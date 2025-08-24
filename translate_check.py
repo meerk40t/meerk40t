@@ -87,13 +87,14 @@ def read_source() -> tuple[list[str], list[str]]:
     filecount = 0
 
     import re
-    # Compile a regex pattern to match translatable strings, 
-    # they should not find abc_() or any other valid python 
+
+    # Compile a regex pattern to match translatable strings,
+    # they should not find abc_() or any other valid python
     # function name
-    pattern = re.compile(r'(?<![\w])_\(')
+    pattern = re.compile(r"(?<![\w])_\(")
     for root, dirs, files in os.walk(sourcedir):
         # Skip ignored directories
-        if any(root.startswith(s) or root.startswith("./" + s) for s in IGNORED_DIRS):
+        if any(root.startswith(s) or root.startswith(f"./{s}") for s in IGNORED_DIRS):
             continue
         for filename in files:
             fname = os.path.join(root, filename)
@@ -141,17 +142,11 @@ def read_source() -> tuple[list[str], list[str]]:
                                 msgid_mode = False
                                 msgid = ""
                                 idx = 0
-                                if idx + 1 >= len(line):
-                                    line = ""
-                                else:
-                                    line = line[idx + 1 :]
+                                line = "" if idx + 1 >= len(line) else line[idx + 1 :]
                                 continue
                             elif line.startswith("+"):
                                 idx = 0
-                                if idx + 1 >= len(line):
-                                    line = ""
-                                else:
-                                    line = line[idx + 1 :]
+                                line = "" if idx + 1 >= len(line) else line[idx + 1 :]
                                 continue
                             elif line.startswith("'"):
                                 quote = "'"
@@ -167,10 +162,7 @@ def read_source() -> tuple[list[str], list[str]]:
                                     else:
                                         break
                                 msgid += line[1:idx]
-                                if idx + 1 >= len(line):
-                                    line = ""
-                                else:
-                                    line = line[idx + 1 :]
+                                line = "" if idx + 1 >= len(line) else line[idx + 1 :]
                                 continue
                             elif line.startswith('"'):
                                 quote = '"'
@@ -186,24 +178,19 @@ def read_source() -> tuple[list[str], list[str]]:
                                     else:
                                         break
                                 msgid += line[1:idx]
-                                if idx + 1 >= len(line):
-                                    line = ""
-                                else:
-                                    line = line[idx + 1 :]
+                                line = "" if idx + 1 >= len(line) else line[idx + 1 :]
                                 continue
                             else:
                                 msgid_mode = False
                                 line = ""
                                 break
+                        elif m := pattern.search(line):
+                            msgid_mode = True
+                            msgid = ""
+                            line = line[m.end() :]
                         else:
-                            m = pattern.search(line)
-                            if m:
-                                msgid_mode = True
-                                msgid = ""
-                                line = line[m.end():]
-                            else:
-                                line = ""
-                                break
+                            line = ""
+                            break
 
     # Read additional strings from file if present
     fname = "additional_strings.txt"
@@ -396,7 +383,7 @@ def check_encoding(locales: list[str]) -> None:
                     content = f.read()
                 # Write the content to a temporary file with utf-8 encoding
                 try:
-                    temp_file = po_dir + "temp_" + po_file
+                    temp_file = f"{po_dir}temp_{po_file}"
                     with open(temp_file, "w", encoding="utf-8") as f:
                         f.write(content)
                 except Exception as e:
@@ -434,6 +421,7 @@ def detect_encoding(file_path: str) -> str:
     """
     try:
         import chardet  # Ensure chardet is available for encoding detection
+
         result = chardet.detect(open(file_path, "rb").read())
         if result and "encoding" in result and result["encoding"]:
             return result["encoding"]

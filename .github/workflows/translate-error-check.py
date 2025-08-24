@@ -22,14 +22,14 @@ def are_curly_brackets_matched(input_str):
 
 
 def find_erroneous_translations(file_path):
-    with open(file_path, "r", encoding="utf-8") as file:
-        file_lines = file.readlines()
-
     found_error = False
     index = 0
     msgids = []
     msgstrs = []
     lineids = []
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        file_lines = file.readlines()
 
     for i, line in enumerate(file_lines):
         if not are_curly_brackets_matched(line):
@@ -40,36 +40,36 @@ def find_erroneous_translations(file_path):
     m_msg = ""
     while index < len(file_lines):
         try:
-            if file_lines[index].strip() == "" or file_lines[index].startswith("#"):
-                pass
-            else:
+            if file_lines[index].strip() != "" and not file_lines[index].startswith(
+                "#"
+            ):
                 msgids.append("")
                 lineids.append(index)
                 # Find msgid and all multi-lined message ids
                 if re.match(r'msgid \s*"(.*)"', file_lines[index]):
                     m = re.match(r'msgid \s*"(.*)"', file_lines[index])
-                    msgids[-1] = m.group(1)
-                    m_id = m.group(1)
+                    msgids[-1] = m[1]
+                    m_id = m[1]
                     index += 1
                     if index >= len(file_lines):
                         break
                     while re.match('^"(.*)"$', file_lines[index]):
                         m = re.match('^"(.*)"$', file_lines[index])
-                        msgids[-1] += m.group(1)
-                        m_id += m.group(1)
+                        msgids[-1] += m[1]
+                        m_id += m[1]
                         index += 1
                 msgstrs.append("")
                 m_msg = ""
                 # find all message strings and all multi-line message strings
                 if re.match('msgstr "(.*)"', file_lines[index]):
                     m = re.match('msgstr "(.*)"', file_lines[index])
-                    msgstrs[-1] += m.group(1)
-                    m_msg += m.group(1)
+                    msgstrs[-1] += m[1]
+                    m_msg += m[1]
                     index += 1
                     while re.match('^"(.*)"$', file_lines[index]):
                         m = re.match('^"(.*)"$', file_lines[index])
-                        msgstrs[-1] += m.group(1)
-                        m_msg += m.group(1)
+                        msgstrs[-1] += m[1]
+                        m_msg += m[1]
                         index += 1
             index += 1
         except IndexError:
@@ -98,14 +98,16 @@ def find_erroneous_translations(file_path):
 
     erct = 0
     idx = 0
-    er_s = list()
+    er_s = []
     for msgid, msgstr, line in zip(msgids, msgstrs, lineids):
         idx += 1
         if len(msgid) == 0 and len(msgstr) == 0:
             erct += 1
             er_s.append(str(line))
     if erct > 0:
-        print (f"{erct} empty pair{'s' if erct==0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}")
+        print(
+            f"{erct} empty pair{'s' if erct == 0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}"
+        )
         found_error = True
     return found_error
 
