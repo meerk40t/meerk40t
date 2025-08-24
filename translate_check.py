@@ -86,6 +86,11 @@ def read_source() -> tuple[list[str], list[str]]:
     linecount = 0
     filecount = 0
 
+    import re
+    # Compile a regex pattern to match translatable strings, 
+    # they should not find abc_() or any other valid python 
+    # function name
+    pattern = re.compile(r'(?<![\w])_\(')
     for root, dirs, files in os.walk(sourcedir):
         # Skip ignored directories
         if any(root.startswith(s) or root.startswith("./" + s) for s in IGNORED_DIRS):
@@ -111,9 +116,9 @@ def read_source() -> tuple[list[str], list[str]]:
                         if not line:
                             break
                         if msgid_mode:
-                            # End of msgid
+                            # ...existing code...
                             if line.startswith(")"):
-                                # Escape quotes in msgid
+                                # ...existing code...
                                 idx = 0
                                 while True:
                                     idx = msgid.find('"', idx)
@@ -191,11 +196,11 @@ def read_source() -> tuple[list[str], list[str]]:
                                 line = ""
                                 break
                         else:
-                            idx = line.find("_(")
-                            if idx >= 0:
+                            m = pattern.search(line)
+                            if m:
                                 msgid_mode = True
                                 msgid = ""
-                                line = line[idx + 2 :]
+                                line = line[m.end():]
                             else:
                                 line = ""
                                 break
@@ -429,8 +434,11 @@ def detect_encoding(file_path: str) -> str:
     """
     try:
         import chardet  # Ensure chardet is available for encoding detection
-
-        return chardet.detect(open(file_path, "rb").read())["encoding"]
+        result = chardet.detect(open(file_path, "rb").read())
+        if result and "encoding" in result and result["encoding"]:
+            return result["encoding"]
+        else:
+            return "unknown"
     except ImportError:
         #    print("chardet missing - falling back to simple default encoding detection")
         pass
