@@ -3740,8 +3740,8 @@ class Kernel(Settings):
 
                 t1 = time.perf_counter()
                 self._console_channel(
-                    _("Finished command {cmd} after {duration:.2f}sec").format(
-                        cmd=remainder, duration=t1 - t0
+                    _("Finished command {cmd} after {duration}sec").format(
+                        cmd=remainder, duration=f"{t1 - t0:.2f}"
                     )
                 )
 
@@ -3793,7 +3793,7 @@ class Kernel(Settings):
                     )
             except ValueError as e:
                 channel(
-                    _("Invalid values for from={lbound} to {ubound}: {error}").format(
+                    _("Invalid values for from={lbound}, to={ubound}: {error}").format(
                         lbound=range_from, ubound=range_to, error=e
                     )
                 )
