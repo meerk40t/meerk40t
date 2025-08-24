@@ -3719,7 +3719,7 @@ class Kernel(Settings):
                     channel(" ".join(parts))
                 channel(_("----------"))
                 return
-            job_identifier = f"threaded-{time.perf_counter():.4f}"
+            job_identifier = f"threaded-{time.time():.4f}"
             job = Job(handler, times=1, run_main=False, job_name=job_identifier)
             job.info = remainder
             self.schedule(job)
@@ -3772,16 +3772,18 @@ class Kernel(Settings):
             def safe_eval(expr, loop):
                 """
                 Safely evaluate arithmetic expressions with 'loop' as a variable.
+                Supports ast.Constant and ast.Num for compatibility.
                 """
-
                 def _eval(node):
-                    if isinstance(node, ast.Num):  # <number>
+                    if isinstance(node, ast.Constant):  # Python 3.8+
+                        return node.value
+                    elif isinstance(node, ast.Num):  # Python <3.8
                         return node.n
-                    elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
+                    elif isinstance(node, ast.BinOp):
                         return SAFE_OPERATORS[type(node.op)](
                             _eval(node.left), _eval(node.right)
                         )
-                    elif isinstance(node, ast.UnaryOp):  # - <operand>
+                    elif isinstance(node, ast.UnaryOp):
                         return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
                     elif isinstance(node, ast.Name):
                         if node.id == "loop":
@@ -3789,7 +3791,6 @@ class Kernel(Settings):
                         raise ValueError(f"Unknown variable: {node.id}")
                     else:
                         raise ValueError("Unsupported expression")
-
                 return _eval(ast.parse(expr, mode="eval").body)
 
             for loop_index in range(range_from, range_to + 1):
