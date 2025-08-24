@@ -386,13 +386,7 @@ and a wxpython version <= 4.1.1."""
         if kernel.themes.dark:
             kargs["bgcolor"] = kernel.themes.get("win_bg")
             kargs["fgcolor"] = kernel.themes.get("win_fg")
-        if kernel.os_information["OS_NAME"] != "Linux":
-            # The Linux implementation of wxWidgets
-            # cannot properly update controls (n idea why,
-            # any hint to circumvent this would be welcome)
-            kernel.busyinfo = BusyInfo(**kargs)
-        else:
-            kernel.busyinfo = SimpleBusyInfo(**kargs)
+        kernel.busyinfo = BusyInfo(**kargs)
 
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)
@@ -515,17 +509,15 @@ and a wxpython version <= 4.1.1."""
             sizeme = 150 if flag else 400
             image = icons.icon_meerk40t.GetBitmap(resize=sizeme)
             from ..main import APPLICATION_VERSION
-
-            if platform.system() != "Linux":
-                kernel.busyinfo.start(
-                    msg=_(
-                        "Start MeerK40t|V. {version}".format(
-                            version=APPLICATION_VERSION
-                        )
-                    ),
-                    image=image,
-                )
-                kernel.busyinfo.change(msg=_("Loading main module"), keep=1)
+            kernel.busyinfo.start(
+                msg=_(
+                    "Start MeerK40t|V. {version}".format(
+                        version=APPLICATION_VERSION
+                    )
+                ),
+                image=image,
+            )
+            kernel.busyinfo.change(msg=_("Loading main module"), keep=1)
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
 
             @kernel.console_command(
