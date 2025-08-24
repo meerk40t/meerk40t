@@ -378,7 +378,7 @@ and a wxpython version <= 4.1.1."""
 
         kernel.yesno = yesno_popup
 
-        from meerk40t.gui.busy import BusyInfo, SimpleBusyInfo
+        from meerk40t.gui.busy import BusyInfo
 
         kargs = {
             "kernel": kernel,
