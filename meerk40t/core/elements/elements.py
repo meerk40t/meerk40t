@@ -11,10 +11,12 @@ functionality, element classification, and the management of persistent
 operations and preferences.
 """
 
+
 import contextlib
 import os.path
 from copy import copy
 from time import time
+import threading
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.node.node import Node
@@ -642,6 +644,8 @@ class Elemental(Service):
         )
         self._clipboard = {}
         self._clipboard_default = "0"
+        # Thread safety for node addition/removal
+        self._node_lock = threading.RLock()
 
         self.note = None
         self.last_file_autoexec = None
@@ -667,6 +671,7 @@ class Elemental(Service):
         self.setting(bool, "use_undo", True)
         self.setting(int, "undo_levels", 20)
         self.setting(bool, "filenode_selection", False)
+
         undo_active = self.use_undo
         undo_levels = self.undo_levels
         self.undo = Undo(self, self._tree, active=undo_active, levels=undo_levels)
@@ -716,7 +721,7 @@ class Elemental(Service):
                 self.load_default(performclassify=False)
             if list(self.ops()):
                 # Something was loaded for default ops. Mark that.
-                # Hint for translate check: _("Operations restored")
+                # Hint for translate check: _(“Operations restored”)
                 self.undo.mark("Operations restored")  # Mark defaulted
 
         self._default_stroke = None
@@ -732,6 +737,11 @@ class Elemental(Service):
 
         self.default_operations = []
         self.init_default_operations_nodes()
+
+    @property
+    def node_lock(self):
+        """Exposes the node lock for external use."""
+        return self._node_lock
 
     def set_start_time(self, key):
         if key in self._timing_stack:
@@ -1118,10 +1128,11 @@ class Elemental(Service):
         )
         for n in data:
             if op_assign.can_drop(n):
-                if exclusive:
-                    for ref in list(n._references):
-                        ref.remove_node()
-                op_assign.drop(n, modify=True)
+                with self._node_lock:
+                    if exclusive:
+                        for ref in list(n._references):
+                            ref.remove_node()
+                    op_assign.drop(n, modify=True)
                 if (
                     impose == "to_elem"
                     and target_color is not None
@@ -1595,12 +1606,13 @@ class Elemental(Service):
             # op.load(settings, section)
             op_tree[section] = op
         op_list = []
-        for section in op_tree:
-            parent = " ".join(section.split(" ")[:-1])
-            if parent == name:
-                op_list.append(op_tree[section])
-            else:
-                op_tree[parent].add_node(op_tree[section])
+        with self._node_lock:
+            for section in op_tree:
+                parent = " ".join(section.split(" ")[:-1])
+                if parent == name:
+                    op_list.append(op_tree[section])
+                else:
+                    op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
     def load_persistent_operations(self, name, classify=None, clear=True):
@@ -1621,25 +1633,26 @@ class Elemental(Service):
                 self.clear_operations()
             operation_branch = self.op_branch
             oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
-            for op in oplist:
-                operation_branch.add_node(op)
-                if not hasattr(op, "settings") or "effects" not in op.settings:
-                    continue
-                effects = op.settings.get("effects", "")
-                del op.settings["effects"]
-                if effects:
-                    parts = effects.split("|")
-                    if len(parts) > 1:
-                        label = parts[0].split()[1] if " " in parts[0] else parts[0]
-                        try:
-                            effnode = op.add(
-                                type=parts[0], label=f"Autocreated {label}"
-                            )
-                            effnode.set_effect_descriptor(effects)
-                            if hasattr(effnode, "stroke") and hasattr(op, "color"):
-                                effnode.stroke = op.color
-                        except Exception as e:
-                            print(f"Bootstrap failed for {parts[0]}: {e}")
+            with self._node_lock:
+                for op in oplist:
+                    operation_branch.add_node(op)
+                    if not hasattr(op, "settings") or "effects" not in op.settings:
+                        continue
+                    effects = op.settings.get("effects", "")
+                    del op.settings["effects"]
+                    if effects:
+                        parts = effects.split("|")
+                        if len(parts) > 1:
+                            label = parts[0].split()[1] if " " in parts[0] else parts[0]
+                            try:
+                                effnode = op.add(
+                                    type=parts[0], label=f"Autocreated {label}"
+                                )
+                                effnode.set_effect_descriptor(effects)
+                                if hasattr(effnode, "stroke") and hasattr(op, "color"):
+                                    effnode.stroke = op.color
+                            except Exception as e:
+                                print(f"Bootstrap failed for {parts[0]}: {e}")
 
             if classify is None:
                 classify = self.classify_new
@@ -1808,14 +1821,15 @@ class Elemental(Service):
                 break
         if newone:
             op_to_use = self.create_usable_copy(targetop)
-            try:
-                self.op_branch.add_node(op_to_use)
-            except ValueError:
-                # This happens when we have somehow lost sync with the node,
-                # and we try to add a node that is already added...
-                # In principle this should be covered by the check
-                # above, but you never know
-                pass
+            with self._node_lock:
+                try:
+                    self.op_branch.add_node(op_to_use)
+                except ValueError:
+                    # This happens when we have somehow lost sync with the node,
+                    # and we try to add a node that is already added...
+                    # In principle this should be covered by the check
+                    # above, but you never know
+                    pass
         # Lets check whether we have an effect:
         effects = ""
         if hasattr(op_to_use, "settings") and "effects" in op_to_use.settings:
@@ -1831,7 +1845,8 @@ class Elemental(Service):
             if len(parts) > 1:
                 label = parts[0].split()[1] if " " in parts[0] else parts[0]
                 try:
-                    effnode = op_to_use.add(type=parts[0], label=f"Autocreated {label}")
+                    with self._node_lock:
+                        effnode = op_to_use.add(type=parts[0], label=f"Autocreated {label}")
                     effnode.set_effect_descriptor(effects)
                     if hasattr(effnode, "stroke") and hasattr(op, "color"):
                         effnode.stroke = op_to_use.color
@@ -1861,7 +1876,6 @@ class Elemental(Service):
         # Let's clean non-used operations that come from defaults...
         if self.remove_non_used_default_ops:
             # print("Remove unused called")
-            deleted = 0
             to_be_deleted = []
 
             for op in list(self.ops()):
@@ -1875,10 +1889,11 @@ class Elemental(Service):
                     if def_op.id == op.id:
                         to_be_deleted.append(op)
                         break
-            for op in to_be_deleted:
-                deleted += 1
-                # print(f"will remove {op.type}- {op.id}")
-                op.remove_node()
+            deleted = len(to_be_deleted)
+            with self._node_lock:
+                for op in to_be_deleted:
+                    # print(f"will remove {op.type}- {op.id}")
+                    op.remove_node()
 
             if deleted:
                 self.signal("operation_removed")
@@ -2113,8 +2128,9 @@ class Elemental(Service):
         with self.undoscope("Load default operations"):
             self.clear_operations()
             nodes = self.create_minimal_op_list()
-            for node in nodes:
-                self.op_branch.add_node(node)
+            with self._node_lock:
+                for node in nodes:
+                    self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -2123,8 +2139,9 @@ class Elemental(Service):
         with self.undoscope("Load default operations"):
             self.clear_operations()
             nodes = self.create_basic_op_list()
-            for node in nodes:
-                self.op_branch.add_node(node)
+            with self._node_lock:
+                for node in nodes:
+                    self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -2264,21 +2281,24 @@ class Elemental(Service):
         @return:
         """
         operation_branch = self.op_branch
-        operation_branch.add_node(op, pos=pos)
+        with self._node_lock:
+            operation_branch.add_node(op, pos=pos)
         self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
         operation_branch = self.op_branch
         items = []
-        for op in adding_ops:
-            operation_branch.add_node(op)
-            items.append(op)
+        with self._node_lock:
+            for op in adding_ops:
+                operation_branch.add_node(op)
+                items.append(op)
         self.signal("add_operation", items)
         return items
 
     def clear_operations(self, fast=False):
         operations = self.op_branch
-        operations.remove_all_children(fast=fast)
+        with self._node_lock:
+            operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
             operations.loop_enabled = False
@@ -2288,13 +2308,15 @@ class Elemental(Service):
 
     def clear_elements(self, fast=False):
         elements = self.elem_branch
-        elements.remove_all_children(fast=fast)
+        with self._node_lock:
+            elements.remove_all_children(fast=fast)
         self.remembered_keyhole_nodes.clear()
         self.registered_keyholes.clear()
 
     def clear_regmarks(self, fast=False):
         elements = self.reg_branch
-        elements.remove_all_children(fast=fast)
+        with self._node_lock:
+            elements.remove_all_children(fast=fast)
 
     def clear_files(self):
         pass
@@ -2447,34 +2469,38 @@ class Elemental(Service):
                     ref._mark_delete = True
                     to_be_deleted += 1
         fastmode = to_be_deleted >= 100
-        for n in reversed(list(self.flat())):
-            if not hasattr(n, "_mark_delete"):
-                continue
-            if n.type in ("root", "branch elems", "branch reg", "branch ops"):
-                continue
-            n.remove_node(children=False, references=False, fast=fastmode)
+        with self._node_lock:
+            for n in reversed(list(self.flat())):
+                if not hasattr(n, "_mark_delete"):
+                    continue
+                if n.type in ("root", "branch elems", "branch reg", "branch ops"):
+                    continue
+                n.remove_node(children=False, references=False, fast=fastmode)
         self.set_end_time("remove_nodes")
         if fastmode:
             self.signal("rebuild_tree", "all")
 
     def remove_elements(self, element_node_list):
-        for elem in element_node_list:
-            if hasattr(elem, "can_remove") and not elem.can_remove:
-                continue
-            elem.remove_node(references=True)
+        with self._node_lock:
+            for elem in element_node_list:
+                if hasattr(elem, "can_remove") and not elem.can_remove:
+                    continue
+                elem.remove_node(references=True)
         self.validate_selected_area()
 
     def remove_operations(self, operations_list):
-        for op in operations_list:
-            for i, o in enumerate(list(self.ops())):
-                if o is op:
-                    o.remove_node()
-            self.signal("operation_removed")
+        with self._node_lock:
+            for op in operations_list:
+                for i, o in enumerate(list(self.ops())):
+                    if o is op:
+                        o.remove_node()
+        self.signal("operation_removed")
 
     def remove_elements_from_operations(self, elements_list):
-        for node in elements_list:
-            for ref in list(node._references):
-                ref.remove_node()
+        with self._node_lock:
+            for node in elements_list:
+                for ref in list(node._references):
+                    ref.remove_node()
 
     def selected_area(self, painted=False):
         if self._emphasized_bounds_dirty:
@@ -3394,7 +3420,8 @@ class Elemental(Service):
                         existing = op.is_referenced(node)
 
                     if not existing:
-                        op.add_reference(node)
+                        with self._node_lock:
+                            op.add_reference(node)
                         update_debug_set(debug_set, op)
 
         self.remove_unused_default_copies()
@@ -4170,8 +4197,9 @@ class Elemental(Service):
                         gdel += cdel
                 else:
                     gres += 1
-            for cnode in to_be_deleted:
-                cnode.remove_node(fast=True)
+            with self._node_lock:
+                for cnode in to_be_deleted:
+                    cnode.remove_node(fast=True)
             return gres, gdel
 
         self.set_start_time("empty_groups")
@@ -4241,9 +4269,10 @@ class Elemental(Service):
                             opcount_now = self.count_op()
                             self.remove_invalid_references()
                             self.remove_empty_groups()
-                            for e in self.elems_nodes():
-                                if e not in _stored_elements:
-                                    self.added_elements.append(e)
+                            with self._node_lock:
+                                for e in self.elems_nodes():
+                                    if e not in _stored_elements:
+                                        self.added_elements.append(e)
                             # self.listen_tree(self)
                             self._filename = pathname
                             self.set_end_time("load", display=True)
@@ -4275,7 +4304,8 @@ class Elemental(Service):
         return False
 
     def clear_loaded_information(self):
-        self.added_elements.clear()
+        with self._node_lock:
+            self.added_elements.clear()
 
     def load_types(self, all=True):
         kernel = self.kernel
@@ -4422,8 +4452,9 @@ class Elemental(Service):
             if hasattr(refnode, "fill"):
                 refnode.fill = None
             # Remove it from all classifications
-            for ref in list(refnode._references):
-                ref.remove_node()
+            with self._node_lock:
+                for ref in list(refnode._references):
+                    ref.remove_node()
 
         self.registered_keyholes[rid] = nodelist
         node.set_keyhole(refnode.id, geom=refnode.as_geometry())
