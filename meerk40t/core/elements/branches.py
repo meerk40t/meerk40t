@@ -592,12 +592,13 @@ def init_commands(kernel):
         # _("Clear operations")
         with self.undoscope("Clear operations"):
             index_ops = list(self.ops())
-            for item in data:
-                i = index_ops.index(item)
-                select_piece = "*" if item.emphasized else " "
-                name = f"{select_piece} {i}: {str(item)}"
-                channel(f"{name}: {len(item.children)}")
-                item.remove_all_children()
+            with self.node_lock:
+                for item in data:
+                    i = index_ops.index(item)
+                    select_piece = "*" if item.emphasized else " "
+                    name = f"{select_piece} {i}: {str(item)}"
+                    channel(f"{name}: {len(item.children)}")
+                    item.remove_all_children()
         self.signal("rebuild_tree", "operations")
 
     @self.console_command(

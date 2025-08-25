@@ -602,8 +602,9 @@ def init_tree(kernel):
             return
         # Language hint: _("Remove all items from operation")
         with self.undoscope("Remove all items from operation"):
-            for item in data:
-                item.remove_all_children()
+            with self.node_lock:
+                for item in data:
+                    item.remove_all_children()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(
@@ -1597,7 +1598,8 @@ def init_tree(kernel):
         ):
             # Language hint _("Clear all elements")
             with self.undoscope("Clear all elements"):
-                self.elem_branch.remove_all_children()
+                with self.node_lock:
+                    self.elem_branch.remove_all_children()
 
     # ==========
     # General menu-entries for regmark branch
@@ -1615,7 +1617,8 @@ def init_tree(kernel):
         ):
             # Language hint _("Clear all regmarks")
             with self.undoscope("Clear all regmarks"):
-                self.reg_branch.remove_all_children()
+                with self.node_lock:
+                    self.reg_branch.remove_all_children()
 
     # ==========
     # REMOVE MULTI (Tree Selected)
