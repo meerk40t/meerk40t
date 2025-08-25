@@ -846,9 +846,11 @@ class KerfPanel(wx.Panel):
         elif result == wx.ID_CANCEL:
             return
         if slider:
-            create_slider()
+            with self.context.elements.node_lock:
+                create_slider()
         else:
-            create_operations()
+            with self.context.elements.node_lock:
+                create_operations()
 
         self.context.signal("rebuild_tree")
         self.context.signal("refresh_scene", "Scene")

@@ -791,7 +791,8 @@ def init_commands(kernel):
         time=None,
         **kwargs,
     ):
-        op = self.op_branch.add(type="util wait", wait=time)
+        with self.node_lock:
+            op = self.op_branch.add(type="util wait", wait=time)
         return "ops", [op]
 
     @self.console_argument(
@@ -863,7 +864,8 @@ def init_commands(kernel):
             # fmt: on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
-        op = self.op_branch.add(type="util goto", x=sx, y=sy)
+        with self.node_lock:
+            op = self.op_branch.add(type="util goto", x=sx, y=sy)
         return "ops", [op]
 
     @self.console_command(
@@ -876,7 +878,8 @@ def init_commands(kernel):
         **kwargs,
     ):
         if remainder is not None:
-            op = self.op_branch.add(type="util console", command=remainder)
+            with self.node_lock:
+                op = self.op_branch.add(type="util console", command=remainder)
             return "ops", [op]
 
     @self.console_argument("dpi", type=int, help=_("raster dpi"))
@@ -1839,7 +1842,8 @@ def init_commands(kernel):
                     el = el[:idx]
                 node_label = el
                 break
-        node = self.elem_branch.add(type="elem path", label=node_label)
+        with self.node_lock:
+            node = self.elem_branch.add(type="elem path", label=node_label)
         first = True
         for e in data:
             try:

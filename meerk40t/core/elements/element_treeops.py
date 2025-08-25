@@ -576,9 +576,10 @@ def init_tree(kernel):
             return
         with self.undoscope("Group elements"):
             parent_node = minimal_parent(data)
-            group_node = parent_node.add(type="group", label="Group", expanded=True)
-            for e in data:
-                group_node.append_child(e)
+            with self.node_lock:
+                group_node = parent_node.add(type="group", label="Group", expanded=True)
+                for e in data:
+                    group_node.append_child(e)
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
@@ -2053,9 +2054,10 @@ def init_tree(kernel):
         elements = list(cutcode.as_elements())
         n = None
         with self.undoscope("Convert to Path"):
-            for element in elements:
-                n = self.elem_branch.add(type="elem path", path=element)
-            node.remove_node()
+            with self.node_lock:
+                for element in elements:
+                    n = self.elem_branch.add(type="elem path", path=element)
+                node.remove_node()
         if n is not None:
             n.focus()
 
@@ -4001,7 +4003,8 @@ def init_tree(kernel):
             return
         with self.undoscope("Merge elements"):
             parent = get_common_parent_node(data)
-            node = parent.add(type="elem path")
+            with self.node_lock:
+                node = parent.add(type="elem path")
             for e in data:
                 try:
                     path = e.as_geometry()

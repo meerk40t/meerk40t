@@ -160,7 +160,8 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def place_current(command, channel, _, **kwargs):
-        node = self.op_branch.add(type="place current")
+        with self.node_lock:
+            node = self.op_branch.add(type="place current")
         added = [node]
         self.set_emphasis(added)
         return "ops", added
