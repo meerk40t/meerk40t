@@ -4617,11 +4617,12 @@ def init_tree(kernel):
             for item in list(self.elems_nodes()):
                 if item.selected:
                     data.append(item)
-            for item in data:
-                # No usecase for having a locked regmark element
-                if hasattr(item, "lock"):
-                    item.lock = False
-                drop_node.drop(item)
+            with self.node_lock:
+                for item in data:
+                    # No usecase for having a locked regmark element
+                    if hasattr(item, "lock"):
+                        item.lock = False
+                    drop_node.drop(item)
 
     @tree_conditional(lambda node: is_regmark(node))
     ## @tree_separator_before()

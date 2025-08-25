@@ -1531,8 +1531,9 @@ def init_commands(kernel):
     # REGMARK COMMANDS
     # ==========
     def move_nodes_to(target, nodes):
-        for elem in nodes:
-            target.drop(elem)
+        with self.node_lock:
+            for elem in nodes:
+                target.drop(elem)
 
     @self.console_argument("cmd", type=str, help=_("free, clear, add"))
     @self.console_command(

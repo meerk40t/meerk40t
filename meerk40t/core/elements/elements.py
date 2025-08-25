@@ -2437,7 +2437,8 @@ class Elemental(Service):
                 if op_treatment and drag_node.has_ancestor("branch reg"):
                     # We need to first relocate the drag_node to the elem branch
                     # print(f"Relocate {drag_node.type} to elem branch")
-                    self.elem_branch.drop(drag_node, flag=flag)
+                    with self.node_lock:
+                        self.elem_branch.drop(drag_node, flag=flag)
                 if drop_node.can_drop(drag_node):
                     # Is the drag node coming from the regmarks branch?
                     # If yes then we might need to classify.
@@ -2446,7 +2447,8 @@ class Elemental(Service):
                             to_classify.extend(iter(drag_node.flat(elem_nodes)))
                         else:
                             to_classify.append(drag_node)
-                    drop_node.drop(drag_node, modify=True, flag=flag)
+                    with self.node_lock:
+                        drop_node.drop(drag_node, modify=True, flag=flag)
                     success = True
                 # else:
                 #     print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
