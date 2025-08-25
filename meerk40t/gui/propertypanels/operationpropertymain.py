@@ -943,23 +943,25 @@ class InfoPanel(wx.Panel):
         result = dlg.ShowModal()
         dlg.Destroy()
         if result == wx.ID_YES:
-            with self.context.elements.undoscope("Re-Classify"):
-                myop = self.operation
-                myop.remove_all_children()
-                data = list(self.context.elements.elems())
-                reverse = self.context.elements.classify_reverse
-                fuzzy = self.context.elements.classify_fuzzy
-                fuzzydistance = self.context.elements.classify_fuzzydistance
-                if reverse:
-                    data = reversed(data)
-                for node in data:
-                    # result is a tuple containing classified, should_break, feedback
-                    result = myop.classify(
-                        node,
-                        fuzzy=fuzzy,
-                        fuzzydistance=fuzzydistance,
-                        usedefault=False,
-                    )
+            elements = self.context.elements
+            with elements.undoscope("Re-Classify"):
+                with elements.node_lock:
+                    myop = self.operation
+                    myop.remove_all_children()
+                    data = list(elements.elems())
+                    reverse = elements.classify_reverse
+                    fuzzy = elements.classify_fuzzy
+                    fuzzydistance = elements.classify_fuzzydistance
+                    if reverse:
+                        data = reversed(data)
+                    for node in data:
+                        # result is a tuple containing classified, should_break, feedback
+                        result = myop.classify(
+                            node,
+                            fuzzy=fuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=False,
+                        )
             # Probably moot as the next command will move the focus away...
             self.refresh_display()
             self.context.signal("tree_changed")

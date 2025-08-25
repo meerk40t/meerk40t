@@ -169,12 +169,13 @@ def init_commands(kernel):
         if hasattr(data, "parameter_store"):
             param = getattr(data, "parameter_store", None)
             del data.parameter_store
-        node = self.elem_branch.add(
-            geometry=data,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            type="elem path",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                geometry=data,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                type="elem path",
+            )
         if param is not None:
             node.functional_parameter = param
 

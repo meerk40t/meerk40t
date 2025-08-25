@@ -207,28 +207,31 @@ class OpInfoPanel(ScrolledPanel):
     def on_tree_popup_empty(self, opnode=None):
         def clear(event=None):
             with self.context.elements.undoscope("Clear"):
-                opnode.remove_all_children()
+                with self.context.elements.node_lock:
+                    opnode.remove_all_children()
 
         return clear
 
     def on_tree_popup_reclassify(self, opnode=None):
         def reclassify(event=None):
-            with self.context.elements.undoscope("Re-Classify"):
-                opnode.remove_all_children()
-                data = list(self.context.elements.elems())
-                reverse = self.context.elements.classify_reverse
-                fuzzy = self.context.elements.classify_fuzzy
-                fuzzydistance = self.context.elements.classify_fuzzydistance
-                if reverse:
-                    data = reversed(data)
-                for node in data:
-                    # result is a tuple containing classified, should_break, feedback
-                    result = opnode.classify(
-                        node,
-                        fuzzy=fuzzy,
-                        fuzzydistance=fuzzydistance,
-                        usedefault=False,
-                    )
+            elements = self.context.elements
+            with elements.undoscope("Re-Classify"):
+                with elements.node_lock:
+                    opnode.remove_all_children()
+                    data = list(elements.elems())
+                    reverse = elements.classify_reverse
+                    fuzzy = elements.classify_fuzzy
+                    fuzzydistance = elements.classify_fuzzydistance
+                    if reverse:
+                        data = reversed(data)
+                    for node in data:
+                        # result is a tuple containing classified, should_break, feedback
+                        result = opnode.classify(
+                            node,
+                            fuzzy=fuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=False,
+                        )
             self.context.signal("tree_changed")
 
         return reclassify
