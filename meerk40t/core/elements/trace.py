@@ -641,10 +641,11 @@ def init_commands(kernel):
             if shape.is_degenerate():
                 channel(_("Shape is degenerate."))
                 return "elements", data
-        node = self.elem_branch.add(shape=shape, type=shape_type)
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
+        with self.node_lock:
+            node = self.elem_branch.add(shape=shape, type=shape_type)
+            node.stroke = self.default_stroke
+            node.stroke_width = self.default_strokewidth
+            node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
         node.focus()
