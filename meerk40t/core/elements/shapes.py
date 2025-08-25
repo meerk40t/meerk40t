@@ -1293,7 +1293,8 @@ def init_commands(kernel):
         except AttributeError:
             # elem text does not have an as_path() object
             return "elements", data
-        data[1].remove_node()
+        with self.node_lock:
+            data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
 
@@ -2899,10 +2900,10 @@ def init_commands(kernel):
                 if result is None:
                     channel("Could not stitch anything")
                     return
-                if not keep:
-                    for node in to_be_deleted:
-                        node.remove_node()
                 with self.node_lock:
+                    if not keep:
+                        for node in to_be_deleted:
+                            node.remove_node()
                     for idx, g in enumerate(result):
                         node = self.elem_branch.add(
                             label=f"Stitch # {idx + 1}",

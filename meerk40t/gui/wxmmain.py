@@ -2752,9 +2752,10 @@ class MeerK40t(MWindow):
 
         def ungroup_selection():
             def release_em(node):
-                for n in list(node.children):
-                    node.insert_sibling(n)
-                node.remove_node()  # Removing group/file node.
+                with kernel.elements.node_lock:
+                    for n in list(node.children):
+                        node.insert_sibling(n)
+                    node.remove_node()  # Removing group/file node.
 
             with kernel.elements.undoscope("Ungroup"):
                 found_some = False

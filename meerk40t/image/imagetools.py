@@ -1596,16 +1596,16 @@ def plugin(kernel, lifecycle=None):
             image_right = img.crop((x, 0, inode.image.width, inode.image.height))
 
             parent = inode.parent
-
-            inode.remove_node()
             elements = context.elements
+            with elements.node_lock:
+                inode.remove_node()
 
-            node1 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_left
-            )
-            node2 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_right
-            )
+                node1 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_left
+                )
+                node2 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_right
+                )
             node2.matrix.pre_translate(x)
             elements.classify([node1, node2])
             channel(_("Image sliced at position {position}").format(position=x))
@@ -1638,15 +1638,16 @@ def plugin(kernel, lifecycle=None):
 
             parent = inode.parent
 
-            inode.remove_node()
             elements = context.elements
+            with elements.node_lock:
+                inode.remove_node()
 
-            node1 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_top
-            )
-            node2 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_bottom
-            )
+                node1 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_top
+                )
+                node2 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_bottom
+                )
             node2.matrix.pre_translate(0, y)
 
             elements.classify([node1, node2])
@@ -1709,13 +1710,14 @@ def plugin(kernel, lifecycle=None):
             inode_remain = copy(inode)
             inode_remain.image = image_remain
 
-            inode.remove_node()
-
             elements = context.elements
+
             # _("Paths around images")
             with elements.undoscope("Image pop"):
-                node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
-                node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
+                with elements.node_lock:
+                    inode.remove_node()
+                    node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
+                    node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
                 if elements.classify_new:
                     elements.classify([node1, node2])
 
@@ -1967,17 +1969,18 @@ def plugin(kernel, lifecycle=None):
         if len(data_out):
             # _("Image white")
             with context.elements.undoscope("Image white"):
-                needs_adding = [True] * len(data_out)
-                if breakdown or whiten:
-                    for inode in data:
-                        if inode in data_out:
-                            idx = data_out.index(inode)
-                            needs_adding[idx] = False
-                        else:
-                            inode.remove_node()
-                for idx, inode in enumerate(data_out):
-                    if needs_adding[idx]:
-                        context.elements.elem_branch.add_node(inode)
+                with context.elements.node_lock:
+                    needs_adding = [True] * len(data_out)
+                    if breakdown or whiten:
+                        for inode in data:
+                            if inode in data_out:
+                                idx = data_out.index(inode)
+                                needs_adding[idx] = False
+                            else:
+                                inode.remove_node()
+                    for idx, inode in enumerate(data_out):
+                        if needs_adding[idx]:
+                            context.elements.elem_branch.add_node(inode)
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out

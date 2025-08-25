@@ -313,11 +313,12 @@ def init_tree(kernel):
     def remove_effect(node, **kwargs):
         with self.undoscope("Remove effect"):
             childs = [e for e in node._children]
-            for e in childs:
-                e._parent = None  # Otherwise add_node will fail below
-                node.parent.add_node(e)
-            node._children.clear()
-            node.remove_node(fast=True)
+            with self.node_lock:
+                for e in childs:
+                    e._parent = None  # Otherwise add_node will fail below
+                    node.parent.add_node(e)
+                node._children.clear()
+                node.remove_node(fast=True)
         self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: is_hatched(node))
@@ -333,35 +334,36 @@ def init_tree(kernel):
         if not data:
             return
         with self.undoscope("Remove effect"):
-            for e in data:
-                # eparent is the nodes immediate parent
-                # nparent is the containing hatch
-                eparent = e.parent
-                nparent = eparent
-                while True:
-                    if nparent.type.startswith("effect"):
-                        break
-                    if nparent.parent is None:
-                        nparent = None
-                        break
-                    if nparent.parent is self.elem_branch:
-                        nparent = None
-                        break
-                    nparent = nparent.parent
-                if nparent is None:
-                    continue
-                e._parent = None  # Otherwise add_node will fail below
-                try:
-                    idx = eparent._children.index(e)
-                    if idx >= 0:
-                        eparent._children.pop(idx)
-                except IndexError:
-                    pass
-                nparent.parent.add_node(e)
-                if len(nparent.children) == 0:
-                    nparent.remove_node(fast=True)
-                else:
-                    nparent.altered()
+            with self.node_lock:
+                for e in data:
+                    # eparent is the nodes immediate parent
+                    # nparent is the containing hatch
+                    eparent = e.parent
+                    nparent = eparent
+                    while True:
+                        if nparent.type.startswith("effect"):
+                            break
+                        if nparent.parent is None:
+                            nparent = None
+                            break
+                        if nparent.parent is self.elem_branch:
+                            nparent = None
+                            break
+                        nparent = nparent.parent
+                    if nparent is None:
+                        continue
+                    e._parent = None  # Otherwise add_node will fail below
+                    try:
+                        idx = eparent._children.index(e)
+                        if idx >= 0:
+                            eparent._children.pop(idx)
+                    except IndexError:
+                        pass
+                    nparent.parent.add_node(e)
+                    if len(nparent.children) == 0:
+                        nparent.remove_node(fast=True)
+                    else:
+                        nparent.altered()
         self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))
@@ -407,11 +409,11 @@ def init_tree(kernel):
                         if enode not in to_treat:
                             to_treat.append(enode)
                         break
-
-            for gnode in to_treat:
-                for n in list(gnode.children):
-                    gnode.insert_sibling(n, below=False)
-                gnode.remove_node()  # Removing group/file node.
+            with self.node_lock:
+                for gnode in to_treat:
+                    for n in list(gnode.children):
+                        gnode.insert_sibling(n, below=False)
+                    gnode.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -446,7 +448,8 @@ def init_tree(kernel):
             return amount
 
         with self.undoscope("Simplify group"):
-            res = straighten(node)
+            with self.node_lock:
+                res = straighten(node)
         if res > 0:
             self.signal("rebuild_tree", "elements")
 
@@ -1643,9 +1646,10 @@ def init_tree(kernel):
             return
         # Language hint _("Remove items from operations")
         with self.undoscope("Remove items from operations"):
-            for node in nodes:
-                if node.parent is not None:  # May have already removed.
-                    node.remove_node()
+            with self.node_lock:
+                for node in nodes:
+                    if node.parent is not None:  # May have already removed.
+                        node.remove_node()
         self.set_emphasis(None)
         self.signal("refresh_tree")
 
@@ -1663,7 +1667,8 @@ def init_tree(kernel):
         self.set_emphasis(None)
         # Language hint _("Delete operation")
         with self.undoscope("Delete operation"):
-            node.remove_node()
+            with self.node_lock:
+                node.remove_node()
         self.signal("operation_removed")
 
     @tree_conditional(
@@ -1680,7 +1685,8 @@ def init_tree(kernel):
         self.set_emphasis(None)
         # Language hint _("Delete blob")
         with self.undoscope("Delete blob"):
-            node.remove_node()
+            with self.node_lock:
+                node.remove_node()
         self.signal("operation_removed")
 
     @tree_conditional(
@@ -1703,8 +1709,9 @@ def init_tree(kernel):
             return
         # Language hint _("Delete operation")
         with self.undoscope("Delete operation"):
-            for op in data:
-                op.remove_node()
+            with self.node_lock:
+                for op in data:
+                    op.remove_node()
         self.set_emphasis(None)
         self.signal("operation_removed")
 
@@ -1733,7 +1740,8 @@ def init_tree(kernel):
         self.set_emphasis(None)
         # Language hint _("Delete group")
         with self.undoscope("Delete group"):
-            node.remove_node()
+            with self.node_lock:
+                node.remove_node()
 
     @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
@@ -1768,8 +1776,9 @@ def init_tree(kernel):
             return
         # Language hint _("Remove file")
         with self.undoscope("Remove file"):
-            for e in to_be_removed:
-                e.remove_node()
+            with self.node_lock:
+                for e in to_be_removed:
+                    e.remove_node()
         self.set_emphasis(None)
 
     @tree_conditional(lambda node: not is_regmark(node))
@@ -1813,8 +1822,9 @@ def init_tree(kernel):
             return
         # Language hint _("Remove transparent objects")
         with self.undoscope("Remove transparent objects"):
-            for enode in data:
-                enode.remove_node()
+            with self.node_lock:
+                for enode in data:
+                    enode.remove_node()
 
         self.signal("rebuild_tree", "elements")
 
@@ -1996,7 +2006,8 @@ def init_tree(kernel):
         if not cancelled:
             with self.undoscope("Convert to Elements"):
                 d2p.parse(node.data_type, node.data, self)
-                node.remove_node()
+                with self.node_lock:
+                    node.remove_node()
         return True
 
     @tree_conditional_try(lambda node: node.data_type == "egv")
@@ -2012,7 +2023,8 @@ def init_tree(kernel):
         parser = LihuiyuParser()
         parser.fix_speeds = True
         parser.parse(node.data, self)
-        node.remove_node()
+        with self.node_lock:
+            node.remove_node()
         self.signal("refresh_scene", "Scene")
 
     @tree_conditional_try(
@@ -2794,9 +2806,10 @@ def init_tree(kernel):
     def remove_all_assignments(node, **kwargs):
         # Language hint _("Clear classification")
         with self.undoscope("Clear classification"):
-            for node in self.elems():
-                for ref in list(node.references):
-                    ref.remove_node()
+            with self.node_lock:
+                for node in self.elems():
+                    for ref in list(node.references):
+                        ref.remove_node()
         self.signal("refresh_tree")
 
     hatchable_elems = (
@@ -3462,8 +3475,9 @@ def init_tree(kernel):
                 and e not in to_be_removed
             ):
                 to_be_removed.append(e)
-        for e in to_be_removed:
-            e.remove_node()
+        with self.node_lock:
+            for e in to_be_removed:
+                e.remove_node()
         self.load(filepath)
 
     @tree_operation(
@@ -3593,8 +3607,9 @@ def init_tree(kernel):
 
         # _("Remove assignments")
         with self.undoscope("Remove assignments"):
-            for node in list(self.elems(emphasized=True)):
-                rem_node(node)
+            with self.node_lock:
+                for node in list(self.elems(emphasized=True)):
+                    rem_node(node)
         self.signal("refresh_tree")
 
     ## @tree_separator_before()
@@ -4005,29 +4020,29 @@ def init_tree(kernel):
             parent = get_common_parent_node(data)
             with self.node_lock:
                 node = parent.add(type="elem path")
-            for e in data:
-                try:
-                    path = e.as_geometry()
-                except AttributeError:
-                    continue
-                try:
-                    if node.stroke is None:
-                        node.stroke = e.stroke
-                except AttributeError:
-                    pass
-                try:
-                    if node.fill is None:
-                        node.fill = e.fill
-                except AttributeError:
-                    pass
-                try:
-                    if node.stroke_width is None:
-                        node.stroke_width = e.stroke_width
-                except AttributeError:
-                    pass
-                node.geometry.append(path)
-            self.remove_elements(data)
-            # Newly created! Classification needed?
+                for e in data:
+                    try:
+                        path = e.as_geometry()
+                    except AttributeError:
+                        continue
+                    try:
+                        if node.stroke is None:
+                            node.stroke = e.stroke
+                    except AttributeError:
+                        pass
+                    try:
+                        if node.fill is None:
+                            node.fill = e.fill
+                    except AttributeError:
+                        pass
+                    try:
+                        if node.stroke_width is None:
+                            node.stroke_width = e.stroke_width
+                    except AttributeError:
+                        pass
+                    node.geometry.append(path)
+                self.remove_elements(data)
+                # Newly created! Classification needed?
             data = [node]
             if self.classify_new:
                 self.classify(data)
@@ -4307,20 +4322,21 @@ def init_tree(kernel):
         if not nodes:
             return
         with self.undoscope("Convert to path"):
-            for node in nodes:
-                node_attributes = []
-                for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
-                    if hasattr(node, attrib):
-                        oldval = getattr(node, attrib, None)
-                        node_attributes.append([attrib, oldval])
-                geometry = node.as_geometry()
-                node.remove_all_children()
-                if not len(geometry):
-                    return
-                newnode = node.replace_node(geometry=geometry, type="elem path")
-                for item in node_attributes:
-                    setattr(newnode, item[0], item[1])
-                newnode.altered()
+            with self.node_lock:
+                for node in nodes:
+                    node_attributes = []
+                    for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                        if hasattr(node, attrib):
+                            oldval = getattr(node, attrib, None)
+                            node_attributes.append([attrib, oldval])
+                    geometry = node.as_geometry()
+                    node.remove_all_children()
+                    if not len(geometry):
+                        return
+                    newnode = node.replace_node(geometry=geometry, type="elem path")
+                    for item in node_attributes:
+                        setattr(newnode, item[0], item[1])
+                    newnode.altered()
 
     def valid_keyhole_pair():
         number_of_images: int = 0
@@ -4529,7 +4545,8 @@ def init_tree(kernel):
             self("element merge\n")
             # Is the group now empty? --> delete
             if len(node.children) == 0:
-                node.remove_node()
+                with self.node_lock:
+                    node.remove_node()
 
     @tree_conditional(lambda node: node.lock)
     ## @tree_separator_before()
