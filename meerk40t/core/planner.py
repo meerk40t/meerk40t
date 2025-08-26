@@ -842,23 +842,23 @@ class Planner(Service):
         )
         def plan_return(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
-            operations.remove_all_children()
-
-            for c in data.plan:
-                if isinstance(c, CutCode):
-                    operations.add(type="cutcode", cutcode=c)
-                if isinstance(
-                    c,
-                    (
-                        RasterOpNode,
-                        ImageOpNode,
-                        CutOpNode,
-                        EngraveOpNode,
-                        DotsOpNode,
-                    ),
-                ):
-                    copy_c = copy(c)
-                    operations.add_node(copy_c)
+            with self.elements.node_lock:
+                operations.remove_all_children()
+                for c in data.plan:
+                    if isinstance(c, CutCode):
+                        operations.add(type="cutcode", cutcode=c)
+                    if isinstance(
+                        c,
+                        (
+                            RasterOpNode,
+                            ImageOpNode,
+                            CutOpNode,
+                            EngraveOpNode,
+                            DotsOpNode,
+                        ),
+                    ):
+                        copy_c = copy(c)
+                        operations.add_node(copy_c)
             channel(_("Returned Operations."))
             self.signal("plan", data.name, None)
             return data_type, data

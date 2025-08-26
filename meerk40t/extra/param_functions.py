@@ -121,7 +121,8 @@ def plugin(kernel, lifecycle):
                 channel("No matching element found.")
             start_pt = Point(ssx, ssy)
             geom = create_copied_grid(start_pt, found_node, cols, rows, sdx, sdy)
-            node = self.elem_branch.add(type="elem path", geometry=geom)
+            with self.node_lock:
+                node = self.elem_branch.add(type="elem path", geometry=geom)
             bb = geom.bbox()
             width = bb[2] - bb[0]
             # height = bb[3] - bb[1]
@@ -490,7 +491,8 @@ def plugin(kernel, lifecycle):
             start_pt = Point(ssx, ssy)
             end_pt = Point.polar(start_pt, 0, blen)
             geom = create_fractal_tree(start_pt, end_pt, iterations, ratio)
-            node = self.elem_branch.add(type="elem path", geometry=geom)
+            with self.node_lock:
+                node = self.elem_branch.add(type="elem path", geometry=geom)
             node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
             node.altered()
@@ -615,7 +617,8 @@ def plugin(kernel, lifecycle):
         #     start_pt = Point(ssx, ssy)
         #     end_pt = Point.polar(start_pt, 0, blen)
         #     geom = create_fractal_dragon(start_pt, end_pt, iterations)
-        #     node = self.elem_branch.add(type="elem path", geometry=geom)
+        #     with self.node_lock:
+        #         node = self.elem_branch.add(type="elem path", geometry=geom)
         #     node.stroke = self.default_stroke
         #     node.stroke_width = self.default_strokewidth
         #     node.altered()
@@ -762,7 +765,8 @@ def plugin(kernel, lifecycle):
             geom = create_cycloid_shape(
                 ssx, ssy, radius_major, radius_minor, iterations
             )
-            node = self.elem_branch.add(type="elem path", geometry=geom)
+            with self.node_lock:
+                node = self.elem_branch.add(type="elem path", geometry=geom)
             node.label = f"Cycloid {iterations} iterations"
             node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
@@ -1103,7 +1107,8 @@ def plugin(kernel, lifecycle):
                     )
             # _("Create shape")
             with self.undoscope("Create shape"):
-                node = self.elem_branch.add(type="elem path", geometry=geom)
+                with self.node_lock:
+                    node = self.elem_branch.add(type="elem path", geometry=geom)
                 node.stroke = self.default_stroke
                 node.stroke_width = self.default_strokewidth
                 node.fill = self.default_fill
@@ -1396,7 +1401,8 @@ def plugin(kernel, lifecycle):
             )
             # _("Create shape")
             with self.undoscope("Create shape"):
-                node = self.elem_branch.add(type="elem path", geometry=geom)
+                with self.node_lock:
+                    node = self.elem_branch.add(type="elem path", geometry=geom)
                 node.label = f"Growing Polygon w. {sides} sides"
                 node.stroke = self.default_stroke
                 node.stroke_width = 1000  # self.default_strokewidth

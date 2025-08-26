@@ -96,7 +96,8 @@ def init_commands(kernel):
             else:
                 index = idx
         with self.static("redo"):
-            redo_done = self.undo.redo(index=index)
+            with self.node_lock:
+                redo_done = self.undo.redo(index=index)
         if not redo_done:
             channel("No redo available.")
             return

@@ -116,7 +116,8 @@ def init_commands(kernel):
                 drop_node = self._tree
                 for n in drop.split("."):
                     drop_node = drop_node.children[int(n)]
-                drop_node.drop(drag_node)
+                with self.node_lock:
+                    drop_node.drop(drag_node)
             except (IndexError, AttributeError, ValueError):
                 raise CommandSyntaxError
         return "tree", data
