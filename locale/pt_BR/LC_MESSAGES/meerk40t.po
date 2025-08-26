@@ -596,12 +596,9 @@ msgstr "Limites do elemento: {bounds}"
 msgid "convex hull of the current selected elements"
 msgstr "Casca convexa dos elementos selecionados"
 
-<<<<<<< HEAD
 #: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542 
-=======
 #: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542
 #: meerk40t/core/elements/trace.py:632
->>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 msgid "No elements bounds to trace."
 msgstr "Nenhum limite de elemento para traçar."
 
@@ -19184,17 +19181,9 @@ msgid "W, H"
 msgstr "L, A"
 
 #: meerk40t/gui/statusbarwidgets/statusbar.py:48
-<<<<<<< HEAD
 msgid "Left Click: Move to next panel\n"
 "Right Click: Move to previous panel"
 msgstr "Clique Esquerdo: Mover para o próximo painel\n"
-=======
-msgid ""
-"Left Click: Move to next panel\n"
-"Right Click: Move to previous panel"
-msgstr ""
-"Clique Esquerdo: Mover para o próximo painel\n"
->>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
 "Clique Direito: Mover para o painel anterior"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:46
@@ -23661,23 +23650,12 @@ msgid "Simplify Effects"
 msgstr "Simplificar efeitos"
 
 #: meerk40t/gui/plugin.py:128
-<<<<<<< HEAD
 msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
 msgstr "Limita a complexidade dos efeitos aplicados aos elementos durante o design.\nNB1: todos os valores serão respeitados durante a gravação.\nNB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
 
 #: meerk40t/grbl/device.py:1049
 msgid "Export succeeded: {filename}"
 msgstr "Exportação bem-sucedida: {filename}"
-
-=======
-msgid ""
-"Limits the complexity of effects applied to elements during design.\n"
-"NB1: all values will be honored during burning.\n"
-"NB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
-msgstr ""
-"Limita a complexidade dos efeitos aplicados aos elementos durante o design.\n"
-"NB1: todos os valores serão respeitados durante a gravação.\n"
-"NB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
 
 #: meerk40t/balormk/device.py:446
 msgid "Cut/Engrave"
@@ -23687,8 +23665,7 @@ msgstr "Cortar/Gravar"
 #: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
 #: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
 msgid "This is global setting that will be overruled by operation settings."
-msgstr ""
-"Esta é uma configuração global que será substituída pelas configurações da "
+msgstr "Esta é uma configuração global que será substituída pelas configurações da "
 "operação."
 
 #: meerk40t/balormk/device.py:475
@@ -23766,4 +23743,87 @@ msgstr "Teste das configurações da operação"
 #: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
 msgid "Operation settings"
 msgstr "Configurações da operação"
->>>>>>> 7e862a7e36367e0279e4899199f5228c3f3134cf
+
+
+#: meerk40t/balormk/device.py:446
+msgid "Cut/Engrave"
+msgstr "Cortar/Gravar"
+
+#: meerk40t/balormk/device.py:452 meerk40t/balormk/device.py:466
+#: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
+#: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
+msgid "This is global setting that will be overruled by operation settings."
+msgstr "Esta é uma configuração global que será substituída pelas configurações de operação."
+
+#: meerk40t/balormk/device.py:475
+msgid "Miscellaneous"
+msgstr "Diversos"
+
+#: meerk40t/balormk/gui/balorconfig.py:52
+#: meerk40t/grbl/gui/grblconfiguration.py:268
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:449
+#: meerk40t/moshi/gui/moshidrivergui.py:67
+#: meerk40t/newly/gui/newlyconfig.py:73 meerk40t/ruida/gui/ruidaconfig.py:216
+msgid "Operation Defaults"
+msgstr "Padrões de Operação"
+
+#: meerk40t/core/elements/element_treeops.py:1324
+#: meerk40t/core/elements/element_treeops.py:1338
+msgid "Reset to device default values"
+msgstr "Redefinir para os valores padrão do dispositivo"
+
+#: meerk40t/core/elements/element_treeops.py:1328
+msgid ""
+"Will reset power / speed and some other properties to device default values"
+msgstr ""
+"Redefinirá a potência/velocidade e algumas outras propriedades para os valores padrão do dispositivo"
+
+#: meerk40t/core/elements/geometry.py:432
+msgid "Use unidirectional hatch lines"
+msgstr "Use linhas de hachura unidirecionais"
+
+#: meerk40t/core/elements/geometry.py:437
+msgid "Distance between hatch lines"
+msgstr "Distância entre as linhas de hachura"
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Type"
+msgstr "Tipo de Oscilação Padrão"
+
+#: meerk40t/device/devicechoices.py:56
+msgid "Wobble Speed"
+msgstr "Velocidade de Oscilação"
+
+#: meerk40t/device/devicechoices.py:57
+msgid "Default Wobble Speed"
+msgstr "Velocidade de Oscilação Padrão"
+
+#: meerk40t/device/devicechoices.py:106
+msgid "Default power for {op}"
+msgstr "Potência padrão para {op} "
+
+#: meerk40t/device/devicechoices.py:117
+msgid "Default speed for {op}"
+msgstr "Velocidade padrão para {op}"
+
+#: meerk40t/gui/materialtest.py:339
+msgid "Create boundary shape"
+msgstr "Criar forma de limite"
+
+#: meerk40t/gui/materialtest.py:602
+msgid "Add the shape a second time around the effect"
+msgstr "Adicione a forma uma segunda vez ao redor do efeito"
+
+#: meerk40t/gui/mkdebug.py:183
+msgid "Op Settings"
+msgstr "Configurações do OP"
+
+#: meerk40t/gui/mkdebug.py:191
+msgid "OP Settings test"
+msgstr "Teste de Configurações de Operação"
+
+#: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
+msgid "Operation settings"
+msgstr "Configurações do operação"
+
+
