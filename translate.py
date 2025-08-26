@@ -373,7 +373,8 @@ def main() -> None:
         help="Integrate delta_xx.po files into the main .po files",
     )
     args = parser.parse_args()
-
+    if "all" in args.locales:
+        args.locales = []
     if args.locales:
         print(f"Will compile po-files for {', '.join(args.locales)}")
     else:
