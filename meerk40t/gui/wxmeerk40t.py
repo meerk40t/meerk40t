@@ -434,7 +434,6 @@ class wxMeerK40t(wx.App, Module):
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
         # monitors with font scaling enabled.
-
         high_dpi = context.setting(bool, "high_dpi", True)
         if platform.system() == "Windows" and high_dpi:
             try:
