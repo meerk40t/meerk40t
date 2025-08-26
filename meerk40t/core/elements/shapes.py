@@ -105,16 +105,17 @@ def init_commands(kernel):
             # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
-        node = self.elem_branch.add(
-            cx=xp,
-            cy=yp,
-            rx=rp,
-            ry=rp,  # Secondary radius equal to primary radius for circle
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                cx=xp,
+                cy=yp,
+                rx=rp,
+                ry=rp,  # Secondary radius equal to primary radius for circle
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem ellipse",
+            )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -153,16 +154,17 @@ def init_commands(kernel):
             # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
-        node = self.elem_branch.add(
-            cx=xp,
-            cy=yp,
-            rx=rx,
-            ry=ry,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                cx=xp,
+                cy=yp,
+                rx=rx,
+                ry=ry,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem ellipse",
+            )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -236,14 +238,15 @@ def init_commands(kernel):
             cy=y_pos,
             rotation=rotation.radians,
         )
-        node = self.elem_branch.add(
-            label="Arc",
-            geometry=geom,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem path",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                label="Arc",
+                geometry=geom,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem path",
+            )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -304,18 +307,19 @@ def init_commands(kernel):
             # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
-        node = self.elem_branch.add(
-            x=x_pos,
-            y=y_pos,
-            width=width,
-            height=height,
-            rx=rx,
-            ry=ry,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem rect",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                x=x_pos,
+                y=y_pos,
+                width=width,
+                height=height,
+                rx=rx,
+                ry=ry,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem rect",
+            )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -350,15 +354,16 @@ def init_commands(kernel):
             # fmt:on
         except ValueError:
             raise CommandSyntaxError(_("Invalid length value."))
-        node = self.elem_branch.add(
-            x1=ax,
-            y1=ay,
-            x2=bx,
-            y2=by,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            type="elem line",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                x1=ax,
+                y1=ay,
+                x2=bx,
+                y2=by,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                type="elem line",
+            )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -411,12 +416,13 @@ def init_commands(kernel):
                     eparent._children.pop(idx)
             except IndexError:
                 pass
-            nparent.parent.add_node(node)
-            if len(nparent.children) == 0:
-                nparent.remove_node()
-            else:
-                nparent.altered()
-                node.emphasized = was_emphasized
+            with self.node_lock:
+                nparent.parent.add_node(node)
+                if len(nparent.children) == 0:
+                    nparent.remove_node()
+                else:
+                    nparent.altered()
+                    node.emphasized = was_emphasized
         self.signal("refresh_scene", "Scene")
 
     @self.console_option("etype", "e", type=str, default="scanline")
@@ -477,17 +483,17 @@ def init_commands(kernel):
         if etype is None:
             etype = "scanline"
         first_node = data[0]
-
-        node = first_node.parent.add(
-            type="effect hatch",
-            label="Hatch Effect",
-            hatch_type=etype,
-            hatch_angle=angle.radians,
-            hatch_angle_delta=angle_delta.radians,
-            hatch_distance=distance,
-        )
-        for n in data:
-            node.append_child(n)
+        with self.node_lock:
+            node = first_node.parent.add(
+                type="effect hatch",
+                label="Hatch Effect",
+                hatch_type=etype,
+                hatch_angle=angle.radians,
+                hatch_angle_delta=angle_delta.radians,
+                hatch_distance=distance,
+            )
+            for n in data:
+                node.append_child(n)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
@@ -551,15 +557,16 @@ def init_commands(kernel):
             channel(_("Invalid length value."))
             return
         first_node = data[0]
-        node = first_node.parent.add(
-            type="effect wobble",
-            label="Wobble Effect",
-            wobble_type=wtype,
-            wobble_radius=rlen.length_mm,
-            wobble_interval=ilen.length_mm,
-        )
-        for n in data:
-            node.append_child(n)
+        with self.node_lock:
+            node = first_node.parent.add(
+                type="effect wobble",
+                label="Wobble Effect",
+                wobble_type=wtype,
+                wobble_radius=rlen.length_mm,
+                wobble_interval=ilen.length_mm,
+            )
+            for n in data:
+                node.append_child(n)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
@@ -583,9 +590,10 @@ def init_commands(kernel):
         if text is None:
             channel(_("No text specified"))
             return
-        node = self.elem_branch.add(
-            text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
+            )
         node.font_size = size
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
@@ -1285,7 +1293,8 @@ def init_commands(kernel):
         except AttributeError:
             # elem text does not have an as_path() object
             return "elements", data
-        data[1].remove_node()
+        with self.node_lock:
+            data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
 
@@ -1303,7 +1312,8 @@ def init_commands(kernel):
                 if not vm.is_point_inside(pt[0], pt[1]):
                     del pts_sub[i]
             path += Path(Polyline(pts_sub))
-        node = self.elem_branch.add(path=path, type="elem path")
+        with self.node_lock:
+            node = self.elem_branch.add(path=path, type="elem path")
         data.append(node)
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
@@ -1337,7 +1347,8 @@ def init_commands(kernel):
         if shape.is_degenerate():
             channel(_("Shape is degenerate."))
             return "elements", data
-        node = self.elem_branch.add(shape=shape, type="elem polyline")
+        with self.node_lock:
+            node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
@@ -1389,8 +1400,8 @@ def init_commands(kernel):
             path *= f"Scale({UNITS_PER_PIXEL})"
         except (ValueError, AttributeError):
             raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
-
-        node = self.elem_branch.add(path=path, type="elem path")
+        with self.node_lock:
+            node = self.elem_branch.add(path=path, type="elem path")
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
@@ -2031,6 +2042,9 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("Nothing Selected"))
             return
+        selected = list(self.elems(emphasized=True))
+        frame_info = selected[0].display_label() if len(selected) == 1 else f"{len(selected)} elements"
+        
         x_pos = bounds[0]
         y_pos = bounds[1]
         width = bounds[2] - bounds[0]
@@ -2039,14 +2053,16 @@ def init_commands(kernel):
         y_pos -= y_offset
         width += x_offset * 2
         height += y_offset * 2
-        node = self.elem_branch.add(
-            x=x_pos,
-            y=y_pos,
-            width=width,
-            height=height,
-            stroke=Color("red"),
-            type="elem rect",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                x=x_pos,
+                y=y_pos,
+                width=width,
+                height=height,
+                stroke=Color("red"),
+                type="elem rect",
+                label = f"Frame around {frame_info}"
+            )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -2884,19 +2900,20 @@ def init_commands(kernel):
                 if result is None:
                     channel("Could not stitch anything")
                     return
-                if not keep:
-                    for node in to_be_deleted:
-                        node.remove_node()
-                for idx, g in enumerate(result):
-                    node = self.elem_branch.add(
-                        label=f"Stitch # {idx + 1}",
-                        stroke=default_stroke,
-                        stroke_width=default_strokewidth,
-                        fill=default_fill,
-                        geometry=g,
-                        type="elem path",
-                    )
-                    data_out.append(node)
+                with self.node_lock:
+                    if not keep:
+                        for node in to_be_deleted:
+                            node.remove_node()
+                    for idx, g in enumerate(result):
+                        node = self.elem_branch.add(
+                            label=f"Stitch # {idx + 1}",
+                            stroke=default_stroke,
+                            stroke_width=default_strokewidth,
+                            fill=default_fill,
+                            geometry=g,
+                            type="elem path",
+                        )
+                        data_out.append(node)
             new_len = len(data_out)
             channel(
                 f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths"
@@ -2982,16 +2999,17 @@ def init_commands(kernel):
             geom.append(Geomstr.circle(dia / 2, xp, yp))
         # _("Create cross") - hint for translator
         with self.undoscope("Create cross"):
-            node = self.elem_branch.add(
-                label=_("Cross at ({xp}, {yp})").format(
-                    xp=Length(xpos).length_mm, yp=Length(ypos).length_mm
-                ),
-                geometry=geom,
-                stroke=self.default_stroke,
-                stroke_width=self.default_strokewidth,
-                fill=None,
-                type="elem path",
-            )
+            with self.node_lock:
+                node = self.elem_branch.add(
+                    label=_("Cross at ({xp}, {yp})").format(
+                        xp=Length(xpos).length_mm, yp=Length(ypos).length_mm
+                    ),
+                    geometry=geom,
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    fill=None,
+                    type="elem path",
+                )
             if data is None:
                 data = []
             data.append(node)
