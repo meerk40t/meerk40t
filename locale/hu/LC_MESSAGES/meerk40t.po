@@ -20551,8 +20551,7 @@ msgstr "Lap"
 
 #: meerk40t/lihuiyu/device.py:159
 msgid "Select the board to use. This affects the speedcodes used."
-msgstr ""
-"Válassza ki a használandó lapot. Ez befolyásolja a használt sebességkódokat."
+msgstr "Válassza ki a használandó lapot. Ez befolyásolja a használt sebességkódokat."
 
 #: meerk40t/lihuiyu/device.py:160 meerk40t/lihuiyu/device.py:172
 #: meerk40t/lihuiyu/device.py:184 meerk40t/lihuiyu/device.py:204
