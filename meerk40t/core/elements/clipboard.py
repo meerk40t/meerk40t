@@ -134,19 +134,20 @@ def init_commands(kernel):
                 node.matrix *= matrix
         # _("Clipboard paste")
         with self.undoscope("Clipboard paste"):
-            if len(pasted) > 1:
-                group = self.elem_branch.add(
-                    type="group", label="Group", id="Copy", expanded=True
-                )
-            else:
-                group = self.elem_branch
-            target = []
-            for p in pasted:
-                if hasattr(p, "label"):
-                    s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
-                    p.label = s
-                group.add_node(p)
-                target.append(p)
+            with self.node_lock:
+                if len(pasted) > 1:
+                    group = self.elem_branch.add(
+                        type="group", label="Group", id="Copy", expanded=True
+                    )
+                else:
+                    group = self.elem_branch
+                target = []
+                for p in pasted:
+                    if hasattr(p, "label"):
+                        s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
+                        p.label = s
+                    group.add_node(p)
+                    target.append(p)
         # Make sure we are selecting the right thing...
         if len(pasted) > 1:
             self.set_emphasis([group])

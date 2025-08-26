@@ -90,19 +90,20 @@ def plugin(kernel, lifecycle):
                     solution_path += Path(r)
             if solution_path:
                 with elements.undoscope("Constructive Additive Geometry: Add"):
-                    if not keep:
-                        for node in data:
-                            node.remove_node()
-                    stroke = last_stroke if last_stroke is not None else Color("blue")
-                    fill = last_fill
-                    stroke_width = last_stroke_width if last_stroke_width is not None else elements.default_strokewidth
-                    new_node = elements.elem_branch.add(
-                        path=solution_path,
-                        type="elem path",
-                        stroke=stroke,
-                        fill=fill,
-                        stroke_width=stroke_width,
-                    )
+                    with elements.node_lock:
+                        if not keep:
+                            for node in data:
+                                node.remove_node()
+                        stroke = last_stroke if last_stroke is not None else Color("blue")
+                        fill = last_fill
+                        stroke_width = last_stroke_width if last_stroke_width is not None else elements.default_strokewidth
+                        new_node = elements.elem_branch.add(
+                            path=solution_path,
+                            type="elem path",
+                            stroke=stroke,
+                            fill=fill,
+                            stroke_width=stroke_width,
+                        )
                     context.signal("refresh_scene", "Scene")
                     if elements.classify_new:
                         elements.classify([new_node])
