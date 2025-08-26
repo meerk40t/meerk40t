@@ -23029,3 +23029,52 @@ msgstr "操作設定テスト"
 #: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
 msgid "Operation settings"
 msgstr "操作設定"
+
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+msgid "Encountered exception {error}"
+msgstr "例外が発生しました {error}"
+
+#: meerk40t/kernel/kernel.py:3727
+msgid "Execute the following command as a separate task in the background"
+msgstr "次のコマンドをバックグラウンドで別タスクとして実行します"
+
+#: meerk40t/kernel/kernel.py:3743
+msgid "Finished command {cmd} after {duration}sec"
+msgstr "コマンド {cmd} が完了しました（所要時間 {duration} 秒）"
+
+#: meerk40t/kernel/kernel.py:3768
+msgid "Command '{cmd}' is now running in the background."
+msgstr "コマンド '{cmd}' はバックグラウンドで実行中です。"
+
+#: meerk40t/kernel/kernel.py:3774
+msgid "Variable name to replace (default 'loop')"
+msgstr "置換する変数名（デフォルトは 'loop'）"
+
+#: meerk40t/kernel/kernel.py:3776
+msgid "First value to take"
+msgstr "開始値"
+
+#: meerk40t/kernel/kernel.py:3777
+msgid "Last value to take"
+msgstr "終了値"
+
+#: meerk40t/kernel/kernel.py:3778
+msgid "loop a given command"
+msgstr "指定したコマンドをループします"
+
+#: meerk40t/kernel/kernel.py:3785
+msgid "Please provide the range to loop in"
+msgstr "ループ範囲を指定してください"
+
+#: meerk40t/kernel/kernel.py:3792
+msgid "upper bound needs to be greater than lower bound"
+msgstr "上限は下限より大きくする必要があります"
+
+#: meerk40t/kernel/kernel.py:3796
+msgid "Invalid values for from={lbound}, to={ubound}: {error}"
+msgstr "無効な値です：from={lbound}、to={ubound}：{error}"
+
+#: meerk40t/kernel/kernel.py:3802
+msgid "Please provide a command to loop."
+msgstr "ループするコマンドを指定してください。"

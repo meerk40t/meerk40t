@@ -23564,3 +23564,52 @@ msgstr "Тест настроек операции"
 #: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
 msgid "Operation settings"
 msgstr "Настройки операции"
+
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+msgid "Encountered exception {error}"
+msgstr "Обнаружено исключение {error}"
+
+#: meerk40t/kernel/kernel.py:3727
+msgid "Execute the following command as a separate task in the background"
+msgstr "Выполнить следующую команду как отдельную задачу в фоновом режиме"
+
+#: meerk40t/kernel/kernel.py:3743
+msgid "Finished command {cmd} after {duration}sec"
+msgstr "Команда {cmd} завершена за {duration} сек."
+
+#: meerk40t/kernel/kernel.py:3768
+msgid "Command '{cmd}' is now running in the background."
+msgstr "Команда '{cmd}' теперь выполняется в фоновом режиме."
+
+#: meerk40t/kernel/kernel.py:3774
+msgid "Variable name to replace (default 'loop')"
+msgstr "Имя переменной для замены (по умолчанию 'loop')"
+
+#: meerk40t/kernel/kernel.py:3776
+msgid "First value to take"
+msgstr "Начальное значение"
+
+#: meerk40t/kernel/kernel.py:3777
+msgid "Last value to take"
+msgstr "Конечное значение"
+
+#: meerk40t/kernel/kernel.py:3778
+msgid "loop a given command"
+msgstr "Повторить указанную команду"
+
+#: meerk40t/kernel/kernel.py:3785
+msgid "Please provide the range to loop in"
+msgstr "Пожалуйста, укажите диапазон для цикла"
+
+#: meerk40t/kernel/kernel.py:3792
+msgid "upper bound needs to be greater than lower bound"
+msgstr "Верхняя граница должна быть больше нижней"
+
+#: meerk40t/kernel/kernel.py:3796
+msgid "Invalid values for from={lbound}, to={ubound}: {error}"
+msgstr "Недопустимые значения: от {lbound} до {ubound}: {error}"
+
+#: meerk40t/kernel/kernel.py:3802
+msgid "Please provide a command to loop."
+msgstr "Пожалуйста, укажите команду для цикла."

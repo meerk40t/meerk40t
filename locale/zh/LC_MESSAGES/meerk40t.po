@@ -22798,3 +22798,52 @@ msgstr "操作设置测试"
 #: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
 msgid "Operation settings"
 msgstr "操作设置"
+
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+msgid "Encountered exception {error}"
+msgstr "遇到异常 {error}"
+
+#: meerk40t/kernel/kernel.py:3727
+msgid "Execute the following command as a separate task in the background"
+msgstr "在后台作为单独任务执行以下命令"
+
+#: meerk40t/kernel/kernel.py:3743
+msgid "Finished command {cmd} after {duration}sec"
+msgstr "命令 {cmd} 已完成，用时 {duration} 秒"
+
+#: meerk40t/kernel/kernel.py:3768
+msgid "Command '{cmd}' is now running in the background."
+msgstr "命令 '{cmd}' 正在后台运行。"
+
+#: meerk40t/kernel/kernel.py:3774
+msgid "Variable name to replace (default 'loop')"
+msgstr "要替换的变量名（默认 'loop'）"
+
+#: meerk40t/kernel/kernel.py:3776
+msgid "First value to take"
+msgstr "起始值"
+
+#: meerk40t/kernel/kernel.py:3777
+msgid "Last value to take"
+msgstr "结束值"
+
+#: meerk40t/kernel/kernel.py:3778
+msgid "loop a given command"
+msgstr "循环指定命令"
+
+#: meerk40t/kernel/kernel.py:3785
+msgid "Please provide the range to loop in"
+msgstr "请提供循环的范围"
+
+#: meerk40t/kernel/kernel.py:3792
+msgid "upper bound needs to be greater than lower bound"
+msgstr "上限需要大于下限"
+
+#: meerk40t/kernel/kernel.py:3796
+msgid "Invalid values for from={lbound}, to={ubound}: {error}"
+msgstr "无效的范围：从 {lbound} 到 {ubound}：{error}"
+
+#: meerk40t/kernel/kernel.py:3802
+msgid "Please provide a command to loop."
+msgstr "请提供要循环的命令。"

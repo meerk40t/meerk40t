@@ -23734,3 +23734,52 @@ msgstr "Test bewerkingsinstellingen"
 #: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
 msgid "Operation settings"
 msgstr "Bewerkingsinstellingen"
+
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+msgid "Encountered exception {error}"
+msgstr "Er is een uitzondering opgetreden {error}"
+
+#: meerk40t/kernel/kernel.py:3727
+msgid "Execute the following command as a separate task in the background"
+msgstr "Voer het volgende commando uit als een aparte taak op de achtergrond"
+
+#: meerk40t/kernel/kernel.py:3743
+msgid "Finished command {cmd} after {duration}sec"
+msgstr "Commando {cmd} voltooid na {duration} sec"
+
+#: meerk40t/kernel/kernel.py:3768
+msgid "Command '{cmd}' is now running in the background."
+msgstr "Commando '{cmd}' wordt nu op de achtergrond uitgevoerd."
+
+#: meerk40t/kernel/kernel.py:3774
+msgid "Variable name to replace (default 'loop')"
+msgstr "Naam van de variabele om te vervangen (standaard 'loop')"
+
+#: meerk40t/kernel/kernel.py:3776
+msgid "First value to take"
+msgstr "Eerste waarde"
+
+#: meerk40t/kernel/kernel.py:3777
+msgid "Last value to take"
+msgstr "Laatste waarde"
+
+#: meerk40t/kernel/kernel.py:3778
+msgid "loop a given command"
+msgstr "Herhaal een opgegeven commando"
+
+#: meerk40t/kernel/kernel.py:3785
+msgid "Please provide the range to loop in"
+msgstr "Geef het bereik op voor de lus"
+
+#: meerk40t/kernel/kernel.py:3792
+msgid "upper bound needs to be greater than lower bound"
+msgstr "Bovengrens moet groter zijn dan ondergrens"
+
+#: meerk40t/kernel/kernel.py:3796
+msgid "Invalid values for from={lbound}, to={ubound}: {error}"
+msgstr "Ongeldige waarden voor van={lbound}, tot={ubound}: {error}"
+
+#: meerk40t/kernel/kernel.py:3802
+msgid "Please provide a command to loop."
+msgstr "Geef een commando op om te herhalen."
