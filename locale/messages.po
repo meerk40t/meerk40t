@@ -20498,3 +20498,118 @@ msgstr ""
 msgid "Create an ean-barcode or a qr-code"
 msgstr ""
 
+#: meerk40t/gui/plugin.py:422
+msgid "Press Cancel to abort the Program."
+msgstr ""
+
+#: meerk40t/gui/alignment.py:1640
+msgid "Element Alignment"
+msgstr ""
+
+#: meerk40t/gui/navigationpanels.py:2872
+msgid "Jog, Move and Transform"
+msgstr ""
+
+#: meerk40t/gui/materialmanager.py:2761
+msgid "Remove effect:"
+msgstr ""
+
+#: meerk40t/gui/materialmanager.py:2767
+msgid "Add diagonal Hatch"
+msgstr ""
+
+#: meerk40t/gui/materialmanager.py:2771
+msgid "Add horizontal Hatch"
+msgstr ""
+
+#: meerk40t/gui/materialmanager.py:2775
+msgid "Add vertical Hatch"
+msgstr ""
+
+#: meerk40t/gui/materialmanager.py:2778
+msgid "Add Wobble"
+msgstr ""
+
+#: meerk40t/gui/plugin.py:125
+msgid "Simplify Effects"
+msgstr ""
+
+#: meerk40t/gui/plugin.py:128
+msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr ""
+
+#: meerk40t/grbl/device.py:1049
+msgid "Export succeeded: {filename}"
+msgstr ""
+
+#: meerk40t/grbl/device.py:1049
+msgid "Export succeeded: {filename}"
+#: meerk40t/balormk/device.py:446
+msgid "Cut/Engrave"
+msgstr ""
+
+#: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
+msgid "This is global setting that will be overruled by operation settings."
+msgstr ""
+
+"Dies ist eine globale Einstellung, die von den Einstellungen in den "
+"Arbeitsabläufen überschrieben wird."
+#: meerk40t/balormk/device.py:475
+msgid "Miscellaneous"
+msgstr ""
+
+#: meerk40t/newly/gui/newlyconfig.py:73 meerk40t/ruida/gui/ruidaconfig.py:216
+msgid "Operation Defaults"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:1338
+msgid "Reset to device default values"
+msgstr ""
+
+#: meerk40t/core/elements/geometry.py:432
+msgid "Use unidirectional hatch lines"
+msgstr ""
+
+#: meerk40t/core/elements/geometry.py:437
+msgid "Distance between hatch lines"
+msgstr ""
+
+#: meerk40t/device/devicechoices.py:47
+msgid "Default Wobble Type"
+msgstr ""
+
+#: meerk40t/device/devicechoices.py:56
+msgid "Wobble Speed"
+msgstr ""
+
+#: meerk40t/device/devicechoices.py:57
+msgid "Default Wobble Speed"
+msgstr ""
+
+#: meerk40t/device/devicechoices.py:106
+msgid "Default power for {op}"
+msgstr ""
+
+#: meerk40t/device/devicechoices.py:117
+msgid "Default speed for {op}"
+msgstr ""
+
+#: meerk40t/gui/materialtest.py:339
+msgid "Create boundary shape"
+msgstr ""
+
+#: meerk40t/gui/materialtest.py:602
+msgid "Add the shape a second time around the effect"
+msgstr ""
+
+#: meerk40t/gui/mkdebug.py:183
+msgid "Op Settings"
+msgstr ""
+
+#: meerk40t/gui/mkdebug.py:191
+msgid "OP Settings test"
+msgstr ""
+
+#: meerk40t/gui/mkdebug.py:1140 meerk40t/gui/mkdebug.py:1169
+msgid "Operation settings"
+msgstr ""
