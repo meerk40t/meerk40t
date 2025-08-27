@@ -7,7 +7,6 @@ import wx
 
 # import wx.lib.mixins.listctrl as listmix
 from wx import aui
-from wx.lib.splitter import MultiSplitterWindow
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
@@ -73,6 +72,19 @@ def register_panel_spooler(window, context):
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
 
+
+# class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+#     """TextEditMixin allows any column to be edited."""
+
+#     # ----------------------------------------------------------------------
+#     def __init__(
+#         self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+#     ):
+#         """Constructor"""
+#         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+#         listmix.TextEditMixin.__init__(self)
+
+
 class SpoolerPanel(wx.Panel):
     def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
@@ -89,20 +101,19 @@ class SpoolerPanel(wx.Panel):
         spools.insert(0, _("-- All available devices --"))
         self.queue_entries = []
         self.context.setting(int, "spooler_sash_position", 0)
-        self.context.setting(int, "spooler_sash2_position", 0)
         self.context.setting(bool, "spool_history_clear_on_start", False)
         self.context.setting(bool, "spool_ignore_helper_jobs", True)
         self.context.setting(bool, "silent_mode", False)
         self.context(f".silent {'on' if self.context.silent_mode else 'off'}\n")
-        
-        self.splitter = MultiSplitterWindow(self, wx.ID_ANY)
-        self.splitter.SetOrientation(wx.VERTICAL)
 
+        self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         sty = wx.BORDER_SUNKEN
-        self.win_top = wx.Window(self, wx.ID_ANY, style=sty)
-        self.win_middle = wx.Window(self, wx.ID_ANY, style=sty)
-        self.win_bottom = wx.Window(self, wx.ID_ANY, style=sty)
 
+        self.win_top = wx.Window(self.splitter, style=sty)
+        self.win_bottom = wx.Window(self.splitter, style=sty)
+        self.splitter.SetMinimumPaneSize(50)
+        self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
+        self.splitter.SetSashPosition(self.context.spooler_sash_position)
         self.combo_device = wxComboBox(
             self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
@@ -143,13 +154,6 @@ class SpoolerPanel(wx.Panel):
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
             context=self.context,
             list_name="list_spoolerjobs",
-        )
-        self.list_job_threads = wxListCtrl(
-            self.win_middle,
-            wx.ID_ANY,
-            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
-            context=self.context,
-            list_name="list_threads",
         )
 
         self.info_label = wxStaticText(self.win_bottom, wx.ID_ANY, _("Completed jobs:"))
@@ -294,56 +298,30 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.resize_columns()
         # end wxGlade
 
-
-        self.list_job_threads.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
-        self.list_job_threads.AppendColumn(
-            _("Task"), format=wx.LIST_FORMAT_LEFT, width=113
-        )
-        self.list_job_threads.AppendColumn(
-            _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
-        )
-        self.list_job_threads.AppendColumn(
-            _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
-        )
-        self.list_job_threads.resize_columns()
-
     def __do_layout(self):
-        self.sizer_top = wx.BoxSizer(wx.VERTICAL)
-        self.sizer_middle = wx.BoxSizer(wx.VERTICAL)
-        self.sizer_bottom = wx.BoxSizer(wx.VERTICAL)
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
 
+        sizer_top = wx.BoxSizer(wx.VERTICAL)
+        sizer_bottom = wx.BoxSizer(wx.VERTICAL)
         sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
         sizer_combo_cmds.Add(self.combo_device, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.check_silent, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.sizer_top.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
-        self.sizer_top.Add(self.list_job_spool, 2, wx.EXPAND, 0)
-        
-        self.sizer_middle.Add(self.list_job_threads, 1, wx.EXPAND, 0)
+        sizer_top.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
+        sizer_top.Add(self.list_job_spool, 4, wx.EXPAND, 0)
+        self.win_top.SetSizer(sizer_top)
+        sizer_top.Fit(self.win_top)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(self.info_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hsizer.Add(self.button_clear_history, 0, wx.EXPAND, 0)
-        self.sizer_bottom.Add(hsizer, 0, wx.EXPAND, 0)
-        self.sizer_bottom.Add(self.list_job_history, 2, wx.EXPAND, 0)
+        sizer_bottom.Add(hsizer, 0, wx.EXPAND, 0)
+        sizer_bottom.Add(self.list_job_history, 2, wx.EXPAND, 0)
+        self.win_bottom.SetSizer(sizer_bottom)
+        sizer_bottom.Fit(self.win_bottom)
 
-        self.win_top.SetSizer(self.sizer_top)
-        self.win_middle.SetSizer(self.sizer_middle)
-        self.win_bottom.SetSizer(self.sizer_bottom)
-
-        self.sizer_top.Fit(self.win_top)
-        self.sizer_middle.Fit(self.win_middle)
-        self.sizer_bottom.Fit(self.win_bottom)
-
-        self.splitter.AppendWindow(self.win_top)
-        self.splitter.AppendWindow(self.win_middle)
-        self.splitter.AppendWindow(self.win_bottom)
-        self.splitter.SetSashPosition(0, self.context.spooler_sash_position)
-        self.splitter.SetSashPosition(1, self.context.spooler_sash2_position)
-
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_main.Add(self.splitter, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -354,26 +332,13 @@ class SpoolerPanel(wx.Panel):
         self.context.silent_mode = self.check_silent.GetValue()
         self.context(f".silent {'on' if self.context.silent_mode else 'off'}\n")
 
-    def _refresh_layout(self):
-        for win in (self.win_top, self.win_middle, self.win_bottom):    
-            sizer = win.GetSizer()
-            sizer.Layout()
-            win.Refresh()
-
     def on_sash_changed(self, event):
-        position1 = self.splitter.GetSashPosition(0)
-        position2 = self.splitter.GetSashPosition(1)
-        self.context.spooler_sash_position = position1
-        self.context.spooler_sash2_position = position2
-        self._refresh_layout()
+        position = self.splitter.GetSashPosition()
+        self.context.spooler_sash_position = position
 
     def on_sash_double(self, event):
-        total_size = int(self.splitter.GetSize().GetHeight() / 3)
-        self.splitter.SetSashPosition(0, 1 * total_size)
-        self.splitter.SetSashPosition(1, 2 * total_size)
-        self.context.spooler_sash_position = 1 * total_size
-        self.context.spooler_sash2_position = 2 * total_size
-        self._refresh_layout()
+        self.splitter.SetSashPosition(0, True)
+        self.context.spooler_sash_position = 0
 
     def on_item_selected(self, event):
         self.current_item = event.Index
@@ -728,30 +693,6 @@ class SpoolerPanel(wx.Panel):
             return named_obj.__name__
         except AttributeError:
             return str(named_obj)
-
-    def refresh_thread_list(self):
-        if not self.update_spooler:
-            return
-        try:
-            self.list_job_threads.DeleteAllItems()
-        except RuntimeError:
-            return
-        idx = 0 
-        with self.context.kernel.thread_lock:
-            thread_items = list(self.context.kernel.threads.items())
-        for thread_name, thread_info in thread_items:
-            thread, message, user_type, info, started = thread_info
-            if not user_type:
-                continue
-            idx += 1
-            elapsed = time.time() - started
-            hours, remainder = divmod(elapsed, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-            m = self.list_job_threads.InsertItem(idx, f"#{idx}")
-            self.list_job_threads.SetItem(m, 1, info)
-            self.list_job_threads.SetItem(m, 2, message)
-            self.list_job_threads.SetItem(m, 3, runtime)
 
     def refresh_spooler_list(self):
         if not self.update_spooler:
@@ -1132,10 +1073,6 @@ class SpoolerPanel(wx.Panel):
         self.update_spooler = True
         self.refresh_spooler_list()
 
-    @signal_listener("thread_update")
-    def on_thread_signal(self, origin, *args):
-        self.refresh_thread_list()
-
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
     @signal_listener("pipe;usb_status")
@@ -1239,12 +1176,10 @@ class SpoolerPanel(wx.Panel):
         if refresh_needed:
             self.refresh_spooler_list()
             self.refresh_history()
-            self.refresh_thread_list()
 
     def update_queue(self):
         if self.shown:
             self.on_device_update(None)
-            self.refresh_thread_list()
 
     def pane_show(self):
         self.shown = True
@@ -1252,7 +1187,6 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool.load_column_widths()
         self.context.schedule(self.timerjob)
         self.refresh_spooler_list()
-        self.refresh_thread_list()
 
     def pane_hide(self):
         self.context.unschedule(self.timerjob)
