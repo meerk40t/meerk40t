@@ -440,6 +440,20 @@ class Planner(Service):
         _ = self.kernel.translation
 
         @self.console_command(
+            "list-plans",
+            help = _("List all available plans"),
+            input_type=None,
+            output_type=None,                              
+        )
+        def list_plans(command, channel, _, **kwgs):
+            if not self._plan:
+                channel(_("No plans available."))
+                return
+            channel(_("Available plans:"))
+            for i, plan in enumerate(self._plan):
+                channel(f"{i + 1}: {plan}")
+
+        @self.console_command(
             "plan",
             help=_("plan<?> <command>"),
             regex=True,
@@ -472,16 +486,16 @@ class Planner(Service):
                 return "plan", cutplan
             if remainder is None:
                 channel(_("----------"))
-                channel(_("Plan:"))
+                channel(_("Plan:") + self._default_plan)
                 for i, plan_name in enumerate(cutplan.name):
-                    channel(f"{i}: {plan_name}")
+                    channel(f"{i + 1}: {plan_name}")
                 channel(_("----------"))
                 channel(_("Plan {plan}:").format(plan=self._default_plan))
                 for i, op_name in enumerate(cutplan.plan):
-                    channel(f"{i}: {op_name}")
+                    channel(f"{i + 1}: {op_name}")
                 channel(_("Commands {plan}:").format(plan=self._default_plan))
                 for i, cmd_name in enumerate(cutplan.commands):
-                    channel(f"{i}: {cmd_name}")
+                    channel(f"{i + 1}: {cmd_name}")
                 channel(_("----------"))
 
             return "plan", cutplan
@@ -670,6 +684,7 @@ class Planner(Service):
             channel(_("Copied Operations."))
             self.signal("plan", data.name, 1)
             return data_type, data
+        
 
         @self.console_option(
             "index", "i", type=int, help=_("index of location to insert command")
@@ -928,3 +943,19 @@ class Planner(Service):
 
     def plan(self, **kwargs):
         yield from self._plan
+
+    def get_free_plan(self):    
+        """
+        Finds and returns a unique plan name not currently in use.
+        This method generates a new plan name by incrementing a counter until an unused name is found.
+        Returns:
+            tuple: A tuple containing the last checked plan name and the new unique plan name.
+        """
+        candidate = "z"
+        last = None
+        index = 1
+        while candidate in self._plan:
+            last = candidate
+            candidate = f"z{index}"
+            index += 1
+        return last, candidate

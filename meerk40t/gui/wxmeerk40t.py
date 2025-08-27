@@ -11,6 +11,7 @@ from meerk40t.core.units import Length
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
+from meerk40t.gui.thread_info import ThreadInfo
 
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
@@ -255,11 +256,14 @@ class GoPanel(ActionPanel):
             return
 
         self.button_go.Enable(False)
-        self.context.kernel.busyinfo.start(msg=_("Processing and sending..."))
+        last_plan, new_plan = self.context.planner.get_free_plan()
+
         self.context(
-            "planz clear copy preprocess validate blob preopt optimize spool\n"
+            f"threaded plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
         )
-        self.context.kernel.busyinfo.end()
+        self.context(
+            f"window open JobSpooler\nwindow open ThreadInfo\n"
+        )
         self.button_go.Enable(True)
         # Reset...
         # Deliberately at the end, as clicks queue...
@@ -1000,6 +1004,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Notes", Notes)
         kernel.register("window/AutoExec", AutoExec)
         kernel.register("window/JobSpooler", JobSpooler)
+        kernel.register("window/ThreadInfo", ThreadInfo)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Tips", Tips)
         kernel.register("window/ExecuteJob", ExecuteJob)

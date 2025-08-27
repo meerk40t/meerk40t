@@ -1833,21 +1833,21 @@ class MeerK40t(MWindow):
             return handler
 
         def run_job(*args):
+            context.setting(bool, "laserpane_hold", False)
             busy = kernel.busyinfo
             context = kernel.root
             opt = kernel.planner.do_optimization
             busy.start(msg=_("Preparing Laserjob..."))
-            plan = kernel.planner.get_or_make_plan("z")
-            context.setting(bool, "laserpane_hold", False)
-            if plan.plan and context.laserpane_hold:
-                context("planz spool\n")
+            last_plan, new_plan = kernel.planner.get_free_plan()
+            if last_plan is not None and context.laserpane_hold:
+                context(f"plan{last_plan} spool\n")
             else:
                 if opt:
                     context(
-                        "planz clear copy preprocess validate blob preopt optimize spool\n"
+                        f"plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
                     )
                 else:
-                    context("planz clear copy preprocess validate blob spool\n")
+                    context(f"plan{new_plan} clear copy preprocess validate blob spool\n")
             if context.auto_spooler:
                 context("window open JobSpooler\n")
             # And we disarm again

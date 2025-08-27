@@ -2393,9 +2393,10 @@ class Simulation(MWindow):
             busy = kernel.busyinfo
             busy.change(msg=_("Preparing simulation..."))
             busy.start()
+            last_plan, new_plan = kernel.planner.get_free_plan()
 
             kernel.console(
-                f"planz clear copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
+                f"plan{new_plan} clear copy preprocess validate blob{optpart}\nwindow toggle Simulation {new_plan}\n"
             )
             busy.end()
 

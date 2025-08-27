@@ -704,16 +704,16 @@ class LaserPanel(wx.Panel):
 
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
-        plan = self.context.planner.get_or_make_plan("z")
+        last_plan, new_plan = self.context.planner.get_free_plan()
         self.context.setting(bool, "laserpane_hold", False)
-        if plan.plan and self.context.laserpane_hold:
-            self.context("planz spool\n")
+        if last_plan is not None and self.context.laserpane_hold:
+            self.context(f"plan{last_plan} spool\n")
         elif self.checkbox_optimize.GetValue():
             self.context(
-                "planz clear copy preprocess validate blob preopt optimize spool\n"
+                f"threaded plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
             )
         else:
-            self.context("planz clear copy preprocess validate blob spool\n")
+            self.context(f"plan{new_plan} clear copy preprocess validate blob spool\n")
         self.armed = False
         self.check_laser_arm()
         if self.context.auto_spooler:
@@ -738,18 +738,20 @@ class LaserPanel(wx.Panel):
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
-
-        plan = self.context.planner.get_or_make_plan("z")
+        last_plan, new_plan = self.context.planner.get_free_plan()
         param = "0"
-        if not plan.plan or not self.context.laserpane_hold:
+        if last_plan is not None and self.context.laserpane_hold:
+            plan = last_plan
+        else:
+            plan = new_plan
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    "planz clear copy preprocess validate blob preopt optimize\n"
+                    f"plan{plan} clear copy preprocess validate blob preopt optimize\n"
                 )
                 param = "1"
             else:
-                self.context("planz clear copy preprocess validate blob\n")
-        self.context(f"window open Simulation z 0 {param}\n")
+                self.context(f"plan{plan} clear copy preprocess validate blob\n")
+        self.context(f"window open Simulation {plan} 0 {param}\n")
         self.context.kernel.busyinfo.end()
 
     def on_control_right(self, event):  # wxGlade: LaserPanel.<event_handler>
