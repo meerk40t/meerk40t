@@ -501,8 +501,11 @@ class Planner(Service):
             if remainder is None:
                 channel(_("----------"))
                 channel(_("Plan:") + self._default_plan)
-                for i, plan_name in enumerate(cutplan.name):
-                    channel(f"{i + 1}: {plan_name}")
+                if isinstance(cutplan.name, str):
+                    channel(f"{1}: {cutplan.name}")
+                else:
+                    for i, plan_name in enumerate(cutplan.name):
+                        channel(f"{i + 1}: {plan_name}")
                 channel(_("----------"))
                 channel(_("Plan {plan}:").format(plan=self._default_plan))
                 for i, op_name in enumerate(cutplan.plan):
