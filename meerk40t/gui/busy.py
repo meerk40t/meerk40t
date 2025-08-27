@@ -208,20 +208,7 @@ class BusyInfo():
 
     def update_message(self, **kwds):
         if self.kernel is not None:
+            thread_name = getattr(self.kernel.thread_local, "thread_name", "")
             message = kwds.get("msg", "")
-            # We need to update the message for the active job, 
-            # unfortunately the context is not easily established
-            # job_name = self.kernel.active_job
-            # if job_name.startswith("threaded") and job_name in self.kernel.jobs:
-            #     self.kernel.jobs[job_name].message = message
-
-    def debug_busy(self, info:str):
-        import inspect
-        tname = threading.current_thread().name
-        state = "" if self.kernel is None else self.kernel.active_job
-        print(f"Debug busy: {info}, state: {state}, thread: {tname}")
-        for idx, s in enumerate(inspect.stack()):
-            print (f"  Caller {idx}: {s}")
-        # caller = inspect.stack()[1]
-        # for prop in caller.__dict__:
-        #     print(f"  {prop}: {caller.__dict__[prop]}")
+            self.kernel.set_thread_message(thread_name, message)
+            self.kernel.signal("thread_update", "/", thread_name, message)
