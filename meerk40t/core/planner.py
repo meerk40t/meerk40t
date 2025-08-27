@@ -443,8 +443,9 @@ class Planner(Service):
         try:
             return self._plan[plan_name]
         except KeyError:
-            self._plan[plan_name] = CutPlan(plan_name, self)
-            self._states[plan_name] = STAGE_PLAN_INIT
+            with self._plan_lock:
+                self._plan[plan_name] = CutPlan(plan_name, self)
+                self._states[plan_name] = STAGE_PLAN_INIT
             return self._plan[plan_name]
 
     @property
@@ -1011,7 +1012,8 @@ class Planner(Service):
             self.console(f"Couldn't update plan {plan_name}: not found")
             return
         if not noset:
-            self._states[plan_name] = stage
+            with self._plan_lock:
+                self._states[plan_name] = stage
         self.signal("plan", plan_name, stage)
 
     def get_plan_stage(self, plan_name):

@@ -871,8 +871,11 @@ class JobPanel(wx.Panel):
         has_content = False
         if can_update:
             plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
-            plan = self.context.planner._plan[plan_name]
-            has_content = len(plan.plan) != 0
+            try:
+                plan = self.context.planner._plan[plan_name]
+                has_content = len(plan.plan) != 0
+            except KeyError:
+                can_update = False
         can_export = has_content and hasattr(self.context.device, "extension")
         self.btn_update.Enable(can_update)
         self.btn_export.Enable(can_export)
