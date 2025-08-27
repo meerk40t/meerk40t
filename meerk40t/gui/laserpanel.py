@@ -849,7 +849,17 @@ class JobPanel(wx.Panel):
             item = self.list_plan.InsertItem(idx, f"{idx}")
             self.list_plan.SetItem(item, 1, plan_name)
             self.list_plan.SetItem(item, 2, description)
-            self.list_plan.SetItem(item, 3, f"{len(cutplan.plan)} items")
+            itemcount = 0
+            for layer in cutplan.plan:
+                if isinstance(layer, (list, tuple)):
+                    itemcount += len(layer)
+                elif hasattr(layer, "children"):
+                    itemcount += len(layer.children)
+                else:
+                    itemcount += 1
+
+            info = _("{amount} items").format(amount=itemcount)
+            self.list_plan.SetItem(item, 3, info)
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -887,20 +897,26 @@ class JobPanel(wx.Panel):
         plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
         self.context(f"plan{plan_name} clear finish\n")
 
-    def on_update_plan(self, event):
+    def _do_update_plan(self, background: bool = False):
         if self.list_plan.GetFirstSelected() == -1:
             return
         plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
-        self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
         if self.context.planner.do_optimization:
-            self.context(
-                f"plan{plan_name} clear copy preprocess validate blob preopt optimize finish\n"
-            )
+            cmd = f"plan{plan_name} clear copy preprocess validate blob preopt optimize finish\n"
         else:
-            self.context(
-                f"plan{plan_name} clear copy preprocess validate blob finish\n"
-            )
-        self.context.kernel.busyinfo.end()
+            cmd = f"plan{plan_name} clear copy preprocess validate blob finish\n"
+        if background:
+            self.context(f"threaded {cmd}window open ThreadInfo\n")
+        else:
+            self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
+            self.context(cmd)
+            self.context.kernel.busyinfo.end()
+
+    def on_update_plan(self, event):
+        self._do_update_plan()
+
+    def on_update_plan_background(self, event):
+        self._do_update_plan(background=True)
 
     def on_export_plan(self, event):
         if self.list_plan.GetFirstSelected() == -1:
@@ -942,6 +958,8 @@ class JobPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.on_clear_plan, item)
         item = menu.Append(wx.ID_ANY, _("Update"))
         self.Bind(wx.EVT_MENU, self.on_update_plan, item)
+        item = menu.Append(wx.ID_ANY, _("Update (background)"))
+        self.Bind(wx.EVT_MENU, self.on_update_plan_background, item)
         item = menu.Append(wx.ID_ANY, _("Export"))
         self.Bind(wx.EVT_MENU, self.on_export_plan, item)
         item = menu.Append(wx.ID_ANY, _("Spool"))

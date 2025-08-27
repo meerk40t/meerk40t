@@ -1833,6 +1833,7 @@ class MeerK40t(MWindow):
             return handler
 
         def run_job(*args):
+            context = kernel.root
             context.setting(bool, "laserpane_hold", False)
             busy = kernel.busyinfo
             context = kernel.root
