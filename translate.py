@@ -294,8 +294,11 @@ def integrate_delta_files(locales: list[str]) -> None:
         main_entries = {entry.msgid: entry for entry in main_po}
         delta_entries = {}
         duplicate_msgids = set()
+        empty_msgids = set()
         for entry in delta_po:
-            if entry.msgid in delta_entries:
+            if not entry.msgstr:
+                empty_msgids.add(entry.msgid)
+            elif entry.msgid in delta_entries:
                 duplicate_msgids.add(entry.msgid)
             else:
                 delta_entries[entry.msgid] = entry
@@ -304,7 +307,10 @@ def integrate_delta_files(locales: list[str]) -> None:
             print(f"Duplicate msgid(s) found in delta file for {locale}:")
             for msgid in duplicate_msgids:
                 print(f"  - {msgid}")
-
+        if empty_msgids:
+            print(f"Untranslated msgid(s) found in delta file for {locale}:")
+            for msgid in empty_msgids:
+                print(f"  - {msgid}")
         # Integrate delta into main, handling conflicts
         conflicts = []
         for msgid, delta_entry in delta_entries.items():
@@ -367,7 +373,8 @@ def main() -> None:
         help="Integrate delta_xx.po files into the main .po files",
     )
     args = parser.parse_args()
-
+    if "all" in args.locales:
+        args.locales = []
     if args.locales:
         print(f"Will compile po-files for {', '.join(args.locales)}")
     else:
