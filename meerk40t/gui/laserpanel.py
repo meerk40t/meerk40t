@@ -30,6 +30,7 @@ from meerk40t.gui.wxutils import (
     wxCheckBox,
     wxComboBox,
     wxStaticText,
+    wxListCtrl,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -746,11 +747,11 @@ class LaserPanel(wx.Panel):
             plan = new_plan
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    f"plan{plan} clear copy preprocess validate blob preopt optimize\n"
+                    f"plan{plan} clear copy preprocess validate blob preopt optimize finish\n"
                 )
                 param = "1"
             else:
-                self.context(f"plan{plan} clear copy preprocess validate blob\n")
+                self.context(f"plan{plan} clear copy preprocess validate blob finish\n")
         self.context(f"window open Simulation {plan} 0 {param}\n")
         self.context.kernel.busyinfo.end()
 
@@ -774,8 +775,66 @@ class LaserPanel(wx.Panel):
     def on_config_button(self, event):
         self.context.device("window toggle Configuration\n")
 
-
 class JobPanel(wx.Panel):
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: MovePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.list_plan = wxListCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context,
+            list_name="list_plan",
+        )
+        self.list_plan.SetToolTip(_("List of prepared cutplans"))
+        self.list_plan.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
+        self.list_plan.AppendColumn(
+            _("Plan"), format=wx.LIST_FORMAT_LEFT, width=113
+        )
+        self.list_plan.AppendColumn(
+            _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_plan.AppendColumn(
+            _("Content"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_plan.resize_columns()
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_main.Add(self.list_plan, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        self.Layout()
+        self.shown = False
+
+    def refresh_plan_list(self):
+        self.list_plan.DeleteAllItems()
+        idx = 0
+        for plan_name in self.context.planner._plan:
+            idx += 1
+            cutplan = self.context.planner._plan[plan_name]
+            state, description = self.context.planner.get_plan_stage(plan_name)
+            item = self.list_plan.InsertItem(idx, f"{idx}")
+            self.list_plan.SetItem(item, 1, plan_name)
+            self.list_plan.SetItem(item, 2, description)
+            self.list_plan.SetItem(item, 3, f"{len(cutplan.plan)} items")
+
+    @signal_listener("plan")
+    def plan_update(self, origin, *message):
+        if self.shown:
+            self.refresh_plan_list()
+
+    def pane_show(self):
+        self.shown = True
+        self.list_plan.load_column_widths()
+        self.refresh_plan_list()
+
+    def pane_hide(self):
+        self.shown = False
+        self.list_plan.save_column_widths()
+
+class JobPanelOld(wx.Panel):
     """
     Contains all elements to plan and save the job
     """

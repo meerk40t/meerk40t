@@ -268,7 +268,7 @@ DEFAULT_ALIAS = {
     "+up": (".timerup 0 0.1 up 1mm",),
     "+down": (".timerdown 0 0.1 down 1mm",),
     "burn": ("planz clear copy preprocess validate blob preopt optimize spool",),
-    "simulate": ("planz clear copy preprocess validate blob preopt optimize\nwindow open Simulation",),
+    "simulate": ("planz clear copy preprocess validate blob preopt optimize finish\nwindow open Simulation",),
     "-scale_up": (".timerscale_up off",),
     "-scale_down": (".timerscale_down off",),
     "-rotate_cw": (".timerrotate_cw off",),

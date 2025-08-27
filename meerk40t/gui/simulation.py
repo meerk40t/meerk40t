@@ -1858,7 +1858,7 @@ class SimulationPanel(wx.Panel, Job):
             self.context.planner.do_optimization = False
         self.context.signal("optimize", self.context.planner.do_optimization)
         self.context(
-            f"plan{plan} clear\nplan{plan} copy preprocess validate blob{opt}\n"
+            f"plan{plan} clear\nplan{plan} copy preprocess validate blob{opt} finish\n"
         )
         busy.end()
         self._refresh_simulated_plan()
@@ -1880,7 +1880,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def pane_hide(self):
         if self.auto_clear:
-            self.context(f"plan{self.plan_name} clear\n")
+            self.context(f"plan{self.plan_name} clear finish\n")
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
@@ -2396,7 +2396,7 @@ class Simulation(MWindow):
             last_plan, new_plan = kernel.planner.get_free_plan()
 
             kernel.console(
-                f"plan{new_plan} clear copy preprocess validate blob{optpart}\nwindow toggle Simulation {new_plan}\n"
+                f"plan{new_plan} clear copy preprocess validate blob{optpart} finish\nwindow open Simulation {new_plan}\n"
             )
             busy.end()
 

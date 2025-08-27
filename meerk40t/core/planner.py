@@ -866,6 +866,17 @@ class Planner(Service):
             return data_type, data
 
         @self.console_command(
+            "finish",
+            help=_("plan<?> finish"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_finish(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            self.update_stage(data.name, STAGE_PLAN_FINISHED)
+            return data_type, data
+
+        @self.console_command(
             "return",
             help=_("plan<?> return"),
             input_type="plan",
