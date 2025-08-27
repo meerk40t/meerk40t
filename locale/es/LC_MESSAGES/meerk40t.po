@@ -22023,4 +22023,52 @@ msgstr "Prueba de Configuración de OP"
 msgid "Operation settings"
 msgstr "Configuración de operación"
 
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+msgid "Encountered exception {error}"
+msgstr "Se encontró una excepción {error}"
+
+#: meerk40t/kernel/kernel.py:3727
+msgid "Execute the following command as a separate task in the background"
+msgstr "Ejecute el siguiente comando como una tarea separada en segundo plano"
+
+#: meerk40t/kernel/kernel.py:3743
+msgid "Finished command {cmd} after {duration}sec"
+msgstr "Comando finalizado {cmd} después de {duration}seg"
+
+#: meerk40t/kernel/kernel.py:3768
+msgid "Command '{cmd}' is now running in the background."
+msgstr "El comando '{cmd}' ahora se ejecuta en segundo plano."
+
+#: meerk40t/kernel/kernel.py:3774
+msgid "Variable name to replace (default 'loop')"
+msgstr "Nombre de la variable a reemplazar (predeterminado 'bucle')"
+
+#: meerk40t/kernel/kernel.py:3776
+msgid "First value to take"
+msgstr "Primer valor a tomar"
+
+#: meerk40t/kernel/kernel.py:3777
+msgid "Last value to take"
+msgstr "Último valor a tomar"
+
+#: meerk40t/kernel/kernel.py:3778
+msgid "loop a given command"
+msgstr "repetir un comando dado"
+
+#: meerk40t/kernel/kernel.py:3785
+msgid "Please provide the range to loop in"
+msgstr "Proporcione el rango en el que se realizará el bucle"
+
+#: meerk40t/kernel/kernel.py:3792
+msgid "upper bound needs to be greater than lower bound"
+msgstr "El límite superior debe ser mayor que el límite inferior"
+
+#: meerk40t/kernel/kernel.py:3796
+msgid "Invalid values for from={lbound}, to={ubound}: {error}"
+msgstr "Valores no válidos para desde={lbound}, a={ubound}: {error}"
+
+#: meerk40t/kernel/kernel.py:3802
+msgid "Please provide a command to loop."
+msgstr "Proporcione un comando para realizar un bucle."
 

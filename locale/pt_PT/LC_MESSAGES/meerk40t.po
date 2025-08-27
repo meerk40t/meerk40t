@@ -25227,4 +25227,52 @@ msgstr "Configurações de OP de teste"
 msgid "Operation settings"
 msgstr "Configurações de operação"
 
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012 meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+msgid "Encountered exception {error}"
+msgstr "Exceção encontrada {error}"
+
+#: meerk40t/kernel/kernel.py:3727
+msgid "Execute the following command as a separate task in the background"
+msgstr "Execute o seguinte comando como uma tarefa separada em segundo plano"
+
+#: meerk40t/kernel/kernel.py:3743
+msgid "Finished command {cmd} after {duration}sec"
+msgstr "Comando concluído {cmd} após {duration}seg"
+
+#: meerk40t/kernel/kernel.py:3768
+msgid "Command '{cmd}' is now running in the background."
+msgstr "O comando '{cmd}' está agora a ser executado em segundo plano."
+
+#: meerk40t/kernel/kernel.py:3774
+msgid "Variable name to replace (default 'loop')"
+msgstr "Nome da variável a substituir (padrão 'loop')"
+
+#: meerk40t/kernel/kernel.py:3776
+msgid "First value to take"
+msgstr "Primeiro valor a tomar"
+
+#: meerk40t/kernel/kernel.py:3777
+msgid "Last value to take"
+msgstr "Último valor a tomar"
+
+#: meerk40t/kernel/kernel.py:3778
+msgid "loop a given command"
+msgstr "executar um loop num comando fornecido"
+
+#: meerk40t/kernel/kernel.py:3785
+msgid "Please provide the range to loop in"
+msgstr "Por favor, forneça o intervalo para o ciclo"
+
+#: meerk40t/kernel/kernel.py:3792
+msgid "upper bound needs to be greater than lower bound"
+msgstr "o limite superior necessita de ser maior que o limite inferior"
+
+#: meerk40t/kernel/kernel.py:3796
+msgid "Invalid values for from={lbound}, to={ubound}: {error}"
+msgstr "Valores inválidos para de={lbound}, para={ubound}: {error}"
+
+#: meerk40t/kernel/kernel.py:3802
+msgid "Please provide a command to loop."
+msgstr "Por favor, forneça um comando para fazer o loop."
+
 
