@@ -152,6 +152,8 @@ class LaserPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
         self.SetHelpText("laserpanel")
         self.context.root.setting(bool, "laserpane_arm", True)
+        self.context.setting(bool, "laserpane_hold", False)
+        self.context.setting(str, "laserpane_plan", "z")
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.icon_size = 0.5 * get_default_icon_size(self.context)
@@ -705,15 +707,16 @@ class LaserPanel(wx.Panel):
 
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
-        last_plan, new_plan = self.context.planner.get_free_plan()
-        self.context.setting(bool, "laserpane_hold", False)
-        if last_plan is not None and self.context.laserpane_hold:
+        last_plan = self.context.laserpane_plan
+        if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
             self.context(f"plan{last_plan} spool\n")
         elif self.checkbox_optimize.GetValue():
+            last_plan, new_plan = self.context.planner.get_free_plan()
             self.context(
                 f"threaded plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
             )
         else:
+            last_plan, new_plan = self.context.planner.get_free_plan()
             self.context(f"plan{new_plan} clear copy preprocess validate blob spool\n")
         self.armed = False
         self.check_laser_arm()
@@ -741,9 +744,11 @@ class LaserPanel(wx.Panel):
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
         last_plan, new_plan = self.context.planner.get_free_plan()
         param = "0"
-        if last_plan is not None and self.context.laserpane_hold:
+        last_plan = self.context.laserpane_plan
+        if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
             plan = last_plan
         else:
+            last_plan, new_plan = self.context.planner.get_free_plan()
             plan = new_plan
             if self.checkbox_optimize.GetValue():
                 self.context(
@@ -775,8 +780,8 @@ class LaserPanel(wx.Panel):
     def on_config_button(self, event):
         self.context.device("window toggle Configuration\n")
 
-class JobPanel(wx.Panel):
 
+class JobPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -792,21 +797,47 @@ class JobPanel(wx.Panel):
         )
         self.list_plan.SetToolTip(_("List of prepared cutplans"))
         self.list_plan.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
-        self.list_plan.AppendColumn(
-            _("Plan"), format=wx.LIST_FORMAT_LEFT, width=113
-        )
-        self.list_plan.AppendColumn(
-            _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
-        )
-        self.list_plan.AppendColumn(
-            _("Content"), format=wx.LIST_FORMAT_LEFT, width=73
-        )
+        self.list_plan.AppendColumn(_("Plan"), format=wx.LIST_FORMAT_LEFT, width=113)
+        self.list_plan.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
+        self.list_plan.AppendColumn(_("Content"), format=wx.LIST_FORMAT_LEFT, width=73)
         self.list_plan.resize_columns()
+        # self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        # self.btn_clear.SetToolTip(_("Clear selected plan"))
+        self.btn_update = wx.Button(self, wx.ID_ANY, _("Update"))
+        self.btn_update.SetToolTip(_("Update selected plan"))
+        self.btn_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        self.btn_export.SetToolTip(_("Export selected plan"))
+        self.btn_spool = wx.Button(self, wx.ID_ANY, _("Spool"))
+        self.btn_spool.SetToolTip(_("Spool selected plan"))
+        self.context.setting(bool, "laserpane_hold", False)
+        self.context.setting(str, "laserpane_plan", "z")
+        self.checkbox_hold = wxCheckBox(self, wx.ID_ANY, _("Hold"))
+        self.checkbox_hold.SetToolTip(
+            _("Preserve the job between running, rerunning, and execution")
+        )
+        self.checkbox_hold.SetValue(self.context.laserpane_hold)
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_main.Add(self.list_plan, 1, wx.EXPAND, 0)
+        hsizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(self.btn_clear, 0, wx.EXPAND, 0)
+        hsizer_buttons.Add(self.btn_update, 0, wx.EXPAND, 0)
+        hsizer_buttons.Add(self.btn_export, 0, wx.EXPAND, 0)
+        hsizer_buttons.Add(self.btn_spool, 0, wx.EXPAND, 0)
+        hsizer_controls = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer_controls.Add(self.checkbox_hold, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(hsizer_buttons, 0, wx.EXPAND, 0)
+        sizer_main.Add(hsizer_controls, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
         self.shown = False
+        self.list_plan.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
+        self.list_plan.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_selection)
+        # self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_plan)
+        self.btn_update.Bind(wx.EVT_BUTTON, self.on_update_plan)
+        self.btn_export.Bind(wx.EVT_BUTTON, self.on_export_plan)
+        self.btn_spool.Bind(wx.EVT_BUTTON, self.on_spool_plan)
+        self.checkbox_hold.Bind(wx.EVT_CHECKBOX, self.on_hold)
+        self.on_selection(None)
 
     def refresh_plan_list(self):
         self.list_plan.DeleteAllItems()
@@ -825,84 +856,56 @@ class JobPanel(wx.Panel):
         if self.shown:
             self.refresh_plan_list()
 
-    def pane_show(self):
-        self.shown = True
-        self.list_plan.load_column_widths()
-        self.refresh_plan_list()
+    def on_selection(self, event):
+        can_update = self.list_plan.GetFirstSelected() != -1
+        has_content = False
+        if can_update:
+            plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+            plan = self.context.planner._plan[plan_name]
+            has_content = len(plan.plan) != 0
+        can_export = has_content and hasattr(self.context.device, "extension")
+        self.btn_update.Enable(can_update)
+        self.btn_export.Enable(can_export)
+        self.btn_spool.Enable(has_content)
 
-    def pane_hide(self):
-        self.shown = False
-        self.list_plan.save_column_widths()
+    def on_spool_plan(self, event):
+        if self.list_plan.GetFirstSelected() == -1:
+            return
+        plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+        self.context.laserpane_plan = plan_name
+        plan = self.context.planner._plan[plan_name]
+        if len(plan.plan) == 0:
+            wx.MessageBox(
+                _("No items to spool"), _("Spool Plan"), wx.OK | wx.ICON_INFORMATION
+            )
+            return
+        self.context(f"plan{plan_name} spool\n")
 
-class JobPanelOld(wx.Panel):
-    """
-    Contains all elements to plan and save the job
-    """
+    def on_clear_plan(self, event):
+        if self.list_plan.GetFirstSelected() == -1:
+            return
+        plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+        self.context(f"plan{plan_name} clear finish\n")
 
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: MovePanel.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.context.themes.set_window_colors(self)
+    def on_update_plan(self, event):
+        if self.list_plan.GetFirstSelected() == -1:
+            return
+        plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+        self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
+        if self.context.planner.do_optimization:
+            self.context(
+                f"plan{plan_name} clear copy preprocess validate blob preopt optimize finish\n"
+            )
+        else:
+            self.context(
+                f"plan{plan_name} clear copy preprocess validate blob finish\n"
+            )
+        self.context.kernel.busyinfo.end()
 
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self._optimize = True
-        self.icon_size = 0.5 * get_default_icon_size(self.context)
-        sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
-
-        self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
-        self.button_clear.SetToolTip(_("Clear locally defined plan"))
-        self.button_clear.SetBitmap(icons8_delete.GetBitmap(resize=self.icon_size))
-        sizer_control_update.Add(self.button_clear, 1, 0, 0)
-
-        self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
-        self.button_update.SetToolTip(_("Update the Plan"))
-        self.button_update.SetBitmap(icon_update_plan.GetBitmap(resize=self.icon_size))
-        sizer_control_update.Add(self.button_update, 1, 0, 0)
-
-        self.button_save_file = wxButton(self, wx.ID_ANY, _("Save"))
-        self.button_save_file.SetToolTip(_("Save the job"))
-        self.button_save_file.SetBitmap(icons8_save.GetBitmap(resize=self.icon_size))
-        sizer_control_update.Add(self.button_save_file, 1, 0, 0)
-
-        sizer_source = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
-
-        self.text_plan = TextCtrl(
-            self, wx.ID_ANY, _("--- Empty ---"), style=wx.TE_READONLY
-        )
-        sizer_source.Add(self.text_plan, 2, 0, 0)
-
-        self.context.setting(bool, "laserpane_hold", False)
-        self.checkbox_hold = wxCheckBox(self, wx.ID_ANY, _("Hold"))
-        self.checkbox_hold.SetToolTip(
-            _("Preserve the job between running, rerunning, and execution")
-        )
-        self.checkbox_hold.SetValue(self.context.laserpane_hold)
-        sizer_source.Add(self.checkbox_hold, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.SetSizer(sizer_main)
-        self.Layout()
-
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_hold, self.checkbox_hold)
-        self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
-        # self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
-        self.Bind(wx.EVT_BUTTON, self.on_button_clear, self.button_clear)
-        self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
-
-    @signal_listener("plan")
-    def plan_update(self, origin, *message):
-        plan_name, stage = message[0], message[1]
-        if plan_name == "z":
-            plan = self.context.planner.get_or_make_plan("z")
-            if not len(plan.plan):
-                self.text_plan.SetValue(_("--- Empty ---"))
-            else:
-                self.text_plan.SetValue(f"{str(stage)}: {str(plan)}")
-
-    def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
+    def on_export_plan(self, event):
+        if self.list_plan.GetFirstSelected() == -1:
+            return
+        plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
         gui = self.context.gui
         extension = "txt"
         if hasattr(self.context.device, "extension"):
@@ -920,33 +923,40 @@ class JobPanelOld(wx.Panel):
 
             if not pathname.lower().endswith(f".{extension}"):
                 pathname += f".{extension}"
-            optpart = "preopt optimize " if self.context.planner.do_optimization else ""
-            self.context(
-                f'planz clear copy preprocess validate blob {optpart}save_job "{pathname}"\n'
-            )
+            self.context(f'plan{plan_name} save_job "{pathname}"\n')
 
-    def on_button_load(self, event):  # wxGlade: LaserPanel.<event_handler>
-        pass
-
-    def on_button_clear(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("planz clear\n")
-
-    def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
-        if self.context.planner.do_optimization:
-            self.context("planz clear copy preprocess validate blob preopt optimize\n")
-        else:
-            self.context("planz clear copy preprocess validate blob\n")
-        self.context.kernel.busyinfo.end()
-
-    def on_check_hold(self, event):
+    def on_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()
 
-    def pane_show(self, *args):
-        self.button_save_file.Enable(hasattr(self.context.device, "extension"))
+    def on_right_click(self, event):
+        # Select the item under the mouse cursor
+        event.Skip()
+        item, flags = self.list_plan.HitTest(event.GetPosition())
+        if item >= 0:
+            self.list_plan.Select(item)
+        item = self.list_plan.GetFirstSelected()
+        if item < 0:
+            return
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, _("Clear"))
+        self.Bind(wx.EVT_MENU, self.on_clear_plan, item)
+        item = menu.Append(wx.ID_ANY, _("Update"))
+        self.Bind(wx.EVT_MENU, self.on_update_plan, item)
+        item = menu.Append(wx.ID_ANY, _("Export"))
+        self.Bind(wx.EVT_MENU, self.on_export_plan, item)
+        item = menu.Append(wx.ID_ANY, _("Spool"))
+        self.Bind(wx.EVT_MENU, self.on_spool_plan, item)
+        self.PopupMenu(menu)
+        menu.Destroy()
 
-    def pane_hide(self, *args):
-        pass
+    def pane_show(self):
+        self.shown = True
+        self.list_plan.load_column_widths()
+        self.refresh_plan_list()
+
+    def pane_hide(self):
+        self.shown = False
+        self.list_plan.save_column_widths()
 
 
 class OptimizePanel(wx.Panel):

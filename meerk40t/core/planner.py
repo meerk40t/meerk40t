@@ -974,6 +974,14 @@ class Planner(Service):
     def finish_plan(self, plan_name):
         self.update_stage(plan_name, STAGE_PLAN_FINISHED)
 
+    def has_content(self, plan_name):
+        """
+        Checks if the specified plan has any content.
+        """
+        if plan_name not in self._plan:
+            return False
+        return len(self._plan[plan_name].plan) > 0
+
     def get_free_plan(self):
         """
         Finds and returns a unique plan name not currently in use.
