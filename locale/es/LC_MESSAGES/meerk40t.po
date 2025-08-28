@@ -22072,3 +22072,92 @@ msgstr "Valores no válidos para desde={lbound}, a={ubound}: {error}"
 msgid "Please provide a command to loop."
 msgstr "Proporcione un comando para realizar un bucle."
 
+#: meerk40t/core/planner.py:460
+msgid "List all available plans"
+msgstr "Lista todos los planes disponibles"
+
+#: meerk40t/core/planner.py:466
+msgid "No plans available."
+msgstr "No hay planes disponibles."
+
+#: meerk40t/core/planner.py:468
+msgid "Available plans:"
+msgstr "Planes disponibles:"
+
+#: meerk40t/core/planner.py:871
+msgid "plan<?> finish"
+msgstr "terminar plan<?> "
+
+#: meerk40t/gui/laserpanel.py:798
+msgid "List of prepared cutplans"
+msgstr "Lista de planes de corte preparadas"
+
+#: meerk40t/gui/laserpanel.py:805
+msgid "Clear selected plan"
+msgstr "Borrar plan seleccionado"
+
+#: meerk40t/gui/laserpanel.py:807
+msgid "Update selected plan"
+msgstr "Actualizar el plan seleccionado"
+
+#: meerk40t/gui/laserpanel.py:809
+msgid "Export selected plan"
+msgstr "Exportar plan seleccionado"
+
+#: meerk40t/gui/laserpanel.py:811
+msgid "Spool selected plan"
+msgstr "Envia plan seleccionado al spool"
+
+#: meerk40t/gui/laserpanel.py:861
+msgid "{amount} items"
+msgstr "{amount} elementos"
+
+#: meerk40t/gui/laserpanel.py:892
+msgid "No items to spool"
+msgstr "No hay artículos en el spool"
+
+#: meerk40t/gui/laserpanel.py:892
+msgid "Spool Plan"
+msgstr "Plan en Spool"
+
+#: meerk40t/gui/laserpanel.py:964
+msgid "Update (background)"
+msgstr "Actualización (fondo)"
+
+#: meerk40t/gui/thread_info.py:23 meerk40t/gui/thread_info.py:186
+msgid "Tasks"
+msgstr "Tareas"
+
+#: meerk40t/gui/thread_info.py:30
+msgid "Opens the tasks window with all background task information"
+msgstr "Abre la ventana de tareas con toda la información de tareas de fondo"
+
+#: meerk40t/gui/thread_info.py:46
+msgid "Background Tasks are preparatory jobs issued with the 'threaded' command,\nlike burn preparation and others."
+msgstr "Las tareas de fondo son trabajos preparatorios emitidos con el comando 'enhebrado',\ncomo la preparación de quemaduras y otros."
+
+#: meerk40t/gui/thread_info.py:56
+msgid "List of background tasks"
+msgstr "Lista de tareas de fondo"
+
+#: meerk40t/gui/thread_info.py:59
+msgid "Task"
+msgstr "Tarea"
+
+#: meerk40t/gui/thread_info.py:95
+msgid "Show System Tasks"
+msgstr "Mostrar Tareas del Sistema"
+
+#: meerk40t/gui/thread_info.py:170
+msgid "Background Tasks"
+msgstr "Tareas de Fondo"
+
+#: meerk40t/gui/thread_info.py:191
+msgid "Opens the window with all background task information"
+msgstr "Abre la ventana con toda la información de tareas de fondo"
+
+#: meerk40t/kernel/kernel.py:2780
+msgid "dead"
+msgstr "muerto"
+
+
