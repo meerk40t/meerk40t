@@ -136,3 +136,5 @@ MeerK40t-*.txt
 # Sourcery settings
 .sourcery.yaml
 .pre-commit-config.yaml
+meerk40t.spec
+mk40t.py
