@@ -178,7 +178,7 @@ def find_erroneous_translations(file_path: str) -> bool:
     return found_error
 
 
-def create_mo_files(force: bool, locales: list[str]) -> list:
+def create_mo_files(force: bool, locales: set) -> list:
     """
     Recursively compiles all valid .po files into .mo files under ./locale/LC_MESSAGES.
     Skips files with errors. If force is True, always recompiles.
@@ -267,7 +267,7 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
     return data_files
 
 
-def integrate_delta_files(locales: list[str]) -> None:
+def integrate_delta_files(locales: set) -> None:
     """
     This code integrates translation updates from delta .po files (named delta_xx.po)
     into the main translation .po files for specified locales.
@@ -375,18 +375,20 @@ def main() -> None:
     args = parser.parse_args()
     if "all" in args.locales:
         args.locales = []
-    if args.locales:
-        print(f"Will compile po-files for {', '.join(args.locales)}")
-    else:
-        print("Will compile all po-files")
+    locales = set()
     if len(args.locales) == 0:
-        locales = []
-        locales.extend(iter(next(os.walk(LOCALE_DIR))[1]))
+        locales.update(iter(next(os.walk(LOCALE_DIR))[1]))
         args.locales = locales
+    for loc in args.locales:
+        locales.add(loc)
+    if args.locales:
+        print(f"Will compile po-files for {', '.join(locales)}")
+    else:
+        print(f"Will compile all po-files ({', '.join(locales)})")
 
     if args.integrate:
-        integrate_delta_files(args.locales)
-    create_mo_files(args.force, args.locales)
+        integrate_delta_files(locales)
+    create_mo_files(args.force, locales)
 
 
 if __name__ == "__main__":

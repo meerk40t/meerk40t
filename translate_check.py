@@ -468,28 +468,28 @@ def main():
     print(f"<locale> one of {supported_locales}")
 
     # Expand 'all' to all supported locales
-    locales: list[str] = []
+    locales = set()
     for loc in args.locales:
         loc = loc.lower()
         if loc == "all":
-            locales = list(LOCALE_LONG_NAMES.keys())
+            locales = set(LOCALE_LONG_NAMES.keys())
             break
         if loc == "en":
             print(
                 "English is the default language, we will create the default .po file."
             )
-            locales.append("en")
+            locales.add("en")
             continue
         found = False
         for key in LOCALE_LONG_NAMES:
             if loc == key.lower():
-                locales.append(key)
+                locales.add(key)
                 found = True
                 break
         if not found:
             print(f"Unknown locale '{loc}', using 'de' as default.")
             if not "de" in locales:
-                locales.append("de")
+                locales.add("de")
 
     print(f"Will examine: {' ' .join(locales)}")
 
