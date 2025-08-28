@@ -211,7 +211,11 @@ def create_mo_files(force: bool, locales: set) -> list:
     for locale_name in next(os.walk(LOCALE_DIR))[1]:
         po_dirs.append(f"{LOCALE_DIR}/{locale_name}/LC_MESSAGES/")
         po_locales.append(locale_name)
-    counts = [0, 0, 0]
+    counts = {
+        "translated": 0,
+        "ignored": 0,
+        "errors": 0,
+    }
     for d_local, d in zip(po_locales, po_dirs):
         if locales and d_local not in locales:
             print(f"Skip locale {d_local}")
@@ -222,7 +226,7 @@ def create_mo_files(force: bool, locales: set) -> list:
             filename, extension = os.path.splitext(po_file)
             if find_erroneous_translations(d + po_file):
                 print(f"Skipping {d + po_file} as invalid...")
-                counts[2] += 1
+                counts["errors"] += 1
                 continue
             mo_file = f"{filename}.mo"
             doit = True
@@ -242,27 +246,45 @@ def create_mo_files(force: bool, locales: set) -> list:
                     )
                     doit = False
             if doit or force:
+                empty_entries = 0
+                duplicate_entries = 0
                 action = "Translate" if doit else "Forced translate"
                 try:
                     po = polib.pofile(d + po_file, encoding=source_encoding)
+                    entries_seen = set()
+                    for entry in po:
+                        if not entry.msgstr:
+                            empty_entries += 1
+                        if entry.msgid in entries_seen:
+                            duplicate_entries += 1
+                        entries_seen.add(entry.msgid)
                     po.save_as_mofile(d + mo_file)
                 except OSError as err:
                     print(f"Unexpected {err=}")
-                    counts[2] += 1
+                    counts["errors"] += 1
                     continue
 
                 target_encoding = "utf-8"
-
+                empt_str = (
+                    ""
+                    if empty_entries == 0
+                    else f", {empty_entries} empty entr{'y' if empty_entries == 1 else 'ies'} found"
+                )
+                dup_str = (
+                    ""
+                    if duplicate_entries == 0
+                    else f", {duplicate_entries} duplicate entr{'y' if duplicate_entries == 1 else 'ies'} found"
+                )
                 print(
-                    f"{action} {d}{po_file} (input encoded={source_encoding}, output encoded={target_encoding})"
+                    f"{action} {d}{po_file} (input encoded={source_encoding}, output encoded={target_encoding}){empt_str}{dup_str}"
                 )
                 mo_files.append(d + mo_file)
-                counts[0] += 1
+                counts["translated"] += 1
             else:
-                counts[1] += 1
+                counts["ignored"] += 1
         data_files.append((d, mo_files))
     print(
-        f"Total: {counts[0] + counts[1]}, Translated: {counts[0]}, Ignored: {counts[1]}, Errors: {counts[2]}"
+        f"Total: {counts['translated'] + counts['ignored']}, Translated: {counts['translated']}, Ignored: {counts['ignored']}, Errors: {counts['errors']}"
     )
     return data_files
 
