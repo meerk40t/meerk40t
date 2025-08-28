@@ -1834,26 +1834,31 @@ class MeerK40t(MWindow):
 
         def run_job(*args):
             context = kernel.root
-            context.setting(bool, "laserpane_hold", False)
+            hold = context.setting(bool, "laserpane_hold", False)
+            prefer_threaded = context.setting(bool, "prefer_threaded_mode", True)
+            prefix = "threaded " if prefer_threaded else ""
+
             busy = kernel.busyinfo
             context = kernel.root
             opt = kernel.planner.do_optimization
-            busy.start(msg=_("Preparing Laserjob..."))
             last_plan, new_plan = kernel.planner.get_free_plan()
-            if last_plan is not None and context.laserpane_hold:
+            if last_plan is not None and hold:
                 context(f"plan{last_plan} spool\n")
             else:
+                if not prefer_threaded:
+                    busy.start(msg=_("Preparing Laserjob..."))
                 if opt:
                     context(
-                        f"plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
+                        f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
                     )
                 else:
-                    context(f"plan{new_plan} clear copy preprocess validate blob spool\n")
+                    context(f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n")
+                if not prefer_threaded:
+                    busy.end()
             if context.auto_spooler:
                 context("window open JobSpooler\n")
             # And we disarm again
             disarm_laser()
-            busy.end()
 
         def run_job_extended(*args):
             context = kernel.root

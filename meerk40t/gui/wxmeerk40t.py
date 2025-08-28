@@ -257,13 +257,25 @@ class GoPanel(ActionPanel):
 
         self.button_go.Enable(False)
         last_plan, new_plan = self.context.planner.get_free_plan()
+        prefer_threaded = self.context.setting(bool, "prefer_threaded_mode", True)
+        prefix = "threaded " if prefer_threaded else ""
+        busy = self.context.kernel.busyinfo
+        if not prefer_threaded:
+            busy.start(msg=_("Preparing Laserjob..."))
 
         self.context(
-            f"threaded plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
+            f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
         )
-        self.context(
-            f"window open JobSpooler\nwindow open ThreadInfo\n"
-        )
+        if prefer_threaded:
+            self.context(
+                f"window open JobSpooler\nwindow open ThreadInfo\n"
+            )
+        else:
+            busy.end()
+            self.context(
+                f"window open JobSpooler\n"
+            )
+
         self.button_go.Enable(True)
         # Reset...
         # Deliberately at the end, as clicks queue...

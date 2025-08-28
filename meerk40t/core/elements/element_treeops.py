@@ -1406,7 +1406,10 @@ def init_tree(kernel):
     def compile_and_simulate(node, **kwargs):
         self.set_node_emphasis(node, True)
         last_plan, new_plan = self.kernel.planner.get_free_plan()
-        self(f"plan{new_plan} copy-selected preprocess validate blob preopt optimize finish\n")
+        opt = self.kernel.planner.do_optimization
+        optstr = " preopt optimize" if opt else ""
+
+        self(f"plan{new_plan} copy-selected preprocess validate blob{optstr} finish\n")
         self(f"window open Simulation {new_plan} 1 1\n")  # Plan Name, Auto-Clear, Optimise
 
     # ==========

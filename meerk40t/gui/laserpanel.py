@@ -704,6 +704,8 @@ class LaserPanel(wx.Panel):
                 )
             )
             return
+        prefer_threaded = self.context.setting(bool, "prefer_threaded_mode", True)
+        prefix = "threaded " if prefer_threaded else ""
 
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
@@ -713,11 +715,11 @@ class LaserPanel(wx.Panel):
         elif self.checkbox_optimize.GetValue():
             last_plan, new_plan = self.context.planner.get_free_plan()
             self.context(
-                f"threaded plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
+                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
             )
         else:
             last_plan, new_plan = self.context.planner.get_free_plan()
-            self.context(f"plan{new_plan} clear copy preprocess validate blob spool\n")
+            self.context(f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n")
         self.armed = False
         self.check_laser_arm()
         if self.context.auto_spooler:
