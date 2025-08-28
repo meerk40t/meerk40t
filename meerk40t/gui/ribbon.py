@@ -405,7 +405,7 @@ class Button:
         menu = wx.Menu()
         item = menu.Append(wx.ID_ANY, "...")
         item.Enable(False)
-        for v in self.button_dict["multi"]:
+        for v in self.button_dict.get("multi", []):
             item = menu.Append(wx.ID_ANY, v.get("label"))
             tip = v.get("tip")
             if tip:
