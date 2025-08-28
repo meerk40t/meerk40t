@@ -1,3 +1,4 @@
+import threading
 from copy import copy
 
 from meerk40t.kernel import Service
@@ -21,6 +22,17 @@ The planner module provides cut planning services. This provides a method of goi
 cutcode which is then put inside a laserjob and sent to a spooler. Most of these operations are called on the
 individual CutPlan objects.
 """
+STAGE_PLAN_INIT = 0
+STAGE_PLAN_CLEAR = 2
+STAGE_PLAN_COPY = 1
+STAGE_PLAN_VALIDATED = 3
+STAGE_PLAN_GEOMETRY = 4
+STAGE_PLAN_PREPROCESSED = 5
+STAGE_PLAN_PREOPTIMIZED = 6
+STAGE_PLAN_OPTIMIZED = 7
+STAGE_PLAN_BLOB = 8
+STAGE_PLAN_FINISHED = 99
+STAGE_PLAN_INFO = 150
 
 
 def plugin(kernel, lifecycle=None):
@@ -409,9 +421,11 @@ class Planner(Service):
 
     def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "planner")
-        self._plan = dict()
+        self._plan = {}  # contains all cutplans
+        self._states = {}  # contains all states
         self._default_plan = "0"
         self.do_optimization = True
+        self._plan_lock = threading.Lock()
 
     def length(self, v):
         return float(Length(v))
@@ -429,7 +443,9 @@ class Planner(Service):
         try:
             return self._plan[plan_name]
         except KeyError:
-            self._plan[plan_name] = CutPlan(plan_name, self)
+            with self._plan_lock:
+                self._plan[plan_name] = CutPlan(plan_name, self)
+                self._states[plan_name] = STAGE_PLAN_INIT
             return self._plan[plan_name]
 
     @property
@@ -438,6 +454,21 @@ class Planner(Service):
 
     def service_attach(self, *args, **kwargs):
         _ = self.kernel.translation
+
+        @self.console_command(
+            "list-plans",
+            help=_("List all available plans"),
+            input_type=None,
+            output_type=None,
+        )
+        def list_plans(command, channel, _, **kwgs):
+            if not self._plan:
+                channel(_("No plans available."))
+                return
+            channel(_("Available plans:"))
+            for i, plan in enumerate(self._plan):
+                stage, info = self.get_plan_stage(plan)
+                channel(f"{i + 1}: {plan} (State: {info})")
 
         @self.console_command(
             "plan",
@@ -449,7 +480,6 @@ class Planner(Service):
         def plan_base(command, channel, _, data=None, remainder=None, **kwgs):
             if len(command) > 4:
                 self._default_plan = command[4:]
-                self.signal("plan", self._default_plan, None)
 
             cutplan = self.default_plan
             if data is not None:
@@ -468,20 +498,22 @@ class Planner(Service):
                     except AttributeError:
                         pass
                     cutplan.plan.append(copy_c)
-                self.signal("plan", self._default_plan, 1)
                 return "plan", cutplan
             if remainder is None:
                 channel(_("----------"))
-                channel(_("Plan:"))
-                for i, plan_name in enumerate(cutplan.name):
-                    channel(f"{i}: {plan_name}")
+                channel(_("Plan:") + self._default_plan)
+                if isinstance(cutplan.name, str):
+                    channel(f"{1}: {cutplan.name}")
+                else:
+                    for i, plan_name in enumerate(cutplan.name):
+                        channel(f"{i + 1}: {plan_name}")
                 channel(_("----------"))
                 channel(_("Plan {plan}:").format(plan=self._default_plan))
                 for i, op_name in enumerate(cutplan.plan):
-                    channel(f"{i}: {op_name}")
+                    channel(f"{i + 1}: {op_name}")
                 channel(_("Commands {plan}:").format(plan=self._default_plan))
                 for i, cmd_name in enumerate(cutplan.commands):
-                    channel(f"{i}: {cmd_name}")
+                    channel(f"{i + 1}: {cmd_name}")
                 channel(_("----------"))
 
             return "plan", cutplan
@@ -668,7 +700,7 @@ class Planner(Service):
             # Add default trailing ops
             add_ops(False)
             channel(_("Copied Operations."))
-            self.signal("plan", data.name, 1)
+            self.update_stage(data.name, STAGE_PLAN_COPY)
             return data_type, data
 
         @self.console_option(
@@ -707,7 +739,7 @@ class Planner(Service):
                         data.plan.insert(index, cmd)
                     except ValueError:
                         channel(_("Invalid index for command insert."))
-                self.signal("plan", data.name, None)
+                self.update_stage(data.name, STAGE_PLAN_INFO, noset=True)
             return data_type, data
 
         @self.console_command(
@@ -724,7 +756,7 @@ class Planner(Service):
                 busy.show()
 
             data.preprocess()
-            self.signal("plan", data.name, 2)
+            self.update_stage(data.name, STAGE_PLAN_PREPROCESSED)
             return data_type, data
 
         @self.console_command(
@@ -746,7 +778,7 @@ class Planner(Service):
                 self.signal("cutplanning;failed", str(e))
                 data.clear()
                 return
-            self.signal("plan", data.name, 3)
+            self.update_stage(data.name, STAGE_PLAN_VALIDATED)
             return data_type, data
 
         @self.console_command(
@@ -763,7 +795,7 @@ class Planner(Service):
                 busy.show()
 
             data.geometry()
-            self.signal("plan", data.name, 4)
+            self.update_stage(data.name, STAGE_PLAN_GEOMETRY)
             return data_type, data
 
         @self.console_command(
@@ -780,7 +812,7 @@ class Planner(Service):
                 busy.show()
 
             data.blob()
-            self.signal("plan", data.name, 4)
+            self.update_stage(data.name, STAGE_PLAN_BLOB)
             return data_type, data
 
         @self.console_command(
@@ -797,7 +829,7 @@ class Planner(Service):
                 busy.show()
 
             data.preopt()
-            self.signal("plan", data.name, 5)
+            self.update_stage(data.name, STAGE_PLAN_PREOPTIMIZED)
             return data_type, data
 
         @self.console_command(
@@ -814,7 +846,7 @@ class Planner(Service):
                 busy.show()
 
             data.execute()
-            self.signal("plan", data.name, 6)
+            self.update_stage(data.name, STAGE_PLAN_OPTIMIZED)
             return data_type, data
 
         @self.console_command(
@@ -831,7 +863,18 @@ class Planner(Service):
                 busy.show()
 
             data.clear()
-            self.signal("plan", data.name, 0)
+            self.update_stage(data.name, STAGE_PLAN_CLEAR)
+            return data_type, data
+
+        @self.console_command(
+            "finish",
+            help=_("plan<?> finish"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_finish(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            self.update_stage(data.name, STAGE_PLAN_FINISHED)
             return data_type, data
 
         @self.console_command(
@@ -860,7 +903,7 @@ class Planner(Service):
                         copy_c = copy(c)
                         operations.add_node(copy_c)
             channel(_("Returned Operations."))
-            self.signal("plan", data.name, None)
+            self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
         @self.console_argument(
@@ -923,8 +966,70 @@ class Planner(Service):
                     c = CutCode(c[: end - pos])
                 data.plan.append(c)
 
-            self.signal("plan", data.name, None)
+            self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
     def plan(self, **kwargs):
         yield from self._plan
+
+    def finish_plan(self, plan_name):
+        self.update_stage(plan_name, STAGE_PLAN_FINISHED)
+
+    def has_content(self, plan_name):
+        """
+        Checks if the specified plan has any content.
+        """
+        if plan_name not in self._plan:
+            return False
+        return len(self._plan[plan_name].plan) > 0
+
+    def get_free_plan(self):
+        """
+        Finds and returns a unique plan name not currently in use.
+        This method generates a new plan name by incrementing a counter until an unused name is found.
+        Returns:
+            tuple: A tuple containing the last checked plan name and the new unique plan name.
+        """
+        candidate = "z"
+        last = None
+        index = 1
+        with self._plan_lock:
+            while True:
+                if candidate not in self._plan:
+                    plan = self.get_or_make_plan(candidate)
+                    break
+                state, info = self.get_plan_stage(candidate)
+                if state == STAGE_PLAN_FINISHED:
+                    break
+                last = candidate
+                candidate = f"z{index}"
+                index += 1
+        # print(f"Retrieved: Last: {last} New: {candidate}")
+        return last, candidate
+
+    def update_stage(self, plan_name, stage, noset: bool = False):
+        if plan_name not in self._states:
+            self.console(f"Couldn't update plan {plan_name}: not found")
+            return
+        if not noset:
+            with self._plan_lock:
+                self._states[plan_name] = stage
+        self.signal("plan", plan_name, stage)
+
+    def get_plan_stage(self, plan_name):
+        descriptions = {
+            STAGE_PLAN_INIT: "Initialized",
+            STAGE_PLAN_CLEAR: "Cleared",
+            STAGE_PLAN_COPY: "Copied",
+            STAGE_PLAN_PREPROCESSED: "Pre-Processed",
+            STAGE_PLAN_PREOPTIMIZED: "Pre-Optimized",
+            STAGE_PLAN_OPTIMIZED: "Optimized",
+            STAGE_PLAN_INFO: "Information",
+            STAGE_PLAN_VALIDATED: "Validated",
+            STAGE_PLAN_GEOMETRY: "Geometry",
+            STAGE_PLAN_BLOB: "Laser Blob",
+            STAGE_PLAN_FINISHED: "Finished",
+        }
+        state = self._states.get(plan_name, None)
+        info = descriptions.get(state, "Unknown")
+        return state, info

@@ -50,7 +50,7 @@ def plugin(kernel, lifecycle):
                     data.plan, loops=loops, label=label, outline=data.outline
                 )
                 channel(_("Spooled Plan."))
-                kernel.root.signal("plan", data.name, 6)
+                kernel.planner.finish_plan(data.name)
 
             if remainder is None:
                 channel(_("----------"))

@@ -57,6 +57,9 @@ class GuideWidget(Widget):
             "cache_key": None,
         }
         self._viewport_cache = {}
+        self._viewport_cache_max_size = (
+            50  # Limit cache size to prevent unbounded growth
+        )
 
         self.set_colors()
         self.font = wx.Font(
@@ -155,6 +158,13 @@ class GuideWidget(Widget):
             max_y = min(getattr(space, "height", float("inf")), max_y)
 
         result = (min_x, min_y, max_x, max_y)
+
+        # Implement simple LRU eviction to prevent unbounded cache growth
+        if len(self._viewport_cache) >= self._viewport_cache_max_size:
+            # Remove oldest entry (first item) to make room for new one
+            oldest_key = next(iter(self._viewport_cache))
+            del self._viewport_cache[oldest_key]
+
         self._viewport_cache[cache_key] = result
         return result
 

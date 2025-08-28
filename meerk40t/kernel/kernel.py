@@ -157,6 +157,7 @@ class Kernel(Settings):
         # All registered threads.
         self.threads = {}
         self.thread_lock = threading.Lock()
+        self.thread_local = threading.local() 
 
         # All established delegates
         self.delegates = []
@@ -1425,7 +1426,7 @@ class Kernel(Settings):
         for thread_name in list(self.threads):
             thread_count += 1
             try:
-                thread = self.threads[thread_name]
+                thread = self.threads[thread_name][0]
             except KeyError:
                 if channel:
                     channel(_("Thread {name} exited safely").format(name=thread_name))
@@ -1796,6 +1797,8 @@ class Kernel(Settings):
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
+        user_type : bool = False,
+        info : str = "",
     ) -> Thread:
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
@@ -1818,7 +1821,7 @@ class Kernel(Settings):
         if thread_name is None:
             thread_name = func.__name__
         try:
-            old_thread = self.threads[thread_name]
+            old_thread = self.threads[thread_name][0]
             channel(
                 _("Thread: {name} already exists. Waiting...").format(name=thread_name)
             )
@@ -1862,7 +1865,13 @@ class Kernel(Settings):
                 channel(_("Thread: {name}, Finished").format(name=thread_name))
 
         thread.run = run
-        self.threads[thread_name] = thread
+        self.threads[thread_name] = [
+            thread, 
+            "Running",
+            user_type,
+            info,
+            time.time(),
+        ]
         thread.daemon = daemon
         thread.start()
         self.thread_lock.release()
@@ -1888,6 +1897,32 @@ class Kernel(Settings):
             return _("Idle")
         elif state == "unknown":
             return _("Unknown")
+
+    def get_thread_message(self, thread_name) -> str:
+        if thread_name not in self.threads:
+            return ""
+        message = self.threads[thread_name][1]
+        return message
+
+    def set_thread_message(self, thread_name, message):
+        if thread_name not in self.threads:
+            return
+        thread, _, user_type, info, started = self.threads[thread_name]
+        # Update the thread status
+        self.threads[thread_name] = [thread, message, user_type, info, started]
+
+    def get_thread_messages(self, user_type_only: bool = False) -> list:
+        """
+        Get a list of all thread messages.
+        @param user_type_only: If True, only include user threads.
+        @return: List of thread messages (thread_name, status, user_type, info)
+        """
+        messages = []
+        for thread_name, (_, message, user_type, info) in self.threads.items():
+            if user_type_only and not user_type:
+                continue
+            messages.append([thread_name, message, user_type, info])
+        return messages 
 
     # ==========
     # SCHEDULER
@@ -2730,13 +2765,19 @@ class Kernel(Settings):
             """
             channel(_("----------"))
             channel(_("Registered Threads:"))
+            parts = ["Nr", "thread", "status", "type", "info", "alive"]
+            channel(" ".join(parts))
+            channel("-"*60)
             for i, thread_name in enumerate(list(self.threads)):
-                thread = self.threads[thread_name]
-                parts = list()
+                thread, message, user_type, info, started = self.threads[thread_name]
+                parts = []
                 parts.append(f"{i + 1}:")
-                parts.append(str(thread))
-                if thread.is_alive:
-                    parts.append(_("is alive."))
+                parts.append(thread_name)
+                parts.append("<user>" if user_type else "<system>")
+                parts.append(message)
+                parts.append(info)
+                runtime = time.time() - started
+                parts.append(f"{runtime:.1f}s" if thread.is_alive else _("dead"))
                 channel(" ".join(parts))
             channel(_("----------"))
 
@@ -3732,6 +3773,8 @@ class Kernel(Settings):
                 Runs the specified command in a background thread and reports completion time.
                 This function is intended to be used as a job handler for asynchronous command execution.
                 """
+                self.thread_local.thread_name = job_identifier
+                self.signal("thread_update", "/", job_identifier, "started")
                 t0 = time.perf_counter()
                 try:
                     data_out = self._console_parse(remainder, channel=self._console_channel)
@@ -3744,6 +3787,7 @@ class Kernel(Settings):
                         cmd=remainder, duration=f"{t1 - t0:.2f}"
                     )
                 )
+                self.signal("thread_update", "/", job_identifier, "ended")
 
             if remainder is None:
                 # List all scheduled jobs that fit our format
@@ -3760,10 +3804,9 @@ class Kernel(Settings):
                     channel(" ".join(parts))
                 channel(_("----------"))
                 return
-            job_identifier = f"threaded-{time.time():.4f}"
-            job = Job(handler, times=1, run_main=False, job_name=job_identifier)
-            job.info = remainder
-            self.schedule(job)
+            job_identifier = f"user-{time.time():.4f}"
+            thread = self.threaded(handler, thread_name=job_identifier, user_type=True, info=remainder)
+            # self.schedule(job)
             channel(
                 _("Command '{cmd}' is now running in the background.").format(
                     cmd=remainder
