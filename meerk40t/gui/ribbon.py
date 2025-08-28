@@ -207,7 +207,7 @@ class Button:
         self.action_right = action_right
         self.rule_enabled = rule_enabled
         self.rule_visible = rule_visible
-        self.multi_autoexec = multi_autoexec 
+        self.multi_autoexec = multi_autoexec
         if object is not None:
             self.object = object
         else:
@@ -226,6 +226,8 @@ class Button:
         self.icon_size = int(point_size)
         edge = int(point_size / 25.0) + 1
         key = str(self.icon_size)
+
+        # Icon bitmaps are cached externally, so we can safely recreate if needed
         if key not in self.available_bitmaps:
             self.available_bitmaps[key] = self.icon.GetBitmap(
                 resize=self.icon_size,
@@ -443,7 +445,9 @@ class Button:
             # self.ensure_realize()
             # And now execute it, provided it would be enabled...
             auto_execute = False if self.multi_autoexec is None else self.multi_autoexec
-            auto_execute = auto_execute and self.context.setting(bool, "button_multi_menu_execute", True)
+            auto_execute = auto_execute and self.context.setting(
+                bool, "button_multi_menu_execute", True
+            )
             if auto_execute:
                 is_visible = True
                 is_enabled = True
@@ -482,7 +486,11 @@ class Button:
             pass
         initial_value = getattr(self.object, self.save_id, "default")
         if "signal" in self.button_dict and "attr" in self.button_dict:
-            self._create_generic_signal_for_multi(self.object, self.button_dict.get("attr"), self.button_dict.get("signal"))
+            self._create_generic_signal_for_multi(
+                self.object,
+                self.button_dict.get("attr"),
+                self.button_dict.get("signal"),
+            )
 
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
@@ -571,7 +579,11 @@ class Button:
             # Whats the value to set?
             set_value = args[0] if args else not self.toggle
             # But if we have a toggle_attr then this has precedence
-            set_value = getattr(self.object, self.toggle_attr) if self.toggle_attr else set_value
+            set_value = (
+                getattr(self.object, self.toggle_attr)
+                if self.toggle_attr
+                else set_value
+            )
             self.set_button_toggle(set_value)
 
         self.context.listen(signal, toggle_click)
@@ -691,7 +703,6 @@ class RibbonPanel:
         @param desc:
         @return:
         """
-        show_tip = not self.context.disable_tool_tips
         # NewIdRef is only available after 4.1
         try:
             new_id = wx.NewIdRef()
@@ -1245,9 +1256,12 @@ class RibbonBarPanel(wx.Control):
     def apply_enable_rules(self):
         """
         Applies all enable rules for all buttons that are currently seen.
+        Batch process for better performance.
         @return:
         """
-        for button in self._all_buttons():
+        # Batch process all buttons to avoid repeated iterations
+        buttons_to_check = list(self._all_buttons())
+        for button in buttons_to_check:
             button.apply_enable_rules()
 
     def add_page(self, ref, id, label, icon):
@@ -1341,6 +1355,11 @@ class Art:
         self.rounded_radius = 3
         self.font_sizes = {}
 
+        # Font cache for performance optimization
+        self._font_cache = {}
+        self._text_extent_cache = {}
+        self._cache_max_size = 200
+
         self.bitmap_text_buffer = 5
         self.dropdown_height = 20
         self.overflow_width = 20
@@ -1353,6 +1372,47 @@ class Art:
         self.hover_tab = None
         self.hover_button = None
         self.hover_dropdown = None
+
+    def get_cached_font(self, ptsize):
+        """
+        Get a font from cache or create and cache it.
+        """
+        if ptsize in self._font_cache:
+            return self._font_cache[ptsize]
+
+        font = wx.Font(
+            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+
+        # Limit cache size to prevent memory growth
+        if len(self._font_cache) >= self._cache_max_size:
+            # Remove oldest entry (simple FIFO)
+            oldest_key = next(iter(self._font_cache))
+            del self._font_cache[oldest_key]
+
+        self._font_cache[ptsize] = font
+        return font
+
+    def get_cached_text_extent(self, dc, text, ptsize):
+        """
+        Get text extent from cache or calculate and cache it.
+        """
+        cache_key = (text, ptsize)
+        if cache_key in self._text_extent_cache:
+            return self._text_extent_cache[cache_key]
+
+        font = self.get_cached_font(ptsize)
+        dc.SetFont(font)
+        extent = dc.GetTextExtent(text)
+
+        # Limit cache size to prevent memory growth
+        if len(self._text_extent_cache) >= self._cache_max_size:
+            # Remove oldest entry (simple FIFO)
+            oldest_key = next(iter(self._text_extent_cache))
+            del self._text_extent_cache[oldest_key]
+
+        self._text_extent_cache[cache_key] = extent
+        return extent
 
     def establish_colors(self):
         self.text_color = copy.copy(
@@ -1401,7 +1461,7 @@ class Art:
             c_mode = COLOR_MODE_DEFAULT
         if (
             c_mode == COLOR_MODE_DEFAULT
-            and self.parent.context.themes.dark # wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+            and self.parent.context.themes.dark  # wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         ):
             c_mode = COLOR_MODE_DARK  # dark mode
         self.color_mode = c_mode
@@ -1491,7 +1551,6 @@ class Art:
                 continue
             for button in panel.visible_buttons():
                 x, y, x1, y1 = button.position
-                start_y = y
                 w = int(round(x1 - x, 2))
                 h = int(round(y1 - y, 2))
                 img_h = h
@@ -1508,31 +1567,21 @@ class Art:
                     bitmap = button.bitmap_disabled
 
                 bitmap_width, bitmap_height = bitmap.Size
-                # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
-                #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
                 bs = min(bitmap_width, bitmap_height)
                 ptsize = self.get_font_size(bs)
                 y += bitmap_height
 
                 text_edge = self.bitmap_text_buffer
                 if button.label and self.show_labels:
-                    show_text = True
-                    label_text = list(button.label.split(" "))
-                    # We try to establish whether this would fit properly.
-                    # We allow a small oversize of 25% to the button,
-                    # before we try to reduce the fontsize
+                    label_text = button.label.split(" ")
+                    # Pre-calculate font and test for efficiency
                     wouldfit = False
                     while not wouldfit:
-                        total_text_height = 0
-                        testfont = wx.Font(
-                            ptsize,
-                            wx.FONTFAMILY_SWISS,
-                            wx.FONTSTYLE_NORMAL,
-                            wx.FONTWEIGHT_NORMAL,
-                        )
-                        test_y = y + text_edge
-                        dc.SetFont(testfont)
+                        # Use cached font instead of creating new one each time
+                        font = self.get_cached_font(ptsize)
+                        dc.SetFont(font)
                         wouldfit = True
+                        test_y = y + text_edge
                         i = 0
                         while i < len(label_text):
                             # We know by definition that all single words
@@ -1545,18 +1594,22 @@ class Art:
                                 if i < len(label_text) - 1:
                                     nextword = label_text[i + 1]
                                     test = word + " " + nextword
-                                    tw, th = dc.GetTextExtent(test)
+                                    # Use cached text extent
+                                    tw, th = self.get_cached_text_extent(
+                                        dc, test, ptsize
+                                    )
                                     if tw < w:
                                         word = test
                                         i += 1
                                         cont = True
 
-                            text_width, text_height = dc.GetTextExtent(word)
+                            text_width, text_height = self.get_cached_text_extent(
+                                dc, word, ptsize
+                            )
                             if text_width > w:
                                 wouldfit = False
                                 break
                             test_y += text_height
-                            total_text_height += text_height
                             if test_y > y1:
                                 wouldfit = False
                                 text_edge = 0
@@ -1770,9 +1823,8 @@ class Art:
         #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
         bs = min(bitmap_width, bitmap_height)
         ptsize = self.get_best_font_size(bs)
-        font = wx.Font(
-            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
+        # Use cached font instead of creating new one
+        font = self.get_cached_font(ptsize)
 
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
 
@@ -1786,21 +1838,18 @@ class Art:
         text_edge = self.bitmap_text_buffer
         if button.label and self.show_labels:
             show_text = True
-            label_text = list(button.label.split(" "))
+            label_text = button.label.split(" ")
             # We try to establish whether this would fit properly.
             # We allow a small oversize of 25% to the button,
             # before we try to reduce the fontsize
             wouldfit = False
+            font = None  # Initialize font variable
             while not wouldfit:
                 total_text_height = 0
-                testfont = wx.Font(
-                    ptsize,
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_NORMAL,
-                )
+                # Use cached font instead of creating new one each time
+                font = self.get_cached_font(ptsize)
                 test_y = y + text_edge
-                dc.SetFont(testfont)
+                dc.SetFont(font)
                 wouldfit = True
                 i = 0
                 while i < len(label_text):
@@ -1814,13 +1863,16 @@ class Art:
                         if i < len(label_text) - 1:
                             nextword = label_text[i + 1]
                             test = word + " " + nextword
-                            tw, th = dc.GetTextExtent(test)
+                            # Use cached text extent
+                            tw, th = self.get_cached_text_extent(dc, test, ptsize)
                             if tw < w:
                                 word = test
                                 i += 1
                                 cont = True
 
-                    text_width, text_height = dc.GetTextExtent(word)
+                    text_width, text_height = self.get_cached_text_extent(
+                        dc, word, ptsize
+                    )
                     if text_width > w:
                         wouldfit = False
                         break
@@ -1833,7 +1885,6 @@ class Art:
                     i += 1
 
                 if wouldfit:
-                    font = testfont
                     break
 
                 ptsize -= 2
@@ -1841,10 +1892,10 @@ class Art:
                     break
             if not wouldfit:
                 show_text = False
-                label_text = list()
+                label_text = []
         else:
             show_text = False
-            label_text = list()
+            label_text = []
         if show_text:
             # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
             text_edge = min(
@@ -1865,13 +1916,15 @@ class Art:
                     if i < len(label_text) - 1:
                         nextword = label_text[i + 1]
                         test = word + " " + nextword
-                        tw, th = dc.GetTextExtent(test)
+                        # Use cached text extent
+                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
                         if tw < w:
                             word = test
                             i += 1
                             cont = True
 
-                text_width, text_height = dc.GetTextExtent(word)
+                # Use cached text extent
+                text_width, text_height = self.get_cached_text_extent(dc, word, ptsize)
                 dc.DrawText(
                     word,
                     int(x + (w / 2.0) - (text_width / 2)),
@@ -2355,11 +2408,10 @@ class Art:
     def button_calc(self, dc: wx.DC, button):
         bitmap = button.bitmap
         ptsize = self.get_font_size(button.icon_size)
-        font = wx.Font(
-            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-
+        # Use cached font instead of creating new one
+        font = self.get_cached_font(ptsize)
         dc.SetFont(font)
+
         bitmap_width, bitmap_height = bitmap.Size
         bitmap_height = max(bitmap_height, button.icon_size)
         bitmap_width = max(bitmap_width, button.icon_size)
@@ -2368,7 +2420,7 @@ class Art:
         text_width = 0
         text_height = 0
         if button.label and self.show_labels:
-            label_text = list(button.label.split(" "))
+            label_text = button.label.split(" ")
             i = 0
             while i < len(label_text):
                 # We know by definition that all single words
@@ -2381,12 +2433,14 @@ class Art:
                     if i < len(label_text) - 1:
                         nextword = label_text[i + 1]
                         test = word + " " + nextword
-                        tw, th = dc.GetTextExtent(test)
+                        # Use cached text extent
+                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
                         if tw < bitmap_width:
                             word = test
                             i += 1
                             cont = True
-                line_width, line_height = dc.GetTextExtent(word)
+                # Use cached text extent
+                line_width, line_height = self.get_cached_text_extent(dc, word, ptsize)
                 text_width = max(text_width, line_width)
                 text_height += line_height
                 i += 1
