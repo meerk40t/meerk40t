@@ -464,25 +464,34 @@ def main():
     )
     args = parser.parse_args()
 
+    print("Usage: python ./translate_check.py <locale>")
+    print(f"<locale> one of {supported_locales}")
+
     # Expand 'all' to all supported locales
     locales: list[str] = []
     for loc in args.locales:
         loc = loc.lower()
         if loc == "all":
-            locales.extend(list(LOCALE_LONG_NAMES.keys()))
-        elif loc in LOCALE_LONG_NAMES:
-            locales.append(loc)
-        elif loc == "en":
+            locales = list(LOCALE_LONG_NAMES.keys())
+            break
+        if loc == "en":
             print(
                 "English is the default language, we will create the default .po file."
             )
             locales.append("en")
-        else:
+            continue
+        found = False
+        for key in LOCALE_LONG_NAMES:
+            if loc == key.lower():
+                locales.append(key)
+                found = True
+                break
+        if not found:
             print(f"Unknown locale '{loc}', using 'de' as default.")
-            locales.append("de")
+            if not "de" in locales:
+                locales.append("de")
 
-    print("Usage: python ./translate_check.py <locale>")
-    print(f"<locale> one of {supported_locales}")
+    print(f"Will examine: {' ' .join(locales)}")
 
     if args.check:
         print("Checking for invalid encoding in po-files...")
