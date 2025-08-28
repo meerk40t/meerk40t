@@ -22847,3 +22847,95 @@ msgstr "无效的范围：从 {lbound} 到 {ubound}：{error}"
 #: meerk40t/kernel/kernel.py:3802
 msgid "Please provide a command to loop."
 msgstr "请提供要循环的命令。"
+
+#: meerk40t/core/planner.py:460
+msgid "List all available plans"
+msgstr "列出所有可用方案"
+
+#: meerk40t/core/planner.py:466
+msgid "No plans available."
+msgstr "没有可用的方案。"
+
+#: meerk40t/core/planner.py:468
+msgid "Available plans:"
+msgstr "可用方案："
+
+#: meerk40t/core/planner.py:871
+msgid "plan<?> finish"
+msgstr "plan<?> finish"
+
+#: meerk40t/gui/laserpanel.py:800
+msgid "List of prepared cutplans"
+msgstr "已准备的切割方案列表"
+
+#: meerk40t/gui/laserpanel.py:807
+msgid "Clear selected plan"
+msgstr "清除所选方案"
+
+#: meerk40t/gui/laserpanel.py:809
+msgid "Update selected plan"
+msgstr "更新所选方案"
+
+#: meerk40t/gui/laserpanel.py:811
+msgid "Export selected plan"
+msgstr "导出所选方案"
+
+#: meerk40t/gui/laserpanel.py:813
+msgid "Spool selected plan"
+msgstr "将所选方案加入队列"
+
+#: meerk40t/gui/laserpanel.py:863
+msgid "{amount} items"
+msgstr "{amount} 个项目"
+
+#: meerk40t/gui/laserpanel.py:894
+msgid "No items to spool"
+msgstr "没有可加入队列的项目"
+
+#: meerk40t/gui/laserpanel.py:894
+msgid "Spool Plan"
+msgstr "方案加入队列"
+
+#: meerk40t/gui/laserpanel.py:966
+msgid "Update (background)"
+msgstr "后台更新"
+
+#: meerk40t/gui/thread_info.py:23 meerk40t/gui/thread_info.py:186
+msgid "Tasks"
+msgstr "任务"
+
+#: meerk40t/gui/thread_info.py:30
+msgid "Opens the tasks window with all background task information"
+msgstr "打开包含所有后台任务信息的任务窗口"
+
+#: meerk40t/gui/thread_info.py:46
+msgid ""
+"Background Tasks are preparatory jobs issued with the 'threaded' command,\n"
+"like burn preparation and others."
+msgstr ""
+"后台任务是通过 'threaded' 命令发起的准备工作，\n"
+"如雕刻准备等。"
+
+#: meerk40t/gui/thread_info.py:56
+msgid "List of background tasks"
+msgstr "后台任务列表"
+
+#: meerk40t/gui/thread_info.py:59
+msgid "Task"
+msgstr "任务"
+
+#: meerk40t/gui/thread_info.py:95
+msgid "Show System Tasks"
+msgstr "显示系统任务"
+
+#: meerk40t/gui/thread_info.py:170
+msgid "Background Tasks"
+msgstr "后台任务"
+
+#: meerk40t/gui/thread_info.py:191
+msgid "Opens the window with all background task information"
+msgstr "打开包含所有后台任务信息的窗口"
+
+#: meerk40t/kernel/kernel.py:2780
+msgid "dead"
+msgstr "已停止"

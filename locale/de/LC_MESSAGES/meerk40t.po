@@ -23854,3 +23854,96 @@ msgstr "Ungültige Werte für von={lbound}, bis={ubound}: {error}"
 #: meerk40t/kernel/kernel.py:3802
 msgid "Please provide a command to loop."
 msgstr "Bitte geben Sie einen zu wiederholenden Befehl an"
+
+#: meerk40t/core/planner.py:460
+msgid "List all available plans"
+msgstr "Alle verfügbaren Pläne auflisten"
+
+#: meerk40t/core/planner.py:466
+msgid "No plans available."
+msgstr "Keine Pläne verfügbar."
+
+#: meerk40t/core/planner.py:468
+msgid "Available plans:"
+msgstr "Verfügbare Pläne:"
+
+#: meerk40t/core/planner.py:871
+msgid "plan<?> finish"
+msgstr "plan<?> finish"
+
+#: meerk40t/gui/laserpanel.py:800
+msgid "List of prepared cutplans"
+msgstr "Liste der vorbereiteten Schnittpläne"
+
+#: meerk40t/gui/laserpanel.py:807
+msgid "Clear selected plan"
+msgstr "Ausgewählten Plan löschen"
+
+#: meerk40t/gui/laserpanel.py:809
+msgid "Update selected plan"
+msgstr "Ausgewählten Plan aktualisieren"
+
+#: meerk40t/gui/laserpanel.py:811
+msgid "Export selected plan"
+msgstr "Ausgewählten Plan exportieren"
+
+#: meerk40t/gui/laserpanel.py:813
+msgid "Spool selected plan"
+msgstr "Ausgewählten Plan in die Warteschlange stellen"
+
+#: meerk40t/gui/laserpanel.py:863
+msgid "{amount} items"
+msgstr "{amount} Elemente"
+
+#: meerk40t/gui/laserpanel.py:894
+msgid "No items to spool"
+msgstr "Keine Elemente zum Spoolen"
+
+#: meerk40t/gui/laserpanel.py:894
+msgid "Spool Plan"
+msgstr "Plan spulen"
+
+#: meerk40t/gui/laserpanel.py:966
+msgid "Update (background)"
+msgstr "Aktualisieren (Hintergrund)"
+
+#: meerk40t/gui/thread_info.py:23 meerk40t/gui/thread_info.py:186
+msgid "Tasks"
+msgstr "Aufgaben"
+
+#: meerk40t/gui/thread_info.py:30
+msgid "Opens the tasks window with all background task information"
+msgstr ""
+"Öffnet das Aufgabenfenster mit allen Hintergrundaufgaben-Informationen"
+
+#: meerk40t/gui/thread_info.py:46
+msgid ""
+"Background Tasks are preparatory jobs issued with the 'threaded' command,\n"
+"like burn preparation and others."
+msgstr ""
+"Hintergrundaufgaben sind vorbereitende Jobs, die mit dem Befehl 'threaded' ausgeführt werden,\n"
+"wie z.B. Brennvorbereitung und andere."
+
+#: meerk40t/gui/thread_info.py:56
+msgid "List of background tasks"
+msgstr "Liste der Hintergrundaufgaben"
+
+#: meerk40t/gui/thread_info.py:59
+msgid "Task"
+msgstr "Aufgabe"
+
+#: meerk40t/gui/thread_info.py:95
+msgid "Show System Tasks"
+msgstr "Systemaufgaben anzeigen"
+
+#: meerk40t/gui/thread_info.py:170
+msgid "Background Tasks"
+msgstr "Hintergrundaufgaben"
+
+#: meerk40t/gui/thread_info.py:191
+msgid "Opens the window with all background task information"
+msgstr "Öffnet das Fenster mit allen Hintergrundaufgaben-Informationen"
+
+#: meerk40t/kernel/kernel.py:2780
+msgid "dead"
+msgstr "beendet"

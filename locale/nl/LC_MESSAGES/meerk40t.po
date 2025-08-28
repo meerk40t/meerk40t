@@ -23783,3 +23783,95 @@ msgstr "Ongeldige waarden voor van={lbound}, tot={ubound}: {error}"
 #: meerk40t/kernel/kernel.py:3802
 msgid "Please provide a command to loop."
 msgstr "Geef een commando op om te herhalen."
+
+#: meerk40t/core/planner.py:460
+msgid "List all available plans"
+msgstr "Alle beschikbare plannen weergeven"
+
+#: meerk40t/core/planner.py:466
+msgid "No plans available."
+msgstr "Geen plannen beschikbaar."
+
+#: meerk40t/core/planner.py:468
+msgid "Available plans:"
+msgstr "Beschikbare plannen:"
+
+#: meerk40t/core/planner.py:871
+msgid "plan<?> finish"
+msgstr "plan<?> finish"
+
+#: meerk40t/gui/laserpanel.py:800
+msgid "List of prepared cutplans"
+msgstr "Lijst van voorbereide snijplannen"
+
+#: meerk40t/gui/laserpanel.py:807
+msgid "Clear selected plan"
+msgstr "Geselecteerd plan wissen"
+
+#: meerk40t/gui/laserpanel.py:809
+msgid "Update selected plan"
+msgstr "Geselecteerd plan bijwerken"
+
+#: meerk40t/gui/laserpanel.py:811
+msgid "Export selected plan"
+msgstr "Geselecteerd plan exporteren"
+
+#: meerk40t/gui/laserpanel.py:813
+msgid "Spool selected plan"
+msgstr "Geselecteerd plan in wachtrij plaatsen"
+
+#: meerk40t/gui/laserpanel.py:863
+msgid "{amount} items"
+msgstr "{amount} items"
+
+#: meerk40t/gui/laserpanel.py:894
+msgid "No items to spool"
+msgstr "Geen items om in de wachtrij te plaatsen"
+
+#: meerk40t/gui/laserpanel.py:894
+msgid "Spool Plan"
+msgstr "Plan in wachtrij plaatsen"
+
+#: meerk40t/gui/laserpanel.py:966
+msgid "Update (background)"
+msgstr "Bijwerken (op de achtergrond)"
+
+#: meerk40t/gui/thread_info.py:23 meerk40t/gui/thread_info.py:186
+msgid "Tasks"
+msgstr "Taken"
+
+#: meerk40t/gui/thread_info.py:30
+msgid "Opens the tasks window with all background task information"
+msgstr "Opent het takenvenster met alle achtergrondtaakinformatie"
+
+#: meerk40t/gui/thread_info.py:46
+msgid ""
+"Background Tasks are preparatory jobs issued with the 'threaded' command,\n"
+"like burn preparation and others."
+msgstr ""
+"Achtergrondtaken zijn voorbereidende taken die worden uitgevoerd met het 'threaded' commando,\n"
+"bijvoorbeeld brandvoorbereiding en andere."
+
+#: meerk40t/gui/thread_info.py:56
+msgid "List of background tasks"
+msgstr "Lijst van achtergrondtaken"
+
+#: meerk40t/gui/thread_info.py:59
+msgid "Task"
+msgstr "Taak"
+
+#: meerk40t/gui/thread_info.py:95
+msgid "Show System Tasks"
+msgstr "Systeemtaken weergeven"
+
+#: meerk40t/gui/thread_info.py:170
+msgid "Background Tasks"
+msgstr "Achtergrondtaken"
+
+#: meerk40t/gui/thread_info.py:191
+msgid "Opens the window with all background task information"
+msgstr "Opent het venster met alle achtergrondtaakinformatie"
+
+#: meerk40t/kernel/kernel.py:2780
+msgid "dead"
+msgstr "gestopt"
