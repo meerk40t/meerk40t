@@ -425,7 +425,7 @@ class Planner(Service):
         self._states = {}  # contains all states
         self._default_plan = "0"
         self.do_optimization = True
-        self._plan_lock = threading.Lock()
+        self._plan_lock = threading.RLock()
 
     def length(self, v):
         return float(Length(v))
@@ -1004,7 +1004,6 @@ class Planner(Service):
                 last = candidate
                 candidate = f"z{index}"
                 index += 1
-        # print(f"Retrieved: Last: {last} New: {candidate}")
         return last, candidate
 
     def update_stage(self, plan_name, stage, noset: bool = False):
