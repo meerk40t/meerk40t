@@ -1,5 +1,6 @@
 import threading
 from copy import copy
+from time import time
 
 from meerk40t.kernel import Service
 
@@ -997,6 +998,7 @@ class Planner(Service):
         Finds and returns a unique plan name that can be reused as work as has been done on it
         """
         last = None
+        last_time = 0
         with self._plan_lock:
             for candidate in self._plan:
                 plan = self._plan[candidate]
@@ -1005,8 +1007,11 @@ class Planner(Service):
                     or len(plan.plan) == 0
                 ):
                     continue
-                last = candidate
-                break
+                # Make sure we take the most recent
+                t = plan.get(STAGE_PLAN_FINISHED, 0)
+                if t > last_time:
+                    last_time = t
+                    last = candidate
         return last
 
     def get_free_plan(self):
@@ -1037,11 +1042,11 @@ class Planner(Service):
         with self._plan_lock:
             if stage == STAGE_PLAN_CLEAR:
                 # If we clear, we remove all other stages.
-                self._states[plan_name] = {STAGE_PLAN_CLEAR: True}
+                self._states[plan_name] = {STAGE_PLAN_CLEAR: time()}
             else:
                 # Extend the dictionary
                 d = dict(self._states[plan_name])
-                d[stage] = True
+                d[stage] = time()
                 self._states[plan_name] = d
         self.signal("plan", plan_name, stage)
 
