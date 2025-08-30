@@ -139,6 +139,14 @@ class Button:
         self.default_width = int(self.max_size / 2)
         self.icon_size = self.default_width
 
+        # Button drawing cache for static visual states
+        self._drawing_cache = {}  # Cache bitmaps by (state, size) key
+        self._last_position = None
+        self._last_enabled = None
+        self._last_visible = None
+        self._last_toggle = None
+        self._last_icon_size = None
+
         self.set_aspect(**description)
         self.apply_enable_rules()
 
@@ -209,11 +217,6 @@ class Button:
         self.rule_visible = rule_visible
         self.multi_autoexec = multi_autoexec
 
-        # Button drawing cache for static visual states
-        self._drawing_cache = {}  # Cache bitmaps by (state, size) key
-        self._last_position = None
-        self._last_enabled = None
-        self._last_visible = None
         if object is not None:
             self.object = object
         else:
@@ -229,7 +232,12 @@ class Button:
             point_size = self.min_size
         if point_size > self.max_size:
             point_size = self.max_size
-        self.icon_size = int(point_size)
+
+        new_icon_size = int(point_size)
+        if hasattr(self, "icon_size") and self.icon_size != new_icon_size:
+            self.invalidate_drawing_cache()  # Cache invalidation when icon size changes
+        self.icon_size = new_icon_size
+
         edge = int(point_size / 25.0) + 1
         key = str(self.icon_size)
 
@@ -337,22 +345,14 @@ class Button:
         """Invalidate drawing cache when button visual state changes."""
         self._drawing_cache.clear()
 
-    def get_cache_key(self):
-        """Generate cache key based on button visual state."""
-        return (
-            f"{self.label}_{self.enabled}_{self.visible}_{self.toggle}_{self.position}"
-        )
-
-    def invalidate_cache(self):
-        """Public method to invalidate cache - alias for invalidate_drawing_cache."""
-        self.invalidate_drawing_cache()
-
     def is_drawing_cache_valid(self):
         """Check if current button visual state matches cached state."""
         return (
             self._last_position == self.position
             and self._last_enabled == self.enabled
             and self._last_visible == self.visible
+            and self._last_toggle == self.toggle
+            and self._last_icon_size == self.icon_size
         )
 
     def update_cached_state(self):
@@ -360,6 +360,8 @@ class Button:
         self._last_position = self.position
         self._last_enabled = self.enabled
         self._last_visible = self.visible
+        self._last_toggle = self.toggle
+        self._last_icon_size = self.icon_size
 
     def get_cached_drawing(self, cache_key):
         """Get cached button drawing if available and still valid."""
@@ -649,7 +651,9 @@ class Button:
         @param toggle_state:
         @return:
         """
-        self.toggle = toggle_state
+        if self.toggle != toggle_state:
+            self.toggle = toggle_state
+            self.invalidate_drawing_cache()  # Cache invalidation when toggle changes
         if toggle_state:
             self._restore_button_aspect(self.state_pressed)
         else:
@@ -1152,7 +1156,11 @@ class RibbonBarPanel(wx.Control):
         return self._ribbon_buffer
 
     def toggle_show_labels(self, v):
-        self.art.show_labels = v
+        if self.art.show_labels != v:
+            self.art.show_labels = v
+            # Invalidate all button caches when show_labels changes
+            for button in self._all_buttons():
+                button.invalidate_drawing_cache()
         self.modified()
 
     def _overflow_at_position(self, pos):
@@ -1843,6 +1851,91 @@ class Art:
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
+    def _render_button_content(
+        self,
+        dc,
+        button,
+        x,
+        y,
+        w,
+        h,
+        bitmap,
+        bitmap_width,
+        bitmap_height,
+        show_text,
+        label_text,
+        font,
+        ptsize,
+        text_edge,
+    ):
+        """
+        Helper method to render button content. This is shared between direct rendering and caching.
+
+        @param dc: Device context to draw to
+        @param button: Button to render
+        @param x, y: Top-left position (0,0 for cache bitmap)
+        @param w, h: Button dimensions
+        @param bitmap: Icon bitmap to draw
+        @param bitmap_width, bitmap_height: Icon dimensions
+        @param show_text: Whether to show text labels
+        @param label_text: Text labels to render
+        @param font: Font to use for text
+        @param ptsize: Font point size
+        @param text_edge: Text edge buffer
+        """
+        # Set up drawing context
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.Pen(self.button_face, 1))  # Subtle border matching button face
+        dc.SetTextForeground(self.text_color)
+        if not button.enabled:
+            dc.SetBrush(wx.Brush(self.inactive_background))
+            dc.SetPen(
+                wx.Pen(self.inactive_background, 1)
+            )  # Subtle border matching background
+            dc.SetTextForeground(self.text_color_disabled)
+        if button.toggle:
+            dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetPen(wx.Pen(self.black_color))
+        if self.hover_button is button and self.hover_dropdown is None:
+            dc.SetBrush(wx.Brush(self.button_face_hover))
+            dc.SetPen(wx.Pen(self.black_color))
+
+        # Draw background
+        dc.DrawRoundedRectangle(int(x), int(y), w, h, self.rounded_radius)
+
+        # Draw icon (centered in button area)
+        icon_x = int(x + (w - bitmap_width) / 2)
+        icon_y = int(y)
+        dc.DrawBitmap(bitmap, icon_x, icon_y)
+
+        # Draw text if needed
+        if show_text and font is not None:
+            text_y = y + bitmap_height + text_edge
+            dc.SetFont(font)
+            i = 0
+            while i < len(label_text):
+                word = label_text[i]
+                cont = True
+                while cont:
+                    cont = False
+                    if i < len(label_text) - 1:
+                        nextword = label_text[i + 1]
+                        test = word + " " + nextword
+                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
+                        if tw < w:
+                            word = test
+                            i += 1
+                            cont = True
+
+                text_width, text_height = self.get_cached_text_extent(dc, word, ptsize)
+                dc.DrawText(
+                    word,
+                    int(x + (w / 2.0) - (text_width / 2)),  # Center in button width
+                    int(text_y),
+                )
+                text_y += text_height
+                i += 1
+
     def _paint_button(self, dc: wx.DC, button: Button):
         """
         Paint the given button on the screen with caching support.
@@ -1857,6 +1950,18 @@ class Art:
         x, y, x1, y1 = button.position
         w = int(round(x1 - x))
         h = int(round(y1 - y))
+
+        # Define practical minimum button size
+        MIN_BUTTON_SIZE = 16
+
+        if w < MIN_BUTTON_SIZE or h < MIN_BUTTON_SIZE:
+            # Optionally log a warning for extremely small buttons
+            import logging
+
+            logging.warning(
+                f"Skipping rendering of button '{getattr(button, 'label', repr(button))}' due to small size ({w}x{h})"
+            )
+            return
 
         # Ensure minimum size to avoid zero-size bitmaps
         w = max(1, w)
@@ -1883,24 +1988,7 @@ class Art:
                 self._paint_dropdown(dc, button.dropdown)
             return
 
-        # No cached version - render directly to provided DC (original behavior)
-        # Set up drawing context
-        dc.SetBrush(wx.Brush(self.button_face))
-        dc.SetPen(wx.Pen(self.button_face, 1))  # Subtle border matching button face
-        dc.SetTextForeground(self.text_color)
-        if not button.enabled:
-            dc.SetBrush(wx.Brush(self.inactive_background))
-            dc.SetPen(
-                wx.Pen(self.inactive_background, 1)
-            )  # Subtle border matching background
-            dc.SetTextForeground(self.text_color_disabled)
-        if button.toggle:
-            dc.SetBrush(wx.Brush(self.highlight))
-            dc.SetPen(wx.Pen(self.black_color))
-        if self.hover_button is button and self.hover_dropdown is None:
-            dc.SetBrush(wx.Brush(self.button_face_hover))
-            dc.SetPen(wx.Pen(self.black_color))
-
+        # No cached version - calculate text layout and render using helper
         start_y = y
         img_h = h
         # do we have text? if yes let's reduce the available space in y
@@ -1915,20 +2003,12 @@ class Art:
         else:
             bitmap = button.bitmap_disabled
 
-        # Draw background - use full allocated button space with proper edge handling
-        dc.DrawRoundedRectangle(int(x), int(y), w, h, self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
         bs = min(bitmap_width, bitmap_height)
         ptsize = self.get_best_font_size(bs)
         # Use cached font instead of creating new one
         font = self.get_cached_font(ptsize)
 
-        # Draw icon at button position - center within full button area
-        icon_x = int(x + (w - bitmap_width) / 2)
-        icon_y = int(y)
-        dc.DrawBitmap(bitmap, icon_x, icon_y)
-
-        button_y = y + bitmap_height
         text_edge = self.bitmap_text_buffer
         if button.label and self.show_labels:
             show_text = True
@@ -1942,7 +2022,7 @@ class Art:
                 total_text_height = 0
                 # Use cached font instead of creating new one each time
                 font = self.get_cached_font(ptsize)
-                test_y = button_y + text_edge
+                test_y = y + bitmap_height + text_edge
                 dc.SetFont(font)
                 wouldfit = True
                 i = 0
@@ -1979,6 +2059,11 @@ class Art:
                     i += 1
 
                 if wouldfit:
+                    # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
+                    text_edge = min(
+                        max(0, start_y + h - (y + bitmap_height) - total_text_height),
+                        self.bitmap_text_buffer,
+                    )
                     break
 
                 ptsize -= 2
@@ -1990,45 +2075,24 @@ class Art:
         else:
             show_text = False
             label_text = []
-        if show_text:
-            # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
-            text_edge = min(
-                max(0, start_y + h - button_y - total_text_height),
-                self.bitmap_text_buffer,
-            )
 
-            button_y += text_edge
-            dc.SetFont(font)
-            i = 0
-            while i < len(label_text):
-                # We know by definition that all single words
-                # are okay for drawing, now we check whether
-                # we can draw multiple in one line
-                word = label_text[i]
-                cont = True
-                while cont:
-                    cont = False
-                    if i < len(label_text) - 1:
-                        nextword = label_text[i + 1]
-                        test = word + " " + nextword
-                        # Use cached text extent
-                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
-                        if tw < w:
-                            word = test
-                            i += 1
-                            cont = True
-
-                # Use cached text extent
-                text_width, text_height = self.get_cached_text_extent(dc, word, ptsize)
-                dc.DrawText(
-                    word,
-                    int(
-                        x + (w / 2.0) - (text_width / 2)
-                    ),  # Center in full button width
-                    int(button_y),
-                )
-                button_y += text_height
-                i += 1
+        # Render button content using helper method
+        self._render_button_content(
+            dc,
+            button,
+            x,
+            y,
+            w,
+            h,
+            bitmap,
+            bitmap_width,
+            bitmap_height,
+            show_text,
+            label_text,
+            font,
+            ptsize,
+            text_edge,
+        )
 
         # Now create a cached version for future use
         # Only cache if the button is in a stable state (not being hovered or actively changing)
@@ -2038,62 +2102,30 @@ class Art:
             temp_dc.SelectObject(temp_bitmap)
 
             # IMPORTANT: Clear the bitmap background first to avoid garbage pixels
-            temp_dc.SetBackground(wx.Brush(self.ribbon_background))
+            # Ensure cached bitmap background matches current rendering context
+            current_bg = getattr(
+                self.parent, "GetBackgroundColour", lambda: self.ribbon_background
+            )()
+            temp_dc.SetBackground(wx.Brush(current_bg))
             temp_dc.Clear()
 
-            # Render the same content to the cache bitmap
-            temp_dc.SetBrush(wx.Brush(self.button_face))
-            temp_dc.SetPen(
-                wx.Pen(self.button_face, 1)
-            )  # Subtle border matching button face
-            temp_dc.SetTextForeground(self.text_color)
-            if not button.enabled:
-                temp_dc.SetBrush(wx.Brush(self.inactive_background))
-                temp_dc.SetPen(
-                    wx.Pen(self.inactive_background, 1)
-                )  # Subtle border matching background
-                temp_dc.SetTextForeground(self.text_color_disabled)
-            if button.toggle:
-                temp_dc.SetBrush(wx.Brush(self.highlight))
-                temp_dc.SetPen(wx.Pen(self.black_color))
-
-            # Draw background to cache - use full button area
-            temp_dc.DrawRoundedRectangle(0, 0, w, h, self.rounded_radius)
-
-            # Draw icon to cache (centered in full area)
-            icon_cache_x = (w - bitmap_width) // 2
-            icon_cache_y = 0
-            temp_dc.DrawBitmap(bitmap, icon_cache_x, icon_cache_y)
-
-            # Draw text to cache if needed
-            if show_text and font is not None:
-                temp_y = bitmap_height + text_edge
-                temp_dc.SetFont(font)
-                i = 0
-                while i < len(label_text):
-                    word = label_text[i]
-                    cont = True
-                    while cont:
-                        cont = False
-                        if i < len(label_text) - 1:
-                            nextword = label_text[i + 1]
-                            test = word + " " + nextword
-                            tw, th = self.get_cached_text_extent(temp_dc, test, ptsize)
-                            if tw < w:  # Use full cache width
-                                word = test
-                                i += 1
-                                cont = True
-
-                    text_width, text_height = self.get_cached_text_extent(
-                        temp_dc, word, ptsize
-                    )
-                    temp_dc.DrawText(
-                        word,
-                        int((w / 2.0) - (text_width / 2)),  # Center in full cache width
-                        int(temp_y),
-                    )
-                    temp_y += text_height
-                    i += 1
+            # Render the same content to the cache bitmap using helper method
+            self._render_button_content(
+                temp_dc,
+                button,
+                0,
+                0,
+                w,
+                h,
+                bitmap,
+                bitmap_width,
+                bitmap_height,
+                show_text,
+                label_text,
+                font,
+                ptsize,
+                text_edge,
+            )
 
             temp_dc.SelectObject(wx.NullBitmap)
             del temp_dc
