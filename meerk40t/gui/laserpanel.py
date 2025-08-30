@@ -747,9 +747,7 @@ class LaserPanel(wx.Panel):
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
         param = "0"
-        last_plan = self.context.laserpane_plan
-        if not last_plan:
-            last_plan = self.context.planner.get_last_plan()
+        last_plan = self.context.laserpane_plan or self.context.planner.get_last_plan()
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
             plan = last_plan
         else:

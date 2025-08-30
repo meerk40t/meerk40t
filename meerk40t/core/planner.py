@@ -992,7 +992,7 @@ class Planner(Service):
         Finds and returns a unique plan name that can be reused as work as has been done on it
         """
         last = None
-        with self, _plan_lock:
+        with self._plan_lock:
             for candidate in self._plan:
                 plan = self._plan[candidate]
                 state, info = self.get_plan_stage(candidate)
