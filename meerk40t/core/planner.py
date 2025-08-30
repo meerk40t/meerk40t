@@ -441,7 +441,7 @@ class Planner(Service):
             return self._plan[plan_name]
         except KeyError:
             self._plan[plan_name] = CutPlan(plan_name, self)
-            self._states[plan_name] = STAGE_PLAN_INIT
+            self._states[plan_name] = {STAGE_PLAN_INIT: True}
         return self._plan[plan_name]
 
     def get_or_make_plan(self, plan_name):
@@ -512,7 +512,12 @@ class Planner(Service):
                     for i, plan_name in enumerate(cutplan.name):
                         channel(f"{i + 1}: {plan_name}")
                 channel(_("----------"))
-                channel(_("Plan {plan}:").format(plan=self._default_plan))
+                state, info = self.get_plan_stage(self._default_plan)
+                channel(
+                    _("Plan {plan}: {state}").format(
+                        plan=self._default_plan, state=info
+                    )
+                )
                 for i, op_name in enumerate(cutplan.plan):
                     channel(f"{i + 1}: {op_name}")
                 channel(_("Commands {plan}:").format(plan=self._default_plan))
@@ -743,7 +748,7 @@ class Planner(Service):
                         data.plan.insert(index, cmd)
                     except ValueError:
                         channel(_("Invalid index for command insert."))
-                self.update_stage(data.name, STAGE_PLAN_INFO, noset=True)
+                self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
         @self.console_command(
@@ -995,8 +1000,10 @@ class Planner(Service):
         with self._plan_lock:
             for candidate in self._plan:
                 plan = self._plan[candidate]
-                state, info = self.get_plan_stage(candidate)
-                if state != STAGE_PLAN_FINISHED or len(plan.plan) == 0:
+                if (
+                    STAGE_PLAN_FINISHED not in self._states[candidate]
+                    or len(plan.plan) == 0
+                ):
                     continue
                 last = candidate
                 break
@@ -1016,36 +1023,44 @@ class Planner(Service):
                 if candidate not in self._plan:
                     plan = self._get_or_make_plan(candidate)
                     break
-                state, info = self.get_plan_stage(candidate)
-                if state == STAGE_PLAN_FINISHED:
+                # We take this if we finished the plan
+                if STAGE_PLAN_FINISHED in self._states[candidate]:
                     break
                 candidate = f"z{index}"
                 index += 1
         return candidate
 
-    def update_stage(self, plan_name, stage, noset: bool = False):
+    def update_stage(self, plan_name, stage):
         if plan_name not in self._states:
             self.console(f"Couldn't update plan {plan_name}: not found")
             return
-        if not noset:
-            with self._plan_lock:
-                self._states[plan_name] = stage
+        with self._plan_lock:
+            if stage == STAGE_PLAN_CLEAR:
+                # If we clear, we remove all other stages.
+                self._states[plan_name] = {STAGE_PLAN_CLEAR: True}
+            else:
+                # Extend the dictionary
+                d = dict(self._states[plan_name])
+                d[stage] = True
+                self._states[plan_name] = d
         self.signal("plan", plan_name, stage)
 
     def get_plan_stage(self, plan_name):
         descriptions = {
-            STAGE_PLAN_INIT: "Initialized",
-            STAGE_PLAN_CLEAR: "Cleared",
-            STAGE_PLAN_COPY: "Copied",
-            STAGE_PLAN_PREPROCESSED: "Pre-Processed",
-            STAGE_PLAN_PREOPTIMIZED: "Pre-Optimized",
-            STAGE_PLAN_OPTIMIZED: "Optimized",
-            STAGE_PLAN_INFO: "Information",
-            STAGE_PLAN_VALIDATED: "Validated",
-            STAGE_PLAN_GEOMETRY: "Geometry",
-            STAGE_PLAN_BLOB: "Laser Blob",
-            STAGE_PLAN_FINISHED: "Finished",
+            STAGE_PLAN_INIT: "Init",
+            STAGE_PLAN_CLEAR: "Clear",
+            STAGE_PLAN_COPY: "Copy",
+            STAGE_PLAN_PREPROCESSED: "Pre-Proc",
+            STAGE_PLAN_PREOPTIMIZED: "Pre-Opt",
+            STAGE_PLAN_OPTIMIZED: "Opt",
+            STAGE_PLAN_INFO: "Info",
+            STAGE_PLAN_VALIDATED: "Valid",
+            STAGE_PLAN_GEOMETRY: "Geom",
+            STAGE_PLAN_BLOB: "Blob",
+            STAGE_PLAN_FINISHED: "Done",
         }
         state = self._states.get(plan_name, None)
-        info = descriptions.get(state, "Unknown")
+        info = ", ".join(
+            v for k, v in descriptions.items() if k in self._states[plan_name]
+        )
         return state, info
