@@ -425,7 +425,7 @@ class Planner(Service):
         self._states = {}  # contains all states
         self._default_plan = "0"
         self.do_optimization = True
-        self._plan_lock = threading.RLock()
+        self._plan_lock = threading.Lock()
 
     def length(self, v):
         return float(Length(v))
@@ -436,17 +436,21 @@ class Planner(Service):
     def length_y(self, v):
         return float(Length(v, relative_length=self.device.view.height))
 
+    def _get_or_make_plan(self, plan_name):
+        try:
+            return self._plan[plan_name]
+        except KeyError:
+            self._plan[plan_name] = CutPlan(plan_name, self)
+            self._states[plan_name] = STAGE_PLAN_INIT
+        return self._plan[plan_name]
+
     def get_or_make_plan(self, plan_name):
         """
         Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
         """
-        try:
-            return self._plan[plan_name]
-        except KeyError:
-            with self._plan_lock:
-                self._plan[plan_name] = CutPlan(plan_name, self)
-                self._states[plan_name] = STAGE_PLAN_INIT
-            return self._plan[plan_name]
+        with self._plan_lock:
+            plan = self._get_or_make_plan(plan_name)
+        return plan
 
     @property
     def default_plan(self):
@@ -983,6 +987,21 @@ class Planner(Service):
             return False
         return len(self._plan[plan_name].plan) > 0
 
+    def get_last_plan(self):
+        """
+        Finds and returns a unique plan name that can be reused as work as has been done on it
+        """
+        last = None
+        with self, _plan_lock:
+            for candidate in self._plan:
+                plan = self._plan[candidate]
+                state, info = self.get_plan_stage(candidate)
+                if state != STAGE_PLAN_FINISHED or len(plan.plan) == 0:
+                    continue
+                last = candidate
+                break
+        return last
+
     def get_free_plan(self):
         """
         Finds and returns a unique plan name not currently in use.
@@ -991,20 +1010,18 @@ class Planner(Service):
             tuple: A tuple containing the last checked plan name and the new unique plan name.
         """
         candidate = "z"
-        last = None
         index = 1
         with self._plan_lock:
             while True:
                 if candidate not in self._plan:
-                    plan = self.get_or_make_plan(candidate)
+                    plan = self._get_or_make_plan(candidate)
                     break
                 state, info = self.get_plan_stage(candidate)
                 if state == STAGE_PLAN_FINISHED:
                     break
-                last = candidate
                 candidate = f"z{index}"
                 index += 1
-        return last, candidate
+        return candidate
 
     def update_stage(self, plan_name, stage, noset: bool = False):
         if plan_name not in self._states:

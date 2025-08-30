@@ -1841,10 +1841,11 @@ class MeerK40t(MWindow):
             busy = kernel.busyinfo
             context = kernel.root
             opt = kernel.planner.do_optimization
-            last_plan, new_plan = kernel.planner.get_free_plan()
+            last_plan = kernel.planner.get_last_plan()
             if last_plan is not None and hold:
                 context(f"plan{last_plan} spool\n")
             else:
+                new_plan = kernel.planner.get_free_plan()
                 if not prefer_threaded:
                     busy.start(msg=_("Preparing Laserjob..."))
                 if opt:
@@ -1852,7 +1853,9 @@ class MeerK40t(MWindow):
                         f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
                     )
                 else:
-                    context(f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n")
+                    context(
+                        f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n"
+                    )
                 if not prefer_threaded:
                     busy.end()
             if context.auto_spooler:

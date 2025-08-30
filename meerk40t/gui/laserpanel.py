@@ -29,8 +29,8 @@ from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
     wxComboBox,
-    wxStaticText,
     wxListCtrl,
+    wxStaticText,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -713,13 +713,15 @@ class LaserPanel(wx.Panel):
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
             self.context(f"plan{last_plan} spool\n")
         elif self.checkbox_optimize.GetValue():
-            last_plan, new_plan = self.context.planner.get_free_plan()
+            new_plan = self.context.planner.get_free_plan()
             self.context(
                 f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
             )
         else:
-            last_plan, new_plan = self.context.planner.get_free_plan()
-            self.context(f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n")
+            new_plan = self.context.planner.get_free_plan()
+            self.context(
+                f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n"
+            )
         self.armed = False
         self.check_laser_arm()
         if self.context.auto_spooler:
@@ -744,14 +746,14 @@ class LaserPanel(wx.Panel):
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
-        last_plan, new_plan = self.context.planner.get_free_plan()
         param = "0"
         last_plan = self.context.laserpane_plan
+        if not last_plan:
+            last_plan = self.context.planner.get_last_plan()
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
             plan = last_plan
         else:
-            last_plan, new_plan = self.context.planner.get_free_plan()
-            plan = new_plan
+            plan = self.context.planner.get_free_plan()
             if self.checkbox_optimize.GetValue():
                 self.context(
                     f"plan{plan} clear copy preprocess validate blob preopt optimize finish\n"
