@@ -416,45 +416,69 @@ def plugin(kernel, lifecycle=None):
 
 class Planner(Service):
     """
-    Planner is a service that adds 'plan' commands to the kernel. These are text based versions of the job preview and
-    should be permitted to control the job creation process.
+    Planner is a service that manages cut planning and job creation for the kernel.
+    It provides thread-safe access to cut plans, tracks plan states and stages, and exposes
+    a set of console commands for manipulating plans, operations, and job execution.
+    Plans are tracked with multiple stages (init, copy, preprocess, optimize, etc.),
+    and the planner ensures that plan creation and modification are safe for concurrent use.
     """
 
     def __init__(self, kernel, *args, **kwargs):
+        """
+        Initialize the Planner service.
+        Sets up plan and state tracking, default plan, and thread lock for safe concurrent access.
+        """
         Service.__init__(self, kernel, "planner")
-        self._plan = {}  # contains all cutplans
-        self._states = {}  # contains all states
+        self._plan = {}  # contains all cutplans, keyed by plan name
+        self._states = {}  # contains all plan state dictionaries, keyed by plan name
         self._default_plan = "0"
         self.do_optimization = True
         self._plan_lock = threading.Lock()
 
     def length(self, v):
+        """
+        Convert a value to a float using the Length class (device-independent units).
+        """
         return float(Length(v))
 
     def length_x(self, v):
+        """
+        Convert a value to a float relative to the device's view width.
+        """
         return float(Length(v, relative_length=self.device.view.width))
 
     def length_y(self, v):
+        """
+        Convert a value to a float relative to the device's view height.
+        """
         return float(Length(v, relative_length=self.device.view.height))
 
-    def _get_or_make_plan(self, plan_name):
+    def __get_or_make_plan(self, plan_name):
+        """
+        Internal helper to get an existing plan by name, or create a new one if it does not exist.
+        Initializes the plan's state tracking as well. Thread safety must be handled by the caller.
+        """
         try:
             return self._plan[plan_name]
         except KeyError:
             self._plan[plan_name] = CutPlan(plan_name, self)
-            self._states[plan_name] = {STAGE_PLAN_INIT: True}
+            self._states[plan_name] = {STAGE_PLAN_INIT: time()}
         return self._plan[plan_name]
 
     def get_or_make_plan(self, plan_name):
         """
-        Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
+        Thread-safe method to get or create a plan by name.
+        Returns the CutPlan instance for the given plan name.
         """
         with self._plan_lock:
-            plan = self._get_or_make_plan(plan_name)
+            plan = self.__get_or_make_plan(plan_name)
         return plan
 
     @property
     def default_plan(self):
+        """
+        Returns the default plan (usually plan '0').
+        """
         return self.get_or_make_plan(self._default_plan)
 
     def service_attach(self, *args, **kwargs):
@@ -987,7 +1011,8 @@ class Planner(Service):
 
     def has_content(self, plan_name):
         """
-        Checks if the specified plan has any content.
+        Checks if the specified plan has any content (i.e., non-empty plan list).
+        Returns True if the plan exists and contains at least one operation.
         """
         if plan_name not in self._plan:
             return False
@@ -995,7 +1020,8 @@ class Planner(Service):
 
     def get_last_plan(self):
         """
-        Finds and returns a unique plan name that can be reused as work as has been done on it
+        Finds and returns the most recently finished plan name that has content.
+        Returns the plan name, or None if no such plan exists.
         """
         last = None
         last_time = 0
@@ -1016,17 +1042,16 @@ class Planner(Service):
 
     def get_free_plan(self):
         """
-        Finds and returns a unique plan name not currently in use.
-        This method generates a new plan name by incrementing a counter until an unused name is found.
-        Returns:
-            tuple: A tuple containing the last checked plan name and the new unique plan name.
+        Finds and returns a unique plan name not currently in use or a finished plan that can be reused.
+        This method generates a new plan name by incrementing a counter until an unused or finished name is found.
+        Returns the new unique plan name as a string.
         """
         candidate = "z"
         index = 1
         with self._plan_lock:
             while True:
                 if candidate not in self._plan:
-                    plan = self._get_or_make_plan(candidate)
+                    plan = self.__get_or_make_plan(candidate)
                     break
                 # We take this if we finished the plan
                 if STAGE_PLAN_FINISHED in self._states[candidate]:
@@ -1036,6 +1061,11 @@ class Planner(Service):
         return candidate
 
     def update_stage(self, plan_name, stage):
+        """
+        Updates the stage of a plan, recording the current time for the given stage.
+        If clearing, resets all other stages. Otherwise, adds the new stage to the plan's state dictionary.
+        Emits a 'plan' signal with the plan name and stage.
+        """
         if plan_name not in self._states:
             self.console(f"Couldn't update plan {plan_name}: not found")
             return
@@ -1051,6 +1081,9 @@ class Planner(Service):
         self.signal("plan", plan_name, stage)
 
     def get_plan_stage(self, plan_name):
+        """
+        Returns the current state dictionary and a comma-separated string of all reached stage descriptions for a plan.
+        """
         descriptions = {
             STAGE_PLAN_INIT: "Init",
             STAGE_PLAN_CLEAR: "Clear",
