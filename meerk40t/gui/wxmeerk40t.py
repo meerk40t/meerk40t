@@ -11,7 +11,6 @@ from meerk40t.core.units import Length
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
-from meerk40t.gui.thread_info import ThreadInfo
 
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
@@ -22,6 +21,7 @@ from meerk40t.gui.thread_info import ThreadInfo
 # except ImportError:
 #     pass
 from meerk40t.gui.themes import Themes
+from meerk40t.gui.thread_info import ThreadInfo
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
@@ -256,7 +256,7 @@ class GoPanel(ActionPanel):
             return
 
         self.button_go.Enable(False)
-        last_plan, new_plan = self.context.planner.get_free_plan()
+        new_plan = self.context.planner.get_free_plan()
         prefer_threaded = self.context.setting(bool, "prefer_threaded_mode", True)
         prefix = "threaded " if prefer_threaded else ""
         busy = self.context.kernel.busyinfo
@@ -267,14 +267,10 @@ class GoPanel(ActionPanel):
             f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
         )
         if prefer_threaded:
-            self.context(
-                f"window open JobSpooler\nwindow open ThreadInfo\n"
-            )
+            self.context(f"window open JobSpooler\nwindow open ThreadInfo\n")
         else:
             busy.end()
-            self.context(
-                f"window open JobSpooler\n"
-            )
+            self.context(f"window open JobSpooler\n")
 
         self.button_go.Enable(True)
         # Reset...
@@ -1104,8 +1100,8 @@ class wxMeerK40t(wx.App, Module):
                 register_panel_debugger,
                 register_panel_icon,
                 register_panel_plotter,
-                register_panel_window,
                 register_panel_view,
+                register_panel_window,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
