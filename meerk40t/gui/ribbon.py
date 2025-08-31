@@ -1952,16 +1952,11 @@ class Art:
         h = int(round(y1 - y))
 
         # Define practical minimum button size
-        MIN_BUTTON_SIZE = 16
+        MIN_BUTTON_SIZE = 12
 
-        if w < MIN_BUTTON_SIZE or h < MIN_BUTTON_SIZE:
-            # Optionally log a warning for extremely small buttons
-            import logging
-
-            logging.warning(
-                f"Skipping rendering of button '{getattr(button, 'label', repr(button))}' due to small size ({w}x{h})"
-            )
-            return
+        # if w < MIN_BUTTON_SIZE or h < MIN_BUTTON_SIZE:
+        #     # Optionally log a warning for extremely small buttons
+        #     return
 
         # Ensure minimum size to avoid zero-size bitmaps
         w = max(1, w)
