@@ -423,6 +423,20 @@ class Planner(Service):
     and the planner ensures that plan creation and modification are safe for concurrent use.
     """
 
+    STAGE_DESCRIPTIONS = {
+        STAGE_PLAN_INIT: "Init",
+        STAGE_PLAN_CLEAR: "Clear",
+        STAGE_PLAN_COPY: "Copy",
+        STAGE_PLAN_PREPROCESSED: "Pre-Proc",
+        STAGE_PLAN_PREOPTIMIZED: "Pre-Opt",
+        STAGE_PLAN_OPTIMIZED: "Opt",
+        STAGE_PLAN_INFO: "Info",
+        STAGE_PLAN_VALIDATED: "Valid",
+        STAGE_PLAN_GEOMETRY: "Geom",
+        STAGE_PLAN_BLOB: "Blob",
+        STAGE_PLAN_FINISHED: "Done",
+    }
+
     def __init__(self, kernel, *args, **kwargs):
         """
         Initialize the Planner service.
@@ -1071,34 +1085,17 @@ class Planner(Service):
             return
         with self._plan_lock:
             if stage == STAGE_PLAN_CLEAR:
-                # If we clear, we remove all other stages.
-                self._states[plan_name] = {STAGE_PLAN_CLEAR: time()}
-            else:
-                # Extend the dictionary
-                d = dict(self._states[plan_name])
-                d[stage] = time()
-                self._states[plan_name] = d
+                self._states[plan_name].clear()
+            self._states[plan_name][stage] = time()
         self.signal("plan", plan_name, stage)
 
     def get_plan_stage(self, plan_name):
         """
-        Returns the current state dictionary and a comma-separated string of all reached stage descriptions for a plan.
+        Returns the current state dictionary and a comma-separated string of all reached stage descriptions for a plan (ordered desc)
         """
-        descriptions = {
-            STAGE_PLAN_INIT: "Init",
-            STAGE_PLAN_CLEAR: "Clear",
-            STAGE_PLAN_COPY: "Copy",
-            STAGE_PLAN_PREPROCESSED: "Pre-Proc",
-            STAGE_PLAN_PREOPTIMIZED: "Pre-Opt",
-            STAGE_PLAN_OPTIMIZED: "Opt",
-            STAGE_PLAN_INFO: "Info",
-            STAGE_PLAN_VALIDATED: "Valid",
-            STAGE_PLAN_GEOMETRY: "Geom",
-            STAGE_PLAN_BLOB: "Blob",
-            STAGE_PLAN_FINISHED: "Done",
-        }
-        state = self._states.get(plan_name, None)
-        info = ", ".join(
-            v for k, v in descriptions.items() if k in self._states[plan_name]
-        )
-        return state, info
+        states = self._states.get(plan_name, {})
+        if not states:
+            return None, ""
+        ordered = sorted(states.items(), key=lambda kv: kv[1], reverse=True)
+        info = ", ".join(self.STAGE_DESCRIPTIONS[s] for s, _ in ordered)
+        return states, info
