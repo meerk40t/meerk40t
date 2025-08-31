@@ -397,6 +397,28 @@ class BalorDevice(Service, Status):
                 "tip": _("Speed of the galvo when using the red laser."),
             },
             {
+                "attr": "redlight_delay_dark",
+                "object": self,
+                "default": 10,
+                "type": int,
+                "trailer": "µs",
+                "label": _("Dark"),
+                "tip": _("Delay for dark movement."),
+                # Hint for translation _("Delays")
+                "subsection": "Delays",
+            },
+            {
+                "attr": "redlight_delay_light",
+                "object": self,
+                "default": 10,
+                "type": int,
+                "trailer": "µs",
+                "label": _("Light"),
+                "tip": _("Delay for light movement."),
+                # Hint for translation _("Delays")
+                "subsection": "Delays",
+            },
+            {
                 "attr": "redlight_offset_x",
                 "object": self,
                 "default": "0mm",

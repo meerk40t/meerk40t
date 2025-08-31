@@ -208,8 +208,8 @@ class LiveLightJob:
             con: The connection to the laser controller.
         """
         con.light_mode()
-        delay_dark = self.service.delay_jump_long
-        delay_between = self.service.delay_jump_short
+        delay_dark = self.service.redlight_delay_dark
+        delay_between = self.service.redlight_delay_light
         move = True
         # We need to jump back to the first point
         first = True
