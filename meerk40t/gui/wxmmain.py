@@ -12,7 +12,7 @@ from wx import aui
 
 # from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.gui_mixins import FormatPainter, Warnings
-from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
+from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget, MaterialSelectorWiddget
 from meerk40t.gui.statusbarwidgets.infowidget import (
     BurnProgressPanel,
     InformationWidget,
@@ -663,9 +663,13 @@ class MeerK40t(MWindow):
         )
 
         self.assign_button_panel = DefaultOperationWidget()
+        self.assign_material_panel = MaterialSelectorWiddget()
         # self.assign_option_panel = OperationAssignOptionWidget()
         self.main_statusbar.add_panel_widget(
             self.assign_button_panel, self.idx_assign, "assign", True
+        )
+        self.main_statusbar.add_panel_widget(
+            self.assign_material_panel, self.idx_assign, "matselect", True
         )
         # self.main_statusbar.add_panel_widget(
         #     self.assign_option_panel, self.idx_assign, "assign-options", True

@@ -6,11 +6,127 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import dip_size, wxStaticBitmap
+from meerk40t.gui.wxutils import dip_size, wxStaticBitmap, wxComboBox, wxButton
 
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
+
+class MaterialSelectorWiddget(StatusBarWidget):
+    """
+    Panel to select the material for the current job
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+        self.material_operations = self.load_material_operations()
+        self.thickness_operations = []
+        self.combo_material = wxComboBox(self.parent, wx.ID_ANY, style=wx.CB_READONLY | wx.CB_DROPDOWN)
+        self.combo_material.SetMinSize((75, -1))
+        self.combo_thickness = wxComboBox(self.parent, wx.ID_ANY, style=wx.CB_READONLY | wx.CB_DROPDOWN)
+        self.combo_thickness.SetMinSize((50, -1))
+        self.btn_load = wxButton(self.parent, wx.ID_ANY, _("Load"))
+        self.btn_load.SetToolTip(_("Load material settings from the database"))
+
+        self.combo_material.SetToolTip(_("Select the material for the current job"))
+        self.StartPopulation()
+        self.populate_materials()
+        self.EndPopulation()
+        self.Add(self.combo_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.combo_material.Bind(wx.EVT_COMBOBOX, self.on_combo_material)
+        self.Add(self.combo_thickness, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.btn_load.Bind(wx.EVT_BUTTON, self.on_button)
+        self.Add(self.btn_load, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+    def load_material_operations(self):
+        material_operations = []
+        for material in self.context.elements.op_data.section_set():
+            if material.startswith("previous"):
+                continue
+            opinfo = self.context.elements.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            material_operations.append((material_name, material_thickness, material_title, material))
+        return material_operations
+
+
+    def on_combo_material(self, event):
+        if not self.startup:
+            self.populate_thickness()
+
+    def on_button(self, event):
+        if self.startup or self.combo_thickness.GetSelection() < 0:
+            return
+        material_title = self.thickness_operations[self.combo_thickness.GetSelection()]
+        oplist, opinfo = self.context.elements.load_persistent_op_list(material_title)
+        print(f"Loading material '{material_title}' with {len(oplist) if oplist else 0} operations from database")
+
+        if oplist is not None and len(oplist) > 0:
+            print ("Loaded")
+            self.context.elements.default_operations = list(oplist)
+            self.Signal("default_operations")
+
+    def populate_materials(self):
+        self.StartPopulation()
+        self.combo_material.Clear()        
+        self.combo_thickness.Clear()
+        entries = []
+        for (material_name, material_thickness, material_title, material) in self.material_operations:
+            if material_name not in entries:
+                entries.append(material_name)
+        # Let's sort them
+        entries.sort()
+        self.combo_material.Set(entries)
+
+        self.EndPopulation()
+        if self.combo_material.GetCount() > 0:
+            self.combo_material.SetSelection(0)
+            self.on_combo_material(None)
+
+    def populate_thickness(self):
+        self.combo_thickness.Clear()
+        self.thickness_operations.clear()
+        if self.combo_material.GetSelection() < 0:
+            return
+        material_filter = self.combo_material.GetStringSelection()
+        self.StartPopulation()
+        entries = []
+        for (material_name, material_thickness, material_title, material) in self.material_operations:
+            if material_name == material_filter:
+                desc = material_thickness or "  "
+                desc = f"{desc} - {material_title}"
+                if desc not in entries:
+                    entries.append(desc)
+                    self.thickness_operations.append(material)
+
+        # Let's sort them
+        entries.sort()
+        self.combo_thickness.Set(entries)
+        self.EndPopulation()
+        print (f"Thickness entries: {entries} - for material '{material_filter}' count={self.combo_thickness.GetCount()}")
+        if self.combo_thickness.GetCount() > 0: 
+            self.combo_thickness.SetSelection(0)
+
+    def Signal(self, signal, *args):
+        if signal == "emphasized":
+            self.Enable(self.context.elements.has_emphasis())
+        elif signal == "default_operations":
+            self.material_operations = self.load_material_operations()
+            self.populate_materials()
 
 
 class DefaultOperationWidget(StatusBarWidget):
@@ -239,6 +355,7 @@ class DefaultOperationWidget(StatusBarWidget):
             def handler(*args):
                 elements = self.context.elements
                 oplist, opinfo = elements.load_persistent_op_list(stored_mat)
+                print (f"Loading material '{matname}' with {len(oplist) if oplist else 0} operations from database")
                 if oplist is not None and len(oplist) > 0:
                     elements.default_operations = list(oplist)
                     self.Signal("default_operations")
