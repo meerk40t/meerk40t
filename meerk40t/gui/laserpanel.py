@@ -709,7 +709,7 @@ class LaserPanel(wx.Panel):
 
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
-        last_plan = self.context.laserpane_plan
+        last_plan = self.context.laserpane_plan or self.context.planner.get_last_plan()
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
             self.context(f"plan{last_plan} spool\n")
         elif self.checkbox_optimize.GetValue():
