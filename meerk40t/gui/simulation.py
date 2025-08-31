@@ -2389,15 +2389,20 @@ class Simulation(MWindow):
     def sub_register(kernel):
         def handler(opt):
             optpart = " preopt optimize" if opt else ""
-
+            hold = kernel.root.setting(bool, "laserpane_hold", False)
+            plan_name = (
+                kernel.root.setting(str, "laserpane_plan", "z")
+                or kernel.planner.get_last_plan()
+            )
             busy = kernel.busyinfo
             busy.change(msg=_("Preparing simulation..."))
             busy.start()
-            last_plan, new_plan = kernel.planner.get_free_plan()
-
-            kernel.console(
-                f"plan{new_plan} clear copy preprocess validate blob{optpart} finish\nwindow open Simulation {new_plan}\n"
-            )
+            if not (hold and kernel.planner.has_content(plan_name)):
+                plan_name = kernel.planner.get_free_plan()
+                kernel.console(
+                    f"plan{plan_name} clear copy preprocess validate blob{optpart} finish\n"
+                )
+            kernel.console(f"window open Simulation {plan_name}\n")
             busy.end()
 
         def open_simulator(*args):

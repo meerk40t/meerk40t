@@ -1,5 +1,6 @@
 import threading
 from copy import copy
+from time import time
 
 from meerk40t.kernel import Service
 
@@ -415,41 +416,83 @@ def plugin(kernel, lifecycle=None):
 
 class Planner(Service):
     """
-    Planner is a service that adds 'plan' commands to the kernel. These are text based versions of the job preview and
-    should be permitted to control the job creation process.
+    Planner is a service that manages cut planning and job creation for the kernel.
+    It provides thread-safe access to cut plans, tracks plan states and stages, and exposes
+    a set of console commands for manipulating plans, operations, and job execution.
+    Plans are tracked with multiple stages (init, copy, preprocess, optimize, etc.),
+    and the planner ensures that plan creation and modification are safe for concurrent use.
     """
 
+    STAGE_DESCRIPTIONS = {
+        STAGE_PLAN_INIT: "Init",
+        STAGE_PLAN_CLEAR: "Clear",
+        STAGE_PLAN_COPY: "Copy",
+        STAGE_PLAN_PREPROCESSED: "Pre-Proc",
+        STAGE_PLAN_PREOPTIMIZED: "Pre-Opt",
+        STAGE_PLAN_OPTIMIZED: "Opt",
+        STAGE_PLAN_INFO: "Info",
+        STAGE_PLAN_VALIDATED: "Valid",
+        STAGE_PLAN_GEOMETRY: "Geom",
+        STAGE_PLAN_BLOB: "Blob",
+        STAGE_PLAN_FINISHED: "Done",
+    }
+
     def __init__(self, kernel, *args, **kwargs):
+        """
+        Initialize the Planner service.
+        Sets up plan and state tracking, default plan, and thread lock for safe concurrent access.
+        """
         Service.__init__(self, kernel, "planner")
-        self._plan = {}  # contains all cutplans
-        self._states = {}  # contains all states
+        self._plan = {}  # contains all cutplans, keyed by plan name
+        self._states = {}  # contains all plan state dictionaries, keyed by plan name
         self._default_plan = "0"
         self.do_optimization = True
-        self._plan_lock = threading.RLock()
+        self._plan_lock = threading.Lock()
 
     def length(self, v):
+        """
+        Convert a value to a float using the Length class (device-independent units).
+        """
         return float(Length(v))
 
     def length_x(self, v):
+        """
+        Convert a value to a float relative to the device's view width.
+        """
         return float(Length(v, relative_length=self.device.view.width))
 
     def length_y(self, v):
+        """
+        Convert a value to a float relative to the device's view height.
+        """
         return float(Length(v, relative_length=self.device.view.height))
 
-    def get_or_make_plan(self, plan_name):
+    def __get_or_make_plan(self, plan_name):
         """
-        Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
+        Internal helper to get an existing plan by name, or create a new one if it does not exist.
+        Initializes the plan's state tracking as well. Thread safety must be handled by the caller.
         """
         try:
             return self._plan[plan_name]
         except KeyError:
-            with self._plan_lock:
-                self._plan[plan_name] = CutPlan(plan_name, self)
-                self._states[plan_name] = STAGE_PLAN_INIT
-            return self._plan[plan_name]
+            self._plan[plan_name] = CutPlan(plan_name, self)
+            self._states[plan_name] = {STAGE_PLAN_INIT: time()}
+        return self._plan[plan_name]
+
+    def get_or_make_plan(self, plan_name):
+        """
+        Thread-safe method to get or create a plan by name.
+        Returns the CutPlan instance for the given plan name.
+        """
+        with self._plan_lock:
+            plan = self.__get_or_make_plan(plan_name)
+        return plan
 
     @property
     def default_plan(self):
+        """
+        Returns the default plan (usually plan '0').
+        """
         return self.get_or_make_plan(self._default_plan)
 
     def service_attach(self, *args, **kwargs):
@@ -508,7 +551,12 @@ class Planner(Service):
                     for i, plan_name in enumerate(cutplan.name):
                         channel(f"{i + 1}: {plan_name}")
                 channel(_("----------"))
-                channel(_("Plan {plan}:").format(plan=self._default_plan))
+                state, info = self.get_plan_stage(self._default_plan)
+                channel(
+                    _("Plan {plan}: {state}").format(
+                        plan=self._default_plan, state=info
+                    )
+                )
                 for i, op_name in enumerate(cutplan.plan):
                     channel(f"{i + 1}: {op_name}")
                 channel(_("Commands {plan}:").format(plan=self._default_plan))
@@ -739,7 +787,7 @@ class Planner(Service):
                         data.plan.insert(index, cmd)
                     except ValueError:
                         channel(_("Invalid index for command insert."))
-                self.update_stage(data.name, STAGE_PLAN_INFO, noset=True)
+                self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
         @self.console_command(
@@ -977,58 +1025,77 @@ class Planner(Service):
 
     def has_content(self, plan_name):
         """
-        Checks if the specified plan has any content.
+        Checks if the specified plan has any content (i.e., non-empty plan list).
+        Returns True if the plan exists and contains at least one operation.
         """
         if plan_name not in self._plan:
             return False
         return len(self._plan[plan_name].plan) > 0
 
+    def get_last_plan(self):
+        """
+        Finds and returns the most recently finished plan name that has content.
+        Returns the plan name, or None if no such plan exists.
+        """
+        last = None
+        last_time = 0
+        with self._plan_lock:
+            for candidate in self._plan:
+                plan = self._plan[candidate]
+                if (
+                    STAGE_PLAN_FINISHED not in self._states[candidate]
+                    or len(plan.plan) == 0
+                ):
+                    continue
+                # Make sure we take the most recent
+                t = plan.get(STAGE_PLAN_FINISHED, 0)
+                if t > last_time:
+                    last_time = t
+                    last = candidate
+        return last
+
     def get_free_plan(self):
         """
-        Finds and returns a unique plan name not currently in use.
-        This method generates a new plan name by incrementing a counter until an unused name is found.
-        Returns:
-            tuple: A tuple containing the last checked plan name and the new unique plan name.
+        Finds and returns a unique plan name not currently in use or a finished plan that can be reused.
+        This method generates a new plan name by incrementing a counter until an unused or finished name is found.
+        Returns the new unique plan name as a string.
         """
         candidate = "z"
-        last = None
         index = 1
         with self._plan_lock:
             while True:
                 if candidate not in self._plan:
-                    plan = self.get_or_make_plan(candidate)
+                    plan = self.__get_or_make_plan(candidate)
                     break
-                state, info = self.get_plan_stage(candidate)
-                if state == STAGE_PLAN_FINISHED:
+                # We take this if we finished the plan
+                if STAGE_PLAN_FINISHED in self._states[candidate]:
                     break
-                last = candidate
                 candidate = f"z{index}"
                 index += 1
-        return last, candidate
+        return candidate
 
-    def update_stage(self, plan_name, stage, noset: bool = False):
+    def update_stage(self, plan_name, stage):
+        """
+        Updates the stage of a plan, recording the current time for the given stage.
+        If clearing, resets all other stages. Otherwise, adds the new stage to the plan's state dictionary.
+        Emits a 'plan' signal with the plan name and stage.
+        """
         if plan_name not in self._states:
             self.console(f"Couldn't update plan {plan_name}: not found")
             return
-        if not noset:
-            with self._plan_lock:
-                self._states[plan_name] = stage
+        with self._plan_lock:
+            if stage == STAGE_PLAN_CLEAR:
+                self._states[plan_name].clear()
+            self._states[plan_name][stage] = time()
         self.signal("plan", plan_name, stage)
 
     def get_plan_stage(self, plan_name):
-        descriptions = {
-            STAGE_PLAN_INIT: "Initialized",
-            STAGE_PLAN_CLEAR: "Cleared",
-            STAGE_PLAN_COPY: "Copied",
-            STAGE_PLAN_PREPROCESSED: "Pre-Processed",
-            STAGE_PLAN_PREOPTIMIZED: "Pre-Optimized",
-            STAGE_PLAN_OPTIMIZED: "Optimized",
-            STAGE_PLAN_INFO: "Information",
-            STAGE_PLAN_VALIDATED: "Validated",
-            STAGE_PLAN_GEOMETRY: "Geometry",
-            STAGE_PLAN_BLOB: "Laser Blob",
-            STAGE_PLAN_FINISHED: "Finished",
-        }
-        state = self._states.get(plan_name, None)
-        info = descriptions.get(state, "Unknown")
-        return state, info
+        """
+        Returns the current state dictionary and a comma-separated string of all reached stage descriptions for a plan (ordered desc)
+        """
+        states = self._states.get(plan_name, {})
+        if not states:
+            return None, ""
+        ordered = sorted(states.items(), key=lambda kv: kv[1], reverse=True)
+        info = ", ".join(self.STAGE_DESCRIPTIONS[s] for s, _ in ordered)
+        return states, info
