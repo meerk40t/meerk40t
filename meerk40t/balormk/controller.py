@@ -429,7 +429,7 @@ class GalvoController:
             try:
                 r = self.connection.read(self._machine_index)
                 return struct.unpack("<4H", r)
-            except ConnectionError:
+            except (ConnectionError, struct.error):
                 return ERR
 
     def status(self):
