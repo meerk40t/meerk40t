@@ -515,7 +515,7 @@ class Planner(Service):
 
         @self.console_command(
             "plan",
-            help=_("plan<?> <command>"),
+            help=_("plan<?> <command> : issue a command to modify the plan"),
             regex=True,
             input_type=(None, "ops"),
             output_type="plan",
@@ -568,7 +568,9 @@ class Planner(Service):
 
         @self.console_command(
             ("copy", "copy-selected"),
-            help=_("plan(-selected)<?> copy"),
+            help=_(
+                "plan<?> copy / copy-selected: copy data from all / only from selected operations"
+            ),
             input_type="plan",
             output_type="plan",
         )
