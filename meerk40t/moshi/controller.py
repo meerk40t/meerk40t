@@ -238,6 +238,20 @@ class MoshiController:
         with self._program_lock:
             return len(self._buffer) + sum(map(len, self._programs))
 
+    def _log_connection_error(self, operation, error, usb_index=None):
+        """
+        Log connection errors with consistent formatting.
+
+        Args:
+            operation (str): Description of the operation that failed
+            error: The exception that occurred
+            usb_index (int, optional): USB device index if applicable
+        """
+        if usb_index is not None:
+            self.usb_log(f"Failed to {operation} at index {usb_index}: {error}")
+        else:
+            self.usb_log(f"Failed to {operation}: {error}")
+
     def open(self):
         """
         Establish connection to the Moshiboard device.
@@ -282,15 +296,15 @@ class MoshiController:
                         self._open_at_index(i)
                         return  # Opened successfully.
                     except ConnectionRefusedError as e:
-                        self.usb_log(f"Failed to open connection at index {i}: {e}")
+                        self._log_connection_error("open connection", e, i)
                         if self.connection is not None:
                             self.connection.close()
                     except IndexError as e:
-                        self.usb_log(f"Failed to open connection at index {i}: {e}")
+                        self._log_connection_error("open connection", e, i)
                         self.connection = None
                         break
         except PermissionError as e:
-            self.usb_log(f"Failed to open connection: {e}")
+            self._log_connection_error("open connection", e)
             return  # OS denied permissions, no point checking anything else.
         if self.connection:
             self.close()
@@ -384,10 +398,8 @@ class MoshiController:
         try:
             self.open()
             self.connection.write_addr(data)
-        except ConnectionRefusedError as e:
-            self.usb_log(f"Failed to open connection for realtime command: {e}")
-        except ConnectionError as e:
-            self.usb_log(f"Failed to open connection for realtime command: {e}")
+        except (ConnectionRefusedError, ConnectionError) as e:
+            self._log_connection_error("open connection for realtime command", e)
 
     def start(self):
         """
@@ -487,6 +499,39 @@ class MoshiController:
         with self._program_lock:
             self.context.signal("pipe;buffer", len(self._buffer))
 
+    def _has_work(self):
+        """
+        Check if there is any work to be done.
+
+        Returns:
+            bool: True if there are programs in queue or buffer has data
+        """
+        with self._program_lock:
+            return bool(self._buffer or self._programs)
+
+    def _load_next_program(self):
+        """
+        Load the next program from queue into buffer if buffer is empty.
+
+        Returns:
+            bool: True if a program was loaded, False otherwise
+        """
+        with self._program_lock:
+            if not self._buffer and self._programs:
+                self._buffer += self._programs.pop(0)
+                return True
+        return False
+
+    def _buffer_length(self):
+        """
+        Get the current buffer length.
+
+        Returns:
+            int: Length of the current buffer
+        """
+        with self._program_lock:
+            return len(self._buffer)
+
     def update_packet(self, packet):
         """
         Signal that a packet has been sent.
@@ -521,9 +566,8 @@ class MoshiController:
         """
         self.pipe_channel("Sending Buffer...")
         while True:
-            with self._program_lock:
-                if len(self._buffer) == 0:
-                    break
+            if not self._buffer_length():
+                break
             queue_processed = self.process_buffer()
             self.refuse_counts = 0
 
@@ -581,53 +625,44 @@ class MoshiController:
         self.is_shutdown = False
 
         while True:
-            self.pipe_channel("While Loop")
             try:
                 if self.state == "init":
-                    # If we are initialized. Change that to active since we're running.
                     self.update_state("active")
                 if self.is_shutdown:
                     break
-                with self._program_lock:
-                    has_work = len(self._buffer) > 0 or len(self._programs) > 0
-                if not has_work:
+
+                if not self._has_work():
                     self.pipe_channel("Nothing to process")
-                    break  # There is nothing to run.
+                    break
+
+                # ensure connection…
                 if self.connection is None:
                     self.open()
-                # Stage 0: New Program send.
-                with self._program_lock:
-                    buffer_empty = len(self._buffer) == 0
-                if buffer_empty:
+
+                # Stage 0: load and prologue
+                if self._load_next_program():
                     self.context.laser_status = "active"
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
                     MoshiBuilder.prologue(self.connection.write_addr, self.pipe_channel)
-                    with self._program_lock:
-                        if self._programs:
-                            self._buffer += self._programs.pop(0)
-                with self._program_lock:
-                    buffer_still_empty = len(self._buffer) == 0
-                if buffer_still_empty:
-                    continue
 
-                # Stage 1: Send Program.
-                self.context.laser_status = "active"
-                with self._program_lock:
-                    buffer_size = len(self._buffer)
-                self.pipe_channel(f"Sending Data... {buffer_size} bytes")
-                self._send_buffer()
-                self.update_status()
-                MoshiBuilder.epilogue(self.connection.write_addr, self.pipe_channel)
+                # Stage 1: send buffer
+                buf_len = self._buffer_length()
+                if buf_len:
+                    self.context.laser_status = "active"
+                    self.pipe_channel(f"Sending Data... {buf_len} bytes")
+                    self._send_buffer()
+                    self.update_status()
+                    MoshiBuilder.epilogue(self.connection.write_addr, self.pipe_channel)
+
                 if self.is_shutdown:
                     break
 
-                # Stage 2: Wait for Program to Finish.
-                self.pipe_channel("Waiting for finish processing.")
-                with self._program_lock:
-                    buffer_finished = len(self._buffer) == 0
-                if buffer_finished:
+                # Stage 2: wait finish
+                if not self._buffer_length():
+                    self.pipe_channel("Waiting for finish processing.")
                     self.wait_finished()
+
                 self.context.laser_status = "idle"
 
             except ConnectionRefusedError:
@@ -674,24 +709,14 @@ class MoshiController:
         - Uses _program_lock for buffer modifications
         """
         with self._program_lock:
-            if len(self._buffer) > 0:
-                buffer = self._buffer
-            else:
+            if not self._buffer:
                 return False
-
-        length = min(32, len(buffer))
-        packet = buffer[:length]
-
-        # Packet is prepared and ready to send. Open Channel.
-
+            packet = self._buffer[:32]
+            self._buffer = self._buffer[32:]
         self.send_packet(packet)
         self.context.packet_count += 1
-
-        # Packet was processed. Remove that data.
-        with self._program_lock:
-            self._buffer = self._buffer[length:]
         self.update_buffer()
-        return True  # A packet was prepped and sent correctly.
+        return True
 
     def send_packet(self, packet):
         """
