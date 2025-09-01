@@ -86,7 +86,7 @@ class Wordlist:
         if idx is None:  # Default
             idx = wordlist[POSITION_INDEX]
 
-        if idx < len(wordlist):
+        if 0 <= idx < len(wordlist):
             try:
                 result = wordlist[idx]
             except IndexError:
@@ -106,7 +106,7 @@ class Wordlist:
 
     def delete_value(self, skey, idx):
         skey = skey.lower()
-        if not skey in self.content:
+        if skey not in self.content:
             return
         if idx is None or idx < 0:
             return
@@ -144,7 +144,7 @@ class Wordlist:
         # Index = None - use current
         # Index < 0 append
         skey = skey.lower()
-        if not skey in self.content:
+        if skey not in self.content:
             # hasn't been there, so establish it
             if wtype is None:
                 wtype = TYPE_STATIC
@@ -280,7 +280,7 @@ class Wordlist:
 
                 if wordlist[TYPE_INDEX] == TYPE_COUNTER:  # Counter-type
                     # Counter index is the value.
-                    value = wordlist[DATA_START_INDEX] if not reset else 0
+                    value = 0 if reset else wordlist[DATA_START_INDEX]
                     try:
                         value = int(value)
                     except ValueError:
@@ -292,7 +292,7 @@ class Wordlist:
                 else:
                     # This is a variable wordlist.
                     current_index = (
-                        wordlist[POSITION_INDEX] if not reset else 2
+                        2 if reset else wordlist[POSITION_INDEX]
                     )  # 2 as 2 based
                     current_index += relative
                     value = self.fetch_value(key, current_index)
