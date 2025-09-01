@@ -47,25 +47,16 @@ class Wordlist:
         # index 1 indicates the position of the current array (always 2 for type 0 and 2)
         # index 2 and onwards contain the actual data
         self.content = {
-            "version": [0, 2, versionstr],
-            "date": [0, 2, self.wordlist_datestr()],
-            "time": [0, 2, self.wordlist_timestr()],
-            "op_device": [0, 2, "<device>"],
-            "op_speed": [0, 2, "<speed>"],
-            "op_power": [0, 2, "<power>"],
-            "op_passes": [0, 2, "<passes>"],
-            "op_dpi": [0, 2, "<dpi>"],
+            "version": [TYPE_STATIC, 2, versionstr],
+            "date": [TYPE_STATIC, 2, self.wordlist_datestr()],
+            "time": [TYPE_STATIC, 2, self.wordlist_timestr()],
+            "op_device": [TYPE_STATIC, 2, "<device>"],
+            "op_speed": [TYPE_STATIC, 2, "<speed>"],
+            "op_power": [TYPE_STATIC, 2, "<power>"],
+            "op_passes": [TYPE_STATIC, 2, "<passes>"],
+            "op_dpi": [TYPE_STATIC, 2, "<dpi>"],
         }
-        self.prohibited = (
-            "version",
-            "date",
-            "time",
-            "op_device",
-            "op_speed",
-            "op_power",
-            "op_passes",
-            "op_dpi",
-        )
+        self.prohibited = list(self.content.keys())
         self._stack = []
         self.transaction_open = False
         self.content_backup = {}
