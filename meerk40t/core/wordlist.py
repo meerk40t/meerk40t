@@ -9,6 +9,7 @@ import os
 import re
 from copy import copy
 from datetime import datetime
+
 from ..extra.encode_detect import EncodingDetectFile
 
 
@@ -77,7 +78,7 @@ class Wordlist:
         if idx is None:  # Default
             idx = wordlist[1]
 
-        if idx <= len(wordlist):
+        if 0 <= idx <= len(wordlist):
             try:
                 result = wordlist[idx]
             except IndexError:
@@ -97,7 +98,7 @@ class Wordlist:
 
     def delete_value(self, skey, idx):
         skey = skey.lower()
-        if not skey in self.content:
+        if skey not in self.content:
             return
         if idx is None or idx < 0:
             return
@@ -135,7 +136,7 @@ class Wordlist:
         # Index = None - use current
         # Index < 0 append
         skey = skey.lower()
-        if not skey in self.content:
+        if skey not in self.content:
             # hasn't been there, so establish it
             if wtype is None:
                 wtype = 0
@@ -269,7 +270,7 @@ class Wordlist:
 
                 if wordlist[0] == 2:  # Counter-type
                     # Counter index is the value.
-                    value = wordlist[2] if not reset else 0
+                    value = 0 if reset else wordlist[2]
                     try:
                         value = int(value)
                     except ValueError:
@@ -280,7 +281,7 @@ class Wordlist:
                         wordlist[2] = value + 1
                 else:
                     # This is a variable wordlist.
-                    current_index = wordlist[1] if not reset else 2  # 2 as 2 based
+                    current_index = 2 if reset else wordlist[1]  # 2 as 2 based
                     current_index += relative
                     value = self.fetch_value(key, current_index)
                     if autoincrement and increment:
