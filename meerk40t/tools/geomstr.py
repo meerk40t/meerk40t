@@ -100,11 +100,11 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Vectorization threshold constants - empirically determined for optimal performance
 # These control when to switch from standard to vectorized implementations
-THRESHOLD_STITCHEABLE_NODES = 25     # stitcheable_nodes: n > 25 (optimal)
-THRESHOLD_STITCH_GEOMETRIES = 50     # stitch_geometries: n > 50 (optimal)
-THRESHOLD_CLOSE_GAPS = 15            # close_gaps: n > 15 (optimal)
-THRESHOLD_BBOX = 45                  # bbox: index > 45 (optimal)
-THRESHOLD_LENGTH = 55                # length: index > 55 (optimal)
+THRESHOLD_STITCHEABLE_NODES = 25  # stitcheable_nodes: n > 25 (optimal)
+THRESHOLD_STITCH_GEOMETRIES = 50  # stitch_geometries: n > 50 (optimal)
+THRESHOLD_CLOSE_GAPS = 15  # close_gaps: n > 15 (optimal)
+THRESHOLD_BBOX = 45  # bbox: index > 45 (optimal)
+THRESHOLD_LENGTH = 55  # length: index > 55 (optimal)
 # Note: area function is always vectorized (no threshold needed)
 
 # Note lower nibble is which indexes are positions (except info index)
@@ -3107,6 +3107,8 @@ class Geomstr:
         num_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in num_parse))
         current_pt = 0j
         direction = 0
+        if n <= 0:
+            return cls()
         turn = math.tau / n
         g = cls()
         pos = 0
@@ -3152,7 +3154,8 @@ class Geomstr:
             elif kind == "N":
                 value = match.group()
                 n = int(float(value[1:]))
-                turn = math.tau / n
+                if n > 0:
+                    turn = math.tau / n
         return g
 
     @classmethod
@@ -3338,6 +3341,8 @@ class Geomstr:
 
     @classmethod
     def circle(cls, r, cx, cy, slices=4):
+        if slices <= 0:
+            return cls()
         rx = r
         ry = r
 
@@ -4938,9 +4943,13 @@ class Geomstr:
                 # Linear case: bt + c = 0 -> t = -c/b
                 b_linear = b[linear_mask]
                 c_linear = c[linear_mask]
-                with np.errstate(divide='ignore', invalid='ignore'):
-                    t_linear = np.where(np.abs(b_linear) > 1e-10, -c_linear / b_linear, 0.5)
-                t_linear_valid = t_linear[(t_linear > 0) & (t_linear < 1) & np.isfinite(t_linear)]
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    t_linear = np.where(
+                        np.abs(b_linear) > 1e-10, -c_linear / b_linear, 0.5
+                    )
+                t_linear_valid = t_linear[
+                    (t_linear > 0) & (t_linear < 1) & np.isfinite(t_linear)
+                ]
                 if len(t_linear_valid) > 0:
                     extrema_points.append(t_linear_valid)
 
@@ -4963,18 +4972,37 @@ class Geomstr:
                     # Additional protection against divide by zero for 2*a_valid
                     denominator = 2 * a_valid
                     nonzero_mask = np.abs(denominator) > 1e-12
-                    
+
                     if np.any(nonzero_mask):
                         # Only process non-zero denominators to avoid warnings
                         denom_safe = denominator[nonzero_mask]
                         b_safe = b_valid[nonzero_mask]
                         sqrt_safe = sqrt_disc[nonzero_mask]
-                        
+
                         # Use numpy error handling to suppress warnings during division
-                        with np.errstate(divide='ignore', invalid='ignore'):
-                            t1_candidates = (-b_safe + sqrt_safe) / denom_safe
-                            t2_candidates = (-b_safe - sqrt_safe) / denom_safe
-                        
+                        with np.errstate(
+                            divide="ignore", invalid="ignore", over="ignore"
+                        ):
+                            # Safe division with additional checks
+                            denom_nonzero = np.abs(denom_safe) > 1e-15
+                            if np.any(denom_nonzero):
+                                denom_final = denom_safe[denom_nonzero]
+                                b_final = b_safe[denom_nonzero]
+                                sqrt_final = sqrt_safe[denom_nonzero]
+
+                                t1_candidates = np.full_like(b_safe, 0.5)
+                                t2_candidates = np.full_like(b_safe, 0.5)
+
+                                t1_candidates[denom_nonzero] = (
+                                    -b_final + sqrt_final
+                                ) / denom_final
+                                t2_candidates[denom_nonzero] = (
+                                    -b_final - sqrt_final
+                                ) / denom_final
+                            else:
+                                t1_candidates = np.full_like(b_safe, 0.5)
+                                t2_candidates = np.full_like(b_safe, 0.5)
+
                         # Filter for finite values
                         t1 = t1_candidates[np.isfinite(t1_candidates)]
                         t2 = t2_candidates[np.isfinite(t2_candidates)]
