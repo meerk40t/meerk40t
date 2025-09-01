@@ -4868,12 +4868,16 @@ class Geomstr:
         # For quadratic: derivative = 2(1-t)(P1-P0) + 2t(P2-P1) = 0
         # Solve: t = (P0-P1)/(P0-2*P1+P2)
         x_denom = x0 - 2 * x1 + x2
-        x_t = np.where(np.abs(x_denom) > 1e-10, (x0 - x1) / x_denom, 0.5)
+        # Use numpy errstate to suppress warnings and handle division by zero safely
+        with np.errstate(divide="ignore", invalid="ignore"):
+            x_t = np.where(np.abs(x_denom) > 1e-10, (x0 - x1) / x_denom, 0.5)
         x_t = np.clip(x_t, 0, 1)  # Clamp to valid range
 
         # Calculate extrema points for Y coordinates
         y_denom = y0 - 2 * y1 + y2
-        y_t = np.where(np.abs(y_denom) > 1e-10, (y0 - y1) / y_denom, 0.5)
+        # Use numpy errstate to suppress warnings and handle division by zero safely
+        with np.errstate(divide="ignore", invalid="ignore"):
+            y_t = np.where(np.abs(y_denom) > 1e-10, (y0 - y1) / y_denom, 0.5)
         y_t = np.clip(y_t, 0, 1)  # Clamp to valid range
 
         # Evaluate quadratic Bezier at extrema points
