@@ -399,7 +399,9 @@ def set_shape(a: float, b: float, *args, outershape=None, **kwargs):
     segment_count = max(1, int(abs(SEGMENT_COUNT_MULTIPLIER * b)))
 
     # Generate concentric patterns
-    pattern_generator = ConcentricPatternGenerator(polycache, copy_count, segment_count)
+    pattern_generator = ConcentricPatternGenerator(
+        polycache, copy_count, segment_count, shape_processor.resolution
+    )
     yield from pattern_generator.generate_patterns()
 
 
@@ -452,11 +454,11 @@ class ShapePatternProcessor:
 class ConcentricPatternGenerator:
     """Generates concentric patterns from normalized polygon points."""
 
-    def __init__(self, polycache, copy_count, segment_count):
+    def __init__(self, polycache, copy_count, segment_count, resolution):
         self.polycache = polycache
         self.copy_count = copy_count
         self.segment_count = segment_count
-        self.resolution = DEFAULT_RESOLUTION
+        self.resolution = resolution
 
         # Calculate geometric center
         self.center_x, self.center_y = self._calculate_geometric_center()
@@ -489,7 +491,14 @@ class ConcentricPatternGenerator:
         segment_counter = self._get_initial_segment_count(is_regular)
         current_x = None
 
-        for i in range(len(self.polycache)):
+        # Ensure polycache has the expected number of points (resolution + 1)
+        expected_points = int(self.resolution) + 1
+        if len(self.polycache) != expected_points:
+            # Fallback to using actual polycache length if there's a mismatch
+            expected_points = len(self.polycache)
+
+        # Iterate over all points in polycache
+        for i in range(expected_points):
             # Scale point around geometric center
             scaled_x = (self.polycache[i][0] - self.center_x) * ratio + self.center_x
             scaled_y = (self.polycache[i][1] - self.center_y) * ratio + self.center_y
