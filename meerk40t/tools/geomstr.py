@@ -3107,6 +3107,8 @@ class Geomstr:
         num_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in num_parse))
         current_pt = 0j
         direction = 0
+        if n <= 0:
+            return cls()
         turn = math.tau / n
         g = cls()
         pos = 0
@@ -3152,7 +3154,8 @@ class Geomstr:
             elif kind == "N":
                 value = match.group()
                 n = int(float(value[1:]))
-                turn = math.tau / n
+                if n > 0:
+                    turn = math.tau / n
         return g
 
     @classmethod
@@ -3349,6 +3352,8 @@ class Geomstr:
 
     @classmethod
     def circle(cls, r, cx, cy, slices=4):
+        if slices <= 0:
+            return cls()
         rx = r
         ry = r
 
@@ -4874,12 +4879,16 @@ class Geomstr:
         # For quadratic: derivative = 2(1-t)(P1-P0) + 2t(P2-P1) = 0
         # Solve: t = (P0-P1)/(P0-2*P1+P2)
         x_denom = x0 - 2 * x1 + x2
-        x_t = np.where(np.abs(x_denom) > 1e-10, (x0 - x1) / x_denom, 0.5)
+        # Use numpy errstate to suppress warnings and handle division by zero safely
+        with np.errstate(divide="ignore", invalid="ignore"):
+            x_t = np.where(np.abs(x_denom) > 1e-10, (x0 - x1) / x_denom, 0.5)
         x_t = np.clip(x_t, 0, 1)  # Clamp to valid range
 
         # Calculate extrema points for Y coordinates
         y_denom = y0 - 2 * y1 + y2
-        y_t = np.where(np.abs(y_denom) > 1e-10, (y0 - y1) / y_denom, 0.5)
+        # Use numpy errstate to suppress warnings and handle division by zero safely
+        with np.errstate(divide="ignore", invalid="ignore"):
+            y_t = np.where(np.abs(y_denom) > 1e-10, (y0 - y1) / y_denom, 0.5)
         y_t = np.clip(y_t, 0, 1)  # Clamp to valid range
 
         # Evaluate quadratic Bezier at extrema points
@@ -4986,9 +4995,29 @@ class Geomstr:
                         sqrt_safe = sqrt_disc[nonzero_mask]
 
                         # Use numpy error handling to suppress warnings during division
-                        with np.errstate(divide="ignore", invalid="ignore"):
-                            t1_candidates = (-b_safe + sqrt_safe) / denom_safe
-                            t2_candidates = (-b_safe - sqrt_safe) / denom_safe
+
+                        with np.errstate(
+                            divide="ignore", invalid="ignore", over="ignore"
+                        ):
+                            # Safe division with additional checks
+                            denom_nonzero = np.abs(denom_safe) > 1e-15
+                            if np.any(denom_nonzero):
+                                denom_final = denom_safe[denom_nonzero]
+                                b_final = b_safe[denom_nonzero]
+                                sqrt_final = sqrt_safe[denom_nonzero]
+
+                                t1_candidates = np.full_like(b_safe, 0.5)
+                                t2_candidates = np.full_like(b_safe, 0.5)
+
+                                t1_candidates[denom_nonzero] = (
+                                    -b_final + sqrt_final
+                                ) / denom_final
+                                t2_candidates[denom_nonzero] = (
+                                    -b_final - sqrt_final
+                                ) / denom_final
+                            else:
+                                t1_candidates = np.full_like(b_safe, 0.5)
+                                t2_candidates = np.full_like(b_safe, 0.5)
 
                         # Filter for finite values
                         t1 = t1_candidates[np.isfinite(t1_candidates)]
