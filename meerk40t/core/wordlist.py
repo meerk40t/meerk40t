@@ -670,6 +670,9 @@ class Wordlist:
             sformat = "%x"
         try:
             result = time.strftime(sformat)
+            # Check if the result contains the original format string (indicates invalid format)
+            if "%" in result and sformat in result:
+                return "invalid"
         except ValueError:
             result = "invalid"
         return result
@@ -695,6 +698,9 @@ class Wordlist:
             sformat = "%X"
         try:
             result = time.strftime(sformat)
+            # Check if the result contains the original format string (indicates invalid format)
+            if "%" in result and sformat in result:
+                return "invalid"
         except ValueError:
             result = "invalid"
         return result
