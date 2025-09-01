@@ -3204,7 +3204,18 @@ class Geomstr:
                 and seg.start is not None
                 and seg.end is not None
             ):
-                obj.line(complex(seg.start), complex(seg.end))
+                # Convert numpy complex to Python complex to avoid deprecation warning
+                start_pt = (
+                    complex(seg.start.real, seg.start.imag)
+                    if hasattr(seg.start, "real")
+                    else complex(seg.start)
+                )
+                end_pt = (
+                    complex(seg.end.real, seg.end.imag)
+                    if hasattr(seg.end, "real")
+                    else complex(seg.end)
+                )
+                obj.line(start_pt, end_pt)
             elif (
                 isinstance(seg, QuadraticBezier)
                 and seg.start is not None
@@ -4984,6 +4995,7 @@ class Geomstr:
                         sqrt_safe = sqrt_disc[nonzero_mask]
 
                         # Use numpy error handling to suppress warnings during division
+
                         with np.errstate(
                             divide="ignore", invalid="ignore", over="ignore"
                         ):

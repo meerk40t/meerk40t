@@ -13,7 +13,6 @@ except ImportError:
     # ezdxf > 0.6.14
     from ezdxf import int2rgb
     from ezdxf.colors import DXF_DEFAULT_COLORS
-
 import math
 
 from ezdxf.units import decode
@@ -25,7 +24,6 @@ from meerk40t.svgelements import (
     Arc,
     Circle,
     Color,
-    Ellipse,
     Matrix,
     Move,
     Path,
@@ -85,6 +83,13 @@ class DXFProcessor:
         self.try_unsupported = True
         # Path stroke width
         self.std_stroke = 1000
+        self._channel = None
+        if hasattr(self.elements, "kernel"):
+            self._channel = self.elements.kernel.channel("console")
+
+    def logger(self, message):
+        if self._channel:
+            self._channel(message)
 
     def process(self, entities, pathname):
         self.pathname = pathname
@@ -149,9 +154,7 @@ class DXFProcessor:
                 c = layer.color
             try:
                 color = (
-                    Color("black")
-                    if c == 7
-                    else Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+                    Color("black") if c == 7 else Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
                 )
                 # Color 7 is black on light backgrounds, light on black.
             except Exception:
@@ -169,7 +172,7 @@ class DXFProcessor:
             if "ENGRAVE" in s_layer.upper() or "ENGRAVE" in entity.dxf.layer.upper():
                 assign_type = "op engrave"
             elif "CUT" in s_layer.upper() or "CUT" in entity.dxf.layer.upper():
-                assign_type = "op cut" 
+                assign_type = "op cut"
             # print (f"Layer: {s_layer} ({entity.dxf.layer}), assign_type: {assign_type}")
             node.label = s_layer
             if assign_type:
@@ -191,13 +194,10 @@ class DXFProcessor:
                 if not found:
                     if first_op is None:
                         first_op = self.elements.op_branch.add(
-                            type=assign_type, 
-                            color=node.stroke, 
-                            label=s_layer
+                            type=assign_type, color=node.stroke, label=s_layer
                         )
                     # We did not find a proper match, so we assign it to the first engrave/cut op
                     first_op.add_reference(node)
-
 
     # def debug_entity(self, entity):
     #     print (f"Entity: {entity.dxftype()}")
@@ -217,7 +217,6 @@ class DXFProcessor:
     #         print (f"e.dxf.{key}={var}")
 
     def parse(self, entity, context_node, e_list):
-
         def get_angles(entity):
             start_angle = 0
             end_angle = math.tau
@@ -264,7 +263,9 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif dxftype == "ARC":
-            center = (entity.dxf.center)  # Center point of the circle (3D, but we'll use x,y)
+            center = (
+                entity.dxf.center
+            )  # Center point of the circle (3D, but we'll use x,y)
             a = entity.dxf.radius
             b = entity.dxf.radius
             start_angle, end_angle = get_angles(entity)
@@ -291,7 +292,9 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif dxftype == "ELLIPSE":
-            center = (entity.dxf.center)  # Center point of the ellipse (3D, but we'll use x,y)
+            center = (
+                entity.dxf.center
+            )  # Center point of the ellipse (3D, but we'll use x,y)
             major_axis = entity.dxf.major_axis  # Vector representing the major axis
             minor_axis = entity.minor_axis  # Vector representing the minor axis
             # They should have the same sign, if they are different then they are mirrored?!
@@ -380,9 +383,9 @@ class DXFProcessor:
                         element = Polygon([(p[0], p[1]) for p in entity.points()])
                     else:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
-                    element.values[SVG_ATTR_VECTOR_EFFECT] = (
-                        SVG_VALUE_NON_SCALING_STROKE
-                    )
+                    element.values[
+                        SVG_ATTR_VECTOR_EFFECT
+                    ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
@@ -417,9 +420,9 @@ class DXFProcessor:
                                 bulge=bulge,
                             )
                             element.closed()
-                    element.values[SVG_ATTR_VECTOR_EFFECT] = (
-                        SVG_VALUE_NON_SCALING_STROKE
-                    )
+                    element.values[
+                        SVG_ATTR_VECTOR_EFFECT
+                    ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
@@ -509,11 +512,15 @@ class DXFProcessor:
                         element.closed()
                 else:
                     for e in p.edges:
-                        if type(e) == "LineEdge":
-                            # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.LineEdge
+                        if hasattr(e, "start") and hasattr(e, "end"):
+                            # LineEdge
                             element.line(e.start, e.end)
-                        elif type(e) == "ArcEdge":
-                            # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.ArcEdge
+                        elif (
+                            hasattr(e, "center")
+                            and hasattr(e, "radius")
+                            and hasattr(e, "start_angle")
+                        ):
+                            # ArcEdge
                             circ = Circle(
                                 center=e.center,
                                 radius=e.radius,
@@ -521,27 +528,52 @@ class DXFProcessor:
                             element += circ.arc_angle(
                                 Angle.degrees(e.start_angle), Angle.degrees(e.end_angle)
                             )
-                        elif type(e) == "EllipseEdge":
-                            # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.EllipseEdge
+                        elif hasattr(e, "major_axis") and hasattr(e, "ratio"):
+                            # EllipseEdge
+                            if hasattr(e, "is_counter_clockwise"):
+                                ccw = e.is_counter_clockwise
+                            else:
+                                ccw = True
+                                self.logger(
+                                    "EllipseEdge direction (is_counter_clockwise) not specified; defaulting to True."
+                                )
                             element += Arc(
-                                radius=e.radius,
+                                radius=e.major_axis,
                                 start_angle=Angle.degrees(e.start_angle),
                                 end_angle=Angle.degrees(e.end_angle),
-                                ccw=e.is_counter_clockwise,
+                                ccw=ccw,
                             )
-                        elif type(e) == "SplineEdge":
-                            # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html#ezdxf.entities.SplineEdge
+                        elif hasattr(e, "degree") and hasattr(e, "knot_values"):
+                            # SplineEdge
                             if e.degree == 3:
                                 for i in range(len(e.knot_values)):
-                                    control = e.control_values[i]
+                                    if (
+                                        hasattr(e, "control_values")
+                                        and isinstance(e.control_values, list)
+                                        and len(e.control_values) > i
+                                    ):
+                                        control = e.control_values[i]
+                                    else:
+                                        self.logger(
+                                            "Fallback: use the knot value as control, or duplicate it for quadratic structure"
+                                        )
+                                        control = e.knot_values[i]
                                     knot = e.knot_values[i]
                                     element.quad(control, knot)
                             elif e.degree == 4:
                                 for i in range(len(e.knot_values)):
-                                    control1 = e.control_values[2 * i]
-                                    control2 = e.control_values[2 * i + 1]
-                                    knot = e.knot_values[i]
-                                    element.cubic(control1, control2, knot)
+                                    control_vals = getattr(e, "control_values", [])
+                                    if len(control_vals) > 2 * i + 1:
+                                        control1 = control_vals[2 * i]
+                                        control2 = control_vals[2 * i + 1]
+                                        knot = e.knot_values[i]
+                                        element.cubic(control1, control2, knot)
+                                    else:
+                                        knot = e.knot_values[i]
+                                        self.logger(
+                                            f"Falling back to line for knot index {i} due to missing control points. This may degrade the intended geometry."
+                                        )
+                                        element.line(knot)
                             else:
                                 for i in range(len(e.knot_values)):
                                     knot = e.knot_values[i]
@@ -609,9 +641,11 @@ class DXFProcessor:
             y_pos = bottom_left_position[1]
             dxf_units_per_inch = self.scale / UNITS_PER_INCH
             width_in_inches = size[0] * dxf_units_per_inch
-            height_in_inches = size[1] * dxf_units_per_inch
-            dpix = size_img[0] / width_in_inches
-            dpiy = size_img[1] / height_in_inches
+            # Protect against division by zero
+            if width_in_inches > 0:
+                dpix = size_img[0] / width_in_inches
+            else:
+                dpix = 96  # Default DPI
 
             # Node.matrix is primary transformation.
             matrix = Matrix()
@@ -637,6 +671,25 @@ class DXFProcessor:
                 node.image = ImageOps.exif_transpose(node.image)
             except ImportError:
                 pass
+
+            # Try to determine actual DPI from image metadata if available
+            if hasattr(node, "image") and node.image is not None:
+                actual_dpix = None
+                if hasattr(node.image, "info"):
+                    dpi_info = node.image.info.get("dpi")
+                    if (
+                        dpi_info
+                        and isinstance(dpi_info, (tuple, list))
+                        and dpi_info[0] > 0
+                    ):
+                        actual_dpix = dpi_info[0]
+                if actual_dpix and actual_dpix != dpix:
+                    # Update the node with the actual DPI from metadata
+                    node.dpi = actual_dpix
+                    self.logger(
+                        f"Updated image DPI from {dpix} to {actual_dpix} based on image metadata."
+                    )
+
             self.check_for_attributes(node, entity)
             # We don't seem to get the position right, so let's look
             # at our bottom_left position again and fix the gap
@@ -688,7 +741,9 @@ class DXFProcessor:
                 node.matrix.post_scale(factor, factor, bb[0], bb[1])
             bb = node.bounds
 
-            node.matrix.post_translate(insert[0] * UNITS_PER_MM - bb[0], -1 * insert[1] * UNITS_PER_MM - bb[1])
+            node.matrix.post_translate(
+                insert[0] * UNITS_PER_MM - bb[0], -1 * insert[1] * UNITS_PER_MM - bb[1]
+            )
             node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             context_node.add_node(node)
@@ -707,13 +762,13 @@ class DXFProcessor:
             node.matrix.post_scale(1, -1, insert[0], insert[1])
             if hasattr(entity.dxf, "height") and entity.dxf.height != 0:
                 # 72pt = 1inch
-                fontheight = 12 * 25.4 / 72 # in mm
+                fontheight = 12 * 25.4 / 72  # in mm
                 factor = entity.dxf.height / fontheight
                 node.matrix.post_scale(factor, factor, insert[0], insert[1])
             elif hasattr(entity.dxf, "width") and entity.dxf.width != 0:
                 # 72pt = 1inch
                 # We are guessing....
-                fontwidth = len(entity.dxf.text) * 6 * 25.4 / 72 # in mm
+                fontwidth = len(entity.dxf.text) * 6 * 25.4 / 72  # in mm
                 factor = entity.dxf.width / fontwidth
                 node.matrix.post_scale(factor, factor, insert[0], insert[1])
 
