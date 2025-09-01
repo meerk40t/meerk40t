@@ -22,6 +22,10 @@ from meerk40t.ch341 import get_ch341_interface
 
 # Protocol Constants
 PACKET_SIZE = 30  # Lihuiyu packet size
+MAX_CONFIRMATION_ATTEMPTS = 500  # Maximum attempts to confirm packet
+CONFIRMATION_DELAY_START = 10  # Attempts before starting delay
+MIN_CONFIRMATION_DELAY = 0.001  # Minimum delay between attempts
+MAX_CONFIRMATION_DELAY = 0.1  # Maximum delay between attempts
 MAX_CONFIRMATION_ATTEMPTS = 500
 USB_LOG_BUFFER_SIZE = 500
 
@@ -116,12 +120,12 @@ def get_code_string_from_code(code):
 def convert_to_list_bytes(data):
     if isinstance(data, str):  # python 2
         packet = [0] * PACKET_SIZE
-        for i in range(0, PACKET_SIZE):
+        for i in range(PACKET_SIZE):
             packet[i] = ord(data[i])
         return packet
     else:
         packet = [0] * PACKET_SIZE
-        for i in range(0, PACKET_SIZE):
+        for i in range(PACKET_SIZE):
             packet[i] = data[i]
         return packet
 
@@ -173,7 +177,7 @@ def onewire_crc_lookup(line):
     """
 
     crc = 0
-    for i in range(0, PACKET_SIZE):
+    for i in range(PACKET_SIZE):
         crc = line[i] ^ crc
         crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
 
@@ -724,18 +728,56 @@ class LihuiyuController:
 
         @return: queue process success.
         """
-        # Determine which buffer to use and get a snapshot
+        # Get buffer snapshot and determine which buffer to use
+        buffer, realtime = self._get_buffer_snapshot()
+        if buffer is None:
+            return False
+
+        # Extract packet from buffer
+        (
+            packet,
+            length,
+            post_send_command,
+            default_checksum,
+        ) = self._extract_packet_from_buffer(buffer)
+
+        # Check if we should process this packet
+        if not realtime and self.state in ("pause", "busy"):
+            return False  # Processing normal queue, PAUSE and BUSY apply.
+
+        # Send and confirm packet if it's the right size
+        packet_sent = self._send_and_confirm_packet(packet, default_checksum)
+
+        # Update buffer after processing
+        self._update_buffer_after_processing(realtime, length, packet)
+
+        # Execute post-send command if any
+        self._execute_post_send_command(post_send_command)
+
+        return packet_sent
+
+    def _get_buffer_snapshot(self):
+        """
+        Get a snapshot of the buffer to process and determine which buffer to use.
+
+        @return: tuple of (buffer_bytes, is_realtime) or (None, None) if no buffer available
+        """
         with self._buffer_lock:
             if len(self._realtime_buffer) > 0:
-                buffer = bytes(self._realtime_buffer)
-                realtime = True
+                return bytes(self._realtime_buffer), True
             elif len(self._buffer) > 0:
-                buffer = bytes(self._buffer)
-                realtime = False
+                return bytes(self._buffer), False
             else:
-                return False
+                return None, None
 
-        # Find buffer of 30 or containing '\n'.
+    def _extract_packet_from_buffer(self, buffer):
+        """
+        Extract a packet from the buffer, handling pipe commands and special cases.
+
+        @param buffer: The buffer bytes to extract from
+        @return: tuple of (packet, length, post_send_command, default_checksum)
+        """
+        # Find buffer of PACKET_SIZE or containing '\n'.
         find = buffer.find(b"\n", 0, PACKET_SIZE)
         if find == -1:  # No end found.
             length = min(PACKET_SIZE, len(buffer))
@@ -743,160 +785,229 @@ class LihuiyuController:
             length = min(PACKET_SIZE, len(buffer), find + 1)
         packet = bytes(buffer[:length])
 
-        # edge condition of catching only pipe command without '\n'
+        # Handle edge condition of catching only pipe command without '\n'
         if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"%", b"\x18")):
             packet += buffer[length : length + 1]
             length += 1
+
+        # Process pipe commands and prepare packet
+        return self._process_pipe_commands(packet, length)
+
+    def _process_pipe_commands(self, packet, length):
+        """
+        Process pipe commands (meta-commands) and prepare the packet for sending.
+
+        @param packet: The raw packet bytes
+        @param length: The length of data to remove from buffer
+        @return: tuple of (processed_packet, length, post_send_command, default_checksum)
+        """
         post_send_command = None
         default_checksum = True
 
+        # Handle AT command special case
         if packet.startswith(b"AT"):
-            # This is as special case for the M3 only:
-            # AT command packages are padded with 0x00 and not 'F' as usal
-            if packet.endswith(b"\n"):
-                packet = packet[:-1]
-            c = b"\x00"
-            packet += c * (PACKET_SIZE - len(packet))  # Padding with 0 character
-        # find pipe commands.
+            packet, length = self._handle_at_command(packet, length)
+
+        # Process pipe commands if packet ends with newline
+        if packet.endswith(b"\n"):
+            packet, post_send_command, default_checksum = self._handle_newline_commands(
+                packet
+            )
+
+        # Apply final padding if needed
+        if len(packet) != 0:
+            packet = self._apply_packet_padding(packet)
+
+        return packet, length, post_send_command, default_checksum
+
+    def _handle_at_command(self, packet, length):
+        """
+        Handle special AT command processing for M3 devices.
+
+        @param packet: The packet starting with AT
+        @param length: Current packet length
+        @return: tuple of (processed_packet, updated_length)
+        """
         if packet.endswith(b"\n"):
             packet = packet[:-1]
-            # There's a special case where we have a trailing "\n" at an exactly 30 byte command,
-            # that requires another package of 30 x F to be sent, so we need to deal with an empty string...
-            if len(packet) == 0:
-                packet += b"F"
-            if packet.endswith(b"P"):
-                # This is a special case where the m3nano seems to fail. So we extend the buffer...
-                packet += b"F"
-            elif packet.endswith(b"-"):  # wait finish
-                packet = packet[:-1]
-                post_send_command = self.wait_finished
-            elif packet.endswith(b"*"):  # abort
-                post_send_command = self.abort
-                packet = packet[:-1]
-            elif packet.endswith(b"&"):  # resume
-                self._resume_busy()
-                packet = packet[:-1]
-            elif packet.endswith(b"!"):  # pause
-                self._pause_busy()
-                packet = packet[:-1]
-            elif packet.endswith(b"%"):  # alt-checksum
-                default_checksum = False
-                packet = packet[:-1]
-            elif packet.endswith(b"\x18"):
-                self.update_state("terminate")
-                self.is_shutdown = True
-                packet = packet[:-1]
-            if packet.startswith(b"A") and not packet.startswith(b"AT"):
-                # This is a challenge code. A is only used for serial challenges.
-                post_send_command = self._confirm_serial
-            if len(packet) != 0:
-                if packet.endswith(b"#"):
-                    packet = packet[:-1]
-                    try:
-                        c = packet[-1]
-                    except IndexError:
-                        c = b"F"  # Packet was simply #. We can do nothing.
-                    packet += bytes([c]) * (PACKET_SIZE - len(packet))  # Padding. '\n'
-                else:
-                    padder = b"\x00" if packet.startswith(b"AT") else b"F"
-                    packet += padder * (PACKET_SIZE - len(packet))  # Padding. '\n'
-        if not realtime and self.state in ("pause", "busy"):
-            return False  # Processing normal queue, PAUSE and BUSY apply.
+        c = b"\x00"
+        packet += c * (PACKET_SIZE - len(packet))  # Padding with 0 character
+        return packet, length
+
+    def _handle_newline_commands(self, packet):
+        """
+        Handle pipe commands when packet ends with newline.
+
+        @param packet: The packet ending with newline
+        @return: tuple of (processed_packet, post_send_command, default_checksum)
+        """
+        post_send_command = None
+        default_checksum = True
+
+        packet = packet[:-1]  # Remove newline
+
+        # Handle empty packet case
+        if len(packet) == 0:
+            packet += b"F"
+
+        # Handle special cases
+        if packet.endswith(b"P"):
+            packet += b"F"  # Extend buffer for m3nano
+        elif packet.endswith(b"-"):  # wait finish
+            packet = packet[:-1]
+            post_send_command = self.wait_finished
+        elif packet.endswith(b"*"):  # abort
+            post_send_command = self.abort
+            packet = packet[:-1]
+        elif packet.endswith(b"&"):  # resume
+            self._resume_busy()
+            packet = packet[:-1]
+        elif packet.endswith(b"!"):  # pause
+            self._pause_busy()
+            packet = packet[:-1]
+        elif packet.endswith(b"%"):  # alt-checksum
+            default_checksum = False
+            packet = packet[:-1]
+        elif packet.endswith(b"\x18"):  # quit
+            self.update_state("terminate")
+            self.is_shutdown = True
+            packet = packet[:-1]
+
+        # Handle serial challenge
+        if packet.startswith(b"A") and not packet.startswith(b"AT"):
+            post_send_command = self._confirm_serial
+
+        return packet, post_send_command, default_checksum
+
+    def _apply_packet_padding(self, packet):
+        """
+        Apply final padding to the packet.
+
+        @param packet: The packet to pad
+        @return: The padded packet
+        """
+        if packet.endswith(b"#"):
+            packet = packet[:-1]
+            try:
+                c = packet[-1]
+            except IndexError:
+                c = b"F"  # Packet was simply #. We can do nothing.
+            packet += bytes([c]) * (PACKET_SIZE - len(packet))  # Padding. '\n'
+        else:
+            padder = b"\x00" if packet.startswith(b"AT") else b"F"
+            packet += padder * (PACKET_SIZE - len(packet))  # Padding. '\n'
+        return packet
+
+    def _send_and_confirm_packet(self, packet, default_checksum):
+        """
+        Send a packet and wait for confirmation.
+
+        @param packet: The packet to send
+        @param default_checksum: Whether to use default checksum
+        @return: True if packet was sent successfully, False otherwise
+        """
+        if len(packet) != PACKET_SIZE:
+            return len(packet) == 0  # Empty packets are considered successful
 
         # Packet is prepared and ready to send. Open Channel.
         self.open()
-        # print (f"Packet: {packet!r} (len={len(packet)})"    )
-        if len(packet) == PACKET_SIZE:
-            # We have a sendable packet.
-            if not self.pre_ok:
-                self.wait_until_accepting_packets()
-            if default_checksum:
-                packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
-            else:
-                packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
-            # self.debug_packet(packet)
-            self.connection.write(packet)
-            self.pre_ok = False
 
-            # Packet is sent, trying to confirm.
-            status = 0
-            flawless = True
-            for attempts in range(MAX_CONFIRMATION_ATTEMPTS):
-                # We'll try to confirm this at 500 times.
-                try:
-                    self.update_status()
-                    status = self._status[1]
-                    if attempts > 10:
-                        time.sleep(min(0.001 * attempts, 0.1))
-                except ConnectionError:
-                    # Errors are ignored, must confirm packet.
-                    flawless = False
-                    continue
-                if status == 0:
-                    # We did not read a status.
-                    continue
-                if status == LihuiyuStatus.OK.value:
-                    # Packet was fine.
-                    self.pre_ok = True
-                    break
-                elif status == LihuiyuStatus.BUSY.value:
-                    # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
-                    continue
-                elif status == LihuiyuStatus.ERROR.value:
-                    if not default_checksum:
-                        break
-                    self.context.rejected_count += 1
-                    if flawless:  # Packet was rejected. The CRC failed.
-                        return False
-                    else:
-                        # The channel had the error, assuming packet was actually good.
-                        break
-                elif status == LihuiyuStatus.FINISH.value:
-                    # We finished. If we were going to wait for that, we no longer need to.
-                    if post_send_command == self.wait_finished:
-                        post_send_command = None
-                    continue  # This is not a confirmation.
-                elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
-                    if post_send_command == self._confirm_serial:
-                        # We confirmed the serial number on the card.
-                        self.serial_confirmed = True
-                        post_send_command = None
-                        break
-                    elif post_send_command == self.wait_finished:
-                        # This is a STATUS_M3_FINISHED, we no longer wait.
-                        post_send_command = None
-                        continue
+        # We have a sendable packet.
+        if not self.pre_ok:
+            self.wait_until_accepting_packets()
 
-            if status == 0:  # After 500 attempts we could only get status = 0.
-                raise ConnectionError  # Broken pipe. Could not confirm packet.
-            self.context.packet_count += (
-                1  # Our packet is confirmed or assumed confirmed.
-            )
+        # Add checksum and send
+        if default_checksum:
+            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
         else:
-            if len(packet) != 0:
-                # We could only generate a partial packet, throw it back
-                return False
-            # We have an empty packet of only commands. Continue work.
+            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
 
+        self.connection.write(packet)
+        self.pre_ok = False
+
+        # Confirm packet was received
+        return self._confirm_packet_receipt(default_checksum)
+
+    def _confirm_packet_receipt(self, default_checksum):
+        """
+        Wait for confirmation that the packet was received correctly.
+
+        @param default_checksum: Whether default checksum was used
+        @return: True if packet was confirmed, False otherwise
+        """
+        status = 0
+        flawless = True
+
+        for attempts in range(MAX_CONFIRMATION_ATTEMPTS):
+            try:
+                self.update_status()
+                status = self._status[1]
+                if attempts > CONFIRMATION_DELAY_START:
+                    time.sleep(
+                        min(MIN_CONFIRMATION_DELAY * attempts, MAX_CONFIRMATION_DELAY)
+                    )
+            except ConnectionError:
+                flawless = False
+                continue
+
+            if status == 0:
+                continue
+
+            # Check status codes
+            if status == LihuiyuStatus.OK.value:
+                self.pre_ok = True
+                self.context.packet_count += 1
+                return True
+            elif status == LihuiyuStatus.BUSY.value:
+                continue
+            elif status == LihuiyuStatus.ERROR.value:
+                if not default_checksum:
+                    return True
+                self.context.rejected_count += 1
+                return not flawless  # Return True if there were connection errors
+            elif status == LihuiyuStatus.FINISH.value:
+                continue  # This is not a confirmation.
+            elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
+                self.context.packet_count += 1
+                return True
+
+        # After all attempts, if we still have status 0, it's a broken pipe
+        if status == 0:
+            raise ConnectionError("Broken pipe. Could not confirm packet.")
+        return False
+
+    def _update_buffer_after_processing(self, realtime, length, packet):
+        """
+        Update the buffer by removing processed data.
+
+        @param realtime: Whether this was a realtime buffer
+        @param length: Length of data to remove
+        @param packet: The packet that was processed
+        """
         # Packet was processed. Remove that data.
         with self._buffer_lock:
             if realtime:
                 del self._realtime_buffer[:length]
             else:
                 del self._buffer[:length]
+
         if len(packet) != 0:
             # Packet was completed and sent. Only then update the channel.
             self.update_packet(packet)
         self.update_buffer()
 
+    def _execute_post_send_command(self, post_send_command):
+        """
+        Execute post-send command if one was specified.
+
+        @param post_send_command: The command to execute after sending
+        """
         if post_send_command is not None:
-            # Post send command could be wait_finished, and might have a broken pipe.
             try:
                 post_send_command()
             except ConnectionError:
                 # We should have already sent the packet. So this should be fine.
                 pass
-        return True  # A packet was prepped and sent correctly.
 
     def update_status(self):
         try:
