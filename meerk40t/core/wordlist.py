@@ -238,7 +238,6 @@ class Wordlist:
 
             # Parse the key and any modifiers, preserving case for format strings
             key, offset, original_key = self._parse_key_and_offset(key_content)
-
             # Get the replacement value
             replacement = self._get_replacement_value(original_key, offset, increment)
 
