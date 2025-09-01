@@ -9,7 +9,16 @@ import os
 import re
 from copy import copy
 from datetime import datetime
+
 from ..extra.encode_detect import EncodingDetectFile
+
+TYPE_INDEX = 0
+POSITION_INDEX = 1
+DATA_START_INDEX = 2
+
+TYPE_STATIC = 0
+TYPE_CSV = 1
+TYPE_COUNTER = 2
 
 
 class Wordlist:
@@ -75,9 +84,9 @@ class Wordlist:
             return self.wordlist_timestr(None)
         # print (f"Retrieve {wordlist} for {skey}")
         if idx is None:  # Default
-            idx = wordlist[1]
+            idx = wordlist[POSITION_INDEX]
 
-        if idx <= len(wordlist):
+        if idx < len(wordlist):
             try:
                 result = wordlist[idx]
             except IndexError:
@@ -88,7 +97,7 @@ class Wordlist:
         skey = skey.lower()
         if skey not in self.content:
             if wtype is None:
-                wtype = 0
+                wtype = TYPE_STATIC
             self.content[skey] = [
                 wtype,
                 2,
@@ -113,22 +122,22 @@ class Wordlist:
             wordlist = self.content[wkey]
             if wkey in self.prohibited:
                 continue
-            if wordlist[0] in (0, 1):  # Text or csv
+            if wordlist[TYPE_INDEX] in (0, 1):  # Text or csv
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
-                newidx = min(wordlist[1] + delta, last_index)
+                newidx = min(wordlist[POSITION_INDEX] + delta, last_index)
                 if newidx < 2:
                     newidx = 2
-                wordlist[1] = newidx
-            elif wordlist[0] == 2:  # Counter-type
-                value = wordlist[2]
+                wordlist[POSITION_INDEX] = newidx
+            elif wordlist[TYPE_INDEX] == TYPE_COUNTER:  # Counter-type
+                value = wordlist[DATA_START_INDEX]
                 try:
                     value = int(value) + delta
                 except ValueError:
                     value = 0
                 if value < 0:
                     value = 0
-                wordlist[2] = value
+                wordlist[DATA_START_INDEX] = value
 
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:
@@ -138,7 +147,7 @@ class Wordlist:
         if not skey in self.content:
             # hasn't been there, so establish it
             if wtype is None:
-                wtype = 0
+                wtype = TYPE_STATIC
             self.content[skey] = [wtype, 2, value]
         else:
             if idx is None:
@@ -178,12 +187,14 @@ class Wordlist:
                 continue
             wordlist = self.content[wkey]
             if (
-                wordlist[0] in (0, 1) and wkey not in self.prohibited
+                wordlist[TYPE_INDEX] in (0, 1) and wkey not in self.prohibited
             ):  # Variable Wordlist type.
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
                 if relative:
-                    self.content[wkey][1] = min(wordlist[1] + index, last_index)
+                    self.content[wkey][1] = min(
+                        wordlist[POSITION_INDEX] + index, last_index
+                    )
                 else:
                     self.content[wkey][1] = min(index + 2, last_index)
 
@@ -267,9 +278,9 @@ class Wordlist:
                     continue
                 wordlist = self.content[key]
 
-                if wordlist[0] == 2:  # Counter-type
+                if wordlist[TYPE_INDEX] == TYPE_COUNTER:  # Counter-type
                     # Counter index is the value.
-                    value = wordlist[2] if not reset else 0
+                    value = wordlist[DATA_START_INDEX] if not reset else 0
                     try:
                         value = int(value)
                     except ValueError:
@@ -277,15 +288,17 @@ class Wordlist:
                     value += relative
                     if autoincrement and increment:
                         # autoincrement of counter means value + 1
-                        wordlist[2] = value + 1
+                        wordlist[DATA_START_INDEX] = value + 1
                 else:
                     # This is a variable wordlist.
-                    current_index = wordlist[1] if not reset else 2  # 2 as 2 based
+                    current_index = (
+                        wordlist[POSITION_INDEX] if not reset else 2
+                    )  # 2 as 2 based
                     current_index += relative
                     value = self.fetch_value(key, current_index)
                     if autoincrement and increment:
                         # Index set to current index + 1
-                        wordlist[1] = current_index + 1
+                        wordlist[POSITION_INDEX] = current_index + 1
 
             if value is not None:
                 result = result.replace(bracketed_key, str(value))
@@ -387,7 +400,7 @@ class Wordlist:
         # remove all traces of the previous csv file
         names = []
         for skey in self.content:
-            if self.content[skey][0] == 1:  # csv
+            if self.content[skey][TYPE_INDEX] == TYPE_CSV:  # csv
                 names.append(skey)
         for skey in names:
             self.delete(skey)
@@ -403,6 +416,10 @@ class Wordlist:
 
             try:
                 with open(filename, newline="", encoding=encoding) as csvfile:
+                    # Check if file is empty first
+                    if csvfile.read(1) == "":
+                        return 0, 0, []
+                    csvfile.seek(0)
                     buffer = csvfile.read(1024)
                     if force_header is None:
                         has_header = csv.Sniffer().has_header(buffer)
@@ -430,7 +447,13 @@ class Wordlist:
                             # Append...
                             self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
                         ct += 1
-            except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
+            except (
+                csv.Error,
+                PermissionError,
+                OSError,
+                FileNotFoundError,
+                StopIteration,
+            ) as e:
                 ct = 0
                 headers = []
         colcount = len(headers)
