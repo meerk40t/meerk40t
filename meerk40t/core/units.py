@@ -538,6 +538,10 @@ class Angle:
     def __eq__(self, other):
         if hasattr(other, "angle"):
             other = other.angle
+        try:
+            other = float(other)
+        except (TypeError, ValueError):
+            return False
         c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
         return c1
 
@@ -599,6 +603,12 @@ class Angle:
         return self
 
     def __idiv__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle /= other
+        return self
+
+    def __itruediv__(self, other):
         if isinstance(other, Angle):
             other = other.angle
         self.angle /= other
