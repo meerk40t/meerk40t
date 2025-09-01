@@ -26,7 +26,6 @@ MAX_CONFIRMATION_ATTEMPTS = 500  # Maximum attempts to confirm packet
 CONFIRMATION_DELAY_START = 10  # Attempts before starting delay
 MIN_CONFIRMATION_DELAY = 0.001  # Minimum delay between attempts
 MAX_CONFIRMATION_DELAY = 0.1  # Maximum delay between attempts
-MAX_CONFIRMATION_ATTEMPTS = 500
 USB_LOG_BUFFER_SIZE = 500
 
 
@@ -111,23 +110,19 @@ def get_code_string_from_code(code):
         status = LihuiyuStatus(code)
         return status.name.replace("_", " ").title()
     except ValueError:
-        if code == 0:
-            return "USB Failed"
-        else:
-            return f"UNK {code:02x}"
+        return "USB Failed" if code == 0 else f"UNK {code:02x}"
 
 
 def convert_to_list_bytes(data):
+    packet = [0] * PACKET_SIZE
+    data_len = min(len(data), PACKET_SIZE)
     if isinstance(data, str):  # python 2
-        packet = [0] * PACKET_SIZE
-        for i in range(PACKET_SIZE):
+        for i in range(data_len):
             packet[i] = ord(data[i])
-        return packet
     else:
-        packet = [0] * PACKET_SIZE
-        for i in range(PACKET_SIZE):
+        for i in range(data_len):
             packet[i] = data[i]
-        return packet
+    return packet
 
 
 crc_table = [
@@ -247,16 +242,32 @@ class LihuiyuController:
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
         self.reset()
 
+    def _acquire_all_buffer_locks(self):
+        """
+        Acquire all buffer-related locks in a consistent order to prevent deadlocks.
+        Always acquire locks in the same order: buffer, queue, preempt.
+        """
+        self._buffer_lock.acquire()
+        self._queue_lock.acquire()
+        self._preempt_lock.acquire()
+
+    def _release_all_buffer_locks(self):
+        """
+        Release all buffer-related locks in reverse order.
+        """
+        self._preempt_lock.release()
+        self._queue_lock.release()
+        self._buffer_lock.release()
+
     @property
     def viewbuffer(self):
-        with self._buffer_lock:
-            with self._queue_lock:
-                with self._preempt_lock:
-                    buffer = (
-                        bytes(self._realtime_buffer)
-                        + bytes(self._buffer)
-                        + bytes(self._queue)
-                    )
+        self._acquire_all_buffer_locks()
+        try:
+            buffer = (
+                bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
+            )
+        finally:
+            self._release_all_buffer_locks()
         try:
             buffer_str = buffer.decode()
         except ValueError:
@@ -283,10 +294,11 @@ class LihuiyuController:
 
     def __len__(self):
         """Provides the length of the buffer of this device."""
-        with self._buffer_lock:
-            with self._queue_lock:
-                with self._preempt_lock:
-                    return len(self._buffer) + len(self._queue) + len(self._preempt)
+        self._acquire_all_buffer_locks()
+        try:
+            return len(self._buffer) + len(self._queue) + len(self._preempt)
+        finally:
+            self._release_all_buffer_locks()
 
     def open(self):
         with self._connect_lock:
@@ -509,12 +521,13 @@ class LihuiyuController:
             self.update_state("active")
 
     def abort(self):
-        with self._buffer_lock:
-            with self._queue_lock:
-                with self._preempt_lock:
-                    self._buffer.clear()
-                    self._queue.clear()
-                    self._realtime_buffer.clear()
+        self._acquire_all_buffer_locks()
+        try:
+            self._buffer.clear()
+            self._queue.clear()
+            self._realtime_buffer.clear()
+        finally:
+            self._release_all_buffer_locks()
         self.abort_waiting = False
         self.context.signal("pipe;buffer", 0)
         self.update_state("terminate")
@@ -563,7 +576,7 @@ class LihuiyuController:
 
         challenge = bytearray.fromhex(md5(bytes(serial.upper(), "utf8")).hexdigest())
         packet = b"A%s" % challenge
-        packet += b"F" * (PACKET_SIZE - len(packet))
+        packet = self._pad_packet_to_size(packet, b"F")
         packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
         self.connection.write(packet)
         try:
@@ -611,10 +624,13 @@ class LihuiyuController:
                 continue
 
             self._check_transfer_buffer()
-            with self._buffer_lock:
+            self._acquire_all_buffer_locks()
+            try:
                 buffer_empty = (
                     len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0
                 )
+            finally:
+                self._release_all_buffer_locks()
             if buffer_empty:
                 # The buffer and realtime buffers are empty. No packet creation possible.
                 self.context.laser_status = "idle"
@@ -687,15 +703,21 @@ class LihuiyuController:
 
     def _check_transfer_buffer(self):
         if len(self._queue):  # check for and append queue
-            with self._queue_lock:
+            self._acquire_all_buffer_locks()
+            try:
                 self._buffer += self._queue
                 self._queue.clear()
+            finally:
+                self._release_all_buffer_locks()
             self.update_buffer()
 
         if len(self._preempt):  # check for and prepend preempt
-            with self._preempt_lock:
+            self._acquire_all_buffer_locks()
+            try:
                 self._realtime_buffer += self._preempt
                 self._preempt.clear()
+            finally:
+                self._release_all_buffer_locks()
             self.update_buffer()
 
     def debug_packet(self, packet):
@@ -762,13 +784,16 @@ class LihuiyuController:
 
         @return: tuple of (buffer_bytes, is_realtime) or (None, None) if no buffer available
         """
-        with self._buffer_lock:
+        self._acquire_all_buffer_locks()
+        try:
             if len(self._realtime_buffer) > 0:
                 return bytes(self._realtime_buffer), True
             elif len(self._buffer) > 0:
                 return bytes(self._buffer), False
             else:
                 return None, None
+        finally:
+            self._release_all_buffer_locks()
 
     def _extract_packet_from_buffer(self, buffer):
         """
@@ -816,7 +841,7 @@ class LihuiyuController:
 
         # Apply final padding if needed
         if len(packet) != 0:
-            packet = self._apply_packet_padding(packet)
+            packet = self._pad_packet_to_size(packet)
 
         return packet, length, post_send_command, default_checksum
 
@@ -830,8 +855,7 @@ class LihuiyuController:
         """
         if packet.endswith(b"\n"):
             packet = packet[:-1]
-        c = b"\x00"
-        packet += c * (PACKET_SIZE - len(packet))  # Padding with 0 character
+        packet = self._pad_packet_to_size(packet, b"\x00")
         return packet, length
 
     def _handle_newline_commands(self, packet):
@@ -879,23 +903,27 @@ class LihuiyuController:
 
         return packet, post_send_command, default_checksum
 
-    def _apply_packet_padding(self, packet):
+    def _pad_packet_to_size(self, packet, padder=None):
         """
-        Apply final padding to the packet.
+        Pad a packet to PACKET_SIZE using the specified padder character.
 
         @param packet: The packet to pad
+        @param padder: The padding character (bytes). If None, uses default logic:
+                       - For packets ending with "#": uses the last character before "#" or "F" if empty
+                       - For AT commands: uses b"\x00"
+                       - For all other packets: uses b"F"
         @return: The padded packet
         """
-        if packet.endswith(b"#"):
-            packet = packet[:-1]
-            try:
-                c = packet[-1]
-            except IndexError:
-                c = b"F"  # Packet was simply #. We can do nothing.
-            packet += bytes([c]) * (PACKET_SIZE - len(packet))  # Padding. '\n'
-        else:
-            padder = b"\x00" if packet.startswith(b"AT") else b"F"
-            packet += padder * (PACKET_SIZE - len(packet))  # Padding. '\n'
+        if padder is None:
+            if packet.endswith(b"#"):
+                packet = packet[:-1]
+                try:
+                    padder = bytes([packet[-1]])
+                except IndexError:
+                    padder = b"F"  # Packet was simply #. We can do nothing.
+            else:
+                padder = b"\x00" if packet.startswith(b"AT") else b"F"
+        packet += padder * (PACKET_SIZE - len(packet))
         return packet
 
     def _send_and_confirm_packet(self, packet, default_checksum):
@@ -985,11 +1013,14 @@ class LihuiyuController:
         @param packet: The packet that was processed
         """
         # Packet was processed. Remove that data.
-        with self._buffer_lock:
+        self._acquire_all_buffer_locks()
+        try:
             if realtime:
                 del self._realtime_buffer[:length]
             else:
                 del self._buffer[:length]
+        finally:
+            self._release_all_buffer_locks()
 
         if len(packet) != 0:
             # Packet was completed and sent. Only then update the channel.
