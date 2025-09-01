@@ -56,7 +56,16 @@ class Wordlist:
             "op_passes": [TYPE_STATIC, 2, "<passes>"],
             "op_dpi": [TYPE_STATIC, 2, "<dpi>"],
         }
-        self.prohibited = list(self.content.keys())
+        self.prohibited = (
+            "version",
+            "date",
+            "time",
+            "op_device",
+            "op_speed",
+            "op_power",
+            "op_passes",
+            "op_dpi",
+        )
         self._stack = []
         self.transaction_open = False
         self.content_backup = {}
@@ -87,6 +96,13 @@ class Wordlist:
             idx = wordlist[POSITION_INDEX]
 
         if 0 <= idx < len(wordlist):
+            # Handle out of bounds for data indices
+            if idx < self.DATA_START_INDEX:
+                # Wrap from the end for negative indices
+                diff = self.DATA_START_INDEX - idx
+                idx = len(wordlist) - 1 - diff
+                if idx < self.DATA_START_INDEX:
+                    idx = self.DATA_START_INDEX
             try:
                 result = wordlist[idx]
             except IndexError:
@@ -218,16 +234,18 @@ class Wordlist:
 
         # Find all bracketed patterns
         for bracketed_key in re.findall(r"\{[^}]+\}", result):
-            key_content = bracketed_key[1:-1].lower().strip()
+            key_content = bracketed_key[1:-1]
 
-            # Parse the key and any modifiers
-            key, offset = self._parse_key_and_offset(key_content)
+            # Parse the key and any modifiers, preserving case for format strings
+            key, offset, original_key = self._parse_key_and_offset(key_content)
 
             # Get the replacement value
-            replacement = self._get_replacement_value(key, offset, increment)
+            replacement = self._get_replacement_value(original_key, offset, increment)
 
-            if replacement is not None:
-                replacements[bracketed_key] = str(replacement)
+            # Always replace, even if None (replace with empty string)
+            replacements[bracketed_key] = (
+                str(replacement) if replacement is not None else ""
+            )
 
         # Apply all replacements at once for efficiency
         for old, new in replacements.items():
@@ -239,47 +257,58 @@ class Wordlist:
         """Parse key content and extract offset if present.
 
         Returns:
-            tuple: (key, offset) where offset is 0 if not specified
+            tuple: (lowercased_key, offset, original_key) where offset is 0 if not specified
         """
-        if "#" not in key_content:
-            return key_content, 0
+        original_key = key_content.strip()
 
-        pos = key_content.find("#")
-        key = key_content[:pos].strip()
-        offset_str = key_content[pos + 1 :].strip()
+        if "#" not in original_key:
+            lowercased_key = original_key.lower()
+            return lowercased_key, 0, original_key
+
+        pos = original_key.find("#")
+        key_part = original_key[:pos].strip()
+        offset_str = original_key[pos + 1 :].strip()
 
         try:
             offset = int(offset_str)
         except ValueError:
             offset = 0
 
-        return key, offset
+        lowercased_key = key_part.lower()
+        return lowercased_key, offset, original_key
 
-    def _get_replacement_value(self, key, offset, increment):
+    def _get_replacement_value(self, original_key, offset, increment):
         """Get the replacement value for a given key and offset."""
-        # Handle special date/time keys
-        if key == "date":
+        # Parse the key to separate base key from offset
+        parsed_key, _, _ = self._parse_key_and_offset(original_key)
+
+        # Handle special date/time keys - use original case for format strings
+        if parsed_key == "date":
             return self._get_date_value(offset)
-        elif key == "time":
+        elif parsed_key == "time":
             return self._get_time_value(offset)
-        elif key.startswith("date@"):
-            format_str = key[5:]  # Remove "date@" prefix
+        elif parsed_key.startswith("date@"):
+            format_str = original_key[
+                5:
+            ]  # Remove "date@" prefix from original (preserves case)
             return self.wordlist_datestr(format_str)
-        elif key.startswith("time@"):
-            format_str = key[5:]  # Remove "time@" prefix
+        elif parsed_key.startswith("time@"):
+            format_str = original_key[
+                5:
+            ]  # Remove "time@" prefix from original (preserves case)
             return self.wordlist_timestr(format_str)
 
         # Handle regular wordlist keys
-        if key not in self.content:
+        if parsed_key not in self.content:
             return None
 
-        wordlist = self.content[key]
+        wordlist = self.content[parsed_key]
         wordlist_type = wordlist[0]  # TYPE_INDEX
 
         if wordlist_type == 2:  # Counter type
             return self._get_counter_value(wordlist, offset, increment)
         else:  # Static or CSV type
-            return self._get_list_value(key, wordlist, offset, increment)
+            return self._get_list_value(parsed_key, wordlist, offset, increment)
 
     def _get_date_value(self, offset):
         """Get date value, optionally with custom format."""
@@ -327,7 +356,7 @@ class Wordlist:
     def _get_list_value(self, key, wordlist, offset, increment):
         """Get value from a static or CSV-type wordlist."""
         if offset != 0:
-            # If offset is specified, use it directly as the target index
+            # If offset is specified, add it to the data start index (absolute offset)
             target_index = self.DATA_START_INDEX + offset
         else:
             # Otherwise use the current position
@@ -466,6 +495,12 @@ class Wordlist:
                     csvfile.seek(0)
                     reader = csv.reader(csvfile, dialect)
                     headers = next(reader)
+                    if not has_header:
+                        # headers contains the first row of data, don't lowercase it
+                        pass
+                    else:
+                        # Convert headers to lowercase for consistency
+                        headers = [h.lower() for h in headers]
                     if not has_header:
                         # Use Line as Data and set some default names
                         for idx, entry in enumerate(headers):
