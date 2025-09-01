@@ -24300,3 +24300,27 @@ msgstr "Valori non validi per da={lbound}, a={ubound}: {error}"
 #: meerk40t/kernel/kernel.py:3845
 msgid "Please provide a command to loop."
 msgstr "Si prega di fornire un comando per loop."
+
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "Ritardo per movimento al buio."
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "Ritardo per movimento con luce."
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <comando> : esegui un comando per modificare il piano"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "Piano {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr ""
+"plan<?> copy / copy-selected: copia dati da tutte / solo dalle operazioni "
+"selezionate"

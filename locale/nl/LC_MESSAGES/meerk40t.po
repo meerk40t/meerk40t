@@ -23875,3 +23875,27 @@ msgstr "Opent het venster met alle achtergrondtaakinformatie"
 #: meerk40t/kernel/kernel.py:2780
 msgid "dead"
 msgstr "gestopt"
+
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "Vertraging voor donkere beweging."
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "Vertraging voor lichte beweging."
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <commando> : geef een commando om het plan te wijzigen"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "Plan {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr ""
+"plan<?> copy / copy-selected: kopieer gegevens van alle / alleen van "
+"geselecteerde bewerkingen"

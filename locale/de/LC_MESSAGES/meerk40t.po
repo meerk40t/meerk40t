@@ -23947,3 +23947,27 @@ msgstr "Öffnet das Fenster mit allen Hintergrundaufgaben-Informationen"
 #: meerk40t/kernel/kernel.py:2780
 msgid "dead"
 msgstr "beendet"
+
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "Verzögerung für Dunkelbewegung."
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "Verzögerung für Lichtbewegung."
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <Befehl> : Befehl zum Ändern des Plans ausführen"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "Plan {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr ""
+"plan<?> copy / copy-selected: Daten von allen / nur von ausgewählten "
+"Operationen kopieren"

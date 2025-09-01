@@ -23061,3 +23061,39 @@ msgstr "すべてのバックグラウンドタスク情報を含むウィンド
 #: meerk40t/kernel/kernel.py:2780
 msgid "dead"
 msgstr "停止"
+
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "ダーク移動の遅延。"
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "ライト移動の遅延。"
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <コマンド> : プランを変更するコマンドを実行"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "プラン {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr "plan<?> copy / copy-selected: すべて／選択した操作からデータをコピー"
+
+#: meerk40t/core/elements/shapes.py:1470 meerk40t/core/elements/shapes.py:1492
+msgid ""
+"{index}: {name} - {typename}\n"
+"   stroke-width = {stroke_width}\n"
+"   scaled-width = {scaled_stroke_width}"
+msgstr ""
+"{index}: {name} - {typename}\n"
+"   線幅 = {stroke_width}\n"
+"   拡大後の線幅 = {scaled_stroke_width}"
+
+#: meerk40t/kernel/kernel.py:3203
+msgid "    {index}.{subindex}: linked {name}:{hash:X}"
+msgstr "    {index}.{subindex}: リンク済み {name}:{hash:X}"

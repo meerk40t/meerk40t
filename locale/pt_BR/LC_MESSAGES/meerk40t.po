@@ -596,7 +596,7 @@ msgstr "Limites do elemento: {bounds}"
 msgid "convex hull of the current selected elements"
 msgstr "Casca convexa dos elementos selecionados"
 
-#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542 
+#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542
 #: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542
 #: meerk40t/core/elements/trace.py:632
 msgid "No elements bounds to trace."
@@ -13261,7 +13261,33 @@ msgstr "Redefinir Cores para Padrão"
 msgid "Reset Colors to brighter defaults"
 msgstr "Redefinir Cores para padrões mais claros"
 
-#: meerk40t/balormk/device.py:92 meerk40t/balormk/device.py:93 meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95 meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97 meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:120 meerk40t/balormk/device.py:136 meerk40t/balormk/device.py:148 meerk40t/balormk/device.py:162 meerk40t/balormk/device.py:274 meerk40t/balormk/device.py:287 meerk40t/balormk/device.py:299 meerk40t/balormk/device.py:311 meerk40t/balormk/device.py:532 meerk40t/balormk/device.py:548 meerk40t/balormk/device.py:562 meerk40t/balormk/device.py:576 meerk40t/balormk/device.py:590 meerk40t/balormk/device.py:603 meerk40t/balormk/device.py:615 meerk40t/core/elements/elements.py:438 meerk40t/core/elements/trace.py:427 meerk40t/device/gui/formatterpanel.py:103 meerk40t/device/gui/formatterpanel.py:118 meerk40t/gui/laserpanel.py:120 meerk40t/gui/plugin.py:112 meerk40t/gui/plugin.py:125 meerk40t/gui/plugin.py:136 meerk40t/gui/plugin.py:149 meerk40t/gui/plugin.py:167 meerk40t/gui/plugin.py:180 meerk40t/gui/plugin.py:191 meerk40t/gui/preferences.py:750 meerk40t/gui/wxmmain.py:1334 meerk40t/gui/wxmmain.py:1347 meerk40t/gui/wxmmain.py:1362 meerk40t/gui/wxmmain.py:1379 meerk40t/gui/wxmmain.py:1396 meerk40t/gui/wxmmain.py:1409 meerk40t/lihuiyu/device.py:156 meerk40t/moshi/device.py:62 meerk40t/moshi/device.py:73 meerk40t/moshi/device.py:86 meerk40t/moshi/device.py:99 meerk40t/newly/device.py:120 meerk40t/newly/device.py:131 meerk40t/newly/device.py:145 meerk40t/newly/device.py:159 meerk40t/newly/device.py:268 meerk40t/newly/device.py:281 meerk40t/ruida/device.py:51
+#: meerk40t/balormk/device.py:92 meerk40t/balormk/device.py:93
+#: meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95
+#: meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97
+#: meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:120
+#: meerk40t/balormk/device.py:136 meerk40t/balormk/device.py:148
+#: meerk40t/balormk/device.py:162 meerk40t/balormk/device.py:274
+#: meerk40t/balormk/device.py:287 meerk40t/balormk/device.py:299
+#: meerk40t/balormk/device.py:311 meerk40t/balormk/device.py:532
+#: meerk40t/balormk/device.py:548 meerk40t/balormk/device.py:562
+#: meerk40t/balormk/device.py:576 meerk40t/balormk/device.py:590
+#: meerk40t/balormk/device.py:603 meerk40t/balormk/device.py:615
+#: meerk40t/core/elements/elements.py:438 meerk40t/core/elements/trace.py:427
+#: meerk40t/device/gui/formatterpanel.py:103
+#: meerk40t/device/gui/formatterpanel.py:118 meerk40t/gui/laserpanel.py:120
+#: meerk40t/gui/plugin.py:112 meerk40t/gui/plugin.py:125
+#: meerk40t/gui/plugin.py:136 meerk40t/gui/plugin.py:149
+#: meerk40t/gui/plugin.py:167 meerk40t/gui/plugin.py:180
+#: meerk40t/gui/plugin.py:191 meerk40t/gui/preferences.py:750
+#: meerk40t/gui/wxmmain.py:1334 meerk40t/gui/wxmmain.py:1347
+#: meerk40t/gui/wxmmain.py:1362 meerk40t/gui/wxmmain.py:1379
+#: meerk40t/gui/wxmmain.py:1396 meerk40t/gui/wxmmain.py:1409
+#: meerk40t/lihuiyu/device.py:156 meerk40t/moshi/device.py:62
+#: meerk40t/moshi/device.py:73 meerk40t/moshi/device.py:86
+#: meerk40t/moshi/device.py:99 meerk40t/newly/device.py:120
+#: meerk40t/newly/device.py:131 meerk40t/newly/device.py:145
+#: meerk40t/newly/device.py:159 meerk40t/newly/device.py:268
+#: meerk40t/newly/device.py:281 meerk40t/ruida/device.py:51
 msgid "General"
 msgstr "Geral"
 
@@ -19181,9 +19207,11 @@ msgid "W, H"
 msgstr "L, A"
 
 #: meerk40t/gui/statusbarwidgets/statusbar.py:48
-msgid "Left Click: Move to next panel\n"
+msgid ""
+"Left Click: Move to next panel\n"
 "Right Click: Move to previous panel"
-msgstr "Clique Esquerdo: Mover para o próximo painel\n"
+msgstr ""
+"Clique Esquerdo: Mover para o próximo painel\n"
 "Clique Direito: Mover para o painel anterior"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:46
@@ -23650,8 +23678,14 @@ msgid "Simplify Effects"
 msgstr "Simplificar efeitos"
 
 #: meerk40t/gui/plugin.py:128
-msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
-msgstr "Limita a complexidade dos efeitos aplicados aos elementos durante o design.\nNB1: todos os valores serão respeitados durante a gravação.\nNB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
+msgid ""
+"Limits the complexity of effects applied to elements during design.\n"
+"NB1: all values will be honored during burning.\n"
+"NB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr ""
+"Limita a complexidade dos efeitos aplicados aos elementos durante o design.\n"
+"NB1: todos os valores serão respeitados durante a gravação.\n"
+"NB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
 
 #: meerk40t/grbl/device.py:1049
 msgid "Export succeeded: {filename}"
@@ -23665,7 +23699,8 @@ msgstr "Cortar/Gravar"
 #: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
 #: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
 msgid "This is global setting that will be overruled by operation settings."
-msgstr "Esta é uma configuração global que será substituída pelas configurações da "
+msgstr ""
+"Esta é uma configuração global que será substituída pelas configurações da "
 "operação."
 
 #: meerk40t/balormk/device.py:475
@@ -23744,7 +23779,6 @@ msgstr "Teste das configurações da operação"
 msgid "Operation settings"
 msgstr "Configurações da operação"
 
-
 #: meerk40t/balormk/device.py:446
 msgid "Cut/Engrave"
 msgstr "Cortar/Gravar"
@@ -23753,7 +23787,9 @@ msgstr "Cortar/Gravar"
 #: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
 #: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
 msgid "This is global setting that will be overruled by operation settings."
-msgstr "Esta é uma configuração global que será substituída pelas configurações de operação."
+msgstr ""
+"Esta é uma configuração global que será substituída pelas configurações de "
+"operação."
 
 #: meerk40t/balormk/device.py:475
 msgid "Miscellaneous"
@@ -23776,7 +23812,8 @@ msgstr "Redefinir para os valores padrão do dispositivo"
 msgid ""
 "Will reset power / speed and some other properties to device default values"
 msgstr ""
-"Redefinirá a potência/velocidade e algumas outras propriedades para os valores padrão do dispositivo"
+"Redefinirá a potência/velocidade e algumas outras propriedades para os "
+"valores padrão do dispositivo"
 
 #: meerk40t/core/elements/geometry.py:432
 msgid "Use unidirectional hatch lines"
@@ -23826,7 +23863,8 @@ msgstr "Teste de Configurações de Operação"
 msgid "Operation settings"
 msgstr "Configurações do operação"
 
-#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012 meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
 msgid "Encountered exception {error}"
 msgstr "Exceção encontrada {error}"
 
@@ -23932,11 +23970,17 @@ msgstr "Tarefas"
 
 #: meerk40t/gui/thread_info.py:30
 msgid "Opens the tasks window with all background task information"
-msgstr "Abre a janela de tarefas com todas as informações de tarefas em segundo plano"
+msgstr ""
+"Abre a janela de tarefas com todas as informações de tarefas em segundo "
+"plano"
 
 #: meerk40t/gui/thread_info.py:46
-msgid "Background Tasks are preparatory jobs issued with the 'threaded' command,\nlike burn preparation and others."
-msgstr "As Tarefas de Fundo são trabalhos preparatórios emitidos com o comando 'encadeado',\ncomo a preparação de gravação e outros."
+msgid ""
+"Background Tasks are preparatory jobs issued with the 'threaded' command,\n"
+"like burn preparation and others."
+msgstr ""
+"As Tarefas de Fundo são trabalhos preparatórios emitidos com o comando 'encadeado',\n"
+"como a preparação de gravação e outros."
 
 #: meerk40t/gui/thread_info.py:56
 msgid "List of background tasks"
@@ -23962,3 +24006,26 @@ msgstr "Abre a janela com todas as informações da tarefa em segundo plano"
 msgid "dead"
 msgstr "morto"
 
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "Atraso para movimento escuro."
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "Atraso para movimento de luz."
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <comando> : emitir um comando para modificar o plano"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "Plano {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr ""
+"plan<?> copy / copy-selected: copiar dados de todas / apenas das operações "
+"selecionadas"

@@ -23987,3 +23987,27 @@ msgstr "Megnyitja az ablakot az összes háttérfeladat információjával"
 #: meerk40t/kernel/kernel.py:2780
 msgid "dead"
 msgstr "leállítva"
+
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "Késleltetés a sötét mozgáshoz."
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "Késleltetés a világos mozgáshoz."
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <parancs> : parancs kiadása a terv módosításához"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "Terv {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr ""
+"plan<?> copy / copy-selected: adatok másolása mindből / csak a kiválasztott "
+"műveletekből"
