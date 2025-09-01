@@ -399,7 +399,7 @@ class BalorDevice(Service, Status):
             {
                 "attr": "redlight_delay_dark",
                 "object": self,
-                "default": 10,
+                "default": 1,
                 "type": int,
                 "trailer": "µs",
                 "label": _("Dark"),
@@ -410,7 +410,7 @@ class BalorDevice(Service, Status):
             {
                 "attr": "redlight_delay_light",
                 "object": self,
-                "default": 10,
+                "default": 1,
                 "type": int,
                 "trailer": "µs",
                 "label": _("Light"),
