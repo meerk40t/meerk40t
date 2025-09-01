@@ -216,11 +216,11 @@ class TestDXFImport(unittest.TestCase):
         doc = ezdxf.new()
         msp = doc.modelspace()
 
-        # Create layers
-        doc.layers.add("CUT_LAYER")
-        doc.layers.add("ENGRAVE_LAYER")
+        # Note: In older versions of ezdxf, layers are created implicitly
+        # when entities are assigned to layer names that don't exist yet.
+        # The add() method may not be available in all versions.
 
-        # Add entities to specific layers
+        # Add entities to specific layers (layers will be created automatically)
         circle = msp.add_circle((0, 0), 10)
         circle.dxf.layer = "CUT_LAYER"
 
