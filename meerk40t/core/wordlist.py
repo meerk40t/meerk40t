@@ -28,6 +28,16 @@ class Wordlist:
     on-the-fly recalculation / repopulation
     """
 
+    # Constants for wordlist array indices
+    TYPE_INDEX = 0
+    POSITION_INDEX = 1
+    DATA_START_INDEX = 2
+
+    # Constants for wordlist types
+    TYPE_STATIC = 0
+    TYPE_CSV = 1
+    TYPE_COUNTER = 2
+
     def __init__(self, versionstr, directory=None):
         # The content-dictionary contains an array per entry
         # index 0 indicates the type:
@@ -56,7 +66,7 @@ class Wordlist:
             "op_passes",
             "op_dpi",
         )
-        self._stack = list()
+        self._stack = []
         self.transaction_open = False
         self.content_backup = {}
         if directory is None:
@@ -68,8 +78,7 @@ class Wordlist:
         self.add_value(key, value, wtype)
 
     def fetch(self, key):
-        result = self.fetch_value(key, None)
-        return result
+        return self.fetch_value(key, None)
 
     def fetch_value(self, skey, idx):
         skey = skey.lower()
@@ -126,8 +135,7 @@ class Wordlist:
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
                 newidx = min(wordlist[POSITION_INDEX] + delta, last_index)
-                if newidx < 2:
-                    newidx = 2
+                newidx = max(newidx, 2)
                 wordlist[POSITION_INDEX] = newidx
             elif wordlist[TYPE_INDEX] == TYPE_COUNTER:  # Counter-type
                 value = wordlist[DATA_START_INDEX]
@@ -135,8 +143,7 @@ class Wordlist:
                     value = int(value) + delta
                 except ValueError:
                     value = 0
-                if value < 0:
-                    value = 0
+                value = max(value, 0)
                 wordlist[DATA_START_INDEX] = value
 
     def set_value(self, skey, value, idx=None, wtype=None):
@@ -172,7 +179,10 @@ class Wordlist:
 
         if isinstance(idx, str):
             relative = idx.startswith("+") or idx.startswith("-")
-            index = int(idx)
+            try:
+                index = int(idx)
+            except ValueError:
+                index = 0
         else:
             relative = False
             index = idx
@@ -200,129 +210,164 @@ class Wordlist:
 
     def reset(self, skey=None):
         # Resets position
-        skey = skey.lower()
         if skey is None:
             for skey in self.content:
-                self.content[skey][1] = 2
+                self.content[skey][self.POSITION_INDEX] = self.DATA_START_INDEX
         else:
-            self.content[skey][1] = 2
+            skey = skey.lower()
+            self.content[skey][self.POSITION_INDEX] = self.DATA_START_INDEX
 
     def translate(self, pattern, increment=True):
-        if pattern is None:
+        """Translate bracketed patterns like {key} or {key#offset} to their values."""
+        if not pattern:
             return ""
+
         result = str(pattern)
-        brackets = re.compile(r"\{[^}]+\}")
-        for bracketed_key in brackets.findall(result):
-            #            print(f"Key found: {bracketed_key}")
-            key = bracketed_key[1:-1].lower().strip()
-            # Let's check whether we have a modifier at the end: #<num>
-            # if key.endswith("++"):
-            #     autoincrement = True
-            #     key = key[:-2].strip()
-            # else:
-            #     autoincrement = False
-            autoincrement = False
+        replacements = {}
 
-            reset = False
-            relative = 0
-            pos = key.find("#")
-            if pos > 0:  # Needs to be after first character
-                # Process offset modification.
-                index_string = key[pos + 1 :]
-                key = key[:pos].strip()
+        # Find all bracketed patterns
+        for bracketed_key in re.findall(r"\{[^}]+\}", result):
+            key_content = bracketed_key[1:-1].lower().strip()
 
-                if not index_string.startswith("+") and not index_string.startswith(
-                    "-"
-                ):
-                    # We have a #<index> value without + or -, specific index value from 0
-                    reset = True
-                try:
-                    # This covers +x, -x, x
-                    relative = int(index_string)
-                except ValueError:
-                    relative = 0
+            # Parse the key and any modifiers
+            key, offset = self._parse_key_and_offset(key_content)
 
-            # And now date and time...
-            if key == "date":
-                # Do we have a format str?
-                sformat = None
-                if key in self.content:
-                    value = self.fetch_value(key, 2)
-                    if value is not None and isinstance(value, str) and len(value) > 0:
-                        if "%" in value:
-                            # Seems to be a format string, so let's try it...
-                            sformat = value
-                value = self.wordlist_datestr(sformat)
-            elif key == "time":
-                # Do we have a format str?
-                sformat = None
-                if key in self.content:
-                    value = self.fetch_value(key, 2)
-                    if value is not None and isinstance(value, str) and len(value) > 0:
-                        if "%" in value:
-                            # Seems to be a format string, so let's try it...
-                            sformat = value
-                value = self.wordlist_timestr(sformat)
-            elif key.startswith("date@"):
-                # Original cASEs, vkey is already lowered...
-                sformat = bracketed_key[6:-1]
-                value = self.wordlist_datestr(sformat)
-            elif key.startswith("time@"):
-                # Original cASEs, vkey is already lowered...
-                sformat = bracketed_key[6:-1]
-                value = self.wordlist_timestr(sformat)
-            else:
-                # Must be a wordlist type.
-                if key not in self.content:
-                    # This is not a wordlist name.
-                    continue
-                wordlist = self.content[key]
+            # Get the replacement value
+            replacement = self._get_replacement_value(key, offset, increment)
 
-                if wordlist[TYPE_INDEX] == TYPE_COUNTER:  # Counter-type
-                    # Counter index is the value.
-                    value = 0 if reset else wordlist[DATA_START_INDEX]
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        value = 0
-                    value += relative
-                    if autoincrement and increment:
-                        # autoincrement of counter means value + 1
-                        wordlist[DATA_START_INDEX] = value + 1
-                else:
-                    # This is a variable wordlist.
-                    current_index = (
-                        2 if reset else wordlist[POSITION_INDEX]
-                    )  # 2 as 2 based
-                    current_index += relative
-                    value = self.fetch_value(key, current_index)
-                    if autoincrement and increment:
-                        # Index set to current index + 1
-                        wordlist[POSITION_INDEX] = current_index + 1
+            if replacement is not None:
+                replacements[bracketed_key] = str(replacement)
 
-            if value is not None:
-                result = result.replace(bracketed_key, str(value))
+        # Apply all replacements at once for efficiency
+        for old, new in replacements.items():
+            result = result.replace(old, new)
 
         return result
 
-    @staticmethod
-    def wordlist_datestr(format=None):
-        time = datetime.now()
-        if format is None:
-            format = "%x"
+    def _parse_key_and_offset(self, key_content):
+        """Parse key content and extract offset if present.
+
+        Returns:
+            tuple: (key, offset) where offset is 0 if not specified
+        """
+        if "#" not in key_content:
+            return key_content, 0
+
+        pos = key_content.find("#")
+        key = key_content[:pos].strip()
+        offset_str = key_content[pos + 1 :].strip()
+
         try:
-            result = time.strftime(format)
-        except:
+            offset = int(offset_str)
+        except ValueError:
+            offset = 0
+
+        return key, offset
+
+    def _get_replacement_value(self, key, offset, increment):
+        """Get the replacement value for a given key and offset."""
+        # Handle special date/time keys
+        if key == "date":
+            return self._get_date_value(offset)
+        elif key == "time":
+            return self._get_time_value(offset)
+        elif key.startswith("date@"):
+            format_str = key[5:]  # Remove "date@" prefix
+            return self.wordlist_datestr(format_str)
+        elif key.startswith("time@"):
+            format_str = key[5:]  # Remove "time@" prefix
+            return self.wordlist_timestr(format_str)
+
+        # Handle regular wordlist keys
+        if key not in self.content:
+            return None
+
+        wordlist = self.content[key]
+        wordlist_type = wordlist[0]  # TYPE_INDEX
+
+        if wordlist_type == 2:  # Counter type
+            return self._get_counter_value(wordlist, offset, increment)
+        else:  # Static or CSV type
+            return self._get_list_value(key, wordlist, offset, increment)
+
+    def _get_date_value(self, offset):
+        """Get date value, optionally with custom format."""
+        format_str = None
+        if "date" in self.content:
+            stored_format = self.fetch_value("date", 2)
+            if (
+                stored_format
+                and isinstance(stored_format, str)
+                and len(stored_format) > 0
+                and "%" in stored_format
+            ):
+                format_str = stored_format
+        return self.wordlist_datestr(format_str)
+
+    def _get_time_value(self, offset):
+        """Get time value, optionally with custom format."""
+        format_str = None
+        if "time" in self.content:
+            stored_format = self.fetch_value("time", 2)
+            if (
+                stored_format
+                and isinstance(stored_format, str)
+                and len(stored_format) > 0
+                and "%" in stored_format
+            ):
+                format_str = stored_format
+        return self.wordlist_timestr(format_str)
+
+    def _get_counter_value(self, wordlist, offset, increment):
+        """Get value from a counter-type wordlist."""
+        try:
+            value = int(wordlist[2])  # DATA_START_INDEX
+        except (ValueError, IndexError):
+            value = 0
+
+        value += offset
+
+        # Auto-increment if requested
+        if increment:
+            wordlist[2] = value + 1
+
+        return value
+
+    def _get_list_value(self, key, wordlist, offset, increment):
+        """Get value from a static or CSV-type wordlist."""
+        if offset != 0:
+            # If offset is specified, use it directly as the target index
+            target_index = self.DATA_START_INDEX + offset
+        else:
+            # Otherwise use the current position
+            target_index = wordlist[self.POSITION_INDEX]
+
+        value = self.fetch_value(key, target_index)
+
+        # Auto-increment if requested and no explicit offset
+        if increment and offset == 0 and value is not None:
+            wordlist[self.POSITION_INDEX] = target_index + 1
+
+        return value
+
+    @staticmethod
+    def wordlist_datestr(sformat=None):
+        time = datetime.now()
+        if sformat is None:
+            sformat = "%x"
+        try:
+            result = time.strftime(sformat)
+        except ValueError:
             result = "invalid"
         return result
 
     @staticmethod
-    def wordlist_timestr(format=None):
+    def wordlist_timestr(sformat=None):
         time = datetime.now()
-        if format is None:
-            format = "%X"
+        if sformat is None:
+            sformat = "%X"
         try:
-            result = time.strftime(format)
+            result = time.strftime(sformat)
         except ValueError:
             result = "invalid"
         return result
@@ -363,7 +408,7 @@ class Wordlist:
         try:
             with open(filename) as f:
                 self.content = json.load(f)
-        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+        except (OSError, ValueError, json.JSONDecodeError):
             pass
         self.transaction_open = False
 
@@ -392,16 +437,15 @@ class Wordlist:
         try:
             self.content[newkey] = self.content[oldkey]
             self.delete(oldkey)
-        except:
+        except KeyError:
             return False
         return True
 
     def empty_csv(self):
         # remove all traces of the previous csv file
-        names = []
-        for skey in self.content:
-            if self.content[skey][TYPE_INDEX] == TYPE_CSV:  # csv
-                names.append(skey)
+        names = [
+            skey for skey in self.content if self.content[skey][TYPE_INDEX] == TYPE_CSV
+        ]
         for skey in names:
             self.delete(skey)
 
@@ -421,10 +465,11 @@ class Wordlist:
                         return 0, 0, []
                     csvfile.seek(0)
                     buffer = csvfile.read(1024)
-                    if force_header is None:
-                        has_header = csv.Sniffer().has_header(buffer)
-                    else:
-                        has_header = force_header
+                    has_header = (
+                        csv.Sniffer().has_header(buffer)
+                        if force_header is None
+                        else force_header
+                    )
                     # print (f"Header={has_header}, Force={force_header}")
                     dialect = csv.Sniffer().sniff(buffer)
                     csvfile.seek(0)
@@ -447,13 +492,7 @@ class Wordlist:
                             # Append...
                             self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
                         ct += 1
-            except (
-                csv.Error,
-                PermissionError,
-                OSError,
-                FileNotFoundError,
-                StopIteration,
-            ) as e:
+            except (OSError, StopIteration, csv.Error, UnicodeDecodeError):
                 ct = 0
                 headers = []
         colcount = len(headers)
@@ -486,12 +525,10 @@ class Wordlist:
                     relative = int(index_string)
                 except ValueError:
                     relative = 0
-            else:
-                # it's the unmodified key...
-                if key.startswith("time@"):
-                    key = "time"
-                elif key.startswith("date@"):
-                    key = "date"
+            elif key.startswith("time@"):
+                key = "time"
+            elif key.startswith("date@"):
+                key = "date"
             if key not in self.content:
                 continue
             if key in self.prohibited:
@@ -520,9 +557,7 @@ class Wordlist:
 
     def push(self):
         """Stores the current content on the stack"""
-        copied_content = {}
-        for key, entry in self.content.items():
-            copied_content[key] = copy(entry)
+        copied_content = {key: copy(entry) for key, entry in self.content.items()}
         self._stack.append(copied_content)
         # print (f"push was called, when name was: '{self.content['name']}'")
 
