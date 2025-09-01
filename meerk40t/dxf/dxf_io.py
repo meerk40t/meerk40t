@@ -83,6 +83,13 @@ class DXFProcessor:
         self.try_unsupported = True
         # Path stroke width
         self.std_stroke = 1000
+        self._channel = None
+        if hasattr(self.elements, "kernel"):
+            self._channel = self.elements.kernel.channel("console")
+
+    def logger(self, message):
+        if self._channel:
+            self._channel(message)
 
     def process(self, entities, pathname):
         self.pathname = pathname
@@ -523,19 +530,34 @@ class DXFProcessor:
                             )
                         elif hasattr(e, "major_axis") and hasattr(e, "ratio"):
                             # EllipseEdge
+                            if hasattr(e, "is_counter_clockwise"):
+                                ccw = e.is_counter_clockwise
+                            else:
+                                ccw = True
+                                self.logger(
+                                    "EllipseEdge direction (is_counter_clockwise) not specified; defaulting to True."
+                                )
                             element += Arc(
                                 radius=e.major_axis,
                                 start_angle=Angle.degrees(e.start_angle),
                                 end_angle=Angle.degrees(e.end_angle),
-                                ccw=getattr(e, "is_counter_clockwise", True),
+                                ccw=ccw,
                             )
                         elif hasattr(e, "degree") and hasattr(e, "knot_values"):
                             # SplineEdge
                             if e.degree == 3:
                                 for i in range(len(e.knot_values)):
-                                    control = getattr(
-                                        e, "control_values", [e.knot_values[i]]
-                                    )[i]
+                                    if (
+                                        hasattr(e, "control_values")
+                                        and isinstance(e.control_values, list)
+                                        and len(e.control_values) > i
+                                    ):
+                                        control = e.control_values[i]
+                                    else:
+                                        self.logger(
+                                            "Fallback: use the knot value as control, or duplicate it for quadratic structure"
+                                        )
+                                        control = e.knot_values[i]
                                     knot = e.knot_values[i]
                                     element.quad(control, knot)
                             elif e.degree == 4:
@@ -548,6 +570,9 @@ class DXFProcessor:
                                         element.cubic(control1, control2, knot)
                                     else:
                                         knot = e.knot_values[i]
+                                        self.logger(
+                                            f"Falling back to line for knot index {i} due to missing control points. This may degrade the intended geometry."
+                                        )
                                         element.line(knot)
                             else:
                                 for i in range(len(e.knot_values)):
@@ -646,6 +671,25 @@ class DXFProcessor:
                 node.image = ImageOps.exif_transpose(node.image)
             except ImportError:
                 pass
+
+            # Try to determine actual DPI from image metadata if available
+            if hasattr(node, "image") and node.image is not None:
+                actual_dpix = None
+                if hasattr(node.image, "info"):
+                    dpi_info = node.image.info.get("dpi")
+                    if (
+                        dpi_info
+                        and isinstance(dpi_info, (tuple, list))
+                        and dpi_info[0] > 0
+                    ):
+                        actual_dpix = dpi_info[0]
+                if actual_dpix and actual_dpix != dpix:
+                    # Update the node with the actual DPI from metadata
+                    node.dpi = actual_dpix
+                    self.logger(
+                        f"Updated image DPI from {dpix} to {actual_dpix} based on image metadata."
+                    )
+
             self.check_for_attributes(node, entity)
             # We don't seem to get the position right, so let's look
             # at our bottom_left position again and fix the gap

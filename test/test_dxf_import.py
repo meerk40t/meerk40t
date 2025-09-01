@@ -129,6 +129,34 @@ class TestDXFImport(unittest.TestCase):
             self.assertEqual(len(points), 1)
             self.assertEqual(len(texts), 1)
 
+            # Test entity geometry and attributes
+            circle = circles[0]
+            self.assertAlmostEqual(circle.cx, 0, places=1)  # Center X
+            self.assertAlmostEqual(circle.cy, 0, places=1)  # Center Y
+            self.assertAlmostEqual(circle.rx, 10, places=1)  # Radius
+            self.assertAlmostEqual(circle.ry, 10, places=1)  # Radius (ellipse)
+
+            line = lines[0]
+            self.assertAlmostEqual(line.x1, 20, places=1)  # Start X
+            self.assertAlmostEqual(line.y1, 0, places=1)  # Start Y
+            self.assertAlmostEqual(line.x2, 30, places=1)  # End X
+            self.assertAlmostEqual(line.y2, 10, places=1)  # End Y
+
+            point = points[0]
+            self.assertAlmostEqual(point.x, 40, places=1)  # X coordinate
+            self.assertAlmostEqual(point.y, 40, places=1)  # Y coordinate
+
+            text = texts[0]
+            self.assertEqual(text.text, "Hello")  # Text content
+            # Check that the text has a transformation matrix (position is stored in matrix)
+            self.assertIsNotNone(text.matrix)
+            # Check that bounds exist (indicating the text was positioned)
+            bounds = text.bounds
+            self.assertIsNotNone(bounds)
+            # Verify the bounds have reasonable dimensions
+            self.assertGreater(bounds[2] - bounds[0], 0)  # Width > 0
+            self.assertGreater(bounds[3] - bounds[1], 0)  # Height > 0
+
         finally:
             os.unlink(dxf_file)
 
@@ -225,27 +253,33 @@ class TestDXFImport(unittest.TestCase):
         doc = ezdxf.new()
         msp = doc.modelspace()
 
-        # Add entity with specific color
-        circle = msp.add_circle((0, 0), 10)
-        circle.dxf.color = 1  # Red color in DXF
+        # Add a circle with a specific DXF color (e.g., color index 1 = red)
+        circle = msp.add_circle(center=(0, 0), radius=10)
+        circle.dxf.color = 1  # DXF color index 1 (red)
 
-        # Save to temporary file
-        fd, dxf_file = tempfile.mkstemp(suffix=".dxf")
-        try:
-            doc.saveas(dxf_file)
-        finally:
-            os.close(fd)
+        # Save to temp file
+        import os
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as tmp:
+            doc.saveas(tmp.name)
+            dxf_file = tmp.name
 
         try:
+            # Import the DXF file using the tested import function
             result = DxfLoader.load(self.kernel, self.elements, dxf_file)
             self.assertTrue(result)
 
+            # Find the imported element (assuming it's stored in self.elements)
             circles = list(self.elements.elem_branch.flat(types="elem ellipse"))
             self.assertEqual(len(circles), 1)
 
-            circle_node = circles[0]
-            # Check that stroke color was set
-            self.assertIsNotNone(circle_node.stroke)
+            imported = circles[0]
+            # Assert that stroke is set
+            self.assertIsNotNone(imported.stroke)
+            # Assert that the color value matches the expected DXF color mapping
+            # DXF color index 1 should map to #FF0000 (red)
+            self.assertEqual(str(imported.stroke).upper(), "#FF0000")
 
         finally:
             os.unlink(dxf_file)
