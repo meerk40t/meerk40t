@@ -122,7 +122,7 @@ def init_commands(kernel):
     # ==========
     # GRID SUBTYPE
     # ==========
-
+    # Hint for translation: _("origin"), _("relative"), _("columns"), _("rows"), _("x distance"), _("y distance")
     @self.console_argument(
         "columns",
         type=int,
@@ -248,6 +248,7 @@ def init_commands(kernel):
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
+    # Hint for translation: _("unrotated"), _("repeats"), _("radius"), _("deltaangle"), _("startangle"), _("endangle")
     @self.console_argument("repeats", type=int, help=_("Number of repeats"), default=3)
     @self.console_argument("radius", type=str, help=_("Radius"), default="2cm")
     @self.console_argument(
@@ -378,6 +379,7 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
+    # Hint for translation: _("copies"), _("radius"), _("startangle"), _("endangle"), _("rotate"), _("deltaangle")
     @self.console_argument("copies", type=int, help=_("Number of copies"), default=1)
     @self.console_argument("radius", type=str, help=_("Radius"), default="2cm")
     @self.console_argument(
