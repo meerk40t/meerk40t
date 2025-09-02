@@ -3336,7 +3336,7 @@ class Geomstr:
         return path
 
     @classmethod
-    def ellipse(cls, rx, ry, cx, cy, rotation=0, slices=12):
+    def ellipse(cls, rx, ry, cx, cy, rotation=0, slices=12, settings=0):
         obj = cls()
         obj.arc_as_cubics(
             0,
@@ -3347,11 +3347,12 @@ class Geomstr:
             cy=cy,
             rotation=rotation,
             slices=slices,
+            settings=settings,
         )
         return obj
 
     @classmethod
-    def circle(cls, r, cx, cy, slices=4):
+    def circle(cls, r, cx, cy, slices=4, settings=0):
         if slices <= 0:
             return cls()
         rx = r
@@ -3370,6 +3371,7 @@ class Geomstr:
                 point_at_t(t_start),
                 point_at_t((t_start + t_end) / 2),
                 point_at_t(t_end),
+                settings=settings,
             )
             t_start = t_end
             t_end += step_size
