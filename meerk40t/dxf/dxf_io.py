@@ -52,35 +52,11 @@ class DxfLoader:
         except ezdxf.DXFError:
             try:
                 # dxf is low quality. Attempt recovery.
-                # Handle different ezdxf versions for recovery functionality
-                try:
-                    # Try the original recovery method (ezdxf < 1.0)
-                    from ezdxf import recover
+                from ezdxf import recover
 
-                    dxf, auditor = recover.readfile(pathname)
-                except ImportError:
-                    # Try newer recovery method (ezdxf >= 1.0)
-                    try:
-                        # In newer versions, recovery might be available via different import
-                        from ezdxf.recover import readfile as recover_readfile
-
-                        dxf, auditor = recover_readfile(pathname)
-                    except ImportError:
-                        # Final fallback - try readfile with options (some versions support this)
-                        try:
-                            import ezdxf.filemanagement
-
-                            # Some versions support recovery through filemanagement
-                            dxf = ezdxf.filemanagement.readfile(
-                                pathname, recovery_mode=True
-                            )
-                        except (ImportError, AttributeError, TypeError):
-                            # No recovery available, re-raise original error with helpful message
-                            raise ezdxf.DXFError(
-                                f"Could not read DXF file: {pathname}. File may be corrupted and recovery is not available in this ezdxf version."
-                            )
-            except (ezdxf.DXFStructureError, ezdxf.DXFError) as e:
-                # Recovery failed, return the BadFileError.
+                dxf, auditor = recover.readfile(pathname)
+            except (ImportError, ezdxf.DXFStructureError) as e:
+                # Recovery failed or not available, return the BadFileError.
                 raise BadFileError(str(e)) from e
 
         unit = dxf.header.get("$INSUNITS")
