@@ -530,10 +530,9 @@ class Node:
             assert c in c._parent._children
             for q in c._references:
                 assert q.node is c
-            if c.type == "reference":
+            if c.type == "reference" and c.node is not None and hasattr(c.node, "_references"):
+                assert c in c.node._references
                 # Fix: Check if reference target exists and has back-reference
-                if c.node is not None and hasattr(c.node, "_references"):
-                    assert c in c.node._references
             c._validate_tree()
 
     def _build_copy_nodes(self, links=None):
