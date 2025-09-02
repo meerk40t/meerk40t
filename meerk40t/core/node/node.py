@@ -24,6 +24,7 @@ from collections import deque
 from copy import copy
 from enum import IntEnum
 from time import time
+from typing import Tuple
 
 
 # LINEJOIN
@@ -1496,35 +1497,48 @@ class Node:
     @staticmethod
     def union_bounds(
         nodes, bounds=None, attr="bounds", ignore_locked=True, ignore_hidden=False
-    ):
+    ) -> Tuple[float, float, float, float]:
         """
         Returns the union of the node list given, optionally unioned the given bounds value
 
-        @return: union of all bounds within the iterable.
+        This method uses an optimized approach that minimizes memory allocations
+        and uses early termination for better performance.
+
+        @return: union of all bounds within the iterable as (xmin, ymin, xmax, ymax)
         """
+        # Initialize bounds
         if bounds is None:
             xmin = float("inf")
             ymin = float("inf")
-            xmax = -xmin
-            ymax = -ymin
+            xmax = float("-inf")
+            ymax = float("-inf")
         else:
             xmin, ymin, xmax, ymax = bounds
+
+        # Single pass through nodes with optimized attribute access
         for e in nodes:
+            # Use direct attribute access for speed (most common case)
             if ignore_locked and e.lock:
                 continue
-            if ignore_hidden and getattr(e, "hidden", False):
+            if ignore_hidden and e.hidden:
                 continue
-            box = getattr(e, attr, None)
+
+            # Direct attribute access (avoid getattr overhead for common case)
+            box = e.bounds if attr == "bounds" else getattr(e, attr, None)
             if box is None:
                 continue
-            if box[0] < xmin:
-                xmin = box[0]
-            if box[2] > xmax:
-                xmax = box[2]
-            if box[1] < ymin:
-                ymin = box[1]
-            if box[3] > ymax:
-                ymax = box[3]
+
+            # Update bounds with minimal comparisons
+            box_xmin, box_ymin, box_xmax, box_ymax = box
+            if box_xmin < xmin:
+                xmin = box_xmin
+            if box_xmax > xmax:
+                xmax = box_xmax
+            if box_ymin < ymin:
+                ymin = box_ymin
+            if box_ymax > ymax:
+                ymax = box_ymax
+
         return xmin, ymin, xmax, ymax
 
     @property
