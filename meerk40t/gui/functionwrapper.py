@@ -20,20 +20,27 @@ _ = wx.GetTranslation
 
 class ConsoleCommandUI(wx.Dialog):
     def __init__(self, parent, id, *args, context=None, command_string: str, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        kwds["style"] = (
+            kwds.get("style", 0)
+            | wx.TAB_TRAVERSAL
+            | wx.DEFAULT_DIALOG_STYLE
+            | wx.RESIZE_BORDER
+        )
         wx.Dialog.__init__(self, parent, id, *args, **kwds)
         self.startup = True
         self.parent_window = parent
-        self.context:Any = context
-        self.cmd_string:str = ""
-        self.help_string:str = ""
-        self.var_set:list = []
+        self.context: Any = context
+        self.context.themes.set_window_colors(self)
+
+        self.cmd_string: str = ""
+        self.help_string: str = ""
+        self.var_set: list = []
         units = self.context.units_name
         if units in ("inch", "inches"):
             units = "in"
         self.units = units
         self._establish_base(command_string)
-        self.TAG:str = f"FUNCTION_{self.cmd_string}"
+        self.TAG: str = f"FUNCTION_{self.cmd_string}"
         self.context.elements.undo.mark(message=self.TAG, hold=True)
         self._build_panel()
         self.startup = False
@@ -44,7 +51,7 @@ class ConsoleCommandUI(wx.Dialog):
             checker = ""
             small = False
             if entry["value"] is None:
-                cval = "" 
+                cval = ""
             else:
                 cval = str(entry["value"])
                 if isinstance(entry["value"], (tuple, list)):
@@ -53,7 +60,9 @@ class ConsoleCommandUI(wx.Dialog):
                 checker = "length"
                 small = True
                 if entry["value"] is not None:
-                    cval = Length(entry["value"], preferred_units=self.units).preferred_length
+                    cval = Length(
+                        entry["value"], preferred_units=self.units
+                    ).preferred_length
             if entry["type"] == Angle:
                 checker = "angle"
                 small = True
@@ -68,7 +77,7 @@ class ConsoleCommandUI(wx.Dialog):
                 small = True
             return checker, small, cval
 
-        main_sizer:wx.BoxSizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer: wx.BoxSizer = wx.BoxSizer(wx.VERTICAL)
 
         if self.help_string:
             help_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Help"))
@@ -76,8 +85,8 @@ class ConsoleCommandUI(wx.Dialog):
             help_sizer.Add(label, 1, wx.EXPAND, 0)
             main_sizer.Add(help_sizer, 0, wx.EXPAND, 0)
 
-        has_params:bool = False
-        has_options:bool = False
+        has_params: bool = False
+        has_options: bool = False
         p_sizer = StaticBoxSizer(
             self, wx.ID_ANY, label=_("Parameters"), orientation=wx.VERTICAL
         )
@@ -89,7 +98,7 @@ class ConsoleCommandUI(wx.Dialog):
             varname = "" if varname is None else varname.replace("_", " ").capitalize()
             control_line = wx.BoxSizer(wx.HORIZONTAL)
             label = wxStaticText(self, wx.ID_ANY, _(varname))
-            label.SetMinSize(dip_size(self, 75, -1))
+            label.SetMinSize(dip_size(self, 100, -1))
             control_line.Add(label, 0, wx.EXPAND, 0)
             if e["type"] == bool:
                 control = wxCheckBox(self, wx.ID_ANY)
@@ -113,7 +122,7 @@ class ConsoleCommandUI(wx.Dialog):
                 has_options = True
             else:
                 p_sizer.Add(control_line, 0, wx.EXPAND, 0)
-                has_params = True   
+                has_params = True
         if has_params:
             main_sizer.Add(p_sizer, 0, wx.EXPAND, 0)
         if has_options:
@@ -124,10 +133,10 @@ class ConsoleCommandUI(wx.Dialog):
         self.SetSizer(main_sizer)
         self.Layout()
         self.Fit()
-        
+
         # print(self.cmd_string, self.var_set)
 
-    def _establish_base(self, command_string:str):
+    def _establish_base(self, command_string: str):
         # Look inside the register commands...
         self.var_set.clear()
         self.cmd_string = ""
@@ -138,7 +147,7 @@ class ConsoleCommandUI(wx.Dialog):
             parts = command_name.split("/")
             input_type = parts[1]
             command_item = parts[2]
-            # This this does not seem to work properly, so "rect" works but "elements rect" doesn't 
+            # This this does not seem to work properly, so "rect" works but "elements rect" doesn't
             # self.cmd_string = (
             #     command_item if input_type == "None" else f"{input_type} {command_item}"
             # )
@@ -146,7 +155,7 @@ class ConsoleCommandUI(wx.Dialog):
             func = self.context.kernel.lookup(command_name)
             self.help_string = f"{func.help}\n{func.long_help}"
             for a in func.arguments:
-                var_info:dict = {
+                var_info: dict = {
                     "name": a.get("name", ""),
                     "type": a.get("type", type(None)),
                     "help": a.get("help", ""),
@@ -198,7 +207,6 @@ class ConsoleCommandUI(wx.Dialog):
                 var_string = f"{var_string} {var_repr}"
         return "" if missing_required else f"{self.cmd_string}{var_string}\n"
 
-
     def on_check_boxes(self, var_dict):
         def handler(event: wx.CommandEvent):
             obj = event.GetEventObject()
@@ -224,13 +232,13 @@ class ConsoleCommandUI(wx.Dialog):
         return handler
 
     def updated(self, source=None):
-        if self.startup: 
+        if self.startup:
             return
         # print (f"Updated from {'unknown' if source is None else source}")
         cmd = self.command_string()
         if not cmd:
             return
-        
+
         self.context(f'.undo "{self.TAG}"\n')
         self.context(cmd)
         self.context.signal("refresh_scene", "Scene")
@@ -249,4 +257,3 @@ class ConsoleCommandUI(wx.Dialog):
         self._remove_undo_traces()
         cmd = self.command_string()
         self.context(cmd)
-
