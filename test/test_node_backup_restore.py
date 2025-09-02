@@ -729,12 +729,9 @@ class TestNestedBackupRestore(unittest.TestCase):
         # Initial backup
         backup1 = self.root.backup_tree()
 
-        # Modify the tree
-        new_path = PathNode()
+        # Modify the tree - use proper bootstrap method like create_complex_tree does
+        new_path = main_branch.add(type="elem path", label="Added Path")
         new_path.id = "new_path"
-        new_path.label = "Added Path"
-        main_branch.add_node(new_path)
-
         # Backup modified tree
         backup2 = self.root.backup_tree()
 
@@ -742,8 +739,9 @@ class TestNestedBackupRestore(unittest.TestCase):
         self.root._children.clear()
         self.root.restore_tree(backup1)
 
-        # Should not have the new path
-        restored_branch = self.root.children[0]
+        # Should not have the new path - check in elements branch
+        elem_branch = self.elements.elem_branch
+        restored_branch = elem_branch.children[0]  # main_branch should be here
         path_ids = [
             child.id for child in restored_branch.children if hasattr(child, "id")
         ]
@@ -753,8 +751,9 @@ class TestNestedBackupRestore(unittest.TestCase):
         self.root._children.clear()
         self.root.restore_tree(backup2)
 
-        # Should have the new path
-        restored_branch = self.root.children[0]
+        # Should have the new path - check in elements branch
+        elem_branch = self.elements.elem_branch
+        restored_branch = elem_branch.children[0]  # main_branch should be here
         path_ids = [
             child.id for child in restored_branch.children if hasattr(child, "id")
         ]
@@ -916,17 +915,13 @@ class TestNestedBackupRestore(unittest.TestCase):
         backup_states = []
         backup_states.append(("initial", self.root.backup_tree()))
 
-        # Add some nodes
+        # Add some nodes - use proper bootstrap method
         for i in range(2):
-            new_group = GroupNode()
+            new_group = main_branch.add(type="group", label=f"Added Group {i}")
             new_group.id = f"added_group_{i}"
-            new_group.label = f"Added Group {i}"
-            main_branch.add_node(new_group)
 
-            new_path = PathNode()
+            new_path = new_group.add(type="elem path", label=f"Added Path {i}")
             new_path.id = f"added_path_{i}"
-            new_path.label = f"Added Path {i}"
-            new_group.add_node(new_path)
 
             backup_states.append((f"added_{i}", self.root.backup_tree()))
 
