@@ -474,12 +474,17 @@ class Node:
             "_emphasized_time",
             "_highlighted",
             "_expanded",
+            "_translated_text",
         )
         for c in tree_data:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
             for att in attrib_list:
-                if getattr(node_copy, att) != getattr(c, att):
+                if not hasattr(c, att):
+                    continue
+                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
+                    c, att
+                ):
                     # print (f"Strange {att} not identical, fixing")
                     setattr(node_copy, att, getattr(c, att))
             node_copy._root = self._root
@@ -502,8 +507,12 @@ class Node:
             if copied_parent is None:
                 # copy_parent should have been copied root, but roots don't copy
                 node_copy._parent = self._root
+                # Fix: Ensure root is properly set
+                node_copy._root = self._root
                 continue
             node_copy._parent = copied_parent
+            # Fix: Ensure root is properly set for all nodes
+            node_copy._root = self._root
             copied_parent._children.append(node_copy)
             if node.type == "reference":
                 try:
@@ -511,7 +520,8 @@ class Node:
                     node_copy.node = copied_referenced
                     copied_referenced._references.append(node_copy)
                 except KeyError:
-                    pass
+                    # Referenced node is not in the backup, clear the reference
+                    node_copy.node = None
 
     def _validate_tree(self):
         for c in self._children:
@@ -520,8 +530,9 @@ class Node:
             assert c in c._parent._children
             for q in c._references:
                 assert q.node is c
-            if c.type == "reference":
+            if c.type == "reference" and c.node is not None and hasattr(c.node, "_references"):
                 assert c in c.node._references
+                # Fix: Check if reference target exists and has back-reference
             c._validate_tree()
 
     def _build_copy_nodes(self, links=None):

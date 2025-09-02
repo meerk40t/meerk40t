@@ -110,12 +110,12 @@ class Length:
     ):
         self.settings = settings if settings is not None else {}
         self._digits = digits
-        self._amount = amount
+        self._amount: float = 0.0  # Initialize as float
         if relative_length:
             self._relative = Length(relative_length, unitless=unitless).units
         else:
             self._relative = None
-        if self._amount is None:
+        if amount is None:
             if len(args) == 2:
                 value = str(args[0]) + str(args[1])
             elif len(args) == 1:
@@ -130,7 +130,7 @@ class Length:
                 raise ValueError(f"Length was not parsable: '{s}'.")
             amount = float(match.group(1))
             units = match.group(2)
-            if units == "inch" or units == "inches":
+            if units in ["inch", "inches"]:
                 units = "in"
             scale = 1.0
             if units == "":
@@ -178,7 +178,8 @@ class Length:
         else:
             # amount is only ever a number.
             if not isinstance(amount, (float, int)):
-                raise ValueError("Amount must be an number.")
+                raise ValueError("Amount must be a number.")
+            self._amount = float(amount)
         if preferred_units is None:
             preferred_units = ""
         if preferred_units == "inch" or preferred_units == "inches":
@@ -538,6 +539,10 @@ class Angle:
     def __eq__(self, other):
         if hasattr(other, "angle"):
             other = other.angle
+        try:
+            other = float(other)
+        except (TypeError, ValueError):
+            return False
         c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
         return c1
 
@@ -599,6 +604,12 @@ class Angle:
         return self
 
     def __idiv__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle /= other
+        return self
+
+    def __itruediv__(self, other):
         if isinstance(other, Angle):
             other = other.angle
         self.angle /= other

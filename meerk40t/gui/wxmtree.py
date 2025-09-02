@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.elements.element_types import op_nodes, elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 
 from ..core.units import Length
 from ..kernel import signal_listener
@@ -199,9 +199,7 @@ class TreePanel(wx.Panel):
                     except AttributeError:
                         pass
             if to_reload:
-                self.context.elements.signal(
-                    "element_property_reload", to_reload
-                )
+                self.context.elements.signal("element_property_reload", to_reload)
                 self.context.elements.signal("warn_state_update")
 
         self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
@@ -245,7 +243,9 @@ class TreePanel(wx.Panel):
         self.btn_fix_assign_existing.Enable(non_assigned)
         self.btn_fix_unburnt.Enable(non_burn)
         new_issue = non_assigned or non_burn
-        if (self._last_issue == new_issue) and (needs_showing == self.btn_fix_unburnt.IsShown()):
+        if (self._last_issue == new_issue) and (
+            needs_showing == self.btn_fix_unburnt.IsShown()
+        ):
             # no changes
             return
         self._last_issue = new_issue
@@ -286,7 +286,9 @@ class TreePanel(wx.Panel):
         )
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.shadow_tree.on_collapse, self.wxtree)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.shadow_tree.on_expand, self.wxtree)
-        self.Bind(wx.EVT_TREE_STATE_IMAGE_CLICK, self.shadow_tree.on_state_icon, self.wxtree)
+        self.Bind(
+            wx.EVT_TREE_STATE_IMAGE_CLICK, self.shadow_tree.on_state_icon, self.wxtree
+        )
 
         self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
         self.wxtree.Bind(wx.EVT_LEAVE_WINDOW, self.on_lost_focus, self.wxtree)
@@ -482,11 +484,19 @@ class TreePanel(wx.Panel):
             if isinstance(nodes, (tuple, list)):
                 # All Standard nodes first
                 for node in nodes:
-                    if node is not None and node._item is not None and node.type.startswith("elem "):
+                    if (
+                        node is not None
+                        and node._item is not None
+                        and node.type.startswith("elem ")
+                    ):
                         self.shadow_tree.set_icon(node, force=True)
                 # Then all others
                 for node in nodes:
-                    if node is not None and node._item is not None and not node.type.startswith("elem "):
+                    if (
+                        node is not None
+                        and node._item is not None
+                        and not node.type.startswith("elem ")
+                    ):
                         self.shadow_tree.set_icon(node, force=True)
                 # Show the first node, but if that's the root node then ignore stuff
                 node = nodes[0] if len(nodes) > 0 else None
@@ -494,11 +504,7 @@ class TreePanel(wx.Panel):
                 node = nodes
                 self.shadow_tree.set_icon(node, force=True)
             rootitem = self.shadow_tree.wxtree.GetRootItem()
-            if (
-                node is not None
-                and node._item is not None
-                and node._item != rootitem
-            ):
+            if node is not None and node._item is not None and node._item != rootitem:
                 self.shadow_tree.wxtree.EnsureVisible(node._item)
 
     @signal_listener("freeze_tree")
@@ -978,7 +984,7 @@ class ShadowTree:
                 target = "operations"
                 break
             node = node.parent
-        
+
         self.rebuild_tree("reorder", target=target)
 
     def update(self, node):
@@ -1130,10 +1136,12 @@ class ShadowTree:
         messages = []
         if unassigned and warn_level <= 2:
             needs_showing = True
-            messages.append( _("You have unassigned elements, that won't be burned") )
+            messages.append(_("You have unassigned elements, that won't be burned"))
         if unburnt and warn_level <= 1:
             needs_showing = True
-            messages.append( _("You have elements in disabled operations, that won't be burned") )
+            messages.append(
+                _("You have elements in disabled operations, that won't be burned")
+            )
 
         if needs_showing:
             self.wxtree.SetItemState(op_item, self.iconstates["warning"])
@@ -1221,7 +1229,7 @@ class ShadowTree:
         self.dragging_nodes = None
         self.wxtree.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
-    def rebuild_tree(self, source:str, target:str="all" ):
+    def rebuild_tree(self, source: str, target: str = "all"):
         """
         Tree requires being deleted and completely rebuilt.
 
@@ -1261,7 +1269,7 @@ class ShadowTree:
                     self.wxtree.DeleteChildren(item)
             else:
                 self.wxtree.DeleteAllItems()
-        
+
         def rebuild_items(target):
             if target == "all":
                 if self.tree_images is not None:
@@ -1326,16 +1334,16 @@ class ShadowTree:
         self.wxtree.Expand(self.elements.elem_branch._item)
         self.wxtree.Expand(self.elements.reg_branch._item)
         startnode = self.elements._tree._item
-        
+
         def expand_leaf(snode):
             child, cookie = self.wxtree.GetFirstChild(snode)
             while child.IsOk():
-                node = self.wxtree.GetItemData(child)  
+                node = self.wxtree.GetItemData(child)
                 if node.expanded:
                     self.wxtree.Expand(child)
                 expand_leaf(child)
                 child, cookie = self.wxtree.GetNextChild(snode, cookie)
-        
+
         expand_leaf(startnode)
         self.elements.signal("warn_state_update")
 
@@ -1380,13 +1388,7 @@ class ShadowTree:
         @return:
         """
 
-        item = node._item
-        if item is None:
-            print(f"Item was None for node {repr(node)}")
-            return
-
         self.do_not_select = True
-        self.check_validity(item)
         # We might need to update the decorations for all parent objects
         informed = []
         if not self._freeze:
@@ -1396,12 +1398,14 @@ class ShadowTree:
                 parent = parent._parent
 
         node.unregister_object()
-        self.wxtree.Delete(node._item)
+
+        item = node._item
+        if item is not None and item.IsOk():
+            self.wxtree.Delete(item)
+            for i in self.wxtree.GetSelections():
+                self.wxtree.SelectItem(i, False)
         if informed:
             self.context.signal("element_property_update", informed)
-        for i in self.wxtree.GetSelections():
-            self.wxtree.SelectItem(i, False)
-
         self.do_not_select = False
 
     def safe_color(self, color_to_set):
@@ -1447,7 +1451,7 @@ class ShadowTree:
         except Exception as e:
             # Invalid tree?
             self.context.signal("rebuild_tree", "all")
-            print (f"We encountered an error at node registration: {e}")
+            print(f"We encountered an error at node registration: {e}")
             return
         self.update_decorations(node, False)
         wxcolor = self.wxtree.GetForegroundColour()
@@ -1942,17 +1946,21 @@ class ShadowTree:
                 state_num = self.iconstates["lock"]
             scene = getattr(self.context.root, "mainscene", None)
             if scene is not None and node == scene.pane.reference_object:
-                    state_num = self.iconstates["refobject"]
+                state_num = self.iconstates["refobject"]
         if state_num < 0:
             state_num = wx.TREE_ITEMSTATE_NONE
             if (
-                node.type in op_nodes
-                and hasattr(node, "is_visible")
-                and not node.is_visible
-            ) or (
-                node.type in elem_nodes and hasattr(node, "hidden") and node.hidden
-            ) or (
-                hasattr(node, "node") and hasattr(node.node, "hidden") and node.node.hidden
+                (
+                    node.type in op_nodes
+                    and hasattr(node, "is_visible")
+                    and not node.is_visible
+                )
+                or (node.type in elem_nodes and hasattr(node, "hidden") and node.hidden)
+                or (
+                    hasattr(node, "node")
+                    and hasattr(node.node, "hidden")
+                    and node.node.hidden
+                )
             ):
                 state_num = self.iconstates["ghost"]
         self.wxtree.SetItemState(node._item, state_num)
@@ -2041,9 +2049,13 @@ class ShadowTree:
             event.Skip()
             return
         # Is the node expanded? If yes regular dnd applies, if not we will add the node to the end...
-        closed_leaf = (self.wxtree.ItemHasChildren(drop_item) and not self.wxtree.IsExpanded(drop_item))
+        closed_leaf = self.wxtree.ItemHasChildren(
+            drop_item
+        ) and not self.wxtree.IsExpanded(drop_item)
         # We extend the logic by calling the appropriate elems routine
-        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node, flag=closed_leaf)
+        skip = not self.elements.drag_and_drop(
+            self.dragging_nodes, drop_node, flag=closed_leaf
+        )
         if skip:
             event.Skip()
             self.dragging_nodes = None
@@ -2392,8 +2404,10 @@ class ShadowTree:
 
         # We seem to lose focus, so lets reclaim it
         if its_me:
+
             def restore_focus():
                 self.wxtree.SetFocus()
+
             wx.CallAfter(restore_focus)
 
     def select_in_tree_by_emphasis(self, origin, *args):
