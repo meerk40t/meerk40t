@@ -3266,6 +3266,19 @@ def init_tree(kernel):
         except (ValueError, IndexError):
             return None
 
+    @tree_conditional(lambda node: node.count_children() > 1)
+    @tree_submenu(_("Optimisation"))
+    @tree_operation(
+        _("Reduce travel moves"),
+        node_type=op_burnable_nodes,
+        help=_("Rearrange items within operation to reduce travel moves"),
+        grouping="80_OPS_OPTIMIZE",
+    )
+    def op_travel_opt(node, **kwargs):
+        # Hint for translation _("Optimize travel moves")
+        with self.undoscope("Optimize travel moves"):
+            self("reorder\n")
+
     ## @tree_separator_before()
     @tree_submenu(_("Insert operation"))
     @tree_operation(
