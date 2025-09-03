@@ -21,6 +21,129 @@ def init_commands(kernel):
     # ==========
     # ELEMENT/SHAPE COMMANDS
     # ==========
+    @self.console_argument(
+        "amount", type=int, help=_("Number of shapes to create"), default=10)
+    @self.console_command(
+        "testcase",
+        help=_("Create test case for optimization"),
+        input_type=None,
+        output_type="elements",
+    )
+    def reorder_testcase(channel, _, amount=None, data=None, post=None, **kwargs):
+        if amount is None or amount < 1:
+            amount = 10
+        branch = self.elem_branch
+        import random
+        random.seed(42)
+        data = []
+        for i in range(amount):
+            x = random.uniform(5, 95)
+            y = random.uniform(5, 95)
+            w = random.uniform(5, 20)
+            h = random.uniform(5, 20)
+            type_selector = random.randint(0, 3)  # 0=line, 1=poly open, 2=poly closed, 3=rectangle, 4=ellipse
+            if type_selector == 0:
+                # Line
+                x2 = min(100, max(0, x + w))
+                y2 = min(100, max(0, y + h))
+                node = branch.add(
+                    "elem line",
+                    x1=float(Length(f"{x}%", relative_length=self.device.view.width)),
+                    y1=float(Length(f"{y}%", relative_length=self.device.view.height)),
+                    x2=float(Length(f"{x2}%", relative_length=self.device.view.width)),
+                    y2=float(Length(f"{y2}%", relative_length=self.device.view.height)),
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    label=f"Testline #{i + 1}",
+                ) 
+            elif type_selector == 1:
+                # Polyline open
+                points = []
+                n_points = random.randint(3, 6)
+                px = x
+                py = y
+                for _ in range(n_points):
+                    px += random.uniform(-10, 10)
+                    py += random.uniform(-10, 10)
+                    px = min(max(px, 0), 100)
+                    py = min(max(py, 0), 100) 
+                    points.append(
+                        (
+                            float(Length(f"{px}%", relative_length=self.device.view.width)),
+                            float(Length(f"{py}%", relative_length=self.device.view.height)),
+                        )
+                    )
+                node = branch.add(
+                    "elem polyline",
+                    geometry=Geomstr().lines(*points),
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    fill=None,
+                    label=f"Polyline open #{i + 1}",
+                )
+            elif type_selector == 2:
+                # Polyline open
+                points = []
+                n_points = random.randint(3, 6)
+                px = x
+                py = y
+                for _ in range(n_points):
+                    px += random.uniform(-10, 10)
+                    py += random.uniform(-10, 10)
+                    px = min(max(px, 0), 100)
+                    py = min(max(py, 0), 100) 
+                    
+                    points.append(
+                        (
+                            float(Length(f"{px}%", relative_length=self.device.view.width)),
+                            float(Length(f"{py}%", relative_length=self.device.view.height)),
+                        )
+                    )
+                points.append(points[0])  # Close the polyline
+                node = branch.add(
+                    "elem polyline",
+                    geometry=Geomstr().lines(*points),
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    fill=None,
+                    label=f"Polyline closed #{i + 1}",
+                )
+            elif type_selector == 3 :
+                # Rectangle
+                x = min(max(x, w), 100 - w)
+                y = min(max(y, h), 100 - h)
+                node = branch.add(
+                    "elem rect",
+                    x=float(Length(f"{x}%", relative_length=self.device.view.height)),
+                    y=float(Length(f"{y}%", relative_length=self.device.view.width)),
+                    width=float(Length(f"{w}%", relative_length=self.device.view.height)),
+                    height=float(Length(f"{h}%", relative_length=self.device.view.width)),
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    fill=None,
+                    label=f"Rectangle #{i + 1}",
+                )
+            else:
+                # Ellipse
+                x = min(max(x, w), 100 - w)
+                y = min(max(y, h), 100 - h)
+                node = branch.add(
+                    "elem ellipse",
+                    cx=float(Length(f"{x}%", relative_length=self.device.view.height)),
+                    cy=float(Length(f"{y}%", relative_length=self.device.view.width)),
+                    rx=float(Length(f"{w}%", relative_length=self.device.view.height)),
+                    ry=float(Length(f"{h}%", relative_length=self.device.view.width)),
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    fill=None,
+                    label=f"Ellipse #{i + 1}",
+                )
+            data.append(node)
+        post.append(self.post_classify(data))
+        return "elements", data
+
+
+
     @self.console_command(
         "reorder",
         help=_("reorder elements for optimal cutting within an operation"),
@@ -414,7 +537,7 @@ def _optimize_path_order_greedy(path_info, channel=None):
     early_termination_threshold = (
         0.001  # Stop if improvement < 0.1% of current distance
     )
-    max_consecutive_small = 3  # Stop after 3 consecutive small improvements
+    max_consecutive_small = len(path_info)  # Stop after 3 consecutive small improvements
 
     while len(ordered_indices) < n_paths:
         best_distance = float("inf")
