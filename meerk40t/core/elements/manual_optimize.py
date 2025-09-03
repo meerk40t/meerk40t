@@ -57,6 +57,8 @@ def init_commands(kernel):
         channel(f"{leading}Children:")
         channel(f"{leading}  " + ", ".join([str(display_label(n)) for n in child_list if n is not None]))
         if len(node_list) > 1:
+            # We need to make sure we have ids for all nodes (and they should be unique)
+            self.validate_ids(node_list)
             ordered_nodes = optimize_path_order(node_list, channel)
             if ordered_nodes != node_list:
                 # Clear old children
