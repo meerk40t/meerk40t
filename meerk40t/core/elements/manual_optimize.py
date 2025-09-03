@@ -349,8 +349,11 @@ def _optimize_path_order_greedy(path_info, channel=None):
     if channel:
         channel(f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}")
 
-    # Greedily add the closest unused path
+    # Greedily add the closest unused path with early termination
     total_iterations = 0
+    consecutive_small_improvements = 0
+    early_termination_threshold = 0.001  # Stop if improvement < 0.1% of current distance
+    max_consecutive_small = 3  # Stop after 3 consecutive small improvements
 
     while len(ordered_indices) < n_paths:
         best_distance = float('inf')
@@ -398,6 +401,42 @@ def _optimize_path_order_greedy(path_info, channel=None):
                     used.add(i)
                     orientation_choices.append((i, 0))  # Default orientation
             break
+
+        # Calculate improvement for early termination
+        if len(ordered_indices) >= 2:  # Need at least 2 paths to calculate improvement
+            # Calculate current total distance with the new path added
+            temp_ordered = ordered_indices + [best_idx]
+            temp_distance = _calculate_partial_travel_distance(path_info, temp_ordered)
+
+            # Calculate previous total distance
+            prev_distance = _calculate_partial_travel_distance(path_info, ordered_indices)
+
+            if prev_distance > 0:
+                improvement_ratio = (prev_distance - temp_distance) / prev_distance
+
+                if channel:
+                    channel(f"  Improvement ratio: {improvement_ratio:.6f} (threshold: {early_termination_threshold})")
+
+                if improvement_ratio < early_termination_threshold:
+                    consecutive_small_improvements += 1
+                    if channel:
+                        channel(f"  Small improvement detected ({consecutive_small_improvements}/{max_consecutive_small})")
+                else:
+                    consecutive_small_improvements = 0
+
+                # Check for early termination
+                if consecutive_small_improvements >= max_consecutive_small:
+                    if channel:
+                        channel(f"  Early termination: {consecutive_small_improvements} consecutive small improvements")
+                        channel(f"  Adding remaining {n_paths - len(ordered_indices)} paths in original order")
+
+                    # Add remaining paths in original order
+                    for i in range(n_paths):
+                        if i not in used:
+                            ordered_indices.append(i)
+                            used.add(i)
+                            orientation_choices.append((i, 0))  # Default orientation
+                    break
 
         ordered_indices.append(best_idx)
         used.add(best_idx)
@@ -455,7 +494,8 @@ def _optimize_path_order_greedy(path_info, channel=None):
         ordered_path_info.append((node, final_geomstr, info))
 
     return ordered_path_info
-def _calculate_total_travel_distance(path_info, channel=None):
+
+def _calculate_partial_travel_distance(path_info, indices):
     """
     Calculate the total travel distance for a sequence of paths.
 
@@ -639,6 +679,63 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
         channel(f"Final path order: {[node.display_label() for node, _, _ in optimized_paths]}")
 
     return optimized_paths
+
+
+def _calculate_total_travel_distance(path_info, channel=None):
+    """
+    Calculate total travel distance for a sequence of paths.
+
+    Args:
+        path_info: List of (node, geomstr, info) tuples
+        channel: Channel for debug output (optional)
+
+    Returns:
+        Total travel distance
+    """
+    if len(path_info) <= 1:
+        return 0.0
+
+    total_distance = 0.0
+
+    for i in range(len(path_info) - 1):
+        current_node, current_geom, current_info = path_info[i]
+        next_node, next_geom, next_info = path_info[i + 1]
+
+        # Calculate distance between end of current path and start of next path
+        distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
+        total_distance += distance
+
+    return total_distance
+
+
+def _calculate_partial_travel_distance(path_info, indices):
+    """
+    Calculate the total travel distance for a partial sequence of paths.
+
+    Args:
+        path_info: List of (node, geomstr, info) tuples
+        indices: List of indices representing the partial path order
+
+    Returns:
+        Total travel distance as float
+    """
+    if len(indices) < 2:
+        return 0.0
+
+    total_distance = 0.0
+
+    for i in range(len(indices) - 1):
+        current_idx = indices[i]
+        next_idx = indices[i + 1]
+
+        current_node, current_geomstr, current_info = path_info[current_idx]
+        next_node, next_geomstr, next_info = path_info[next_idx]
+
+        # Calculate distance between end of current and start of next
+        distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
+        total_distance += distance
+
+    return total_distance
 
 
 def _calculate_total_travel_distance_optimized(path_info, distance_cache):
