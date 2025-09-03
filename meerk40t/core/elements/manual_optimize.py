@@ -1,4 +1,3 @@
-
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.core.units import Length
 from meerk40t.core.elements.element_types import (
@@ -6,6 +5,7 @@ from meerk40t.core.elements.element_types import (
 )
 import numpy as np
 import itertools
+
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -17,7 +17,6 @@ def init_commands(kernel):
     self = kernel.elements
 
     _ = kernel.translation
-
 
     # ==========
     # ELEMENT/SHAPE COMMANDS
@@ -37,7 +36,7 @@ def init_commands(kernel):
                 opout.append(op)
         self.signal("rebuild_tree")
         return "operations", opout
-    
+
     def optimize_node_travel_under(op, channel, leading=""):
         node_list = []
         child_list = []
@@ -45,17 +44,27 @@ def init_commands(kernel):
             channel(f"{leading}{display_label(child)}")
             if child.type.startswith("effect"):
                 # We reorder the children of the effect, not the effect itself
-                optimize_node_travel_under(child, channel, leading =f"{leading}  ")
+                optimize_node_travel_under(child, channel, leading=f"{leading}  ")
             elif child.type == "reference":
-                channel(f"{leading}Reference to {display_label(child.node) if child.node else 'None!!!'}")
+                channel(
+                    f"{leading}Reference to {display_label(child.node) if child.node else 'None!!!'}"
+                )
                 node_list.append(child.node)
                 child_list.append(child)
             else:
-                channel(f"{leading}Don't know how to handle {child.type} in reorder for {display_label(op)}")
+                channel(
+                    f"{leading}Don't know how to handle {child.type} in reorder for {display_label(op)}"
+                )
         channel(f"{leading}Nodes:")
-        channel(f"{leading}  " + " ".join([str(display_label(n)) for n in node_list if n is not None]))
+        channel(
+            f"{leading}  "
+            + " ".join([str(display_label(n)) for n in node_list if n is not None])
+        )
         channel(f"{leading}Children:")
-        channel(f"{leading}  " + ", ".join([str(display_label(n)) for n in child_list if n is not None]))
+        channel(
+            f"{leading}  "
+            + ", ".join([str(display_label(n)) for n in child_list if n is not None])
+        )
         if len(node_list) > 1:
             # We need to make sure we have ids for all nodes (and they should be unique)
             self.validate_ids(node_list)
@@ -82,139 +91,174 @@ def init_commands(kernel):
         non_geomstr_nodes = []
 
         for idx, node in enumerate(node_list):
-            if hasattr(node, 'as_geometry') and callable(getattr(node, 'as_geometry')):
+            if hasattr(node, "as_geometry") and callable(getattr(node, "as_geometry")):
                 try:
                     geomstr = node.as_geometry()
                     # create_dump_of(f"geom{idx+1}", geomstr)
                     if geomstr and geomstr.index > 0:
                         geomstr_nodes.append((node, geomstr))
                         if channel:
-                            channel(f"  Node {display_label(node) or 'Unknown'}: {geomstr.index} segments")
+                            channel(
+                                f"  Node {display_label(node) or 'Unknown'}: {geomstr.index} segments"
+                            )
                     else:
                         non_geomstr_nodes.append(node)
                         if channel:
-                            channel(f"  Node {display_label(node) or 'Unknown'}: Empty geometry")
+                            channel(
+                                f"  Node {display_label(node) or 'Unknown'}: Empty geometry"
+                            )
                 except Exception as e:
                     non_geomstr_nodes.append(node)
                     if channel:
-                        channel(f"  Node {display_label(node) or 'Unknown'}: Error extracting geometry - {e}")
+                        channel(
+                            f"  Node {display_label(node) or 'Unknown'}: Error extracting geometry - {e}"
+                        )
             else:
                 non_geomstr_nodes.append(node)
                 if channel:
-                    channel(f"  Node {display_label(node) or 'Unknown'}: No as_geometry method")
+                    channel(
+                        f"  Node {display_label(node) or 'Unknown'}: No as_geometry method"
+                    )
 
         if channel:
-            channel(f"Found {len(geomstr_nodes)} geomstr nodes and {len(non_geomstr_nodes)} non-geomstr nodes")
+            channel(
+                f"Found {len(geomstr_nodes)} geomstr nodes and {len(non_geomstr_nodes)} non-geomstr nodes"
+            )
 
         if len(geomstr_nodes) < 2:
             # Not enough geomstr nodes to optimize, return original order
             if channel:
-                channel("Not enough geomstr nodes to optimize, returning original order")
+                channel(
+                    "Not enough geomstr nodes to optimize, returning original order"
+                )
             return node_list
-        
+
         # Extract path information for each geomstr node
         path_info = []
         for node, geomstr in geomstr_nodes:
             if channel:
-                channel(f"Extracting path info for node {display_label(node) or 'Unknown'}")
-            info = _extract_path_info(geomstr, channel)
+                channel(f"Extracting path info for node {display_label(node)}")
+            may_extend = hasattr(node, "set_geometry")
+            info = _extract_path_info(geomstr, may_extend, channel)
             path_info.append((node, geomstr, info))
-        
+
         # Calculate original travel distance
         original_distance = _calculate_total_travel_distance(path_info, channel)
-        
+
         # Optimize the order using greedy nearest neighbor with improvements
         ordered_path_info = _optimize_path_order_greedy(path_info, channel)
-        
+
         # Calculate optimized travel distance
-        optimized_distance = _calculate_total_travel_distance(ordered_path_info, channel)
-        
+        optimized_distance = _calculate_total_travel_distance(
+            ordered_path_info, channel
+        )
+
         # Report results to channel if available
         if channel:
             improvement = original_distance - optimized_distance
-            improvement_percent = (improvement / original_distance * 100) if original_distance > 0 else 0
+            improvement_percent = (
+                (improvement / original_distance * 100) if original_distance > 0 else 0
+            )
             channel(f"Path optimization for {len(geomstr_nodes)} paths:")
-            channel(f"  Original travel distance: {Length(original_distance).length_mm}")
-            channel(f"  Optimized travel distance: {Length(optimized_distance).length_mm}")
-            channel(f"  Distance saved: {Length(improvement).length_mm}  ({improvement_percent:.1f}%)")
-        
+            channel(
+                f"  Original travel distance: {Length(original_distance).length_mm}"
+            )
+            channel(
+                f"  Optimized travel distance: {Length(optimized_distance).length_mm}"
+            )
+            channel(
+                f"  Distance saved: {Length(improvement).length_mm}  ({improvement_percent:.1f}%)"
+            )
+
         # Reconstruct the ordered node list
         ordered_nodes = [node for node, _, _ in ordered_path_info] + non_geomstr_nodes
-        
+
         return ordered_nodes
+
 
 def display_label(node):
     return f"{node.type}.{node.id if node.id is not None else '-'}.{node.label if node.label is not None else '-'}"
 
-def _extract_path_info(geomstr, channel=None):
+
+def _extract_path_info(geomstr, may_extend, channel=None):
     """
     Extract start and end points from a geomstr, considering different orientations.
-    
+
     Returns:
         dict with 'start_points', 'end_points', and 'is_closed' keys
     """
     if geomstr.index == 0:
         if channel:
             channel("  Empty geomstr, no path information")
-        return {'start_points': [], 'end_points': [], 'is_closed': False, 'segments': []}
-    
-    segments = geomstr.segments[:geomstr.index]
+        return {
+            "start_points": [],
+            "end_points": [],
+            "is_closed": False,
+            "segments": [],
+        }
+
+    segments = geomstr.segments[: geomstr.index]
     if channel:
         channel(f"  Extracting path info from {len(segments)} segments")
-    
+
     # Extract start and end points for forward direction
     start_point = segments[0][0]  # First segment start
-    end_point = segments[-1][4]   # Last segment end
-    
+    end_point = segments[-1][4]  # Last segment end
     # For closed paths, we can start at any segment
-    is_closed = geomstr.is_closed() if hasattr(geomstr, 'is_closed') else False
+    is_closed = may_extend and (
+        geomstr.is_closed() if hasattr(geomstr, "is_closed") else False
+    )
     if channel:
         channel(f"  Path is {'closed' if is_closed else 'open'}")
-    
+
     result = {
-        'start_points': [start_point],
-        'end_points': [end_point],
-        'is_closed': is_closed,
-        'segments': segments
+        "start_points": [start_point],
+        "end_points": [end_point],
+        "is_closed": is_closed,
+        "segments": segments,
     }
-    
+
     # Add reversed orientation
     if len(segments) > 1:
         reversed_start = segments[-1][4]  # Last segment end becomes start
-        reversed_end = segments[0][0]     # First segment start becomes end
-        result['start_points'].append(reversed_start)
-        result['end_points'].append(reversed_end)
-    
+        reversed_end = segments[0][0]  # First segment start becomes end
+        result["start_points"].append(reversed_start)
+        result["end_points"].append(reversed_end)
+
     # If closed, add alternative start/end points for different starting segments
     if is_closed and len(segments) > 1:
         # Use improved candidate selection for closed paths
         max_alternatives = min(len(segments), 8)  # Limit to avoid excessive computation
-        candidate_indices = _select_closed_path_candidates(segments, max_alternatives, channel)
-        result['candidate_indices'] = candidate_indices  # Store for later use
+        candidate_indices = _select_closed_path_candidates(
+            segments, max_alternatives, channel
+        )
+        result["candidate_indices"] = candidate_indices  # Store for later use
         for segment_idx in candidate_indices:
             alt_start = segments[segment_idx][0]
             # For closed paths, the end point when starting at segment i would be the end of segment i-1
-            alt_end = segments[segment_idx-1][4] if segment_idx > 0 else segments[-1][4]
-            result['start_points'].append(alt_start)
-            result['end_points'].append(alt_end)
-    
+            alt_end = (
+                segments[segment_idx - 1][4] if segment_idx > 0 else segments[-1][4]
+            )
+            result["start_points"].append(alt_start)
+            result["end_points"].append(alt_end)
+
     return result
 
 
 def _select_closed_path_candidates(segments, max_candidates, channel=None):
     """
     Select optimal candidate starting points for closed paths.
-    
+
     Uses multiple strategies:
     1. Spatial distribution around the geometry
     2. Points of high curvature/direction changes
     3. Regular intervals as fallback
-    
+
     Args:
         segments: List of geomstr segments
         max_candidates: Maximum number of candidates to return
         channel: Channel for debug output
-        
+
     Returns:
         List of segment indices to use as starting points
     """
@@ -224,19 +268,19 @@ def _select_closed_path_candidates(segments, max_candidates, channel=None):
         if channel:
             channel(f"  Using all {len(candidates)} segments as candidates")
         return candidates
-    
+
     candidates = []
     n_segments = len(segments)
-    
+
     if channel:
         channel(f"  Selecting {max_candidates} candidates from {n_segments} segments")
-    
+
     # Strategy 1: Spatial distribution - divide the path into roughly equal arcs
     if n_segments >= 4:
         # Calculate approximate arc lengths to distribute candidates evenly
         segment_lengths = []
         total_length = 0
-        
+
         for segment in segments:
             # Approximate segment length using start and end points
             start_pt = segment[0]
@@ -244,20 +288,23 @@ def _select_closed_path_candidates(segments, max_candidates, channel=None):
             length = abs(end_pt - start_pt)
             segment_lengths.append(length)
             total_length += length
-        
+
         if total_length > 0:
             # Distribute candidates evenly by arc length
             target_length = total_length / max_candidates
             current_length = 0
             candidates.append(0)  # Always include the original start
-            
+
             for i in range(1, n_segments):
-                current_length += segment_lengths[i-1]
-                if current_length >= target_length * len(candidates) and len(candidates) < max_candidates:
+                current_length += segment_lengths[i - 1]
+                if (
+                    current_length >= target_length * len(candidates)
+                    and len(candidates) < max_candidates
+                ):
                     candidates.append(i)
                     if len(candidates) >= max_candidates:
                         break
-    
+
     # Strategy 2: Curvature-based selection (fallback to regular intervals)
     if len(candidates) < max_candidates:
         # Fill remaining slots with regular intervals
@@ -267,11 +314,11 @@ def _select_closed_path_candidates(segments, max_candidates, channel=None):
             for i in range(step, n_segments, step):
                 if i not in candidates and len(candidates) < max_candidates:
                     candidates.append(i)
-    
+
     # Ensure we don't include index 0 (original start) and remove duplicates
     candidates = [idx for idx in candidates if idx != 0]
     candidates = sorted(set(candidates))  # Remove duplicates and sort
-    
+
     # Limit to max_candidates
     candidates = candidates[:max_candidates]
     if channel:
@@ -300,11 +347,17 @@ def _optimize_path_order_greedy(path_info, channel=None):
     n_paths = len(path_info)
 
     # Calculate maximum number of orientations (start/end point combinations)
-    max_end_points = max(len(info['end_points']) for _, _, info in path_info) if path_info else 1
-    max_start_points = max(len(info['start_points']) for _, _, info in path_info) if path_info else 1
+    max_end_points = (
+        max(len(info["end_points"]) for _, _, info in path_info) if path_info else 1
+    )
+    max_start_points = (
+        max(len(info["start_points"]) for _, _, info in path_info) if path_info else 1
+    )
 
     if channel:
-        channel(f"  Maximum orientations: {max_end_points} end points, {max_start_points} start points")
+        channel(
+            f"  Maximum orientations: {max_end_points} end points, {max_start_points} start points"
+        )
 
     # Remove cache - it's not effective for this algorithm and adds memory overhead
     # distance_cache = {}  # Key: (from_idx, to_idx, from_ori, to_ori) -> distance
@@ -341,7 +394,9 @@ def _optimize_path_order_greedy(path_info, channel=None):
     #     cache_misses += 1
 
     if channel:
-        channel("  Using direct distance calculation (no cache needed for greedy algorithm)...")
+        channel(
+            "  Using direct distance calculation (no cache needed for greedy algorithm)..."
+        )
 
     # Start with the first path
     ordered_indices = [0]
@@ -349,35 +404,43 @@ def _optimize_path_order_greedy(path_info, channel=None):
     orientation_choices = [(0, 0)]  # (path_idx, orientation_idx) for each ordered path
 
     if channel:
-        channel(f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}")
+        channel(
+            f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}"
+        )
 
     # Greedily add the closest unused path with early termination
     total_iterations = 0
     consecutive_small_improvements = 0
-    early_termination_threshold = 0.001  # Stop if improvement < 0.1% of current distance
+    early_termination_threshold = (
+        0.001  # Stop if improvement < 0.1% of current distance
+    )
     max_consecutive_small = 3  # Stop after 3 consecutive small improvements
 
     while len(ordered_indices) < n_paths:
-        best_distance = float('inf')
+        best_distance = float("inf")
         best_idx = -1
         best_start_ori = 0
         path_iterations = 0
         path_candidates_evaluated = 0
 
         current_path_idx = ordered_indices[-1]
-        current_end_points = path_info[current_path_idx][2]['end_points']
+        current_end_points = path_info[current_path_idx][2]["end_points"]
 
         if channel:
-            channel(f"  Finding next path after {display_label(path_info[current_path_idx][0])}")
+            channel(
+                f"  Finding next path after {display_label(path_info[current_path_idx][0])}"
+            )
 
         for candidate_idx in range(n_paths):
             if candidate_idx in used:
                 continue
 
-            candidate_start_points = path_info[candidate_idx][2]['start_points']
+            candidate_start_points = path_info[candidate_idx][2]["start_points"]
 
             # Find the best orientation combination using direct distance calculation
-            for end_ori, start_ori in itertools.product(range(len(current_end_points)), range(len(candidate_start_points))):
+            for end_ori, start_ori in itertools.product(
+                range(len(current_end_points)), range(len(candidate_start_points))
+            ):
                 # Calculate distance directly (no cache needed)
                 end_pt = current_end_points[end_ori]
                 start_pt = candidate_start_points[start_ori]
@@ -396,7 +459,9 @@ def _optimize_path_order_greedy(path_info, channel=None):
         if best_idx == -1:
             # No more candidates, add remaining paths in original order
             if channel:
-                channel("  No more candidates found, adding remaining paths in original order")
+                channel(
+                    "  No more candidates found, adding remaining paths in original order"
+                )
             for i in range(n_paths):
                 if i not in used:
                     ordered_indices.append(i)
@@ -411,26 +476,36 @@ def _optimize_path_order_greedy(path_info, channel=None):
             temp_distance = _calculate_partial_travel_distance(path_info, temp_ordered)
 
             # Calculate previous total distance
-            prev_distance = _calculate_partial_travel_distance(path_info, ordered_indices)
+            prev_distance = _calculate_partial_travel_distance(
+                path_info, ordered_indices
+            )
 
             if prev_distance > 0:
                 improvement_ratio = (prev_distance - temp_distance) / prev_distance
 
                 if channel:
-                    channel(f"  Improvement ratio: {improvement_ratio:.6f} (threshold: {early_termination_threshold})")
+                    channel(
+                        f"  Improvement ratio: {improvement_ratio:.6f} (threshold: {early_termination_threshold})"
+                    )
 
                 if improvement_ratio < early_termination_threshold:
                     consecutive_small_improvements += 1
                     if channel:
-                        channel(f"  Small improvement detected ({consecutive_small_improvements}/{max_consecutive_small})")
+                        channel(
+                            f"  Small improvement detected ({consecutive_small_improvements}/{max_consecutive_small})"
+                        )
                 else:
                     consecutive_small_improvements = 0
 
                 # Check for early termination
                 if consecutive_small_improvements >= max_consecutive_small:
                     if channel:
-                        channel(f"  Early termination: {consecutive_small_improvements} consecutive small improvements")
-                        channel(f"  Adding remaining {n_paths - len(ordered_indices)} paths in original order")
+                        channel(
+                            f"  Early termination: {consecutive_small_improvements} consecutive small improvements"
+                        )
+                        channel(
+                            f"  Adding remaining {n_paths - len(ordered_indices)} paths in original order"
+                        )
 
                     # Add remaining paths in original order
                     for i in range(n_paths):
@@ -445,13 +520,19 @@ def _optimize_path_order_greedy(path_info, channel=None):
         orientation_choices.append((best_idx, best_start_ori))
 
         if channel:
-            channel(f"  Added path {best_idx}: {display_label(path_info[best_idx][0])} (distance: {Length(best_distance).length_mm}, orientation: {best_start_ori})")
+            channel(
+                f"  Added path {best_idx}: {display_label(path_info[best_idx][0])} (distance: {Length(best_distance).length_mm}, orientation: {best_start_ori})"
+            )
 
     # Report algorithm statistics
     if channel:
         channel(f"  Total distance calculations: {total_iterations}")
-        channel(f"  Average calculations per path: {total_iterations/len(ordered_indices):.1f}")
-        channel(f"  Optimization complete. Final order: {[display_label(path_info[i][0]) for i in ordered_indices]}")
+        channel(
+            f"  Average calculations per path: {total_iterations / len(ordered_indices):.1f}"
+        )
+        channel(
+            f"  Optimization complete. Final order: {[display_label(path_info[i][0]) for i in ordered_indices]}"
+        )
 
     # Reconstruct ordered path_info with optimal orientations
     ordered_path_info = []
@@ -459,43 +540,67 @@ def _optimize_path_order_greedy(path_info, channel=None):
         node, original_geomstr, info = path_info[path_idx]
 
         # Apply orientation transformation if needed
-        if orientation_idx == 0 or orientation_idx >= len(info['start_points']):
+        if orientation_idx == 0 or orientation_idx >= len(info["start_points"]):
             # Original orientation or invalid orientation index
             final_geomstr = original_geomstr
             if channel:
-                channel(f"  Node {display_label(node) or 'Unknown'}: Using original orientation (idx={orientation_idx}, available={len(info['start_points'])})")
-        elif orientation_idx == 1 and len(info['start_points']) > 1:
+                channel(
+                    f"  Node {display_label(node)}: Using original orientation (idx={orientation_idx}, available={len(info['start_points'])})"
+                )
+        elif orientation_idx == 1 and len(info["start_points"]) > 1:
             # Reversed orientation - use reversed start point
             final_geomstr = _reverse_geomstr(original_geomstr, channel)
             # Reassign the changed geometry to the node
-            if hasattr(node, 'geometry'):
-                node.geometry = final_geomstr
+            if hasattr(node, "set_geometry"):
+                oldtype = node.type
+                newnode = node.set_geometry(final_geomstr)
+                path_info[path_idx] = (newnode, final_geomstr, info)  # Update reference
                 if channel:
-                    channel(f"  Node {display_label(node) or 'Unknown'}: Applied reversed geometry")
-        elif info['is_closed'] and orientation_idx >= 2 and len(info['start_points']) > orientation_idx:
+                    channel(
+                        f"  Node {display_label(newnode)}: Applied reversed geometry {'' if oldtype == newnode.type else ' (type changed)'}"
+                    )
+        elif (
+            info["is_closed"]
+            and orientation_idx >= 2
+            and len(info["start_points"]) > orientation_idx
+        ):
             # Closed path with different starting segment
-            candidate_idx = orientation_idx - 2  # Adjust for the first two being forward/reverse
-            if 'candidate_indices' in info and candidate_idx < len(info['candidate_indices']):
-                start_segment_idx = info['candidate_indices'][candidate_idx]
-                final_geomstr = _reshuffle_closed_geomstr(original_geomstr, start_segment_idx, channel)
+            candidate_idx = (
+                orientation_idx - 2
+            )  # Adjust for the first two being forward/reverse
+            if "candidate_indices" in info and candidate_idx < len(
+                info["candidate_indices"]
+            ):
+                start_segment_idx = info["candidate_indices"][candidate_idx]
+                final_geomstr = _reshuffle_closed_geomstr(
+                    original_geomstr, start_segment_idx, channel
+                )
                 # Reassign the changed geometry to the node
-                if hasattr(node, 'geometry'):
-                    node.geometry = final_geomstr
+                if hasattr(node, "set_geometry"):
+                    oldtype = node.type
+                    newnode = node.set_geometry(final_geomstr)
                     if channel:
-                        channel(f"  Node {display_label(node) or 'Unknown'}: Applied reshuffled geometry, starting at segment {start_segment_idx}")
+                        channel(
+                            f"  Node {display_label(node) or 'Unknown'}: Applied reshuffled geometry, starting at segment {start_segment_idx}{'' if oldtype == newnode.type else ' (type changed)'}"
+                        )
             else:
                 final_geomstr = original_geomstr
                 if channel:
-                    channel(f"  Node {display_label(node) or 'Unknown'}: Fallback to original (invalid candidate index)")
+                    channel(
+                        f"  Node {display_label(node) or 'Unknown'}: Fallback to original (invalid candidate index)"
+                    )
         else:
             # Fallback to original
             final_geomstr = original_geomstr
             if channel:
-                channel(f"  Node {display_label(node) or 'Unknown'}: Fallback to original orientation (orientation_idx={orientation_idx}, available={len(info['start_points'])})")
+                channel(
+                    f"  Node {display_label(node) or 'Unknown'}: Fallback to original orientation (orientation_idx={orientation_idx}, available={len(info['start_points'])})"
+                )
 
         ordered_path_info.append((node, final_geomstr, info))
 
     return ordered_path_info
+
 
 def _calculate_partial_travel_distance(path_info, indices):
     """
@@ -524,15 +629,21 @@ def _calculate_partial_travel_distance(path_info, indices):
 
         # Use the actual current geometry's end point, not the cached info
         if current_geomstr.index > 0:
-            current_end = current_geomstr.segments[current_geomstr.index - 1][4]  # Last segment end
+            current_end = current_geomstr.segments[current_geomstr.index - 1][
+                4
+            ]  # Last segment end
         else:
-            current_end = current_info['end_points'][0] if current_info['end_points'] else 0j
+            current_end = (
+                current_info["end_points"][0] if current_info["end_points"] else 0j
+            )
 
         # Use the actual next geometry's start point, not the cached info
         if next_geomstr.index > 0:
             next_start = next_geomstr.segments[0][0]  # First segment start
         else:
-            next_start = next_info['start_points'][0] if next_info['start_points'] else 0j
+            next_start = (
+                next_info["start_points"][0] if next_info["start_points"] else 0j
+            )
 
         # Calculate distance between end of current and start of next
         distance = abs(current_end - next_start)
@@ -552,7 +663,7 @@ def _calculate_partial_travel_distance(path_info, indices):
 def _reverse_geomstr(geomstr, channel=None):
     """
     Reverse the order of segments in a geomstr.
-    
+
     For each segment (start, c0, info, c1, end), we need to:
     - Swap start and end
     - Reverse control points c0 and c1
@@ -562,27 +673,29 @@ def _reverse_geomstr(geomstr, channel=None):
         if channel:
             channel("  Reversing empty geomstr")
         return geomstr
-    
+
     if channel:
         channel(f"  Reversing geomstr with {geomstr.index} segments")
-    
+
     reversed_geomstr = Geomstr()
-    segments = geomstr.segments[:geomstr.index]
-    
+    segments = geomstr.segments[: geomstr.index]
+
     for segment in reversed(segments):
         start, c0, info, c1, end = segment
         # Reverse the segment: end becomes start, start becomes end
         # For Bezier curves, we need to reverse the control points
         reversed_segment = (end, c1, info, c0, start)
         reversed_geomstr.append_segment(*reversed_segment)
-    
+
     if channel:
         channel(f"  Reversed geomstr created with {reversed_geomstr.index} segments")
-    
+
     return reversed_geomstr
 
 
-def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termination_threshold=0.001, max_iterations=None):
+def _optimize_path_order_greedy_optimized(
+    path_info, channel=None, early_termination_threshold=0.001, max_iterations=None
+):
     """
     Optimized greedy path optimization algorithm with lazy evaluation and early termination.
 
@@ -602,7 +715,9 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
         return path_info
 
     if channel:
-        channel(f"Starting optimized greedy path optimization with {len(path_info)} paths")
+        channel(
+            f"Starting optimized greedy path optimization with {len(path_info)} paths"
+        )
         channel(f"Early termination threshold: {early_termination_threshold}")
         if max_iterations:
             channel(f"Max iterations: {max_iterations}")
@@ -613,29 +728,39 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
 
     # Distance cache for frequently accessed distances
     distance_cache = {}
-    cache_stats = {'hits': 0, 'misses': 0}
+    cache_stats = {"hits": 0, "misses": 0}
 
     total_iterations = 0
     consecutive_small_improvements = 0
 
-    while remaining_paths and (max_iterations is None or total_iterations < max_iterations):
+    while remaining_paths and (
+        max_iterations is None or total_iterations < max_iterations
+    ):
         total_iterations += 1
 
         best_insertion_idx = None
         best_path_idx = None
-        best_distance = float('inf')
+        best_distance = float("inf")
         best_improvement = 0
 
-        current_distance = _calculate_total_travel_distance_optimized(optimized_paths, distance_cache, cache_stats)
+        current_distance = _calculate_total_travel_distance_optimized(
+            optimized_paths, distance_cache, cache_stats
+        )
 
         # Try inserting each remaining path at each possible position
         for path_idx, (node, geom, info) in enumerate(remaining_paths):
             for insert_idx in range(len(optimized_paths) + 1):
                 # Create test path order
-                test_paths = optimized_paths[:insert_idx] + [(node, geom, info)] + optimized_paths[insert_idx:]
+                test_paths = (
+                    optimized_paths[:insert_idx]
+                    + [(node, geom, info)]
+                    + optimized_paths[insert_idx:]
+                )
 
                 # Calculate new total distance with caching
-                new_distance = _calculate_total_travel_distance_optimized(test_paths, distance_cache, cache_stats)
+                new_distance = _calculate_total_travel_distance_optimized(
+                    test_paths, distance_cache, cache_stats
+                )
 
                 if new_distance < best_distance:
                     best_distance = new_distance
@@ -647,14 +772,18 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
         if best_improvement < current_distance * early_termination_threshold:
             consecutive_small_improvements += 1
             if channel:
-                channel(f"Small improvement detected ({best_improvement:.6f} < {current_distance * early_termination_threshold:.6f})")
+                channel(
+                    f"Small improvement detected ({best_improvement:.6f} < {current_distance * early_termination_threshold:.6f})"
+                )
         else:
             consecutive_small_improvements = 0
 
         # Stop if we've had too many small improvements in a row
         if consecutive_small_improvements >= 3:
             if channel:
-                channel(f"Early termination after {consecutive_small_improvements} consecutive small improvements")
+                channel(
+                    f"Early termination after {consecutive_small_improvements} consecutive small improvements"
+                )
             break
 
         # If no improvement found, we're done
@@ -668,17 +797,27 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
         optimized_paths.insert(best_insertion_idx, (node, geom, info))
 
         if channel:
-            channel(f"Iteration {total_iterations}: Inserted '{node.display_label()}' at position {best_insertion_idx}")
-            channel(f"  Improvement: {best_improvement:.6f}, New distance: {best_distance:.6f}")
+            channel(
+                f"Iteration {total_iterations}: Inserted '{node.display_label()}' at position {best_insertion_idx}"
+            )
+            channel(
+                f"  Improvement: {best_improvement:.6f}, New distance: {best_distance:.6f}"
+            )
 
     # Update cache statistics
-    if channel and (cache_stats['hits'] + cache_stats['misses']) > 0:
-        hit_rate = cache_stats['hits'] / (cache_stats['hits'] + cache_stats['misses']) * 100
-        channel(f"Cache statistics: {cache_stats['hits']} hits, {cache_stats['misses']} misses ({hit_rate:.1f}% hit rate)")
+    if channel and (cache_stats["hits"] + cache_stats["misses"]) > 0:
+        hit_rate = (
+            cache_stats["hits"] / (cache_stats["hits"] + cache_stats["misses"]) * 100
+        )
+        channel(
+            f"Cache statistics: {cache_stats['hits']} hits, {cache_stats['misses']} misses ({hit_rate:.1f}% hit rate)"
+        )
 
     if channel:
         channel(f"Optimization completed in {total_iterations} iterations")
-        channel(f"Final path order: {[node.display_label() for node, _, _ in optimized_paths]}")
+        channel(
+            f"Final path order: {[node.display_label() for node, _, _ in optimized_paths]}"
+        )
 
     return optimized_paths
 
@@ -761,8 +900,16 @@ def _calculate_total_travel_distance_optimized(path_info, distance_cache):
         next_node, next_geom, next_info = path_info[i + 1]
 
         # Create cache key using stable node identifiers
-        current_id = getattr(current_node, 'label', f"{current_node.type}.{getattr(current_node, 'id', 'unknown')}")
-        next_id = getattr(next_node, 'label', f"{next_node.type}.{getattr(next_node, 'id', 'unknown')}")
+        current_id = getattr(
+            current_node,
+            "label",
+            f"{current_node.type}.{getattr(current_node, 'id', 'unknown')}",
+        )
+        next_id = getattr(
+            next_node,
+            "label",
+            f"{next_node.type}.{getattr(next_node, 'id', 'unknown')}",
+        )
         cache_key = (current_id, next_id)
 
         # Check cache first
@@ -770,7 +917,9 @@ def _calculate_total_travel_distance_optimized(path_info, distance_cache):
             distance = distance_cache[cache_key]
         else:
             # Calculate distance between end of current path and start of next path
-            distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
+            distance = _calculate_path_to_path_distance_optimized(
+                current_info, next_info
+            )
             distance_cache[cache_key] = distance
 
         total_distance += distance
@@ -790,13 +939,13 @@ def _calculate_path_to_path_distance_optimized(current_info, next_info):
     Returns:
         Minimum distance between path end and next path start
     """
-    min_distance = float('inf')
+    min_distance = float("inf")
 
     # Get possible end points from current path
-    current_end_points = current_info['end_points']
+    current_end_points = current_info["end_points"]
 
     # Get possible start points from next path
-    next_start_points = next_info['start_points']
+    next_start_points = next_info["start_points"]
 
     # If either path has no points, return 0
     if not current_end_points or not next_start_points:
@@ -819,15 +968,16 @@ def _calculate_path_to_path_distance_optimized(current_info, next_info):
 
     return min_distance
 
+
 def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):
     """
     Reshuffle a closed geomstr to start at a different segment.
-    
+
     Args:
         geomstr: The original geomstr
         start_segment_idx: Index of the segment to start with
         channel: Channel for debug output
-        
+
     Returns:
         Reshuffled geomstr
     """
@@ -835,27 +985,32 @@ def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):
         if channel:
             channel("  No reshuffling needed (empty geomstr or start_segment_idx=0)")
         return geomstr
-    
+
     if channel:
         channel(f"  Reshuffling geomstr to start at segment {start_segment_idx}")
-    
-    segments = geomstr.segments[:geomstr.index]
+
+    segments = geomstr.segments[: geomstr.index]
     reshuffled_geomstr = Geomstr()
-    
+
     # Add segments from start_segment_idx to end
     for i in range(start_segment_idx, len(segments)):
         reshuffled_geomstr.append_segment(*segments[i])
-    
+
     # Add segments from beginning to start_segment_idx
     for i in range(start_segment_idx):
         reshuffled_geomstr.append_segment(*segments[i])
-    
+
     if channel:
-        channel(f"  Reshuffled geomstr created with {reshuffled_geomstr.index} segments")
-    
+        channel(
+            f"  Reshuffled geomstr created with {reshuffled_geomstr.index} segments"
+        )
+
     return reshuffled_geomstr
 
-def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termination_threshold=0.001, max_iterations=None):
+
+def _optimize_path_order_greedy_optimized(
+    path_info, channel=None, early_termination_threshold=0.001, max_iterations=None
+):
     """
     Optimized greedy path optimization algorithm that maintains result integrity with the original
     while providing performance improvements through early termination.
@@ -882,11 +1037,17 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
     n_paths = len(path_info)
 
     # Calculate maximum number of orientations (start/end point combinations)
-    max_end_points = max(len(info['end_points']) for _, _, info in path_info) if path_info else 1
-    max_start_points = max(len(info['start_points']) for _, _, info in path_info) if path_info else 1
+    max_end_points = (
+        max(len(info["end_points"]) for _, _, info in path_info) if path_info else 1
+    )
+    max_start_points = (
+        max(len(info["start_points"]) for _, _, info in path_info) if path_info else 1
+    )
 
     if channel:
-        channel(f"  Maximum orientations: {max_end_points} end points, {max_start_points} start points")
+        channel(
+            f"  Maximum orientations: {max_end_points} end points, {max_start_points} start points"
+        )
 
     # Pre-calculate distance matrix (same as original for result integrity)
     distance_matrix = np.zeros((n_paths, n_paths, max_end_points, max_start_points))
@@ -900,13 +1061,13 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
             info_j = path_info[j][2]
 
             # Calculate distances between all combinations of end/start points
-            n_end_points = len(info_i['end_points'])
-            n_start_points = len(info_j['start_points'])
+            n_end_points = len(info_i["end_points"])
+            n_start_points = len(info_j["start_points"])
 
             for end_idx in range(n_end_points):
                 for start_idx in range(n_start_points):
-                    end_pt = info_i['end_points'][end_idx]
-                    start_pt = info_j['start_points'][start_idx]
+                    end_pt = info_i["end_points"][end_idx]
+                    start_pt = info_j["start_points"][start_idx]
                     distance_matrix[i, j, end_idx, start_idx] = abs(end_pt - start_pt)
 
     # Start with the first path
@@ -915,25 +1076,31 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
     orientation_choices = [(0, 0)]  # (path_idx, orientation_idx) for each ordered path
 
     if channel:
-        channel(f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}")
+        channel(
+            f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}"
+        )
 
     # Greedily add the closest unused path with early termination optimization
     consecutive_small_improvements = 0
     total_iterations = 0
 
-    while len(ordered_indices) < n_paths and (max_iterations is None or total_iterations < max_iterations):
+    while len(ordered_indices) < n_paths and (
+        max_iterations is None or total_iterations < max_iterations
+    ):
         total_iterations += 1
 
-        best_distance = float('inf')
+        best_distance = float("inf")
         best_idx = -1
         best_end_ori = 0
         best_start_ori = 0
 
         current_path_idx = ordered_indices[-1]
-        current_end_points = path_info[current_path_idx][2]['end_points']
+        current_end_points = path_info[current_path_idx][2]["end_points"]
 
         if channel:
-            channel(f"  Finding next path after {display_label(path_info[current_path_idx][0])}")
+            channel(
+                f"  Finding next path after {display_label(path_info[current_path_idx][0])}"
+            )
 
         # Reset small improvements counter for each new path addition
         consecutive_small_improvements = 0
@@ -942,12 +1109,14 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
             if candidate_idx in used:
                 continue
 
-            candidate_start_points = path_info[candidate_idx][2]['start_points']
+            candidate_start_points = path_info[candidate_idx][2]["start_points"]
 
             # Find the best orientation combination for this candidate
             for end_ori in range(len(current_end_points)):
                 for start_ori in range(len(candidate_start_points)):
-                    distance = distance_matrix[current_path_idx, candidate_idx, end_ori, start_ori]
+                    distance = distance_matrix[
+                        current_path_idx, candidate_idx, end_ori, start_ori
+                    ]
 
                     if distance < best_distance:
                         best_distance = distance
@@ -962,15 +1131,23 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
             break
 
         # Check if this is a small improvement
-        current_total_distance = _calculate_total_travel_distance_from_indices(path_info, ordered_indices + [best_idx], distance_matrix)
-        previous_total_distance = _calculate_total_travel_distance_from_indices(path_info, ordered_indices, distance_matrix)
+        current_total_distance = _calculate_total_travel_distance_from_indices(
+            path_info, ordered_indices + [best_idx], distance_matrix
+        )
+        previous_total_distance = _calculate_total_travel_distance_from_indices(
+            path_info, ordered_indices, distance_matrix
+        )
 
         if previous_total_distance > 0:
-            improvement_ratio = (previous_total_distance - current_total_distance) / previous_total_distance
+            improvement_ratio = (
+                previous_total_distance - current_total_distance
+            ) / previous_total_distance
             if improvement_ratio < early_termination_threshold:
                 consecutive_small_improvements += 1
                 if channel:
-                    channel(f"Small improvement detected ({improvement_ratio:.6f} < {early_termination_threshold:.6f})")
+                    channel(
+                        f"Small improvement detected ({improvement_ratio:.6f} < {early_termination_threshold:.6f})"
+                    )
             else:
                 consecutive_small_improvements = 0
 
@@ -980,15 +1157,21 @@ def _optimize_path_order_greedy_optimized(path_info, channel=None, early_termina
         orientation_choices.append((best_end_ori, best_start_ori))
 
         if channel:
-            channel(f"Iteration {total_iterations}: Added '{display_label(path_info[best_idx][0])}' at position {len(ordered_indices)-1}")
-            channel(f"  Distance: {best_distance:.6f}, End ori: {best_end_ori}, Start ori: {best_start_ori}")
+            channel(
+                f"Iteration {total_iterations}: Added '{display_label(path_info[best_idx][0])}' at position {len(ordered_indices) - 1}"
+            )
+            channel(
+                f"  Distance: {best_distance:.6f}, End ori: {best_end_ori}, Start ori: {best_start_ori}"
+            )
 
     # Reconstruct the ordered path_info list
     ordered_path_info = [path_info[idx] for idx in ordered_indices]
 
     if channel:
         channel(f"Optimization completed in {total_iterations} iterations")
-        channel(f"Final path order: {[display_label(node) for node, _, _ in ordered_path_info]}")
+        channel(
+            f"Final path order: {[display_label(node) for node, _, _ in ordered_path_info]}"
+        )
 
     return ordered_path_info
 
@@ -1019,14 +1202,16 @@ def _calculate_total_travel_distance_from_indices(path_info, indices, distance_m
         next_start_ori = 0
 
         # Get the actual number of orientations available
-        current_end_points = len(path_info[current_idx][2]['end_points'])
-        next_start_points = len(path_info[next_idx][2]['start_points'])
+        current_end_points = len(path_info[current_idx][2]["end_points"])
+        next_start_points = len(path_info[next_idx][2]["start_points"])
 
         # Ensure orientations are within bounds
         current_end_ori = min(current_end_ori, current_end_points - 1)
         next_start_ori = min(next_start_ori, next_start_points - 1)
 
-        distance = distance_matrix[current_idx, next_idx, current_end_ori, next_start_ori]
+        distance = distance_matrix[
+            current_idx, next_idx, current_end_ori, next_start_ori
+        ]
         total_distance += distance
 
     return total_distance
@@ -1044,13 +1229,13 @@ def _calculate_path_to_path_distance_optimized(current_info, next_info):
     Returns:
         Minimum distance between path end and next path start
     """
-    min_distance = float('inf')
+    min_distance = float("inf")
 
     # Get possible end points from current path
-    current_end_points = current_info['end_points']
+    current_end_points = current_info["end_points"]
 
     # Get possible start points from next path
-    next_start_points = next_info['start_points']
+    next_start_points = next_info["start_points"]
 
     # If either path has no points, return 0
     if not current_end_points or not next_start_points:
@@ -1074,7 +1259,9 @@ def _calculate_path_to_path_distance_optimized(current_info, next_info):
     return min_distance
 
 
-def _calculate_total_travel_distance_optimized(path_info, distance_cache, cache_stats=None):
+def _calculate_total_travel_distance_optimized(
+    path_info, distance_cache, cache_stats=None
+):
     """
     Calculate total travel distance with distance caching for optimization.
 
@@ -1096,21 +1283,31 @@ def _calculate_total_travel_distance_optimized(path_info, distance_cache, cache_
         next_node, next_geom, next_info = path_info[i + 1]
 
         # Create cache key using stable node identifiers
-        current_id = getattr(current_node, 'label', f"{current_node.type}.{getattr(current_node, 'id', 'unknown')}")
-        next_id = getattr(next_node, 'label', f"{next_node.type}.{getattr(next_node, 'id', 'unknown')}")
+        current_id = getattr(
+            current_node,
+            "label",
+            f"{current_node.type}.{getattr(current_node, 'id', 'unknown')}",
+        )
+        next_id = getattr(
+            next_node,
+            "label",
+            f"{next_node.type}.{getattr(next_node, 'id', 'unknown')}",
+        )
         cache_key = (current_id, next_id)
 
         # Check cache first
         if cache_key in distance_cache:
             distance = distance_cache[cache_key]
             if cache_stats is not None:
-                cache_stats['hits'] = cache_stats.get('hits', 0) + 1
+                cache_stats["hits"] = cache_stats.get("hits", 0) + 1
         else:
             # Calculate distance between end of current path and start of next path
-            distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
+            distance = _calculate_path_to_path_distance_optimized(
+                current_info, next_info
+            )
             distance_cache[cache_key] = distance
             if cache_stats is not None:
-                cache_stats['misses'] = cache_stats.get('misses', 0) + 1
+                cache_stats["misses"] = cache_stats.get("misses", 0) + 1
 
         total_distance += distance
 
