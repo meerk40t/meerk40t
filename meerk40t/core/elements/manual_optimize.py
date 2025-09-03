@@ -22,7 +22,8 @@ def init_commands(kernel):
     # ELEMENT/SHAPE COMMANDS
     # ==========
     @self.console_argument(
-        "amount", type=int, help=_("Number of shapes to create"), default=10)
+        "amount", type=int, help=_("Number of shapes to create"), default=10
+    )
     @self.console_command(
         "testcase",
         help=_("Create test case for optimization"),
@@ -34,6 +35,7 @@ def init_commands(kernel):
             amount = 10
         branch = self.elem_branch
         import random
+
         random.seed(42)
         data = []
         for i in range(amount):
@@ -41,7 +43,9 @@ def init_commands(kernel):
             y = random.uniform(5, 95)
             w = random.uniform(5, 20)
             h = random.uniform(5, 20)
-            type_selector = random.randint(0, 3)  # 0=line, 1=poly open, 2=poly closed, 3=rectangle, 4=ellipse
+            type_selector = random.randint(
+                0, 3
+            )  # 0=line, 1=poly open, 2=poly closed, 3=rectangle, 4=ellipse
             if type_selector == 0:
                 # Line
                 x2 = min(100, max(0, x + w))
@@ -55,7 +59,7 @@ def init_commands(kernel):
                     stroke=self.default_stroke,
                     stroke_width=self.default_strokewidth,
                     label=f"Testline #{i + 1}",
-                ) 
+                )
             elif type_selector == 1:
                 # Polyline open
                 points = []
@@ -66,11 +70,17 @@ def init_commands(kernel):
                     px += random.uniform(-10, 10)
                     py += random.uniform(-10, 10)
                     px = min(max(px, 0), 100)
-                    py = min(max(py, 0), 100) 
+                    py = min(max(py, 0), 100)
                     points.append(
                         (
-                            float(Length(f"{px}%", relative_length=self.device.view.width)),
-                            float(Length(f"{py}%", relative_length=self.device.view.height)),
+                            float(
+                                Length(f"{px}%", relative_length=self.device.view.width)
+                            ),
+                            float(
+                                Length(
+                                    f"{py}%", relative_length=self.device.view.height
+                                )
+                            ),
                         )
                     )
                 node = branch.add(
@@ -91,12 +101,18 @@ def init_commands(kernel):
                     px += random.uniform(-10, 10)
                     py += random.uniform(-10, 10)
                     px = min(max(px, 0), 100)
-                    py = min(max(py, 0), 100) 
-                    
+                    py = min(max(py, 0), 100)
+
                     points.append(
                         (
-                            float(Length(f"{px}%", relative_length=self.device.view.width)),
-                            float(Length(f"{py}%", relative_length=self.device.view.height)),
+                            float(
+                                Length(f"{px}%", relative_length=self.device.view.width)
+                            ),
+                            float(
+                                Length(
+                                    f"{py}%", relative_length=self.device.view.height
+                                )
+                            ),
                         )
                     )
                 points.append(points[0])  # Close the polyline
@@ -108,7 +124,7 @@ def init_commands(kernel):
                     fill=None,
                     label=f"Polyline closed #{i + 1}",
                 )
-            elif type_selector == 3 :
+            elif type_selector == 3:
                 # Rectangle
                 x = min(max(x, w), 100 - w)
                 y = min(max(y, h), 100 - h)
@@ -116,8 +132,12 @@ def init_commands(kernel):
                     "elem rect",
                     x=float(Length(f"{x}%", relative_length=self.device.view.height)),
                     y=float(Length(f"{y}%", relative_length=self.device.view.width)),
-                    width=float(Length(f"{w}%", relative_length=self.device.view.height)),
-                    height=float(Length(f"{h}%", relative_length=self.device.view.width)),
+                    width=float(
+                        Length(f"{w}%", relative_length=self.device.view.height)
+                    ),
+                    height=float(
+                        Length(f"{h}%", relative_length=self.device.view.width)
+                    ),
                     stroke=self.default_stroke,
                     stroke_width=self.default_strokewidth,
                     fill=None,
@@ -141,8 +161,6 @@ def init_commands(kernel):
             data.append(node)
         post.append(self.post_classify(data))
         return "elements", data
-
-
 
     @self.console_command(
         "reorder",
@@ -531,15 +549,12 @@ def _optimize_path_order_greedy(path_info, channel=None):
             f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}"
         )
 
-    # Greedily add the closest unused path with early termination
+    # Greedily add the closest unused path with early termination based on complete iterations
     total_iterations = 0
-    consecutive_small_improvements = 0
-    early_termination_threshold = (
-        0.001  # Stop if improvement < 0.1% of current distance
-    )
-    max_consecutive_small = len(path_info)  # Stop after 3 consecutive small improvements
 
     while len(ordered_indices) < n_paths:
+        # Perform a complete iteration through all remaining paths
+        iteration_shuffles = 0
         best_distance = float("inf")
         best_idx = -1
         best_start_ori = 0
@@ -551,7 +566,7 @@ def _optimize_path_order_greedy(path_info, channel=None):
 
         if channel:
             channel(
-                f"  Finding next path after {display_label(path_info[current_path_idx][0])}"
+                f"  Iteration {total_iterations + 1}: Finding next path after {display_label(path_info[current_path_idx][0])}"
             )
 
         for candidate_idx in range(n_paths):
@@ -575,7 +590,7 @@ def _optimize_path_order_greedy(path_info, channel=None):
                     best_start_ori = start_ori
 
                 path_iterations += 1
-                total_iterations += 1
+                iteration_shuffles += 1
 
             path_candidates_evaluated += 1
 
@@ -592,56 +607,11 @@ def _optimize_path_order_greedy(path_info, channel=None):
                     orientation_choices.append((i, 0))  # Default orientation
             break
 
-        # Calculate improvement for early termination
-        if len(ordered_indices) >= 2:  # Need at least 2 paths to calculate improvement
-            # Calculate current total distance with the new path added
-            temp_ordered = ordered_indices + [best_idx]
-            temp_distance = _calculate_partial_travel_distance(path_info, temp_ordered)
-
-            # Calculate previous total distance
-            prev_distance = _calculate_partial_travel_distance(
-                path_info, ordered_indices
-            )
-
-            if prev_distance > 0:
-                improvement_ratio = (prev_distance - temp_distance) / prev_distance
-
-                if channel:
-                    channel(
-                        f"  Improvement ratio: {improvement_ratio:.6f} (threshold: {early_termination_threshold})"
-                    )
-
-                if improvement_ratio < early_termination_threshold:
-                    consecutive_small_improvements += 1
-                    if channel:
-                        channel(
-                            f"  Small improvement detected ({consecutive_small_improvements}/{max_consecutive_small})"
-                        )
-                else:
-                    consecutive_small_improvements = 0
-
-                # Check for early termination
-                if consecutive_small_improvements >= max_consecutive_small:
-                    if channel:
-                        channel(
-                            f"  Early termination: {consecutive_small_improvements} consecutive small improvements"
-                        )
-                        channel(
-                            f"  Adding remaining {n_paths - len(ordered_indices)} paths in original order"
-                        )
-
-                    # Add remaining paths in original order
-                    for i in range(n_paths):
-                        if i not in used:
-                            ordered_indices.append(i)
-                            used.add(i)
-                            orientation_choices.append((i, 0))  # Default orientation
-                    break
-
+        # Add the best path found in this iteration
         ordered_indices.append(best_idx)
         used.add(best_idx)
         orientation_choices.append((best_idx, best_start_ori))
-
+        total_iterations += 1
         if channel:
             channel(
                 f"  Added path {best_idx}: {display_label(path_info[best_idx][0])} (distance: {Length(best_distance).length_mm}, orientation: {best_start_ori})"
@@ -649,10 +619,7 @@ def _optimize_path_order_greedy(path_info, channel=None):
 
     # Report algorithm statistics
     if channel:
-        channel(f"  Total distance calculations: {total_iterations}")
-        channel(
-            f"  Average calculations per path: {total_iterations / len(ordered_indices):.1f}"
-        )
+        channel(f"  Total optimization iterations: {total_iterations}")
         channel(
             f"  Optimization complete. Final order: {[display_label(path_info[i][0]) for i in ordered_indices]}"
         )
@@ -723,64 +690,6 @@ def _optimize_path_order_greedy(path_info, channel=None):
         ordered_path_info.append((node, final_geomstr, info))
 
     return ordered_path_info
-
-
-def _calculate_partial_travel_distance(path_info, indices):
-    """
-    Calculate the total travel distance for a sequence of paths.
-
-    Args:
-        path_info: List of (node, geomstr, info) tuples in order
-        channel: Channel for debug output
-
-    Returns:
-        Total travel distance as float
-    """
-    if len(path_info) < 2:
-        if channel:
-            channel("  No travel distance to calculate (less than 2 paths)")
-        return 0.0
-
-    total_distance = 0.0
-
-    if channel:
-        channel(f"  Calculating travel distance for {len(path_info)} paths")
-
-    for i in range(len(path_info) - 1):
-        current_node, current_geomstr, current_info = path_info[i]
-        next_node, next_geomstr, next_info = path_info[i + 1]
-
-        # Use the actual current geometry's end point, not the cached info
-        if current_geomstr.index > 0:
-            current_end = current_geomstr.segments[current_geomstr.index - 1][
-                4
-            ]  # Last segment end
-        else:
-            current_end = (
-                current_info["end_points"][0] if current_info["end_points"] else 0j
-            )
-
-        # Use the actual next geometry's start point, not the cached info
-        if next_geomstr.index > 0:
-            next_start = next_geomstr.segments[0][0]  # First segment start
-        else:
-            next_start = (
-                next_info["start_points"][0] if next_info["start_points"] else 0j
-            )
-
-        # Calculate distance between end of current and start of next
-        distance = abs(current_end - next_start)
-        total_distance += distance
-
-        if channel:
-            current_label = display_label(current_node)
-            next_label = display_label(next_node)
-            channel(f"    {current_label} -> {next_label}: {distance:.8f}mm")
-
-    if channel:
-        channel(f"  Total travel distance: {total_distance:.8f}mm")
-
-    return total_distance
 
 
 def _reverse_geomstr(geomstr, channel=None):
@@ -966,36 +875,6 @@ def _calculate_total_travel_distance(path_info, channel=None):
         next_node, next_geom, next_info = path_info[i + 1]
 
         # Calculate distance between end of current path and start of next path
-        distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
-        total_distance += distance
-
-    return total_distance
-
-
-def _calculate_partial_travel_distance(path_info, indices):
-    """
-    Calculate the total travel distance for a partial sequence of paths.
-
-    Args:
-        path_info: List of (node, geomstr, info) tuples
-        indices: List of indices representing the partial path order
-
-    Returns:
-        Total travel distance as float
-    """
-    if len(indices) < 2:
-        return 0.0
-
-    total_distance = 0.0
-
-    for i in range(len(indices) - 1):
-        current_idx = indices[i]
-        next_idx = indices[i + 1]
-
-        current_node, current_geomstr, current_info = path_info[current_idx]
-        next_node, next_geomstr, next_info = path_info[next_idx]
-
-        # Calculate distance between end of current and start of next
         distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
         total_distance += distance
 
