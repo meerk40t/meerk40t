@@ -18,15 +18,28 @@ Arguments:
     <locale>         Locale code(s) to process (e.g., de, fr, ja, or 'all' for all supported)
     -v, --validate   Validate .po files for the given locale(s)
     -c, --check      Check encoding of .po files for the given locale(s)
+    -a, --auto       Try a translation using an online service
 
 Supported locales:
     de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
+    
+testcase:
+ _("This is a test string.")
+ _("Another test string with a newline.\nSee?")
+ _("String with a tab.\tSee?")
+ _("String with {curly} braces.")
 """
 
 import argparse
 import os
 
 import polib
+try:
+    import googletrans
+    import re
+    GOOGLETRANS = True
+except ImportError:
+    GOOGLETRANS = False
 
 IGNORED_DIRS = [".git", ".github", "venv", ".venv"]
 LOCALE_LONG_NAMES = {
@@ -440,6 +453,30 @@ def detect_encoding(file_path: str) -> str:
         # If it fails, return 'unknown' or another encoding if needed
         return "unknown"
 
+def fix_result_string(translated: str, original: str) -> str:
+    """
+    Fixes common issues in the translated string to better match the original formatting.
+    """
+    if not translated:
+        return ""
+    # Escape quotes, if they are not already escaped
+    translated = re.sub(r'(?<!\\)"', r'\\"', translated)
+    # Handle newlines
+    translated = translated.replace("\n", "\\n")
+    translated = translated.replace("\r", "\\r")
+    # Handle tabs
+    translated = translated.replace("\t", "\\t")
+    # Ensure curly braces are preserved
+    if "{" in original and "}" in original:
+        # We replace the contents between braces with the same in the translated string
+        # to avoid issues with formatting placeholders.
+        for original_brace, translated_brace in zip(
+            re.findall(r"\{(.*?)\}", original), re.findall(r"\{(.*?)\}", translated)
+        ):
+            translated = translated.replace(translated_brace, original_brace)
+    # There might be erroneous double escapes added, we remove them
+    translated = translated.replace('\\\\', '\\')
+    return translated
 
 def main():
     """
@@ -461,6 +498,9 @@ def main():
     )
     parser.add_argument(
         "-c", "--check", action="store_true", help="Check encoding of .po files"
+    )
+    parser.add_argument(
+        "-a", "--auto", action="store_true", help="Try translation with Google Translate API (horrible results!)"
     )
     args = parser.parse_args()
 
@@ -488,16 +528,21 @@ def main():
                 break
         if not found:
             print(f"Unknown locale '{loc}', using 'de' as default.")
-            if not "de" in locales:
+            if "de" not in locales:
                 locales.add("de")
 
     print(f"Will examine: {' ' .join(locales)}")
 
     if args.check:
         print("Checking for invalid encoding in po-files...")
-        check_encoding(locales)
+        check_encoding(list(locales))
         return
-
+    do_translate = False
+    if args.auto:
+        if not GOOGLETRANS:
+            print("googletrans module not found, cannot do automatic translation.")
+        else:
+            do_translate = True
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locales:
@@ -516,7 +561,23 @@ def main():
                 f"Checking for new translation strings for locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
             )
             compare(loc, id_strings, id_strings_source, id_usage)
-
+            if do_translate and loc != "en":
+                print(f"Trying automatic translation for locale {loc}...")
+                try:
+                    translator = googletrans.Translator()
+                    delta_po_file = f"./delta_{loc}.po"
+                    polib_file = polib.pofile(delta_po_file, encoding="utf-8")
+                    id_strings = [e.msgid for e in polib_file if e.msgstr == ""]
+                    for id_string in id_strings:
+                        translated = translator.translate(id_string, dest=loc)
+                        entry = polib_file.find(id_string)
+                        if entry:
+                            entry.msgstr = fix_result_string(translated.text, id_string)
+                            # print (f"{translated.src} -> {translated.dest}: '{translated.origin}' -> '{translated.text}' -> '{entry.msgstr}'")
+                    polib_file.save(delta_po_file)
+                    print(f"Automatic translation for locale {loc} completed. PLEASE CHECK, PROBABLY INCORRECT!")
+                except Exception as e:
+                    print(f"Error during automatic translation for locale {loc}: {e}")
 
 if __name__ == "__main__":
     main()
