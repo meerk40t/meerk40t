@@ -24011,3 +24011,51 @@ msgid ""
 msgstr ""
 "plan<?> copy / copy-selected: adatok másolása mindből / csak a kiválasztott "
 "műveletekből"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "Eredet"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "Relatív"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "Oszlopok"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "Sorok"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "X távolság"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Y távolság"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "Nem forgatott"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "Ismétlések"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "Delta szög"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "Kezdő szög"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "Végszög"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "Másolatok"

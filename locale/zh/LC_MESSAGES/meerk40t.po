@@ -22961,3 +22961,51 @@ msgid ""
 "plan<?> copy / copy-selected: copy data from all / only from selected "
 "operations"
 msgstr "plan<?> copy / copy-selected：从所有/仅选定操作复制数据"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "原点"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "相对"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "列"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "行"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "X距离"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Y距离"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "未旋转"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "重复"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "增量角度"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "起始角度"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "结束角度"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "副本"

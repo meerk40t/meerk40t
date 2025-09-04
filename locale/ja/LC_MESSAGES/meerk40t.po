@@ -23097,3 +23097,51 @@ msgstr ""
 #: meerk40t/kernel/kernel.py:3203
 msgid "    {index}.{subindex}: linked {name}:{hash:X}"
 msgstr "    {index}.{subindex}: リンク済み {name}:{hash:X}"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "原点"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "相対"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "列"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "行"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "X距離"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Y距離"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "未回転"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "繰り返し"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "デルタ角度"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "開始角度"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "終了角度"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "コピー"

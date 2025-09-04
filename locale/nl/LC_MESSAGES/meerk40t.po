@@ -23899,3 +23899,51 @@ msgid ""
 msgstr ""
 "plan<?> copy / copy-selected: kopieer gegevens van alle / alleen van "
 "geselecteerde bewerkingen"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "Oorsprong"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "Relatief"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "Kolommen"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "Rijen"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "X-afstand"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Y-afstand"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "Niet geroteerd"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "Herhalingen"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "Deltahoek"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "Starthoek"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "Eindhoek"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "Kopieën"
