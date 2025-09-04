@@ -1344,6 +1344,8 @@ class Node:
         node._references.clear()
         for ref in list(self._references):
             ref.node = node
+            if hasattr(ref, "_item"):
+                ref._item = None
             node._references.append(ref)
             # ref.remove_node()
         self._references.clear()
