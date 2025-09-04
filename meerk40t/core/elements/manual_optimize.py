@@ -162,30 +162,35 @@ def init_commands(kernel):
         post.append(self.post_classify(data))
         return "elements", data
 
+    @self.console_argument(
+        "start_x", type=float, help=_("Starting X position"), default=0.0)
+    @self.console_argument(
+        "start_y", type=float, help=_("Starting Y position"), default=0.0)
     @self.console_command(
         "reorder",
         help=_("reorder elements for optimal cutting within an operation"),
         input_type=("operations", None),
         output_type="operations",
     )
-    def element_reorder(channel, _, data=None, post=None, **kwargs):
+    def element_reorder(channel, _, start_x=None, start_y=None, data=None, post=None, **kwargs):
+        start_position = complex(start_x or 0.0, start_y or 0.0)
         oplist = data if data is not None else list(self.ops(selected=True))
         opout = []
         for op in oplist:
             if op.type in op_burnable_nodes:
-                optimize_node_travel_under(op, channel)
+                optimize_node_travel_under(op, channel, start_position)
                 opout.append(op)
         self.signal("rebuild_tree")
         return "operations", opout
 
-    def optimize_node_travel_under(op, channel, leading=""):
+    def optimize_node_travel_under(op, channel, leading="", start_position=0j):
         node_list = []
         child_list = []
         for child in op.children:
             channel(f"{leading}{display_label(child)}")
             if child.type.startswith("effect"):
                 # We reorder the children of the effect, not the effect itself
-                optimize_node_travel_under(child, channel, leading=f"{leading}  ")
+                optimize_node_travel_under(child, channel, leading=f"{leading}  ", start_position=start_position)
             elif child.type == "reference":
                 channel(
                     f"{leading}Reference to {display_label(child.node) if child.node else 'None!!!'}"
@@ -209,7 +214,7 @@ def init_commands(kernel):
         if len(node_list) > 1:
             # We need to make sure we have ids for all nodes (and they should be unique)
             self.validate_ids(node_list)
-            ordered_nodes = optimize_path_order(node_list, channel)
+            ordered_nodes = optimize_path_order(node_list, channel, start_position)
             if ordered_nodes != node_list:
                 # Clear old children
                 for child in child_list:
@@ -220,12 +225,12 @@ def init_commands(kernel):
         else:
             channel(f"No need to reorder {op.display_label()}")
 
-    def optimize_path_order(node_list, channel=None):
+    def optimize_path_order(node_list, channel=None, start_position=0j):
         if len(node_list) < 2:
             return node_list
 
         if channel:
-            channel(f"Starting path optimization for {len(node_list)} nodes")
+            channel(f"Starting path optimization for {len(node_list)} nodes from position {start_position}")
 
         # Separate nodes with and without as_geometry attribute
         geomstr_nodes = []
@@ -287,7 +292,7 @@ def init_commands(kernel):
         original_distance = _calculate_total_travel_distance(path_info, channel)
 
         # Optimize the order using greedy nearest neighbor with improvements
-        ordered_path_info = _optimize_path_order_greedy(path_info, channel)
+        ordered_path_info = _optimize_path_order_greedy(path_info, channel, start_position)
 
         # Calculate optimized travel distance
         optimized_distance = _calculate_total_travel_distance(
@@ -467,13 +472,14 @@ def _select_closed_path_candidates(segments, max_candidates, channel=None):
     return candidates
 
 
-def _optimize_path_order_greedy(path_info, channel=None):
+def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
     """
     Optimize path order using greedy nearest neighbor algorithm with lazy distance calculation.
 
     Args:
         path_info: List of (node, geomstr, info) tuples
         channel: Channel for debug output
+        start_position: Starting position (complex number) to minimize total travel from
 
     Returns:
         Ordered list of (node, geomstr, info) tuples
@@ -539,14 +545,38 @@ def _optimize_path_order_greedy(path_info, channel=None):
             "  Using direct distance calculation (no cache needed for greedy algorithm)..."
         )
 
-    # Start with the first path
-    ordered_indices = [0]
-    used = {0}
-    orientation_choices = [(0, 0)]  # (path_idx, orientation_idx) for each ordered path
+    # Find the optimal starting path to minimize total travel from start_position
+    best_start_idx = 0
+    best_start_distance = float("inf")
+    best_start_ori = 0
+
+    if channel:
+        channel(f"  Finding optimal starting path from position {start_position}")
+
+    for start_idx in range(n_paths):
+        start_info = path_info[start_idx][2]
+        start_points = start_info["start_points"]
+
+        for start_ori in range(len(start_points)):
+            distance_from_start = abs(start_points[start_ori] - start_position)
+            if distance_from_start < best_start_distance:
+                best_start_distance = distance_from_start
+                best_start_idx = start_idx
+                best_start_ori = start_ori
 
     if channel:
         channel(
-            f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}"
+            f"  Optimal starting path: {best_start_idx} ({display_label(path_info[best_start_idx][0])}) at distance {best_start_distance:.6f}"
+        )
+
+    # Start with the optimal path
+    ordered_indices = [best_start_idx]
+    used = {best_start_idx}
+    orientation_choices = [(best_start_idx, best_start_ori)]  # (path_idx, orientation_idx) for each ordered path
+
+    if channel:
+        channel(
+            f"  Starting with path {best_start_idx}: {display_label(path_info[best_start_idx][0]) or 'Unknown'}"
         )
 
     # Greedily add the closest unused path with early termination based on complete iterations
@@ -726,15 +756,14 @@ def _reverse_geomstr(geomstr, channel=None):
 
 
 def _optimize_path_order_greedy_optimized(
-    path_info, channel=None, early_termination_threshold=0.001, max_iterations=None
+    path_info, channel=None, max_iterations=None
 ):
     """
-    Optimized greedy path optimization algorithm with lazy evaluation and early termination.
+    Optimized greedy path optimization algorithm with lazy evaluation.
 
     Args:
         path_info: List of (node, geom, info) tuples
         channel: Channel for debug output
-        early_termination_threshold: Stop if improvement < this fraction of current distance
         max_iterations: Maximum number of optimization iterations (None = no limit)
 
     Returns:
@@ -750,7 +779,6 @@ def _optimize_path_order_greedy_optimized(
         channel(
             f"Starting optimized greedy path optimization with {len(path_info)} paths"
         )
-        channel(f"Early termination threshold: {early_termination_threshold}")
         if max_iterations:
             channel(f"Max iterations: {max_iterations}")
 
@@ -763,7 +791,6 @@ def _optimize_path_order_greedy_optimized(
     cache_stats = {"hits": 0, "misses": 0}
 
     total_iterations = 0
-    consecutive_small_improvements = 0
 
     while remaining_paths and (
         max_iterations is None or total_iterations < max_iterations
@@ -799,24 +826,6 @@ def _optimize_path_order_greedy_optimized(
                     best_insertion_idx = insert_idx
                     best_path_idx = path_idx
                     best_improvement = current_distance - new_distance
-
-        # Check for early termination
-        if best_improvement < current_distance * early_termination_threshold:
-            consecutive_small_improvements += 1
-            if channel:
-                channel(
-                    f"Small improvement detected ({best_improvement:.6f} < {current_distance * early_termination_threshold:.6f})"
-                )
-        else:
-            consecutive_small_improvements = 0
-
-        # Stop if we've had too many small improvements in a row
-        if consecutive_small_improvements >= 3:
-            if channel:
-                channel(
-                    f"Early termination after {consecutive_small_improvements} consecutive small improvements"
-                )
-            break
 
         # If no improvement found, we're done
         if best_path_idx is None:
@@ -1011,16 +1020,14 @@ def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):
 
 
 def _optimize_path_order_greedy_optimized(
-    path_info, channel=None, early_termination_threshold=0.001, max_iterations=None
+    path_info, channel=None, max_iterations=None
 ):
     """
-    Optimized greedy path optimization algorithm that maintains result integrity with the original
-    while providing performance improvements through early termination.
+    Optimized greedy path optimization algorithm that maintains result integrity with the original.
 
     Args:
         path_info: List of (node, geomstr, info) tuples
         channel: Channel for debug output
-        early_termination_threshold: Stop if improvement < this fraction of current distance
         max_iterations: Maximum number of optimization iterations (None = no limit)
 
     Returns:
@@ -1031,7 +1038,6 @@ def _optimize_path_order_greedy_optimized(
 
     if channel:
         channel(f"Starting optimized greedy optimization for {len(path_info)} paths")
-        channel(f"Early termination threshold: {early_termination_threshold}")
         if max_iterations:
             channel(f"Max iterations: {max_iterations}")
 
@@ -1082,8 +1088,7 @@ def _optimize_path_order_greedy_optimized(
             f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}"
         )
 
-    # Greedily add the closest unused path with early termination optimization
-    consecutive_small_improvements = 0
+    # Greedily add the closest unused path
     total_iterations = 0
 
     while len(ordered_indices) < n_paths and (
@@ -1103,9 +1108,6 @@ def _optimize_path_order_greedy_optimized(
             channel(
                 f"  Finding next path after {display_label(path_info[current_path_idx][0])}"
             )
-
-        # Reset small improvements counter for each new path addition
-        consecutive_small_improvements = 0
 
         for candidate_idx in range(n_paths):
             if candidate_idx in used:
@@ -1131,27 +1133,6 @@ def _optimize_path_order_greedy_optimized(
             if channel:
                 channel("No further improvements possible")
             break
-
-        # Check if this is a small improvement
-        current_total_distance = _calculate_total_travel_distance_from_indices(
-            path_info, ordered_indices + [best_idx], distance_matrix
-        )
-        previous_total_distance = _calculate_total_travel_distance_from_indices(
-            path_info, ordered_indices, distance_matrix
-        )
-
-        if previous_total_distance > 0:
-            improvement_ratio = (
-                previous_total_distance - current_total_distance
-            ) / previous_total_distance
-            if improvement_ratio < early_termination_threshold:
-                consecutive_small_improvements += 1
-                if channel:
-                    channel(
-                        f"Small improvement detected ({improvement_ratio:.6f} < {early_termination_threshold:.6f})"
-                    )
-            else:
-                consecutive_small_improvements = 0
 
         # Insert the best path
         ordered_indices.append(best_idx)
