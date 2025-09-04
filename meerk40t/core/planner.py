@@ -699,6 +699,9 @@ class Planner(Service):
             init_settings()
 
             # Add default start ops
+            if busy.shown:
+                busy.change(msg=_("Adding trailing operations"), keep=1)
+                busy.show()
             add_ops(True)
             # types = (
             #     "op cut",
@@ -717,9 +720,10 @@ class Planner(Service):
             #     "blob",
             # )
             c_count = 0
+            update_interval = 10  # Update busy indicator every 10 commands
             for c in operations:
                 c_count += 1
-                if busy.shown:
+                if busy.shown and (c_count % update_interval) == 0:
                     busy.change(msg=_("Copying data {count}").format(count=c_count), keep=2)
                     busy.show()
 
@@ -754,6 +758,9 @@ class Planner(Service):
                 data.plan.append(copy_c)
 
             # Add default trailing ops
+            if busy.shown:
+                busy.change(msg=_("Adding trailing operations"), keep=1)
+                busy.show()
             add_ops(False)
             channel(_("Copied Operations."))
             self.update_stage(data.name, STAGE_PLAN_COPY)
