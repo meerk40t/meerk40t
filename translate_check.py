@@ -32,6 +32,7 @@ testcase:
 
 import argparse
 import os
+from contextlib import suppress
 
 import polib
 try:
@@ -77,12 +78,11 @@ def lf_coded(s: str) -> str:
     """
     if not s:
         return ""
-    s = s.replace("\\", "\\\\")  # Escape backslashes
-    s = s.replace('"', '\\"')  # Escape double quotes
-    s = s.replace("\t", "\\t")  # Escape tab
-    s = s.replace("\n", "\\n")  # Escape newlines
-    s = s.replace("\r", "\\r")  # Escape newlines
-    return s
+    return (s.replace("\\", "\\\\")  # Escape backslashes
+            .replace('"', '\\"')  # Escape double quotes
+            .replace("\t", "\\t")  # Escape tab
+            .replace("\n", "\\n")  # Escape newlines
+            .replace("\r", "\\r"))  # Escape newlines
 
 
 def read_source() -> tuple[list[str], list[str]]:
@@ -432,17 +432,12 @@ def detect_encoding(file_path: str) -> str:
     Detects the encoding of a file.
     Returns 'utf-8' if the file is encoded in UTF-8, otherwise returns the detected encoding.
     """
-    try:
+    with suppress(ImportError):
         import chardet  # Ensure chardet is available for encoding detection
 
         result = chardet.detect(open(file_path, "rb").read())
-        if result and "encoding" in result and result["encoding"]:
-            return result["encoding"]
-        else:
-            return "unknown"
-    except ImportError:
-        #    print("chardet missing - falling back to simple default encoding detection")
-        pass
+        return result["encoding"] if result and result.get("encoding") else "unknown"
+    
     try:
         with open(file_path, "rb") as f:
             raw_data = f.read()
@@ -537,12 +532,9 @@ def main():
         print("Checking for invalid encoding in po-files...")
         check_encoding(list(locales))
         return
-    do_translate = False
-    if args.auto:
-        if not GOOGLETRANS:
-            print("googletrans module not found, cannot do automatic translation.")
-        else:
-            do_translate = True
+    do_translate = args.auto and GOOGLETRANS
+    if args.auto and not GOOGLETRANS:
+        print("googletrans module not found, cannot do automatic translation.")
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
     for loc in locales:
