@@ -716,7 +716,13 @@ class Planner(Service):
             #     "place point"
             #     "blob",
             # )
+            c_count = 0
             for c in operations:
+                c_count += 1
+                if busy.shown:
+                    busy.change(msg=_("Copying data {count}").format(count=c_count), keep=2)
+                    busy.show()
+
                 isactive = True
                 try:
                     if not c.output:
