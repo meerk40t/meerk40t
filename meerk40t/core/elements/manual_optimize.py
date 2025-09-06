@@ -285,7 +285,10 @@ def init_commands(kernel):
             if channel:
                 channel(f"Extracting path info for node {display_label(node)}")
             may_extend = hasattr(node, "set_geometry")
-            info = _extract_path_info(geomstr, may_extend, channel)
+            may_reverse = True  # Assume we can reverse unless proven otherwise
+            if node.type in ("elem image", "elem text", "elem raster"):                
+                may_reverse = False
+            info = _extract_path_info(geomstr, may_extend, may_reverse=may_reverse, channel=channel)
             path_info.append((node, geomstr, info))
 
         # Calculate original travel distance
@@ -326,7 +329,7 @@ def display_label(node):
     return f"{node.type}.{node.id if node.id is not None else '-'}.{node.label if node.label is not None else '-'}"
 
 
-def _extract_path_info(geomstr, may_extend, channel=None):
+def _extract_path_info(geomstr, may_extend, may_reverse=True, channel=None):
     """
     Extract start and end points from a geomstr, considering different orientations.
 
@@ -365,7 +368,7 @@ def _extract_path_info(geomstr, may_extend, channel=None):
     }
 
     # Add reversed orientation
-    if len(segments) > 1:
+    if len(segments) > 1 and may_reverse:
         reversed_start = segments[-1][4]  # Last segment end becomes start
         reversed_end = segments[0][0]  # First segment start becomes end
         result["start_points"].append(reversed_start)
