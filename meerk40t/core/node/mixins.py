@@ -88,7 +88,16 @@ class Stroked(ABC):
         matrix = self.matrix
         self._stroke_zero = sqrt(abs(matrix.determinant))
 
-
+    def set_geometry(self, geom):
+        # We have been given a new geometry. 
+        # If we have a "geometry" property then we need to set it
+        # This method needs to be overridden in subclasses 
+        # if a special handling is required, eg. node type change.
+        if hasattr(self, "geometry"):
+            self.geometry = geom
+            self.altered()
+        return self
+    
 class FunctionalParameter(ABC):
     """
     Functional Parameters mixin allows the use and utility of functional parameters for this node type.
