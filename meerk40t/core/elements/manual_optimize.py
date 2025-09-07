@@ -1312,3 +1312,9 @@ def _calculate_total_travel_distance_optimized(
         total_distance += distance
 
     return total_distance
+
+def create_dump_of(identifier, geom: Geomstr):
+    print (f"  {identifier}=Geomstr()")
+    for segment in geom.segments[: geom.index]:
+        start, c0, info, c1, end = segment
+        print(f"  {identifier}.append_segment({start}, {c0}, {info}, {c1}, {end})")
