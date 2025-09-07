@@ -162,6 +162,12 @@ def init_commands(kernel):
         post.append(self.post_classify(data))
         return "elements", data
 
+    @self.console_option(
+        "debug",
+        type=bool,
+        action="store_true",
+        help=_("Provide detailed debug output"),
+    )
     @self.console_argument(
         "start_x", type=float, help=_("Starting X position"), default=0.0)
     @self.console_argument(
@@ -169,17 +175,34 @@ def init_commands(kernel):
     @self.console_command(
         "reorder",
         help=_("reorder elements for optimal cutting within an operation"),
-        input_type=("operations", None),
-        output_type="operations",
+        input_type=("ops", None),
+        output_type="ops",
     )
-    def element_reorder(channel, _, start_x=None, start_y=None, data=None, post=None, **kwargs):
+    def element_reorder(channel, _, start_x=None, start_y=None, debug=None, data=None, post=None, **kwargs):
         start_position = complex(start_x or 0.0, start_y or 0.0)
         oplist = data if data is not None else list(self.ops(selected=True))
         opout = []
+        debug_channel = channel if debug else None
+        # Collect optimization results for summary
+        total_improvement = 0.0
+        optimized_operations = []
+        operation_results = []
+        if not oplist:
+            channel(_("No operations to optimize"))
+            return "ops", []
+        
         for op in oplist:
             if op.type in op_burnable_nodes:
-                optimize_node_travel_under(op, channel, start_position)
+                optimization_result = optimize_node_travel_under(op, channel, start_position)
                 opout.append(op)
+                
+                # Collect results for summary
+                if optimization_result['optimized']:
+                    optimized_operations.append(op.display_label())
+                    total_improvement += optimization_result['improvement']
+                
+                operation_results.append((op.display_label(), optimization_result))
+                
                 # New start_position is last position of the last node
                 if len(op.children) > 0:
                     last_child = op.children[-1]
@@ -194,41 +217,90 @@ def init_commands(kernel):
                                     start_position = end_point
                             except Exception as e:
                                 channel(f"Error extracting geometry from last node: {e}")
+        
+        # Display optimization summary
+        if operation_results:
+            channel(f"\n{'='*60}")
+            channel("PATH OPTIMIZATION SUMMARY")
+            channel(f"{'='*60}")
+            
+            total_distance_saved = 0.0
+            optimized_count = 0
+            
+            for op_label, result in operation_results:
+                if result['optimized']:
+                    channel(f"✓ {op_label}:")
+                    channel(f"  Paths optimized: {result['path_count']}")
+                    channel(f"  Distance saved: {Length(result['improvement'], digits=0).length_mm}")
+                    total_distance_saved += result['improvement']
+                    optimized_count += 1
+                else:
+                    channel(f"○ {op_label}: No optimization needed ({result['path_count']} paths)")
+            
+            channel(f"{'='*60}")
+            if optimized_count > 0:
+                channel("Summary:")
+                channel(f"  Operations optimized: {optimized_count}")
+                channel(f"  Total distance saved: {Length(total_distance_saved, digits=0).length_mm}")
+                channel(f"  Optimized operations: {', '.join([op for op, result in operation_results if result['optimized']])}")
+            else:
+                channel("No operations required optimization")
+            channel(f"{'='*60}\n")
+        
         self.signal("rebuild_tree")
-        return "operations", opout
+        return "ops", opout
 
-    def optimize_node_travel_under(op, channel, leading="", start_position=0j):
+    def optimize_node_travel_under(op, channel, debug_channel, leading="", start_position=0j):
         node_list = []
         child_list = []
+        
+        # Track optimization results from child operations
+        total_optimization_results = {
+            'optimized': False,
+            'original_distance': 0,
+            'optimized_distance': 0,
+            'improvement': 0,
+            'improvement_percent': 0,
+            'path_count': 0
+        }
+        
         for child in op.children:
-            channel(f"{leading}{display_label(child)}")
+            if debug_channel:
+                debug_channel(f"{leading}{display_label(child)}")
             if child.type.startswith("effect"):
                 # We reorder the children of the effect, not the effect itself
-                optimize_node_travel_under(child, channel, leading=f"{leading}  ", start_position=start_position)
+                child_result = optimize_node_travel_under(child, channel, leading=f"{leading}  ", start_position=start_position)
+                # Accumulate results from child operations
+                if child_result['optimized']:
+                    total_optimization_results['optimized'] = True
+                    total_optimization_results['improvement'] += child_result['improvement']
+                    total_optimization_results['path_count'] += child_result['path_count']
             elif child.type == "reference":
-                channel(
-                    f"{leading}Reference to {display_label(child.node) if child.node else 'None!!!'}"
-                )
+                if debug_channel:
+                    debug_channel(
+                        f"{leading}Reference to {display_label(child.node) if child.node else 'None!!!'}"
+                    )
                 node_list.append(child.node)
                 child_list.append(child)
             else:
                 channel(
                     f"{leading}Don't know how to handle {child.type} in reorder for {display_label(op)}"
                 )
-        channel(f"{leading}Nodes:")
-        channel(
-            f"{leading}  "
-            + " ".join([str(display_label(n)) for n in node_list if n is not None])
-        )
-        channel(f"{leading}Children:")
-        channel(
-            f"{leading}  "
-            + ", ".join([str(display_label(n)) for n in child_list if n is not None])
-        )
+        if debug_channel:
+            debug_channel(f"{leading}Nodes:")
+            debug_channel(
+                f"{leading}  "
+                + " ".join([str(display_label(n)) for n in node_list if n is not None])
+            )
+            debug_channel(f"{leading}Children:")
+            debug_channel(
+                f"{leading}  "
+                + ", ".join([str(display_label(n)) for n in child_list if n is not None])
+            )
         if len(node_list) > 1:
             # We need to make sure we have ids for all nodes (and they should be unique)
             self.validate_ids(node_list)
-            ordered_nodes = optimize_path_order(node_list, channel, start_position)
+            ordered_nodes, optimization_results = optimize_path_order(node_list, channel, debug_channel, start_position)
             if ordered_nodes != node_list:
                 # Clear old children
                 for child in child_list:
@@ -236,15 +308,24 @@ def init_commands(kernel):
                 # Rebuild children in new order
                 for node in ordered_nodes:
                     op.add_reference(node)
+            
+            # Combine with any results from child operations
+            if optimization_results['optimized']:
+                total_optimization_results['optimized'] = True
+                total_optimization_results['improvement'] += optimization_results['improvement']
+                total_optimization_results['path_count'] += optimization_results['path_count']
+            
+            return total_optimization_results
         else:
             channel(f"No need to reorder {op.display_label()}")
+            return total_optimization_results
 
-    def optimize_path_order(node_list, channel=None, start_position=0j):
+    def optimize_path_order(node_list, channel=None, debug_channel=None, start_position=0j):
         if len(node_list) < 2:
             return node_list
 
-        if channel:
-            channel(f"Starting path optimization for {len(node_list)} nodes from position {start_position}")
+        if debug_channel:
+            debug_channel(f"Starting path optimization for {len(node_list)} nodes from position {start_position}")
 
         # Separate nodes with and without as_geometry attribute
         geomstr_nodes = []
@@ -257,38 +338,38 @@ def init_commands(kernel):
                     # create_dump_of(f"geom{idx+1}", geomstr)
                     if geomstr and geomstr.index > 0:
                         geomstr_nodes.append((node, geomstr))
-                        if channel:
-                            channel(
-                                f"  Node {display_label(node) or 'Unknown'}: {geomstr.index} segments"
+                        if debug_channel:
+                            debug_channel(
+                                f"  Node {display_label(node)}: {geomstr.index} segments"
                             )
                     else:
                         non_geomstr_nodes.append(node)
-                        if channel:
-                            channel(
-                                f"  Node {display_label(node) or 'Unknown'}: Empty geometry"
+                        if debug_channel:
+                            debug_channel(
+                                f"  Node {display_label(node)}: Empty geometry"
                             )
                 except Exception as e:
                     non_geomstr_nodes.append(node)
                     if channel:
                         channel(
-                            f"  Node {display_label(node) or 'Unknown'}: Error extracting geometry - {e}"
+                            f"  Node {display_label(node)}: Error extracting geometry - {e}"
                         )
             else:
                 non_geomstr_nodes.append(node)
-                if channel:
-                    channel(
-                        f"  Node {display_label(node) or 'Unknown'}: No as_geometry method"
+                if debug_channel:
+                    debug_channel(
+                        f"  Node {display_label(node)}: No as_geometry method"
                     )
 
-        if channel:
-            channel(
+        if debug_channel:
+            debug_channel(
                 f"Found {len(geomstr_nodes)} geomstr nodes and {len(non_geomstr_nodes)} non-geomstr nodes"
             )
 
         if len(geomstr_nodes) < 2:
             # Not enough geomstr nodes to optimize, return original order
-            if channel:
-                channel(
+            if debug_channel:
+                debug_channel(
                     "Not enough geomstr nodes to optimize, returning original order"
                 )
             return node_list
@@ -296,24 +377,24 @@ def init_commands(kernel):
         # Extract path information for each geomstr node
         path_info = []
         for node, geomstr in geomstr_nodes:
-            if channel:
-                channel(f"Extracting path info for node {display_label(node)}")
+            if debug_channel:
+                debug_channel(f"Extracting path info for node {display_label(node)}")
             may_extend = hasattr(node, "set_geometry")
             may_reverse = True  # Assume we can reverse unless proven otherwise
             if node.type in ("elem image", "elem text", "elem raster"):                
                 may_reverse = False
-            info = _extract_path_info(geomstr, may_extend, may_reverse=may_reverse, channel=channel)
+            info = _extract_path_info(geomstr, may_extend, may_reverse=may_reverse, channel=debug_channel)
             path_info.append((node, geomstr, info))
 
         # Calculate original travel distance
-        original_distance = _calculate_total_travel_distance(path_info, channel)
+        original_distance = _calculate_total_travel_distance(path_info, debug_channel, start_position)
 
         # Optimize the order using greedy nearest neighbor with improvements
-        ordered_path_info = _optimize_path_order_greedy(path_info, channel, start_position)
+        ordered_path_info = _optimize_path_order_greedy(path_info, debug_channel, start_position)
 
         # Calculate optimized travel distance
         optimized_distance = _calculate_total_travel_distance(
-            ordered_path_info, channel
+            ordered_path_info, debug_channel, start_position
         )
 
         # Report results to channel if available
@@ -324,19 +405,29 @@ def init_commands(kernel):
             )
             channel(f"Path optimization for {len(geomstr_nodes)} paths:")
             channel(
-                f"  Original travel distance: {Length(original_distance).length_mm}"
+                f"  Original travel distance: {Length(original_distance, digits=0).length_mm}"
             )
             channel(
-                f"  Optimized travel distance: {Length(optimized_distance).length_mm}"
+                f"  Optimized travel distance: {Length(optimized_distance, digits=0).length_mm}"
             )
             channel(
-                f"  Distance saved: {Length(improvement).length_mm}  ({improvement_percent:.1f}%)"
+                f"  Distance saved: {Length(improvement, digits=0).length_mm}  ({improvement_percent:.1f}%)"
             )
 
         # Reconstruct the ordered node list
         ordered_nodes = [node for node, _, _ in ordered_path_info] + non_geomstr_nodes
 
-        return ordered_nodes
+        # Return both the ordered nodes and optimization results
+        optimization_results = {
+            'optimized': ordered_path_info != path_info,
+            'original_distance': original_distance,
+            'optimized_distance': optimized_distance,
+            'improvement': original_distance - optimized_distance,
+            'improvement_percent': (original_distance - optimized_distance) / original_distance * 100 if original_distance > 0 else 0,
+            'path_count': len(geomstr_nodes)
+        }
+
+        return ordered_nodes, optimization_results
 
 
 def display_label(node):
@@ -593,7 +684,7 @@ def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
 
     if channel:
         channel(
-            f"  Starting with path {best_start_idx}: {display_label(path_info[best_start_idx][0]) or 'Unknown'}"
+            f"  Starting with path {best_start_idx}: {display_label(path_info[best_start_idx][0])}"
         )
 
     # Greedily add the closest unused path with early termination based on complete iterations
@@ -661,7 +752,7 @@ def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
         total_iterations += 1
         if channel:
             channel(
-                f"  Added path {best_idx}: {display_label(path_info[best_idx][0])} (distance: {Length(best_distance).length_mm}, orientation: {best_start_ori})"
+                f"  Added path {best_idx}: {display_label(path_info[best_idx][0])} (distance: {Length(best_distance, digits=0).length_mm}, orientation: {best_start_ori})"
             )
 
     # Report algorithm statistics
@@ -718,20 +809,20 @@ def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
                     newnode = node.set_geometry(final_geomstr)
                     if channel:
                         channel(
-                            f"  Node {display_label(node) or 'Unknown'}: Applied reshuffled geometry, starting at segment {start_segment_idx}{'' if oldtype == newnode.type else ' (type changed)'}"
+                            f"  Node {display_label(node)}: Applied reshuffled geometry, starting at segment {start_segment_idx}{'' if oldtype == newnode.type else ' (type changed)'}"
                         )
             else:
                 final_geomstr = original_geomstr
                 if channel:
                     channel(
-                        f"  Node {display_label(node) or 'Unknown'}: Fallback to original (invalid candidate index)"
+                        f"  Node {display_label(node)}: Fallback to original (invalid candidate index)"
                     )
         else:
             # Fallback to original
             final_geomstr = original_geomstr
             if channel:
                 channel(
-                    f"  Node {display_label(node) or 'Unknown'}: Fallback to original orientation (orientation_idx={orientation_idx}, available={len(info['start_points'])})"
+                    f"  Node {display_label(node)}: Fallback to original orientation (orientation_idx={orientation_idx}, available={len(info['start_points'])})"
                 )
 
         ordered_path_info.append((node, final_geomstr, info))
@@ -880,22 +971,37 @@ def _optimize_path_order_greedy_optimized(
     return optimized_paths
 
 
-def _calculate_total_travel_distance(path_info, channel=None):
+def _calculate_total_travel_distance(path_info, channel=None, start_position=0j):
     """
-    Calculate total travel distance for a sequence of paths.
+    Calculate total travel distance for a sequence of paths, including distance from start position.
 
     Args:
         path_info: List of (node, geomstr, info) tuples
         channel: Channel for debug output (optional)
+        start_position: Starting position to calculate distance from
 
     Returns:
         Total travel distance
     """
-    if len(path_info) <= 1:
+    if len(path_info) == 0:
         return 0.0
 
     total_distance = 0.0
 
+    # Calculate distance from start position to first path
+    if len(path_info) > 0:
+        first_node, first_geom, first_info = path_info[0]
+        first_start_points = first_info["start_points"]
+
+        if first_start_points:
+            # Find the minimum distance from start_position to any start point of the first path
+            min_distance_to_first = min(abs(start_point - start_position) for start_point in first_start_points)
+            total_distance += min_distance_to_first
+
+            if channel:
+                channel(f"  Distance from start position {start_position} to first path: {min_distance_to_first:.6f}")
+
+    # Calculate distances between consecutive paths
     for i in range(len(path_info) - 1):
         current_node, current_geom, current_info = path_info[i]
         next_node, next_geom, next_info = path_info[i + 1]
@@ -903,6 +1009,12 @@ def _calculate_total_travel_distance(path_info, channel=None):
         # Calculate distance between end of current path and start of next path
         distance = _calculate_path_to_path_distance_optimized(current_info, next_info)
         total_distance += distance
+
+        if channel:
+            channel(f"  Distance from path {i} to path {i+1}: {distance:.6f}")
+
+    if channel:
+        channel(f"  Total travel distance: {total_distance:.6f}")
 
     return total_distance
 
@@ -1102,7 +1214,7 @@ def _optimize_path_order_greedy_optimized(
 
     if channel:
         channel(
-            f"  Starting with path 0: {display_label(path_info[0][0]) or 'Unknown'}"
+            f"  Starting with path 0: {display_label(path_info[0][0])}"
         )
 
     # Greedily add the closest unused path
