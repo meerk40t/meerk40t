@@ -180,6 +180,20 @@ def init_commands(kernel):
             if op.type in op_burnable_nodes:
                 optimize_node_travel_under(op, channel, start_position)
                 opout.append(op)
+                # New start_position is last position of the last node
+                if len(op.children) > 0:
+                    last_child = op.children[-1]
+                    if last_child.type == "reference" and last_child.node is not None:
+                        last_node = last_child.node
+                        if hasattr(last_node, "as_geometry") and callable(getattr(last_node, "as_geometry")):
+                            try:
+                                geomstr = last_node.as_geometry()
+                                if geomstr and geomstr.index > 0:
+                                    last_segment = geomstr.segments[geomstr.index - 1]
+                                    end_point = last_segment[4]  # End point of the last segment
+                                    start_position = end_point
+                            except Exception as e:
+                                channel(f"Error extracting geometry from last node: {e}")
         self.signal("rebuild_tree")
         return "operations", opout
 
