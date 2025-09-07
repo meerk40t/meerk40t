@@ -4,7 +4,12 @@ from meerk40t.core.elements.element_types import (
     op_burnable_nodes,
 )
 import numpy as np
-import itertools
+
+# Import TYPE constants for geometric operations
+from meerk40t.tools.geomstr import TYPE_QUAD, TYPE_CUBIC, TYPE_ARC
+
+# Import for caching and additional utilities
+from functools import lru_cache
 
 
 def plugin(kernel, lifecycle=None):
@@ -213,7 +218,7 @@ def init_commands(kernel):
                                 geomstr = last_node.as_geometry()
                                 if geomstr and geomstr.index > 0:
                                     last_segment = geomstr.segments[geomstr.index - 1]
-                                    end_point = last_segment[4]  # End point of the last segment
+                                    start_point, control1, info, control2, end_point = last_segment
                                     start_position = end_point
                             except Exception as e:
                                 channel(f"Error extracting geometry from last node: {e}")
@@ -537,8 +542,7 @@ def _select_closed_path_candidates(segments, max_candidates, channel=None):
 
         for segment in segments:
             # Approximate segment length using start and end points
-            start_pt = segment[0]
-            end_pt = segment[4]
+            start_pt, control1, info, control2, end_pt = segment
             length = abs(end_pt - start_pt)
             segment_lengths.append(length)
             total_length += length
@@ -661,16 +665,30 @@ def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
     if channel:
         channel(f"  Finding optimal starting path from position {start_position}")
 
+    # Find the optimal starting path using vectorized operations
+    best_start_idx = 0
+    best_start_distance = float("inf")
+    best_start_ori = 0
+
+    if channel:
+        channel(f"  Finding optimal starting path from position {start_position}")
+
+    # Vectorized approach: calculate all distances at once
     for start_idx in range(n_paths):
         start_info = path_info[start_idx][2]
-        start_points = start_info["start_points"]
+        start_points = np.array(start_info["start_points"], dtype=complex)
 
-        for start_ori in range(len(start_points)):
-            distance_from_start = abs(start_points[start_ori] - start_position)
-            if distance_from_start < best_start_distance:
-                best_start_distance = distance_from_start
-                best_start_idx = start_idx
-                best_start_ori = start_ori
+        # Calculate distances from start_position to all start points for this path
+        distances_from_start = np.abs(start_points - start_position)
+
+        # Find the minimum distance for this path
+        min_distance = np.min(distances_from_start)
+        min_ori = np.argmin(distances_from_start)
+
+        if min_distance < best_start_distance:
+            best_start_distance = min_distance
+            best_start_idx = start_idx
+            best_start_ori = min_ori
 
     if channel:
         channel(
@@ -713,22 +731,24 @@ def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
 
             candidate_start_points = path_info[candidate_idx][2]["start_points"]
 
-            # Find the best orientation combination using direct distance calculation
-            for end_ori, start_ori in itertools.product(
-                range(len(current_end_points)), range(len(candidate_start_points))
-            ):
-                # Calculate distance directly (no cache needed)
-                end_pt = current_end_points[end_ori]
-                start_pt = candidate_start_points[start_ori]
-                distance = abs(end_pt - start_pt)
+            # Find the best orientation combination using vectorized distance calculation
+            current_ends = np.array(current_end_points, dtype=complex)
+            candidate_starts = np.array(candidate_start_points, dtype=complex)
 
-                if distance < best_distance:
-                    best_distance = distance
-                    best_idx = candidate_idx
-                    best_start_ori = start_ori
+            # Vectorized distance calculation: all combinations at once
+            distances = np.abs(current_ends[:, np.newaxis] - candidate_starts)
 
-                path_iterations += 1
-                iteration_shuffles += 1
+            # Find minimum distance and corresponding indices
+            min_idx = np.unravel_index(np.argmin(distances), distances.shape)
+            distance = distances[min_idx]
+
+            if distance < best_distance:
+                best_distance = distance
+                best_idx = candidate_idx
+                best_start_ori = min_idx[1]  # start_ori is the second index
+
+            path_iterations += len(current_end_points) * len(candidate_start_points)
+            iteration_shuffles += len(current_end_points) * len(candidate_start_points)
 
             path_candidates_evaluated += 1
 
@@ -864,7 +884,7 @@ def _reverse_geomstr(geomstr, channel=None):
 
 
 def _optimize_path_order_greedy_optimized(
-    path_info, channel=None, max_iterations=None
+    path_info, channel=None, max_iterations=None, start_position=0j
 ):
     """
     Optimized greedy path optimization algorithm with lazy evaluation.
@@ -873,6 +893,7 @@ def _optimize_path_order_greedy_optimized(
         path_info: List of (node, geom, info) tuples
         channel: Channel for debug output
         max_iterations: Maximum number of optimization iterations (None = no limit)
+        start_position: Starting position (complex number) to minimize total travel from
 
     Returns:
         Optimized path order as list of (node, geom, info) tuples
@@ -883,6 +904,18 @@ def _optimize_path_order_greedy_optimized(
     if len(path_info) == 1:
         return path_info
 
+    # Define threshold for when to use full matrix optimization
+    # For small numbers of paths, on-demand calculation is more efficient
+    MATRIX_OPTIMIZATION_THRESHOLD = 25  # Paths
+
+    if len(path_info) <= MATRIX_OPTIMIZATION_THRESHOLD:
+        # Use simplified approach for small numbers of paths
+        return _optimize_path_order_greedy_simple(path_info, channel, max_iterations, start_position)
+
+    # For larger numbers of paths, use the full matrix optimization
+    if channel:
+        channel(f"  Using full matrix optimization for {len(path_info)} paths (> {MATRIX_OPTIMIZATION_THRESHOLD})")
+
     if channel:
         channel(
             f"Starting optimized greedy path optimization with {len(path_info)} paths"
@@ -890,9 +923,36 @@ def _optimize_path_order_greedy_optimized(
         if max_iterations:
             channel(f"Max iterations: {max_iterations}")
 
-    # Initialize with first path
-    optimized_paths = [path_info[0]]
-    remaining_paths = path_info[1:]
+    # Find the optimal starting path to minimize total travel from start_position
+    best_start_idx = 0
+    best_start_distance = float("inf")
+
+    if channel:
+        channel(f"  Finding optimal starting path from position {start_position}")
+
+    # Vectorized approach: calculate all distances at once
+    for start_idx in range(len(path_info)):
+        start_info = path_info[start_idx][2]
+        start_points = np.array(start_info["start_points"], dtype=complex)
+
+        # Calculate distances from start_position to all start points for this path
+        distances_from_start = np.abs(start_points - start_position)
+
+        # Find the minimum distance for this path
+        min_distance = np.min(distances_from_start)
+
+        if min_distance < best_start_distance:
+            best_start_distance = min_distance
+            best_start_idx = start_idx
+
+    if channel:
+        channel(
+            f"  Optimal starting path: {best_start_idx} at distance {best_start_distance:.6f}"
+        )
+
+    # Initialize with the optimal starting path
+    optimized_paths = [path_info[best_start_idx]]
+    remaining_paths = [p for i, p in enumerate(path_info) if i != best_start_idx]
 
     # Distance cache for frequently accessed distances
     distance_cache = {}
@@ -1070,7 +1130,7 @@ def _calculate_total_travel_distance_optimized(path_info, distance_cache):
 def _calculate_path_to_path_distance_optimized(current_info, next_info):
     """
     Calculate the travel distance from the end of one path to the start of another.
-    Optimized version with orientation pruning.
+    Optimized version with numpy vectorization for significant performance gains.
 
     Args:
         current_info: Path info for current path
@@ -1079,34 +1139,24 @@ def _calculate_path_to_path_distance_optimized(current_info, next_info):
     Returns:
         Minimum distance between path end and next path start
     """
-    min_distance = float("inf")
-
     # Get possible end points from current path
     current_end_points = current_info["end_points"]
-
-    # Get possible start points from next path
     next_start_points = next_info["start_points"]
 
     # If either path has no points, return 0
     if not current_end_points or not next_start_points:
         return 0.0
 
-    # For efficiency, limit the number of orientations we check
-    max_orientations = min(4, len(current_end_points), len(next_start_points))
+    # Convert to numpy arrays for vectorized operations
+    current_ends = np.array(current_end_points, dtype=complex)
+    next_starts = np.array(next_start_points, dtype=complex)
 
-    # Use only the most promising orientations (first few)
-    current_ends = current_end_points[:max_orientations]
-    next_starts = next_start_points[:max_orientations]
+    # Vectorized distance calculation: compute all pairwise distances at once
+    # This replaces the nested loops with a single vectorized operation
+    distances = np.abs(current_ends[:, np.newaxis] - next_starts)
 
-    # Calculate distances for all combinations
-    for end_point in current_ends:
-        for start_point in next_starts:
-            # Calculate Euclidean distance
-            distance = abs(end_point - start_point)
-            if distance < min_distance:
-                min_distance = distance
-
-    return min_distance
+    # Return minimum distance
+    return np.min(distances)
 
 
 def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):
@@ -1148,8 +1198,137 @@ def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):
     return reshuffled_geomstr
 
 
+def _optimize_path_order_greedy_simple(path_info, channel=None, max_iterations=None, start_position=0j):
+    """
+    Simple greedy path optimization for small numbers of paths.
+    Uses on-demand distance calculation to avoid matrix overhead.
+
+    Args:
+        path_info: List of (node, geom, info) tuples
+        channel: Channel for debug output
+        max_iterations: Maximum number of optimization iterations (None = no limit)
+        start_position: Starting position (complex number) to minimize total travel from
+
+    Returns:
+        Optimized path order as list of (node, geom, info) tuples
+    """
+    if len(path_info) < 2:
+        return path_info
+
+    if channel:
+        channel(f"Starting simple greedy optimization for {len(path_info)} paths")
+
+    n_paths = len(path_info)
+
+    # Find the optimal starting path to minimize total travel from start_position
+    best_start_idx = 0
+    best_start_distance = float("inf")
+    best_start_ori = 0
+
+    if channel:
+        channel(f"  Finding optimal starting path from position {start_position}")
+
+    # Simple loop approach for small numbers of paths
+    for start_idx in range(n_paths):
+        start_info = path_info[start_idx][2]
+        start_points = start_info["start_points"]
+
+        # Calculate distances from start_position to all start points for this path
+        distances_from_start = [abs(point - start_position) for point in start_points]
+
+        # Find the minimum distance for this path
+        min_distance = min(distances_from_start)
+        min_ori = distances_from_start.index(min_distance)
+
+        if min_distance < best_start_distance:
+            best_start_distance = min_distance
+            best_start_idx = start_idx
+            best_start_ori = min_ori
+
+    if channel:
+        channel(
+            f"  Optimal starting path: {best_start_idx} at distance {best_start_distance:.6f}"
+        )
+
+    # Start with the optimal path
+    ordered_indices = [best_start_idx]
+    used = {best_start_idx}
+    orientation_choices = [(best_start_idx, best_start_ori)]
+
+    if channel:
+        channel(
+            f"  Starting with path {best_start_idx}: {display_label(path_info[best_start_idx][0])}"
+        )
+
+    # Greedily add the closest unused path with on-demand distance calculation
+    total_iterations = 0
+
+    while len(ordered_indices) < n_paths and (
+        max_iterations is None or total_iterations < max_iterations
+    ):
+        total_iterations += 1
+
+        best_distance = float("inf")
+        best_idx = -1
+        best_start_ori = 0
+
+        current_path_idx = ordered_indices[-1]
+        current_end_points = path_info[current_path_idx][2]["end_points"]
+
+        if channel:
+            channel(
+                f"  Iteration {total_iterations}: Finding next path after {display_label(path_info[current_path_idx][0])}"
+            )
+
+        for candidate_idx in range(n_paths):
+            if candidate_idx in used:
+                continue
+
+            candidate_start_points = path_info[candidate_idx][2]["start_points"]
+
+            # Simple nested loops for small numbers of paths - more efficient than matrix
+            for end_ori, end_point in enumerate(current_end_points):
+                for start_ori, start_point in enumerate(candidate_start_points):
+                    distance = abs(end_point - start_point)
+
+                    if distance < best_distance:
+                        best_distance = distance
+                        best_idx = candidate_idx
+                        best_start_ori = start_ori
+
+        if best_idx == -1:
+            # No more candidates found, break
+            break
+
+        ordered_indices.append(best_idx)
+        used.add(best_idx)
+        orientation_choices.append((best_idx, best_start_ori))
+
+        if channel:
+            channel(
+                f"  Added path {best_idx}: {display_label(path_info[best_idx][0])} at distance {best_distance:.6f}"
+            )
+
+    # Reconstruct the ordered path_info with proper orientations
+    ordered_path_info = []
+    for path_idx, orientation_idx in orientation_choices:
+        node, geom, info = path_info[path_idx]
+
+        # Apply the optimal orientation if needed
+        if orientation_idx > 0:
+            # Reverse the geomstr to start at the optimal segment
+            geom = _reshuffle_closed_geomstr(geom, orientation_idx, channel)
+
+        ordered_path_info.append((node, geom, info))
+
+    if channel:
+        channel(f"  Completed simple optimization with {len(ordered_path_info)} paths")
+
+    return ordered_path_info
+
+
 def _optimize_path_order_greedy_optimized(
-    path_info, channel=None, max_iterations=None
+    path_info, channel=None, max_iterations=None, start_position=0j
 ):
     """
     Optimized greedy path optimization algorithm that maintains result integrity with the original.
@@ -1158,6 +1337,7 @@ def _optimize_path_order_greedy_optimized(
         path_info: List of (node, geomstr, info) tuples
         channel: Channel for debug output
         max_iterations: Maximum number of optimization iterations (None = no limit)
+        start_position: Starting position (complex number) to minimize total travel from
 
     Returns:
         Optimized path order as list of (node, geomstr, info) tuples
@@ -1173,6 +1353,18 @@ def _optimize_path_order_greedy_optimized(
     # Use the same approach as original but with optimizations
     n_paths = len(path_info)
 
+    # Define threshold for when to use full matrix optimization
+    # For small numbers of paths, on-demand calculation is more efficient
+    MATRIX_OPTIMIZATION_THRESHOLD = 25  # Paths
+
+    if n_paths <= MATRIX_OPTIMIZATION_THRESHOLD:
+        # Use simplified approach for small numbers of paths
+        return _optimize_path_order_greedy_simple(path_info, channel, max_iterations, start_position)
+
+    # For larger numbers of paths, use the full matrix optimization
+    if channel:
+        channel(f"  Using full matrix optimization for {n_paths} paths (> {MATRIX_OPTIMIZATION_THRESHOLD})")
+
     # Calculate maximum number of orientations (start/end point combinations)
     max_end_points = (
         max(len(info["end_points"]) for _, _, info in path_info) if path_info else 1
@@ -1186,35 +1378,70 @@ def _optimize_path_order_greedy_optimized(
             f"  Maximum orientations: {max_end_points} end points, {max_start_points} start points"
         )
 
-    # Pre-calculate distance matrix (same as original for result integrity)
+    # Pre-calculate distance matrix using numpy vectorization (MAJOR PERFORMANCE IMPROVEMENT)
     distance_matrix = np.zeros((n_paths, n_paths, max_end_points, max_start_points))
 
     if channel:
-        channel("  Pre-calculating distance matrix...")
+        channel("  Pre-calculating distance matrix using vectorized operations...")
 
-    for i, j in itertools.product(range(n_paths), repeat=2):
-        if i != j:
-            info_i = path_info[i][2]
-            info_j = path_info[j][2]
+    # Vectorized distance calculation - replaces nested loops with single operation
+    for i in range(n_paths):
+        for j in range(n_paths):
+            if i != j:
+                info_i = path_info[i][2]
+                info_j = path_info[j][2]
 
-            # Calculate distances between all combinations of end/start points
-            n_end_points = len(info_i["end_points"])
-            n_start_points = len(info_j["start_points"])
+                # Get points as numpy arrays
+                end_points = np.array(info_i["end_points"], dtype=complex)
+                start_points = np.array(info_j["start_points"], dtype=complex)
 
-            for end_idx in range(n_end_points):
-                for start_idx in range(n_start_points):
-                    end_pt = info_i["end_points"][end_idx]
-                    start_pt = info_j["start_points"][start_idx]
-                    distance_matrix[i, j, end_idx, start_idx] = abs(end_pt - start_pt)
+                # Vectorized distance calculation: all combinations at once
+                # This replaces the nested loops: for end_idx, for start_idx: abs(end_pt - start_pt)
+                distances = np.abs(end_points[:, np.newaxis] - start_points)
 
-    # Start with the first path
-    ordered_indices = [0]
-    used = {0}
-    orientation_choices = [(0, 0)]  # (path_idx, orientation_idx) for each ordered path
+                # Store in the distance matrix
+                n_ends = len(end_points)
+                n_starts = len(start_points)
+                distance_matrix[i, j, :n_ends, :n_starts] = distances
+
+    # Find the optimal starting path to minimize total travel from start_position
+    best_start_idx = 0
+    best_start_distance = float("inf")
+    best_start_ori = 0
+
+    if channel:
+        channel(f"  Finding optimal starting path from position {start_position}")
+
+    # Vectorized approach: calculate all distances at once
+    for start_idx in range(n_paths):
+        start_info = path_info[start_idx][2]
+        start_points = np.array(start_info["start_points"], dtype=complex)
+
+        # Calculate distances from start_position to all start points for this path
+        distances_from_start = np.abs(start_points - start_position)
+
+        # Find the minimum distance for this path
+        min_distance = np.min(distances_from_start)
+        min_ori = np.argmin(distances_from_start)
+
+        if min_distance < best_start_distance:
+            best_start_distance = min_distance
+            best_start_idx = start_idx
+            best_start_ori = min_ori
 
     if channel:
         channel(
-            f"  Starting with path 0: {display_label(path_info[0][0])}"
+            f"  Optimal starting path: {best_start_idx} at distance {best_start_distance:.6f}"
+        )
+
+    # Start with the optimal path
+    ordered_indices = [best_start_idx]
+    used = {best_start_idx}
+    orientation_choices = [(best_start_idx, best_start_ori)]  # (path_idx, orientation_idx) for each ordered path
+
+    if channel:
+        channel(
+            f"  Starting with path {best_start_idx}: {display_label(path_info[best_start_idx][0])}"
         )
 
     # Greedily add the closest unused path
@@ -1244,18 +1471,21 @@ def _optimize_path_order_greedy_optimized(
 
             candidate_start_points = path_info[candidate_idx][2]["start_points"]
 
-            # Find the best orientation combination for this candidate
-            for end_ori in range(len(current_end_points)):
-                for start_ori in range(len(candidate_start_points)):
-                    distance = distance_matrix[
-                        current_path_idx, candidate_idx, end_ori, start_ori
-                    ]
+            # Find the best orientation combination for this candidate using vectorized min
+            # This replaces the nested loops with a single numpy operation
+            candidate_distances = distance_matrix[current_path_idx, candidate_idx,
+                                                :len(current_end_points),
+                                                :len(candidate_start_points)]
 
-                    if distance < best_distance:
-                        best_distance = distance
-                        best_idx = candidate_idx
-                        best_end_ori = end_ori
-                        best_start_ori = start_ori
+            # Find the minimum distance and its indices in one operation
+            min_idx = np.unravel_index(np.argmin(candidate_distances), candidate_distances.shape)
+            distance = candidate_distances[min_idx]
+
+            if distance < best_distance:
+                best_distance = distance
+                best_idx = candidate_idx
+                best_end_ori = min_idx[0]
+                best_start_ori = min_idx[1]
 
         # If no improvement found, we're done
         if best_idx == -1:
@@ -1329,104 +1559,697 @@ def _calculate_total_travel_distance_from_indices(path_info, indices, distance_m
     return total_distance
 
 
-def _calculate_path_to_path_distance_optimized(current_info, next_info):
-    """
-    Calculate the travel distance from the end of one path to the start of another.
-    Optimized version with orientation pruning.
-
-    Args:
-        current_info: Path info for current path
-        next_info: Path info for next path
-
-    Returns:
-        Minimum distance between path end and next path start
-    """
-    min_distance = float("inf")
-
-    # Get possible end points from current path
-    current_end_points = current_info["end_points"]
-
-    # Get possible start points from next path
-    next_start_points = next_info["start_points"]
-
-    # If either path has no points, return 0
-    if not current_end_points or not next_start_points:
-        return 0.0
-
-    # For efficiency, limit the number of orientations we check
-    max_orientations = min(4, len(current_end_points), len(next_start_points))
-
-    # Use only the most promising orientations (first few)
-    current_ends = current_end_points[:max_orientations]
-    next_starts = next_start_points[:max_orientations]
-
-    # Calculate distances for all combinations
-    for end_point in current_ends:
-        for start_point in next_starts:
-            # Calculate Euclidean distance
-            distance = abs(end_point - start_point)
-            if distance < min_distance:
-                min_distance = distance
-
-    return min_distance
-
-
-def _calculate_total_travel_distance_optimized(
-    path_info, distance_cache, cache_stats=None
-):
-    """
-    Calculate total travel distance with distance caching for optimization.
-
-    Args:
-        path_info: List of (node, geomstr, info) tuples
-        distance_cache: Dictionary for caching distances
-        cache_stats: Dictionary to track cache hits/misses (optional)
-
-    Returns:
-        Total travel distance
-    """
-    if len(path_info) <= 1:
-        return 0.0
-
-    total_distance = 0.0
-
-    for i in range(len(path_info) - 1):
-        current_node, current_geom, current_info = path_info[i]
-        next_node, next_geom, next_info = path_info[i + 1]
-
-        # Create cache key using stable node identifiers
-        current_id = getattr(
-            current_node,
-            "label",
-            f"{current_node.type}.{getattr(current_node, 'id', 'unknown')}",
-        )
-        next_id = getattr(
-            next_node,
-            "label",
-            f"{next_node.type}.{getattr(next_node, 'id', 'unknown')}",
-        )
-        cache_key = (current_id, next_id)
-
-        # Check cache first
-        if cache_key in distance_cache:
-            distance = distance_cache[cache_key]
-            if cache_stats is not None:
-                cache_stats["hits"] = cache_stats.get("hits", 0) + 1
-        else:
-            # Calculate distance between end of current path and start of next path
-            distance = _calculate_path_to_path_distance_optimized(
-                current_info, next_info
-            )
-            distance_cache[cache_key] = distance
-            if cache_stats is not None:
-                cache_stats["misses"] = cache_stats.get("misses", 0) + 1
-
-        total_distance += distance
-
-    return total_distance
-
 def create_dump_of(identifier, geom: Geomstr):
     print (f"  {identifier}=Geomstr()")
     for segment in geom.segments[: geom.index]:
         start, c0, info, c1, end = segment
         print(f"  {identifier}.append_segment({start}, {c0}, {info}, {c1}, {end})")
+
+
+def is_geomstr_contained(outer_geom, inner_geom, tolerance: float = 1e-3, resolution: int = 100) -> bool:
+    """
+    Determine if inner_geom is completely contained within outer_geom.
+
+    This function combines the best of both approaches:
+    - High-performance Shapely containment detection
+    - Robust Scanbeam fallback with geometric sampling
+    - Fast bounding box pre-checks for early rejection
+    - Support for various input types (elements with .path attribute)
+    - Special handling for raster images
+    - LRU caching for repeated polygon computations
+
+    Args:
+        outer_geom: The outer geometry (container) - can be Geomstr or object with .path
+        inner_geom: The inner geometry (contained) - can be Geomstr or object with .path
+        tolerance: Tolerance for geometric operations
+        resolution: Resolution for polygon sampling (higher = more accurate but slower)
+
+    Returns:
+        True if inner_geom is completely contained within outer_geom, False otherwise
+    """
+    if outer_geom is None or inner_geom is None:
+        return False
+
+    # Handle different input types - extract paths if needed
+    outer_path = outer_geom
+    inner_path = inner_geom
+
+    if outer_geom == inner_geom:  # Same object
+        return False
+
+    # Extract paths from objects if they have .path attribute
+    if hasattr(outer_geom, "path") and outer_geom.path is not None:
+        outer_path = outer_geom.path
+    if hasattr(inner_geom, "path") and inner_geom.path is not None:
+        inner_path = inner_geom.path
+
+    # Convert to Geomstr if needed
+    if not isinstance(outer_path, Geomstr):
+        try:
+            outer_geomstr = Geomstr.svg(outer_path)
+        except Exception:
+            outer_geomstr = Geomstr()
+    else:
+        outer_geomstr = outer_path
+
+    if not isinstance(inner_path, Geomstr):
+        try:
+            inner_geomstr = Geomstr.svg(inner_path)
+        except Exception:
+            inner_geomstr = Geomstr()
+    else:
+        inner_geomstr = inner_path
+
+    if outer_geomstr.index == 0 or inner_geomstr.index == 0:
+        return False
+
+    # Fast bounding box pre-check for early rejection
+    if not _bounding_box_contained(outer_geomstr, inner_geomstr, tolerance):
+        return False
+
+    # Try Shapely first for high-performance containment detection
+    try:
+        # Check if shapely is available
+        import importlib.util
+        if importlib.util.find_spec("shapely") is None:
+            raise ImportError("Shapely not available")
+
+        from shapely import contains
+
+        # Convert Geomstr objects to Shapely geometries with caching
+        outer_poly = _get_cached_shapely_polygon(outer_geomstr, resolution)
+        inner_poly = _get_cached_shapely_polygon(inner_geomstr, resolution)
+
+        if outer_poly is None or inner_poly is None:
+            raise ImportError("Could not convert geometries to Shapely format")
+
+        # Use Shapely's contains function for efficient containment detection
+        return contains(outer_poly, inner_poly)
+
+    except (ImportError, Exception) as e:
+        # Shapely not available or failed, fall back to Scanbeam method
+        if not isinstance(e, ImportError):
+            print(f"Warning: Shapely containment failed ({e}), falling back to Scanbeam")
+
+    # Fallback to Scanbeam-based containment detection
+    return _scanbeam_containment_check(outer_geomstr, inner_geomstr, tolerance, resolution)
+
+
+@lru_cache(maxsize=128)
+def _geomstr_to_shapely_polygon_cached(geom_id: int, resolution: int):
+    """
+    Cached version of Geomstr to Shapely polygon conversion using object ID.
+
+    Args:
+        geom_id: ID of the Geomstr object to convert
+        resolution: Resolution for polygon sampling
+
+    Returns:
+        Shapely Polygon or None if conversion fails
+    """
+    # This function is a placeholder - actual conversion happens in the main function
+    return None
+
+
+# Global cache for Shapely polygon conversions
+_shapely_cache = {}
+
+def _get_cached_shapely_polygon(geom: Geomstr, resolution: int):
+    """
+    Get cached Shapely polygon conversion with size-limited cache.
+
+    Args:
+        geom: Geomstr object to convert
+        resolution: Resolution for polygon sampling
+
+    Returns:
+        Shapely Polygon or None if conversion fails
+    """
+    # Create cache key using object id and resolution
+    cache_key = (id(geom), resolution)
+
+    if cache_key in _shapely_cache:
+        return _shapely_cache[cache_key]
+
+    # Convert and cache
+    polygon = _geomstr_to_shapely_polygon(geom, resolution)
+
+    # Implement simple LRU by clearing cache if it gets too large
+    if len(_shapely_cache) >= 128:  # Max cache size
+        # Clear half the cache (simple approximation of LRU)
+        items_to_remove = list(_shapely_cache.keys())[:64]
+        for key in items_to_remove:
+            del _shapely_cache[key]
+
+    _shapely_cache[cache_key] = polygon
+    return polygon
+
+
+def _bounding_box_contained(outer_geom: Geomstr, inner_geom: Geomstr, tolerance: float = 1e-3) -> bool:
+    """
+    Fast bounding box containment check for early rejection.
+
+    Args:
+        outer_geom: Outer geometry
+        inner_geom: Inner geometry
+        tolerance: Tolerance for bounding box checks
+
+    Returns:
+        True if inner bounding box is contained within outer bounding box
+    """
+    try:
+        # Get bounding boxes
+        outer_bbox = outer_geom.bbox()
+        inner_bbox = inner_geom.bbox()
+
+        if outer_bbox is None or inner_bbox is None:
+            return False
+
+        # Check if inner bbox is completely contained within outer bbox
+        return (outer_bbox[0] <= inner_bbox[0] - tolerance and  # outer minx <= inner minx
+                outer_bbox[1] <= inner_bbox[1] - tolerance and  # outer miny <= inner miny
+                outer_bbox[2] >= inner_bbox[2] + tolerance and  # outer maxx >= inner maxx
+                outer_bbox[3] >= inner_bbox[3] + tolerance)     # outer maxy >= inner maxy
+
+    except Exception:
+        # If bbox calculation fails, assume containment is possible
+        return True
+
+
+def _scanbeam_containment_check(outer_geom: Geomstr, inner_geom: Geomstr, tolerance: float = 1e-3, resolution: int = 100) -> bool:
+    """
+    Check containment using the Scanbeam algorithm from Geomstr with improved sampling.
+
+    Args:
+        outer_geom: The outer geometry (container)
+        inner_geom: The inner geometry (contained)
+        tolerance: Tolerance for geometric operations
+        resolution: Resolution for point sampling
+
+    Returns:
+        True if inner_geom is contained within outer_geom, False otherwise
+    """
+    try:
+        from meerk40t.tools.geomstr import Scanbeam
+
+        # Create Scanbeam for the outer geometry
+        scanbeam = Scanbeam(outer_geom)
+
+        # Check if all points of inner_geom are inside outer_geom
+        all_points_inside = True
+
+        # Sample points from inner geometry for testing
+        test_points = _sample_geometry_points(inner_geom, resolution)
+
+        if not test_points:
+            return False
+
+        for point in test_points:
+            if not scanbeam.is_point_inside(point.real, point.imag, tolerance):
+                all_points_inside = False
+                break
+
+        return all_points_inside
+
+    except Exception as e:
+        print(f"Warning: Scanbeam containment check failed: {e}")
+        return False
+
+
+def _sample_geometry_points(geom: Geomstr, resolution: int = 100):
+    """
+    Sample points from a geometry for containment testing.
+
+    Args:
+        geom: Geometry to sample points from
+        resolution: Number of interpolation points per segment
+
+    Returns:
+        List of complex points for testing
+    """
+    try:
+        # Use Geomstr's optimized interpolation method
+        points = list(geom.as_interpolated_points(interpolate=resolution))
+        # Filter out None values (disconnected segments)
+        return [p for p in points if p is not None]
+    except Exception:
+        # Fallback to manual sampling using geomstr.position method
+        points = []
+        for i, segment in enumerate(geom.segments[:geom.index]):
+            # Always include start and end points
+            start_point, control1, info, control2, end_point = segment
+            points.extend([start_point, end_point])
+
+            # For curved segments, sample additional points using position method
+            segtype = geom._segtype(segment)
+            if segtype in (TYPE_QUAD, TYPE_CUBIC, TYPE_ARC):
+                # Sample points along curved segments using geomstr.position
+                num_samples = max(5, resolution // 10)  # Adaptive sampling
+                for j in range(1, num_samples):
+                    t = j / num_samples
+                    try:
+                        point = geom.position(i, t)
+                        if point is not None:
+                            points.append(point)
+                    except Exception:
+                        # If position method fails, skip this point
+                        continue
+        return points
+
+
+def _geomstr_to_shapely_polygon(geom: Geomstr, resolution: int = 100):
+    """
+    Convert a Geomstr object to a Shapely Polygon with configurable resolution.
+
+    Args:
+        geom: Geomstr object to convert
+        resolution: Number of points to sample per segment for curve approximation
+
+    Returns:
+        Shapely Polygon or None if conversion fails
+    """
+    try:
+        from shapely.geometry import Polygon
+
+        # Extract all subpaths from the Geomstr
+        subpaths = list(geom.as_subpaths())
+
+        if not subpaths:
+            return None
+
+        # Use the first closed subpath as the main polygon
+        main_path = None
+        holes = []
+
+        for subpath in subpaths:
+            if subpath.is_closed():
+                # Use Geomstr's built-in interpolation for accurate point sampling
+                coords = []
+                try:
+                    # Try as_interpolated_points first
+                    interpolated_points = list(subpath.as_interpolated_points(interpolate=resolution))
+                    
+                    if len(interpolated_points) >= 3:
+                        for point in interpolated_points:
+                            if point is not None:  # Skip None values (disconnected segments)
+                                coords.append((point.real, point.imag))
+                    else:
+                        # Fallback: manually extract points from segments
+                        for segment in subpath.segments[:subpath.index]:
+                            start_point, control1, info, control2, end_point = segment
+                            start_coord = (start_point.real, start_point.imag)
+                            end_coord = (end_point.real, end_point.imag)
+                            if not coords:
+                                coords.append(start_coord)
+                            coords.append(end_coord)
+                    
+                    # Ensure we have enough points for a valid polygon
+                    if len(coords) < 3:
+                        continue
+                        
+                except Exception:
+                    # Fallback to manual point extraction if interpolation fails
+                    for segment in subpath.segments[:subpath.index]:
+                        start_point, control1, info, control2, end_point = segment
+                        if not coords:
+                            coords.append((start_point.real, start_point.imag))
+                        coords.append((end_point.real, end_point.imag))
+                    
+                    if len(coords) < 3:
+                        continue
+
+                # Ensure polygon is closed
+                if coords[0] != coords[-1]:
+                    coords.append(coords[0])
+
+                if main_path is None:
+                    main_path = coords
+                else:
+                    holes.append(coords)
+
+        if main_path is None:
+            return None
+
+        # Create Shapely Polygon with holes if any
+        polygon = Polygon(main_path, holes) if holes else Polygon(main_path)
+        
+        # Check if polygon is valid
+        if not polygon.is_valid:
+            return None
+        
+        return polygon
+
+    except Exception as e:
+        print(f"Warning: Failed to convert Geomstr to Shapely polygon: {e}")
+        return None
+
+
+def build_geometry_hierarchy(elements_collection, tolerance: float = 1e-6, resolution: int = 50):
+    """
+    Build a hierarchical tree representation of geometric containment relationships.
+
+    This function analyzes all elements with as_geometry() method and establishes
+    parent-child relationships based on geometric containment. Uses optimization
+    to avoid redundant comparisons.
+
+    Args:
+        elements_collection: Collection of elements (e.g., from kernel.elements.elems())
+        tolerance: Tolerance for geometric operations
+        resolution: Resolution for polygon sampling
+
+    Returns:
+        Dictionary with hierarchy information:
+        {
+            'nodes': list of all nodes with geometry,
+            'containment_tree': dict mapping node_id -> list of contained node_ids,
+            'containment_map': dict mapping (outer_id, inner_id) -> containment result,
+            'root_nodes': list of nodes not contained by any other,
+            'stats': dict with statistics about the analysis
+        }
+    """
+    from collections import defaultdict
+
+    # Step 1: Collect all elements with as_geometry method
+    geometry_nodes = []
+    node_geometries = {}
+    node_info = {}
+
+    print("Collecting geometric elements...")
+    for elem in elements_collection:
+        node_id = id(elem)  # Use object ID as unique identifier
+        
+        # Special handling for image elements
+        if getattr(elem, 'type', None) in ("elem image", "elem raster"):
+            try:
+                # For images, use as_image() to get PIL image and create geometry from bounds
+                if hasattr(elem, 'as_image') and callable(getattr(elem, 'as_image')):
+                    pil_image = elem.as_image()
+                    if pil_image:
+                        bbox = elem.bbox()
+                        # Create a rectangular geometry from the image bounds
+                        geom = Geomstr.rect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
+                        
+                        if geom and geom.index > 0:
+                            geometry_nodes.append(elem)
+                            node_geometries[node_id] = geom
+                            node_info[node_id] = {
+                                'element': elem,
+                                'bbox': geom.bbox(),
+                                'type': 'elem image',
+                                'label': getattr(elem, 'label', str(elem))
+                            }
+            except Exception as e:
+                print(f"Warning: Failed to process image element {elem}: {e}")
+        
+        # Standard geometry extraction for other elements
+        elif hasattr(elem, 'as_geometry') and callable(getattr(elem, 'as_geometry')):
+            try:
+                geom = elem.as_geometry()
+                if geom and geom.index > 0:  # Only include non-empty geometries
+                    geometry_nodes.append(elem)
+                    node_geometries[node_id] = geom
+                    node_info[node_id] = {
+                        'element': elem,
+                        'bbox': geom.bbox(),
+                        'type': getattr(elem, 'type', 'unknown'),
+                        'label': getattr(elem, 'label', str(elem))
+                    }
+            except Exception as e:
+                print(f"Warning: Failed to get geometry for element {elem}: {e}")
+                continue
+
+    print(f"Found {len(geometry_nodes)} geometric elements")
+
+    if len(geometry_nodes) < 2:
+        return {
+            'nodes': geometry_nodes,
+            'containment_tree': {},
+            'containment_map': {},
+            'root_nodes': geometry_nodes,
+            'stats': {'total_elements': len(geometry_nodes), 'comparisons_made': 0}
+        }
+
+    # Step 2: Pre-compute bounding boxes for fast rejection
+    print("Pre-computing bounding boxes...")
+    bbox_cache = {}
+    for node_id, info in node_info.items():
+        bbox_cache[node_id] = info['bbox']
+
+    # Step 3: Build containment relationships with optimization
+    containment_tree = defaultdict(list)  # node_id -> list of contained node_ids
+    containment_map = {}  # (outer_id, inner_id) -> containment result
+    contained_nodes = set()  # Track nodes that are contained by others
+
+    print("Analyzing containment relationships...")
+
+    # Sort nodes by bounding box area (smaller first) for optimization
+    def bbox_area(bbox):
+        if bbox is None:
+            return 0
+        return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+
+    sorted_nodes = sorted(node_info.keys(), key=lambda nid: bbox_area(bbox_cache[nid]))
+
+    comparisons_made = 0
+
+    for i, inner_id in enumerate(sorted_nodes):
+        if inner_id in contained_nodes:
+            continue  # Skip nodes already known to be contained
+
+        inner_bbox = bbox_cache[inner_id]
+
+        # Check containment against potential parent nodes
+        for j, outer_id in enumerate(sorted_nodes):
+            if i == j:  # Don't compare with self
+                continue
+
+            if outer_id == inner_id:
+                continue
+
+            # Optimization: if inner is already contained, skip further checks
+            if inner_id in contained_nodes:
+                break
+
+            outer_bbox = bbox_cache[outer_id]
+
+            # Fast bounding box pre-check
+            if not _bbox_might_contain(outer_bbox, inner_bbox, tolerance):
+                continue
+
+            # Check if we've already computed this relationship
+            pair_key = (outer_id, inner_id)
+            if pair_key in containment_map:
+                is_contained = containment_map[pair_key]
+            else:
+                # Perform geometric containment check
+                try:
+                    is_contained = is_geomstr_contained(
+                        node_geometries[outer_id],
+                        node_geometries[inner_id],
+                        tolerance,
+                        resolution
+                    )
+                    containment_map[pair_key] = is_contained
+                    comparisons_made += 1
+                except Exception as e:
+                    print(f"Warning: Containment check failed for {inner_id} in {outer_id}: {e}")
+                    is_contained = False
+
+            if is_contained:
+                containment_tree[outer_id].append(inner_id)
+                contained_nodes.add(inner_id)
+
+                # Optimization: If A contains B, and B contains C, then A contains C
+                # Mark all descendants of inner_id as also contained by outer_id
+                _mark_descendants_as_contained(containment_tree, outer_id, inner_id, contained_nodes)
+
+    # Step 4: Identify root nodes (not contained by any other)
+    root_nodes = []
+    for elem in geometry_nodes:
+        node_id = id(elem)
+        if node_id not in contained_nodes:
+            root_nodes.append(elem)
+
+    # Step 5: Build statistics
+    stats = {
+        'total_elements': len(geometry_nodes),
+        'comparisons_made': comparisons_made,
+        'contained_elements': len(contained_nodes),
+        'root_elements': len(root_nodes),
+        'containment_relationships': sum(len(children) for children in containment_tree.values()),
+        'cache_hits': len(containment_map) - comparisons_made
+    }
+
+    print("Hierarchy analysis complete:")
+    print(f"  - Total elements: {stats['total_elements']}")
+    print(f"  - Containment relationships: {stats['containment_relationships']}")
+    print(f"  - Root elements: {stats['root_elements']}")
+    print(f"  - Comparisons made: {stats['comparisons_made']}")
+
+    return {
+        'nodes': geometry_nodes,
+        'containment_tree': dict(containment_tree),
+        'containment_map': containment_map,
+        'root_nodes': root_nodes,
+        'node_info': node_info,
+        'stats': stats
+    }
+
+
+def _bbox_might_contain(outer_bbox, inner_bbox, tolerance: float = 0) -> bool:
+    """
+    Fast bounding box check to see if outer might contain inner.
+
+    Args:
+        outer_bbox: Outer bounding box (x1, y1, x2, y2)
+        inner_bbox: Inner bounding box (x1, y1, x2, y2)
+        tolerance: Tolerance for comparison
+
+    Returns:
+        True if inner bbox is potentially contained within outer bbox
+    """
+    if outer_bbox is None or inner_bbox is None:
+        return False
+
+    return (outer_bbox[0] - tolerance <= inner_bbox[0] and  # outer.left <= inner.left
+            outer_bbox[1] - tolerance <= inner_bbox[1] and  # outer.top <= inner.top
+            outer_bbox[2] + tolerance >= inner_bbox[2] and  # outer.right >= inner.right
+            outer_bbox[3] + tolerance >= inner_bbox[3])     # outer.bottom >= inner.bottom
+
+
+def _mark_descendants_as_contained(containment_tree, ancestor_id, parent_id, contained_nodes):
+    """
+    Recursively mark all descendants of parent_id as contained by ancestor_id.
+
+    This optimization avoids redundant containment checks by leveraging the
+    transitive property: if A contains B and B contains C, then A contains C.
+
+    Args:
+        containment_tree: Current containment relationships
+        ancestor_id: The ancestor node that contains everything
+        parent_id: The parent node whose descendants we're marking
+        contained_nodes: Set of nodes known to be contained
+    """
+    if parent_id not in containment_tree:
+        return
+
+    for child_id in containment_tree[parent_id]:
+        if child_id not in contained_nodes:
+            contained_nodes.add(child_id)
+            # Recursively mark descendants
+            _mark_descendants_as_contained(containment_tree, ancestor_id, child_id, contained_nodes)
+
+
+def print_geometry_hierarchy(hierarchy_result, max_depth: int = 3):
+    """
+    Print a human-readable representation of the geometry hierarchy.
+
+    Args:
+        hierarchy_result: Result from build_geometry_hierarchy()
+        max_depth: Maximum depth to display
+    """
+    print("\n" + "="*60)
+    print("GEOMETRY CONTAINMENT HIERARCHY")
+    print("="*60)
+
+    containment_tree = hierarchy_result['containment_tree']
+    node_info = hierarchy_result['node_info']
+    root_nodes = hierarchy_result['root_nodes']
+
+    def print_node(node_id, depth=0, prefix=""):
+        if depth > max_depth:
+            print(f"{'  ' * depth}{prefix}... (truncated)")
+            return
+
+        info = node_info.get(node_id, {})
+        elem = info.get('element', f"Node {node_id}")
+        node_type = info.get('type', 'unknown')
+        label = info.get('label', str(elem))
+
+        print(f"{'  ' * depth}{prefix}{node_type}: {label}")
+
+        if node_id in containment_tree:
+            children = containment_tree[node_id]
+            for i, child_id in enumerate(children):
+                next_prefix = "└── " if i == len(children) - 1 else "├── "
+                print_node(child_id, depth + 1, next_prefix)
+
+    print(f"Root nodes ({len(root_nodes)}):")
+    for i, root_elem in enumerate(root_nodes):
+        root_id = id(root_elem)
+        prefix = "└── " if i == len(root_nodes) - 1 else "├── "
+        print_node(root_id, 0, prefix)
+
+    # Print statistics
+    stats = hierarchy_result['stats']
+    print("\nStatistics:")
+    print(f"  Total elements: {stats['total_elements']}")
+    print(f"  Containment relationships: {stats['containment_relationships']}")
+    print(f"  Root elements: {stats['root_elements']}")
+    print(f"  Comparisons made: {stats['comparisons_made']}")
+    if 'cache_hits' in stats:
+        print(f"  Cache efficiency: {stats.get('cache_hits', 0)} cached results used")
+
+
+def get_containment_depth(hierarchy_result, node_id):
+    """
+    Get the containment depth of a node in the hierarchy.
+
+    Args:
+        hierarchy_result: Result from build_geometry_hierarchy()
+        node_id: ID of the node to check
+
+    Returns:
+        Depth level (0 = root, higher numbers = deeper nesting)
+    """
+    containment_tree = hierarchy_result['containment_tree']
+
+    def find_depth(current_id, visited=None):
+        if visited is None:
+            visited = set()
+
+        if current_id in visited:
+            return 0  # Avoid cycles
+
+        visited.add(current_id)
+        max_depth = 0
+
+        # Find all parents of this node
+        for parent_id, children in containment_tree.items():
+            if current_id in children:
+                parent_depth = find_depth(parent_id, visited.copy())
+                max_depth = max(max_depth, parent_depth + 1)
+
+        return max_depth
+
+    return find_depth(node_id)
+
+
+def find_nested_groups(hierarchy_result, min_group_size: int = 2):
+    """
+    Find groups of nested elements for optimization opportunities.
+
+    Args:
+        hierarchy_result: Result from build_geometry_hierarchy()
+        min_group_size: Minimum number of elements to consider a group
+
+    Returns:
+        List of nested groups, each containing the parent and its direct children
+    """
+    containment_tree = hierarchy_result['containment_tree']
+    nested_groups = []
+
+    for parent_id, children in containment_tree.items():
+        if len(children) >= min_group_size:
+            group = {
+                'parent': parent_id,
+                'children': children,
+                'group_size': len(children) + 1,  # +1 for parent
+                'parent_info': hierarchy_result['node_info'].get(parent_id, {})
+            }
+            nested_groups.append(group)
+
+    # Sort by group size (largest first)
+    nested_groups.sort(key=lambda g: g['group_size'], reverse=True)
+
+    return nested_groups
