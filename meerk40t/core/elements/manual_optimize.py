@@ -198,15 +198,15 @@ def init_commands(kernel):
         
         for op in oplist:
             if op.type in op_burnable_nodes:
-                optimization_result = optimize_node_travel_under(op, channel, start_position)
+                optimization_result = optimize_node_travel_under(self, op, channel, debug_channel, start_position=start_position)
                 opout.append(op)
                 
                 # Collect results for summary
                 if optimization_result['optimized']:
-                    optimized_operations.append(op.display_label())
+                    optimized_operations.append(display_label(op))
                     total_improvement += optimization_result['improvement']
                 
-                operation_results.append((op.display_label(), optimization_result))
+                operation_results.append((display_label(op), optimization_result))
                 
                 # New start_position is last position of the last node
                 if len(op.children) > 0:
@@ -255,7 +255,7 @@ def init_commands(kernel):
         self.signal("rebuild_tree")
         return "ops", opout
 
-    def optimize_node_travel_under(op, channel, debug_channel, leading="", start_position=0j):
+    def optimize_node_travel_under(self, op, channel, debug_channel, leading="", start_position=0j):
         node_list = []
         child_list = []
         
@@ -274,7 +274,7 @@ def init_commands(kernel):
                 debug_channel(f"{leading}{display_label(child)}")
             if child.type.startswith("effect"):
                 # We reorder the children of the effect, not the effect itself
-                child_result = optimize_node_travel_under(child, channel, leading=f"{leading}  ", start_position=start_position)
+                child_result = optimize_node_travel_under(self, child, channel, debug_channel, leading=f"{leading}  ", start_position=start_position)
                 # Accumulate results from child operations
                 if child_result['optimized']:
                     total_optimization_results['optimized'] = True
@@ -322,7 +322,7 @@ def init_commands(kernel):
             
             return total_optimization_results
         else:
-            channel(f"No need to reorder {op.display_label()}")
+            channel(f"No need to reorder {display_label(op)}")
             return total_optimization_results
 
     def optimize_path_order(node_list, channel=None, debug_channel=None, start_position=0j):
@@ -1007,7 +1007,7 @@ def _optimize_path_order_greedy_optimized(
 
         if channel:
             channel(
-                f"Iteration {total_iterations}: Inserted '{node.display_label()}' at position {best_insertion_idx}"
+                f"Iteration {total_iterations}: Inserted '{display_label(node)}' at position {best_insertion_idx}"
             )
             channel(
                 f"  Improvement: {best_improvement:.6f}, New distance: {best_distance:.6f}"
@@ -1025,7 +1025,7 @@ def _optimize_path_order_greedy_optimized(
     if channel:
         channel(f"Optimization completed in {total_iterations} iterations")
         channel(
-            f"Final path order: {[node.display_label() for node, _, _ in optimized_paths]}"
+            f"Final path order: {[display_label(node) for node, _, _ in optimized_paths]}"
         )
 
     return optimized_paths
