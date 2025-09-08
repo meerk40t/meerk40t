@@ -2111,10 +2111,13 @@ def _bbox_might_contain(outer_bbox, inner_bbox, tolerance: float = 0) -> bool:
     if outer_bbox is None or inner_bbox is None:
         return False
 
-    return (outer_bbox[0] - tolerance <= inner_bbox[0] and  # outer.left <= inner.left
-            outer_bbox[1] - tolerance <= inner_bbox[1] and  # outer.top <= inner.top
-            outer_bbox[2] + tolerance >= inner_bbox[2] and  # outer.right >= inner.right
-            outer_bbox[3] + tolerance >= inner_bbox[3])     # outer.bottom >= inner.bottom
+    # Check if containment is impossible (inner extends outside outer in any dimension)
+    containment_impossible = (inner_bbox[0] - tolerance > outer_bbox[2] or  # inner.left - tolerance > outer.right
+                              inner_bbox[2] + tolerance < outer_bbox[0] or  # inner.right + tolerance < outer.left
+                              inner_bbox[1] - tolerance > outer_bbox[3] or  # inner.top - tolerance > outer.bottom
+                              inner_bbox[3] + tolerance < outer_bbox[1])    # inner.bottom + tolerance < outer.top
+
+    return not containment_impossible  # If containment is not impossible, it might be possible
 
 
 def _mark_descendants_as_contained(containment_tree, ancestor_id, parent_id, contained_nodes):
