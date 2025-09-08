@@ -11,6 +11,54 @@ from meerk40t.tools.geomstr import TYPE_QUAD, TYPE_CUBIC, TYPE_ARC
 # Import for caching and additional utilities
 from functools import lru_cache
 
+# Import test case generation utilities
+from .optimization_testcases import generate_random_test_case, DEFAULT_SHAPE_COUNT
+
+
+# ==========
+# OPTIMIZATION CONSTANTS
+# ==========
+
+# Path optimization thresholds
+MATRIX_OPTIMIZATION_THRESHOLD = 25  # Paths - threshold for using full matrix optimization
+MAX_GREEDY_ITERATIONS = 1000  # Maximum iterations for greedy algorithms
+DEFAULT_TOLERANCE = 1e-6  # Default geometric tolerance for calculations
+DEFAULT_CONTAINMENT_TOLERANCE = 1e-3  # Default tolerance for containment checks
+DEFAULT_CONTAINMENT_RESOLUTION = 100  # Default resolution for containment polygon sampling
+
+# Distance calculation constants
+DISTANCE_CALCULATION_BATCH_SIZE = 100  # For large distance matrix calculations
+
+
+# ==========
+# SHAPELY UTILITIES
+# ==========
+
+def _get_shapely_operations():
+    """
+    Get Shapely operations if available, None otherwise.
+    Centralizes all Shapely dependency handling in one place.
+    
+    Returns:
+        dict or None: Dictionary with Shapely functions if available, None if not available
+    """
+    try:
+        import importlib.util
+        if importlib.util.find_spec("shapely") is None:
+            return None
+        
+        # Import all needed Shapely components
+        from shapely import contains
+        from shapely.geometry import Polygon
+        
+        return {
+            'contains': contains,
+            'Polygon': Polygon,
+            'available': True
+        }
+    except ImportError:
+        return None
+
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -27,7 +75,7 @@ def init_commands(kernel):
     # ELEMENT/SHAPE COMMANDS
     # ==========
     @self.console_argument(
-        "amount", type=int, help=_("Number of shapes to create"), default=10
+        "amount", type=int, help=_("Number of shapes to create"), default=DEFAULT_SHAPE_COUNT
     )
     @self.console_command(
         "testcase",
@@ -36,135 +84,95 @@ def init_commands(kernel):
         output_type="elements",
     )
     def reorder_testcase(channel, _, amount=None, data=None, post=None, **kwargs):
-        if amount is None or amount < 1:
-            amount = 10
+        """Create a random test case for path optimization testing."""
         branch = self.elem_branch
-        import random
+        
+        # Generate random test case using the dedicated module
+        created_elements = generate_random_test_case(
+            branch=branch,
+            device_view=self.device.view,
+            default_stroke=self.default_stroke,
+            default_strokewidth=self.default_strokewidth,
+            amount=amount
+        )
+        
+        # Add classification post-processing
+        post.append(self.post_classify(created_elements))
 
-        random.seed(42)
-        data = []
-        for i in range(amount):
-            x = random.uniform(5, 95)
-            y = random.uniform(5, 95)
-            w = random.uniform(5, 20)
-            h = random.uniform(5, 20)
-            type_selector = random.randint(
-                0, 3
-            )  # 0=line, 1=poly open, 2=poly closed, 3=rectangle, 4=ellipse
-            if type_selector == 0:
-                # Line
-                x2 = min(100, max(0, x + w))
-                y2 = min(100, max(0, y + h))
-                node = branch.add(
-                    "elem line",
-                    x1=float(Length(f"{x}%", relative_length=self.device.view.width)),
-                    y1=float(Length(f"{y}%", relative_length=self.device.view.height)),
-                    x2=float(Length(f"{x2}%", relative_length=self.device.view.width)),
-                    y2=float(Length(f"{y2}%", relative_length=self.device.view.height)),
-                    stroke=self.default_stroke,
-                    stroke_width=self.default_strokewidth,
-                    label=f"Testline #{i + 1}",
-                )
-            elif type_selector == 1:
-                # Polyline open
-                points = []
-                n_points = random.randint(3, 6)
-                px = x
-                py = y
-                for _ in range(n_points):
-                    px += random.uniform(-10, 10)
-                    py += random.uniform(-10, 10)
-                    px = min(max(px, 0), 100)
-                    py = min(max(py, 0), 100)
-                    points.append(
-                        (
-                            float(
-                                Length(f"{px}%", relative_length=self.device.view.width)
-                            ),
-                            float(
-                                Length(
-                                    f"{py}%", relative_length=self.device.view.height
-                                )
-                            ),
-                        )
-                    )
-                node = branch.add(
-                    "elem polyline",
-                    geometry=Geomstr().lines(*points),
-                    stroke=self.default_stroke,
-                    stroke_width=self.default_strokewidth,
-                    fill=None,
-                    label=f"Polyline open #{i + 1}",
-                )
-            elif type_selector == 2:
-                # Polyline open
-                points = []
-                n_points = random.randint(3, 6)
-                px = x
-                py = y
-                for _ in range(n_points):
-                    px += random.uniform(-10, 10)
-                    py += random.uniform(-10, 10)
-                    px = min(max(px, 0), 100)
-                    py = min(max(py, 0), 100)
+    @self.console_argument("rows", type=int, help=_("Number of rows"), default=3)
+    @self.console_argument("cols", type=int, help=_("Number of columns"), default=3)  
+    @self.console_argument("shape", type=str, help=_("Shape type"), default="rectangle")
+    @self.console_command(
+        "testcase_grid",
+        help=_("Create grid pattern test case for optimization"),
+        input_type=None,
+        output_type="elements",
+    )
+    def reorder_testcase_grid(channel, _, rows=None, cols=None, shape=None, data=None, post=None, **kwargs):
+        """Create a grid pattern test case for path optimization testing."""
+        from .optimization_testcases import generate_grid_test_case
+        
+        branch = self.elem_branch
+        
+        created_elements = generate_grid_test_case(
+            branch=branch,
+            device_view=self.device.view,
+            default_stroke=self.default_stroke,
+            default_strokewidth=self.default_strokewidth,
+            rows=rows or 3,
+            cols=cols or 3,
+            shape_type=shape or "rectangle"
+        )
+        
+        post.append(self.post_classify(created_elements))
 
-                    points.append(
-                        (
-                            float(
-                                Length(f"{px}%", relative_length=self.device.view.width)
-                            ),
-                            float(
-                                Length(
-                                    f"{py}%", relative_length=self.device.view.height
-                                )
-                            ),
-                        )
-                    )
-                points.append(points[0])  # Close the polyline
-                node = branch.add(
-                    "elem polyline",
-                    geometry=Geomstr().lines(*points),
-                    stroke=self.default_stroke,
-                    stroke_width=self.default_strokewidth,
-                    fill=None,
-                    label=f"Polyline closed #{i + 1}",
-                )
-            elif type_selector == 3:
-                # Rectangle
-                x = min(max(x, w), 100 - w)
-                y = min(max(y, h), 100 - h)
-                node = branch.add(
-                    "elem rect",
-                    x=float(Length(f"{x}%", relative_length=self.device.view.height)),
-                    y=float(Length(f"{y}%", relative_length=self.device.view.width)),
-                    width=float(
-                        Length(f"{w}%", relative_length=self.device.view.height)
-                    ),
-                    height=float(
-                        Length(f"{h}%", relative_length=self.device.view.width)
-                    ),
-                    stroke=self.default_stroke,
-                    stroke_width=self.default_strokewidth,
-                    fill=None,
-                    label=f"Rectangle #{i + 1}",
-                )
-            else:
-                # Ellipse
-                x = min(max(x, w), 100 - w)
-                y = min(max(y, h), 100 - h)
-                node = branch.add(
-                    "elem ellipse",
-                    cx=float(Length(f"{x}%", relative_length=self.device.view.height)),
-                    cy=float(Length(f"{y}%", relative_length=self.device.view.width)),
-                    rx=float(Length(f"{w}%", relative_length=self.device.view.height)),
-                    ry=float(Length(f"{h}%", relative_length=self.device.view.width)),
-                    stroke=self.default_stroke,
-                    stroke_width=self.default_strokewidth,
-                    fill=None,
-                    label=f"Ellipse #{i + 1}",
-                )
-            data.append(node)
-        post.append(self.post_classify(data))
+    @self.console_argument("count", type=int, help=_("Number of shapes in circle"), default=8)
+    @self.console_argument("radius", type=float, help=_("Circle radius (percentage)"), default=30.0)
+    @self.console_command(
+        "testcase_circle",
+        help=_("Create circular pattern test case for optimization"),
+        input_type=None,
+        output_type="elements",
+    )
+    def reorder_testcase_circle(channel, _, count=None, radius=None, data=None, post=None, **kwargs):
+        """Create a circular pattern test case for path optimization testing."""
+        from .optimization_testcases import generate_circular_pattern_test_case
+        
+        branch = self.elem_branch
+        
+        created_elements = generate_circular_pattern_test_case(
+            branch=branch,
+            device_view=self.device.view,
+            default_stroke=self.default_stroke,
+            default_strokewidth=self.default_strokewidth,
+            count=count or 8,
+            radius=radius or 30.0
+        )
+        
+        post.append(self.post_classify(created_elements))
+
+    @self.console_argument("levels", type=int, help=_("Number of nesting levels"), default=3)
+    @self.console_command(
+        "testcase_nested",
+        help=_("Create nested shapes test case for containment testing"),
+        input_type=None,
+        output_type="elements",
+    )
+    def reorder_testcase_nested(channel, _, levels=None, data=None, post=None, **kwargs):
+        """Create nested shapes test case for containment testing."""
+        from .optimization_testcases import generate_nested_shapes_test_case
+        
+        branch = self.elem_branch
+        
+        created_elements = generate_nested_shapes_test_case(
+            branch=branch,
+            device_view=self.device.view,
+            default_stroke=self.default_stroke,
+            default_strokewidth=self.default_strokewidth,
+            levels=levels or 3
+        )
+        
+        post.append(self.post_classify(created_elements))
         return "elements", data
 
     @self.console_option(
@@ -904,10 +912,7 @@ def _optimize_path_order_greedy_optimized(
     if len(path_info) == 1:
         return path_info
 
-    # Define threshold for when to use full matrix optimization
-    # For small numbers of paths, on-demand calculation is more efficient
-    MATRIX_OPTIMIZATION_THRESHOLD = 25  # Paths
-
+    # Use global threshold for matrix optimization
     if len(path_info) <= MATRIX_OPTIMIZATION_THRESHOLD:
         # Use simplified approach for small numbers of paths
         return _optimize_path_order_greedy_simple(path_info, channel, max_iterations, start_position)
@@ -1354,9 +1359,7 @@ def _optimize_path_order_greedy_optimized(
     n_paths = len(path_info)
 
     # Define threshold for when to use full matrix optimization
-    # For small numbers of paths, on-demand calculation is more efficient
-    MATRIX_OPTIMIZATION_THRESHOLD = 25  # Paths
-
+    # Use global threshold for matrix optimization
     if n_paths <= MATRIX_OPTIMIZATION_THRESHOLD:
         # Use simplified approach for small numbers of paths
         return _optimize_path_order_greedy_simple(path_info, channel, max_iterations, start_position)
@@ -1566,7 +1569,7 @@ def create_dump_of(identifier, geom: Geomstr):
         print(f"  {identifier}.append_segment({start}, {c0}, {info}, {c1}, {end})")
 
 
-def is_geomstr_contained(outer_geom, inner_geom, tolerance: float = 1e-3, resolution: int = 100) -> bool:
+def is_geomstr_contained(outer_geom, inner_geom, tolerance: float = DEFAULT_CONTAINMENT_TOLERANCE, resolution: int = DEFAULT_CONTAINMENT_RESOLUTION) -> bool:
     """
     Determine if inner_geom is completely contained within outer_geom.
 
@@ -1628,27 +1631,21 @@ def is_geomstr_contained(outer_geom, inner_geom, tolerance: float = 1e-3, resolu
         return False
 
     # Try Shapely first for high-performance containment detection
-    try:
-        # Check if shapely is available
-        import importlib.util
-        if importlib.util.find_spec("shapely") is None:
-            raise ImportError("Shapely not available")
+    shapely_ops = _get_shapely_operations()
+    if shapely_ops:
+        try:
+            # Convert Geomstr objects to Shapely geometries with caching
+            outer_poly = _get_cached_shapely_polygon(outer_geomstr, resolution)
+            inner_poly = _get_cached_shapely_polygon(inner_geomstr, resolution)
 
-        from shapely import contains
+            if outer_poly is None or inner_poly is None:
+                raise ImportError("Could not convert geometries to Shapely format")
 
-        # Convert Geomstr objects to Shapely geometries with caching
-        outer_poly = _get_cached_shapely_polygon(outer_geomstr, resolution)
-        inner_poly = _get_cached_shapely_polygon(inner_geomstr, resolution)
+            # Use Shapely's contains function for efficient containment detection
+            return shapely_ops['contains'](outer_poly, inner_poly)
 
-        if outer_poly is None or inner_poly is None:
-            raise ImportError("Could not convert geometries to Shapely format")
-
-        # Use Shapely's contains function for efficient containment detection
-        return contains(outer_poly, inner_poly)
-
-    except (ImportError, Exception) as e:
-        # Shapely not available or failed, fall back to Scanbeam method
-        if not isinstance(e, ImportError):
+        except Exception as e:
+            # Shapely operation failed, fall back to Scanbeam method
             print(f"Warning: Shapely containment failed ({e}), falling back to Scanbeam")
 
     # Fallback to Scanbeam-based containment detection
@@ -1705,7 +1702,7 @@ def _get_cached_shapely_polygon(geom: Geomstr, resolution: int):
     return polygon
 
 
-def _bounding_box_contained(outer_geom: Geomstr, inner_geom: Geomstr, tolerance: float = 1e-3) -> bool:
+def _bounding_box_contained(outer_geom: Geomstr, inner_geom: Geomstr, tolerance: float = DEFAULT_CONTAINMENT_TOLERANCE) -> bool:
     """
     Fast bounding box containment check for early rejection.
 
@@ -1736,7 +1733,7 @@ def _bounding_box_contained(outer_geom: Geomstr, inner_geom: Geomstr, tolerance:
         return True
 
 
-def _scanbeam_containment_check(outer_geom: Geomstr, inner_geom: Geomstr, tolerance: float = 1e-3, resolution: int = 100) -> bool:
+def _scanbeam_containment_check(outer_geom: Geomstr, inner_geom: Geomstr, tolerance: float = DEFAULT_CONTAINMENT_TOLERANCE, resolution: int = DEFAULT_CONTAINMENT_RESOLUTION) -> bool:
     """
     Check containment using the Scanbeam algorithm from Geomstr with improved sampling.
 
@@ -1828,9 +1825,11 @@ def _geomstr_to_shapely_polygon(geom: Geomstr, resolution: int = 100):
     Returns:
         Shapely Polygon or None if conversion fails
     """
+    shapely_ops = _get_shapely_operations()
+    if not shapely_ops:
+        return None
+    
     try:
-        from shapely.geometry import Polygon
-
         # Extract all subpaths from the Geomstr
         subpaths = list(geom.as_subpaths())
 
@@ -1891,7 +1890,7 @@ def _geomstr_to_shapely_polygon(geom: Geomstr, resolution: int = 100):
             return None
 
         # Create Shapely Polygon with holes if any
-        polygon = Polygon(main_path, holes) if holes else Polygon(main_path)
+        polygon = shapely_ops['Polygon'](main_path, holes) if holes else shapely_ops['Polygon'](main_path)
         
         # Check if polygon is valid
         if not polygon.is_valid:
@@ -1904,32 +1903,16 @@ def _geomstr_to_shapely_polygon(geom: Geomstr, resolution: int = 100):
         return None
 
 
-def build_geometry_hierarchy(elements_collection, tolerance: float = 1e-6, resolution: int = 50):
+def _collect_geometric_elements(elements_collection):
     """
-    Build a hierarchical tree representation of geometric containment relationships.
-
-    This function analyzes all elements with as_geometry() method and establishes
-    parent-child relationships based on geometric containment. Uses optimization
-    to avoid redundant comparisons.
-
+    Collect all elements with geometry and build initial data structures.
+    
     Args:
-        elements_collection: Collection of elements (e.g., from kernel.elements.elems())
-        tolerance: Tolerance for geometric operations
-        resolution: Resolution for polygon sampling
-
+        elements_collection: Collection of elements to analyze
+        
     Returns:
-        Dictionary with hierarchy information:
-        {
-            'nodes': list of all nodes with geometry,
-            'containment_tree': dict mapping node_id -> list of contained node_ids,
-            'containment_map': dict mapping (outer_id, inner_id) -> containment result,
-            'root_nodes': list of nodes not contained by any other,
-            'stats': dict with statistics about the analysis
-        }
+        tuple: (geometry_nodes, node_geometries, node_info)
     """
-    from collections import defaultdict
-
-    # Step 1: Collect all elements with as_geometry method
     geometry_nodes = []
     node_geometries = {}
     node_info = {}
@@ -1979,23 +1962,43 @@ def build_geometry_hierarchy(elements_collection, tolerance: float = 1e-6, resol
                 continue
 
     print(f"Found {len(geometry_nodes)} geometric elements")
+    return geometry_nodes, node_geometries, node_info
 
-    if len(geometry_nodes) < 2:
-        return {
-            'nodes': geometry_nodes,
-            'containment_tree': {},
-            'containment_map': {},
-            'root_nodes': geometry_nodes,
-            'stats': {'total_elements': len(geometry_nodes), 'comparisons_made': 0}
-        }
 
-    # Step 2: Pre-compute bounding boxes for fast rejection
+def _compute_bbox_cache(node_info):
+    """
+    Pre-compute bounding boxes for fast rejection.
+    
+    Args:
+        node_info: Dictionary mapping node_id -> node information
+        
+    Returns:
+        dict: bbox_cache mapping node_id -> bbox
+    """
     print("Pre-computing bounding boxes...")
     bbox_cache = {}
     for node_id, info in node_info.items():
         bbox_cache[node_id] = info['bbox']
+    return bbox_cache
 
-    # Step 3: Build containment relationships with optimization
+
+def _analyze_containment_relationships(geometry_nodes, node_geometries, node_info, bbox_cache, tolerance, resolution):
+    """
+    Analyze containment relationships between geometric elements.
+    
+    Args:
+        geometry_nodes: List of geometry nodes
+        node_geometries: Dict mapping node_id -> geometry
+        node_info: Dict mapping node_id -> node information
+        bbox_cache: Dict mapping node_id -> bbox
+        tolerance: Tolerance for geometric operations
+        resolution: Resolution for polygon sampling
+        
+    Returns:
+        tuple: (containment_tree, containment_map, contained_nodes, comparisons_made)
+    """
+    from collections import defaultdict
+    
     containment_tree = defaultdict(list)  # node_id -> list of contained node_ids
     containment_map = {}  # (outer_id, inner_id) -> containment result
     contained_nodes = set()  # Track nodes that are contained by others
@@ -2008,60 +2011,90 @@ def build_geometry_hierarchy(elements_collection, tolerance: float = 1e-6, resol
             return 0
         return (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
 
-    sorted_nodes = sorted(node_info.keys(), key=lambda nid: bbox_area(bbox_cache[nid]))
+    sorted_nodes = sorted(geometry_nodes, key=lambda elem: bbox_area(bbox_cache[id(elem)]))
 
     comparisons_made = 0
+    total_comparisons = len(geometry_nodes) * (len(geometry_nodes) - 1) // 2
 
-    for i, inner_id in enumerate(sorted_nodes):
-        if inner_id in contained_nodes:
-            continue  # Skip nodes already known to be contained
+    for i, outer_elem in enumerate(sorted_nodes):
+        outer_id = id(outer_elem)
+        outer_bbox = bbox_cache[outer_id]
+        
+        if i % 10 == 0:
+            print(f"  Processing element {i + 1}/{len(sorted_nodes)}...")
 
-        inner_bbox = bbox_cache[inner_id]
-
-        # Check containment against potential parent nodes
-        for j, outer_id in enumerate(sorted_nodes):
-            if i == j:  # Don't compare with self
-                continue
-
-            if outer_id == inner_id:
-                continue
-
-            # Optimization: if inner is already contained, skip further checks
-            if inner_id in contained_nodes:
-                break
-
-            outer_bbox = bbox_cache[outer_id]
-
-            # Fast bounding box pre-check
+        for inner_elem in sorted_nodes[i + 1:]:
+            inner_id = id(inner_elem)
+            inner_bbox = bbox_cache[inner_id]
+            
+            # Quick bounding box rejection
             if not _bbox_might_contain(outer_bbox, inner_bbox, tolerance):
                 continue
 
-            # Check if we've already computed this relationship
-            pair_key = (outer_id, inner_id)
-            if pair_key in containment_map:
-                is_contained = containment_map[pair_key]
-            else:
-                # Perform geometric containment check
-                try:
-                    is_contained = is_geomstr_contained(
-                        node_geometries[outer_id],
-                        node_geometries[inner_id],
-                        tolerance,
-                        resolution
-                    )
-                    containment_map[pair_key] = is_contained
-                    comparisons_made += 1
-                except Exception as e:
-                    print(f"Warning: Containment check failed for {inner_id} in {outer_id}: {e}")
-                    is_contained = False
+            comparisons_made += 1
+            
+            # Perform detailed containment check
+            try:
+                outer_geom = node_geometries[outer_id]
+                inner_geom = node_geometries[inner_id]
+                
+                is_contained = is_geomstr_contained(outer_geom, inner_geom, tolerance, resolution)
+                containment_map[(outer_id, inner_id)] = is_contained
+                
+                if is_contained:
+                    containment_tree[outer_id].append(inner_id)
+                    contained_nodes.add(inner_id)
+                    
+            except Exception as e:
+                print(f"Warning: Failed containment check between {outer_elem} and {inner_elem}: {e}")
 
-            if is_contained:
-                containment_tree[outer_id].append(inner_id)
-                contained_nodes.add(inner_id)
+    print(f"  Made {comparisons_made} detailed comparisons out of {total_comparisons} possible")
+    
+    return containment_tree, containment_map, contained_nodes, comparisons_made
 
-                # Optimization: If A contains B, and B contains C, then A contains C
-                # Mark all descendants of inner_id as also contained by outer_id
-                _mark_descendants_as_contained(containment_tree, outer_id, inner_id, contained_nodes)
+
+def build_geometry_hierarchy(elements_collection, tolerance: float = DEFAULT_TOLERANCE, resolution: int = 50):
+    """
+    Build a hierarchical tree representation of geometric containment relationships.
+
+    This function analyzes all elements with as_geometry() method and establishes
+    parent-child relationships based on geometric containment. Uses optimization
+    to avoid redundant comparisons.
+
+    Args:
+        elements_collection: Collection of elements (e.g., from kernel.elements.elems())
+        tolerance: Tolerance for geometric operations
+        resolution: Resolution for polygon sampling
+
+    Returns:
+        Dictionary with hierarchy information:
+        {
+            'nodes': list of all nodes with geometry,
+            'containment_tree': dict mapping node_id -> list of contained node_ids,
+            'containment_map': dict mapping (outer_id, inner_id) -> containment result,
+            'root_nodes': list of nodes not contained by any other,
+            'stats': dict with statistics about the analysis
+        }
+    """
+    # Step 1: Collect all elements with geometry
+    geometry_nodes, node_geometries, node_info = _collect_geometric_elements(elements_collection)
+
+    if len(geometry_nodes) < 2:
+        return {
+            'nodes': geometry_nodes,
+            'containment_tree': {},
+            'containment_map': {},
+            'root_nodes': geometry_nodes,
+            'stats': {'total_elements': len(geometry_nodes), 'comparisons_made': 0}
+        }
+
+    # Step 2: Pre-compute bounding boxes for fast rejection
+    bbox_cache = _compute_bbox_cache(node_info)
+
+    # Step 3: Build containment relationships with optimization
+    containment_tree, containment_map, contained_nodes, comparisons_made = _analyze_containment_relationships(
+        geometry_nodes, node_geometries, node_info, bbox_cache, tolerance, resolution
+    )
 
     # Step 4: Identify root nodes (not contained by any other)
     root_nodes = []
@@ -2076,8 +2109,7 @@ def build_geometry_hierarchy(elements_collection, tolerance: float = 1e-6, resol
         'comparisons_made': comparisons_made,
         'contained_elements': len(contained_nodes),
         'root_elements': len(root_nodes),
-        'containment_relationships': sum(len(children) for children in containment_tree.values()),
-        'cache_hits': len(containment_map) - comparisons_made
+        'containment_relationships': sum(len(children) for children in containment_tree.values())
     }
 
     print("Hierarchy analysis complete:")
