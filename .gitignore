@@ -138,3 +138,6 @@ MeerK40t-*.txt
 .pre-commit-config.yaml
 meerk40t.spec
 mk40t.py
+
+# Local test files
+local_workspace/
