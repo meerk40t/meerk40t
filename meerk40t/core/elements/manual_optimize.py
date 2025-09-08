@@ -442,6 +442,199 @@ def init_commands(kernel):
 
         return ordered_nodes, optimization_results
 
+    # ==========
+    # WORKFLOW MANAGEMENT COMMANDS
+    # ==========
+    
+    @self.console_option(
+        "tolerance", 
+        type=float, 
+        default=DEFAULT_CONTAINMENT_TOLERANCE,
+        help=_("Geometric tolerance for containment analysis")
+    )
+    @self.console_command(
+        "workflow_optimize",
+        help=_("Optimize selected operations using containment-aware workflow"),
+        input_type="ops",
+        output_type="ops",
+    )
+    def workflow_optimize(channel, _, tolerance=None, data=None, post=None, **kwargs):
+        """Optimize operations using containment-aware workflow scheduling."""
+        try:
+            from .operation_workflow import create_operation_workflow
+            
+            operations = data if data is not None else list(self.ops(selected=True))
+            
+            if not operations:
+                channel(_("No operations selected for workflow optimization"))
+                return
+            
+            # Convert to workflow format
+            workflow_ops = []
+            for op in operations:
+                op_type = getattr(op, 'type', 'op cut')
+                workflow_ops.append((op, op_type))
+            
+            # Create and process workflow
+            workflow = create_operation_workflow(workflow_ops, tolerance=tolerance)
+            optimized_order = workflow.generate_workflow()
+            
+            # Get summary statistics
+            summary = workflow.get_workflow_summary()
+            
+            # Report results
+            channel(_("Workflow Optimization Results:"))
+            channel(f"  Total operations: {summary['total_operations']}")
+            channel(f"  Processing groups: {summary['total_groups']}")
+            channel(f"  Containment relationships: {summary['containment_relationships']}")
+            channel(f"  Total travel distance: {summary['total_travel_distance']:.2f}")
+            
+            # Show group details
+            for group in summary['groups']:
+                channel(f"  Group {group['priority']}: {group['operation_count']} operations")
+                
+            return "ops", optimized_order
+            
+        except ImportError as e:
+            channel(f"Workflow optimization not available: {e}")
+            return "ops", data
+        except Exception as e:
+            channel(f"Error in workflow optimization: {e}")
+            return "ops", data
+
+    @self.console_command(
+        "workflow_test",
+        help=_("Run the operation workflow test suite"),
+        input_type=None,
+        output_type=None,
+    )
+    def workflow_test(channel, _, **kwargs):
+        """Run comprehensive workflow system tests."""
+        try:
+            from .workflow_tests_revised import run_all_revised_workflow_tests
+            
+            channel(_("Running Operation Workflow Test Suite..."))
+            success = run_all_revised_workflow_tests()
+            
+            if success:
+                channel(_("✓ All workflow tests passed successfully!"))
+            else:
+                channel(_("✗ Some workflow tests failed. Check output for details."))
+                
+        except ImportError as e:
+            channel(f"Workflow tests not available: {e}")
+        except Exception as e:
+            channel(f"Error running workflow tests: {e}")
+
+    @self.console_argument(
+        "scenario", 
+        type=str, 
+        default="nested",
+        help=_("Demo scenario: nested, shared, travel, or performance")
+    )
+    @self.console_command(
+        "workflow_demo",
+        help=_("Create demonstration workflow scenarios"),
+        input_type=None,
+        output_type="elements",
+    )
+    def workflow_demo(channel, _, scenario=None, data=None, post=None, **kwargs):
+        """Create demonstration scenarios for workflow testing."""
+        try:
+            branch = self.elem_branch
+            created_elements = []
+            
+            if scenario == "nested":
+                # Create nested shapes scenario
+                outer = branch.add(type="elem rect", x=0, y=0, width=200, height=200)
+                middle = branch.add(type="elem rect", x=25, y=25, width=150, height=150) 
+                inner = branch.add(type="elem ellipse", cx=100, cy=100, rx=30, ry=30)
+                
+                # Create operations
+                ops_branch = self.op_branch  
+                cut_op = ops_branch.add(type="op cut", label="Cut Outer")
+                engrave_op = ops_branch.add(type="op engrave", label="Engrave Inner")
+                
+                # Add references (simplified for demo)
+                created_elements = [outer, middle, inner]
+                
+                channel(f"Created workflow demo with operations: {cut_op.label}, {engrave_op.label}")
+                
+            elif scenario == "travel":
+                # Create scattered elements for travel optimization
+                positions = [(50, 50), (150, 200), (250, 100), (100, 150), (200, 50)]
+                for i, (x, y) in enumerate(positions):
+                    elem = branch.add(type="elem rect", x=x, y=y, width=20, height=20)
+                    created_elements.append(elem)
+                    
+            channel(f"Created {len(created_elements)} elements for '{scenario}' workflow demo")
+            post.append(self.post_classify(created_elements))
+            return "elements", created_elements
+            
+        except Exception as e:
+            channel(f"Error creating workflow demo: {e}")
+            return "elements", data or []
+
+    @self.console_command(
+        "workflow_scenarios", 
+        help=_("Run realistic workflow test scenarios"),
+        input_type=None,
+        output_type=None,
+    )
+    def workflow_scenarios(channel, _, **kwargs):
+        """Run comprehensive realistic workflow scenarios."""
+        try:
+            from .workflow_scenarios import (
+                create_wooden_plaque_scenario,
+                create_multi_part_assembly_scenario, 
+                create_production_batch_scenario,
+                create_complex_artwork_scenario
+            )
+            from .operation_workflow import create_operation_workflow
+            
+            scenarios = [
+                (create_wooden_plaque_scenario, "Wooden Plaque"),
+                (create_multi_part_assembly_scenario, "Multi-part Assembly"),
+                (create_production_batch_scenario, "Production Batch"), 
+                (create_complex_artwork_scenario, "Complex Artwork")
+            ]
+            
+            channel(_("Running Realistic Workflow Scenarios..."))
+            
+            passed = 0
+            for scenario_func, name in scenarios:
+                try:
+                    operations, description = scenario_func()
+                    workflow = create_operation_workflow(operations)
+                    ordered_operations = workflow.generate_workflow()
+                    summary = workflow.get_workflow_summary()
+                    
+                    # Check if reordering occurred
+                    original_order = [op[0].label for op in operations]
+                    optimized_order = [op.label for op in ordered_operations]
+                    reordered = original_order != optimized_order
+                    
+                    channel(f"✓ {name}: {summary['total_operations']} ops, "
+                           f"{summary['total_groups']} groups, "
+                           f"reordered: {'Yes' if reordered else 'No'}")
+                    passed += 1
+                    
+                except Exception as e:
+                    channel(f"✗ {name}: Failed - {e}")
+            
+            total = len(scenarios)
+            channel(f"Results: {passed}/{total} scenarios passed")
+            
+            if passed == total:
+                channel("🎉 All workflow scenarios completed successfully!")
+            else:
+                channel("⚠️  Some scenarios failed")
+                
+        except ImportError as e:
+            channel(f"Workflow scenarios not available: {e}")
+        except Exception as e:
+            channel(f"Error running workflow scenarios: {e}")
+
 
 def display_label(node):
     return f"{node.type}.{node.id if node.id is not None else '-'}.{node.label if node.label is not None else '-'}"
