@@ -5,8 +5,6 @@ This module provides console commands and functions for grouping, ungrouping,
 and simplifying groups of elements in the MeerK40t laser processing system.
 """
 
-from meerk40t.core.node.node import Node
-
 
 def plugin(kernel, lifecycle=None):
     """
@@ -34,7 +32,7 @@ def init_commands(kernel):
 
     classify_new = self.post_classify
 
-    def get_group_data(data) -> list[Node]:
+    def get_group_data(data) -> list:
         """
         Extract group and file nodes from the provided data, filtering out
         nodes whose ancestors are already in the data to avoid double processing.
