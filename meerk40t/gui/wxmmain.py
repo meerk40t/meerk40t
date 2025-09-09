@@ -2700,46 +2700,6 @@ class MeerK40t(MWindow):
             },
         )
 
-        def group_selection():
-            group_node = None
-            lets_do_it = False
-            data = list(kernel.elements.elems(emphasized=True))
-            sel_count = len(data)
-            my_parent = None
-            for node in data:
-                this_parent = None
-                if hasattr(node, "parent") and hasattr(node.parent, "type"):
-                    if node.parent.type in ("group", "file"):
-                        this_parent = node.parent
-                    if this_parent is not None:
-                        my_parent = this_parent
-                else:
-                    if my_parent != this_parent:
-                        # different parents, so definitely a do it
-                        lets_do_it = True
-                        break
-            if not lets_do_it:
-                if my_parent is None:
-                    # All base elements
-                    lets_do_it = True
-                else:
-                    parent_ct = len(my_parent.children)
-                    if parent_ct != sel_count:
-                        # Not the full group...
-                        lets_do_it = True
-
-            if lets_do_it:
-                with kernel.elements.undoscope("Group"):
-                    for node in data:
-                        if group_node is None:
-                            group_node = node.parent.add(
-                                type="group", label="Group", expanded=True
-                            )
-                        group_node.append_child(node)
-                        node.emphasized = True
-                    if group_node is not None:
-                        group_node.emphasized = True
-                        kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         # buttonsize = STD_ICON_SIZE
@@ -2750,7 +2710,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_group_objects,
                 "tip": _("Group elements together"),
                 "help": "group",
-                "action": lambda v: group_selection(),
+                "action": exec_plain("group\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2759,29 +2719,6 @@ class MeerK40t(MWindow):
             },
         )
 
-        def ungroup_selection():
-            def release_em(node):
-                with kernel.elements.node_lock:
-                    for n in list(node.children):
-                        node.insert_sibling(n)
-                    node.remove_node()  # Removing group/file node.
-
-            with kernel.elements.undoscope("Ungroup"):
-                found_some = False
-                for node in list(kernel.elements.elems(emphasized=True)):
-                    if node is not None and node.type in ("group", "file"):
-                        found_some = True
-                        release_em(node)
-                if not found_some:
-                    # So let's see that we address the parents...
-                    for node in list(kernel.elements.elems(emphasized=True)):
-                        if (
-                            node is not None
-                            and hasattr(node, "parent")
-                            and hasattr(node.parent, "type")
-                            and node.parent.type in ("group", "file")
-                        ):
-                            release_em(node.parent)
 
         def part_of_group():
             for node in list(kernel.elements.elems(emphasized=True)):
@@ -2796,7 +2733,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_ungroup_objects,
                 "tip": _("Ungroup elements"),
                 "help": "group",
-                "action": lambda v: ungroup_selection(),
+                "action": exec_plain("ungroup\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: part_of_group(),
             },
