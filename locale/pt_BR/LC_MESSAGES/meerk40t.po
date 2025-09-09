@@ -24078,3 +24078,68 @@ msgstr "Ângulo Final"
 msgid "Copies"
 msgstr "Cópias"
 
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "Esta é uma string de teste."
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"Outra string de teste com uma nova linha.\n"
+"Veja?"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "String com uma tabulação.\tVeja?"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "String com {curly} chaves."
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "Enviando dados {count}"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "Adicionando operações finais"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "Copiando dados {count}"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "Reparentizar elementos agrupados para a raiz"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "Rótulo do grupo"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "agrupar elementos selecionados"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "Nada para agrupar."
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "Agrupados {count} elementos."
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "desagrupar elementos selecionados"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "Nenhum grupo ou arquivo selecionado."
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr ""
+"Simplificados {count} grupos. Removidos {removed} níveis de grupo "
+"desnecessários."

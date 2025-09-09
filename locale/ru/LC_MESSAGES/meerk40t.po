@@ -23965,3 +23965,68 @@ msgstr "Конечный угол"
 #: meerk40t/core/elements/grid.py:382
 msgid "Copies"
 msgstr "Копии"
+
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "Это тестовая строка."
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"Другая тестовая строка с новой строкой.\n"
+"Видите?"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "Строка с табуляцией.\tВидите?"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "Строка с {curly} фигурными скобками."
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "Отправка данных {count}"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "Добавление завершающих операций"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "Копирование данных {count}"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "Переподчинение сгруппированных элементов корню"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "Метка группы"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "группировать выбранные элементы"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "Нечего группировать."
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "Сгруппировано {count} элементов."
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "разгруппировать выбранные элементы"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "Не выбрана группа или файл."
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr ""
+"Упрощено {count} групп. Удалено {removed} ненужных уровней группировки."

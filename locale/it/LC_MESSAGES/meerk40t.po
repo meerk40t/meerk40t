@@ -7,12 +7,12 @@ msgstr ""
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
 "PO-Revision-Date: 05-09-25 18:35:10UTC\n"
 "Last-Translator: Betaeta\n"
-"Language: it\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
-"Plural-Forms: nplurals=2; plural=n != 1\n"
+"Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
 "Generated-By: Poboy 0.0.1\n"
 
 #: meerk40t/grbl/plugin.py:212 meerk40t/grbl/plugin.py:264
@@ -24166,3 +24166,69 @@ msgstr "Angolo finale"
 #: meerk40t/core/elements/grid.py:382
 msgid "Copies"
 msgstr "Copie"
+
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "Questa è una stringa di test."
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"Un'altra stringa di test con un'interruzione di riga.\n"
+"Vedi?"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "Stringa con una tabulazione.\tVedi?"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "Stringa con parentesi graffe {curly}."
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "Dati in spooling {count}"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "Aggiunta di operazioni finali"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "Copia dei dati {count}"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "Riassegna elementi raggruppati alla radice"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "Etichetta del gruppo"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "raggruppa elementi selezionati"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "Niente da raggruppare."
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "{count} elementi raggruppati."
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "sgroup elementi selezionati"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "Nessun gruppo o file selezionato."
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr ""
+"Semplificati {count} gruppi. Rimossi {removed} livelli di gruppo non "
+"necessari."
