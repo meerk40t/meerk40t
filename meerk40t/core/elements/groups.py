@@ -104,6 +104,7 @@ def init_commands(kernel):
             post: Post-processing function (unused)
             **kwargs: Additional keyword arguments
         """
+
         def condensed_set(data):
             """
             Condense the data by replacing groups where all children are selected
@@ -119,31 +120,26 @@ def init_commands(kernel):
             # Condense the data in the sense, that if for a given node, we see that it belongs
             # to a group and all other children of that group are part of the set too,
             # then we will replace those nodes by the parent group node.
-            repetition_needed = True
-            new_data = list(data)
-            while repetition_needed:
-                repetition_needed = False
-                org_data = list(new_data)
-                new_data = []
-                skip_nodes = set()
-                for node in org_data:
-                    if node in skip_nodes:
-                        continue
-                    if node.parent is not None and node.parent.type == "group":
-                        all_in = True
-                        for sibling in node.parent.children:
-                            if sibling not in org_data:
-                                all_in = False
-                                break
-                        if all_in:
-                            new_data.append(node.parent)
-                            for sibling in node.parent.children:
-                                skip_nodes.add(sibling)
-                            repetition_needed = True
-                        else:
-                            new_data.append(node)
-                    else:
-                        new_data.append(node)
+            data_set = set(data)
+            parent_map = {}
+            # collect selected children per group‐parent
+            for node in data:
+                p = node.parent
+                if p and p.type == "group":
+                    parent_map.setdefault(p, []).append(node)
+
+            new_data = []
+            for node in data:
+                p = node.parent
+                # if we selected all children, replace them with the parent
+                if p in parent_map and len(parent_map[p]) == len(p.children):
+                    if p not in new_data:
+                        new_data.append(p)
+                else:
+                    new_data.append(node)
+
+            if set(new_data) != data_set:
+                return condensed_set(new_data)
             return new_data
 
         if data is None:
@@ -233,7 +229,7 @@ def init_commands(kernel):
                     for n in list(gnode.children):
                         gnode.insert_sibling(n, below=False)
                     gnode.remove_node()  # Removing group/file node.
-        self.signal("rebuild_tree")
+        self.signal("rebuild_tree", "elements")
 
     @self.console_command(
         "simplify-group",
