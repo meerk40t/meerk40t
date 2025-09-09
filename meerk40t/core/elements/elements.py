@@ -1160,101 +1160,73 @@ class Elemental(Service):
         NB: we will set the emphasized_time of the parent element
         to the minimum time of all children
         """
+        if not data:
+            return []
 
-        def remove_children_from_list(list_to_deal, parent_node):
-            for idx, node in enumerate(list_to_deal):
-                if node is None:
+        # Use a set for O(1) lookups
+        parent_map = {}
+
+        # Build map of selected children per parent
+        for node in data:
+            if node.parent and node.parent.type in ("file", "group"):
+                parent_map.setdefault(node.parent, []).append(node)
+
+        condensed_data = []
+
+        for node in data:
+            # If this node is a group/file itself, include it directly
+            if node.type in ("file", "group"):
+                condensed_data.append(node)
+                # Set emphasized_time to minimum of children
+                min_time = None
+                for child in node.children:
+                    if hasattr(child, '_emphasized_time') and child._emphasized_time is not None:
+                        if min_time is None or child._emphasized_time < min_time:
+                            min_time = child._emphasized_time
+                if min_time is not None:
+                    node._emphasized_time = min_time
+                continue
+
+            # Check if all siblings are selected - if so, use parent instead
+            parent = node.parent
+            if parent and parent.type in ("file", "group"):
+                selected_siblings = parent_map.get(parent, [])
+                if len(selected_siblings) == len(parent.children):
+                    # All children selected, use parent instead
+                    if parent not in condensed_data:
+                        condensed_data.append(parent)
+                        # Set emphasized_time to minimum of children
+                        min_time = None
+                        for child in parent.children:
+                            if hasattr(child, '_emphasized_time') and child._emphasized_time is not None:
+                                if min_time is None or child._emphasized_time < min_time:
+                                    min_time = child._emphasized_time
+                        if min_time is not None:
+                            parent._emphasized_time = min_time
+                    # Don't add the individual node when parent is used
                     continue
-                if node.parent is parent_node:
-                    list_to_deal[idx] = None
-                    if len(node.children) > 0:
-                        remove_children_from_list(list_to_deal, node)
-                    t1 = parent_node._emphasized_time
-                    t2 = node._emphasized_time
-                    if t2 is None:
-                        continue
-                    if t1 is None or t2 < t1:
-                        parent_node._emphasized_time = t2
 
-        align_data = list(data)
-        needs_repetition = True
-        while needs_repetition:
-            # Will be set only if we add a parent, as the process needs then to be repeated
-            needs_repetition = False
+            # Either no condensable parent, or not all siblings selected
+            condensed_data.append(node)
 
-            data_to_align = []
-            # We need to iterate through all the elements
-            # to establish if they belong to a group,
-            # if all the elements in this group are in
-            # the dataset too, then we just take the group
-            # as a representative.
-            data_len = len(align_data)
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_condensed = []
+        for node in condensed_data:
+            if node not in seen:
+                seen.add(node)
+                unique_condensed.append(node)
 
-            for idx1, node_1 in enumerate(align_data):
-                if node_1 is None:
-                    # Has been dealt with already
-                    # print ("Eliminated node")
-                    continue
-                # Is this a group? Then we just take this node
-                # and remove all children nodes
-                if node_1.type in ("file", "group"):
-                    # print (f"Group node ({node_1.display_label()}), eliminate children")
-                    remove_children_from_list(align_data, node_1)
-                    # No continue, as we still need to
-                    # assess the parent case
-
-                parent = node_1.parent
-                if parent is None:
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    # print (f"Adding {node_1.type}, no parent")
-                    continue
-                if parent.type not in ("file", "group"):
-                    # That should not happen per se,
-                    # only for root objects which parent
-                    # is elem_branch
-                    # print (f"Adding {node_1.type}, parent was: {parent.type}")
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    continue
-                # How many children are contained?
-                candidates = len(parent.children)
-                identified = 0
-                if candidates > 0:
-                    # We only need to look to elements not yet dealt with,
-                    # but we start with the current index to include
-                    # node_1 in the count
-                    for idx2 in range(idx1, data_len, 1):
-                        node_2 = align_data[idx2]
-                        if node_2 is not None and node_2.parent is parent:
-                            identified += 1
-                if identified == candidates:
-                    # All children of the parent object are contained
-                    # So we add the parent instead...
-                    data_to_align.append(parent)
-                    remove_children_from_list(align_data, parent)
-                    # print (f"Adding parent for {node_1.type}, all children inside")
-                    needs_repetition = True
-
-                else:
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
-            if needs_repetition:
-                # We copy the data and do it again....
-                # print ("Repetition required")
-                align_data = list(data_to_align)
-        # One special case though: if we have selected all
-        # elements within a single group then we still deal
-        # with all children
+        # Handle expand_at_end logic
         if expand_at_end:
-            while len(data_to_align) == 1:
-                node = data_to_align[0]
+            while len(unique_condensed) == 1:
+                node = unique_condensed[0]
                 if node is not None and node.type in ("file", "group"):
-                    data_to_align = list(node.children)
+                    unique_condensed = list(node.children)
                 else:
                     break
-        return data_to_align
+
+        return unique_condensed
 
     def translate_node(self, node, dx, dy):
         if not node.can_move(self.lock_allows_move):
