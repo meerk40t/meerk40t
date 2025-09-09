@@ -86,9 +86,9 @@ class KeymapPanel(wx.Panel):
     def on_item_activated(self, event):
         element = event.Text
         self.text_key_name.SetValue(element)
-        self.text_command_name.SetValue(
-            self.context.bind.keymap[KeymapPanel.__translate_from_mac(element)]
-        )
+        keyval = KeymapPanel.__translate_from_mac(element)
+        keycommand = self.context.bind.keymap.get(keyval, "")
+        self.text_command_name.SetValue(keycommand)
 
     def on_item_rightclick(self, event):
         element = event.Text
