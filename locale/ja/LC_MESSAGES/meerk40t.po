@@ -23209,3 +23209,47 @@ msgstr "グループまたはファイルが選択されていません。"
 #: meerk40t/core/elements/groups.py:304
 msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
 msgstr "{count} 個のグループを簡素化しました。{removed} 個の不要なグループレベルを削除しました。"
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "原点へ移動"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "0,0へ移動"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "ビープ音"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "冷却オン"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "冷却オフ"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "休止状態オフ"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "休止状態オン"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "グループ化 + ファイル"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "操作 (特殊)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "要素 (効果)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "配置"

@@ -24125,3 +24125,47 @@ msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
 msgstr ""
 "{count} csoport egyszerűsítve. {removed} szükségtelen csoportszint "
 "eltávolítva."
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "Ugrás az origóhoz"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "Ugrás 0,0-hoz"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "Sípolás"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "Hűtés bekapcsolva"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "Hűtés kikapcsolva"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "Hibernálás kikapcsolva"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "Hibernálás bekapcsolva"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "Csoportosítás + Fájlok"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "Műveletek (Speciális)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "Elemek (Effektek)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "Elhelyezések"

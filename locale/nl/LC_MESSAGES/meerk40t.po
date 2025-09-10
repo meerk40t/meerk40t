@@ -24012,3 +24012,47 @@ msgstr "Geen groep of bestand geselecteerd."
 msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
 msgstr ""
 "{count} groepen vereenvoudigd. {removed} onnodige groepsniveaus verwijderd."
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "Ga naar oorsprong"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "Ga naar 0,0"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "Pieptoon"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "Koeling aan"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "Koeling uit"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "Sluimerstand uit"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "Sluimerstand aan"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "Groepering + Bestanden"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "Bewerkingen (Speciaal)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "Elementen (Effecten)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "Plaatsingen"

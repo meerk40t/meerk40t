@@ -24030,3 +24030,47 @@ msgstr "Не выбрана группа или файл."
 msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
 msgstr ""
 "Упрощено {count} групп. Удалено {removed} ненужных уровней группировки."
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "Перейти к началу координат"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "Перейти к 0,0"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "Звуковой сигнал"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "Охлаждение включено"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "Охлаждение выключено"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "Спящий режим выключен"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "Спящий режим включен"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "Группировка + Файлы"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "Операции (Специальные)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "Элементы (Эффекты)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "Размещения"
