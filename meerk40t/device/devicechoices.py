@@ -1,7 +1,7 @@
-from meerk40t.kernel import _
 
 
 def get_effect_choices(context):
+    _ = context.kernel.translation
     def get_wobble_options():
         return list(context.match("wobble", suffix=True))
 
@@ -84,6 +84,7 @@ def get_effect_choices(context):
 def get_operation_choices(
     context, default_cut_speed=5, default_engrave_speed=10, default_raster_speed=200
 ):
+    _ = context.kernel.translation
     choices = []
     operations = {
         "op_cut": (_("Cut"), default_cut_speed),
