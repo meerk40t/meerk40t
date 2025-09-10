@@ -23,11 +23,12 @@ Arguments:
 Supported locales:
     de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
     
-testcase:
+Some testcases:
  _("This is a test string.")
  _("Another test string with a newline.\nSee?")
  _("String with a tab.\tSee?")
  _("String with {curly} braces.")
+ _("String with a quote: \"See?\"")
 """
 
 import argparse
@@ -83,6 +84,20 @@ def lf_coded(s: str) -> str:
             .replace("\t", "\\t")  # Escape tab
             .replace("\n", "\\n")  # Escape newlines
             .replace("\r", "\\r"))  # Escape newlines
+
+
+def unescape_string(s: str) -> str:
+    """
+    Unescapes a string that was escaped for .po files.
+    This is the reverse of lf_coded.
+    """
+    if not s:
+        return ""
+    return (s.replace("\\\\", "\\")  # Unescape backslashes
+            .replace('\\"', '"')  # Unescape double quotes  
+            .replace("\\t", "\t")  # Unescape tab
+            .replace("\\n", "\n")  # Unescape newlines
+            .replace("\\r", "\r"))  # Unescape carriage returns
 
 
 def read_source() -> tuple[list[str], list[str]]:
@@ -279,11 +294,24 @@ def compare(
 ) -> None:
     """
     Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
+    Preserves existing translations from previous delta files.
     """
     counts = [0, 0, 0]
-    with open(
-        f"./delta_{locale}.po", "w", encoding="utf-8", errors="surrogateescape"
-    ) as outp:
+
+    # Read existing translations from old delta file if it exists
+    existing_translations = {}
+    delta_file = f"./delta_{locale}.po"
+    if os.path.exists(delta_file):
+        try:
+            old_po = polib.pofile(delta_file, encoding="utf-8")
+            for entry in old_po:
+                if entry.msgstr and entry.msgstr.strip():
+                    # Store with unescaped msgid as key so it matches what we get from source
+                    existing_translations[entry.msgid] = entry.msgstr
+        except Exception as e:
+            print(f"Warning: Could not read existing delta file {delta_file}: {e}")
+
+    with open(delta_file, "w", encoding="utf-8", errors="surrogateescape") as outp:
         for idx, key in enumerate(id_strings_source):
             if not key:
                 continue
@@ -301,14 +329,35 @@ def compare(
                     lkey += kchar
                     last = kchar
                 outp.write(f'msgid "{lkey}"\n')
-                outp.write('msgstr ""\n\n')
+
+                # Check if we have an existing translation for this msgid
+                # We need to unescape the key from source to match what polib gives us
+                unescaped_key = unescape_string(key)
+                if unescaped_key in existing_translations:
+                    # Use existing translation
+                    msgstr = existing_translations[unescaped_key]
+                    # Use the lf_coded function to properly escape the string
+                    escaped_msgstr = lf_coded(msgstr)
+                    outp.write(f'msgstr "{escaped_msgstr}"\n\n')
+                else:
+                    # No existing translation, leave empty
+                    outp.write('msgstr ""\n\n')
+
     if counts[2] == 0:
         print(f"No changes for {locale}, no file created.")
-        os.remove(f"./delta_{locale}.po")
+        if os.path.exists(delta_file):
+            os.remove(delta_file)
     else:
-        print(
-            f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}."
-        )
+        preserved_count = len(existing_translations)
+        if preserved_count > 0:
+            print(
+                f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}. "
+                f"Preserved {preserved_count} existing translations."
+            )
+        else:
+            print(
+                f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}."
+            )
 
 
 def validate_po(
