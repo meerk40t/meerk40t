@@ -47,29 +47,29 @@ class DefaultActionPanel(wx.Panel):
         self.SetHelpText("defaultactions")
 
         self.standards = [
-            ("Home", "util home", "", _("Move the laser head to the home position.")),
+            (_("Home"), "util home", "", _("Move the laser head to the home position.")),
             (
-                "Goto Origin",
+                _("Goto Origin"),
                 "util goto",
                 "0,0",
                 _("Move the laser head to the origin position."),
             ),
             (
-                "Goto 0,0",
+                _("Goto 0,0"),
                 "util goto",
                 "0,0,True",
                 _("Move the laser head to the absolute position 0,0."),
             ),
-            ("Beep", "util console", "beep", _("Make audible beep.")),
+            (_("Beep"), "util console", "beep", _("Make audible beep.")),
             (
-                "Interrupt",
+                _("Interrupt"),
                 "util console",
                 'interrupt "Spooling was interrupted"',
                 _("Interrupt the current operation and display a message."),
             ),
-            ("Console", "util console", "", _("Execute a command in the console.")),
-            ("Coolant on", "util console", "coolant_on", _("Turn on the coolant.")),
-            ("Coolant off", "util console", "coolant_off", _("Turn off the coolant.")),
+            (_("Console"), "util console", "", _("Execute a command in the console.")),
+            (_("Coolant on"), "util console", "coolant_on", _("Turn on the coolant.")),
+            (_("Coolant off"), "util console", "coolant_off", _("Turn off the coolant.")),
         ]
         self.default_images = [
             ["console home -f", icons8_home_filled],
@@ -89,13 +89,13 @@ class DefaultActionPanel(wx.Panel):
         if self.context.kernel.inhibitor.available:
             self.standards += [
                 (
-                    "Hibernation off",
+                    _("Hibernation off"),
                     "util console",
                     "system_hibernate prevent",
                     _("Prevent the system from entering hibernation mode."),
                 ),
                 (
-                    "Hibernation on",
+                    _("Hibernation on"),
                     "util console",
                     "system_hibernate allow",
                     _("Allow the system to enter hibernation mode."),
