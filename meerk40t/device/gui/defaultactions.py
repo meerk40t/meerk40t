@@ -36,6 +36,20 @@ class DefaultActionPanel(wx.Panel):
     It allows to define operations that should be executed at the beginning and the end of a job
     """
 
+    # Constants for standards list indices
+    STD_NAME = 0
+    STD_COMMAND = 1
+    STD_PARAMETER = 2
+    STD_TOOLTIP = 3
+
+    # Constants for operation entry indices
+    OP_COMMAND = 0
+    OP_PARAMETER = 1
+
+    # Constants for default images indices
+    IMG_COMMAND = 0
+    IMG_ICON = 1
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -257,12 +271,12 @@ class DefaultActionPanel(wx.Panel):
         self.setup_state_images()
         for entry in self.standards:
             item = self.option_list.InsertItem(
-                self.option_list.GetItemCount(), _(entry[0])
+                self.option_list.GetItemCount(), entry[self.STD_NAME]   
             )
-            state = self.establish_state(entry[1], entry[2])
+            state = self.establish_state(entry[self.STD_COMMAND], entry[self.STD_PARAMETER])
             if state >= 0:
                 # print(
-                #     f"I would set image for {entry[0]}={entry[1]}.{entry[2]} to {state}"
+                #     f"I would set image for {entry[self.STD_NAME]}={entry[self.STD_COMMAND]}.{entry[self.STD_PARAMETER]} to {state}"
                 # )
                 self.option_list.SetItemImage(item, state)
         # Set to all to disabled by default
@@ -322,6 +336,22 @@ class DefaultActionPanel(wx.Panel):
         self.append_ops[idx][1] = content
         self.save_data()
 
+    def _swap_prepend(self, idx1, idx2):
+        swap = self.prepend_ops[idx1][0]
+        self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
+        self.prepend_ops[idx2][0] = swap
+        swap = self.prepend_ops[idx1][1]
+        self.prepend_ops[idx1][1] = self.prepend_ops[idx2][1]
+        self.prepend_ops[idx2][1] = swap
+
+    def _swap_append(self, idx1, idx2):
+        swap = self.append_ops[idx1][0]
+        self.append_ops[idx1][0] = self.append_ops[idx2][0]
+        self.append_ops[idx2][0] = swap
+        swap = self.append_ops[idx1][1]
+        self.append_ops[idx1][1] = self.append_ops[idx2][1]
+        self.append_ops[idx2][1] = swap
+
     def prepend_move_up(self, event):
         idx2 = self.prepend_list.GetFirstSelected()
         # Either invalid or the first, so can't be moved up
@@ -329,12 +359,7 @@ class DefaultActionPanel(wx.Panel):
             return
         # Previous Element
         idx1 = idx2 - 1
-        swap = self.prepend_ops[idx1][0]
-        self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
-        self.prepend_ops[idx2][0] = swap
-        swap = self.prepend_ops[idx1][1]
-        self.prepend_ops[idx1][1] = self.prepend_ops[idx2][1]
-        self.prepend_ops[idx2][1] = swap
+        self._swap_prepend(idx1, idx2)
         self.save_data()
         self.fill_prepend_list()
         self.prepend_list.SetItemState(
@@ -349,12 +374,7 @@ class DefaultActionPanel(wx.Panel):
             return
         # Next element
         idx1 = idx2 + 1
-        swap = self.prepend_ops[idx1][0]
-        self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
-        self.prepend_ops[idx2][0] = swap
-        swap = self.prepend_ops[idx1][1]
-        self.prepend_ops[idx1][1] = self.prepend_ops[idx2][1]
-        self.prepend_ops[idx2][1] = swap
+        self._swap_prepend(idx1, idx2)
         self.save_data()
         self.fill_prepend_list()
         self.prepend_list.SetItemState(
@@ -369,12 +389,7 @@ class DefaultActionPanel(wx.Panel):
             return
         # Previous Element
         idx1 = idx2 - 1
-        swap = self.append_ops[idx1][0]
-        self.append_ops[idx1][0] = self.append_ops[idx2][0]
-        self.append_ops[idx2][0] = swap
-        swap = self.append_ops[idx1][1]
-        self.append_ops[idx1][1] = self.append_ops[idx2][1]
-        self.append_ops[idx2][1] = swap
+        self._swap_append(idx1, idx2)
         self.save_data()
         self.fill_append_list()
         self.append_list.SetItemState(
@@ -396,12 +411,7 @@ class DefaultActionPanel(wx.Panel):
             or idx2 >= len(self.append_ops)
         ):
             return
-        swap = self.append_ops[idx1][0]
-        self.append_ops[idx1][0] = self.append_ops[idx2][0]
-        self.append_ops[idx2][0] = swap
-        swap = self.append_ops[idx1][1]
-        self.append_ops[idx1][1] = self.append_ops[idx2][1]
-        self.append_ops[idx2][1] = swap
+        self._swap_append(idx1, idx2)
         self.save_data()
         self.fill_append_list()
         self.append_list.SetItemState(
@@ -452,13 +462,13 @@ class DefaultActionPanel(wx.Panel):
             return
         idx = self.option_list.GetFirstSelected()
         while 0 <= idx < len(self.standards):
-            operation = self.standards[idx][1]
+            operation = self.standards[idx][self.STD_COMMAND]
             if ct == 1:
                 # Only one, so we take the displayed and potentially changed parameter
                 content = self.text_param_option.GetValue()
             else:
                 # More than one, so we take the default as parameter
-                content = self.standards[idx][2]
+                content = self.standards[idx][self.STD_PARAMETER]
             entry = [operation, content]
             self.prepend_ops.append(entry)
             idx = self.option_list.GetNextSelected(idx)
@@ -471,13 +481,13 @@ class DefaultActionPanel(wx.Panel):
             return
         idx = self.option_list.GetFirstSelected()
         while 0 <= idx < len(self.standards):
-            operation = self.standards[idx][1]
+            operation = self.standards[idx][self.STD_COMMAND]
             if ct == 1:
                 # Only one, so we take the displayed and potentially changed parameter
                 content = self.text_param_option.GetValue()
             else:
                 # More than one, so we take the default as parameter
-                content = self.standards[idx][2]
+                content = self.standards[idx][self.STD_PARAMETER]
             entry = [operation, content]
             self.append_ops.append(entry)
             idx = self.option_list.GetNextSelected(idx)
@@ -492,7 +502,7 @@ class DefaultActionPanel(wx.Panel):
             self.option_list.SetToolTip("")
         else:
             active = True
-            self.text_param_option.SetValue(self.standards[idx][2])
+            self.text_param_option.SetValue(self.standards[idx][self.STD_PARAMETER])
         for ctrl in (
             self.button_add_prepend,
             self.button_add_append,
@@ -506,7 +516,7 @@ class DefaultActionPanel(wx.Panel):
         if idx < 0 or idx >= len(self.standards):
             self.option_list.SetToolTip("")
         else:
-            tooltip = self.standards[idx][3]
+            tooltip = self.standards[idx][self.STD_TOOLTIP]
             if tooltip is None:
                 tooltip = ""
             self.option_list.SetToolTip(tooltip)
@@ -518,28 +528,28 @@ class DefaultActionPanel(wx.Panel):
         str_count = f"{prefix}_op_count"
         count = 0
         for idx, entry in enumerate(self.prepend_ops):
-            if entry[1] is None:
-                entry[1] = ""
+            if entry[self.OP_PARAMETER] is None:
+                entry[self.OP_PARAMETER] = ""
             attr1 = f"{prefix}_op_{idx:02d}"
             attr2 = f"{prefix}_op_param_{idx:02d}"
-            self.context.setting(str, attr1, entry[0])
-            self.context.setting(str, attr2, entry[1])
-            setattr(self.context, attr1, entry[0])
-            setattr(self.context, attr2, entry[1])
+            self.context.setting(str, attr1, entry[self.OP_COMMAND])
+            self.context.setting(str, attr2, entry[self.OP_PARAMETER])
+            setattr(self.context, attr1, entry[self.OP_COMMAND])
+            setattr(self.context, attr2, entry[self.OP_PARAMETER])
             count += 1
         setattr(self.context, str_count, len(self.prepend_ops))
 
         prefix = "append"
         str_count = f"{prefix}_op_count"
         for idx, entry in enumerate(self.append_ops):
-            if entry[1] is None:
-                entry[1] = ""
+            if entry[self.OP_PARAMETER] is None:
+                entry[self.OP_PARAMETER] = ""
             attr1 = f"{prefix}_op_{idx:02d}"
             attr2 = f"{prefix}_op_param_{idx:02d}"
-            self.context.setting(str, attr1, entry[0])
-            self.context.setting(str, attr2, entry[1])
-            setattr(self.context, attr1, entry[0])
-            setattr(self.context, attr2, entry[1])
+            self.context.setting(str, attr1, entry[self.OP_COMMAND])
+            self.context.setting(str, attr2, entry[self.OP_PARAMETER])
+            setattr(self.context, attr1, entry[self.OP_COMMAND])
+            setattr(self.context, attr2, entry[self.OP_PARAMETER])
         setattr(self.context, str_count, len(self.append_ops))
 
     def setup_state_images(self):
@@ -553,12 +563,12 @@ class DefaultActionPanel(wx.Panel):
         self.append_images = wx.ImageList()
         self.append_images.Create(width=iconsize, height=iconsize)
         for entry in self.default_images:
-            image = entry[1].GetBitmap(
+            image = entry[self.IMG_ICON].GetBitmap(
                 resize=(iconsize, iconsize), buffer=2, noadjustment=True
             )
-            image_id1 = self.options_images.Add(bitmap=image)
-            image_id2 = self.prepend_images.Add(bitmap=image)
-            image_id3 = self.append_images.Add(bitmap=image)
+            self.options_images.Add(bitmap=image)
+            self.prepend_images.Add(bitmap=image)
+            self.append_images.Add(bitmap=image)
         self.option_list.AssignImageList(self.options_images, wx.IMAGE_LIST_SMALL)
         self.prepend_list.AssignImageList(self.prepend_images, wx.IMAGE_LIST_SMALL)
         self.append_list.AssignImageList(self.append_images, wx.IMAGE_LIST_SMALL)
@@ -572,14 +582,14 @@ class DefaultActionPanel(wx.Panel):
         if tofind == "util console":
             # Let's see whether we find the keyword...
             for idx, entry in enumerate(self.default_images):
-                if entry[0].startswith("console "):
-                    skey = entry[0][8:]
+                if entry[self.IMG_COMMAND].startswith("console "):
+                    skey = entry[self.IMG_COMMAND][8:]
                     if parameter is not None and skey in parameter:
                         stateidx = idx
                         break
         if stateidx < 0:
             for idx, entry in enumerate(self.default_images):
-                if entry[0] == tofind:
+                if entry[self.IMG_COMMAND] == tofind:
                     stateidx = idx
                     break
         # print(f"opname={opname}, parameter={parameter}, state={stateidx}")
@@ -615,9 +625,9 @@ class DefaultActionPanel(wx.Panel):
             item = self.prepend_list.InsertItem(
                 self.prepend_list.GetItemCount(), f"{idx:02d}# - {display_name}"
             )
-            state = self.establish_state(entry[0], entry[1])
+            state = self.establish_state(entry[self.OP_COMMAND], entry[self.OP_PARAMETER])
             if state >= 0:
-                # print (f"I would set image for {entry[0]}.{entry[1]} to {state}")
+                # print (f"I would set image for {entry[self.OP_COMMAND]}.{entry[self.OP_PARAMETER]} to {state}")
                 self.prepend_list.SetItemImage(item, state)
 
         self.prepend_list.Refresh()
@@ -629,19 +639,19 @@ class DefaultActionPanel(wx.Panel):
         self.button_up_append.Enable(False)
         self.button_down_append.Enable(False)
         for idx, entry in enumerate(self.append_ops):
-            if entry[1] is None:
-                entry[1] = ""
-            display_name = entry[0]
+            if entry[self.OP_PARAMETER] is None:
+                entry[self.OP_PARAMETER] = ""
+            display_name = entry[self.OP_COMMAND]
             for def_entry in self.standards:
-                if def_entry[2] is None:
-                    def_entry[2] = ""
-                if def_entry[1] == entry[0] and def_entry[2] == entry[1]:
-                    display_name = def_entry[0]
+                if def_entry[self.STD_PARAMETER] is None:
+                    def_entry[self.STD_PARAMETER] = ""
+                if def_entry[self.STD_COMMAND] == entry[self.OP_COMMAND] and def_entry[self.STD_PARAMETER] == entry[self.OP_PARAMETER]:
+                    display_name = def_entry[self.STD_NAME]
                     break
             item = self.append_list.InsertItem(
                 self.append_list.GetItemCount(), f"{idx:02d}# - {display_name}"
             )
-            state = self.establish_state(entry[0], entry[1])
+            state = self.establish_state(entry[self.OP_COMMAND], entry[self.OP_PARAMETER])
             if state >= 0:
                 self.append_list.SetItemImage(item, state)
         self.append_list.Refresh()
@@ -658,8 +668,8 @@ class DefaultActionPanel(wx.Panel):
             entry = ["", ""]
             attr1 = f"{prefix}_op_{idx:02d}"
             attr2 = f"{prefix}_op_param_{idx:02d}"
-            entry[0] = getattr(self.context, attr1, "")
-            entry[1] = getattr(self.context, attr2, "")
+            entry[self.OP_COMMAND] = getattr(self.context, attr1, "")
+            entry[self.OP_PARAMETER] = getattr(self.context, attr2, "")
             self.prepend_ops.append(entry)
 
         prefix = "append"
@@ -669,8 +679,8 @@ class DefaultActionPanel(wx.Panel):
             entry = ["", ""]
             attr1 = f"{prefix}_op_{idx:02d}"
             attr2 = f"{prefix}_op_param_{idx:02d}"
-            entry[0] = getattr(self.context, attr1, "")
-            entry[1] = getattr(self.context, attr2, "")
+            entry[self.OP_COMMAND] = getattr(self.context, attr1, "")
+            entry[self.OP_PARAMETER] = getattr(self.context, attr2, "")
             self.append_ops.append(entry)
         self.fill_prepend_list()
         self.fill_append_list()
