@@ -3977,7 +3977,7 @@ msgstr "Überhang"
 
 #: meerk40t/device/devicechoices.py:11 meerk40t/gui/materialtest.py:784
 msgid "Hatch Distance"
-msgstr "Schraffur`-Abstand"
+msgstr "Schraffur-Abstand"
 
 #: meerk40t/device/devicechoices.py:20 meerk40t/gui/materialtest.py:791
 msgid "Hatch Angle"
@@ -24128,3 +24128,7 @@ msgstr "Elemente (Effekte)"
 #: meerk40t/device/gui/formatterpanel.py:160
 msgid "Placements"
 msgstr "Platzierungen"
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr "Test for a quote: \"Alles klar?\""
