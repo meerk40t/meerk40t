@@ -1075,7 +1075,7 @@ class Elemental(Service):
                     # We accept stroke none or fill none as well!
                     has_a_color = True
                     try:
-                        if c is not None and c.argb is not None:
+                        if self._valid_color(c):
                             first_color = c
                     except (AttributeError, ValueError):
                         first_color = None
@@ -2766,6 +2766,14 @@ class Elemental(Service):
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
 
+    def _valid_color(self, color):
+        try:
+            if color is not None and color.argb is not None:
+                return True
+        except Exception:
+            pass
+        return False
+
     def post_classify(self, data):
         """
         Provides a post_classification algorithm.
@@ -2823,6 +2831,8 @@ class Elemental(Service):
             candidate_dist = float("inf")
             for cand_op in operations:
                 if cand_op.type != "op raster":
+                    continue
+                if not self._valid_color(cand_op.color) or not self._valid_color(node.fill):
                     continue
                 col_d = Color.distance(cand_op.color, abs(node.fill))
                 if col_d > fuzzydistance:
@@ -2917,10 +2927,9 @@ class Elemental(Service):
                     is_black = False
                     perform_classification = True
                     if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and node.stroke.argb is not None
-                        and node.type != "elem text"
+                        hasattr(node, "stroke") and 
+                        self._valid_color(node.stroke) and
+                        node.type != "elem text"
                     ):
                         if fuzzy:  # No need to distinguish tempfuzzy here
                             is_black = (
@@ -3045,7 +3054,7 @@ class Elemental(Service):
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
-                if node.stroke is None or node.stroke.argb is None:
+                if not self._valid_color(node.stroke):
                     classif_info[0] = True
                 if node.type == "elem text":
                     # even if it has, we are not going to do something with it
@@ -3053,7 +3062,7 @@ class Elemental(Service):
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
-                if node.fill is None or node.fill.argb is None:
+                if not self._valid_color(node.fill):
                     classif_info[1] = True
             else:
                 classif_info[1] = True
@@ -3104,7 +3113,7 @@ class Elemental(Service):
                         break
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
-                if node.stroke is None or node.stroke.argb is None:
+                if not self._valid_color(node.stroke):
                     classif_info[0] = True
                 if node.type == "elem text":
                     # even if it has, we are not going to do something with it
@@ -3112,7 +3121,7 @@ class Elemental(Service):
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
-                if node.fill is None or node.fill.argb is None:
+                if not self._valid_color(node.fill):
                     classif_info[1] = True
             else:
                 classif_info[1] = True
@@ -3169,8 +3178,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     # Let's loop through the default operations
                     # First the whisperer case
@@ -3198,8 +3206,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     fuzzy_param = (False, True) if fuzzy else (False,)
                     was_classified = False
@@ -3209,7 +3216,7 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
+                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)) and self._valid_color(op_candidate.color):
                                 if tempfuzzy:
                                     classified = (
                                         Color.distance(
@@ -3238,8 +3245,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     if fuzzy:
                         is_cut = (
@@ -3268,8 +3274,7 @@ class Elemental(Service):
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                    and self._valid_color(node.fill)
                 ):
                     if node.fill.red == node.fill.green == node.fill.blue:
                         is_black = True
@@ -3289,6 +3294,8 @@ class Elemental(Service):
                         if debug:
                             debug(f"Pass 3-fill (fuzzy={tempfuzzy}): check {node.type}")
                         for op_candidate in self.default_operations:
+                            if not self._valid_color(op_candidate.color):
+                                continue
                             classified = False
                             if isinstance(op_candidate, RasterOpNode):
                                 if tempfuzzy:
@@ -3316,8 +3323,7 @@ class Elemental(Service):
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                    and self._valid_color(node.fill)
                 ):
                     default_color = (
                         abs(node.fill) if self.classify_fill else Color("black")
