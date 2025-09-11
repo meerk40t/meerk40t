@@ -34,7 +34,7 @@ from meerk40t.constants import (
     RASTER_T2B,
 )
 from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.core.elements.element_types import *
+from meerk40t.core.elements.element_types import op_nodes, elem_nodes
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length

@@ -18,7 +18,7 @@ import math
 import numpy as np
 import wx
 
-from meerk40t.core.elements.element_types import *
+from meerk40t.core.elements.element_types import elem_nodes, elem_group_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
