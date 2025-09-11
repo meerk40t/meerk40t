@@ -1063,7 +1063,7 @@ class Planner(Service):
                 ):
                     continue
                 # Make sure we take the most recent
-                t = plan.get(STAGE_PLAN_FINISHED, 0)
+                t = self._states[candidate].get(STAGE_PLAN_FINISHED, 0)
                 if t > last_time:
                     last_time = t
                     last = candidate
