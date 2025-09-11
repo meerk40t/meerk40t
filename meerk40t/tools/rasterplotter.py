@@ -440,7 +440,12 @@ class RasterPlotter:
         Returns the initial position for this within the scene. Taking into account start corner, and step size.
         @return: initial position within scene. The first plot location.
         """
-        if self.initial_x is None or isinf(self.initial_x):  # image is blank.
+        if (
+            self.initial_x is None
+            or isinf(self.initial_x)
+            or self.initial_y is None
+            or isinf(self.initial_y)
+        ):  # image is blank.
             if self.use_integers:
                 return int(round(self.offset_x)), int(round(self.offset_y))
             else:
@@ -1253,10 +1258,10 @@ class RasterPlotter:
         t3 = perf_counter()
         if self.debug_level > 1:
             print(
-                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments"
+                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3 - t0:.2f}s - created: {len(line_parts)} segments"
             )
             print(
-                f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
+                f"Computation: {t2 - t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
             )
         self.final_x = last_x
         self.final_y = last_y
@@ -1619,7 +1624,7 @@ class RasterPlotter:
         self.final_y = last_y
         t3 = perf_counter()
         if self.debug_level > 1:
-            print(f"Overall time for crossover consumption: {t3-t0:.2f}s")
+            print(f"Overall time for crossover consumption: {t3 - t0:.2f}s")
             print(
                 f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s"
             )
