@@ -298,7 +298,7 @@ def init_commands(kernel):
                     f"  Total distance saved: {Length(total_distance_saved, digits=0).length_mm}"
                 )
                 channel(
-                    f"  Optimized operations: {', '.join([op for op, result in operation_results if result['optimized']])}"
+                    f"  Optimized operations: {', '.join([op_label for op_label, result in operation_results if result['optimized'] and op_label is not None])}"
                 )
             else:
                 channel("No operations required optimization")
