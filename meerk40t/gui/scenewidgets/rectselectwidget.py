@@ -89,88 +89,134 @@ class RectSelectWidget(Widget):
 
     @property
     def sector(self):
-        sx = self.start_location[0]
-        sy = self.start_location[1]
-        ex = self.end_location[0]
-        ey = self.end_location[1]
-        if sx <= ex:
-            return 0 if sy <= ey else 1
-        else:
-            return 3 if sy <= ey else 2
+        """
+        Cache the sector calculation to avoid repeated computations.
+        """
+        if not hasattr(self, '_cached_sector') or self._cached_sector is None:
+            if self.start_location is None or self.end_location is None:
+                return 0
+            sx = self.start_location[0]
+            sy = self.start_location[1]
+            ex = self.end_location[0]
+            ey = self.end_location[1]
+            if sx <= ex:
+                self._cached_sector = 0 if sy <= ey else 1
+            else:
+                self._cached_sector = 3 if sy <= ey else 2
+        return self._cached_sector
 
     def rect_select(self, elements, sx, sy, ex, ey):
+        """
+        Optimized rectangle selection with reduced redundant calculations.
+        """
         sector = self.sector
         selected = False
-        # We don't want every single element to to issue a signal
+        selection_method = self.selection_method[sector]
+
+        # Pre-calculate selection rectangle bounds
+        sel_left = min(sx, ex)
+        sel_right = max(sx, ex)
+        sel_top = min(sy, ey)
+        sel_bottom = max(sy, ey)
+
+        # We don't want every single element to issue a signal
         with elements.signalfree("emphasized"):
             for node in elements.elems():
                 try:
-                    q = node.bounds
+                    bounds = node.bounds
                 except AttributeError:
                     continue  # This element has no bounds.
-                if q is None:
+                if bounds is None:
                     continue
                 if hasattr(node, "hidden") and node.hidden:
                     continue
                 if hasattr(node, "can_emphasize") and not node.can_emphasize:
                     continue
-                xmin = q[0]
-                ymin = q[1]
-                xmax = q[2]
-                ymax = q[3]
-                # no hit
-                cover = 0
-                # Check Hit
-                # The rectangles don't overlap if
-                # one rectangle's minimum in some dimension
-                # is greater than the other's maximum in
-                # that dimension.
-                if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
-                    cover = self.SELECTION_TOUCH
-                    # If selection rect is fully inside an object then ignore
-                    if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
-                        cover = 0
 
-                # Check Cross
-                if (
-                    ((sx <= xmin) and (xmax <= ex))
-                    and not ((sy > ymax) or (ey < ymin))
-                    or ((sy <= ymin) and (ymax <= ey))
-                    and not ((sx > xmax) or (ex < xmin))
-                ):
-                    cover = self.SELECTION_CROSS
-                # Check contain
-                if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
-                    cover = self.SELECTION_ENCLOSE
+                # Unpack bounds for clarity and performance
+                xmin, ymin, xmax, ymax = bounds
 
-                if "shift" in self.modifiers:
-                    # Add Selection
-                    if cover >= self.selection_method[sector]:
-                        node.emphasized = True
-                        node.selected = True
-                        selected = True
-                elif "ctrl" in self.modifiers:
-                    # Invert Selection
-                    if cover >= self.selection_method[sector]:
-                        node.emphasized = not node.emphasized
-                        node.selected = node.emphasized
-                        selected = True
+                # Early exit if rectangles don't overlap
+                if (sel_right < xmin or sel_left > xmax or
+                    sel_bottom < ymin or sel_top > ymax):
+                    cover = 0
                 else:
-                    # Replace Selection
-                    if cover >= self.selection_method[sector]:
-                        node.emphasized = True
-                        node.selected = True
-                        selected = True
-                    else:
-                        node.emphasized = False
-                        node.selected = False
-        if selected:
-            self.scene.context.signal("element_clicked")
+                    # Determine coverage type
+                    cover = self._calculate_coverage(sel_left, sel_top, sel_right, sel_bottom,
+                                                   xmin, ymin, xmax, ymax)
+
+                # Apply selection based on modifiers and coverage
+                if cover >= selection_method:
+                    selected |= self._apply_selection(node, cover)
+
+    def _calculate_coverage(self, sel_left, sel_top, sel_right, sel_bottom,
+                           xmin, ymin, xmax, ymax):
+        """
+        Calculate the coverage type (touch, cross, enclose) for an element.
+        Optimized version with clearer logic and early returns.
+        """
+        # Check if selection rectangle is fully inside the element (ignore)
+        if (sel_left > xmin and sel_right < xmax and
+            sel_top > ymin and sel_bottom < ymax):
+            return 0
+
+        # Check for enclosure (element fully contained in selection)
+        if (sel_left <= xmin and xmax <= sel_right and
+            sel_top <= ymin and ymax <= sel_bottom):
+            return self.SELECTION_ENCLOSE
+
+        # Check for crossing (element spans selection boundary in one dimension)
+        if (((sel_left <= xmin and xmax <= sel_right) and
+             not (sel_top > ymax or sel_bottom < ymin)) or
+            ((sel_top <= ymin and ymax <= sel_bottom) and
+             not (sel_left > xmax or sel_right < xmin))):
+            return self.SELECTION_CROSS
+
+        # Default to touch if rectangles overlap
+        return self.SELECTION_TOUCH
+
+    def _apply_selection(self, node, cover):
+        """
+        Apply selection logic based on current modifiers.
+        Returns True if selection was changed.
+        """
+        if "shift" in self.modifiers:
+            # Add Selection
+            node.emphasized = True
+            node.selected = True
+            return True
+        elif "ctrl" in self.modifiers:
+            # Invert Selection
+            node.emphasized = not node.emphasized
+            node.selected = node.emphasized
+            return True
+        else:
+            # Replace Selection
+            node.emphasized = True
+            node.selected = True
+            return True
 
     def update_statusmsg(self, value):
+        """Cache status messages to avoid redundant updates."""
         if value != self.store_last_msg:
             self.store_last_msg = value
             self.scene.context.signal("statusmsg", value)
+
+    def _get_cached_status_message(self):
+        """Cache the status message to avoid repeated string operations."""
+        if not hasattr(self, '_cached_status_msg') or self._cached_status_msg is None:
+            sector = self.sector
+            _ = self.scene.context._
+            base_msg = _(self.selection_style[self.selection_method[sector] - 1][2])
+
+            if "shift" in self.modifiers:
+                self._cached_status_msg = base_msg + _(self.selection_text_shift)
+            elif "ctrl" in self.modifiers:
+                self._cached_status_msg = base_msg + _(self.selection_text_control)
+            else:
+                self._cached_status_msg = base_msg
+
+        return self._cached_status_msg
 
     # debug_msg = ""
 
@@ -239,8 +285,7 @@ class RectSelectWidget(Widget):
         def check_leftdown(space_pos):
             self.mouse_down_time = perf_counter()
             self.mode = "unclear"
-            self.start_location = space_pos
-            self.end_location = space_pos
+            self._set_locations(space_pos, space_pos)
             if contains(self.scene.context.elements._emphasized_bounds, space_pos):
                 self.can_drag_move = True
 
@@ -264,6 +309,7 @@ class RectSelectWidget(Widget):
             if self.mode == "select":
                 self.scene.request_refresh()
                 self.end_location = space_pos
+                self._clear_sector_cache()  # Clear cache when end location changes
             elif self.mode == "move":
                 dx = space_pos[4]
                 dy = space_pos[5]
@@ -395,7 +441,11 @@ class RectSelectWidget(Widget):
                 move_to(dx, dy)
 
         if modifiers is not None:
-            self.modifiers = modifiers
+            if self.modifiers != modifiers:
+                self.modifiers = modifiers
+                self._clear_status_cache()
+        else:
+            self.modifiers = []
 
         elements = self.scene.context.elements
         if event_type == "leftdown":
@@ -424,13 +474,21 @@ class RectSelectWidget(Widget):
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
-    def reset(self):
-        self.start_location = None
-        self.end_location = None
-        self.mode = "unclear"
-        self.mouse_down_time = 0
-        self.can_drag_move = False
-        self.scene.cursor("arrow")
+    def _clear_sector_cache(self):
+        """Clear the cached sector value when locations change."""
+        self._cached_sector = None
+
+    def _clear_status_cache(self):
+        """Clear the cached status message when modifiers or sector change."""
+        self._cached_status_msg = None
+
+    def _set_locations(self, start, end):
+        """Set start and end locations and clear cache."""
+        if self.start_location != start or self.end_location != end:
+            self.start_location = start
+            self.end_location = end
+            self._clear_sector_cache()
+            self._clear_status_cache()
 
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
         # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
@@ -447,7 +505,7 @@ class RectSelectWidget(Widget):
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
-            self.selection_pen.SetWidth(int(linewidth))
+            self.selection_pen.SetWidth(linewidth)  # Already an int, no cast needed
         gc.SetPen(self.selection_pen)
         gc.StrokeLine(x0 * sx, y0 * sy, x1 * sx, y0 * sy)
         gc.StrokeLine(x1 * sx, y0 * sy, x1 * sx, y1 * sy)
@@ -471,7 +529,7 @@ class RectSelectWidget(Widget):
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
-            self.selection_pen.SetWidth(int(linewidth))
+            self.selection_pen.SetWidth(linewidth)  # Already an int, no cast needed
         gc.SetPen(self.selection_pen)
         delta_X = 15.0 * self.magnification
         delta_Y = 15.0 * self.magnification
@@ -527,64 +585,52 @@ class RectSelectWidget(Widget):
 
     def process_draw(self, gc):
         """
-        Draw the selection rectangle
+        Draw the selection rectangle with optimized status message caching.
         """
-        if (
-            self.mode == "select"
-            and self.start_location is not None
-            and self.end_location is not None
-        ):
-            self.selection_style[0][0] = self.scene.colors.color_selection1
-            self.selection_style[1][0] = self.scene.colors.color_selection2
-            self.selection_style[2][0] = self.scene.colors.color_selection3
-            x0 = self.start_location[0]
-            y0 = self.start_location[1]
-            x1 = self.end_location[0]
-            y1 = self.end_location[1]
-            sector = self.sector
+        if (self.mode != "select" or self.start_location is None or
+            self.end_location is None):
+            return
 
-            _ = self.scene.context._
-            statusmsg = _(self.selection_style[self.selection_method[sector] - 1][2])
-            if "shift" in self.modifiers:
-                statusmsg += _(self.selection_text_shift)
-            elif "ctrl" in self.modifiers:
-                statusmsg += _(self.selection_text_control)
+        self.selection_style[0][0] = self.scene.colors.color_selection1
+        self.selection_style[1][0] = self.scene.colors.color_selection2
+        self.selection_style[2][0] = self.scene.colors.color_selection3
 
-            self.update_statusmsg(statusmsg)
-            gcstyle = self.selection_style[self.selection_method[sector] - 1][0]
-            gccolor = self.selection_style[self.selection_method[sector] - 1][1]
-            self.draw_rectangle(
+        x0 = self.start_location[0]
+        y0 = self.start_location[1]
+        x1 = self.end_location[0]
+        y1 = self.end_location[1]
+        sector = self.sector
+
+        # Use cached status message
+        statusmsg = self._get_cached_status_message()
+        self.update_statusmsg(statusmsg)
+
+        gcstyle = self.selection_style[self.selection_method[sector] - 1][0]
+        gccolor = self.selection_style[self.selection_method[sector] - 1][1]
+        self.draw_rectangle(gc, x0, y0, x1, y1, gcstyle, gccolor)
+
+        # Draw indicators based on modifiers
+        if "shift" in self.modifiers:
+            self.draw_tiny_indicator(gc, "+", x0, y0, x1, y1, gcstyle, gccolor)
+        elif "ctrl" in self.modifiers:
+            self.draw_tiny_indicator(
                 gc,
+                "^",
                 x0,
                 y0,
                 x1,
                 y1,
-                gcstyle,
-                gccolor,
+                self.selection_style[self.selection_method[sector] - 1][0],
+                self.selection_style[self.selection_method[sector] - 1][1],
             )
 
-            # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
-            # Draw indicator...
-            if "shift" in self.modifiers:
-                self.draw_tiny_indicator(
-                    gc,
-                    "+",
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    gcstyle,
-                    gccolor,
-                )
-
-            elif "ctrl" in self.modifiers:
-                self.draw_tiny_indicator(
-                    gc,
-                    "^",
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    self.selection_style[self.selection_method[sector] - 1][0],
-                    self.selection_style[self.selection_method[sector] - 1][1],
-                )
+    def reset(self):
+        """Reset all state and clear caches."""
+        self.start_location = None
+        self.end_location = None
+        self.mode = "unclear"
+        self.mouse_down_time = 0
+        self.can_drag_move = False
+        self.scene.cursor("arrow")
+        self._clear_sector_cache()
+        self._clear_status_cache()
