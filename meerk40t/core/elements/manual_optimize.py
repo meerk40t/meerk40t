@@ -20,11 +20,15 @@ from .optimization_testcases import generate_random_test_case, DEFAULT_SHAPE_COU
 # ==========
 
 # Path optimization thresholds
-MATRIX_OPTIMIZATION_THRESHOLD = 25  # Paths - threshold for using full matrix optimization
+MATRIX_OPTIMIZATION_THRESHOLD = (
+    25  # Paths - threshold for using full matrix optimization
+)
 MAX_GREEDY_ITERATIONS = 1000  # Maximum iterations for greedy algorithms
 DEFAULT_TOLERANCE = 1e-6  # Default geometric tolerance for calculations
 DEFAULT_CONTAINMENT_TOLERANCE = 1e-3  # Default tolerance for containment checks
-DEFAULT_CONTAINMENT_RESOLUTION = 100  # Default resolution for containment polygon sampling
+DEFAULT_CONTAINMENT_RESOLUTION = (
+    100  # Default resolution for containment polygon sampling
+)
 
 # Distance calculation constants
 DISTANCE_CALCULATION_BATCH_SIZE = 100  # For large distance matrix calculations
@@ -34,28 +38,26 @@ DISTANCE_CALCULATION_BATCH_SIZE = 100  # For large distance matrix calculations
 # SHAPELY UTILITIES
 # ==========
 
+
 def _get_shapely_operations():
     """
     Get Shapely operations if available, None otherwise.
     Centralizes all Shapely dependency handling in one place.
-    
+
     Returns:
         dict or None: Dictionary with Shapely functions if available, None if not available
     """
     try:
         import importlib.util
+
         if importlib.util.find_spec("shapely") is None:
             return None
-        
+
         # Import all needed Shapely components
         from shapely import contains
         from shapely.geometry import Polygon
-        
-        return {
-            'contains': contains,
-            'Polygon': Polygon,
-            'available': True
-        }
+
+        return {"contains": contains, "Polygon": Polygon, "available": True}
     except ImportError:
         return None
 
@@ -75,7 +77,10 @@ def init_commands(kernel):
     # ELEMENT/SHAPE COMMANDS
     # ==========
     @self.console_argument(
-        "amount", type=int, help=_("Number of shapes to create"), default=DEFAULT_SHAPE_COUNT
+        "amount",
+        type=int,
+        help=_("Number of shapes to create"),
+        default=DEFAULT_SHAPE_COUNT,
     )
     @self.console_command(
         "testcase",
@@ -86,21 +91,21 @@ def init_commands(kernel):
     def reorder_testcase(channel, _, amount=None, data=None, post=None, **kwargs):
         """Create a random test case for path optimization testing."""
         branch = self.elem_branch
-        
+
         # Generate random test case using the dedicated module
         created_elements = generate_random_test_case(
             branch=branch,
             device_view=self.device.view,
             default_stroke=self.default_stroke,
             default_strokewidth=self.default_strokewidth,
-            amount=amount
+            amount=amount,
         )
-        
+
         # Add classification post-processing
         post.append(self.post_classify(created_elements))
 
     @self.console_argument("rows", type=int, help=_("Number of rows"), default=3)
-    @self.console_argument("cols", type=int, help=_("Number of columns"), default=3)  
+    @self.console_argument("cols", type=int, help=_("Number of columns"), default=3)
     @self.console_argument("shape", type=str, help=_("Shape type"), default="rectangle")
     @self.console_command(
         "testcase_grid",
@@ -108,12 +113,14 @@ def init_commands(kernel):
         input_type=None,
         output_type="elements",
     )
-    def reorder_testcase_grid(channel, _, rows=None, cols=None, shape=None, data=None, post=None, **kwargs):
+    def reorder_testcase_grid(
+        channel, _, rows=None, cols=None, shape=None, data=None, post=None, **kwargs
+    ):
         """Create a grid pattern test case for path optimization testing."""
         from .optimization_testcases import generate_grid_test_case
-        
+
         branch = self.elem_branch
-        
+
         created_elements = generate_grid_test_case(
             branch=branch,
             device_view=self.device.view,
@@ -121,57 +128,67 @@ def init_commands(kernel):
             default_strokewidth=self.default_strokewidth,
             rows=rows or 3,
             cols=cols or 3,
-            shape_type=shape or "rectangle"
+            shape_type=shape or "rectangle",
         )
-        
+
         post.append(self.post_classify(created_elements))
 
-    @self.console_argument("count", type=int, help=_("Number of shapes in circle"), default=8)
-    @self.console_argument("radius", type=float, help=_("Circle radius (percentage)"), default=30.0)
+    @self.console_argument(
+        "count", type=int, help=_("Number of shapes in circle"), default=8
+    )
+    @self.console_argument(
+        "radius", type=float, help=_("Circle radius (percentage)"), default=30.0
+    )
     @self.console_command(
         "testcase_circle",
         help=_("Create circular pattern test case for optimization"),
         input_type=None,
         output_type="elements",
     )
-    def reorder_testcase_circle(channel, _, count=None, radius=None, data=None, post=None, **kwargs):
+    def reorder_testcase_circle(
+        channel, _, count=None, radius=None, data=None, post=None, **kwargs
+    ):
         """Create a circular pattern test case for path optimization testing."""
         from .optimization_testcases import generate_circular_pattern_test_case
-        
+
         branch = self.elem_branch
-        
+
         created_elements = generate_circular_pattern_test_case(
             branch=branch,
             device_view=self.device.view,
             default_stroke=self.default_stroke,
             default_strokewidth=self.default_strokewidth,
             count=count or 8,
-            radius=radius or 30.0
+            radius=radius or 30.0,
         )
-        
+
         post.append(self.post_classify(created_elements))
 
-    @self.console_argument("levels", type=int, help=_("Number of nesting levels"), default=3)
+    @self.console_argument(
+        "levels", type=int, help=_("Number of nesting levels"), default=3
+    )
     @self.console_command(
         "testcase_nested",
         help=_("Create nested shapes test case for containment testing"),
         input_type=None,
         output_type="elements",
     )
-    def reorder_testcase_nested(channel, _, levels=None, data=None, post=None, **kwargs):
+    def reorder_testcase_nested(
+        channel, _, levels=None, data=None, post=None, **kwargs
+    ):
         """Create nested shapes test case for containment testing."""
         from .optimization_testcases import generate_nested_shapes_test_case
-        
+
         branch = self.elem_branch
-        
+
         created_elements = generate_nested_shapes_test_case(
             branch=branch,
             device_view=self.device.view,
             default_stroke=self.default_stroke,
             default_strokewidth=self.default_strokewidth,
-            levels=levels or 3
+            levels=levels or 3,
         )
-        
+
         post.append(self.post_classify(created_elements))
         return "elements", data
 
@@ -182,16 +199,27 @@ def init_commands(kernel):
         help=_("Provide detailed debug output"),
     )
     @self.console_argument(
-        "start_x", type=float, help=_("Starting X position"), default=0.0)
+        "start_x", type=float, help=_("Starting X position"), default=0.0
+    )
     @self.console_argument(
-        "start_y", type=float, help=_("Starting Y position"), default=0.0)
+        "start_y", type=float, help=_("Starting Y position"), default=0.0
+    )
     @self.console_command(
         "reorder",
         help=_("reorder elements for optimal cutting within an operation"),
         input_type=("ops", None),
         output_type="ops",
     )
-    def element_reorder(channel, _, start_x=None, start_y=None, debug=None, data=None, post=None, **kwargs):
+    def element_reorder(
+        channel,
+        _,
+        start_x=None,
+        start_y=None,
+        debug=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
         start_position = complex(start_x or 0.0, start_y or 0.0)
         oplist = data if data is not None else list(self.ops(selected=True))
         opout = []
@@ -203,91 +231,120 @@ def init_commands(kernel):
         if not oplist:
             channel(_("No operations to optimize"))
             return "ops", []
-        
+
         for op in oplist:
             if op.type in op_burnable_nodes:
-                optimization_result = optimize_node_travel_under(self, op, channel, debug_channel, start_position=start_position)
+                optimization_result = optimize_node_travel_under(
+                    self, op, channel, debug_channel, start_position=start_position
+                )
                 opout.append(op)
-                
+
                 # Collect results for summary
-                if optimization_result['optimized']:
+                if optimization_result["optimized"]:
                     optimized_operations.append(display_label(op))
-                    total_improvement += optimization_result['improvement']
-                
+                    total_improvement += optimization_result["improvement"]
+
                 operation_results.append((display_label(op), optimization_result))
-                
+
                 # New start_position is last position of the last node
                 if len(op.children) > 0:
                     last_child = op.children[-1]
                     if last_child.type == "reference" and last_child.node is not None:
                         last_node = last_child.node
-                        if hasattr(last_node, "as_geometry") and callable(getattr(last_node, "as_geometry")):
+                        if hasattr(last_node, "as_geometry") and callable(
+                            getattr(last_node, "as_geometry")
+                        ):
                             try:
                                 geomstr = last_node.as_geometry()
                                 if geomstr and geomstr.index > 0:
                                     last_segment = geomstr.segments[geomstr.index - 1]
-                                    start_point, control1, info, control2, end_point = last_segment
+                                    start_point, control1, info, control2, end_point = (
+                                        last_segment
+                                    )
                                     start_position = end_point
                             except Exception as e:
-                                channel(f"Error extracting geometry from last node: {e}")
-        
+                                channel(
+                                    f"Error extracting geometry from last node: {e}"
+                                )
+
         # Display optimization summary
         if operation_results:
-            channel(f"\n{'='*60}")
+            channel(f"\n{'=' * 60}")
             channel("PATH OPTIMIZATION SUMMARY")
-            channel(f"{'='*60}")
-            
+            channel(f"{'=' * 60}")
+
             total_distance_saved = 0.0
             optimized_count = 0
-            
+
             for op_label, result in operation_results:
-                if result['optimized']:
+                if result["optimized"]:
                     channel(f"✓ {op_label}:")
                     channel(f"  Paths optimized: {result['path_count']}")
-                    channel(f"  Distance saved: {Length(result['improvement'], digits=0).length_mm}")
-                    total_distance_saved += result['improvement']
+                    channel(
+                        f"  Distance saved: {Length(result['improvement'], digits=0).length_mm}"
+                    )
+                    total_distance_saved += result["improvement"]
                     optimized_count += 1
                 else:
-                    channel(f"○ {op_label}: No optimization needed ({result['path_count']} paths)")
-            
-            channel(f"{'='*60}")
+                    channel(
+                        f"○ {op_label}: No optimization needed ({result['path_count']} paths)"
+                    )
+
+            channel(f"{'=' * 60}")
             if optimized_count > 0:
                 channel("Summary:")
                 channel(f"  Operations optimized: {optimized_count}")
-                channel(f"  Total distance saved: {Length(total_distance_saved, digits=0).length_mm}")
-                channel(f"  Optimized operations: {', '.join([op for op, result in operation_results if result['optimized']])}")
+                channel(
+                    f"  Total distance saved: {Length(total_distance_saved, digits=0).length_mm}"
+                )
+                channel(
+                    f"  Optimized operations: {', '.join([op for op, result in operation_results if result['optimized']])}"
+                )
             else:
                 channel("No operations required optimization")
-            channel(f"{'='*60}\n")
-        
+            channel(f"{'=' * 60}\n")
+
         self.signal("rebuild_tree")
         return "ops", opout
 
-    def optimize_node_travel_under(self, op, channel, debug_channel, leading="", start_position=0j):
+    def optimize_node_travel_under(
+        self, op, channel, debug_channel, leading="", start_position=0j
+    ):
         node_list = []
         child_list = []
-        
+
         # Track optimization results from child operations
         total_optimization_results = {
-            'optimized': False,
-            'original_distance': 0,
-            'optimized_distance': 0,
-            'improvement': 0,
-            'improvement_percent': 0,
-            'path_count': 0
+            "optimized": False,
+            "original_distance": 0,
+            "optimized_distance": 0,
+            "improvement": 0,
+            "improvement_percent": 0,
+            "path_count": 0,
         }
-        
+
         for child in op.children:
             if debug_channel:
                 debug_channel(f"{leading}{display_label(child)}")
             if child.type.startswith("effect"):
                 # We reorder the children of the effect, not the effect itself
-                child_result = optimize_node_travel_under(self, child, channel, debug_channel, leading=f"{leading}  ", start_position=start_position)
+                child_result = optimize_node_travel_under(
+                    self,
+                    child,
+                    channel,
+                    debug_channel,
+                    leading=f"{leading}  ",
+                    start_position=start_position,
+                )
                 # Accumulate results from child operations
-                if child_result['optimized']:
-                    total_optimization_results['optimized'] = True
-                    total_optimization_results['improvement'] += child_result['improvement']
-                    total_optimization_results['path_count'] += child_result['path_count']
+                if child_result["optimized"]:
+                    total_optimization_results["optimized"] = True
+                    total_optimization_results["improvement"] += child_result[
+                        "improvement"
+                    ]
+                    total_optimization_results["path_count"] += child_result[
+                        "path_count"
+                    ]
             elif child.type == "reference":
                 if debug_channel:
                     debug_channel(
@@ -308,12 +365,16 @@ def init_commands(kernel):
             debug_channel(f"{leading}Children:")
             debug_channel(
                 f"{leading}  "
-                + ", ".join([str(display_label(n)) for n in child_list if n is not None])
+                + ", ".join(
+                    [str(display_label(n)) for n in child_list if n is not None]
+                )
             )
         if len(node_list) > 1:
             # We need to make sure we have ids for all nodes (and they should be unique)
             self.validate_ids(node_list)
-            ordered_nodes, optimization_results = optimize_path_order(node_list, channel, debug_channel, start_position)
+            ordered_nodes, optimization_results = optimize_path_order(
+                node_list, channel, debug_channel, start_position
+            )
             if ordered_nodes != node_list:
                 # Clear old children
                 for child in child_list:
@@ -321,24 +382,32 @@ def init_commands(kernel):
                 # Rebuild children in new order
                 for node in ordered_nodes:
                     op.add_reference(node)
-            
+
             # Combine with any results from child operations
-            if optimization_results['optimized']:
-                total_optimization_results['optimized'] = True
-                total_optimization_results['improvement'] += optimization_results['improvement']
-                total_optimization_results['path_count'] += optimization_results['path_count']
-            
+            if optimization_results["optimized"]:
+                total_optimization_results["optimized"] = True
+                total_optimization_results["improvement"] += optimization_results[
+                    "improvement"
+                ]
+                total_optimization_results["path_count"] += optimization_results[
+                    "path_count"
+                ]
+
             return total_optimization_results
         else:
             channel(f"No need to reorder {display_label(op)}")
             return total_optimization_results
 
-    def optimize_path_order(node_list, channel=None, debug_channel=None, start_position=0j):
+    def optimize_path_order(
+        node_list, channel=None, debug_channel=None, start_position=0j
+    ):
         if len(node_list) < 2:
             return node_list
 
         if debug_channel:
-            debug_channel(f"Starting path optimization for {len(node_list)} nodes from position {start_position}")
+            debug_channel(
+                f"Starting path optimization for {len(node_list)} nodes from position {start_position}"
+            )
 
         # Separate nodes with and without as_geometry attribute
         geomstr_nodes = []
@@ -394,16 +463,22 @@ def init_commands(kernel):
                 debug_channel(f"Extracting path info for node {display_label(node)}")
             may_extend = hasattr(node, "set_geometry")
             may_reverse = True  # Assume we can reverse unless proven otherwise
-            if node.type in ("elem image", "elem text", "elem raster"):                
+            if node.type in ("elem image", "elem text", "elem raster"):
                 may_reverse = False
-            info = _extract_path_info(geomstr, may_extend, may_reverse=may_reverse, channel=debug_channel)
+            info = _extract_path_info(
+                geomstr, may_extend, may_reverse=may_reverse, channel=debug_channel
+            )
             path_info.append((node, geomstr, info))
 
         # Calculate original travel distance
-        original_distance = _calculate_total_travel_distance(path_info, debug_channel, start_position)
+        original_distance = _calculate_total_travel_distance(
+            path_info, debug_channel, start_position
+        )
 
         # Optimize the order using greedy nearest neighbor with improvements
-        ordered_path_info = _optimize_path_order_greedy(path_info, debug_channel, start_position)
+        ordered_path_info = _optimize_path_order_greedy(
+            path_info, debug_channel, start_position
+        )
 
         # Calculate optimized travel distance
         optimized_distance = _calculate_total_travel_distance(
@@ -432,12 +507,16 @@ def init_commands(kernel):
 
         # Return both the ordered nodes and optimization results
         optimization_results = {
-            'optimized': ordered_path_info != path_info,
-            'original_distance': original_distance,
-            'optimized_distance': optimized_distance,
-            'improvement': original_distance - optimized_distance,
-            'improvement_percent': (original_distance - optimized_distance) / original_distance * 100 if original_distance > 0 else 0,
-            'path_count': len(geomstr_nodes)
+            "optimized": ordered_path_info != path_info,
+            "original_distance": original_distance,
+            "optimized_distance": optimized_distance,
+            "improvement": original_distance - optimized_distance,
+            "improvement_percent": (original_distance - optimized_distance)
+            / original_distance
+            * 100
+            if original_distance > 0
+            else 0,
+            "path_count": len(geomstr_nodes),
         }
 
         return ordered_nodes, optimization_results
@@ -445,12 +524,12 @@ def init_commands(kernel):
     # ==========
     # WORKFLOW MANAGEMENT COMMANDS
     # ==========
-    
+
     @self.console_option(
-        "tolerance", 
-        type=float, 
+        "tolerance",
+        type=float,
         default=DEFAULT_CONTAINMENT_TOLERANCE,
-        help=_("Geometric tolerance for containment analysis")
+        help=_("Geometric tolerance for containment analysis"),
     )
     @self.console_command(
         "workflow_optimize",
@@ -462,39 +541,43 @@ def init_commands(kernel):
         """Optimize operations using containment-aware workflow scheduling."""
         try:
             from .operation_workflow import create_operation_workflow
-            
+
             operations = data if data is not None else list(self.ops(selected=True))
-            
+
             if not operations:
                 channel(_("No operations selected for workflow optimization"))
                 return
-            
+
             # Convert to workflow format
             workflow_ops = []
             for op in operations:
-                op_type = getattr(op, 'type', 'op cut')
+                op_type = getattr(op, "type", "op cut")
                 workflow_ops.append((op, op_type))
-            
+
             # Create and process workflow
             workflow = create_operation_workflow(workflow_ops, tolerance=tolerance)
             optimized_order = workflow.generate_workflow()
-            
+
             # Get summary statistics
             summary = workflow.get_workflow_summary()
-            
+
             # Report results
             channel(_("Workflow Optimization Results:"))
             channel(f"  Total operations: {summary['total_operations']}")
             channel(f"  Processing groups: {summary['total_groups']}")
-            channel(f"  Containment relationships: {summary['containment_relationships']}")
+            channel(
+                f"  Containment relationships: {summary['containment_relationships']}"
+            )
             channel(f"  Total travel distance: {summary['total_travel_distance']:.2f}")
-            
+
             # Show group details
-            for group in summary['groups']:
-                channel(f"  Group {group['priority']}: {group['operation_count']} operations")
-                
+            for group in summary["groups"]:
+                channel(
+                    f"  Group {group['priority']}: {group['operation_count']} operations"
+                )
+
             return "ops", optimized_order
-            
+
         except ImportError as e:
             channel(f"Workflow optimization not available: {e}")
             return "ops", data
@@ -514,31 +597,37 @@ def init_commands(kernel):
             # Import and run current test files
             import subprocess
             import os
-            
+
             channel(_("Running Operation Workflow Test Suite..."))
-            
+
             # Get the test directory path
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+            project_root = os.path.dirname(
+                os.path.dirname(os.path.dirname(current_dir))
+            )
             test_dir = os.path.join(project_root, "test")
-            
+
             test_files = [
                 "test_kdtree_integration.py",
-                "test_loop_handling.py", 
+                "test_loop_handling.py",
                 "test_scenarios.py",
-                "test_group_ordering.py"
+                "test_group_ordering.py",
             ]
-            
+
             all_passed = True
             for test_file in test_files:
                 test_path = os.path.join(test_dir, test_file)
                 if os.path.exists(test_path):
                     channel(f"Running {test_file}...")
                     try:
-                        result = subprocess.run([
-                            "python", test_path
-                        ], cwd=project_root, capture_output=True, text=True, timeout=120)
-                        
+                        result = subprocess.run(
+                            ["python", test_path],
+                            cwd=project_root,
+                            capture_output=True,
+                            text=True,
+                            timeout=120,
+                        )
+
                         if result.returncode == 0:
                             channel(f"✓ {test_file} passed")
                         else:
@@ -552,22 +641,22 @@ def init_commands(kernel):
                         all_passed = False
                 else:
                     channel(f"⚠ {test_file} not found")
-            
+
             if all_passed:
                 channel(_("✓ All available workflow tests passed successfully!"))
             else:
                 channel(_("✗ Some workflow tests failed. Check output for details."))
-                
+
         except ImportError as e:
             channel(f"Workflow tests not available: {e}")
         except Exception as e:
             channel(f"Error running workflow tests: {e}")
 
     @self.console_argument(
-        "scenario", 
-        type=str, 
+        "scenario",
+        type=str,
         default="nested",
-        help=_("Demo scenario: nested, shared, travel, or performance")
+        help=_("Demo scenario: nested, shared, travel, or performance"),
     )
     @self.console_command(
         "workflow_demo",
@@ -580,40 +669,44 @@ def init_commands(kernel):
         try:
             branch = self.elem_branch
             created_elements = []
-            
+
             if scenario == "nested":
                 # Create nested shapes scenario
                 outer = branch.add(type="elem rect", x=0, y=0, width=200, height=200)
-                middle = branch.add(type="elem rect", x=25, y=25, width=150, height=150) 
+                middle = branch.add(type="elem rect", x=25, y=25, width=150, height=150)
                 inner = branch.add(type="elem ellipse", cx=100, cy=100, rx=30, ry=30)
-                
+
                 # Create operations
-                ops_branch = self.op_branch  
+                ops_branch = self.op_branch
                 cut_op = ops_branch.add(type="op cut", label="Cut Outer")
                 engrave_op = ops_branch.add(type="op engrave", label="Engrave Inner")
-                
+
                 # Add references (simplified for demo)
                 created_elements = [outer, middle, inner]
-                
-                channel(f"Created workflow demo with operations: {cut_op.label}, {engrave_op.label}")
-                
+
+                channel(
+                    f"Created workflow demo with operations: {cut_op.label}, {engrave_op.label}"
+                )
+
             elif scenario == "travel":
                 # Create scattered elements for travel optimization
                 positions = [(50, 50), (150, 200), (250, 100), (100, 150), (200, 50)]
                 for i, (x, y) in enumerate(positions):
                     elem = branch.add(type="elem rect", x=x, y=y, width=20, height=20)
                     created_elements.append(elem)
-                    
-            channel(f"Created {len(created_elements)} elements for '{scenario}' workflow demo")
+
+            channel(
+                f"Created {len(created_elements)} elements for '{scenario}' workflow demo"
+            )
             post.append(self.post_classify(created_elements))
             return "elements", created_elements
-            
+
         except Exception as e:
             channel(f"Error creating workflow demo: {e}")
             return "elements", data or []
 
     @self.console_command(
-        "workflow_scenarios", 
+        "workflow_scenarios",
         help=_("Run realistic workflow test scenarios"),
         input_type=None,
         output_type=None,
@@ -624,30 +717,32 @@ def init_commands(kernel):
             # Import from test directory where workflow_scenarios was moved
             import sys
             import os
-            
+
             # Add test directory to path
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+            project_root = os.path.dirname(
+                os.path.dirname(os.path.dirname(current_dir))
+            )
             test_dir = os.path.join(project_root, "test")
             sys.path.insert(0, test_dir)
-            
+
             from workflow_scenarios import (
                 create_wooden_plaque_scenario,
-                create_multi_part_assembly_scenario, 
+                create_multi_part_assembly_scenario,
                 create_production_batch_scenario,
-                create_complex_artwork_scenario
+                create_complex_artwork_scenario,
             )
             from .operation_workflow import create_operation_workflow
-            
+
             scenarios = [
                 (create_wooden_plaque_scenario, "Wooden Plaque"),
                 (create_multi_part_assembly_scenario, "Multi-part Assembly"),
-                (create_production_batch_scenario, "Production Batch"), 
-                (create_complex_artwork_scenario, "Complex Artwork")
+                (create_production_batch_scenario, "Production Batch"),
+                (create_complex_artwork_scenario, "Complex Artwork"),
             ]
-            
+
             channel(_("Running Realistic Workflow Scenarios..."))
-            
+
             passed = 0
             for scenario_func, name in scenarios:
                 try:
@@ -655,28 +750,30 @@ def init_commands(kernel):
                     workflow = create_operation_workflow(operations)
                     ordered_operations = workflow.generate_workflow()
                     summary = workflow.get_workflow_summary()
-                    
+
                     # Check if reordering occurred
                     original_order = [op[0].label for op in operations]
                     optimized_order = [op.label for op in ordered_operations]
                     reordered = original_order != optimized_order
-                    
-                    channel(f"✓ {name}: {summary['total_operations']} ops, "
-                           f"{summary['total_groups']} groups, "
-                           f"reordered: {'Yes' if reordered else 'No'}")
+
+                    channel(
+                        f"✓ {name}: {summary['total_operations']} ops, "
+                        f"{summary['total_groups']} groups, "
+                        f"reordered: {'Yes' if reordered else 'No'}"
+                    )
                     passed += 1
-                    
+
                 except Exception as e:
                     channel(f"✗ {name}: Failed - {e}")
-            
+
             total = len(scenarios)
             channel(f"Results: {passed}/{total} scenarios passed")
-            
+
             if passed == total:
                 channel("🎉 All workflow scenarios completed successfully!")
             else:
                 channel("⚠️  Some scenarios failed")
-                
+
         except ImportError as e:
             channel(f"Workflow scenarios not available: {e}")
         except Exception as e:
@@ -684,7 +781,11 @@ def init_commands(kernel):
 
 
 def display_label(node):
-    return f"{node.type}.{node.id if node.id is not None else '-'}.{node.label if node.label is not None else '-'}"
+    try:
+        res = f"{node.type}.{node.id if node.id is not None else '-'}.{node.label if node.label is not None else '-'}"
+    except Exception:
+        res = f"Err-{node}"
+    return res
 
 
 def _extract_path_info(geomstr, may_extend, may_reverse=True, channel=None):
@@ -946,7 +1047,9 @@ def _optimize_path_order_greedy(path_info, channel=None, start_position=0j):
     # Start with the optimal path
     ordered_indices = [best_start_idx]
     used = {best_start_idx}
-    orientation_choices = [(best_start_idx, best_start_ori)]  # (path_idx, orientation_idx) for each ordered path
+    orientation_choices = [
+        (best_start_idx, best_start_ori)
+    ]  # (path_idx, orientation_idx) for each ordered path
 
     if channel:
         channel(
@@ -1155,11 +1258,15 @@ def _optimize_path_order_greedy_optimized(
     # Use global threshold for matrix optimization
     if len(path_info) <= MATRIX_OPTIMIZATION_THRESHOLD:
         # Use simplified approach for small numbers of paths
-        return _optimize_path_order_greedy_simple(path_info, channel, max_iterations, start_position)
+        return _optimize_path_order_greedy_simple(
+            path_info, channel, max_iterations, start_position
+        )
 
     # For larger numbers of paths, use the full matrix optimization
     if channel:
-        channel(f"  Using full matrix optimization for {len(path_info)} paths (> {MATRIX_OPTIMIZATION_THRESHOLD})")
+        channel(
+            f"  Using full matrix optimization for {len(path_info)} paths (> {MATRIX_OPTIMIZATION_THRESHOLD})"
+        )
 
     if channel:
         channel(
@@ -1300,11 +1407,15 @@ def _calculate_total_travel_distance(path_info, channel=None, start_position=0j)
 
         if first_start_points:
             # Find the minimum distance from start_position to any start point of the first path
-            min_distance_to_first = min(abs(start_point - start_position) for start_point in first_start_points)
+            min_distance_to_first = min(
+                abs(start_point - start_position) for start_point in first_start_points
+            )
             total_distance += min_distance_to_first
 
             if channel:
-                channel(f"  Distance from start position {start_position} to first path: {min_distance_to_first:.6f}")
+                channel(
+                    f"  Distance from start position {start_position} to first path: {min_distance_to_first:.6f}"
+                )
 
     # Calculate distances between consecutive paths
     for i in range(len(path_info) - 1):
@@ -1316,7 +1427,7 @@ def _calculate_total_travel_distance(path_info, channel=None, start_position=0j)
         total_distance += distance
 
         if channel:
-            channel(f"  Distance from path {i} to path {i+1}: {distance:.6f}")
+            channel(f"  Distance from path {i} to path {i + 1}: {distance:.6f}")
 
     if channel:
         channel(f"  Total travel distance: {total_distance:.6f}")
@@ -1443,7 +1554,9 @@ def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):
     return reshuffled_geomstr
 
 
-def _optimize_path_order_greedy_simple(path_info, channel=None, max_iterations=None, start_position=0j):
+def _optimize_path_order_greedy_simple(
+    path_info, channel=None, max_iterations=None, start_position=0j
+):
     """
     Simple greedy path optimization for small numbers of paths.
     Uses on-demand distance calculation to avoid matrix overhead.
@@ -1570,5 +1683,3 @@ def _optimize_path_order_greedy_simple(path_info, channel=None, max_iterations=N
         channel(f"  Completed simple optimization with {len(ordered_path_info)} paths")
 
     return ordered_path_info
-
-
