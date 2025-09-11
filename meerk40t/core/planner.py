@@ -1114,3 +1114,15 @@ class Planner(Service):
         ordered = sorted(states.items(), key=lambda kv: kv[1], reverse=True)
         info = ", ".join(self.STAGE_DESCRIPTIONS[s] for s, _ in ordered)
         return states, info
+
+    def is_finished(self, plan_name):
+        """
+        Checks if the specified plan has reached the finished stage.
+        Returns True if the plan exists and has the STAGE_PLAN_FINISHED recorded.
+        """
+        if plan_name not in self._states:
+            return False
+        with self._plan_lock:
+            finished = STAGE_PLAN_FINISHED in self._states[plan_name]
+        return finished 
+    

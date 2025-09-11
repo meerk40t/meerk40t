@@ -1363,13 +1363,27 @@ def init_tree(kernel):
     def clear_unused(node, **kwargs):
         to_delete = []
         for op in self.ops():
-            # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0 and not op.type == "blob":
+            if op.type == "blob":
+                continue
+            empty = True
+
+            def contains_reference(c):
+                if c.type == "reference":
+                    return True
+                for cc in c.children:
+                    if contains_reference(cc):
+                        return True
+                return False
+
+            empty = not contains_reference(op)
+
+            if empty:
                 to_delete.append(op)
-        if len(to_delete) > 0:
-            if self.kernel.yesno(
+                
+        todel = len(to_delete)
+        if todel > 0 and self.kernel.yesno(
                 _("Do you really want to delete {num} entries?").format(
-                    num=len(to_delete)
+                    num=todel
                 ),
                 caption=_("Operations"),
             ):
