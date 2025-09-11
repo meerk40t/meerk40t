@@ -34,6 +34,13 @@ from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import UNITS_PER_MM, Length
 
+# Check shapely availability once at module level for performance
+try:
+    import importlib.util
+    _SHAPELY_AVAILABLE = importlib.util.find_spec("shapely") is not None
+except ImportError:
+    _SHAPELY_AVAILABLE = False
+
 """
 The time to compile does outweigh the benefit...
 try:
@@ -1105,20 +1112,88 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
         geom.transform(matrix)
         return geom
 
-    # We still consider a path to be inside another path if it is
-    # within a certain tolerance
+    # Check for geometric equivalence, not just object identity
+    # A shape cannot contain itself, regardless of whether it's the same object or identical geometry
+    if hasattr(inner, "path") and hasattr(outer, "path"):
+        if inner.path is not None and outer.path is not None:
+            # Compare path data for geometric equivalence
+            try:
+                inner_path_data = inner.path.d() if hasattr(inner.path, 'd') else str(inner.path)
+                outer_path_data = outer.path.d() if hasattr(outer.path, 'd') else str(outer.path)
+                if inner_path_data == outer_path_data:
+                    return False  # Same geometry
+            except (AttributeError, TypeError):
+                pass  # Fall through to object identity check
+
+    if outer is inner:  # Fallback to object identity check
+        return False
+
+    # Extract paths from objects
     inner_path = inner
     outer_path = outer
-    if outer == inner:  # This is the same object.
-        return False
     if hasattr(inner, "path") and inner.path is not None:
         inner_path = inner.path
     if hasattr(outer, "path") and outer.path is not None:
         outer_path = outer.path
-    if not hasattr(inner, "bounding_box"):
-        inner.bounding_box = Group.union_bbox([inner_path])
-    if not hasattr(outer, "bounding_box"):
-        outer.bounding_box = Group.union_bbox([outer_path])
+    
+    # Handle Geomstr objects directly
+    if hasattr(inner_path, "segments"):  # It's a Geomstr object
+        if not hasattr(inner, "bounding_box"):
+            # Compute bounding box for Geomstr
+            min_x = min_y = float('inf')
+            max_x = max_y = float('-inf')
+            for segment in inner_path.segments[:inner_path.index]:
+                start, c1, info, c2, end = segment
+                points = [start, end]
+                if hasattr(c1, 'real'):
+                    points.append(c1)
+                if hasattr(c2, 'real'):
+                    points.append(c2)
+                for p in points:
+                    if hasattr(p, 'real') and hasattr(p, 'imag'):
+                        min_x = min(min_x, p.real)
+                        min_y = min(min_y, p.imag)
+                        max_x = max(max_x, p.real)
+                        max_y = max(max_y, p.imag)
+            if min_x != float('inf'):
+                inner.bounding_box = (min_x, min_y, max_x, max_y)
+            else:
+                inner.bounding_box = None
+    elif not hasattr(inner, "bounding_box"):
+        try:
+            inner.bounding_box = Group.union_bbox([inner_path])
+        except TypeError:
+            # Fallback if union_bbox doesn't accept the parameters
+            inner.bounding_box = None
+    
+    if hasattr(outer_path, "segments"):  # It's a Geomstr object
+        if not hasattr(outer, "bounding_box"):
+            # Compute bounding box for Geomstr
+            min_x = min_y = float('inf')
+            max_x = max_y = float('-inf')
+            for segment in outer_path.segments[:outer_path.index]:
+                start, c1, info, c2, end = segment
+                points = [start, end]
+                if hasattr(c1, 'real'):
+                    points.append(c1)
+                if hasattr(c2, 'real'):
+                    points.append(c2)
+                for p in points:
+                    if hasattr(p, 'real') and hasattr(p, 'imag'):
+                        min_x = min(min_x, p.real)
+                        min_y = min(min_y, p.imag)
+                        max_x = max(max_x, p.real)
+                        max_y = max(max_y, p.imag)
+            if min_x != float('inf'):
+                outer.bounding_box = (min_x, min_y, max_x, max_y)
+            else:
+                outer.bounding_box = None
+    elif not hasattr(outer, "bounding_box"):
+        try:
+            outer.bounding_box = Group.union_bbox([outer_path])
+        except TypeError:
+            # Fallback if union_bbox doesn't accept the parameters
+            outer.bounding_box = None
     if outer.bounding_box is None:
         return False
     if inner.bounding_box is None:
@@ -1136,17 +1211,24 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
     #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
     #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
     #     )
-    if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
+    # Apply tolerance to bounding box checks with floating-point safety
+    # Use a small epsilon to handle floating-point precision issues
+    epsilon = 1e-10
+    effective_tolerance = max(tolerance, epsilon)
+
+    # Check if inner bounding box is completely outside outer bounding box
+    # (with tolerance for floating-point precision)
+    if outer.bounding_box[0] > inner.bounding_box[2] + effective_tolerance:
         # outer minx > inner maxx (is not contained)
         return False
-    if outer.bounding_box[1] > inner.bounding_box[3] + tolerance:
+    if outer.bounding_box[1] > inner.bounding_box[3] + effective_tolerance:
         # outer miny > inner maxy (is not contained)
         return False
-    if outer.bounding_box[2] < inner.bounding_box[0] - tolerance:
+    if outer.bounding_box[2] < inner.bounding_box[0] - effective_tolerance:
         # outer maxx < inner minx (is not contained)
         return False
-    if outer.bounding_box[3] < inner.bounding_box[1] - tolerance:
-        # outer maxy < inner maxy (is not contained)
+    if outer.bounding_box[3] < inner.bounding_box[1] - effective_tolerance:
+        # outer maxy < inner miny (is not contained)
         return False
 
     # Inner bbox is entirely inside outer bbox,
@@ -1167,7 +1249,7 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
             vm.add_pointlist(outer_polygon)
             outer.vm = vm
         for gp in inner_polygon:
-            if not outer.vm.is_point_inside(gp[0], gp[1], tolerance=tolerance):
+            if not outer.vm.is_point_inside(gp[0], gp[1], tolerance=effective_tolerance):
                 return False
         return True
 
@@ -1190,165 +1272,38 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
         q = outer_cut.sb.points_in_polygon(points)
         return q.all()
 
-    def raycasting_code_old(outer_polygon, inner_polygon):
-        # The time to compile is outweighing the benefits...
-
-        def ray_tracing(x, y, poly, tolerance):
-            def sq_length(a, b):
-                return a * a + b * b
-
-            tolerance_square = tolerance * tolerance
-            n = len(poly)
-            inside = False
-            xints = 0
-
-            p1x, p1y = poly[0]
-            old_sq_dist = sq_length(p1x - x, p1y - y)
-            for i in range(n + 1):
-                p2x, p2y = poly[i % n]
-                new_sq_dist = sq_length(p2x - x, p2y - y)
-                # We are approximating the edge to an extremely thin ellipse and see
-                # whether our point is on that ellipse
-                reldist = (
-                    old_sq_dist
-                    + new_sq_dist
-                    + 2.0 * np.sqrt(old_sq_dist * new_sq_dist)
-                    - sq_length(p2x - p1x, p2y - p1y)
-                )
-                if reldist < tolerance_square:
-                    return True
-
-                if y > min(p1y, p2y):
-                    if y <= max(p1y, p2y):
-                        if x <= max(p1x, p2x):
-                            if p1y != p2y:
-                                xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                            if p1x == p2x or x <= xints:
-                                inside = not inside
-                p1x, p1y = p2x, p2y
-                old_sq_dist = new_sq_dist
-            return inside
-
-        points = inner_polygon
-        vertices = outer_polygon
-        return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
-
-    """
-    Unfortunately this does not work if one of the objects is concave.
-
-    def sat_code(outer_polygon, inner_polygon):
-        # https://en.wikipedia.org/wiki/Hyperplane_separation_theorem
-
-        # Separating Axis Theorem (SAT) for Polygon Containment
-
-        # The Separating Axis Theorem (SAT) is a powerful technique for collision detection
-        # between convex polygons. It can also be adapted to determine polygon containment.
-
-        # How SAT Works:
-
-        # Generate Axes: For each edge of the outer polygon, create a perpendicular axis.
-        # Project Polygons: Project both the inner and outer polygons onto each axis.
-        # Check Overlap: If the projections of the inner polygon are completely contained
-        # within the projections of the outer polygon on all axes,
-        # then the inner polygon is fully contained.
-
-        # Convex Polygons: SAT is most efficient for convex polygons.
-        # For concave polygons, you might need to decompose them into convex sub-polygons.
-        # Computational Cost: SAT can be computationally expensive for large numbers of polygons.
-        # In such cases, spatial indexing can be used to reduce the number of pairwise comparisons.
-        def project_polygon(polygon, axis):
-            # Projects a polygon onto a given axis.
-            min_projection, max_projection = np.dot(polygon, axis).min(), np.dot(polygon, axis).max()
-            return min_projection, max_projection
-
-        def is_polygon_inside_polygon_sat(inner_polygon, outer_polygon):
-            # Determines if one polygon is fully inside another using the Separating Axis Theorem.
-
-            # Args:
-            #     inner_polygon: A 2D array of inner polygon vertices.
-            #     outer_polygon: A 2D array of outer polygon vertices.
-
-            # Returns:
-            #     True if the inner polygon is fully inside the outer polygon, False otherwise.
-
-            for i in range(len(outer_polygon)):
-                # Calculate the axis perpendicular to the current edge
-                edge = outer_polygon[i] - outer_polygon[(i+1) % len(outer_polygon)]
-                axis = np.array([-edge[1], edge[0]])
-
-                # Project both polygons onto the axis
-                min_inner, max_inner = project_polygon(inner_polygon, axis)
-                min_outer, max_outer = project_polygon(outer_polygon, axis)
-
-                # Check if the inner polygon's projection is fully contained within the outer polygon's projection
-                if not (min_inner >= min_outer and max_inner <= max_outer):
-                    return False
-
-            return True
-
-        return is_polygon_inside_polygon_sat(inner_polygon, outer_polygon)
-    """
-
     def raycasting_code_new(outer_polygon, inner_polygon):
-        def precompute_intersections(polygon):
-            slopes = []
-            intercepts = []
-            is_vertical = []
-            for i in range(len(polygon)):
-                p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
-                dx = p2[0] - p1[0]
-                dy = p2[1] - p1[1]
-
-                if dx == 0:
-                    slopes.append(np.nan)  # Use NaN to indicate vertical line
-                    intercepts.append(p1[0])
-                    is_vertical.append(True)
-                else:
-                    slope = dy / dx
-                    intercept = p1[1] - slope * p1[0]
-                    slopes.append(slope)
-                    intercepts.append(intercept)
-                    is_vertical.append(False)
-
-            return np.array(slopes), np.array(intercepts), np.array(is_vertical)
-
-        def point_in_polygon(x, y, slopes, intercepts, is_vertical, polygon):
+        def point_in_polygon(px, py, polygon):
+            """
+            Ray casting algorithm to determine if point (px, py) is inside polygon.
+            Casts a ray to the right and counts edge crossings.
+            """
+            n = len(polygon)
             inside = False
-            for i in range(len(slopes)):
-                slope = slopes[i]
-                intercept = intercepts[i]
-                p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
 
-                if np.isnan(slope):  # Vertical line
-                    if (
-                        x == intercept
-                        and y >= min(p1[1], p2[1])
-                        and y <= max(p1[1], p2[1])
-                    ):
-                        inside = not inside
-                else:
-                    if y > min(p1[1], p2[1]):
-                        if y <= max(p1[1], p2[1]):
-                            if x <= max(p1[0], p2[0]):
-                                if p1[1] != p2[1]:
-                                    xints = (y - intercept) / slope
-                                if p1[0] == p2[0] or x <= xints:
-                                    inside = not inside
+            # Get the last point
+            x1, y1 = polygon[-1]
+
+            for i in range(n):
+                x2, y2 = polygon[i]
+
+                # Check if the ray crosses this edge
+                if ((y1 > py) != (y2 > py)) and (px < x1 + (x2 - x1) * (py - y1) / (y2 - y1 + 1e-10)):
+                    inside = not inside
+
+                # Update last point
+                x1, y1 = x2, y2
 
             return inside
 
         def is_polygon_inside(outer_polygon, inner_polygon):
-            slopes, intercepts, is_vertical = precompute_intersections(outer_polygon)
+            # Check if all points of inner polygon are inside outer polygon
             for point in inner_polygon:
-                if not point_in_polygon(
-                    point[0], point[1], slopes, intercepts, is_vertical, outer_polygon
-                ):
+                if not point_in_polygon(point[0], point[1], outer_polygon):
                     return False
             return True
 
-        return is_polygon_inside(
-            outer_polygon=outer_polygon, inner_polygon=inner_polygon
-        )
+        return is_polygon_inside(outer_polygon, inner_polygon)
 
     def shapely_code(outer_polygon, inner_polygon):
         from shapely.geometry import Polygon
@@ -1360,53 +1315,184 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
         return poly_a.within(poly_b)
 
     @lru_cache(maxsize=128)
-    def get_polygon(path, resolution):
-        geom = Geomstr.svg(path)
-        polygon = np.array(
-            list(
-                (p.real, p.imag)
-                for p in geom.as_equal_interpolated_points(distance=resolution)
+    def get_polygon(path_content_hash, resolution):
+        """
+        Convert path to polygon with robust error handling and content-based caching.
+        """
+        # Reconstruct path from hash for processing
+        try:
+            # Handle different path types - we need to reconstruct the path object
+            # This is a bit complex because we need to store the actual path data
+            # For now, we'll use a simpler approach with string representation
+            if isinstance(path_content_hash, str):
+                path_data = path_content_hash
+            else:
+                # If it's not a string, we can't cache it properly with content
+                # Fall back to processing without caching
+                return get_polygon_uncached(path_content_hash, resolution)
+
+            geom = Geomstr.svg(path_data)
+            polygon = np.array(
+                list(
+                    (p.real, p.imag)
+                    for p in geom.as_equal_interpolated_points(distance=resolution)
+                    if p is not None
+                )
             )
-        )
-        return polygon
+            return polygon
+        except Exception as e:
+            # Fallback: create a simple bounding box polygon
+            print(f"Warning: Failed to convert path to polygon: {e}")
+            if hasattr(path_content_hash, 'bbox'):
+                bbox = path_content_hash.bbox()
+                if bbox:
+                    # Create a simple rectangular polygon from bounding box
+                    return np.array([
+                        [bbox[0], bbox[1]],
+                        [bbox[2], bbox[1]],
+                        [bbox[2], bbox[3]],
+                        [bbox[0], bbox[3]]
+                    ])
+            # Last resort: return empty polygon
+            return np.array([])
 
-    """
-    # Testroutines
-    from time import perf_counter
-    inner_polygon = get_polygon(inner_path.d(), resolution)
-    outer_polygon = get_polygon(outer_path.d(), resolution)
+    def get_polygon_uncached(path, resolution):
+        """
+        Convert path to polygon without caching (fallback for non-hashable paths).
+        """
+        try:
+            # Handle different path types
+            if hasattr(path, 'd'):
+                path_data = path.d()
+                geom = Geomstr.svg(path_data)
+            elif isinstance(path, str):
+                path_data = path
+                geom = Geomstr.svg(path_data)
+            elif hasattr(path, 'segments'):  # Check if it's a Geomstr object
+                # It's already a Geomstr, use it directly
+                geom = path
+            else:
+                # Try to convert to string representation
+                path_data = str(path)
+                geom = Geomstr.svg(path_data)
 
-    t0 = perf_counter()
-    res0 = vm_code(outer, outer_polygon, inner, inner_polygon)
-    t1 = perf_counter()
-    res1 = scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
-    t2 = perf_counter()
-    res2 = raycasting_code_old(outer_polygon, inner_polygon)
-    t3 = perf_counter()
-    # res3 = sat_code(outer, outer_path, inner, inner_path)
-    res3 = raycasting_code_new(outer_polygon, inner_polygon)
-    t4 = perf_counter()
+            polygon = np.array(
+                list(
+                    (p.real, p.imag)
+                    for p in geom.as_equal_interpolated_points(distance=resolution)
+                    if p is not None
+                )
+            )
+            return polygon
+        except Exception as e:
+            # Fallback: create a simple bounding box polygon
+            print(f"Warning: Failed to convert path to polygon: {e}")
+            if hasattr(path, 'bbox'):
+                bbox = path.bbox()
+                if bbox:
+                    # Create a simple rectangular polygon from bounding box
+                    return np.array([
+                        [bbox[0], bbox[1]],
+                        [bbox[2], bbox[1]],
+                        [bbox[2], bbox[3]],
+                        [bbox[0], bbox[3]]
+                    ])
+            elif hasattr(path, 'segments'):  # Geomstr fallback
+                # For Geomstr objects, try to get bounds manually
+                try:
+                    min_x = min_y = float('inf')
+                    max_x = max_y = float('-inf')
+                    for segment in path.segments[:path.index]:
+                        for i in [0, 4]:  # Start and end points of each segment
+                            x, y = segment[i].real, segment[i].imag
+                            min_x = min(min_x, x)
+                            min_y = min(min_y, y)
+                            max_x = max(max_x, x)
+                            max_y = max(max_y, y)
+                    if min_x != float('inf'):
+                        return np.array([
+                            [min_x, min_y],
+                            [max_x, min_y],
+                            [max_x, max_y],
+                            [min_x, max_y]
+                        ])
+                except Exception:
+                    pass
+            # Last resort: return empty polygon
+            return np.array([])
+
+    def get_path_content_hash(path):
+        """
+        Get a hashable representation of the path content for caching.
+        """
+        try:
+            if hasattr(path, 'd'):
+                return path.d()
+            elif hasattr(path, 'segments'):  # Check if it's a Geomstr object
+                # For Geomstr objects, we can't easily hash the content
+                # Return None to force uncached processing
+                return None
+            elif isinstance(path, str):
+                return path
+            else:
+                # For other types, use string representation
+                return str(path)
+        except Exception:
+            # If we can't get a hashable representation, return None
+            return None
+
+    # Execute containment algorithms with comprehensive error handling and fallbacks
+    # Use content-based caching for better performance
+    inner_path_hash = get_path_content_hash(inner_path)
+    outer_path_hash = get_path_content_hash(outer_path)
+
+    if inner_path_hash is not None and outer_path_hash is not None:
+        inner_polygon = get_polygon(inner_path_hash, resolution)
+        outer_polygon = get_polygon(outer_path_hash, resolution)
+    else:
+        # Fall back to uncached version for non-hashable paths
+        inner_polygon = get_polygon_uncached(inner_path, resolution)
+        outer_polygon = get_polygon_uncached(outer_path, resolution)
+
+    # Validate polygon data
+    if len(inner_polygon) == 0 or len(outer_polygon) == 0:
+        print("Warning: Empty polygon data, cannot determine containment")
+        return False
+
+    # Try algorithms in order of preference with error handling
+    algorithms_tried = []
+
+    # Algorithm 1: Shapely (highest performance)
     try:
-        import shapely
-        res4 = shapely_code(outer_polygon, inner_polygon)
-        t5 = perf_counter()
-    except ImportError:
-        res4 = "Shapely missing"
-        t5 = t4
-    print (f"Tolerance: {tolerance}, vm={res0} in {t1 - t0:.3f}s, sb={res1} in {t1 - t0:.3f}s, ray-old={res2} in {t2 - t1:.3f}s, ray-new={res3} in {t3 - t2:.3f}s, shapely={res4} in {t4 - t3:.3f}s")
-    """
-    inner_polygon = get_polygon(inner_path.d(), resolution)
-    outer_polygon = get_polygon(outer_path.d(), resolution)
-    try:
-        import shapely
+        if _SHAPELY_AVAILABLE:
+            from shapely.geometry import Polygon
+            result = shapely_code(outer_polygon, inner_polygon)
+            algorithms_tried.append(f"Shapely: {result}")
+            return result
+        else:
+            algorithms_tried.append("Shapely: not available")
+    except Exception as e:
+        algorithms_tried.append(f"Shapely: failed ({e})")
 
-        return shapely_code(outer_polygon, inner_polygon)
-    except ImportError:
-        return vm_code(outer, outer_polygon, inner, inner_polygon)
-    # return raycasting_code_new(outer_polygon, inner_polygon)
-    # return scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
-    # return vm_code(outer, outer_path, inner, inner_path)
-    return
+    # Algorithm 2: VectorMontonizer (reliable fallback)
+    try:
+        result = vm_code(outer, outer_polygon, inner, inner_polygon)
+        algorithms_tried.append(f"VectorMontonizer: {result}")
+        return result
+    except Exception as e:
+        algorithms_tried.append(f"VectorMontonizer: failed ({e})")
+
+    # Algorithm 3: Ray casting (backup fallback)
+    try:
+        result = raycasting_code_new(outer_polygon, inner_polygon)
+        algorithms_tried.append(f"Raycasting: {result}")
+        return result
+    except Exception as e:
+        algorithms_tried.append(f"Raycasting: failed ({e})")
+
+    # All algorithms failed
+    print(f"Error: All containment algorithms failed. Tried: {', '.join(algorithms_tried)}")
+    raise RuntimeError(f"All containment algorithms failed for {type(inner).__name__} inside {type(outer).__name__}")
 
 
 def reify_matrix(self):

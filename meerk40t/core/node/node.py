@@ -1341,9 +1341,15 @@ class Node:
         parent._children.remove(self)
         self.notify_detached(self)
         node = parent.add(*args, **kwargs, pos=index)
-        self.notify_destroyed()
+        node._references.clear()
         for ref in list(self._references):
-            ref.remove_node()
+            ref.node = node
+            if hasattr(ref, "_item"):
+                ref._item = None
+            node._references.append(ref)
+            # ref.remove_node()
+        self._references.clear()
+        self.notify_destroyed()
         if keep_children:
             for ref in list(self._children):
                 node._children.append(ref)
