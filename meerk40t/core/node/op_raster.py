@@ -14,7 +14,7 @@ from meerk40t.constants import (
 )
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
-from meerk40t.core.elements.element_types import *
+from meerk40t.core.elements.element_types import op_nodes, elem_nodes, elem_ref_nodes
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters

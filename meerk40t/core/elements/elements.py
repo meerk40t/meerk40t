@@ -33,7 +33,7 @@ from meerk40t.kernel import ConsoleFunction, Service, Settings
 from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from . import offset_clpr, offset_mk
-from .element_types import *
+from .element_types import elem_nodes, elem_group_nodes, place_nodes, op_parent_nodes
 
 
 def plugin(kernel, lifecycle=None):
