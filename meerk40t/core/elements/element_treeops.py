@@ -392,28 +392,7 @@ def init_tree(kernel):
         grouping="40_ELEM_GROUPS",
     )
     def ungroup_elements(node, **kwargs):
-        with self.undoscope("Ungroup elements"):
-            to_treat = []
-            for gnode in self.flat(
-                selected=True, cascade=False, types=("group", "file")
-            ):
-                enode = gnode
-                while True:
-                    if enode.parent is None or enode.parent is self.elem_branch:
-                        if enode not in to_treat:
-                            to_treat.append(enode)
-                        break
-                    if enode.parent.selected:
-                        enode = enode.parent
-                    else:
-                        if enode not in to_treat:
-                            to_treat.append(enode)
-                        break
-            with self.node_lock:
-                for gnode in to_treat:
-                    for n in list(gnode.children):
-                        gnode.insert_sibling(n, below=False)
-                    gnode.remove_node()  # Removing group/file node.
+        self("ungroup\n")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -423,46 +402,8 @@ def init_tree(kernel):
         grouping="40_ELEM_GROUPS",
     )
     def simplify_groups(node, **kwargs):
-        def straighten(snode):
-            amount = 0
-            needs_repetition = True
-            while needs_repetition:
-                needs_repetition = False
-                cl = list(snode.children)
-                if len(cl) == 0:
-                    # No Children? Remove
-                    amount = 1
-                    snode.remove_node()
-                elif len(cl) == 1:
-                    gnode = cl[0]
-                    if gnode is not None and gnode.type == "group":
-                        for n in list(gnode.children):
-                            gnode.insert_sibling(n)
-                        gnode.remove_node()  # Removing group/file node.
-                        needs_repetition = True
-                else:
-                    for n in cl:
-                        if n is not None and n.type == "group":
-                            fnd = straighten(n)
-                            amount += fnd
-            return amount
+        self("simplify-group\n")
 
-        with self.undoscope("Simplify group"):
-            with self.node_lock:
-                res = straighten(node)
-        if res > 0:
-            self.signal("rebuild_tree", "elements")
-
-    # @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
-    # @tree_operation(
-    #     _("Elements in scene..."),
-    #     node_type=elem_nodes,
-    #     help="",
-    #     enable=False,
-    #     grouping="50_ELEM_",
-    # )
-    # def element_label(node, **kwargs):
-    #     return
 
     def add_node_and_children(node):
         data = []
@@ -553,36 +494,7 @@ def init_tree(kernel):
         grouping="40_ELEM_GROUPS",
     )
     def group_elements(node, **kwargs):
-        def minimal_parent(data):
-            result = None
-            root = self.elem_branch
-            curr_level = None
-            for node in data:
-                plevel = 0
-                candidate = node.parent
-                while candidate is not None and candidate.parent is not root:
-                    candidate = candidate.parent
-                    plevel += 1
-                if curr_level is None or plevel < curr_level:
-                    curr_level = plevel
-                    result = node.parent
-                if plevel == 0:
-                    # No need to continue
-                    break
-            if result is None:
-                result = root
-            return result
-
-        raw_data = list(self.elems(emphasized=True))
-        data = self.condense_elements(raw_data, expand_at_end=False)
-        if not data:
-            return
-        with self.undoscope("Group elements"):
-            parent_node = minimal_parent(data)
-            with self.node_lock:
-                group_node = parent_node.add(type="group", label="Group", expanded=True)
-                for e in data:
-                    group_node.append_child(e)
+        self("group\n")
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))

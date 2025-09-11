@@ -33,7 +33,7 @@ from meerk40t.kernel import ConsoleFunction, Service, Settings
 from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from . import offset_clpr, offset_mk
-from .element_types import *
+from .element_types import elem_nodes, elem_group_nodes, place_nodes, op_parent_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -68,6 +68,7 @@ def plugin(kernel, lifecycle=None):
             files,
             geometry,
             grid,
+            groups,
             materials,
             notes,
             placements,
@@ -91,6 +92,7 @@ def plugin(kernel, lifecycle=None):
             shapes.plugin,
             geometry.plugin,
             tree_commands.plugin,
+            groups.plugin,
             undo_redo.plugin,
             clipboard.plugin,
             grid.plugin,
@@ -1075,7 +1077,7 @@ class Elemental(Service):
                     # We accept stroke none or fill none as well!
                     has_a_color = True
                     try:
-                        if c is not None and c.argb is not None:
+                        if self._valid_color(c):
                             first_color = c
                     except (AttributeError, ValueError):
                         first_color = None
@@ -1160,101 +1162,73 @@ class Elemental(Service):
         NB: we will set the emphasized_time of the parent element
         to the minimum time of all children
         """
+        if not data:
+            return []
 
-        def remove_children_from_list(list_to_deal, parent_node):
-            for idx, node in enumerate(list_to_deal):
-                if node is None:
+        # Use a set for O(1) lookups
+        parent_map = {}
+
+        # Build map of selected children per parent
+        for node in data:
+            if node.parent and node.parent.type in ("file", "group"):
+                parent_map.setdefault(node.parent, []).append(node)
+
+        condensed_data = []
+
+        for node in data:
+            # If this node is a group/file itself, include it directly
+            if node.type in ("file", "group"):
+                condensed_data.append(node)
+                # Set emphasized_time to minimum of children
+                min_time = None
+                for child in node.children:
+                    if hasattr(child, '_emphasized_time') and child._emphasized_time is not None:
+                        if min_time is None or child._emphasized_time < min_time:
+                            min_time = child._emphasized_time
+                if min_time is not None:
+                    node._emphasized_time = min_time
+                continue
+
+            # Check if all siblings are selected - if so, use parent instead
+            parent = node.parent
+            if parent and parent.type in ("file", "group"):
+                selected_siblings = parent_map.get(parent, [])
+                if len(selected_siblings) == len(parent.children):
+                    # All children selected, use parent instead
+                    if parent not in condensed_data:
+                        condensed_data.append(parent)
+                        # Set emphasized_time to minimum of children
+                        min_time = None
+                        for child in parent.children:
+                            if hasattr(child, '_emphasized_time') and child._emphasized_time is not None:
+                                if min_time is None or child._emphasized_time < min_time:
+                                    min_time = child._emphasized_time
+                        if min_time is not None:
+                            parent._emphasized_time = min_time
+                    # Don't add the individual node when parent is used
                     continue
-                if node.parent is parent_node:
-                    list_to_deal[idx] = None
-                    if len(node.children) > 0:
-                        remove_children_from_list(list_to_deal, node)
-                    t1 = parent_node._emphasized_time
-                    t2 = node._emphasized_time
-                    if t2 is None:
-                        continue
-                    if t1 is None or t2 < t1:
-                        parent_node._emphasized_time = t2
 
-        align_data = list(data)
-        needs_repetition = True
-        while needs_repetition:
-            # Will be set only if we add a parent, as the process needs then to be repeated
-            needs_repetition = False
+            # Either no condensable parent, or not all siblings selected
+            condensed_data.append(node)
 
-            data_to_align = []
-            # We need to iterate through all the elements
-            # to establish if they belong to a group,
-            # if all the elements in this group are in
-            # the dataset too, then we just take the group
-            # as a representative.
-            data_len = len(align_data)
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_condensed = []
+        for node in condensed_data:
+            if node not in seen:
+                seen.add(node)
+                unique_condensed.append(node)
 
-            for idx1, node_1 in enumerate(align_data):
-                if node_1 is None:
-                    # Has been dealt with already
-                    # print ("Eliminated node")
-                    continue
-                # Is this a group? Then we just take this node
-                # and remove all children nodes
-                if node_1.type in ("file", "group"):
-                    # print (f"Group node ({node_1.display_label()}), eliminate children")
-                    remove_children_from_list(align_data, node_1)
-                    # No continue, as we still need to
-                    # assess the parent case
-
-                parent = node_1.parent
-                if parent is None:
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    # print (f"Adding {node_1.type}, no parent")
-                    continue
-                if parent.type not in ("file", "group"):
-                    # That should not happen per se,
-                    # only for root objects which parent
-                    # is elem_branch
-                    # print (f"Adding {node_1.type}, parent was: {parent.type}")
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    continue
-                # How many children are contained?
-                candidates = len(parent.children)
-                identified = 0
-                if candidates > 0:
-                    # We only need to look to elements not yet dealt with,
-                    # but we start with the current index to include
-                    # node_1 in the count
-                    for idx2 in range(idx1, data_len, 1):
-                        node_2 = align_data[idx2]
-                        if node_2 is not None and node_2.parent is parent:
-                            identified += 1
-                if identified == candidates:
-                    # All children of the parent object are contained
-                    # So we add the parent instead...
-                    data_to_align.append(parent)
-                    remove_children_from_list(align_data, parent)
-                    # print (f"Adding parent for {node_1.type}, all children inside")
-                    needs_repetition = True
-
-                else:
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
-            if needs_repetition:
-                # We copy the data and do it again....
-                # print ("Repetition required")
-                align_data = list(data_to_align)
-        # One special case though: if we have selected all
-        # elements within a single group then we still deal
-        # with all children
+        # Handle expand_at_end logic
         if expand_at_end:
-            while len(data_to_align) == 1:
-                node = data_to_align[0]
+            while len(unique_condensed) == 1:
+                node = unique_condensed[0]
                 if node is not None and node.type in ("file", "group"):
-                    data_to_align = list(node.children)
+                    unique_condensed = list(node.children)
                 else:
                     break
-        return data_to_align
+
+        return unique_condensed
 
     def translate_node(self, node, dx, dy):
         if not node.can_move(self.lock_allows_move):
@@ -2794,6 +2768,14 @@ class Elemental(Service):
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
 
+    def _valid_color(self, color):
+        try:
+            if color is not None and color.argb is not None:
+                return True
+        except Exception:
+            pass
+        return False
+
     def post_classify(self, data):
         """
         Provides a post_classification algorithm.
@@ -2851,6 +2833,8 @@ class Elemental(Service):
             candidate_dist = float("inf")
             for cand_op in operations:
                 if cand_op.type != "op raster":
+                    continue
+                if not self._valid_color(cand_op.color) or not self._valid_color(node.fill):
                     continue
                 col_d = Color.distance(cand_op.color, abs(node.fill))
                 if col_d > fuzzydistance:
@@ -2945,10 +2929,9 @@ class Elemental(Service):
                     is_black = False
                     perform_classification = True
                     if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and node.stroke.argb is not None
-                        and node.type != "elem text"
+                        hasattr(node, "stroke") and 
+                        self._valid_color(node.stroke) and
+                        node.type != "elem text"
                     ):
                         if fuzzy:  # No need to distinguish tempfuzzy here
                             is_black = (
@@ -3073,7 +3056,7 @@ class Elemental(Service):
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
-                if node.stroke is None or node.stroke.argb is None:
+                if not self._valid_color(node.stroke):
                     classif_info[0] = True
                 if node.type == "elem text":
                     # even if it has, we are not going to do something with it
@@ -3081,7 +3064,7 @@ class Elemental(Service):
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
-                if node.fill is None or node.fill.argb is None:
+                if not self._valid_color(node.fill):
                     classif_info[1] = True
             else:
                 classif_info[1] = True
@@ -3132,7 +3115,7 @@ class Elemental(Service):
                         break
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
-                if node.stroke is None or node.stroke.argb is None:
+                if not self._valid_color(node.stroke):
                     classif_info[0] = True
                 if node.type == "elem text":
                     # even if it has, we are not going to do something with it
@@ -3140,7 +3123,7 @@ class Elemental(Service):
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
-                if node.fill is None or node.fill.argb is None:
+                if not self._valid_color(node.fill):
                     classif_info[1] = True
             else:
                 classif_info[1] = True
@@ -3197,8 +3180,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     # Let's loop through the default operations
                     # First the whisperer case
@@ -3226,8 +3208,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     fuzzy_param = (False, True) if fuzzy else (False,)
                     was_classified = False
@@ -3237,7 +3218,7 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
+                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)) and self._valid_color(op_candidate.color):
                                 if tempfuzzy:
                                     classified = (
                                         Color.distance(
@@ -3266,8 +3247,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     if fuzzy:
                         is_cut = (
@@ -3296,8 +3276,7 @@ class Elemental(Service):
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                    and self._valid_color(node.fill)
                 ):
                     if node.fill.red == node.fill.green == node.fill.blue:
                         is_black = True
@@ -3317,6 +3296,8 @@ class Elemental(Service):
                         if debug:
                             debug(f"Pass 3-fill (fuzzy={tempfuzzy}): check {node.type}")
                         for op_candidate in self.default_operations:
+                            if not self._valid_color(op_candidate.color):
+                                continue
                             classified = False
                             if isinstance(op_candidate, RasterOpNode):
                                 if tempfuzzy:
@@ -3344,8 +3325,7 @@ class Elemental(Service):
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                    and self._valid_color(node.fill)
                 ):
                     default_color = (
                         abs(node.fill) if self.classify_fill else Color("black")

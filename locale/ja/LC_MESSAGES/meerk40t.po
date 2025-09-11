@@ -23097,3 +23097,159 @@ msgstr ""
 #: meerk40t/kernel/kernel.py:3203
 msgid "    {index}.{subindex}: linked {name}:{hash:X}"
 msgstr "    {index}.{subindex}: リンク済み {name}:{hash:X}"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "原点"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "相対"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "列"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "行"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "X距離"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Y距離"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "未回転"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "繰り返し"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "デルタ角度"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "開始角度"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "終了角度"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "コピー"
+
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "これはテスト文字列です。"
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"改行を含む別のテスト文字列。\n"
+"見えますか？"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "タブを含む文字列。\t見えますか？"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "{curly} 波括弧を含む文字列。"
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "データ {count} をスプール中"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "末尾操作を追加中"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "データ {count} をコピー中"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "グループ化された要素をルートに再割り当て"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "グループのラベル"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "選択された要素をグループ化"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "グループ化するものがありません。"
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "{count} 個の要素をグループ化しました。"
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "選択された要素のグループ化を解除"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "グループまたはファイルが選択されていません。"
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr "{count} 個のグループを簡素化しました。{removed} 個の不要なグループレベルを削除しました。"
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "原点へ移動"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "0,0へ移動"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "ビープ音"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "冷却オン"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "冷却オフ"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "休止状態オフ"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "休止状態オン"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "グループ化 + ファイル"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "操作 (特殊)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "要素 (効果)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "配置"

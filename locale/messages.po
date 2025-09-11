@@ -78,7 +78,7 @@ msgstr ""
 msgid "Flip the X axis for the device"
 msgstr ""
 
-#: meerk40t/balormk/device.py:176 meerk40t/balormk/device.py:188 meerk40t/balormk/device.py:200 meerk40t/balormk/device.py:220 meerk40t/balormk/device.py:234 meerk40t/balormk/device.py:250 meerk40t/balormk/device.py:262 meerk40t/balormk/device.py:325 meerk40t/balormk/device.py:338 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:810 meerk40t/balormk/device.py:823 meerk40t/balormk/device.py:836 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77 meerk40t/gui/functionwrapper.py:82 meerk40t/gui/wxutils.py:246 meerk40t/gui/propertypanels/imageproperty.py:1249 meerk40t/newly/device.py:187 meerk40t/newly/device.py:201 meerk40t/newly/device.py:222 meerk40t/newly/device.py:233 meerk40t/newly/device.py:245 meerk40t/newly/device.py:257 meerk40t/newly/device.py:268 meerk40t/newly/device.py:348 meerk40t/newly/device.py:360 meerk40t/newly/device.py:373 meerk40t/newly/device.py:386 meerk40t/newly/device.py:401 meerk40t/newly/device.py:414 meerk40t/newly/device.py:426 meerk40t/newly/device.py:444 meerk40t/newly/device.py:456 meerk40t/newly/device.py:468 meerk40t/newly/device.py:482 meerk40t/ruida/device.py:215 meerk40t/tools/kerftest.py:125
+#: meerk40t/balormk/device.py:176 meerk40t/balormk/device.py:188 meerk40t/balormk/device.py:200 meerk40t/balormk/device.py:220 meerk40t/balormk/device.py:234 meerk40t/balormk/device.py:250 meerk40t/balormk/device.py:262 meerk40t/balormk/device.py:325 meerk40t/balormk/device.py:338 meerk40t/balormk/device.py:797 meerk40t/balormk/device.py:810 meerk40t/balormk/device.py:823 meerk40t/balormk/device.py:836 meerk40t/balormk/gui/balorconfig.py:65 meerk40t/balormk/gui/balorconfig.py:77 meerk40t/gui/functionwrapper.py:91 meerk40t/gui/wxutils.py:246 meerk40t/gui/propertypanels/imageproperty.py:1249 meerk40t/newly/device.py:187 meerk40t/newly/device.py:201 meerk40t/newly/device.py:222 meerk40t/newly/device.py:233 meerk40t/newly/device.py:245 meerk40t/newly/device.py:257 meerk40t/newly/device.py:268 meerk40t/newly/device.py:348 meerk40t/newly/device.py:360 meerk40t/newly/device.py:373 meerk40t/newly/device.py:386 meerk40t/newly/device.py:401 meerk40t/newly/device.py:414 meerk40t/newly/device.py:426 meerk40t/newly/device.py:444 meerk40t/newly/device.py:456 meerk40t/newly/device.py:468 meerk40t/newly/device.py:482 meerk40t/ruida/device.py:215 meerk40t/tools/kerftest.py:125
 msgid "Parameters"
 msgstr ""
 
@@ -2658,7 +2658,7 @@ msgstr ""
 msgid "<gotoop> <x> <y> - Create new utility operation"
 msgstr ""
 
-#: meerk40t/core/elements/branches.py:870 meerk40t/core/elements/geometry.py:297 meerk40t/core/elements/geometry.py:390 meerk40t/core/elements/grid.py:313 meerk40t/core/elements/grid.py:443 meerk40t/core/elements/placements.py:112 meerk40t/core/elements/render.py:449 meerk40t/core/elements/shapes.py:107 meerk40t/core/elements/shapes.py:156 meerk40t/core/elements/shapes.py:224 meerk40t/core/elements/shapes.py:309 meerk40t/core/elements/shapes.py:356 meerk40t/core/elements/shapes.py:456 meerk40t/core/elements/shapes.py:552 meerk40t/core/elements/shapes.py:557 meerk40t/core/elements/shapes.py:2040 meerk40t/core/elements/shapes.py:2138 meerk40t/core/elements/shapes.py:2226 meerk40t/core/elements/shapes.py:2414 meerk40t/core/elements/shapes.py:2476 meerk40t/core/elements/shapes.py:2551 meerk40t/core/elements/shapes.py:2647
+#: meerk40t/core/elements/branches.py:870 meerk40t/core/elements/geometry.py:297 meerk40t/core/elements/geometry.py:390 meerk40t/core/elements/grid.py:314 meerk40t/core/elements/grid.py:445 meerk40t/core/elements/placements.py:112 meerk40t/core/elements/render.py:449 meerk40t/core/elements/shapes.py:107 meerk40t/core/elements/shapes.py:156 meerk40t/core/elements/shapes.py:224 meerk40t/core/elements/shapes.py:309 meerk40t/core/elements/shapes.py:356 meerk40t/core/elements/shapes.py:456 meerk40t/core/elements/shapes.py:552 meerk40t/core/elements/shapes.py:557 meerk40t/core/elements/shapes.py:2040 meerk40t/core/elements/shapes.py:2138 meerk40t/core/elements/shapes.py:2226 meerk40t/core/elements/shapes.py:2414 meerk40t/core/elements/shapes.py:2476 meerk40t/core/elements/shapes.py:2551 meerk40t/core/elements/shapes.py:2647
 msgid "Invalid length value."
 msgstr ""
 
@@ -2958,7 +2958,7 @@ msgstr ""
 msgid "Invalid tolerance distance provided"
 msgstr ""
 
-#: meerk40t/core/elements/branches.py:1840 meerk40t/core/elements/grid.py:184 meerk40t/core/elements/grid.py:300 meerk40t/core/elements/grid.py:431
+#: meerk40t/core/elements/branches.py:1840 meerk40t/core/elements/grid.py:184 meerk40t/core/elements/grid.py:301 meerk40t/core/elements/grid.py:433
 msgid "No item selected."
 msgstr ""
 
@@ -4106,7 +4106,7 @@ msgstr ""
 msgid "Classification for unassigned"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2168 meerk40t/gui/wxmtree.py:214
+#: meerk40t/core/elements/element_treeops.py:2168 meerk40t/gui/wxmtree.py:212
 msgid "Classify unassigned elements and create operations if necessary"
 msgstr ""
 
@@ -4122,7 +4122,7 @@ msgstr ""
 msgid "Reclassify all elements and use only existing operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2217 meerk40t/gui/wxmtree.py:217
+#: meerk40t/core/elements/element_treeops.py:2217 meerk40t/gui/wxmtree.py:215
 msgid "Classify unassigned elements and use only existing operations"
 msgstr ""
 
@@ -4774,7 +4774,7 @@ msgstr ""
 msgid "Scale Element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4455 meerk40t/core/elements/shapes.py:2144 meerk40t/gui/alignment.py:476 meerk40t/gui/statusbarwidgets/selectionwidget.py:26
+#: meerk40t/core/elements/element_treeops.py:4455 meerk40t/core/elements/grid.py:382 meerk40t/core/elements/shapes.py:2144 meerk40t/gui/alignment.py:476 meerk40t/gui/statusbarwidgets/selectionwidget.py:26
 msgid "Rotate"
 msgstr ""
 
@@ -5254,6 +5254,30 @@ msgstr ""
 msgid "Constructive Area Geometry, difference"
 msgstr ""
 
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr ""
+
 #: meerk40t/core/elements/grid.py:129 meerk40t/extra/imageactions.py:167
 msgid "Number of columns"
 msgstr ""
@@ -5287,58 +5311,82 @@ msgid "Create grid"
 msgstr ""
 
 #: meerk40t/core/elements/grid.py:251
-msgid "Number of repeats"
+msgid "Unrotated"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:252 meerk40t/core/elements/grid.py:382 meerk40t/gui/propertypanels/rasterwizardpanels.py:677
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:253 meerk40t/core/elements/grid.py:382 meerk40t/core/elements/grid.py:384 meerk40t/gui/propertypanels/rasterwizardpanels.py:677
 msgid "Radius"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:254 meerk40t/core/elements/grid.py:384 meerk40t/extra/param_functions.py:934
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:252
+msgid "Number of repeats"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:255 meerk40t/core/elements/grid.py:386 meerk40t/extra/param_functions.py:934
 msgid "Start-Angle"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:257 meerk40t/core/elements/grid.py:387
+#: meerk40t/core/elements/grid.py:258 meerk40t/core/elements/grid.py:389
 msgid "End-Angle"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:264
+#: meerk40t/core/elements/grid.py:265
 msgid "Leave copies unrotated?"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:270
+#: meerk40t/core/elements/grid.py:271
 msgid "Delta-Angle (if omitted will take (end-start)/repeats )"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:274
+#: meerk40t/core/elements/grid.py:275
 msgid "radial <repeats> <radius> <startangle> <endangle> <rotate>"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:308
+#: meerk40t/core/elements/grid.py:309
 msgid "repeats should be greater or equal to 2"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:343
+#: meerk40t/core/elements/grid.py:344
 msgid "Create radial"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:381
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr ""
+
+#: meerk40t/core/elements/grid.py:383
 msgid "Number of copies"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:394
+#: meerk40t/core/elements/grid.py:396
 msgid "Rotate copies towards center?"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:401
+#: meerk40t/core/elements/grid.py:403
 msgid "Delta-Angle (if omitted will take (end-start)/copies )"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:405
+#: meerk40t/core/elements/grid.py:407
 msgid "circ_copy <copies> <radius> <startangle> <endangle> <rotate>"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:471
+#: meerk40t/core/elements/grid.py:473
 msgid "Create circular copy"
 msgstr ""
 
@@ -9214,11 +9262,11 @@ msgstr ""
 msgid "Execute a laser job"
 msgstr ""
 
-#: meerk40t/gui/functionwrapper.py:74 meerk40t/gui/helper.py:27 meerk40t/gui/helper.py:34 meerk40t/gui/wxmmain.py:4900 meerk40t/gui/propertypanels/operationpropertymain.py:1802
+#: meerk40t/gui/functionwrapper.py:83 meerk40t/gui/helper.py:27 meerk40t/gui/helper.py:34 meerk40t/gui/wxmmain.py:4900 meerk40t/gui/propertypanels/operationpropertymain.py:1802
 msgid "Help"
 msgstr ""
 
-#: meerk40t/gui/functionwrapper.py:85 meerk40t/gui/magnetoptions.py:501 meerk40t/gui/propertypanels/imageproperty.py:1489 meerk40t/tools/livinghinges.py:326 barcodes/gui.py:73 build/lib/barcodes/gui.py:73
+#: meerk40t/gui/functionwrapper.py:94 meerk40t/gui/magnetoptions.py:501 meerk40t/gui/propertypanels/imageproperty.py:1489 meerk40t/tools/livinghinges.py:326 barcodes/gui.py:73 build/lib/barcodes/gui.py:73
 msgid "Options"
 msgstr ""
 
@@ -14822,7 +14870,7 @@ msgstr ""
 msgid "Zoom to &Selected"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:110 meerk40t/gui/wxmtree.py:549
+#: meerk40t/gui/wxmtree.py:110 meerk40t/gui/wxmtree.py:555
 msgid "Tree"
 msgstr ""
 
@@ -14834,83 +14882,83 @@ msgstr ""
 msgid "Burn-Operation"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:220
+#: meerk40t/gui/wxmtree.py:218
 msgid "Reactivate disabled operations that prevent elements from being burnt"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:1133
+#: meerk40t/gui/wxmtree.py:1139
 msgid "You have unassigned elements, that won't be burned"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:1136
+#: meerk40t/gui/wxmtree.py:1143
 msgid "You have elements in disabled operations, that won't be burned"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2105
+#: meerk40t/gui/wxmtree.py:2117
 msgid "This is binary data imported or generated\nthat will be sent directly to the laser.\nDouble-click to view."
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2111
+#: meerk40t/gui/wxmtree.py:2123
 msgid "This will engrave/cut the elements contained,\nfollowing the vector-paths of the data.\n(Usually done last)"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2116
+#: meerk40t/gui/wxmtree.py:2128
 msgid "This will engrave the elements contained,\nfollowing the vector-paths of the data."
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2121
+#: meerk40t/gui/wxmtree.py:2133
 msgid "This engraves already created images pixel by pixel,\napplying the settings to the individual pictures"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2127
+#: meerk40t/gui/wxmtree.py:2139
 msgid "This will render all contained elements\ninto an intermediary image which then will be\nengraved pixel by pixel."
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2131
+#: meerk40t/gui/wxmtree.py:2143
 msgid "This will engrave a single point for a given period of time"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2135
+#: meerk40t/gui/wxmtree.py:2147
 msgid "This allows to execute an arbitrary command during the engrave process"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2139
+#: meerk40t/gui/wxmtree.py:2151
 msgid "This will send the laser back to its logical start position"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2143
+#: meerk40t/gui/wxmtree.py:2155
 msgid "This will send the laser back to its physical start position"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2147
+#: meerk40t/gui/wxmtree.py:2159
 msgid "This will wait for active IO bits on the laser (mainly fibre laser for now)"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2151
+#: meerk40t/gui/wxmtree.py:2163
 msgid "This will set some IO bits on the laser (mainly fibre laser for now)"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2155
+#: meerk40t/gui/wxmtree.py:2167
 msgid "This will pause the engrave process for a given period"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2160
+#: meerk40t/gui/wxmtree.py:2172
 msgid "The elements under this section will not be engraved,\nthey can serve as a template or registration marks."
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2206
+#: meerk40t/gui/wxmtree.py:2218
 msgid "This is a placeholder for the 'place current' operation"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2211
+#: meerk40t/gui/wxmtree.py:2223
 msgid "This will define an origin from where all the elements in this scene\nwill be plotted. You can have multiple such job start points"
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2217
+#: meerk40t/gui/wxmtree.py:2229
 msgid "This is a special node that will consume any other closed path\nyou drag onto it and will fill the shape with a line pattern.\nTo activate / deactivate this effect please use the context menu."
 msgstr ""
 
-#: meerk40t/gui/wxmtree.py:2258
+#: meerk40t/gui/wxmtree.py:2270
 msgid "HIDDEN: "
 msgstr ""
 
@@ -18506,31 +18554,31 @@ msgstr ""
 msgid "No such directory."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:265 meerk40t/moshi/controller.py:159
+#: meerk40t/lihuiyu/controller.py:339
 msgid "Connection failed."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:274 meerk40t/moshi/controller.py:168
+#: meerk40t/lihuiyu/controller.py:348 meerk40t/moshi/controller.py:312
 msgid "No valid connection matched any given criteria."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:285 meerk40t/moshi/controller.py:179
+#: meerk40t/lihuiyu/controller.py:359 meerk40t/moshi/controller.py:332
 msgid "K40 devices were found but they were rejected due to usb bus."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:292 meerk40t/moshi/controller.py:186
+#: meerk40t/lihuiyu/controller.py:366 meerk40t/moshi/controller.py:339
 msgid "K40 devices were found but they were rejected due to usb address."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:300 meerk40t/moshi/controller.py:194
+#: meerk40t/lihuiyu/controller.py:374 meerk40t/moshi/controller.py:347
 msgid "K40 devices were found but they were rejected due to chip version."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:305
+#: meerk40t/lihuiyu/controller.py:379
 msgid "Requires serial number confirmation."
 msgstr ""
 
-#: meerk40t/lihuiyu/controller.py:314
+#: meerk40t/lihuiyu/controller.py:388
 msgid "Serial number confirmed."
 msgstr ""
 

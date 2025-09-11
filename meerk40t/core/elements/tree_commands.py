@@ -4,7 +4,7 @@ This is a giant list of console commands that deal with and often implement the 
 
 from meerk40t.kernel import CommandSyntaxError
 
-from .element_types import *
+from .element_types import op_nodes, elem_group_nodes, elem_nodes
 
 
 def plugin(kernel, lifecycle=None):

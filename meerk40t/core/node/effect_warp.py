@@ -1,13 +1,13 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter
+from meerk40t.core.node.mixins import FunctionalParameter, Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
 
-class WarpEffectNode(Node, FunctionalParameter):
+class WarpEffectNode(Node, FunctionalParameter, Suppressable):
     """
     Effect node performing a warp. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -274,7 +274,8 @@ class WarpEffectNode(Node, FunctionalParameter):
                     subs = right_types(e)
                     res.extend(subs)
                 elif e.type.startswith("elem"):
-                    if hasattr(e, "hidden") and e.hidden:
+                    # Is this node hidden? If we autohide, then that's still relevant, if not ignore.
+                    if hasattr(e, "hidden") and e.hidden and not self.autohide:
                         continue
                     res.append(e)
             return res

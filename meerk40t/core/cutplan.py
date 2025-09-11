@@ -129,12 +129,19 @@ class CutPlan:
         Final is called during at the time of spool. Just before the laserjob is created.
         @return:
         """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
         # Using copy of commands, so commands can add ops.
+        c_count = 0
         while self.spool_commands:
             # Executing command can add a command, complete them all.
             commands = self.spool_commands[:]
             self.spool_commands.clear()
             for command in commands:
+                c_count += 1
+                if busy.shown:
+                    busy.change(msg=_("Spooling data {count}").format(count=c_count), keep=2)
+                    busy.show()
                 command()
 
     def preprocess(self):

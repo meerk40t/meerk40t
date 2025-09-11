@@ -24291,3 +24291,160 @@ msgid ""
 msgstr ""
 "plan<?> copy / copy-selected : copier les données de toutes / seulement des "
 "opérations sélectionnées"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "Origine"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "Relatif"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "Colonnes"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "Lignes"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "Distance X"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Distance Y"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "Non roté"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "Répétitions"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "Angle delta"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "Angle de départ"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "Angle de fin"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "Copies"
+
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "Ceci est une chaîne de test."
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"Une autre chaîne de test avec un saut de ligne.\n"
+"Voyez-vous ?"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "Chaîne avec une tabulation.\tVoyez-vous ?"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "Chaîne avec des accolades {curly}."
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "Mise en file d'attente des données {count}"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "Ajout d'opérations de fin"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "Copie des données {count}"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "Réassigner les éléments groupés à la racine"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "Étiquette du groupe"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "grouper les éléments sélectionnés"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "Rien à grouper."
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "{count} éléments groupés."
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "dégrouper les éléments sélectionnés"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "Aucun groupe ou fichier sélectionné."
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr ""
+"{count} groupes simplifiés. {removed} niveaux de groupe inutiles supprimés."
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "Aller à l'origine"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "Aller à 0,0"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "Bip"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "Refroidissement activé"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "Refroidissement désactivé"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "Hibernation désactivée"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "Hibernation activée"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "Groupement + Fichiers"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "Opérations (Spécial)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "Éléments (Effets)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "Emplacements"

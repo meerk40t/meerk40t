@@ -960,39 +960,58 @@ class Scene(Module, Job):
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
 
     # --- Centralised snap_point calculation
-    def _calculate_snap_points(self, my_x, my_y, length):
+    def _calculate_snap_points_optimized(self, my_x, my_y, length_sq):
         """
-        Recalculate the snap element attraction points
+        Recalculate the snap element attraction points using squared distance for better performance.
 
-        @param length:
+        @param length_sq: squared distance threshold
         @return:
         """
         for pts in self.snap_attraction_points:
-            if self.pane.modif_active:
-                if pts[3]:
-                    # No snap points for emphasized objects.
-                    continue
-            if abs(pts[0] - my_x) <= length and abs(pts[1] - my_y) <= length:
+            if self.pane.modif_active and pts[3]:
+                # No snap points for emphasized objects during modification
+                continue
+
+            # Use squared distance for better performance (avoid sqrt)
+            dx = pts[0] - my_x
+            dy = pts[1] - my_y
+            dist_sq = dx * dx + dy * dy
+
+            if dist_sq <= length_sq:
                 self.snap_display_points.append([pts[0], pts[1], pts[2]])
 
-    def _calculate_grid_points(self, my_x, my_y, length):
+    def _calculate_grid_points_optimized(self, my_x, my_y, length_sq):
         """
-        Recalculate the local grid points
+        Recalculate the local grid points using squared distance for better performance.
 
-        @param length:
+        @param length_sq: squared distance threshold
         @return:
         """
         for pts in self.pane.grid.grid_points:
-            if abs(pts[0] - my_x) <= length and abs(pts[1] - my_y) <= length:
+            # Use squared distance for better performance (avoid sqrt)
+            dx = pts[0] - my_x
+            dy = pts[1] - my_y
+            dist_sq = dx * dx + dy * dy
+
+            if dist_sq <= length_sq:
                 self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
 
     def _calculate_attraction_points(self):
         """
-        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
-        attraction points (center, corners, sides)
+        Looks at all elements and identifies all attraction points with optimized processing.
         """
         self.context.elements.set_start_time("attr_calc_points")
+
+        # Check if we need to recalculate (cache invalidation)
+        current_elements_hash = self._get_elements_hash()
+        if hasattr(self, '_last_elements_hash') and self._last_elements_hash == current_elements_hash:
+            # Elements haven't changed, reuse cached points
+            self.context.elements.set_end_time("attr_calc_points", message="cached")
+            return
+
         self.snap_attraction_points = []  # Clear all
+
+        # Pre-build translation table for better performance
         translation_table = {
             "bounds top_left": TYPE_BOUND,
             "bounds top_right": TYPE_BOUND,
@@ -1008,92 +1027,159 @@ class Scene(Module, Job):
             "midpoint": TYPE_MIDDLE_SMALL,
         }
 
+        # Batch process elements for better performance
+        points_list = []
         for e in self.context.elements.flat(types=elem_nodes):
-            emph = e.emphasized
             if hasattr(e, "points"):
+                emph = e.emphasized
+                # Extend the list instead of appending one by one for better performance
                 for pt in e.points:
                     try:
-                        pt_type = translation_table[pt[2]]
-                    except:
-                        print(f"Unknown type: {pt[2]}")
-                        pt_type = TYPE_POINT
-                    self.snap_attraction_points.append([pt[0], pt[1], pt_type, emph])
+                        if len(pt) >= 3:
+                            pt_type = translation_table.get(pt[2], TYPE_POINT)
+                            points_list.append([pt[0], pt[1], pt_type, emph])
+                    except Exception:
+                        pass  # Skip invalid points
+            elif hasattr(e, "as_geometry"):
+                try:
+                    geom = e.as_geometry()
+                    points_list.extend([[pt.real, pt.imag, TYPE_POINT, e.emphasized] for pt in geom.as_points()])
+                except Exception:
+                    pass  # Skip elements with broken as_geometry
+
+        self.snap_attraction_points = points_list
+        self._last_elements_hash = current_elements_hash
 
         self.context.elements.set_end_time(
             "attr_calc_points",
             message=f"points added={len(self.snap_attraction_points)}",
         )
 
+    def _get_elements_hash(self):
+        """
+        Generate a simple hash of the elements to detect changes.
+        """
+        # Simple hash based on element count
+        try:
+            element_count = sum(1 for _ in self.context.elements.flat(types=elem_nodes))
+            return hash(element_count)
+        except Exception:
+            # Fallback if hashing fails
+            return None
+
     def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
         """
-        Recalculate the points that need to be displayed for the user.
+        Recalculate the points that need to be displayed for the user with optimized calculations.
 
         @return:
         """
         self.snap_display_points = []
         if my_x is None:
             return
-        if self.snap_attraction_points is None and snap_points:
+
+        # Early exit if nothing to snap to
+        if not snap_points and not snap_grid:
+            return
+
+        # Calculate attraction points only if needed and not already cached
+        if snap_points and self.snap_attraction_points is None:
             self._calculate_attraction_points()
 
+        # Cache matrix and scale calculations
         matrix = self.widget_root.scene_widget.matrix
-        length = self.context.show_attract_len / get_matrix_scale(matrix)
+        scale = get_matrix_scale(matrix)
+        if scale == 0:
+            return
 
+        # Pre-calculate squared distances for better performance
+        show_length = self.context.show_attract_len / scale
+        show_length_sq = show_length * show_length
+
+        # Calculate snap points with optimized distance checking
         if snap_points and self.snap_attraction_points:
-            self._calculate_snap_points(my_x, my_y, length)
+            self._calculate_snap_points_optimized(my_x, my_y, show_length_sq)
 
+        # Calculate grid points with optimized distance checking
         if snap_grid and self.pane.grid.grid_points:
-            self._calculate_grid_points(my_x, my_y, length)
+            self._calculate_grid_points_optimized(my_x, my_y, show_length_sq)
 
     def calculate_snap(self, my_x, my_y):
         """
-        Calculates the nearest_snap
+        Calculates the nearest_snap with optimized distance calculations.
         """
-        # Loop through display points, find closest.
         res_x = None
         res_y = None
-        if self.snap_display_points and my_x is not None:
-            # Has to be lower than the action threshold
-            min_delta = float("inf")
-            new_x = None
-            new_y = None
-            for pt in self.snap_display_points:
-                dx = pt[0] - my_x
-                dy = pt[1] - my_y
-                delta = dx * dx + dy * dy
-                if delta < min_delta:
-                    new_x = pt[0]
-                    new_y = pt[1]
-                    min_delta = delta
-            if new_x is not None:
-                matrix = self.widget_root.scene_widget.matrix
-                pixel = self.context.action_attract_len / get_matrix_scale(matrix)
-                if abs(new_x - my_x) <= pixel and abs(new_y - my_y) <= pixel:
-                    # If the distance is small enough: snap.
-                    res_x = new_x
-                    res_y = new_y
+
+        if not self.snap_display_points or my_x is None:
+            return res_x, res_y
+
+        # Cache matrix scale calculation
+        matrix = self.widget_root.scene_widget.matrix
+        scale = get_matrix_scale(matrix)
+        if scale == 0:
+            return res_x, res_y
+
+        # Pre-calculate action threshold
+        action_threshold_sq = (self.context.action_attract_len / scale) ** 2
+
+        # Find closest point using squared distance
+        min_delta_sq = float("inf")
+        closest_x = None
+        closest_y = None
+
+        for pt in self.snap_display_points:
+            dx = pt[0] - my_x
+            dy = pt[1] - my_y
+            delta_sq = dx * dx + dy * dy
+
+            if delta_sq < min_delta_sq:
+                closest_x = pt[0]
+                closest_y = pt[1]
+                min_delta_sq = delta_sq
+
+        # Check if closest point is within action threshold
+        if closest_x is not None and min_delta_sq <= action_threshold_sq:
+            res_x = closest_x
+            res_y = closest_y
+
         return res_x, res_y
 
     def get_snap_point(self, sx, sy, modifiers):
+        """
+        Get the snap point for given coordinates with optimized logic.
+        """
         resx = sx
         resy = sy
+
+        # Determine snap settings based on modifiers
         sgrid = self.context.snap_grid
         spoints = self.context.snap_points
+
         if "shift" in modifiers:
             sgrid = not sgrid
             spoints = False
-        if sgrid or spoints:
-            if "shift" in modifiers:
-                # Need to recalculate
-                self.reset_snap_attraction()
-            self.calculate_display_points(sx, sy, spoints, sgrid)
-            nx, ny = self.calculate_snap(sx, sy)
-            if nx is not None:
-                resx = nx
-                resy = ny
-            if "shift" in modifiers:
-                # Need to recalculate again
-                self.reset_snap_attraction()
+
+        # Early exit if no snapping needed
+        if not sgrid and not spoints:
+            return resx, resy
+
+        # Reset attraction points if shift is pressed (inverting snap behavior)
+        needs_reset = "shift" in modifiers
+        if needs_reset:
+            self.reset_snap_attraction()
+
+        # Calculate display points and find snap
+        self.calculate_display_points(sx, sy, spoints, sgrid)
+        nx, ny = self.calculate_snap(sx, sy)
+
+        if nx is not None:
+            resx = nx
+            resy = ny
+
+        # Reset attraction points again if shift was pressed
+        if needs_reset:
+            self.reset_snap_attraction()
+
         return resx, resy
 
     def reset_snap_attraction(self):
