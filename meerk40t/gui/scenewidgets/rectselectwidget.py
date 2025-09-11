@@ -166,10 +166,14 @@ class RectSelectWidget(Widget):
             return self.SELECTION_ENCLOSE
 
         # Check for crossing (element spans selection boundary in one dimension)
-        if (((sel_left <= xmin and xmax <= sel_right) and
-             not (sel_top > ymax or sel_bottom < ymin)) or
-            ((sel_top <= ymin and ymax <= sel_bottom) and
-             not (sel_left > xmax or sel_right < xmin))):
+        if (
+            (sel_left <= xmin and xmax <= sel_right)
+            and sel_top <= ymax
+            and sel_bottom >= ymin
+            or (sel_top <= ymin and ymax <= sel_bottom)
+            and sel_left <= xmax
+            and sel_right >= xmin
+        ):
             return self.SELECTION_CROSS
 
         # Default to touch if rectangles overlap
