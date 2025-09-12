@@ -219,6 +219,7 @@ class BorderWidget(Widget):
             self.master.right,
             self.master.bottom,
         )
+        self.msize = None
         self.update()
         context = self.scene.context
         # Make sure we have the correct display unit
@@ -231,6 +232,12 @@ class BorderWidget(Widget):
         self.show_rb = coord_display_mode == 0
         self._angle_font = None
         self._label_font = None
+
+    def set_size(self, *args):
+        self.left = self.master.left
+        self.top = self.master.top
+        self.right = self.master.right
+        self.bottom = self.master.bottom
 
     def _get_angle_font(self):
         if self._angle_font is None or self._angle_font.GetPointSize() != int(0.75 * self.master.font_size):
@@ -291,6 +298,8 @@ class BorderWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
+        if not self.visible:
+            return  
 
         def get_length_text_and_extent(gc, value, units, secondary_units, rel_length):
             s_txt = str(
@@ -506,6 +515,15 @@ class RotationWidget(Widget):
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.inner = int(msize)
+        self.half = rotsize / 2
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+
     def update(self):
         # mid_x = (self.master.right + self.master.left) / 2
         # mid_y = (self.master.bottom + self.master.top) / 2
@@ -536,7 +554,7 @@ class RotationWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if self.master.tool_running or not self.visible:  # We don't need that overhead
             return
         self.update()  # make sure coords are valid
 
@@ -830,6 +848,14 @@ class CornerWidget(Widget):
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.half = msize / 2
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+        
     def update(self):
         # mid_x = (self.master.right + self.master.left) / 2
         # mid_y = (self.master.bottom + self.master.top) / 2
@@ -860,7 +886,7 @@ class CornerWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if self.master.tool_running or not self.visible:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -1005,7 +1031,7 @@ class CornerWidget(Widget):
         **kwargs,
     ):
         s_me = "corner"
-        response = process_event(
+        return process_event(
             widget=self,
             widget_identifier=s_me,
             window_pos=window_pos,
@@ -1015,7 +1041,6 @@ class CornerWidget(Widget):
             modifiers=modifiers,
             helptext="Size element (with Alt-Key freely, with Ctrl+shift from center)",
         )
-        return response
 
 
 class SideWidget(Widget):
@@ -1052,6 +1077,14 @@ class SideWidget(Widget):
         self.cursor = "size_" + self.method
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.half = msize / 2
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+
     def update(self):
         mid_x = (self.master.right + self.master.left) / 2
         mid_y = (self.master.bottom + self.master.top) / 2
@@ -1083,7 +1116,7 @@ class SideWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if self.master.tool_running or not self.visible:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -1278,6 +1311,14 @@ class SkewWidget(Widget):
         self.cursor = "skew_x" if is_x else "skew_y"
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.half = msize / 2
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+        
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
@@ -1295,7 +1336,8 @@ class SkewWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        if self.master.tool_running or not self.visible:
+            # print (f"SkewWidget_{'x' if self.is_x else 'y'}: Not drawing, tool_running={self.master.tool_running}, visible={self.visible}")
             return
 
         self.update()  # make sure coords are valid
@@ -1440,6 +1482,17 @@ class MoveWidget(Widget):
         self.total_dy = 0
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.action_size = rotsize
+        self.half_x = rotsize / 2
+        self.half_y = rotsize / 2
+        self.drawhalf = msize / 2
+        self.left = -self.half_x
+        self.right = self.half_x
+        self.top = -self.half_y
+        self.bottom = self.half_y
+        self.update()
+
     def update(self):
         # Let's take into account small selections
         pos_x = (self.master.right + self.master.left) / 2
@@ -1577,7 +1630,8 @@ class MoveWidget(Widget):
             elements.classify(copy_nodes)
 
     def process_draw(self, gc):
-        if self.master.tool_running:  # We don't need that overhead
+        # print (f"MoveWidget: process_draw called, tool_running={self.master.tool_running}, visible={self.visible} - extent:{self.left},{self.top} - {self.right},{self.bottom} ")
+        if self.master.tool_running or not self.visible:    
             return
 
         self.update()  # make sure coords are valid
@@ -1930,6 +1984,14 @@ class MoveRotationOriginWidget(Widget):
         self.cursor = "rotmove"
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.half = msize / 2
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+
     def update(self):
         try:
             # if 0 < abs(self.master.rotation_cx - (self.master.left + self.master.right)/2) <= 0.0001:
@@ -1947,6 +2009,8 @@ class MoveRotationOriginWidget(Widget):
 
     def process_draw(self, gc):
         # This one gets painted always.
+        if not self.visible:    
+            return
 
         self.update()  # make sure coords are valid
         gc.SetPen(self.master.handle_pen)
@@ -2059,6 +2123,16 @@ class ReferenceWidget(Widget):
         self.cursor = "reference"
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.half = msize / 2
+        if self.is_reference_object:
+            self.half = self.half * 1.5
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+        
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
@@ -2071,8 +2145,7 @@ class ReferenceWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:
-            # We don't need that overhead
+        if self.master.tool_running or not self.visible:  # We don't need that overhead
             return
         if not (self.show_if_not_active or self.is_reference_object):
             return
@@ -2195,6 +2268,14 @@ class LockWidget(Widget):
         self.cursor = "arrow"
         self.update()
 
+    def set_size(self, msize, rotsize):
+        self.half = msize / 2
+        self.left = -self.half
+        self.right = self.half
+        self.top = -self.half
+        self.bottom = self.half
+        self.update()
+        
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
@@ -2207,7 +2288,7 @@ class LockWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
-        if self.master.tool_running:
+        if self.master.tool_running or not self.visible:
             # We don't need that overhead
             return
         self.update()  # make sure coords are valid
@@ -2493,6 +2574,60 @@ class SelectionWidget(Widget):
         self.gc = None
         self.reset_variables()
         self.modifiers = []
+
+        msize = 10
+        rotsize = 10
+        self.child_widgets = {}
+        self.child_widgets["border"] = BorderWidget(master=self, scene=self.scene)
+        self.add_widget(-1, self.child_widgets["border"])
+        self.child_widgets["reference"] = ReferenceWidget(
+            master=self,
+            scene=self.scene,
+            size=msize,
+            is_reference_object=self.is_ref,
+            show_if_not_active=False,
+        )
+        self.add_widget(-1, self.child_widgets["reference"])
+
+        self.child_widgets["move"] = MoveWidget(
+            master=self, scene=self.scene, size=rotsize, drawsize=msize,
+        )
+        self.add_widget(-1, self.child_widgets["move"])
+
+        self.child_widgets["skew_x"] = SkewWidget(
+            master=self, scene=self.scene, is_x=True, size=2 / 3 * msize
+        )
+        self.child_widgets["skew_y"] = SkewWidget(
+            master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
+        )
+        self.add_widget(-1, self.child_widgets["skew_x"])
+        self.add_widget(-1, self.child_widgets["skew_y"])
+
+        for i in range(4):
+            self.child_widgets[f"rotation_{i}"] = RotationWidget(
+                master=self,
+                scene=self.scene,
+                index=i,
+                size=rotsize,
+                inner=int(msize),
+            )
+            self.add_widget(-1, self.child_widgets[f"rotation_{i}"])
+        self.child_widgets["rotation_org"] = MoveRotationOriginWidget(master=self, scene=self.scene, size=msize)
+        self.add_widget(-1, self.child_widgets["rotation_org"])
+        for i in range(4):
+            self.child_widgets[f"corner_{i}"] = CornerWidget(
+                master=self, scene=self.scene, index=i, size=msize
+            )
+            self.add_widget(-1, self.child_widgets[f"corner_{i}"])
+            self.child_widgets[f"side_{i}"] = SideWidget(master=self, scene=self.scene, index=i, size=msize)
+            self.add_widget(-1, self.child_widgets[f"side_{i}"])
+        self.child_widgets["lock"] = LockWidget(
+            master=self,
+            scene=self.scene,
+            size=1.5 * msize,
+        )
+        self.add_widget(-1, self.child_widgets["lock"])
+        
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
@@ -2876,7 +3011,6 @@ class SelectionWidget(Widget):
         Draw routine for drawing the selection box.
         """
         self.gc = gc
-        self.clear()  # Clearing children as we are generating them in a bit...
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         if self.scene.pane.suppress_selection:
@@ -2978,79 +3112,23 @@ class SelectionWidget(Widget):
             if (self.right - self.left) < (0.5 + 1 + 0.5 + 1) * msize:
                 show_skew_x = False
 
-            self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
-            if self.single_element and self.use_handle_size:
-                self.add_widget(
-                    -1,
-                    ReferenceWidget(
-                        master=self,
-                        scene=self.scene,
-                        size=msize,
-                        is_reference_object=self.is_ref,
-                        show_if_not_active=False,
-                    ),
-                )
-
-            allowlockmove = elements.lock_allows_move
-            maymove = True
-            if is_locked and not allowlockmove:
-                maymove = False
-            if self.use_handle_move and maymove:
-                self.add_widget(
-                    -1,
-                    MoveWidget(
-                        master=self, scene=self.scene, size=rotsize, drawsize=msize
-                    ),
-                )
-            if show_skew_y and not no_skew:
-                self.add_widget(
-                    -1,
-                    SkewWidget(
-                        master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
-                    ),
-                )
-            if show_skew_x and not no_skew:
-                self.add_widget(
-                    -1,
-                    SkewWidget(
-                        master=self, scene=self.scene, is_x=True, size=2 / 3 * msize
-                    ),
-                )
-            if self.use_handle_rotate and not no_rotate:
-                for i in range(4):
-                    self.add_widget(
-                        -1,
-                        RotationWidget(
-                            master=self,
-                            scene=self.scene,
-                            index=i,
-                            size=rotsize,
-                            inner=int(msize),
-                        ),
-                    )
-                self.add_widget(
-                    -1,
-                    MoveRotationOriginWidget(master=self, scene=self.scene, size=msize),
-                )
-            if self.use_handle_size and not no_scale:
-                for i in range(4):
-                    self.add_widget(
-                        -1,
-                        CornerWidget(
-                            master=self, scene=self.scene, index=i, size=msize
-                        ),
-                    )
-                for i in range(4):
-                    self.add_widget(
-                        -1,
-                        SideWidget(master=self, scene=self.scene, index=i, size=msize),
-                    )
-            if is_locked:
-                self.add_widget(
-                    -1,
-                    LockWidget(
-                        master=self,
-                        scene=self.scene,
-                        size=1.5 * msize,
-                    ),
-                )
+            self.child_widgets["reference"].is_reference_object = self.is_ref
+            # Border Widget is fine as is
+            for widget in self.child_widgets.values():
+                widget.visible = False
+                widget.set_size(msize, rotsize)
+            self.child_widgets["border"].visible = self.show_border
+            self.child_widgets["reference"].visible = self.single_element and self.use_handle_size
+            maymove = not (is_locked and not elements.lock_allows_move)
+            self.child_widgets["move"].visible = self.use_handle_move and maymove
+            self.child_widgets["skew_x"].visible = show_skew_x and not no_skew
+            self.child_widgets["skew_y"].visible = show_skew_y and not no_skew
+            for i in range(4):
+                self.child_widgets[f"rotation_{i}"].visible = self.use_handle_rotate and not no_rotate
+            self.child_widgets["rotation_org"].visible = self.use_handle_rotate and not no_rotate
+            for i in range(4):
+                self.child_widgets[f"corner_{i}"].visible = self.use_handle_size and not no_scale
+                self.child_widgets[f"side_{i}"].visible = self.use_handle_size and not no_scale
+            self.child_widgets["lock"].visible = is_locked
+            # for key, widget in self.child_widgets.items():
+            #     print(f"Widget {key} visible: {widget.visible}")
