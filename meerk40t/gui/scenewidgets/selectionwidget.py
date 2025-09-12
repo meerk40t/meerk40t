@@ -40,8 +40,6 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
 )
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
-
 # from time import perf_counter
 
 
@@ -219,6 +217,44 @@ class BorderWidget(Widget):
         # 0 = all, 1 = to mk 0,0 only, 2=suppress
         self.show_lt = coord_display_mode in (0, 1)
         self.show_rb = coord_display_mode == 0
+        self._angle_font = None
+        self._label_font = None
+
+    def _get_angle_font(self):
+        if self._angle_font is None or self._angle_font.GetPointSize() != int(0.75 * self.master.font_size):
+            try:
+                self._angle_font = wx.Font(
+                    0.75 * self.master.font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                )
+            except TypeError:
+                self._angle_font = wx.Font(
+                    int(0.75 * self.master.font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                )
+        return self._angle_font
+
+    def _get_label_font(self):
+        if self._label_font is None or self._label_font.GetPointSize() != int(self.master.font_size):
+            try:
+                self._label_font = wx.Font(
+                    self.master.font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                )
+            except TypeError:
+                self._label_font = wx.Font(
+                    int(self.master.font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                )
+        return self._label_font
 
     def update(self):
         self.left = self.master.left
@@ -278,20 +314,7 @@ class BorderWidget(Widget):
         if not self.master.show_border:
             # Only show angle if not showing border
             if abs(self.master.rotated_angle) > 0.001:
-                try:
-                    font = wx.Font(
-                        0.75 * self.master.font_size,
-                        wx.FONTFAMILY_SWISS,
-                        wx.FONTSTYLE_NORMAL,
-                        wx.FONTWEIGHT_BOLD,
-                    )
-                except TypeError:
-                    font = wx.Font(
-                        int(0.75 * self.master.font_size),
-                        wx.FONTFAMILY_SWISS,
-                        wx.FONTSTYLE_NORMAL,
-                        wx.FONTWEIGHT_BOLD,
-                    )
+                font = self._get_angle_font()
                 gc.SetFont(font, self.scene.colors.color_manipulation)
                 symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
                 pen = wx.Pen()
@@ -345,21 +368,7 @@ class BorderWidget(Widget):
 
         units = context._display_unit if context._display_unit else context.units_name
         secondary_units = context.units_name
-        try:
-            font = wx.Font(
-                self.master.font_size,
-                wx.FONTFAMILY_SWISS,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_BOLD,
-            )
-        except TypeError:
-            font = wx.Font(
-                int(self.master.font_size),
-                wx.FONTFAMILY_SWISS,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_BOLD,
-            )
-        gc.SetFont(font, self.scene.colors.color_manipulation)
+        gc.SetFont(self._get_label_font(), self.scene.colors.color_manipulation)
 
         # Draw coordinate labels
         if self.show_lt:
@@ -436,22 +445,8 @@ class BorderWidget(Widget):
             self.scene.context.device.view.width,
         )
         gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
-        # Show the angle if rotated
         if abs(self.master.rotated_angle) > 0.001:
-            try:
-                font = wx.Font(
-                    0.75 * self.master.font_size,
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_BOLD,
-                )
-            except TypeError:
-                font = wx.Font(
-                    int(0.75 * self.master.font_size),
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_BOLD,
-                )
+            font = self._get_angle_font()
             gc.SetFont(font, self.scene.colors.color_manipulation)
             symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
             pen = wx.Pen()
@@ -1319,8 +1314,8 @@ class SkewWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
         if event == 1:  # end
             self.last_skew = 0
@@ -1719,7 +1714,7 @@ class MoveWidget(Widget):
             did_snap_to_point = False
             if (
                 self.scene.context.snap_points
-                and not "shift" in modifiers
+                and modifiers and "shift" not in modifiers
                 and b is not None
             ):
                 gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
@@ -1801,7 +1796,7 @@ class MoveWidget(Widget):
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
                 self.scene.context.snap_grid
-                and not "shift" in modifiers
+                and modifiers and "shift" not in modifiers
                 and b is not None
                 and not did_snap_to_point
             ):
@@ -2631,8 +2626,8 @@ class SelectionWidget(Widget):
         if bb is None or cc is None:
             return
         try:
-            b_ratio = (bb[2] - bb[0]) / (bb[3] - bb[1])
-            c_ratio = (cc[2] - cc[0]) / (cc[3] - cc[1])
+            pass  # b_ratio = (bb[2] - bb[0]) / (bb[3] - bb[1])
+            # c_ratio = (cc[2] - cc[0]) / (cc[3] - cc[1])
         except ZeroDivisionError:
             return
         if method == "fit":
