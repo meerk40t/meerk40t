@@ -40,6 +40,7 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
 )
 from meerk40t.svgelements import Point
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 # from time import perf_counter
 
 
@@ -59,6 +60,8 @@ def process_event(
 ):
     if widget_identifier is None:
         widget_identifier = "none"
+    if space_pos is None:
+        return RESPONSE_CHAIN
     try:
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError:
@@ -67,113 +70,122 @@ def process_event(
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
 
-    # Now all Mouse-Hover-Events
-    _ = widget.scene.context._
-    if event_type == "hover" and widget.hovering and not inside:
-        widget.hovering = False
-        widget.scene.cursor("arrow")
-        widget.scene.context.signal("statusmsg", "")
-        return RESPONSE_CHAIN
+    def _handle_hover_events():
+        _ = widget.scene.context._
+        if event_type == "hover" and widget.hovering and not inside:
+            widget.hovering = False
+            widget.scene.cursor("arrow")
+            widget.scene.context.signal("statusmsg", "")
+            return RESPONSE_CHAIN
 
-    if event_type == "hover_start":
-        if inside:
-            widget.scene.cursor(widget.cursor)
+        if event_type == "hover_start":
+            if inside:
+                widget.scene.cursor(widget.cursor)
+                widget.hovering = True
+                widget.scene.context.signal("statusmsg", _(helptext))
+                return RESPONSE_CONSUME
+        elif event_type == "hover_end" or event_type == "lost":
+            widget.scene.cursor("arrow")
+            widget.hovering = False
+            widget.scene.context.signal("statusmsg", "")
+            return RESPONSE_CHAIN
+        elif event_type == "hover":
             widget.hovering = True
+            widget.scene.cursor(widget.cursor)
             widget.scene.context.signal("statusmsg", _(helptext))
             return RESPONSE_CONSUME
-    elif event_type == "hover_end" or event_type == "lost":
-        widget.scene.cursor("arrow")
-        widget.hovering = False
-        widget.scene.context.signal("statusmsg", "")
-        return RESPONSE_CHAIN
-    elif event_type == "hover":
-        widget.hovering = True
-        widget.scene.cursor(widget.cursor)
-        widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        return None  # Not a hover event
 
-    # Now all Mouse-Click-Events
-    elements = widget.scene.context.elements
-    dx = space_pos[4]
-    dy = space_pos[5]
-    # print (f"Event={event_type}, tool={widget.scene.tool_active}, modif={widget.scene.pane.modif_active}, snap={nearest_snap}")
-    if widget.scene.pane.tool_active:
-        # print ("ignore")
-        return RESPONSE_CHAIN
+    def _handle_mouse_events():
+        if space_pos is None:
+            return RESPONSE_CHAIN
+        elements = widget.scene.context.elements
+        dx = space_pos[4]
+        dy = space_pos[5]
+        # print (f"Event={event_type}, tool={widget.scene.tool_active}, modif={widget.scene.pane.modif_active}, snap={nearest_snap}")
+        if widget.scene.pane.tool_active:
+            # print ("ignore")
+            return RESPONSE_CHAIN
 
-    if event_type == "leftdown":
-        # We want to establish that we don't have a singular Shift key or a singular ctrl-key
-        # as these will extend / reduce the selection
-        if widget_identifier == "move" or (
-            not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers))
-        ):
-            cx = (widget.left + widget.right) / 2
-            cy = (widget.top + widget.bottom) / 2
-            # print(f"Start: x={space_pos[0]}, y={space_pos[1]}, dx={space_pos[4]}, dy={space_pos[5]}")
-            # print(f"Widget: cx={cx}, cy={cy}")
-            # Set them to the center of the widget
-            widget.master.offset_x = cx - space_pos[0]
-            widget.master.offset_y = cy - space_pos[1]
-            widget.was_lb_raised = True
-            widget.save_width = widget.master.width
-            widget.save_height = widget.master.height
-            widget.uniform = not widget.master.key_alt_pressed
-            widget.master.total_delta_y = dy
-            widget.master.total_delta_x = dx
-            widget.master.total_delta_y = dy
-            widget.master.tool_running = optimize_drawing
-            widget.master.invalidate_rot_center()
-            widget.master.check_rot_center()
-            widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
-            return RESPONSE_CONSUME
-    # elif event_type == "middledown":
-    #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
-    #     widget.was_lb_raised = False
-    #     widget.save_width = widget.master.width
-    #     widget.save_height = widget.master.height
-    #     widget.uniform = False
-    #     widget.master.total_delta_x = dx
-    #     widget.master.total_delta_y = dy
-    #     widget.master.tool_running = optimize_drawing
-    #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
-    #     return RESPONSE_CONSUME
-    elif event_type == "leftup":
-        if widget.was_lb_raised:
-            widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
-            widget.scene.context.elements.ensure_positive_bounds()
-            widget.was_lb_raised = False
-            widget.master.show_border = True
-            widget.master.tool_running = False
-            return RESPONSE_CONSUME
-    elif event_type in ("middleup", "lost"):
-        if widget.was_lb_raised:
-            widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
-            widget.was_lb_raised = False
-            widget.master.show_border = True
-            widget.master.tool_running = False
-            widget.scene.context.elements.ensure_positive_bounds()
-            return RESPONSE_CONSUME
-    elif event_type == "move":
-        if widget.was_lb_raised:
-            if not elements.has_emphasis():
+        single_modifier = modifiers and len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)
+        if event_type == "leftdown":
+            # We want to establish that we don't have a singular Shift key or a singular ctrl-key
+            # as these will extend / reduce the selection
+            if widget_identifier == "move" or not single_modifier:
+                cx = (widget.left + widget.right) / 2
+                cy = (widget.top + widget.bottom) / 2
+                # print(f"Start: x={space_pos[0]}, y={space_pos[1]}, dx={space_pos[4]}, dy={space_pos[5]}")
+                # print(f"Widget: cx={cx}, cy={cy}")
+                # Set them to the center of the widget
+                widget.master.offset_x = cx - space_pos[0]
+                widget.master.offset_y = cy - space_pos[1]
+                widget.was_lb_raised = True
+                widget.save_width = widget.master.width
+                widget.save_height = widget.master.height
+                widget.uniform = not widget.master.key_alt_pressed
+                widget.master.total_delta_y = dy
+                widget.master.total_delta_x = dx
+                widget.master.total_delta_y = dy
+                widget.master.tool_running = optimize_drawing
+                widget.master.invalidate_rot_center()
+                widget.master.check_rot_center()
+                widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
                 return RESPONSE_CONSUME
-            if widget.save_width is None or widget.save_height is None:
-                widget.save_width = widget.width
-                widget.save_height = widget.height
-            widget.master.total_delta_x += dx
-            widget.master.total_delta_y += dy
-            widget.tool(space_pos, nearest_snap, dx, dy, 0, modifiers)
-            return RESPONSE_CONSUME
-    elif event_type == "leftclick":
-        if widget.was_lb_raised:
-            widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
-            widget.scene.context.elements.ensure_positive_bounds()
-            widget.was_lb_raised = False
-            widget.master.tool_running = False
-            widget.master.show_border = True
-            return RESPONSE_CONSUME
-    else:
+        # elif event_type == "middledown":
+        #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
+        #     widget.was_lb_raised = False
+        #     widget.save_width = widget.master.width
+        #     widget.save_height = widget.master.height
+        #     widget.uniform = False
+        #     widget.master.total_delta_x = dx
+        #     widget.master.total_delta_y = dy
+        #     widget.master.tool_running = optimize_drawing
+        #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
+        #     return RESPONSE_CONSUME
+        elif event_type == "leftup":
+            if widget.was_lb_raised:
+                widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
+                widget.scene.context.elements.ensure_positive_bounds()
+                widget.was_lb_raised = False
+                widget.master.show_border = True
+                widget.master.tool_running = False
+                return RESPONSE_CONSUME
+        elif event_type in ("middleup", "lost"):
+            if widget.was_lb_raised:
+                widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
+                widget.was_lb_raised = False
+                widget.master.show_border = True
+                widget.master.tool_running = False
+                widget.scene.context.elements.ensure_positive_bounds()
+                return RESPONSE_CONSUME
+        elif event_type == "move":
+            if widget.was_lb_raised:
+                if not elements.has_emphasis():
+                    return RESPONSE_CONSUME
+                if widget.save_width is None or widget.save_height is None:
+                    widget.save_width = widget.width
+                    widget.save_height = widget.height
+                widget.master.total_delta_x += dx
+                widget.master.total_delta_y += dy
+                widget.tool(space_pos, nearest_snap, dx, dy, 0, modifiers)
+                return RESPONSE_CONSUME
+        elif event_type == "leftclick":
+            if widget.was_lb_raised:
+                widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
+                widget.scene.context.elements.ensure_positive_bounds()
+                widget.was_lb_raised = False
+                widget.master.tool_running = False
+                widget.master.show_border = True
+                return RESPONSE_CONSUME
         return RESPONSE_CHAIN
+
+    # Handle hover events first
+    hover_result = _handle_hover_events()
+    if hover_result is not None:
+        return hover_result
+
+    # Handle mouse events
+    return _handle_mouse_events()
 
 
 def update_elements(scene):
@@ -912,7 +924,7 @@ class CornerWidget(Widget):
                     scalex = (position[0] - self.master.left) / self.save_width
                 except ZeroDivisionError:
                     scalex = 1
-            free = bool("alt" in modifiers)
+            free = bool(modifiers and "alt" in modifiers)
             if len(self.method) > 1 and self.uniform and not free:  # from corner
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
@@ -1787,11 +1799,12 @@ class MoveWidget(Widget):
 
                     if dist is not None and dist < gap:
                         did_snap_to_point = True
-                        dx = pt1.real - pt2.real
-                        dy = pt1.imag - pt2.imag
-                        self.total_dx = 0
-                        self.total_dy = 0
-                        move_to(dx, dy, interim=False)
+                        if pt1 is not None and pt2 is not None and hasattr(pt1, 'real'):
+                            dx = pt1.real - pt2.real
+                            dy = pt1.imag - pt2.imag
+                            self.total_dx = 0
+                            self.total_dy = 0
+                            move_to(dx, dy, interim=False)
                 # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
@@ -1822,11 +1835,12 @@ class MoveWidget(Widget):
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
                     if dist is not None and dist < gap:
                         did_snap_to_point = True
-                        dx = pt1[0] - pt2[0]
-                        dy = pt1[1] - pt2[1]
-                        self.total_dx = 0
-                        self.total_dy = 0
-                        move_to(dx, dy, interim=False)
+                        if pt1 is not None and pt2 is not None and isinstance(pt1, (list, tuple)):
+                            dx = pt1[0] - pt2[0]
+                            dy = pt1[1] - pt2[1]
+                            self.total_dx = 0
+                            self.total_dy = 0
+                            move_to(dx, dy, interim=False)
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
@@ -1858,7 +1872,7 @@ class MoveWidget(Widget):
             #     elements.update_bounds([bx0, by0, bx1, by1])
             update_elements(self.scene)
         elif event == -1:  # start
-            if "alt" in modifiers:
+            if modifiers and "alt" in modifiers:
                 self.create_duplicate()
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -2423,8 +2437,8 @@ class RefAlign(wx.Dialog):
 
         self.Layout()
 
-        self.radio_btn_10.SetValue(1)  # Unchanged
-        self.radio_btn_5.SetValue(1)  # center
+        self.radio_btn_10.SetValue(True)  # Unchanged
+        self.radio_btn_5.SetValue(True)  # center
 
     def results(self):
         self.cancelled = False
@@ -2489,15 +2503,15 @@ class SelectionWidget(Widget):
 
     @property
     def key_shift_pressed(self):
-        return "shift" in self.modifiers
+        return self.modifiers and "shift" in self.modifiers
 
     @property
     def key_control_pressed(self):
-        return "ctrl" in self.modifiers
+        return self.modifiers and "ctrl" in self.modifiers
 
     @property
     def key_alt_pressed(self):
-        return "alt" in self.modifiers
+        return self.modifiers and "alt" in self.modifiers
 
     def reset_variables(self):
         self.modifiers = []
@@ -2668,7 +2682,8 @@ class SelectionWidget(Widget):
         dlgRefAlign.Destroy()
         if opt_pos is not None:
             self.rotate_elements_if_needed(opt_rotate)
-            self.scale_selection_to_ref(opt_scale)
+            if opt_scale is not None:
+                self.scale_selection_to_ref(opt_scale)
             self.move_selection_to_ref(opt_pos)
             self.scene.context.elements.validate_selected_area()
             self.scene.request_refresh()
@@ -2792,7 +2807,7 @@ class SelectionWidget(Widget):
             self.scene.pane.tool_active = False
             self.scene.pane.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
-                "ctrl" in modifiers
+                modifiers and "ctrl" in modifiers
             )
             use_files = bool(self.scene.context.file_selection)
             elements.set_emphasized_by_position(
@@ -2814,7 +2829,7 @@ class SelectionWidget(Widget):
             self.scene.pane.tool_active = False
             self.scene.pane.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
-                "ctrl" in modifiers
+                modifiers and "ctrl" in modifiers
             )
             use_files = bool(self.scene.context.file_selection)
             elements.set_emphasized_by_position(
@@ -2893,8 +2908,8 @@ class SelectionWidget(Widget):
             self.selection_pen.SetColour(self.scene.colors.color_manipulation)
             self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
             try:
-                self.selection_pen.SetWidth(self.line_width)
-                self.handle_pen.SetWidth(0.75 * self.line_width)
+                self.selection_pen.SetWidth(int(self.line_width))
+                self.handle_pen.SetWidth(int(0.75 * self.line_width))
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
                 self.handle_pen.SetWidth(int(0.75 * self.line_width))
@@ -2902,7 +2917,7 @@ class SelectionWidget(Widget):
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
                 font = wx.Font(
-                    self.font_size,
+                    int(self.font_size),
                     wx.FONTFAMILY_SWISS,
                     wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_BOLD,
@@ -3010,7 +3025,7 @@ class SelectionWidget(Widget):
                             scene=self.scene,
                             index=i,
                             size=rotsize,
-                            inner=msize,
+                            inner=int(msize),
                         ),
                     )
                 self.add_widget(
