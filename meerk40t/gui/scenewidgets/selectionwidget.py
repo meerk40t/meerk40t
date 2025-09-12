@@ -298,8 +298,8 @@ class BorderWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
-        if not self.visible:
-            return  
+        if self.master.tool_running or not self.visible:  # We don't need that overhead
+            return
 
         def get_length_text_and_extent(gc, value, units, secondary_units, rel_length):
             s_txt = str(
@@ -2017,7 +2017,7 @@ class MoveRotationOriginWidget(Widget):
 
     def process_draw(self, gc):
         # This one gets painted always.
-        if not self.visible:    
+        if self.master.tool_running or not self.visible:  # We don't need that overhead
             return
 
         self.update()  # make sure coords are valid
@@ -3018,6 +3018,7 @@ class SelectionWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
+        self.hide_all_widgets()
         self.gc = gc
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
@@ -3123,7 +3124,6 @@ class SelectionWidget(Widget):
             self.child_widgets["reference"].is_reference_object = self.is_ref
             # Border Widget is fine as is
             for widget in self.child_widgets.values():
-                widget.visible = False
                 widget.set_size(msize, rotsize)
             self.child_widgets["border"].visible = self.show_border
             self.child_widgets["reference"].visible = self.single_element and self.use_handle_size
@@ -3140,3 +3140,7 @@ class SelectionWidget(Widget):
             self.child_widgets["lock"].visible = is_locked
             # for key, widget in self.child_widgets.items():
             #     print(f"Widget {key} visible: {widget.visible}")
+
+    def hide_all_widgets(self):
+        for widget in self.child_widgets.values():
+            widget.visible = False
