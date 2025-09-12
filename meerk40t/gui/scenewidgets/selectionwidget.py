@@ -45,6 +45,8 @@ from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
 
 
 NEARLY_ZERO = 1.0e-6
+ROTATION_THRESHOLD = 0.001
+POSITION_THRESHOLD = 0.0001
 
 
 def process_event(
@@ -84,7 +86,7 @@ def process_event(
                 widget.hovering = True
                 widget.scene.context.signal("statusmsg", _(helptext))
                 return RESPONSE_CONSUME
-        elif event_type == "hover_end" or event_type == "lost":
+        elif event_type in ("hover_end", "lost"):
             widget.scene.cursor("arrow")
             widget.hovering = False
             widget.scene.context.signal("statusmsg", "")
@@ -181,11 +183,7 @@ def process_event(
 
     # Handle hover events first
     hover_result = _handle_hover_events()
-    if hover_result is not None:
-        return hover_result
-
-    # Handle mouse events
-    return _handle_mouse_events()
+    return hover_result if hover_result is not None else _handle_mouse_events()
 
 
 def update_elements(scene):
@@ -327,7 +325,7 @@ class BorderWidget(Widget):
 
         if not self.master.show_border:
             # Only show angle if not showing border
-            if abs(self.master.rotated_angle) > 0.001:
+            if abs(self.master.rotated_angle) > ROTATION_THRESHOLD:
                 font = self._get_angle_font()
                 gc.SetFont(font, self.scene.colors.color_manipulation)
                 symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
@@ -459,7 +457,7 @@ class BorderWidget(Widget):
             self.scene.context.device.view.width,
         )
         gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
-        if abs(self.master.rotated_angle) > 0.001:
+        if abs(self.master.rotated_angle) > ROTATION_THRESHOLD:
             font = self._get_angle_font()
             gc.SetFont(font, self.scene.colors.color_manipulation)
             symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
@@ -835,7 +833,7 @@ class CornerWidget(Widget):
             self.method = "ne"
         elif index == 2:
             self.method = "se"
-        if index == 3:
+        elif index == 3:
             self.method = "sw"
         self.cursor = f"size_{self.method}"
 
@@ -1056,7 +1054,7 @@ class SideWidget(Widget):
             self.method = "e"
         elif index == 2:
             self.method = "s"
-        if index == 3:
+        elif index == 3:
             self.method = "w"
         self.cursor = f"size_{self.method}"
         self.update()
@@ -1181,8 +1179,8 @@ class SideWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
-                if b is None:
-                    return
+            if b is None:
+                return
             # Establish origin
             orgy = self.master.bottom if "n" in self.method else self.master.top
             orgx = self.master.right if "w" in self.method else self.master.left
@@ -1559,10 +1557,7 @@ class MoveWidget(Widget):
                 for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(e, optional))
-                options = []
-                for prop in dir(e):
-                    if prop.startswith("mk"):
-                        options.append(prop)
+                options = [prop for prop in dir(e) if prop.startswith("mk")]
                 for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(e, optional))
@@ -1764,10 +1759,7 @@ class MoveWidget(Widget):
                     if hasattr(e, "hidden") and e.hidden:
                         continue
 
-                    if e.emphasized:
-                        target = selected_points
-                    else:
-                        target = other_points
+                    target = selected_points if e.emphasized else other_points
                     if not hasattr(e, "as_geometry"):
                         continue
                     geom = e.as_geometry()
@@ -2250,12 +2242,7 @@ class LockWidget(Widget):
         self.update()
         
     def update(self):
-        if self.master.handle_outside:
-            offset_x = self.half
-            # offset_y = self.half
-        else:
-            offset_x = 0
-            # offset_y = 0
+        offset_x = self.half if self.master.handle_outside else 0
         pos_x = self.master.right - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
@@ -2873,13 +2860,12 @@ class SelectionWidget(Widget):
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
-            if space_pos is not None:
-                if self.contains(space_pos[0], space_pos[1]):
-                    self.hovering = True
-                    self.scene.context.signal("statusmsg", "")
-                    self.tool_running = False
+            if space_pos is not None and self.contains(space_pos[0], space_pos[1]):
+                self.hovering = True
+                self.scene.context.signal("statusmsg", "")
+                self.tool_running = False
 
-        elif event_type == "hover_end" or event_type == "lost":
+        elif event_type in ("hover_end", "lost"):
             self.scene.cursor(self.cursor)
             self.hovering = False
             if space_pos is not None:
@@ -2964,8 +2950,8 @@ class SelectionWidget(Widget):
             cx = (self.left + self.right) / 2
             cy = (self.top + self.bottom) / 2
             value = (
-                abs(self.rotation_cx - cx) < 0.0001
-                and abs(self.rotation_cy - cy) < 0.0001
+                abs(self.rotation_cx - cx) < POSITION_THRESHOLD
+                and abs(self.rotation_cy - cy) < POSITION_THRESHOLD
             )
             self.keep_rotation = value
             # if value:
