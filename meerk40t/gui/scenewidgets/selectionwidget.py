@@ -40,7 +40,7 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
 )
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END
 # from time import perf_counter
 
 
@@ -1763,21 +1763,27 @@ class MoveWidget(Widget):
                     if not hasattr(e, "as_geometry"):
                         continue
                     geom = e.as_geometry()
-                    last = None
-                    for seg in geom.segments[: geom.index]:
-                        start = seg[0]
+                    lastpt = None
+                    for idx, seg in enumerate(geom.segments[: geom.index]):
                         seg_type = geom._segtype(seg)
-                        end = seg[4]
+                        if seg_type == TYPE_END:
+                            lastpt = None
                         if seg_type in NON_GEOMETRY_TYPES:
                             continue
-                        if np.isnan(start) or np.isnan(end):
+                        startpt = seg[0]
+                        endpt = seg[4]
+                        if np.isnan(startpt) or np.isnan(endpt):
                             print(
-                                f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers"
+                                f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={startpt}, end={endpt} - coming from element type {e.type}\nPlease inform the developers"
                             )
                             continue
-                        if start != last:
-                            xx = start.real
-                            yy = start.imag
+                        midpt = geom.position(idx, 0.5)
+                        
+                        def add_it(pt, last):
+                            if last is not None and pt == last:
+                                return last
+                            xx = pt.real
+                            yy = pt.imag
                             ignore = (
                                 xx < b[0] - gap
                                 or xx > b[2] + gap
@@ -1785,18 +1791,14 @@ class MoveWidget(Widget):
                                 or yy > b[3] + gap
                             )
                             if not ignore:
-                                target.append(start)
-                        xx = end.real
-                        yy = end.imag
-                        ignore = (
-                            xx < b[0] - gap
-                            or xx > b[2] + gap
-                            or yy < b[1] - gap
-                            or yy > b[3] + gap
-                        )
-                        if not ignore:
-                            target.append(end)
-                        last = end
+                                last = pt
+                                target.append(pt)
+                            return last
+                            
+                                
+                        lastpt = add_it(startpt, lastpt)
+                        lastpt = add_it(midpt, lastpt)
+                        lastpt = add_it(endpt, lastpt)
                 # t2 = perf_counter()
                 if (
                     other_points is not None
