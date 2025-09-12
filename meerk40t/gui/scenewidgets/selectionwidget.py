@@ -775,6 +775,7 @@ class RotationWidget(Widget):
         **kwargs,
     ):
         s_me = "rotation"
+        # Translation hint: _("Rotate element")
         response = process_event(
             widget=self,
             widget_identifier=s_me,
@@ -1024,6 +1025,7 @@ class CornerWidget(Widget):
         **kwargs,
     ):
         s_me = "corner"
+        # Translation hint: _("Size element (with Alt-Key freely, with Ctrl+shift from center)")
         return process_event(
             widget=self,
             widget_identifier=s_me,
@@ -1269,8 +1271,9 @@ class SideWidget(Widget):
         s_me = "side"
         s_coord = "Y" if self.index in (0, 2) else "X"
         s_help = f"Size element in {s_coord}-direction (with Ctrl+shift from center)"
-
-        response = process_event(
+        # Translation hint: _("Size element in X-direction (with Ctrl+shift from center)")
+        # Translation hint: _("Size element in Y-direction (with Ctrl+shift from center)")
+        return process_event(
             widget=self,
             widget_identifier=s_me,
             window_pos=window_pos,
@@ -1280,7 +1283,6 @@ class SideWidget(Widget):
             modifiers=modifiers,
             helptext=s_help,
         )
-        return response
 
 
 class SkewWidget(Widget):
@@ -1427,6 +1429,8 @@ class SkewWidget(Widget):
     ):
         s_me = "skew"
         s_help = f"Skew element in {'X' if self.is_x else 'Y'}-direction"
+        # Translation hint: _("Skew element in X-direction")
+        # Translation hint: _("Skew element in Y-direction")
         response = process_event(
             widget=self,
             widget_identifier=s_me,
@@ -1957,7 +1961,8 @@ class MoveWidget(Widget):
         **kwargs,
     ):
         s_me = "move"
-        response = process_event(
+        # Translation hint: _("Move element")   
+        return process_event(
             widget=self,
             widget_identifier=s_me,
             window_pos=window_pos,
@@ -1967,7 +1972,6 @@ class MoveWidget(Widget):
             modifiers=modifiers,
             helptext="Move element",
         )
-        return response
 
 
 class MoveRotationOriginWidget(Widget):
@@ -2089,19 +2093,18 @@ class MoveRotationOriginWidget(Widget):
             self.master.rotation_cy = None
             self.master.invalidate_rot_center()
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
-        else:
-            response = process_event(
-                widget=self,
-                widget_identifier=s_me,
-                window_pos=window_pos,
-                space_pos=space_pos,
-                event_type=event_type,
-                nearest_snap=nearest_snap,
-                modifiers=modifiers,
-                helptext="Move rotation center",
-            )
-        return response
+            return RESPONSE_CONSUME
+        # Translation hint: _("Move rotation center")
+        return process_event(
+            widget=self,
+            widget_identifier=s_me,
+            window_pos=window_pos,
+            space_pos=space_pos,
+            event_type=event_type,
+            nearest_snap=nearest_snap,
+            modifiers=modifiers,
+            helptext="Move rotation center",
+        )
 
 
 class ReferenceWidget(Widget):
@@ -2240,7 +2243,8 @@ class ReferenceWidget(Widget):
         **kwargs,
     ):
         s_me = "reference"
-        response = process_event(
+        # Translation hint: _("Toggle reference status of element")
+        return process_event(
             widget=self,
             widget_identifier=s_me,
             window_pos=window_pos,
@@ -2251,7 +2255,6 @@ class ReferenceWidget(Widget):
             helptext="Toggle reference status of element",
             optimize_drawing=False,
         )
-        return response
 
 
 class LockWidget(Widget):
@@ -2371,7 +2374,8 @@ class LockWidget(Widget):
         **kwargs,
     ):
         s_me = "lock"
-        response = process_event(
+        # Translation hint: _("Remove the 'locked' status of the element")
+        return process_event(
             widget=self,
             widget_identifier=s_me,
             window_pos=window_pos,
@@ -2382,7 +2386,6 @@ class LockWidget(Widget):
             helptext="Remove the 'locked' status of the element",
             optimize_drawing=False,
         )
-        return response
 
 
 class RefAlign(wx.Dialog):
