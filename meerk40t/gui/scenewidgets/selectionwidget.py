@@ -311,7 +311,7 @@ class BorderWidget(Widget):
                 )
             )
             if units != secondary_units:
-                s_txt += f"/{str(Length(amount=value, digits=2, preferred_units=secondary_units, relative_length=rel_length))}"
+                s_txt += f"/{Length(amount=value, digits=2, preferred_units=secondary_units, relative_length=rel_length)}"
             try:
                 (width, height, descent, externalLeading) = gc.GetFullTextExtent(s_txt)
                 t_width = width + externalLeading
@@ -523,8 +523,8 @@ class RotationWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        dx = abs(min(0, inner_wd_half - self.inner))
-        dy = abs(min(0, inner_ht_half - self.inner))
+        dx = max(0, self.inner - inner_wd_half)
+        dy = max(0, self.inner - inner_ht_half)
         if self.master.handle_outside:
             offset_x = self.inner / 2
             offset_y = self.inner / 2
@@ -856,14 +856,10 @@ class CornerWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        if self.master.handle_outside:
-            offset_x = self.half
-            offset_y = self.half
-        else:
-            offset_x = 0
-            offset_y = 0
-        dx = abs(min(0, inner_wd_half - 2 * self.half))
-        dy = abs(min(0, inner_ht_half - 2 * self.half))
+        offset_x = self.half if self.master.handle_outside else 0
+        offset_y = self.half if self.master.handle_outside else 0
+        dx = max(0, 2 * self.half - inner_wd_half)
+        dy = max(0, 2 * self.half - inner_ht_half)
 
         if self.index == 0:
             pos_x = self.master.left - dx - offset_x
@@ -957,15 +953,8 @@ class CornerWidget(Widget):
                 return
 
             # Establish origin
-            if "n" in self.method:
-                orgy = self.master.bottom
-            else:
-                orgy = self.master.top
-
-            if "w" in self.method:
-                orgx = self.master.right
-            else:
-                orgx = self.master.left
+            orgy = self.master.bottom if "n" in self.method else self.master.top
+            orgx = self.master.right if "w" in self.method else self.master.left
 
             grow = 1
             # If the crtl+shift-Keys are pressed then size equally on both opposing sides at the same time
@@ -1086,15 +1075,11 @@ class SideWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        dx = abs(min(0, inner_wd_half - 2 * self.half))
-        dy = abs(min(0, inner_ht_half - 2 * self.half))
+        dx = max(0, 2 * self.half - inner_wd_half)
+        dy = max(0, 2 * self.half - inner_ht_half)
 
-        if self.master.handle_outside:
-            offset_x = self.half
-            offset_y = self.half
-        else:
-            offset_x = 0
-            offset_y = 0
+        offset_x = self.half if self.master.handle_outside else 0
+        offset_y = self.half if self.master.handle_outside else 0
 
         if self.index == 0:
             pos_x = mid_x
@@ -1199,15 +1184,8 @@ class SideWidget(Widget):
                 if b is None:
                     return
             # Establish origin
-            if "n" in self.method:
-                orgy = self.master.bottom
-            else:
-                orgy = self.master.top
-
-            if "w" in self.method:
-                orgx = self.master.right
-            else:
-                orgx = self.master.left
+            orgy = self.master.bottom if "n" in self.method else self.master.top
+            orgx = self.master.right if "w" in self.method else self.master.left
             grow = 1
             # If the Ctr+Shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
@@ -1315,12 +1293,8 @@ class SkewWidget(Widget):
         self.update()
         
     def update(self):
-        if self.master.handle_outside:
-            offset_x = self.half
-            offset_y = self.half
-        else:
-            offset_x = 0
-            offset_y = 0
+        offset_x = self.half if self.master.handle_outside else 0
+        offset_y = self.half if self.master.handle_outside else 0
 
         if self.is_x:
             pos_x = self.master.left + 3 / 4 * (self.master.right - self.master.left)
@@ -1563,14 +1537,8 @@ class MoveWidget(Widget):
                 newparent = entry[2]
                 if newparent is None:
                     # Add a new group...
-                    if oldparent.label is None:
-                        newlabel = "Copy"
-                    else:
-                        newlabel = f"Copy of {oldparent.display_label()}"
-                    if oldparent.id is None:
-                        newid = "Copy"
-                    else:
-                        newid = f"Copy of {oldparent.id}"
+                    newlabel = "Copy" if oldparent.label is None else f"Copy of {oldparent.display_label()}"
+                    newid = "Copy" if oldparent.id is None else f"Copy of {oldparent.id}"
                     newparent = oldparent.parent.add(
                         type="group",
                         label=newlabel,
@@ -2143,12 +2111,8 @@ class ReferenceWidget(Widget):
         self.update()
         
     def update(self):
-        if self.master.handle_outside:
-            offset_x = self.half
-            # offset_y = self.half
-        else:
-            offset_x = 0
-            # offset_y = 0
+        offset_x = self.half if self.master.handle_outside else 0
+        # offset_y = self.half if self.master.handle_outside else 0
         pos_x = self.master.left - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
@@ -3127,7 +3091,7 @@ class SelectionWidget(Widget):
                 widget.set_size(msize, rotsize)
             self.child_widgets["border"].visible = self.show_border
             self.child_widgets["reference"].visible = self.single_element and self.use_handle_size
-            maymove = not (is_locked and not elements.lock_allows_move)
+            maymove = not is_locked or elements.lock_allows_move
             self.child_widgets["move"].visible = self.use_handle_move and maymove
             self.child_widgets["skew_x"].visible = show_skew_x and not no_skew
             self.child_widgets["skew_y"].visible = show_skew_y and not no_skew
