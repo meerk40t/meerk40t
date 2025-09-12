@@ -1861,6 +1861,9 @@ class MoveWidget(Widget):
                             move_to(dx, dy, interim=False)
                 # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+                if did_snap_to_point:
+                    # Even then magnets win!
+                    self.check_for_magnets()
             if (
                 self.scene.context.snap_grid
                 and modifiers and "shift" not in modifiers
@@ -1889,9 +1892,14 @@ class MoveWidget(Widget):
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
                     if dist is not None and dist < gap:
                         did_snap_to_point = True
-                        if pt1 is not None and pt2 is not None and isinstance(pt1, (list, tuple)):
-                            dx = pt1[0] - pt2[0]
-                            dy = pt1[1] - pt2[1]
+                        if pt1 is not None and pt2 is not None:
+                            # Convert to real coordinates - pt1 and pt2 might be complex or tuples
+                            if hasattr(pt1, 'real'):
+                                dx = pt1.real - pt2.real
+                                dy = pt1.imag - pt2.imag
+                            else:
+                                dx = pt1[0] - pt2[0]
+                                dy = pt1[1] - pt2[1]
                             self.total_dx = 0
                             self.total_dy = 0
                             move_to(dx, dy, interim=False)
