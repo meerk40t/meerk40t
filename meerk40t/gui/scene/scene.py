@@ -5,6 +5,7 @@ import time
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
@@ -27,6 +28,7 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END, Geomstr
 
 _reused_identity_widget = Matrix()
 XCELLS = 15
@@ -1029,24 +1031,41 @@ class Scene(Module, Job):
 
         # Batch process elements for better performance
         points_list = []
-        for e in self.context.elements.flat(types=elem_nodes):
-            if hasattr(e, "points"):
-                emph = e.emphasized
+        minimum_distance = float(Length("2spx"))
+        for node in self.context.elements.flat(types=elem_nodes):
+            if hasattr(node, "as_geometry"):
+                geom = node.as_geometry()
+                # Let's take all start and end points of lines and curves
+                # but only if they are further away than a small epsilon to avoid duplicates
+                lastpt = None
+                for idx, seg in enumerate(geom.segments[:geom.index]):
+                    segtype = geom._segtype(seg)
+                    if segtype == TYPE_END:
+                        lastpt = None
+                    if segtype in NON_GEOMETRY_TYPES:
+                        continue
+                    pt0 = seg[0] # Start point
+                    pt1 = geom.position(idx, 0.5)   
+                    pt2 = seg[-1] # End point
+                    
+                    def added(pt, lastpt, pt_type):
+                        if lastpt is None or abs(pt - lastpt) > minimum_distance:
+                            points_list.append([pt.real, pt.imag, pt_type, node.emphasized])
+                            lastpt = pt
+                        return lastpt
+                            
+                    lastpt = added(pt0, lastpt, TYPE_POINT)
+                    lastpt = added(pt1, lastpt, TYPE_MIDDLE_SMALL)
+                    lastpt = added(pt2, lastpt, TYPE_POINT)
+                # Other element types can be added here as needed   
+            elif hasattr(node, "points"):
+                emph = node.emphasized
                 # Extend the list instead of appending one by one for better performance
-                for pt in e.points:
-                    try:
-                        if len(pt) >= 3:
-                            pt_type = translation_table.get(pt[2], TYPE_POINT)
-                            points_list.append([pt[0], pt[1], pt_type, emph])
-                    except Exception:
-                        pass  # Skip invalid points
-            elif hasattr(e, "as_geometry"):
-                try:
-                    geom = e.as_geometry()
-                    points_list.extend([[pt.real, pt.imag, TYPE_POINT, e.emphasized] for pt in geom.as_points()])
-                except Exception:
-                    pass  # Skip elements with broken as_geometry
-
+                for pt in node.points:
+                    if len(pt) >= 3:
+                        pt_type = translation_table.get(pt[2], TYPE_POINT)
+                        points_list.append([pt[0], pt[1], pt_type, emph])
+            
         self.snap_attraction_points = points_list
         self._last_elements_hash = current_elements_hash
 
