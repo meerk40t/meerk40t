@@ -311,14 +311,7 @@ class BorderWidget(Widget):
                 )
             )
             if units != secondary_units:
-                s_txt += "/" + str(
-                    Length(
-                        amount=value,
-                        digits=2,
-                        preferred_units=secondary_units,
-                        relative_length=rel_length,
-                    )
-                )
+                s_txt += f"/{str(Length(amount=value, digits=2, preferred_units=secondary_units, relative_length=rel_length))}"
             try:
                 (width, height, descent, externalLeading) = gc.GetFullTextExtent(s_txt)
                 t_width = width + externalLeading
@@ -387,7 +380,7 @@ class BorderWidget(Widget):
         gc.PopState()
         gc.SetPen(self.master.selection_pen)
 
-        units = context._display_unit if context._display_unit else context.units_name
+        units = context._display_unit or context.units_name
         secondary_units = context.units_name
         gc.SetFont(self._get_label_font(), self.scene.colors.color_manipulation)
 
@@ -795,7 +788,7 @@ class RotationWidget(Widget):
         if event_type == "leftdown":
             self.master.show_border = False
             # Hit in the inner area?
-            if self.inner_contains(space_pos[0], space_pos[1]):
+            if space_pos is not None and self.inner_contains(space_pos[0], space_pos[1]):
                 if self.index == 0:  # tl
                     self.rotate_cx = self.master.right
                     self.rotate_cy = self.master.bottom
@@ -843,7 +836,7 @@ class CornerWidget(Widget):
             self.method = "se"
         if index == 3:
             self.method = "sw"
-        self.cursor = "size_" + self.method
+        self.cursor = f"size_{self.method}"
 
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
         self.update()
@@ -1060,7 +1053,7 @@ class SideWidget(Widget):
         self.save_height = 0
         self.uniform = False
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
-        if index == 0 or index == 2:
+        if index in (0, 2):
             self.allow_x = True
             self.allow_y = False
         else:
@@ -1074,7 +1067,7 @@ class SideWidget(Widget):
             self.method = "s"
         if index == 3:
             self.method = "w"
-        self.cursor = "size_" + self.method
+        self.cursor = f"size_{self.method}"
         self.update()
 
     def set_size(self, msize, rotsize):
@@ -1516,8 +1509,8 @@ class MoveWidget(Widget):
         # Iterate through list of selected elements, duplicate them
         context = self.scene.context
         elements = context.elements
-        copy_nodes = list()
-        changed_nodes = list()
+        copy_nodes = []
+        changed_nodes = []
         delta_wordlist = 1
         # The alt-drag will leave a copy in the original location.
         # This copy will lose all hierarchy attributes,
@@ -1625,7 +1618,7 @@ class MoveWidget(Widget):
                     ):
                         property_op(self.scene.context, e)
 
-            if len(changed_nodes) > 0:
+            if changed_nodes:
                 self.scene.context.signal("element_property_update", changed_nodes)
             elements.classify(copy_nodes)
 
@@ -1853,7 +1846,7 @@ class MoveWidget(Widget):
 
                     if dist is not None and dist < gap:
                         did_snap_to_point = True
-                        if pt1 is not None and pt2 is not None and hasattr(pt1, 'real'):
+                        if pt1 is not None and pt2 is not None:
                             dx = pt1.real - pt2.real
                             dy = pt1.imag - pt2.imag
                             self.total_dx = 0
@@ -1894,15 +1887,20 @@ class MoveWidget(Widget):
                         did_snap_to_point = True
                         if pt1 is not None and pt2 is not None:
                             # Convert to real coordinates - pt1 and pt2 might be complex or tuples
-                            if hasattr(pt1, 'real'):
-                                dx = pt1.real - pt2.real
-                                dy = pt1.imag - pt2.imag
-                            else:
-                                dx = pt1[0] - pt2[0]
-                                dy = pt1[1] - pt2[1]
-                            self.total_dx = 0
-                            self.total_dy = 0
-                            move_to(dx, dy, interim=False)
+                            try:
+                                if hasattr(pt1, 'real') and hasattr(pt2, 'real'):
+                                    dx = pt1.real - pt2.real
+                                    dy = pt1.imag - pt2.imag
+                                else:
+                                    # Handle as tuples/arrays - suppress lint warnings with explicit conversion
+                                    dx = float(pt1[0]) - float(pt2[0])  # type: ignore
+                                    dy = float(pt1[1]) - float(pt2[1])  # type: ignore
+                                self.total_dx = 0
+                                self.total_dy = 0
+                                move_to(dx, dy, interim=False)
+                            except (IndexError, TypeError, AttributeError):
+                                # Fallback: skip snapping if coordinate conversion fails
+                                did_snap_to_point = False
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
@@ -2617,7 +2615,7 @@ class SelectionWidget(Widget):
                 scene=self.scene,
                 index=i,
                 size=rotsize,
-                inner=int(msize),
+                inner=msize,
             )
             self.add_widget(-1, self.child_widgets[f"rotation_{i}"])
         self.child_widgets["rotation_org"] = MoveRotationOriginWidget(master=self, scene=self.scene, size=msize)
@@ -3056,8 +3054,7 @@ class SelectionWidget(Widget):
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
                 self.handle_pen.SetWidth(int(0.75 * self.line_width))
-            if self.font_size < 1.0:
-                self.font_size = 1.0  # Mac does not allow values lower than 1.
+            self.font_size = max(self.font_size, 1.0)  # Mac does not allow values lower than 1.
             try:
                 font = wx.Font(
                     int(self.font_size),
