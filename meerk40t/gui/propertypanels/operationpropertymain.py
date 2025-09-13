@@ -1207,122 +1207,198 @@ class PanelStartPreference(wx.Panel):
                     from_left = not from_left
                 pos += step
         if direction == RASTER_DIAGONAL:
+            # Draw direction arrows based on preferences
             dir_arrow_left_right(self.operation.raster_preference_left)
             dir_arrow_up_down(self.operation.raster_preference_top)
 
-            # Draw diagonal raster lines that represent the actual scanning pattern
-            # The diagonal algorithm scans along lines where x+y = constant
-            start_corner = f"{'top' if self.operation.raster_preference_top else 'bottom'}-{'left' if self.operation.raster_preference_left else 'right'}"
+            # Simple diagonal raster visualization
+            # Draw parallel 45-degree lines that represent the scanning pattern
             bidirectional = getattr(self.operation, 'bidirectional', False)
 
-            # Calculate the number of diagonal lines to draw
-            num_lines = min(8, max(3, int(min(w, h) / 20)))  # Adaptive number of lines
-
-            # For proper diagonal visualization, draw parallel 45-degree lines
-            # The algorithm scans along lines where x + y = constant
-            # We need to find the range of diagonal sums that cover the area
-
-            # Calculate the bounding box for the visualization (10% margin)
+            # Calculate bounding box (10% margin)
             left = w * 0.1
             right = w * 0.9
             top = h * 0.1
             bottom = h * 0.9
 
-            # Find the range of diagonal sums (x + y = constant) that intersect our bounding box
-            min_sum = int(left + top)  # Smallest sum in top-left
-            max_sum = int(right + bottom)  # Largest sum in bottom-right
+            # Draw diagonal raster lines - use different equations to achieve the 4 distinct directions
+            # This creates clear visual distinction for each preference combination:
+            # TL->BR and BR->TL need positive slope: x - y = constant
+            # BL->TR and TR->BL need negative slope: x + y = constant
+            
+            # Determine which diagonal type to use based on desired visual direction
+            if (self.operation.raster_preference_left and self.operation.raster_preference_top) or \
+               (not self.operation.raster_preference_left and not self.operation.raster_preference_top):
+                # TL->BR or BR->TL: use x - y = constant (positive slope)
+                use_difference = True
+                min_val = left - bottom  # Most negative difference (bottom-left area)
+                max_val = right - top    # Most positive difference (top-right area)
+                equation_type = "x - y"
+            else:
+                # BL->TR or TR->BL: use x + y = constant (negative slope)
+                use_difference = False
+                min_val = left + top     # Smallest sum (top-left area)
+                max_val = right + bottom # Largest sum (bottom-right area)
+                equation_type = "x + y"
 
-            # Calculate step size to distribute lines evenly
-            total_range = max_sum - min_sum
-            step = max(1, total_range // (num_lines - 1)) if num_lines > 1 else 1
+            print(f"Debug: Using {equation_type} = constant for visual clarity, range=[{min_val:.1f}, {max_val:.1f}]")
+            print(f"Debug: Bounding box - left={left}, right={right}, top={top}, bottom={bottom}")
 
-            # Draw parallel diagonal lines
-            for i in range(num_lines):
-                # Calculate the diagonal sum for this line
-                diagonal_sum = min_sum + i * step
-                if i == num_lines - 1:  # Ensure last line covers the full range
-                    diagonal_sum = max_sum
+            # Number of lines to draw
+            num_lines = 6
 
-                # Find intersection points of this diagonal (x + y = diagonal_sum) with the bounding box
-                # We need to find where the line intersects the four edges of the rectangle
+            # For diagonal raster, both preferences determine the scanning behavior
+            step = (max_val - min_val) / (num_lines - 1) if num_lines > 1 else 0
+            
+            # Determine diagonal scan order based on BOTH preferences
+            # This determines which diagonal lines are scanned first AND how they're drawn
+            print(f"Debug: Preferences - top={self.operation.raster_preference_top}, left={self.operation.raster_preference_left}")
+            
+            if self.operation.raster_preference_top and self.operation.raster_preference_left:
+                # Top-left preference: scan from top-left diagonal to bottom-right diagonal
+                scan_order = list(range(num_lines))
+                line_emphasis = "normal"  # Standard diagonal pattern
+            elif self.operation.raster_preference_top and not self.operation.raster_preference_left:
+                # Top-right preference: scan from different diagonal starting point
+                scan_order = list(range(num_lines))
+                line_emphasis = "top-right"  # Shift pattern to emphasize top-right start
+            elif not self.operation.raster_preference_top and self.operation.raster_preference_left:
+                # Bottom-left preference: reverse diagonal order
+                scan_order = list(range(num_lines - 1, -1, -1))
+                line_emphasis = "bottom-left"  # Different pattern for bottom-left
+            else:
+                # Bottom-right preference: both order and pattern change
+                scan_order = list(range(num_lines - 1, -1, -1))
+                line_emphasis = "bottom-right"  # Most dramatic change
 
+            # Draw parallel 45-degree diagonal lines with preference-based emphasis
+            for idx, i in enumerate(scan_order):
+                current_val = min_val + i * step
+                if i == num_lines - 1:
+                    current_val = max_val
+
+                # Adjust diagonal line positioning based on line_emphasis
+                if line_emphasis == "top-right":
+                    # Shift diagonals slightly to emphasize top-right starting behavior
+                    current_val = current_val + step * 0.2
+                elif line_emphasis == "bottom-left":
+                    # Shift diagonals to show bottom-left emphasis
+                    current_val = current_val - step * 0.2
+                elif line_emphasis == "bottom-right":
+                    # Most dramatic shift for bottom-right corner start
+                    current_val = current_val + step * 0.3
+
+                # Find intersection points based on diagonal equation type
                 intersections = []
+                
+                if use_difference:
+                    # Find intersections for x - y = current_val (positive slope diagonals)
+                    # Intersection with left edge (x = left)
+                    y_left = left - current_val
+                    if top <= y_left <= bottom:
+                        intersections.append((left, y_left))
 
-                # Intersection with left edge (x = left)
-                y_left = diagonal_sum - left
-                if top <= y_left <= bottom:
-                    intersections.append((left, y_left))
+                    # Intersection with right edge (x = right)
+                    y_right = right - current_val
+                    if top <= y_right <= bottom:
+                        intersections.append((right, y_right))
 
-                # Intersection with right edge (x = right)
-                y_right = diagonal_sum - right
-                if top <= y_right <= bottom:
-                    intersections.append((right, y_right))
+                    # Intersection with top edge (y = top)
+                    x_top = current_val + top
+                    if left <= x_top <= right:
+                        intersections.append((x_top, top))
 
-                # Intersection with top edge (y = top)
-                x_top = diagonal_sum - top
-                if left <= x_top <= right:
-                    intersections.append((x_top, top))
+                    # Intersection with bottom edge (y = bottom)
+                    x_bottom = current_val + bottom
+                    if left <= x_bottom <= right:
+                        intersections.append((x_bottom, bottom))
+                else:
+                    # Find intersections for x + y = current_val (negative slope diagonals)
+                    # Intersection with left edge (x = left)
+                    y_left = current_val - left
+                    if top <= y_left <= bottom:
+                        intersections.append((left, y_left))
 
-                # Intersection with bottom edge (y = bottom)
-                x_bottom = diagonal_sum - bottom
-                if left <= x_bottom <= right:
-                    intersections.append((x_bottom, bottom))
+                    # Intersection with right edge (x = right)
+                    y_right = current_val - right
+                    if top <= y_right <= bottom:
+                        intersections.append((right, y_right))
 
-                # We need exactly 2 intersection points to draw a line
+                    # Intersection with top edge (y = top)
+                    x_top = current_val - top
+                    if left <= x_top <= right:
+                        intersections.append((x_top, top))
+
+                    # Intersection with bottom edge (y = bottom)
+                    x_bottom = current_val - bottom
+                    if left <= x_bottom <= right:
+                        intersections.append((x_bottom, bottom))
+
+                print(f"Debug: Diagonal {idx} ({equation_type}={current_val:.1f}) - intersections: {intersections}")
+
+                # Draw line if we have at least 2 intersection points
                 if len(intersections) >= 2:
-                    # Sort intersections to ensure consistent direction
-                    if start_corner in ["top-left", "bottom-right"]:
-                        # Sort by x coordinate (left to right)
-                        intersections.sort(key=lambda p: p[0])
-                    else:
-                        # Sort by x coordinate in reverse (right to left)
-                        intersections.sort(key=lambda p: p[0], reverse=True)
+                    # Apply sorting to achieve the four distinct visual directions:
+                    # True-True: TL->BR (use x-y=const, sort for top-left first)
+                    # True-False: BL->TR (use x+y=const, sort for bottom-left first) 
+                    # False-True: TR->BL (use x+y=const, sort for top-right first)
+                    # False-False: BR->TL (use x-y=const, sort for bottom-right first)
+                    
+                    if self.operation.raster_preference_left and self.operation.raster_preference_top:
+                        # TL->BR: For x-y=const lines, start from top-left (smallest x+y sum)
+                        intersections.sort(key=lambda p: (p[0] + p[1]))
+                    elif self.operation.raster_preference_left and not self.operation.raster_preference_top:
+                        # BL->TR: For x+y=const lines, start from bottom-left (smallest x, largest y)
+                        intersections.sort(key=lambda p: (p[0], -p[1]))
+                    elif not self.operation.raster_preference_left and self.operation.raster_preference_top:
+                        # TR->BL: For x+y=const lines, start from top-right (largest x, smallest y)
+                        intersections.sort(key=lambda p: (-p[0], p[1]))
+                    else:  # not raster_preference_left and not raster_preference_top
+                        # BR->TL: For x-y=const lines, start from bottom-right (largest x+y sum)
+                        intersections.sort(key=lambda p: -(p[0] + p[1]))
 
                     x1, y1 = intersections[0]
                     x2, y2 = intersections[1]
+                    
+                    direction_name = ""
+                    if self.operation.raster_preference_left and self.operation.raster_preference_top:
+                        direction_name = "TL->BR"
+                    elif self.operation.raster_preference_left and not self.operation.raster_preference_top:
+                        direction_name = "BL->TR"
+                    elif not self.operation.raster_preference_left and self.operation.raster_preference_top:
+                        direction_name = "TR->BL"
+                    else:
+                        direction_name = "BR->TL"
+                    
+                    print(f"Debug: Line {idx} - {direction_name}, direction=({x1:.1f},{y1:.1f})->({x2:.1f},{y2:.1f})")
 
                     # Apply bidirectional alternation if enabled
-                    if bidirectional and (i % 2 == 1):
+                    if bidirectional and (idx % 2 == 1):
                         x1, x2 = x2, x1
                         y1, y2 = y2, y1
 
-                    # Ensure coordinates are within bounds
-                    x1 = max(w * 0.1, min(w * 0.9, x1))
-                    y1 = max(h * 0.1, min(h * 0.9, y1))
-                    x2 = max(w * 0.1, min(w * 0.9, x2))
-                    y2 = max(h * 0.1, min(h * 0.9, y2))
-
                     r_start.append((x1, y1))
                     r_end.append((x2, y2))
-
-                # Add direction arrow for the last line
-                if i == num_lines - 1:
-                    # Draw small arrow at the end of the last raster line
-                    arrow_size = 6
+                    
+                    # Add small directional arrow at the end of each line to show direction
+                    arrow_size = 4
                     dx = x2 - x1
                     dy = y2 - y1
-                    if abs(dx) > abs(dy):  # More horizontal movement
-                        if dx > 0:  # Going right
-                            r_start.append((x2, y2))
-                            r_end.append((x2 - arrow_size, y2 - arrow_size))
-                            r_start.append((x2, y2))
-                            r_end.append((x2 - arrow_size, y2 + arrow_size))
-                        else:  # Going left
-                            r_start.append((x2, y2))
-                            r_end.append((x2 + arrow_size, y2 - arrow_size))
-                            r_start.append((x2, y2))
-                            r_end.append((x2 + arrow_size, y2 + arrow_size))
-                    else:  # More vertical movement
-                        if dy > 0:  # Going down
-                            r_start.append((x2, y2))
-                            r_end.append((x2 - arrow_size, y2 - arrow_size))
-                            r_start.append((x2, y2))
-                            r_end.append((x2 + arrow_size, y2 - arrow_size))
-                        else:  # Going up
-                            r_start.append((x2, y2))
-                            r_end.append((x2 - arrow_size, y2 + arrow_size))
-                            r_start.append((x2, y2))
-                            r_end.append((x2 + arrow_size, y2 + arrow_size))
+                    length = (dx*dx + dy*dy)**0.5
+                    if length > 0:
+                        # Normalize direction vector
+                        dx_norm = dx / length
+                        dy_norm = dy / length
+                        
+                        # Create perpendicular vector for arrow
+                        perp_x = -dy_norm * arrow_size
+                        perp_y = dx_norm * arrow_size
+                        
+                        # Add arrow lines
+                        r_start.append((x2, y2))
+                        r_end.append((x2 - dx_norm * arrow_size + perp_x, y2 - dy_norm * arrow_size + perp_y))
+                        r_start.append((x2, y2))
+                        r_end.append((x2 - dx_norm * arrow_size - perp_x, y2 - dy_norm * arrow_size - perp_y))
 
         if direction in (
             RASTER_R2L,
