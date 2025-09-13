@@ -3,6 +3,7 @@ import wx
 from meerk40t.constants import (
     RASTER_B2T,
     RASTER_CROSSOVER,
+    RASTER_DIAGONAL,
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_HATCH,
@@ -61,6 +62,7 @@ def validate_raster_settings(node):
         RASTER_GREEDY_H,
         RASTER_GREEDY_V,
         RASTER_SPIRAL,
+        RASTER_DIAGONAL
     ):
         node.bidirectional = True
 
@@ -1118,7 +1120,7 @@ class PanelStartPreference(wx.Panel):
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
-        if w < 10 or h < 10:  # Ini initialisation phase and too small anyway...
+        if w < 10 or h < 10:  # In initialisation phase and too small anyway...
             return
 
         from_left = self.operation.raster_preference_left
@@ -1204,6 +1206,145 @@ class PanelStartPreference(wx.Panel):
                 if bidirectional:
                     from_left = not from_left
                 pos += step
+        if direction == RASTER_DIAGONAL:
+            dir_arrow_left_right(True)
+            dir_arrow_up_down(True)
+
+            # Draw diagonal raster lines that represent the actual scanning pattern
+            # The diagonal algorithm scans along lines where x+y = constant
+            start_corner = getattr(self.operation, 'raster_start_corner', 'top-left')
+            bidirectional = getattr(self.operation, 'bidirectional', False)
+
+            # Calculate the number of diagonal lines to draw
+            num_lines = min(8, max(3, int(min(w, h) / 20)))  # Adaptive number of lines
+
+            # Draw diagonal raster lines representing the scanning pattern
+            for i in range(num_lines):
+                # Determine if this diagonal should be reversed (bidirectional alternation)
+                reverse_direction = bidirectional and (i % 2 == 1)
+
+                if start_corner in ["top-left", "bottom-right"]:
+                    # Calculate positions for diagonals starting from top-left going down-right
+                    if i < num_lines // 2:
+                        # Lines starting from top edge
+                        x1 = w * 0.1 + (i * w * 0.8 / max(1, num_lines // 2))
+                        y1 = h * 0.1
+                        # Calculate end point based on diagonal slope
+                        remaining_width = w * 0.9 - x1
+                        remaining_height = h * 0.9 - y1
+                        if remaining_width > 0:
+                            slope = remaining_height / remaining_width
+                            x2 = w * 0.9
+                            y2 = y1 + (x2 - x1) * slope
+                            if y2 > h * 0.9:
+                                y2 = h * 0.9
+                                x2 = x1 + (y2 - y1) / slope
+                        else:
+                            x2 = x1
+                            y2 = y1
+                    else:
+                        # Lines starting from left edge
+                        x1 = w * 0.1
+                        y1 = h * 0.1 + ((i - num_lines // 2) * h * 0.8 / max(1, num_lines // 2))
+                        # Calculate end point
+                        remaining_height = h * 0.9 - y1
+                        remaining_width = w * 0.9 - x1
+                        if remaining_height > 0:
+                            slope = remaining_width / remaining_height
+                            y2 = h * 0.9
+                            x2 = x1 + (y2 - y1) * slope
+                            if x2 > w * 0.9:
+                                x2 = w * 0.9
+                                y2 = y1 + (x2 - x1) / slope
+                        else:
+                            x2 = x1
+                            y2 = y1
+
+                    # Reverse direction for bidirectional alternation
+                    if reverse_direction:
+                        x1, x2 = x2, x1
+                        y1, y2 = y2, y1
+
+                else:
+                    # Start from top-right or bottom-left
+                    if i < num_lines // 2:
+                        # Lines starting from top edge
+                        x1 = w * 0.9 - (i * w * 0.8 / max(1, num_lines // 2))
+                        y1 = h * 0.1
+                        # Calculate end point going down-left
+                        remaining_width = x1 - w * 0.1
+                        remaining_height = h * 0.9 - y1
+                        if remaining_width > 0:
+                            slope = remaining_height / remaining_width
+                            x2 = w * 0.1
+                            y2 = y1 + (x1 - x2) * slope
+                            if y2 > h * 0.9:
+                                y2 = h * 0.9
+                                x2 = x1 - (y2 - y1) / slope
+                        else:
+                            x2 = x1
+                            y2 = y1
+                    else:
+                        # Lines starting from right edge
+                        x1 = w * 0.9
+                        y1 = h * 0.1 + ((i - num_lines // 2) * h * 0.8 / max(1, num_lines // 2))
+                        # Calculate end point going left
+                        remaining_height = h * 0.9 - y1
+                        remaining_width = x1 - w * 0.1
+                        if remaining_height > 0:
+                            slope = remaining_width / remaining_height
+                            y2 = h * 0.9
+                            x2 = x1 - (y2 - y1) * slope
+                            if x2 < w * 0.1:
+                                x2 = w * 0.1
+                                y2 = y1 + (x1 - x2) / slope
+                        else:
+                            x2 = x1
+                            y2 = y1
+
+                    # Reverse direction for bidirectional alternation
+                    if reverse_direction:
+                        x1, x2 = x2, x1
+                        y1, y2 = y2, y1
+
+                # Ensure coordinates are within bounds
+                x1 = max(w * 0.1, min(w * 0.9, x1))
+                y1 = max(h * 0.1, min(h * 0.9, y1))
+                x2 = max(w * 0.1, min(w * 0.9, x2))
+                y2 = max(h * 0.1, min(h * 0.9, y2))
+
+                r_start.append((x1, y1))
+                r_end.append((x2, y2))
+
+                # Add direction arrow for the last line
+                if i == num_lines - 1:
+                    # Draw small arrow at the end of the last raster line
+                    arrow_size = 6
+                    dx = x2 - x1
+                    dy = y2 - y1
+                    if abs(dx) > abs(dy):  # More horizontal movement
+                        if dx > 0:  # Going right
+                            r_start.append((x2, y2))
+                            r_end.append((x2 - arrow_size, y2 - arrow_size))
+                            r_start.append((x2, y2))
+                            r_end.append((x2 - arrow_size, y2 + arrow_size))
+                        else:  # Going left
+                            r_start.append((x2, y2))
+                            r_end.append((x2 + arrow_size, y2 - arrow_size))
+                            r_start.append((x2, y2))
+                            r_end.append((x2 + arrow_size, y2 + arrow_size))
+                    else:  # More vertical movement
+                        if dy > 0:  # Going down
+                            r_start.append((x2, y2))
+                            r_end.append((x2 - arrow_size, y2 - arrow_size))
+                            r_start.append((x2, y2))
+                            r_end.append((x2 + arrow_size, y2 - arrow_size))
+                        else:  # Going up
+                            r_start.append((x2, y2))
+                            r_end.append((x2 - arrow_size, y2 + arrow_size))
+                            r_start.append((x2, y2))
+                            r_end.append((x2 + arrow_size, y2 + arrow_size))
+
         if direction in (
             RASTER_R2L,
             RASTER_L2R,
@@ -1467,6 +1608,7 @@ class RasterSettingsPanel(wx.Panel):
             (RASTER_GREEDY_V, "Greedy vertical"),
             (RASTER_CROSSOVER, "Crossover"),
             (RASTER_SPIRAL, "Spiral"),
+            (RASTER_DIAGONAL, "Diagonal"),
         ]
         # Look for registered raster (image) preprocessors,
         # these are routines that take one image as parameter
@@ -1793,6 +1935,7 @@ class RasterSettingsPanel(wx.Panel):
             + "\n"
             + _("  Usually much faster on an image with a lot of white pixels."),
             RASTER_SPIRAL: _("- Spiral: Starting in the center spiralling outwards"),
+            RASTER_DIAGONAL: _("- Digonal: Starting in one corner traversing the image diagonally"),
         }
         lines = [_("You can choose from the following modes to laser an image:")]
         lines.extend([info for key, info in inform.items() if key not in unsupported])
