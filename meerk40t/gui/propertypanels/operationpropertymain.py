@@ -1207,114 +1207,93 @@ class PanelStartPreference(wx.Panel):
                     from_left = not from_left
                 pos += step
         if direction == RASTER_DIAGONAL:
-            dir_arrow_left_right(True)
-            dir_arrow_up_down(True)
+            dir_arrow_left_right(self.operation.raster_preference_left)
+            dir_arrow_up_down(self.operation.raster_preference_top)
 
             # Draw diagonal raster lines that represent the actual scanning pattern
             # The diagonal algorithm scans along lines where x+y = constant
-            start_corner = getattr(self.operation, 'raster_start_corner', 'top-left')
+            start_corner = f"{'top' if self.operation.raster_preference_top else 'bottom'}-{'left' if self.operation.raster_preference_left else 'right'}"
             bidirectional = getattr(self.operation, 'bidirectional', False)
 
             # Calculate the number of diagonal lines to draw
             num_lines = min(8, max(3, int(min(w, h) / 20)))  # Adaptive number of lines
 
-            # Draw diagonal raster lines representing the scanning pattern
+            # For proper diagonal visualization, draw parallel 45-degree lines
+            # The algorithm scans along lines where x + y = constant
+            # We need to find the range of diagonal sums that cover the area
+
+            # Calculate the bounding box for the visualization (10% margin)
+            left = w * 0.1
+            right = w * 0.9
+            top = h * 0.1
+            bottom = h * 0.9
+
+            # Find the range of diagonal sums (x + y = constant) that intersect our bounding box
+            min_sum = int(left + top)  # Smallest sum in top-left
+            max_sum = int(right + bottom)  # Largest sum in bottom-right
+
+            # Calculate step size to distribute lines evenly
+            total_range = max_sum - min_sum
+            step = max(1, total_range // (num_lines - 1)) if num_lines > 1 else 1
+
+            # Draw parallel diagonal lines
             for i in range(num_lines):
-                # Determine if this diagonal should be reversed (bidirectional alternation)
-                reverse_direction = bidirectional and (i % 2 == 1)
+                # Calculate the diagonal sum for this line
+                diagonal_sum = min_sum + i * step
+                if i == num_lines - 1:  # Ensure last line covers the full range
+                    diagonal_sum = max_sum
 
-                if start_corner in ["top-left", "bottom-right"]:
-                    # Calculate positions for diagonals starting from top-left going down-right
-                    if i < num_lines // 2:
-                        # Lines starting from top edge
-                        x1 = w * 0.1 + (i * w * 0.8 / max(1, num_lines // 2))
-                        y1 = h * 0.1
-                        # Calculate end point based on diagonal slope
-                        remaining_width = w * 0.9 - x1
-                        remaining_height = h * 0.9 - y1
-                        if remaining_width > 0:
-                            slope = remaining_height / remaining_width
-                            x2 = w * 0.9
-                            y2 = y1 + (x2 - x1) * slope
-                            if y2 > h * 0.9:
-                                y2 = h * 0.9
-                                x2 = x1 + (y2 - y1) / slope
-                        else:
-                            x2 = x1
-                            y2 = y1
+                # Find intersection points of this diagonal (x + y = diagonal_sum) with the bounding box
+                # We need to find where the line intersects the four edges of the rectangle
+
+                intersections = []
+
+                # Intersection with left edge (x = left)
+                y_left = diagonal_sum - left
+                if top <= y_left <= bottom:
+                    intersections.append((left, y_left))
+
+                # Intersection with right edge (x = right)
+                y_right = diagonal_sum - right
+                if top <= y_right <= bottom:
+                    intersections.append((right, y_right))
+
+                # Intersection with top edge (y = top)
+                x_top = diagonal_sum - top
+                if left <= x_top <= right:
+                    intersections.append((x_top, top))
+
+                # Intersection with bottom edge (y = bottom)
+                x_bottom = diagonal_sum - bottom
+                if left <= x_bottom <= right:
+                    intersections.append((x_bottom, bottom))
+
+                # We need exactly 2 intersection points to draw a line
+                if len(intersections) >= 2:
+                    # Sort intersections to ensure consistent direction
+                    if start_corner in ["top-left", "bottom-right"]:
+                        # Sort by x coordinate (left to right)
+                        intersections.sort(key=lambda p: p[0])
                     else:
-                        # Lines starting from left edge
-                        x1 = w * 0.1
-                        y1 = h * 0.1 + ((i - num_lines // 2) * h * 0.8 / max(1, num_lines // 2))
-                        # Calculate end point
-                        remaining_height = h * 0.9 - y1
-                        remaining_width = w * 0.9 - x1
-                        if remaining_height > 0:
-                            slope = remaining_width / remaining_height
-                            y2 = h * 0.9
-                            x2 = x1 + (y2 - y1) * slope
-                            if x2 > w * 0.9:
-                                x2 = w * 0.9
-                                y2 = y1 + (x2 - x1) / slope
-                        else:
-                            x2 = x1
-                            y2 = y1
+                        # Sort by x coordinate in reverse (right to left)
+                        intersections.sort(key=lambda p: p[0], reverse=True)
 
-                    # Reverse direction for bidirectional alternation
-                    if reverse_direction:
+                    x1, y1 = intersections[0]
+                    x2, y2 = intersections[1]
+
+                    # Apply bidirectional alternation if enabled
+                    if bidirectional and (i % 2 == 1):
                         x1, x2 = x2, x1
                         y1, y2 = y2, y1
 
-                else:
-                    # Start from top-right or bottom-left
-                    if i < num_lines // 2:
-                        # Lines starting from top edge
-                        x1 = w * 0.9 - (i * w * 0.8 / max(1, num_lines // 2))
-                        y1 = h * 0.1
-                        # Calculate end point going down-left
-                        remaining_width = x1 - w * 0.1
-                        remaining_height = h * 0.9 - y1
-                        if remaining_width > 0:
-                            slope = remaining_height / remaining_width
-                            x2 = w * 0.1
-                            y2 = y1 + (x1 - x2) * slope
-                            if y2 > h * 0.9:
-                                y2 = h * 0.9
-                                x2 = x1 - (y2 - y1) / slope
-                        else:
-                            x2 = x1
-                            y2 = y1
-                    else:
-                        # Lines starting from right edge
-                        x1 = w * 0.9
-                        y1 = h * 0.1 + ((i - num_lines // 2) * h * 0.8 / max(1, num_lines // 2))
-                        # Calculate end point going left
-                        remaining_height = h * 0.9 - y1
-                        remaining_width = x1 - w * 0.1
-                        if remaining_height > 0:
-                            slope = remaining_width / remaining_height
-                            y2 = h * 0.9
-                            x2 = x1 - (y2 - y1) * slope
-                            if x2 < w * 0.1:
-                                x2 = w * 0.1
-                                y2 = y1 + (x1 - x2) / slope
-                        else:
-                            x2 = x1
-                            y2 = y1
+                    # Ensure coordinates are within bounds
+                    x1 = max(w * 0.1, min(w * 0.9, x1))
+                    y1 = max(h * 0.1, min(h * 0.9, y1))
+                    x2 = max(w * 0.1, min(w * 0.9, x2))
+                    y2 = max(h * 0.1, min(h * 0.9, y2))
 
-                    # Reverse direction for bidirectional alternation
-                    if reverse_direction:
-                        x1, x2 = x2, x1
-                        y1, y2 = y2, y1
-
-                # Ensure coordinates are within bounds
-                x1 = max(w * 0.1, min(w * 0.9, x1))
-                y1 = max(h * 0.1, min(h * 0.9, y1))
-                x2 = max(w * 0.1, min(w * 0.9, x2))
-                y2 = max(h * 0.1, min(h * 0.9, y2))
-
-                r_start.append((x1, y1))
-                r_end.append((x2, y2))
+                    r_start.append((x1, y1))
+                    r_end.append((x2, y2))
 
                 # Add direction arrow for the last line
                 if i == num_lines - 1:
@@ -1437,10 +1416,10 @@ class PanelStartPreference(wx.Panel):
         prefer_min_x = self.operation.raster_preference_left
 
         self.slider_pref_left.Enable(
-            direction in (RASTER_T2B, RASTER_B2T, RASTER_GREEDY_H, RASTER_GREEDY_V)
+            direction in (RASTER_T2B, RASTER_B2T, RASTER_GREEDY_H, RASTER_GREEDY_V, RASTER_DIAGONAL)
         )
         self.slider_pref_top.Enable(
-            direction in (RASTER_L2R, RASTER_R2L, RASTER_GREEDY_H, RASTER_GREEDY_V)
+            direction in (RASTER_L2R, RASTER_R2L, RASTER_GREEDY_H, RASTER_GREEDY_V, RASTER_DIAGONAL)
         )
         self.slider_pref_left.SetValue(0 if prefer_min_x else 1)
         self.slider_pref_top.SetValue(0 if prefer_min_y else 1)
@@ -1448,6 +1427,7 @@ class PanelStartPreference(wx.Panel):
     def _reload_display(self):
         self.raster_lines = None
         self.travel_lines = None
+        self.direction_lines = None
         self.refresh_display()
 
     def on_slider_pref_left(

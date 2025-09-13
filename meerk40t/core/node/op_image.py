@@ -25,6 +25,7 @@ from math import isnan
 from meerk40t.constants import (
     RASTER_B2T,
     RASTER_CROSSOVER,
+    RASTER_DIAGONAL,
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_HATCH,
@@ -117,6 +118,8 @@ class ImageOpNode(Node, Parameters):
             raster_dir = "GR|"
         elif self.raster_direction == RASTER_SPIRAL:
             raster_dir = "(.)"
+        elif self.raster_direction == RASTER_DIAGONAL:
+            raster_dir = "/"
         else:
             raster_dir = str(self.raster_direction)
         default_map["direction"] = f"{raster_swing}{raster_dir} "
@@ -270,6 +273,7 @@ class ImageOpNode(Node, Parameters):
                 RASTER_GREEDY_H,
                 RASTER_CROSSOVER,
                 RASTER_SPIRAL,
+                RASTER_DIAGONAL,
             ):
                 scanlines = height_in_inches * dpi
                 if not self.bidirectional:
@@ -667,6 +671,7 @@ class ImageOpNode(Node, Parameters):
                 if self.raster_direction in (
                     RASTER_CROSSOVER,
                     RASTER_SPIRAL,
+                    RASTER_DIAGONAL,
                 ):  # Crossover - need both
                     settings["raster_step_x"] = step_x
                     settings["raster_step_y"] = step_y

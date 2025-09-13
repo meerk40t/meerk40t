@@ -678,8 +678,7 @@ class RasterPlotter:
             yield from self._plot_spiral()
         elif self.direction == RASTER_DIAGONAL:
             # Get start corner from special parameters, default to top-left
-            start_corner = self.special.get("start_corner", "top-left")
-            yield from self._plot_diagonal(start_corner=start_corner)
+            yield from self._plot_diagonal()
         # elif self.direction < 0:
         #     yield from self.testpattern_generator()
         elif self.horizontal:
@@ -1632,7 +1631,7 @@ class RasterPlotter:
                 f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s"
             )
 
-    def _plot_diagonal(self, start_corner="top-left"):
+    def _plot_diagonal(self):
         """
         Diagonal scanning algorithm that traverses the image diagonally.
         Supports bidirectional scanning where direction alternates between diagonals.
@@ -1644,6 +1643,8 @@ class RasterPlotter:
         Yields:
             tuple: (x, y, on) coordinates and on/off state
         """
+        start_corner = f"{'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}"
+
         # Track visited pixels to avoid duplicates
         visited = np.zeros((self.width, self.height), dtype=bool)
 

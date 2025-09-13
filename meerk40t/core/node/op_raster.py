@@ -11,6 +11,7 @@ from meerk40t.constants import (
     RASTER_GREEDY_V,
     RASTER_CROSSOVER,
     RASTER_SPIRAL,
+    RASTER_DIAGONAL,
 )
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
@@ -121,6 +122,8 @@ class RasterOpNode(Node, Parameters):
             raster_dir = "GR|"
         elif self.raster_direction == RASTER_SPIRAL:
             raster_dir = "(.)"
+        elif self.raster_direction == RASTER_DIAGONAL:
+            raster_dir = "/"
         else:
             raster_dir = str(self.raster_direction)
         default_map["direction"] = f"{raster_swing}{raster_dir} "
@@ -350,6 +353,7 @@ class RasterOpNode(Node, Parameters):
         if self.raster_direction in (
             RASTER_T2B, RASTER_B2T, RASTER_HATCH, 
             RASTER_GREEDY_H, RASTER_CROSSOVER, RASTER_SPIRAL,
+            RASTER_DIAGONAL,
         ):
             scanlines = height_in_inches * dpi
             if not self.bidirectional:
@@ -645,7 +649,7 @@ class RasterOpNode(Node, Parameters):
                 if white_pixel_ratio < 0.3:
                     self.raster_direction = RASTER_T2B if self.raster_direction == RASTER_GREEDY_H else RASTER_L2R
 
-            if self.raster_direction in (RASTER_CROSSOVER, RASTER_SPIRAL): # Crossover - need both
+            if self.raster_direction in (RASTER_CROSSOVER, RASTER_SPIRAL, RASTER_DIAGONAL): # Crossover - need both
                 settings["raster_step_x"] = step_x
                 settings["raster_step_y"] = step_y
                 horizontal = True
