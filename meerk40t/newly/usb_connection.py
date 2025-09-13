@@ -280,10 +280,14 @@ class USBConnection:
                 read = dev.read(
                     endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
                 )
-                self.channel(f"Confirmation: {read}")
-                if read[0] != 1:
+                if read is None or len(read) == 0:
+                    self.channel("No Confirmation Received.")
                     time.sleep(2)
-                    continue
+                else:
+                    self.channel(f"Confirmation: {read}")
+                    if read[0] != 1:
+                        time.sleep(2)
+                        continue
 
                 #####################################
                 # Step #3, write the bulk data of the packet.
