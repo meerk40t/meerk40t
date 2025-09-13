@@ -387,19 +387,8 @@ class ScenePanel(wx.Panel):
         mouse_pos = event.GetPosition()
         modifiers = self.event_modifiers(event)
         nearest_snap = None
-        
-        try:
-            space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
-            # Get snap point from scene
-            snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
-            if snap_x is not None and snap_y is not None:
-                # Convert back to screen coordinates for the snap info
-                snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
-                nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
-        except (AttributeError, TypeError):
-            # Fallback to no snap if there are issues
-            nearest_snap = None
-        
+        # Hover will not snap
+       
         if event.Moving():
             self.scene.event(
                 mouse_pos, "hover", nearest_snap, modifiers

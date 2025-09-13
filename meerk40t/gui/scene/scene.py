@@ -1008,6 +1008,7 @@ class Scene(Module, Job):
         current_elements_hash = self._get_elements_hash()
         if hasattr(self, '_last_elements_hash') and self._last_elements_hash == current_elements_hash:
             # Elements haven't changed, reuse cached points
+            # print (f"Cached attraction points used: {len(self.snap_attraction_points) if self.snap_attraction_points else 0} points.")
             self.context.elements.set_end_time("attr_calc_points", message="cached")
             return
 
@@ -1033,6 +1034,7 @@ class Scene(Module, Job):
         points_list = []
         minimum_distance = float(Length("2spx"))
         for node in self.context.elements.flat(types=elem_nodes):
+            # print(f"Debug: Processing node {node.type}")
             if hasattr(node, "as_geometry"):
                 geom = node.as_geometry()
                 # Let's take all start and end points of lines and curves
@@ -1103,6 +1105,7 @@ class Scene(Module, Job):
         # Calculate attraction points only if needed and not already cached
         if snap_points and self.snap_attraction_points is None:
             self._calculate_attraction_points()
+            # print(f"Calculated {len(self.snap_attraction_points) if self.snap_attraction_points else 0} attraction points.")
 
         # Cache matrix and scale calculations
         matrix = self.widget_root.scene_widget.matrix
