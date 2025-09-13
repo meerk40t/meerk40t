@@ -11,9 +11,6 @@ from meerk40t.tools.geomstr import TYPE_QUAD, TYPE_CUBIC, TYPE_ARC
 # Import for caching and additional utilities
 from functools import lru_cache
 
-# Import test case generation utilities
-from .optimization_testcases import generate_random_test_case, DEFAULT_SHAPE_COUNT
-
 
 # ==========
 # OPTIMIZATION CONSTANTS
@@ -76,122 +73,8 @@ def init_commands(kernel):
     # ==========
     # ELEMENT/SHAPE COMMANDS
     # ==========
-    @self.console_argument(
-        "amount",
-        type=int,
-        help=_("Number of shapes to create"),
-        default=DEFAULT_SHAPE_COUNT,
-    )
-    @self.console_command(
-        "testcase",
-        help=_("Create test case for optimization"),
-        input_type=None,
-        output_type="elements",
-    )
-    def reorder_testcase(channel, _, amount=None, data=None, post=None, **kwargs):
-        """Create a random test case for path optimization testing."""
-        branch = self.elem_branch
-
-        # Generate random test case using the dedicated module
-        created_elements = generate_random_test_case(
-            branch=branch,
-            device_view=self.device.view,
-            default_stroke=self.default_stroke,
-            default_strokewidth=self.default_strokewidth,
-            amount=amount,
-        )
-
-        # Add classification post-processing
-        post.append(self.post_classify(created_elements))
-
-    @self.console_argument("rows", type=int, help=_("Number of rows"), default=3)
-    @self.console_argument("cols", type=int, help=_("Number of columns"), default=3)
-    @self.console_argument("shape", type=str, help=_("Shape type"), default="rectangle")
-    @self.console_command(
-        "testcase_grid",
-        help=_("Create grid pattern test case for optimization"),
-        input_type=None,
-        output_type="elements",
-    )
-    def reorder_testcase_grid(
-        channel, _, rows=None, cols=None, shape=None, data=None, post=None, **kwargs
-    ):
-        """Create a grid pattern test case for path optimization testing."""
-        from .optimization_testcases import generate_grid_test_case
-
-        branch = self.elem_branch
-
-        created_elements = generate_grid_test_case(
-            branch=branch,
-            device_view=self.device.view,
-            default_stroke=self.default_stroke,
-            default_strokewidth=self.default_strokewidth,
-            rows=rows or 3,
-            cols=cols or 3,
-            shape_type=shape or "rectangle",
-        )
-
-        post.append(self.post_classify(created_elements))
-
-    @self.console_argument(
-        "count", type=int, help=_("Number of shapes in circle"), default=8
-    )
-    @self.console_argument(
-        "radius", type=float, help=_("Circle radius (percentage)"), default=30.0
-    )
-    @self.console_command(
-        "testcase_circle",
-        help=_("Create circular pattern test case for optimization"),
-        input_type=None,
-        output_type="elements",
-    )
-    def reorder_testcase_circle(
-        channel, _, count=None, radius=None, data=None, post=None, **kwargs
-    ):
-        """Create a circular pattern test case for path optimization testing."""
-        from .optimization_testcases import generate_circular_pattern_test_case
-
-        branch = self.elem_branch
-
-        created_elements = generate_circular_pattern_test_case(
-            branch=branch,
-            device_view=self.device.view,
-            default_stroke=self.default_stroke,
-            default_strokewidth=self.default_strokewidth,
-            count=count or 8,
-            radius=radius or 30.0,
-        )
-
-        post.append(self.post_classify(created_elements))
-
-    @self.console_argument(
-        "levels", type=int, help=_("Number of nesting levels"), default=3
-    )
-    @self.console_command(
-        "testcase_nested",
-        help=_("Create nested shapes test case for containment testing"),
-        input_type=None,
-        output_type="elements",
-    )
-    def reorder_testcase_nested(
-        channel, _, levels=None, data=None, post=None, **kwargs
-    ):
-        """Create nested shapes test case for containment testing."""
-        from .optimization_testcases import generate_nested_shapes_test_case
-
-        branch = self.elem_branch
-
-        created_elements = generate_nested_shapes_test_case(
-            branch=branch,
-            device_view=self.device.view,
-            default_stroke=self.default_stroke,
-            default_strokewidth=self.default_strokewidth,
-            levels=levels or 3,
-        )
-
-        post.append(self.post_classify(created_elements))
-        return "elements", data
-
+    # OPTIMIZATION COMMANDS  
+    # ==========
     @self.console_option(
         "debug",
         type=bool,
@@ -643,9 +526,9 @@ def init_commands(kernel):
                     channel(f"⚠ {test_file} not found")
 
             if all_passed:
-                channel(_("✓ All available workflow tests passed successfully!"))
+                channel("✓ All available workflow tests passed successfully!")
             else:
-                channel(_("✗ Some workflow tests failed. Check output for details."))
+                channel("✗ Some workflow tests failed. Check output for details.")
 
         except ImportError as e:
             channel(f"Workflow tests not available: {e}")

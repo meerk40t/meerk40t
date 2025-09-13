@@ -80,6 +80,7 @@ def plugin(kernel, lifecycle=None):
             undo_redo,
             wordlist,
             manual_optimize,
+            # optimization_scenarios,
         )
 
         return [
@@ -104,6 +105,7 @@ def plugin(kernel, lifecycle=None):
             offset_clpr.plugin,
             testcases.plugin,
             manual_optimize.plugin,
+            # optimization_scenarios.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
