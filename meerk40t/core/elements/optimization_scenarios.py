@@ -363,7 +363,6 @@ def generate_nested_shapes_test_case(branch, device_view, default_stroke, defaul
 
 def plugin(kernel, lifecycle=None):
     """Plugin entry point following the standard MeerK40t plugin pattern."""
-    _ = kernel.translation
     if lifecycle == "postboot":
         init_commands(kernel)
 
@@ -371,7 +370,6 @@ def plugin(kernel, lifecycle=None):
 def init_commands(kernel):
     """Initialize all testcase scenario generator commands."""
     self = kernel.elements
-    _ = kernel.translation
 
     # ==========
     # TESTCASE SCENARIO GENERATORS
@@ -380,12 +378,12 @@ def init_commands(kernel):
     @self.console_argument(
         "amount",
         type=int,
-        help=_("Number of shapes to create"),
+        help="Number of shapes to create",
         default=DEFAULT_SHAPE_COUNT,
     )
     @self.console_command(
         "testcase",
-        help=_("Create test case for optimization"),
+        help="Create test case for optimization",
         input_type=None,
         output_type="elements",
     )
@@ -405,12 +403,12 @@ def init_commands(kernel):
         # Add classification post-processing
         post.append(self.post_classify(created_elements))
 
-    @self.console_argument("rows", type=int, help=_("Number of rows"), default=3)
-    @self.console_argument("cols", type=int, help=_("Number of columns"), default=3)
-    @self.console_argument("shape", type=str, help=_("Shape type"), default="rectangle")
+    @self.console_argument("rows", type=int, help="Number of rows", default=3)
+    @self.console_argument("cols", type=int, help="Number of columns", default=3)
+    @self.console_argument("shape", type=str, help="Shape type", default="rectangle")
     @self.console_command(
         "testcase_grid",
-        help=_("Create grid pattern test case for optimization"),
+        help="Create grid pattern test case for optimization",
         input_type=None,
         output_type="elements",
     )
@@ -434,14 +432,14 @@ def init_commands(kernel):
             post.append(self.post_classify(created_elements))
 
     @self.console_argument(
-        "count", type=int, help=_("Number of shapes in circle"), default=8
+        "count", type=int, help="Number of shapes in circle", default=8
     )
     @self.console_argument(
-        "radius", type=float, help=_("Circle radius (percentage)"), default=30.0
+        "radius", type=float, help="Circle radius (percentage)", default=30.0
     )
     @self.console_command(
         "testcase_circle",
-        help=_("Create circular pattern test case for optimization"),
+        help="Create circular pattern test case for optimization",
         input_type=None,
         output_type="elements",
     )
@@ -464,11 +462,11 @@ def init_commands(kernel):
             post.append(self.post_classify(created_elements))
 
     @self.console_argument(
-        "levels", type=int, help=_("Number of nesting levels"), default=3
+        "levels", type=int, help="Number of nesting levels", default=3
     )
     @self.console_command(
         "testcase_nested",
-        help=_("Create nested shapes test case for containment testing"),
+        help="Create nested shapes test case for containment testing",
         input_type=None,
         output_type="elements",
     )
