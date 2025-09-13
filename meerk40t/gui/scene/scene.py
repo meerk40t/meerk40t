@@ -26,7 +26,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
-from meerk40t.kernel import Job, Module
+from meerk40t.kernel import Job, Module, signal_listener
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END, Geomstr
 
@@ -997,6 +997,25 @@ class Scene(Module, Job):
 
             if dist_sq <= length_sq:
                 self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
+
+
+    @signal_listener("element_property_update")
+    @signal_listener("element_property_reload")
+    @signal_listener("rebuild_tree")
+    @signal_listener("modified_by_tool")
+    def on_external_element_change(self, *args, **kwargs):
+        """
+        Listens to element changes and resets the attraction point cache.
+        """
+        self._reset_attraction_cache()
+    
+    def _reset_attraction_cache(self):
+        """
+        Resets the cached attraction points forcing a recalculation on next use.
+        """
+        self.snap_attraction_points = None
+        if hasattr(self, '_last_elements_hash'):
+            del self._last_elements_hash
 
     def _calculate_attraction_points(self):
         """
