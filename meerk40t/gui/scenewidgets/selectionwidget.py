@@ -109,7 +109,11 @@ def process_event(
             # print ("ignore")
             return RESPONSE_CHAIN
 
-        single_modifier = modifiers and len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)
+        single_modifier = (
+            modifiers
+            and len(modifiers) == 1
+            and ("shift" in modifiers or "ctrl" in modifiers)
+        )
         if event_type == "leftdown":
             # We want to establish that we don't have a singular Shift key or a singular ctrl-key
             # as these will extend / reduce the selection
@@ -238,7 +242,9 @@ class BorderWidget(Widget):
         self.bottom = self.master.bottom
 
     def _get_angle_font(self):
-        if self._angle_font is None or self._angle_font.GetPointSize() != int(0.75 * self.master.font_size):
+        if self._angle_font is None or self._angle_font.GetPointSize() != int(
+            0.75 * self.master.font_size
+        ):
             try:
                 self._angle_font = wx.Font(
                     0.75 * self.master.font_size,
@@ -256,7 +262,9 @@ class BorderWidget(Widget):
         return self._angle_font
 
     def _get_label_font(self):
-        if self._label_font is None or self._label_font.GetPointSize() != int(self.master.font_size):
+        if self._label_font is None or self._label_font.GetPointSize() != int(
+            self.master.font_size
+        ):
             try:
                 self._label_font = wx.Font(
                     self.master.font_size,
@@ -787,7 +795,9 @@ class RotationWidget(Widget):
         if event_type == "leftdown":
             self.master.show_border = False
             # Hit in the inner area?
-            if space_pos is not None and self.inner_contains(space_pos[0], space_pos[1]):
+            if space_pos is not None and self.inner_contains(
+                space_pos[0], space_pos[1]
+            ):
                 if self.index == 0:  # tl
                     self.rotate_cx = self.master.right
                     self.rotate_cy = self.master.bottom
@@ -847,7 +857,7 @@ class CornerWidget(Widget):
         self.top = -self.half
         self.bottom = self.half
         self.update()
-        
+
     def update(self):
         # mid_x = (self.master.right + self.master.left) / 2
         # mid_y = (self.master.bottom + self.master.top) / 2
@@ -1289,7 +1299,7 @@ class SkewWidget(Widget):
         self.top = -self.half
         self.bottom = self.half
         self.update()
-        
+
     def update(self):
         offset_x = self.half if self.master.handle_outside else 0
         offset_y = self.half if self.master.handle_outside else 0
@@ -1535,8 +1545,14 @@ class MoveWidget(Widget):
                 newparent = entry[2]
                 if newparent is None:
                     # Add a new group...
-                    newlabel = "Copy" if oldparent.label is None else f"Copy of {oldparent.display_label()}"
-                    newid = "Copy" if oldparent.id is None else f"Copy of {oldparent.id}"
+                    newlabel = (
+                        "Copy"
+                        if oldparent.label is None
+                        else f"Copy of {oldparent.display_label()}"
+                    )
+                    newid = (
+                        "Copy" if oldparent.id is None else f"Copy of {oldparent.id}"
+                    )
                     newparent = oldparent.parent.add(
                         type="group",
                         label=newlabel,
@@ -1591,7 +1607,7 @@ class MoveWidget(Widget):
 
     def process_draw(self, gc):
         # print (f"MoveWidget: process_draw called, tool_running={self.master.tool_running}, visible={self.visible} - extent:{self.left},{self.top} - {self.right},{self.bottom} ")
-        if self.master.tool_running or not self.visible:    
+        if self.master.tool_running or not self.visible:
             return
 
         self.update()  # make sure coords are valid
@@ -1740,7 +1756,8 @@ class MoveWidget(Widget):
             did_snap_to_point = False
             if (
                 self.scene.context.snap_points
-                and modifiers and "shift" not in modifiers
+                and modifiers
+                and "shift" not in modifiers
                 and b is not None
             ):
                 gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
@@ -1778,7 +1795,7 @@ class MoveWidget(Widget):
                             )
                             continue
                         midpt = geom.position(idx, 0.5)
-                        
+
                         def add_it(pt, last):
                             if last is not None and pt == last:
                                 return last
@@ -1794,8 +1811,7 @@ class MoveWidget(Widget):
                                 last = pt
                                 target.append(pt)
                             return last
-                            
-                                
+
                         lastpt = add_it(startpt, lastpt)
                         lastpt = add_it(midpt, lastpt)
                         lastpt = add_it(endpt, lastpt)
@@ -1825,7 +1841,8 @@ class MoveWidget(Widget):
                     self.check_for_magnets()
             if (
                 self.scene.context.snap_grid
-                and modifiers and "shift" not in modifiers
+                and modifiers
+                and "shift" not in modifiers
                 and b is not None
                 and not did_snap_to_point
             ):
@@ -1854,7 +1871,7 @@ class MoveWidget(Widget):
                         if pt1 is not None and pt2 is not None:
                             # Convert to real coordinates - pt1 and pt2 might be complex or tuples
                             try:
-                                if hasattr(pt1, 'real') and hasattr(pt2, 'real'):
+                                if hasattr(pt1, "real") and hasattr(pt2, "real"):
                                     dx = pt1.real - pt2.real
                                     dy = pt1.imag - pt2.imag
                                 else:
@@ -1923,7 +1940,7 @@ class MoveWidget(Widget):
         **kwargs,
     ):
         s_me = "move"
-        # Translation hint: _("Move element")   
+        # Translation hint: _("Move element")
         return process_event(
             widget=self,
             widget_identifier=s_me,
@@ -2103,7 +2120,7 @@ class ReferenceWidget(Widget):
         self.top = -self.half
         self.bottom = self.half
         self.update()
-        
+
     def update(self):
         offset_x = self.half if self.master.handle_outside else 0
         # offset_y = self.half if self.master.handle_outside else 0
@@ -2242,7 +2259,7 @@ class LockWidget(Widget):
         self.top = -self.half
         self.bottom = self.half
         self.update()
-        
+
     def update(self):
         offset_x = self.half if self.master.handle_outside else 0
         pos_x = self.master.right - offset_x
@@ -2552,7 +2569,10 @@ class SelectionWidget(Widget):
         self.add_widget(-1, self.child_widgets["reference"])
 
         self.child_widgets["move"] = MoveWidget(
-            master=self, scene=self.scene, size=rotsize, drawsize=msize,
+            master=self,
+            scene=self.scene,
+            size=rotsize,
+            drawsize=msize,
         )
         self.add_widget(-1, self.child_widgets["move"])
 
@@ -2574,14 +2594,18 @@ class SelectionWidget(Widget):
                 inner=msize,
             )
             self.add_widget(-1, self.child_widgets[f"rotation_{i}"])
-        self.child_widgets["rotation_org"] = MoveRotationOriginWidget(master=self, scene=self.scene, size=msize)
+        self.child_widgets["rotation_org"] = MoveRotationOriginWidget(
+            master=self, scene=self.scene, size=msize
+        )
         self.add_widget(-1, self.child_widgets["rotation_org"])
         for i in range(4):
             self.child_widgets[f"corner_{i}"] = CornerWidget(
                 master=self, scene=self.scene, index=i, size=msize
             )
             self.add_widget(-1, self.child_widgets[f"corner_{i}"])
-            self.child_widgets[f"side_{i}"] = SideWidget(master=self, scene=self.scene, index=i, size=msize)
+            self.child_widgets[f"side_{i}"] = SideWidget(
+                master=self, scene=self.scene, index=i, size=msize
+            )
             self.add_widget(-1, self.child_widgets[f"side_{i}"])
         self.child_widgets["lock"] = LockWidget(
             master=self,
@@ -2589,7 +2613,6 @@ class SelectionWidget(Widget):
             size=1.5 * msize,
         )
         self.add_widget(-1, self.child_widgets["lock"])
-        
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
@@ -3009,7 +3032,9 @@ class SelectionWidget(Widget):
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
                 self.handle_pen.SetWidth(int(0.75 * self.line_width))
-            self.font_size = max(self.font_size, 1.0)  # Mac does not allow values lower than 1.
+            self.font_size = max(
+                self.font_size, 1.0
+            )  # Mac does not allow values lower than 1.
             try:
                 font = wx.Font(
                     int(self.font_size),
@@ -3078,17 +3103,27 @@ class SelectionWidget(Widget):
             for widget in self.child_widgets.values():
                 widget.set_size(msize, rotsize)
             self.child_widgets["border"].visible = self.show_border
-            self.child_widgets["reference"].visible = self.single_element and self.use_handle_size
+            self.child_widgets["reference"].visible = (
+                self.single_element and self.use_handle_size
+            )
             maymove = not is_locked or elements.lock_allows_move
             self.child_widgets["move"].visible = self.use_handle_move and maymove
             self.child_widgets["skew_x"].visible = show_skew_x and not no_skew
             self.child_widgets["skew_y"].visible = show_skew_y and not no_skew
             for i in range(4):
-                self.child_widgets[f"rotation_{i}"].visible = self.use_handle_rotate and not no_rotate
-            self.child_widgets["rotation_org"].visible = self.use_handle_rotate and not no_rotate
+                self.child_widgets[f"rotation_{i}"].visible = (
+                    self.use_handle_rotate and not no_rotate
+                )
+            self.child_widgets["rotation_org"].visible = (
+                self.use_handle_rotate and not no_rotate
+            )
             for i in range(4):
-                self.child_widgets[f"corner_{i}"].visible = self.use_handle_size and not no_scale
-                self.child_widgets[f"side_{i}"].visible = self.use_handle_size and not no_scale
+                self.child_widgets[f"corner_{i}"].visible = (
+                    self.use_handle_size and not no_scale
+                )
+                self.child_widgets[f"side_{i}"].visible = (
+                    self.use_handle_size and not no_scale
+                )
             self.child_widgets["lock"].visible = is_locked
             # for key, widget in self.child_widgets.items():
             #     print(f"Widget {key} visible: {widget.visible}")

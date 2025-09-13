@@ -116,9 +116,8 @@ class SceneToast:
     def draw(self, gc: wx.GraphicsContext):
         if not self.message:
             return
-        alpha = 255
-        if self.countdown <= 20:
-            alpha = int(self.countdown * 12.5)
+        alpha = int(self.countdown * 12.5) if self.countdown <= 20 else 255
+
         self.set_alpha(alpha)
 
         width = self.right - self.left
@@ -676,7 +675,9 @@ class Scene(Module, Job):
             )
         return space_pos
 
-    def _handle_keyboard_events(self, window_pos, event_type, nearest_snap, modifiers, keycode):
+    def _handle_keyboard_events(
+        self, window_pos, event_type, nearest_snap, modifiers, keycode
+    ):
         """Handle keyboard events by distributing them to all hittable elements."""
         self.rebuild_hittable_chain()
         for current_widget, current_matrix in self.hittable_elements:
@@ -748,43 +749,67 @@ class Scene(Module, Job):
 
         # Handle keyboard events
         if event_type in ("key_down", "key_up"):
-            return self._handle_keyboard_events(window_pos, event_type, nearest_snap, modifiers, keycode)
+            return self._handle_keyboard_events(
+                window_pos, event_type, nearest_snap, modifiers, keycode
+            )
 
         # Handle mouse events
-        return self._handle_mouse_events(window_pos, event_type, nearest_snap, modifiers, keycode, previous_top_element)
+        return self._handle_mouse_events(
+            window_pos,
+            event_type,
+            nearest_snap,
+            modifiers,
+            keycode,
+            previous_top_element,
+        )
 
-    def _handle_hover_state_changes(self, window_pos, event_type, previous_top_element, current_widget, space_pos, modifiers, keycode, i):
+    def _handle_hover_state_changes(
+        self,
+        window_pos,
+        event_type,
+        previous_top_element,
+        current_widget,
+        space_pos,
+        modifiers,
+        keycode,
+        i,
+    ):
         """Handle hover state changes between widgets."""
-        if (
-            i == 0
-            and event_type == "hover"
-            and previous_top_element is not current_widget
-        ):
-            if previous_top_element is not None:
-                if self.log_events:
-                    self.log_events(f"Converted hover_end: {str(window_pos)}")
-                previous_top_element.event(
-                    window_pos=window_pos,
-                    space_pos=space_pos,
-                    event_type="hover_end",
-                    nearest_snap=None,
-                    modifiers=modifiers,
-                    keycode=keycode,
-                )
-            current_widget.event(
+        if i != 0 or event_type != "hover" or previous_top_element is current_widget:
+            return previous_top_element
+        if previous_top_element is not None:
+            if self.log_events:
+                self.log_events(f"Converted hover_end: {str(window_pos)}")
+            previous_top_element.event(
                 window_pos=window_pos,
                 space_pos=space_pos,
-                event_type="hover_start",
+                event_type="hover_end",
                 nearest_snap=None,
                 modifiers=modifiers,
                 keycode=keycode,
             )
-            if self.log_events:
-                self.log_events(f"Converted hover_start: {str(window_pos)}")
-            return current_widget
-        return previous_top_element
+        current_widget.event(
+            window_pos=window_pos,
+            space_pos=space_pos,
+            event_type="hover_start",
+            nearest_snap=None,
+            modifiers=modifiers,
+            keycode=keycode,
+        )
+        if self.log_events:
+            self.log_events(f"Converted hover_start: {str(window_pos)}")
+        return current_widget
 
-    def _handle_leftclick_conversion(self, window_pos, event_type, space_pos, nearest_snap, modifiers, keycode, current_widget):
+    def _handle_leftclick_conversion(
+        self,
+        window_pos,
+        event_type,
+        space_pos,
+        nearest_snap,
+        modifiers,
+        keycode,
+        current_widget,
+    ):
         """Handle conversion of leftup to leftclick if within time and distance thresholds."""
         if (
             event_type == "leftup"
@@ -807,7 +832,7 @@ class Scene(Module, Job):
                 self.log_events(
                     f"Did not convert to click, {time.time() - self._down_start_time}"
                 )
-        
+
         return current_widget.event(
             window_pos=window_pos,
             space_pos=space_pos,
@@ -836,9 +861,7 @@ class Scene(Module, Job):
                 snap_y = window_pos[1] + sdy
 
                 if snap_x is not None:
-                    snap_space = current_matrix.point_in_inverse_space(
-                        (snap_x, snap_y)
-                    )
+                    snap_space = current_matrix.point_in_inverse_space((snap_x, snap_y))
                     nearest_snap = (
                         snap_space[0],
                         snap_space[1],
@@ -848,7 +871,15 @@ class Scene(Module, Job):
                     self.pane.last_snap = nearest_snap
         return response
 
-    def _handle_mouse_events(self, window_pos, event_type, nearest_snap, modifiers, keycode, previous_top_element):
+    def _handle_mouse_events(
+        self,
+        window_pos,
+        event_type,
+        nearest_snap,
+        modifiers,
+        keycode,
+        previous_top_element,
+    ):
         """Handle mouse events by processing the hit chain."""
         if event_type in (
             "leftdown",
@@ -869,20 +900,33 @@ class Scene(Module, Job):
             current_widget, current_matrix = hit
             if current_widget is None:
                 continue
-            
+
             space_pos = self._calculate_space_position(window_pos, current_matrix)
 
             previous_top_element = self._handle_hover_state_changes(
-                window_pos, event_type, previous_top_element, current_widget, 
-                space_pos, modifiers, keycode, i
+                window_pos,
+                event_type,
+                previous_top_element,
+                current_widget,
+                space_pos,
+                modifiers,
+                keycode,
+                i,
             )
 
             response = self._handle_leftclick_conversion(
-                window_pos, event_type, space_pos, nearest_snap, 
-                modifiers, keycode, current_widget
+                window_pos,
+                event_type,
+                space_pos,
+                nearest_snap,
+                modifiers,
+                keycode,
+                current_widget,
             )
 
-            response = self._process_snap_response(response, space_pos, window_pos, current_matrix)
+            response = self._process_snap_response(
+                response, space_pos, window_pos, current_matrix
+            )
 
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()
@@ -991,7 +1035,6 @@ class Scene(Module, Job):
             if dist_sq <= length_sq:
                 self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
 
-
     @signal_listener("element_property_update")
     @signal_listener("element_property_reload")
     @signal_listener("rebuild_tree")
@@ -1001,13 +1044,13 @@ class Scene(Module, Job):
         Listens to element changes and resets the attraction point cache.
         """
         self._reset_attraction_cache()
-    
+
     def _reset_attraction_cache(self):
         """
         Resets the cached attraction points forcing a recalculation on next use.
         """
         self.snap_attraction_points = None
-        if hasattr(self, '_last_elements_hash'):
+        if hasattr(self, "_last_elements_hash"):
             del self._last_elements_hash
 
     def _calculate_attraction_points(self):
@@ -1018,7 +1061,10 @@ class Scene(Module, Job):
 
         # Check if we need to recalculate (cache invalidation)
         current_elements_hash = self._get_elements_hash()
-        if hasattr(self, '_last_elements_hash') and self._last_elements_hash == current_elements_hash:
+        if (
+            hasattr(self, "_last_elements_hash")
+            and self._last_elements_hash == current_elements_hash
+        ):
             # Elements haven't changed, reuse cached points
             # print (f"Cached attraction points used: {len(self.snap_attraction_points) if self.snap_attraction_points else 0} points.")
             self.context.elements.set_end_time("attr_calc_points", message="cached")
@@ -1052,26 +1098,28 @@ class Scene(Module, Job):
                 # Let's take all start and end points of lines and curves
                 # but only if they are further away than a small epsilon to avoid duplicates
                 lastpt = None
-                for idx, seg in enumerate(geom.segments[:geom.index]):
+                for idx, seg in enumerate(geom.segments[: geom.index]):
                     segtype = geom._segtype(seg)
                     if segtype == TYPE_END:
                         lastpt = None
                     if segtype in NON_GEOMETRY_TYPES:
                         continue
-                    pt0 = seg[0] # Start point
-                    pt1 = geom.position(idx, 0.5)   
-                    pt2 = seg[-1] # End point
-                    
+                    pt0 = seg[0]  # Start point
+                    pt1 = geom.position(idx, 0.5)
+                    pt2 = seg[-1]  # End point
+
                     def added(pt, lastpt, pt_type):
                         if lastpt is None or abs(pt - lastpt) > minimum_distance:
-                            points_list.append([pt.real, pt.imag, pt_type, node.emphasized])
+                            points_list.append(
+                                [pt.real, pt.imag, pt_type, node.emphasized]
+                            )
                             lastpt = pt
                         return lastpt
-                            
+
                     lastpt = added(pt0, lastpt, TYPE_POINT)
                     lastpt = added(pt1, lastpt, TYPE_MIDDLE_SMALL)
                     lastpt = added(pt2, lastpt, TYPE_POINT)
-                # Other element types can be added here as needed   
+                # Other element types can be added here as needed
             elif hasattr(node, "points"):
                 emph = node.emphasized
                 # Extend the list instead of appending one by one for better performance
@@ -1079,7 +1127,7 @@ class Scene(Module, Job):
                     if len(pt) >= 3:
                         pt_type = translation_table.get(pt[2], TYPE_POINT)
                         points_list.append([pt[0], pt[1], pt_type, emph])
-            
+
         self.snap_attraction_points = points_list
         self._last_elements_hash = current_elements_hash
 
