@@ -26,6 +26,7 @@ import numpy as np
 from meerk40t.constants import (
     RASTER_B2T,
     RASTER_CROSSOVER,
+    RASTER_DIAGONAL,
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_HATCH,
@@ -547,7 +548,7 @@ class RasterPlotter:
                     f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
                     f.write(f"Overlapping pixels to any side: {self.overlap}\n")
                     if self.special:
-                        f.write(f"Special instructions:\n")
+                        f.write("Special instructions:\n")
                         for key, value in self.special.items():
                             f.write(f"  {key} = {value}\n")
                     f.write(
@@ -675,6 +676,10 @@ class RasterPlotter:
             yield from self._plot_crossover()
         elif self.direction == RASTER_SPIRAL:
             yield from self._plot_spiral()
+        elif self.direction == RASTER_DIAGONAL:
+            # Get start corner from special parameters, default to top-left
+            start_corner = self.special.get("start_corner", "top-left")
+            yield from self._plot_diagonal(start_corner=start_corner)
         # elif self.direction < 0:
         #     yield from self.testpattern_generator()
         elif self.horizontal:
@@ -1448,7 +1453,7 @@ class RasterPlotter:
                 row_ratio = row_count * row_count / row_len * rowfactor
                 col_ratio = col_count * col_count / col_len * colfactor
                 # print (f"Col #{rowidx}: {int(row_count):3d} pixel over {int(row_len):3d} length, ratio: {row_ratio:.3f} {'winner' if row_ratio >= col_ratio else 'loser'}")
-                # print (f"Row #{colidx}: {int(col_count):3d} pixel over {int(col_len):3d} length, ratio: {col_ratio:.3f} {'winner' if row_ratio < col_ratio else 'loser'}")
+                # print (f"Row #{colidx}: {int(col_count):3d} pixel over {int(row_len):3d} length, ratio: {col_ratio:.3f} {'winner' if row_ratio < col_ratio else 'loser'}")
                 # if row_count >= col_count:
                 if row_ratio >= col_ratio:
                     last_pixel = None
@@ -1545,8 +1550,6 @@ class RasterPlotter:
         t2 = perf_counter()
         dx = +1
         dy = +1
-        first_x = 0
-        first_y = 0
         last_x = self.initial_x
         last_y = self.initial_y
         yield last_x, last_y, 0
@@ -1629,7 +1632,95 @@ class RasterPlotter:
                 f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s"
             )
 
-    """
+    def _plot_diagonal(self, start_corner="top-left"):
+        """
+        Diagonal scanning algorithm that traverses the image diagonally.
+        Supports bidirectional scanning where direction alternates between diagonals.
+        Ensures all pixels are visited exactly once.
+
+        Args:
+            start_corner: Corner to start from ("top-left", "top-right", "bottom-left", "bottom-right")
+
+        Yields:
+            tuple: (x, y, on) coordinates and on/off state
+        """
+        # Track visited pixels to avoid duplicates
+        visited = np.zeros((self.width, self.height), dtype=bool)
+
+        # Set initial position
+        self.initial_x = 0
+        self.initial_y = 0
+
+        # Determine if we should alternate direction (bidirectional)
+        alternate_direction = self.bidirectional
+
+        # For each diagonal (x + y = constant), collect all pixels on that diagonal
+        for diagonal_idx, diagonal_sum in enumerate(range(self.width + self.height - 1)):
+            pixels_on_diagonal = []
+
+            # Collect all pixels where x + y = diagonal_sum
+            for x in range(max(0, diagonal_sum - self.height + 1), min(diagonal_sum + 1, self.width)):
+                y = diagonal_sum - x
+                if 0 <= y < self.height:
+                    pixels_on_diagonal.append((x, y))
+
+            # Sort pixels within diagonal based on start_corner and bidirectional setting
+            if start_corner == "top-left":
+                if alternate_direction and diagonal_idx % 2 == 1:
+                    # Alternate direction: right to left, top to bottom
+                    pixels_on_diagonal.sort(key=lambda p: (-p[0], p[1]))
+                else:
+                    # Normal direction: left to right, top to bottom
+                    pixels_on_diagonal.sort(key=lambda p: (p[0], p[1]))
+            elif start_corner == "top-right":
+                if alternate_direction and diagonal_idx % 2 == 1:
+                    # Alternate direction: left to right, top to bottom
+                    pixels_on_diagonal.sort(key=lambda p: (p[0], p[1]))
+                else:
+                    # Normal direction: right to left, top to bottom
+                    pixels_on_diagonal.sort(key=lambda p: (-p[0], p[1]))
+            elif start_corner == "bottom-left":
+                if alternate_direction and diagonal_idx % 2 == 1:
+                    # Alternate direction: right to left, bottom to top
+                    pixels_on_diagonal.sort(key=lambda p: (-p[0], -p[1]))
+                else:
+                    # Normal direction: left to right, bottom to top
+                    pixels_on_diagonal.sort(key=lambda p: (p[0], -p[1]))
+            elif start_corner == "bottom-right":
+                if alternate_direction and diagonal_idx % 2 == 1:
+                    # Alternate direction: left to right, bottom to top
+                    pixels_on_diagonal.sort(key=lambda p: (p[0], -p[1]))
+                else:
+                    # Normal direction: right to left, bottom to top
+                    pixels_on_diagonal.sort(key=lambda p: (-p[0], -p[1]))
+
+            # Visit each pixel on this diagonal
+            for x, y in pixels_on_diagonal:
+                if not visited[x, y]:
+                    visited[x, y] = True
+
+                    # Get pixel value
+                    pixel = self.px(x, y)
+                    on = 0 if pixel == self.skip_pixel else pixel
+
+                    # Mark overlapping pixels as visited if overlap is enabled
+                    if self.overlap > 0 and on:
+                        BLANK = 255
+                        for x_idx in range(-self.overlap, self.overlap + 1):
+                            for y_idx in range(-self.overlap, self.overlap + 1):
+                                nx = x + x_idx
+                                ny = y + y_idx
+                                if 0 <= nx < self.width and 0 <= ny < self.height:
+                                    visited[nx, ny] = True
+                                    if abs(x_idx) + abs(y_idx) > 0:  # Don't blank the center pixel
+                                        self.data[nx, ny] = BLANK
+
+                    yield x, y, on
+
+        # Update final position
+        self.final_x = self.width - 1
+        self.final_y = self.height - 1
+
     # Testpattern generation
     def testpattern_generator(self):
         def rectangle_h():
@@ -1748,4 +1839,3 @@ class RasterPlotter:
             yield from methods[method]()
         except IndexError:
             print (f"Unknown testgenerator for {self.direction}")
-    """
