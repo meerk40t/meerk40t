@@ -308,6 +308,27 @@ class ScenePanel(wx.Panel):
             event.GetPosition(), "middleup", None, self.event_modifiers(event)
         )
 
+    def _compute_snap_point(self, event):
+        """
+        Compute snap point for given mouse event.
+        
+        Returns:
+            tuple: (mouse_pos, space_pos, nearest_snap, modifiers)
+        """
+        mouse_pos = event.GetPosition()
+        space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
+        modifiers = self.event_modifiers(event)
+        
+        # Get snap point from scene
+        snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+        nearest_snap = None
+        if snap_x is not None and snap_y is not None:
+            # Convert back to screen coordinates for the snap info
+            snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
+            nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
+            
+        return mouse_pos, space_pos, nearest_snap, modifiers
+
     def on_left_mouse_down(self, event: wx.MouseEvent):
         """
         Scene Panel left click event for down.
@@ -321,22 +342,8 @@ class ScenePanel(wx.Panel):
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
             
-        # Calculate snap point for the current mouse position
-        mouse_pos = event.GetPosition()
-        space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
-        modifiers = self.event_modifiers(event)
-        
-        # Get snap point from scene
-        snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
-        nearest_snap = None
-        if snap_x is not None and snap_y is not None:
-            # Convert back to screen coordinates for the snap info
-            snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
-            nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
-            
-        self.scene.event(
-            mouse_pos, "leftdown", nearest_snap, modifiers
-        )
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "leftdown", nearest_snap, modifiers)
 
     def on_left_mouse_up(self, event: wx.MouseEvent):
         """
@@ -349,22 +356,8 @@ class ScenePanel(wx.Panel):
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
             
-        # Calculate snap point for the current mouse position
-        mouse_pos = event.GetPosition()
-        space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
-        modifiers = self.event_modifiers(event)
-        
-        # Get snap point from scene
-        snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
-        nearest_snap = None
-        if snap_x is not None and snap_y is not None:
-            # Convert back to screen coordinates for the snap info
-            snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
-            nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
-            
-        self.scene.event(
-            mouse_pos, "leftup", nearest_snap, modifiers
-        )
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "leftup", nearest_snap, modifiers)
 
     def on_mouse_double_click(self, event: wx.MouseEvent):
         """
@@ -405,22 +398,8 @@ class ScenePanel(wx.Panel):
         Offers alternative events if Alt or control is currently pressed.
         """
         self.SetFocus()
-        # Calculate snap point for the current mouse position
-        mouse_pos = event.GetPosition()
-        space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
-        modifiers = self.event_modifiers(event)
-        
-        # Get snap point from scene
-        snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
-        nearest_snap = None
-        if snap_x is not None and snap_y is not None:
-            # Convert back to screen coordinates for the snap info
-            snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
-            nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
-            
-        self.scene.event(
-            mouse_pos, "rightdown", nearest_snap, modifiers
-        )
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "rightdown", nearest_snap, modifiers)
         event.Skip()
 
     def on_right_mouse_up(self, event: wx.MouseEvent):

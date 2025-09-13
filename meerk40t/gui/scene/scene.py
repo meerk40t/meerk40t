@@ -194,7 +194,7 @@ class Scene(Module, Job):
     to the scene and then the interface widget which contains all the non-scene widget elements.
     """
 
-    def __init__(self, context, path, gui, pane=None, **kwargs):
+    def __init__(self, context, path, gui, pane=None,  **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
@@ -218,10 +218,15 @@ class Scene(Module, Job):
         self.push_stack(SceneSpaceWidget(self))
 
         self.interval = 1.0 / 60.0  # 60fps
-        self.last_position = None
+        self.last_window_pos = None  # Store last 2-tuple window position
         self._down_start_time = None
         self._down_start_pos = None
         self._cursor = None
+        
+        # Configurable leftclick conversion thresholds
+        self.leftclick_time_threshold = 0.3
+        self.leftclick_distance_threshold = 50
+        
         self.suppress_changes = True
 
         self.colors = self.context.colors
@@ -627,19 +632,19 @@ class Scene(Module, Job):
 
     def _handle_position_setup(self, window_pos):
         """Handle position setup and return normalized window position with deltas."""
-        if self.last_position is None:
-            self.last_position = window_pos
-        dx = window_pos[0] - self.last_position[0]
-        dy = window_pos[1] - self.last_position[1]
+        if self.last_window_pos is None:
+            self.last_window_pos = window_pos
+        dx = window_pos[0] - self.last_window_pos[0]
+        dy = window_pos[1] - self.last_window_pos[1]
         extended_pos = (
             window_pos[0],
             window_pos[1],
-            self.last_position[0],
-            self.last_position[1],
+            self.last_window_pos[0],
+            self.last_window_pos[1],
             dx,
             dy,
         )
-        self.last_position = extended_pos
+        self.last_window_pos = window_pos  # Update to current position as 2-tuple
         return extended_pos
 
     def _handle_capture_lost(self, event_type):
@@ -813,8 +818,8 @@ class Scene(Module, Job):
         """Handle conversion of leftup to leftclick if within time and distance thresholds."""
         if (
             event_type == "leftup"
-            and time.time() - self._down_start_time <= 0.30
-            and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2])) < 50
+            and time.time() - self._down_start_time <= self.leftclick_time_threshold
+            and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2])) < self.leftclick_distance_threshold
         ):
             response = current_widget.event(
                 window_pos=window_pos,
@@ -1090,6 +1095,8 @@ class Scene(Module, Job):
 
         # Batch process elements for better performance
         points_list = []
+        # Minimum distance of 2 scaled pixels (spx) - provides appropriate snap tolerance 
+        # that scales with zoom level, ensuring consistent snap behavior across different view scales
         minimum_distance = float(Length("2spx"))
         for node in self.context.elements.flat(types=elem_nodes):
             # print(f"Debug: Processing node {node.type}")

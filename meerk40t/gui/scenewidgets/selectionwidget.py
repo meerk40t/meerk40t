@@ -49,6 +49,26 @@ ROTATION_THRESHOLD = 0.001
 POSITION_THRESHOLD = 0.0001
 
 
+def calculate_handle_offsets_and_deltas(half, handle_outside, inner_wd_half, inner_ht_half):
+    """
+    Calculate handle offsets and deltas for widget positioning.
+    
+    Args:
+        half: Half the widget size
+        handle_outside: Whether handles should be placed outside the selection
+        inner_wd_half: Half width of the inner selection area
+        inner_ht_half: Half height of the inner selection area
+        
+    Returns:
+        tuple: (offset_x, offset_y, dx, dy) for positioning calculations
+    """
+    offset_x = half if handle_outside else 0
+    offset_y = half if handle_outside else 0
+    dx = max(0, 2 * half - inner_wd_half)
+    dy = max(0, 2 * half - inner_ht_half)
+    return offset_x, offset_y, dx, dy
+
+
 def process_event(
     widget,
     widget_identifier=None,
@@ -864,10 +884,9 @@ class CornerWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        offset_x = self.half if self.master.handle_outside else 0
-        offset_y = self.half if self.master.handle_outside else 0
-        dx = max(0, 2 * self.half - inner_wd_half)
-        dy = max(0, 2 * self.half - inner_ht_half)
+        offset_x, offset_y, dx, dy = calculate_handle_offsets_and_deltas(
+            self.half, self.master.handle_outside, inner_wd_half, inner_ht_half
+        )
 
         if self.index == 0:
             pos_x = self.master.left - dx - offset_x
@@ -1083,11 +1102,9 @@ class SideWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        dx = max(0, 2 * self.half - inner_wd_half)
-        dy = max(0, 2 * self.half - inner_ht_half)
-
-        offset_x = self.half if self.master.handle_outside else 0
-        offset_y = self.half if self.master.handle_outside else 0
+        offset_x, offset_y, dx, dy = calculate_handle_offsets_and_deltas(
+            self.half, self.master.handle_outside, inner_wd_half, inner_ht_half
+        )
 
         if self.index == 0:
             pos_x = mid_x
