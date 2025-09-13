@@ -5,6 +5,7 @@ import time
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
@@ -25,8 +26,9 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
-from meerk40t.kernel import Job, Module
+from meerk40t.kernel import Job, Module, signal_listener
 from meerk40t.svgelements import Matrix, Point
+from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END
 
 _reused_identity_widget = Matrix()
 XCELLS = 15
@@ -114,9 +116,8 @@ class SceneToast:
     def draw(self, gc: wx.GraphicsContext):
         if not self.message:
             return
-        alpha = 255
-        if self.countdown <= 20:
-            alpha = int(self.countdown * 12.5)
+        alpha = int(self.countdown * 12.5) if self.countdown <= 20 else 255
+
         self.set_alpha(alpha)
 
         width = self.right - self.left
@@ -193,7 +194,7 @@ class Scene(Module, Job):
     to the scene and then the interface widget which contains all the non-scene widget elements.
     """
 
-    def __init__(self, context, path, gui, pane=None, **kwargs):
+    def __init__(self, context, path, gui, pane=None,  **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
@@ -211,16 +212,21 @@ class Scene(Module, Job):
         self.log_events = context.channel("scene-events")
         self.gui = gui
         self.pane = pane
-        self.hittable_elements = list()
-        self.hit_chain = list()
+        self.hittable_elements = []
+        self.hit_chain = []
         self.widget_root = None
         self.push_stack(SceneSpaceWidget(self))
 
         self.interval = 1.0 / 60.0  # 60fps
-        self.last_position = None
+        self.last_window_pos = None  # Store last 2-tuple window position
         self._down_start_time = None
         self._down_start_pos = None
         self._cursor = None
+        
+        # Configurable leftclick conversion thresholds
+        self.leftclick_time_threshold = 0.3
+        self.leftclick_distance_threshold = 50
+        
         self.suppress_changes = True
 
         self.colors = self.context.colors
@@ -234,9 +240,9 @@ class Scene(Module, Job):
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
 
-        self._animating = list()
+        self._animating = []
         self._animate_lock = threading.Lock()
-        self._adding_widgets = list()
+        self._adding_widgets = []
         self._animate_job = Job(
             self._animate_scene,
             job_name=f"Animate-Scene{path}",
@@ -420,10 +426,8 @@ class Scene(Module, Job):
             except RuntimeError:
                 # May hit runtime error.
                 pass
-            self.screen_refresh_is_requested = False
             self.scene_lock.release()
-        else:
-            self.screen_refresh_is_requested = False
+        self.screen_refresh_is_requested = False
 
     def _update_buffer_ui_thread(self):
         """Performs redrawing of the data in the UI thread."""
@@ -470,11 +474,8 @@ class Scene(Module, Job):
             self._toast = SceneToast(
                 self, self.x(0.1), self.y(0.8), self.x(0.9), self.y(0.9)
             )
-            self._toast.set_message(message, token)
-            self.animate(self._toast)
-        else:
-            self._toast.set_message(message, token)
-            self.animate(self._toast)
+        self._toast.set_message(message, token)
+        self.animate(self._toast)
 
     def x(self, v):
         width, height = self.gui.ClientSize
@@ -629,6 +630,98 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
+    def _handle_position_setup(self, window_pos):
+        """Handle position setup and return normalized window position with deltas."""
+        if self.last_window_pos is None:
+            self.last_window_pos = window_pos
+        dx = window_pos[0] - self.last_window_pos[0]
+        dy = window_pos[1] - self.last_window_pos[1]
+        extended_pos = (
+            window_pos[0],
+            window_pos[1],
+            self.last_window_pos[0],
+            self.last_window_pos[1],
+            dx,
+            dy,
+        )
+        self.last_window_pos = window_pos  # Update to current position as 2-tuple
+        return extended_pos
+
+    def _handle_capture_lost(self, event_type):
+        """Handle capture lost events by notifying all widgets in hit chain."""
+        for i, hit in enumerate(self.hit_chain):
+            if hit is None:
+                continue  # Element was dropped.
+            current_widget, current_matrix = hit
+            current_widget.event(
+                window_pos=None,
+                scene_pos=None,
+                event_type=event_type,
+                nearest_snap=None,
+                modifiers=None,
+            )
+        return False
+
+    def _calculate_space_position(self, window_pos, current_matrix):
+        """Calculate space position from window position using matrix transformation."""
+        space_pos = window_pos
+        if current_matrix is not None and not current_matrix.is_identity():
+            space_cur = current_matrix.point_in_inverse_space(window_pos[:2])
+            space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
+            sdx = space_cur[0] - space_last[0]
+            sdy = space_cur[1] - space_last[1]
+            space_pos = (
+                space_cur[0],
+                space_cur[1],
+                space_last[0],
+                space_last[1],
+                sdx,
+                sdy,
+            )
+        return space_pos
+
+    def _handle_keyboard_events(
+        self, window_pos, event_type, nearest_snap, modifiers, keycode
+    ):
+        """Handle keyboard events by distributing them to all hittable elements."""
+        self.rebuild_hittable_chain()
+        for current_widget, current_matrix in self.hittable_elements:
+            space_pos = self._calculate_space_position(window_pos, current_matrix)
+            response = current_widget.event(
+                window_pos=window_pos,
+                space_pos=space_pos,
+                event_type=event_type,
+                nearest_snap=nearest_snap,
+                modifiers=modifiers,
+                keycode=keycode,
+            )
+
+            if response == RESPONSE_ABORT:
+                self.hit_chain.clear()
+                return True
+            elif response == RESPONSE_CONSUME:
+                return True
+            elif response == RESPONSE_CHAIN:
+                continue
+            elif response == RESPONSE_DROP:
+                continue
+
+        return False
+
+    def _find_previous_top_element(self):
+        """Find the previous top element in the hit chain."""
+        previous_top_element = None
+        try:
+            idx = 0
+            while idx < len(self.hit_chain):
+                if not self.hit_chain[idx][0].transparent:
+                    previous_top_element = self.hit_chain[idx][0]
+                    break
+                idx += 1
+        except (IndexError, TypeError):
+            pass
+        return previous_top_element
+
     def event(
         self, window_pos, event_type="", nearest_snap=None, modifiers=None, keycode=None
     ):
@@ -654,94 +747,145 @@ class Scene(Module, Job):
             )
 
         if window_pos is None:
-            # Capture Lost
-            for i, hit in enumerate(self.hit_chain):
-                if hit is None:
-                    continue  # Element was dropped.
-                current_widget, current_matrix = hit
-                current_widget.event(
-                    window_pos=None,
-                    scene_pos=None,
-                    event_type=event_type,
-                    nearest_snap=None,
-                    modifiers=None,
-                )
-            return False
-        if self.last_position is None:
-            self.last_position = window_pos
-        dx = window_pos[0] - self.last_position[0]
-        dy = window_pos[1] - self.last_position[1]
-        window_pos = (
-            window_pos[0],
-            window_pos[1],
-            self.last_position[0],
-            self.last_position[1],
-            dx,
-            dy,
+            return self._handle_capture_lost(event_type)
+
+        window_pos = self._handle_position_setup(window_pos)
+        previous_top_element = self._find_previous_top_element()
+
+        # Handle keyboard events
+        if event_type in ("key_down", "key_up"):
+            return self._handle_keyboard_events(
+                window_pos, event_type, nearest_snap, modifiers, keycode
+            )
+
+        # Handle mouse events
+        return self._handle_mouse_events(
+            window_pos,
+            event_type,
+            nearest_snap,
+            modifiers,
+            keycode,
+            previous_top_element,
         )
-        self.last_position = window_pos
-        previous_top_element = None
-        try:
-            idx = 0
-            while idx < len(self.hit_chain):
-                if not self.hit_chain[idx][0].transparent:
-                    previous_top_element = self.hit_chain[idx][0]
-                    break
-                idx += 1
 
-        except (IndexError, TypeError):
-            pass
+    def _handle_hover_state_changes(
+        self,
+        window_pos,
+        event_type,
+        previous_top_element,
+        current_widget,
+        space_pos,
+        modifiers,
+        keycode,
+        i,
+    ):
+        """Handle hover state changes between widgets."""
+        if i != 0 or event_type != "hover" or previous_top_element is current_widget:
+            return previous_top_element
+        if previous_top_element is not None:
+            if self.log_events:
+                self.log_events(f"Converted hover_end: {str(window_pos)}")
+            previous_top_element.event(
+                window_pos=window_pos,
+                space_pos=space_pos,
+                event_type="hover_end",
+                nearest_snap=None,
+                modifiers=modifiers,
+                keycode=keycode,
+            )
+        current_widget.event(
+            window_pos=window_pos,
+            space_pos=space_pos,
+            event_type="hover_start",
+            nearest_snap=None,
+            modifiers=modifiers,
+            keycode=keycode,
+        )
+        if self.log_events:
+            self.log_events(f"Converted hover_start: {str(window_pos)}")
+        return current_widget
 
-        if event_type in (
-            "key_down",
-            "key_up",
+    def _handle_leftclick_conversion(
+        self,
+        window_pos,
+        event_type,
+        space_pos,
+        nearest_snap,
+        modifiers,
+        keycode,
+        current_widget,
+    ):
+        """Handle conversion of leftup to leftclick if within time and distance thresholds."""
+        if (
+            event_type == "leftup"
+            and time.time() - self._down_start_time <= self.leftclick_time_threshold
+            and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2])) < self.leftclick_distance_threshold
         ):
-            # print("Keyboard-Event raised: %s" % event_type)
-            self.rebuild_hittable_chain()
-            for current_widget, current_matrix in self.hittable_elements:
-                space_pos = window_pos
-                if current_matrix is not None and not current_matrix.is_identity():
-                    space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
-                    space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
-                    sdx = space_cur[0] - space_last[0]
-                    sdy = space_cur[1] - space_last[1]
-                    space_pos = (
-                        space_cur[0],
-                        space_cur[1],
-                        space_last[0],
-                        space_last[1],
-                        sdx,
-                        sdy,
-                    )
-                response = current_widget.event(
-                    window_pos=window_pos,
-                    space_pos=space_pos,
-                    event_type=event_type,
-                    nearest_snap=nearest_snap,
-                    modifiers=modifiers,
-                    keycode=keycode,
+            response = current_widget.event(
+                window_pos=window_pos,
+                space_pos=space_pos,
+                event_type="leftclick",
+                nearest_snap=nearest_snap,
+                modifiers=modifiers,
+                keycode=keycode,
+            )
+            if self.log_events:
+                self.log_events(f"Converted leftclick: {str(window_pos)}")
+            return response
+        elif event_type == "leftup":
+            if self.log_events:
+                self.log_events(
+                    f"Did not convert to click, {time.time() - self._down_start_time}"
                 )
 
-                if response == RESPONSE_ABORT:
-                    self.hit_chain.clear()
-                    # print (f"Response abort of {event_type}, {keycode}/{modifiers} by {current_widget}")
-                    return True
-                elif response == RESPONSE_CONSUME:
-                    # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
-                    #      widgetname = type(current_widget).__name__
-                    #      print("Event %s was consumed by %s" % (event_type, widgetname))
-                    # print (f"Response consume of {event_type}, {keycode}/{modifiers} by {current_widget}")
-                    return True
-                elif response == RESPONSE_CHAIN:
-                    continue
-                elif response == RESPONSE_DROP:
-                    # self.hit_chain[i] = None
-                    continue
-                #
-                # if response == RESPONSE_ABORT:
-                #     self.hit_chain.clear()
-            return False
+        return current_widget.event(
+            window_pos=window_pos,
+            space_pos=space_pos,
+            event_type=event_type,
+            nearest_snap=nearest_snap,
+            modifiers=modifiers,
+            keycode=keycode,
+        )
 
+    def _process_snap_response(self, response, space_pos, window_pos, current_matrix):
+        """Process snap response if it contains snap coordinates."""
+        if type(response) is tuple:
+            params = response[1:]
+            response = response[0]
+            if len(params) > 1:
+                new_x_space = params[0]
+                new_y_space = params[1]
+
+                sdx = new_x_space - space_pos[0]
+                if current_matrix is not None and not current_matrix.is_identity():
+                    sdx *= get_matrix_scale(current_matrix)
+                snap_x = window_pos[0] + sdx
+                sdy = new_y_space - space_pos[1]
+                if current_matrix is not None and not current_matrix.is_identity():
+                    sdy *= current_matrix.value_scale_y()
+                snap_y = window_pos[1] + sdy
+
+                if snap_x is not None:
+                    snap_space = current_matrix.point_in_inverse_space((snap_x, snap_y))
+                    nearest_snap = (
+                        snap_space[0],
+                        snap_space[1],
+                        snap_x,
+                        snap_y,
+                    )
+                    self.pane.last_snap = nearest_snap
+        return response
+
+    def _handle_mouse_events(
+        self,
+        window_pos,
+        event_type,
+        nearest_snap,
+        modifiers,
+        keycode,
+        previous_top_element,
+    ):
+        """Handle mouse events by processing the hit chain."""
         if event_type in (
             "leftdown",
             "middledown",
@@ -754,143 +898,45 @@ class Scene(Module, Job):
             self._down_start_pos = window_pos
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
+
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
             current_widget, current_matrix = hit
             if current_widget is None:
                 continue
-            space_pos = window_pos
-            if current_matrix is not None and not current_matrix.is_identity():
-                space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
-                space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
-                sdx = space_cur[0] - space_last[0]
-                sdy = space_cur[1] - space_last[1]
-                space_pos = (
-                    space_cur[0],
-                    space_cur[1],
-                    space_last[0],
-                    space_last[1],
-                    sdx,
-                    sdy,
-                )
 
-            if (
-                i == 0
-                and event_type == "hover"
-                and previous_top_element is not current_widget
-            ):
-                if previous_top_element is not None:
-                    if self.log_events:
-                        self.log_events(f"Converted hover_end: {str(window_pos)}")
-                    previous_top_element.event(
-                        window_pos=window_pos,
-                        space_pos=space_pos,
-                        event_type="hover_end",
-                        nearest_snap=None,
-                        modifiers=modifiers,
-                        keycode=keycode,
-                    )
-                current_widget.event(
-                    window_pos=window_pos,
-                    space_pos=space_pos,
-                    event_type="hover_start",
-                    nearest_snap=None,
-                    modifiers=modifiers,
-                    keycode=keycode,
-                )
-                if self.log_events:
-                    self.log_events(f"Converted hover_start: {str(window_pos)}")
-                previous_top_element = current_widget
-            if (
-                event_type == "leftup"
-                and time.time() - self._down_start_time <= 0.30
-                and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2]))
-                < 50
-            ):  # Anything within 0.3 seconds will be converted to a leftclick
-                response = current_widget.event(
-                    window_pos=window_pos,
-                    space_pos=space_pos,
-                    event_type="leftclick",
-                    nearest_snap=nearest_snap,
-                    modifiers=modifiers,
-                    keycode=keycode,
-                )
-                if self.log_events:
-                    self.log_events(f"Converted leftclick: {str(window_pos)}")
-            elif event_type == "leftup":
-                if self.log_events:
-                    self.log_events(
-                        f"Did not convert to click, {time.time() - self._down_start_time}"
-                    )
-                response = current_widget.event(
-                    window_pos=window_pos,
-                    space_pos=space_pos,
-                    event_type=event_type,
-                    nearest_snap=nearest_snap,
-                    modifiers=modifiers,
-                    keycode=keycode,
-                )
-                # print ("Leftup called for widget #%d" % i )
-                # print (response)
-            else:
-                response = current_widget.event(
-                    window_pos=window_pos,
-                    space_pos=space_pos,
-                    event_type=event_type,
-                    nearest_snap=nearest_snap,
-                    modifiers=modifiers,
-                    keycode=keycode,
-                )
+            space_pos = self._calculate_space_position(window_pos, current_matrix)
 
-            ##################
-            # PROCESS RESPONSE
-            ##################
-            if type(response) is tuple:
-                # print (f"Nearest snap provided")
-                # We get two additional parameters which are the screen location of the nearest snap point
-                params = response[1:]
-                response = response[0]
-                if len(params) > 1:
-                    new_x_space = params[0]
-                    new_y_space = params[1]
-                    new_x = window_pos[0]
-                    new_y = window_pos[1]
+            previous_top_element = self._handle_hover_state_changes(
+                window_pos,
+                event_type,
+                previous_top_element,
+                current_widget,
+                space_pos,
+                modifiers,
+                keycode,
+                i,
+            )
 
-                    sdx = new_x_space - space_pos[0]
-                    if current_matrix is not None and not current_matrix.is_identity():
-                        sdx *= get_matrix_scale(current_matrix)
-                    snap_x = window_pos[0] + sdx
-                    sdy = new_y_space - space_pos[1]
-                    if current_matrix is not None and not current_matrix.is_identity():
-                        sdy *= current_matrix.value_scale_y()
-                    # print("Shift x by %.1f pixel (%.1f), Shift y by %.1f pixel (%.1f)" % (sdx, odx, sdy, ody))
-                    snap_y = window_pos[1] + sdy
+            response = self._handle_leftclick_conversion(
+                window_pos,
+                event_type,
+                space_pos,
+                nearest_snap,
+                modifiers,
+                keycode,
+                current_widget,
+            )
 
-                    # dx = new_x - self.last_position[0]
-                    # dy = new_y - self.last_position[1]
-                    if snap_x is None:
-                        nearest_snap = None
-                    else:
-                        # We are providing the space and screen coordinates
-                        snap_space = current_matrix.point_in_inverse_space(
-                            (snap_x, snap_y)
-                        )
-                        nearest_snap = (
-                            snap_space[0],
-                            snap_space[1],
-                            snap_x,
-                            snap_y,
-                        )
-                        self.pane.last_snap = nearest_snap
+            response = self._process_snap_response(
+                response, space_pos, window_pos, current_matrix
+            )
 
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()
                 return True
             elif response == RESPONSE_CONSUME:
-                # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
-                #      widgetname = type(current_widget).__name__
-                #      print("Event %s was consumed by %s" % (event_type, widgetname))
                 return True
             elif response == RESPONSE_CHAIN:
                 continue
@@ -938,9 +984,7 @@ class Scene(Module, Job):
         if platform.system() == "Linux":
             if cursor == "sizing":
                 new_cursor = wx.CURSOR_SIZENWSE
-            elif cursor in ("size_nw", "size_se"):
-                new_cursor = wx.CURSOR_SIZING
-            elif cursor in ("size_sw", "size_ne"):
+            elif cursor in ("size_nw", "size_se", "size_sw", "size_ne"):
                 new_cursor = wx.CURSOR_SIZING
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
@@ -996,6 +1040,24 @@ class Scene(Module, Job):
             if dist_sq <= length_sq:
                 self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
 
+    @signal_listener("element_property_update")
+    @signal_listener("element_property_reload")
+    @signal_listener("rebuild_tree")
+    @signal_listener("modified_by_tool")
+    def on_external_element_change(self, *args, **kwargs):
+        """
+        Listens to element changes and resets the attraction point cache.
+        """
+        self._reset_attraction_cache()
+
+    def _reset_attraction_cache(self):
+        """
+        Resets the cached attraction points forcing a recalculation on next use.
+        """
+        self.snap_attraction_points = None
+        if hasattr(self, "_last_elements_hash"):
+            del self._last_elements_hash
+
     def _calculate_attraction_points(self):
         """
         Looks at all elements and identifies all attraction points with optimized processing.
@@ -1004,8 +1066,12 @@ class Scene(Module, Job):
 
         # Check if we need to recalculate (cache invalidation)
         current_elements_hash = self._get_elements_hash()
-        if hasattr(self, '_last_elements_hash') and self._last_elements_hash == current_elements_hash:
+        if (
+            hasattr(self, "_last_elements_hash")
+            and self._last_elements_hash == current_elements_hash
+        ):
             # Elements haven't changed, reuse cached points
+            # print (f"Cached attraction points used: {len(self.snap_attraction_points) if self.snap_attraction_points else 0} points.")
             self.context.elements.set_end_time("attr_calc_points", message="cached")
             return
 
@@ -1029,23 +1095,45 @@ class Scene(Module, Job):
 
         # Batch process elements for better performance
         points_list = []
-        for e in self.context.elements.flat(types=elem_nodes):
-            if hasattr(e, "points"):
-                emph = e.emphasized
+        # Minimum distance of 2 scaled pixels (spx) - provides appropriate snap tolerance 
+        # that scales with zoom level, ensuring consistent snap behavior across different view scales
+        minimum_distance = float(Length("2spx"))
+        for node in self.context.elements.flat(types=elem_nodes):
+            # print(f"Debug: Processing node {node.type}")
+            if hasattr(node, "as_geometry"):
+                geom = node.as_geometry()
+                # Let's take all start and end points of lines and curves
+                # but only if they are further away than a small epsilon to avoid duplicates
+                lastpt = None
+                for idx, seg in enumerate(geom.segments[: geom.index]):
+                    segtype = geom._segtype(seg)
+                    if segtype == TYPE_END:
+                        lastpt = None
+                    if segtype in NON_GEOMETRY_TYPES:
+                        continue
+                    pt0 = seg[0]  # Start point
+                    pt1 = geom.position(idx, 0.5)
+                    pt2 = seg[-1]  # End point
+
+                    def added(pt, lastpt, pt_type):
+                        if lastpt is None or abs(pt - lastpt) > minimum_distance:
+                            points_list.append(
+                                [pt.real, pt.imag, pt_type, node.emphasized]
+                            )
+                            lastpt = pt
+                        return lastpt
+
+                    lastpt = added(pt0, lastpt, TYPE_POINT)
+                    lastpt = added(pt1, lastpt, TYPE_MIDDLE_SMALL)
+                    lastpt = added(pt2, lastpt, TYPE_POINT)
+                # Other element types can be added here as needed
+            elif hasattr(node, "points"):
+                emph = node.emphasized
                 # Extend the list instead of appending one by one for better performance
-                for pt in e.points:
-                    try:
-                        if len(pt) >= 3:
-                            pt_type = translation_table.get(pt[2], TYPE_POINT)
-                            points_list.append([pt[0], pt[1], pt_type, emph])
-                    except Exception:
-                        pass  # Skip invalid points
-            elif hasattr(e, "as_geometry"):
-                try:
-                    geom = e.as_geometry()
-                    points_list.extend([[pt.real, pt.imag, TYPE_POINT, e.emphasized] for pt in geom.as_points()])
-                except Exception:
-                    pass  # Skip elements with broken as_geometry
+                for pt in node.points:
+                    if len(pt) >= 3:
+                        pt_type = translation_table.get(pt[2], TYPE_POINT)
+                        points_list.append([pt[0], pt[1], pt_type, emph])
 
         self.snap_attraction_points = points_list
         self._last_elements_hash = current_elements_hash
@@ -1084,6 +1172,7 @@ class Scene(Module, Job):
         # Calculate attraction points only if needed and not already cached
         if snap_points and self.snap_attraction_points is None:
             self._calculate_attraction_points()
+            # print(f"Calculated {len(self.snap_attraction_points) if self.snap_attraction_points else 0} attraction points.")
 
         # Cache matrix and scale calculations
         matrix = self.widget_root.scene_widget.matrix
