@@ -24380,3 +24380,105 @@ msgstr "Elementos (Efectos)"
 #: meerk40t/device/gui/formatterpanel.py:160
 msgid "Placements"
 msgstr "Ubicaciones"
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr "Cadena con una comilla: \"¿Ves?\""
+
+#: meerk40t/core/elements/element_treeops.py:3182
+msgid "Optimisation"
+msgstr "Optimización"
+
+#: meerk40t/core/elements/element_treeops.py:3184
+msgid "Reduce travel moves"
+msgstr "Reducir movimientos de desplazamiento"
+
+#: meerk40t/core/elements/element_treeops.py:3186
+msgid "Rearrange items within operation to reduce travel moves"
+msgstr ""
+"Reorganizar elementos dentro de la operación para reducir movimientos de "
+"desplazamiento"
+
+#: meerk40t/core/elements/element_treeops.py:3190
+msgid "Optimize travel moves"
+msgstr "Optimizar movimientos de desplazamiento"
+
+#: meerk40t/core/elements/manual_optimize.py:82
+msgid "Provide detailed debug output"
+msgstr "Proporcionar salida de depuración detallada"
+
+#: meerk40t/core/elements/manual_optimize.py:85
+msgid "Starting X position"
+msgstr "Posición inicial X"
+
+#: meerk40t/core/elements/manual_optimize.py:88
+msgid "Starting Y position"
+msgstr "Posición inicial Y"
+
+#: meerk40t/core/elements/manual_optimize.py:92
+msgid "reorder elements for optimal cutting within an operation"
+msgstr "Reordenar elementos para corte óptimo dentro de una operación"
+
+#: meerk40t/core/elements/manual_optimize.py:115
+msgid "No operations to optimize"
+msgstr "No hay operaciones para optimizar"
+
+#: meerk40t/core/elements/manual_optimize.py:415
+msgid "Geometric tolerance for containment analysis"
+msgstr "Tolerancia geométrica para el análisis de contención"
+
+#: meerk40t/core/elements/manual_optimize.py:419
+msgid "Optimize selected operations using containment-aware workflow"
+msgstr ""
+"Optimizar operaciones seleccionadas usando flujo de trabajo consciente de la"
+" contención"
+
+#: meerk40t/core/elements/manual_optimize.py:431
+msgid "No operations selected for workflow optimization"
+msgstr ""
+"No se seleccionaron operaciones para la optimización del flujo de trabajo"
+
+#: meerk40t/core/elements/manual_optimize.py:448
+msgid "Workflow Optimization Results:"
+msgstr "Resultados de la optimización del flujo de trabajo:"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:804
+msgid "Rotate element"
+msgstr "Rotar elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1044
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr ""
+"Dimensionar elemento (con Alt libremente, con Ctrl+Shift desde el centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1277
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr "Dimensionar elemento en dirección X (con Ctrl+Shift desde el centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1278
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr "Dimensionar elemento en dirección Y (con Ctrl+Shift desde el centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1431
+msgid "Skew element in X-direction"
+msgstr "Sesgar elemento en dirección X"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1432
+msgid "Skew element in Y-direction"
+msgstr "Sesgar elemento en dirección Y"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1960
+msgid "Move element"
+msgstr "Mover elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2093
+msgid "Move rotation center"
+msgstr "Mover centro de rotación"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2238
+msgid "Toggle reference status of element"
+msgstr "Alternar estado de referencia del elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2364
+msgid "Remove the 'locked' status of the element"
+msgstr "Eliminar el estado 'bloqueado' del elemento"

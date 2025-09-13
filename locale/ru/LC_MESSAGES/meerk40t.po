@@ -24074,3 +24074,99 @@ msgstr "Элементы (Эффекты)"
 #: meerk40t/device/gui/formatterpanel.py:160
 msgid "Placements"
 msgstr "Размещения"
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr "Строка с кавычками: \"Видишь?\""
+
+#: meerk40t/core/elements/element_treeops.py:3182
+msgid "Optimisation"
+msgstr "Оптимизация"
+
+#: meerk40t/core/elements/element_treeops.py:3184
+msgid "Reduce travel moves"
+msgstr "Сократить перемещения"
+
+#: meerk40t/core/elements/element_treeops.py:3186
+msgid "Rearrange items within operation to reduce travel moves"
+msgstr "Перестроить элементы внутри операции для сокращения перемещений"
+
+#: meerk40t/core/elements/element_treeops.py:3190
+msgid "Optimize travel moves"
+msgstr "Оптимизировать перемещения"
+
+#: meerk40t/core/elements/manual_optimize.py:82
+msgid "Provide detailed debug output"
+msgstr "Предоставить подробный вывод отладки"
+
+#: meerk40t/core/elements/manual_optimize.py:85
+msgid "Starting X position"
+msgstr "Начальная позиция X"
+
+#: meerk40t/core/elements/manual_optimize.py:88
+msgid "Starting Y position"
+msgstr "Начальная позиция Y"
+
+#: meerk40t/core/elements/manual_optimize.py:92
+msgid "reorder elements for optimal cutting within an operation"
+msgstr "Перестроить элементы для оптимальной резки внутри операции"
+
+#: meerk40t/core/elements/manual_optimize.py:115
+msgid "No operations to optimize"
+msgstr "Нет операций для оптимизации"
+
+#: meerk40t/core/elements/manual_optimize.py:415
+msgid "Geometric tolerance for containment analysis"
+msgstr "Геометрический допуск для анализа вложенности"
+
+#: meerk40t/core/elements/manual_optimize.py:419
+msgid "Optimize selected operations using containment-aware workflow"
+msgstr "Оптимизировать выбранные операции с учетом вложенности"
+
+#: meerk40t/core/elements/manual_optimize.py:431
+msgid "No operations selected for workflow optimization"
+msgstr "Нет выбранных операций для оптимизации рабочего процесса"
+
+#: meerk40t/core/elements/manual_optimize.py:448
+msgid "Workflow Optimization Results:"
+msgstr "Результаты оптимизации рабочего процесса:"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:804
+msgid "Rotate element"
+msgstr "Повернуть элемент"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1044
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr "Изменить размер элемента (с Alt свободно, с Ctrl+Shift от центра)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1277
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr "Изменить размер элемента по X (с Ctrl+Shift от центра)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1278
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr "Изменить размер элемента по Y (с Ctrl+Shift от центра)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1431
+msgid "Skew element in X-direction"
+msgstr "Наклонить элемент по X"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1432
+msgid "Skew element in Y-direction"
+msgstr "Наклонить элемент по Y"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1960
+msgid "Move element"
+msgstr "Переместить элемент"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2093
+msgid "Move rotation center"
+msgstr "Переместить центр вращения"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2238
+msgid "Toggle reference status of element"
+msgstr "Переключить статус ссылки элемента"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2364
+msgid "Remove the 'locked' status of the element"
+msgstr "Удалить статус 'заблокировано' у элемента"

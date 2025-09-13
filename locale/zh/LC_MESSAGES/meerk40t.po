@@ -23117,3 +23117,99 @@ msgstr "元素 (效果)"
 #: meerk40t/device/gui/formatterpanel.py:160
 msgid "Placements"
 msgstr "位置"
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr "带引号的字符串：\"看到了吗？\""
+
+#: meerk40t/core/elements/element_treeops.py:3182
+msgid "Optimisation"
+msgstr "优化"
+
+#: meerk40t/core/elements/element_treeops.py:3184
+msgid "Reduce travel moves"
+msgstr "减少移动路径"
+
+#: meerk40t/core/elements/element_treeops.py:3186
+msgid "Rearrange items within operation to reduce travel moves"
+msgstr "在操作内重新排列项目以减少移动路径"
+
+#: meerk40t/core/elements/element_treeops.py:3190
+msgid "Optimize travel moves"
+msgstr "优化移动路径"
+
+#: meerk40t/core/elements/manual_optimize.py:82
+msgid "Provide detailed debug output"
+msgstr "提供详细调试输出"
+
+#: meerk40t/core/elements/manual_optimize.py:85
+msgid "Starting X position"
+msgstr "起始X位置"
+
+#: meerk40t/core/elements/manual_optimize.py:88
+msgid "Starting Y position"
+msgstr "起始Y位置"
+
+#: meerk40t/core/elements/manual_optimize.py:92
+msgid "reorder elements for optimal cutting within an operation"
+msgstr "在操作内重新排序元素以实现最佳切割"
+
+#: meerk40t/core/elements/manual_optimize.py:115
+msgid "No operations to optimize"
+msgstr "没有可优化的操作"
+
+#: meerk40t/core/elements/manual_optimize.py:415
+msgid "Geometric tolerance for containment analysis"
+msgstr "包含分析的几何容差"
+
+#: meerk40t/core/elements/manual_optimize.py:419
+msgid "Optimize selected operations using containment-aware workflow"
+msgstr "使用包含感知工作流优化选定操作"
+
+#: meerk40t/core/elements/manual_optimize.py:431
+msgid "No operations selected for workflow optimization"
+msgstr "未选择任何操作进行工作流优化"
+
+#: meerk40t/core/elements/manual_optimize.py:448
+msgid "Workflow Optimization Results:"
+msgstr "工作流优化结果："
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:804
+msgid "Rotate element"
+msgstr "旋转元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1044
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr "调整元素大小（Alt键自由，Ctrl+Shift从中心）"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1277
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr "调整元素X方向大小（Ctrl+Shift从中心）"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1278
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr "调整元素Y方向大小（Ctrl+Shift从中心）"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1431
+msgid "Skew element in X-direction"
+msgstr "X方向倾斜元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1432
+msgid "Skew element in Y-direction"
+msgstr "Y方向倾斜元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1960
+msgid "Move element"
+msgstr "移动元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2093
+msgid "Move rotation center"
+msgstr "移动旋转中心"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2238
+msgid "Toggle reference status of element"
+msgstr "切换元素参考状态"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2364
+msgid "Remove the 'locked' status of the element"
+msgstr "移除元素的“锁定”状态"
