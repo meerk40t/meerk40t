@@ -792,15 +792,18 @@ class RasterPlotter:
                 else:
                     px = xy
                     py = idx
-                for x_idx in range(-self.overlap, self.overlap + 1):
-                    for y_idx in range(-self.overlap, self.overlap + 1):
-                        nx = px + x_idx
-                        ny = py + y_idx
-                        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
-                            continue
-                        self.data[nx, ny] = BLANK
+                self._overlap_pixel(px, py)
+
         self._debug_data()
 
+    def _overlap_pixel(self, px, py):
+        for x_idx in range(-self.overlap, self.overlap + 1):
+            for y_idx in range(-self.overlap, self.overlap + 1):
+                nx = px + x_idx
+                ny = py + y_idx
+                if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
+                    continue
+                self.data[nx, ny] = BLANK
 
     def _plot_vertical(self):
         """
@@ -1376,10 +1379,10 @@ class RasterPlotter:
         t3 = perf_counter()
         if self.debug_level > 1:
             print(
-                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments"
+                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3 - t0:.2f}s - created: {len(line_parts)} segments"
             )
             print(
-                f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
+                f"Computation: {t2 - t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
             )
         self.final_x = last_x
         self.final_y = last_y
@@ -1739,7 +1742,7 @@ class RasterPlotter:
         self.final_y = last_y
         t3 = perf_counter()
         if self.debug_level > 1:
-            print(f"Overall time for crossover consumption: {t3-t0:.2f}s")
+            print(f"Overall time for crossover consumption: {t3 - t0:.2f}s")
             print(
                 f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s"
             )
@@ -1835,13 +1838,7 @@ class RasterPlotter:
                 pixel = self.px(px, py)
                 on = 0 if pixel == self.skip_pixel else pixel
                 if on and self.overlap > 0:
-                    for x_idx in range(-self.overlap, self.overlap + 1):
-                        for y_idx in range(-self.overlap, self.overlap + 1):
-                            nx = px + x_idx
-                            ny = py + y_idx
-                            if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
-                                continue
-                            self.data[nx, ny] = BLANK
+                    self._overlap_pixels(px, py)
 
         # Update final position
         self.final_x, self.final_y = current_x, current_y
@@ -1956,16 +1953,6 @@ class RasterPlotter:
 
         # Update position for caller
         position[0], position[1] = current_x, current_y
-
-    def _mark_overlap_pixels(self, x, y, visited):
-        """Mark overlapping pixels as visited and blank them in the data."""
-        for dx in range(-self.overlap, self.overlap + 1):
-            for dy in range(-self.overlap, self.overlap + 1):
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < self.width and 0 <= ny < self.height:
-                    visited[nx, ny] = True
-                    if abs(dx) + abs(dy) > 0:  # Don't blank center pixel
-                        self.data[nx, ny] = BLANK
 
     """
     # Testpattern generation
