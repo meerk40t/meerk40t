@@ -536,6 +536,7 @@ class RasterOpNode(Node, Parameters):
             elif self.raster_direction == RASTER_B2T:
                 self.raster_direction = RASTER_T2B
         if negative_scale_x:
+            # print ("Negative scale X -> flipping L2R/R2L")
             # X is negative scale, flip raster_direction if needed
             self.raster_preference_left = not self.raster_preference_left
             if self.raster_direction == RASTER_R2L:
@@ -626,6 +627,8 @@ class RasterOpNode(Node, Parameters):
                 continue
             if image_node.type != "elem image":
                 continue
+
+            # print (f"Raster direction for {image_node.type}: {direction}, horizontal: {horizontal}, bidir: {bidirectional}, start_on_left: {start_on_left}, start_on_top: {start_on_top}")
 
             step_x = image_node.step_x
             step_y = image_node.step_y
