@@ -850,6 +850,7 @@ class SimulationPanel(wx.Panel, Job):
             self.context,
             self,
             scene_name="SimScene",
+            with_snap=False,
             style=wx.EXPAND,
         )
         self.view_pane.start_scene()

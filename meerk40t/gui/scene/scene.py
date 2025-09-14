@@ -194,7 +194,7 @@ class Scene(Module, Job):
     to the scene and then the interface widget which contains all the non-scene widget elements.
     """
 
-    def __init__(self, context, path, gui, pane=None,  **kwargs):
+    def __init__(self, context, path, gui, pane=None, supports_snap=False, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
@@ -204,6 +204,7 @@ class Scene(Module, Job):
             run_main=True,
         )
         self.stack = []
+        self.needs_snap = supports_snap
 
         # Scene lock is used for widget structure modification and scene drawing.
         self.scene_lock = threading.RLock()
@@ -1237,6 +1238,8 @@ class Scene(Module, Job):
         """
         Get the snap point for given coordinates with optimized logic.
         """
+        if not self.needs_snap:
+            return None, None
         resx = sx
         resy = sy
 
