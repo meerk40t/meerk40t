@@ -801,6 +801,59 @@ class RasterPlotter:
                         self.data[nx, ny] = BLANK
         self._debug_data()
 
+    def _consume_diagonal_pixel_chains(self, segments, diag_value, equation_func):
+        """Consume overlapping pixels for diagonal pixel chains."""
+        BLANK = 255
+
+        for segment in segments:
+            (sx, sy), (ex, ey), on = segment
+
+            # Mark pixels in the chain as consumed
+            if equation_func(0, 0) == 0:  # x + y equation
+                if sx <= ex:  # left to right
+                    for x in range(sx, ex + 1):
+                        y = diag_value - x
+                        if 0 <= y < self.height:
+                            # Mark overlapping pixels
+                            for dx in range(-self.overlap, self.overlap + 1):
+                                for dy in range(-self.overlap, self.overlap + 1):
+                                    nx, ny = x + dx, y + dy
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+                else:  # right to left
+                    for x in range(ex, sx + 1):
+                        y = diag_value - x
+                        if 0 <= y < self.height:
+                            # Mark overlapping pixels
+                            for dx in range(-self.overlap, self.overlap + 1):
+                                for dy in range(-self.overlap, self.overlap + 1):
+                                    nx, ny = x + dx, y + dy
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+            else:  # x - y equation
+                if sx <= ex:  # left to right
+                    for x in range(sx, ex + 1):
+                        y = x - diag_value
+                        if 0 <= y < self.height:
+                            # Mark overlapping pixels
+                            for dx in range(-self.overlap, self.overlap + 1):
+                                for dy in range(-self.overlap, self.overlap + 1):
+                                    nx, ny = x + dx, y + dy
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+                else:  # right to left
+                    for x in range(ex, sx + 1):
+                        y = x - diag_value
+                        if 0 <= y < self.height:
+                            # Mark overlapping pixels
+                            for dx in range(-self.overlap, self.overlap + 1):
+                                for dy in range(-self.overlap, self.overlap + 1):
+                                    nx, ny = x + dx, y + dy
+                                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                                        self.data[nx, ny] = BLANK
+
+        self._debug_data()
+
     def _plot_vertical(self):
         """
         This code is for vertical rastering.
@@ -1746,10 +1799,11 @@ class RasterPlotter:
 
     def _plot_diagonal(self):
         """
-        Diagonal scanning algorithm that traverses the image diagonally.
+        Diagonal scanning algorithm that traverses the image diagonally using pixel chains.
 
         This method implements diagonal rastering that supports all four corner starting positions
-        with bidirectional scanning and proper pixel overlap handling.
+        with bidirectional scanning and proper pixel overlap handling. Uses pixel chains for
+        efficiency like other raster methods.
 
         Yields:
             tuple: (x, y, on) coordinates and laser on/off state (0=off, pixel_value=on)
@@ -1776,9 +1830,9 @@ class RasterPlotter:
             else range(min_diag, max_diag + 1)
         )
 
-        # Track visited pixels and current position
-        visited = np.zeros((self.width, self.height), dtype=bool)
+        # Track current position
         current_x, current_y = self.initial_x, self.initial_y
+        first_diagonal = True
 
         for diagonal_idx, diag_value in enumerate(diagonal_range):
             # Collect pixels on this diagonal
@@ -1789,14 +1843,48 @@ class RasterPlotter:
                 pixels_on_diagonal, start_corner, diagonal_idx
             )
 
-            # Process pixels on this diagonal
-            if pixels_on_diagonal:
-                position = [current_x, current_y]
-                for result in self._process_diagonal_pixels(
-                    pixels_on_diagonal, visited, position
-                ):
-                    yield result
-                current_x, current_y = position[0], position[1]
+            # Get pixel chains for this diagonal
+            segments = self._get_diagonal_pixel_chains(pixels_on_diagonal)
+
+            # Consume overlapping pixels
+            self._consume_diagonal_pixel_chains(segments, diag_value, equation_func)
+
+            if segments:
+                # Determine direction based on start corner and bidirectional setting
+                alternate = self.bidirectional and diagonal_idx % 2 == 1
+
+                if start_corner == "top-left":
+                    reverse_segments = alternate
+                elif start_corner == "top-right":
+                    reverse_segments = alternate
+                elif start_corner == "bottom-left":
+                    reverse_segments = not alternate
+                else:  # bottom-right
+                    reverse_segments = not alternate
+
+                if reverse_segments:
+                    segments = segments[::-1]
+
+                # Move to start of first segment
+                start_x, start_y = segments[0][0]
+                if first_diagonal or start_x != current_x or start_y != current_y:
+                    yield start_x, start_y, 0
+                    current_x, current_y = start_x, start_y
+
+                # Process each segment
+                for segment in segments:
+                    (sx, sy), (ex, ey), on = segment
+
+                    # Move to segment start if needed
+                    if sx != current_x or sy != current_y:
+                        yield sx, sy, 0
+                        current_x, current_y = sx, sy
+
+                    # Move to segment end with laser on
+                    yield ex, ey, on
+                    current_x, current_y = ex, ey
+
+                first_diagonal = False
 
         # Update final position
         self.final_x, self.final_y = current_x, current_y
@@ -1827,6 +1915,40 @@ class RasterPlotter:
                 if 0 <= y < self.height:
                     pixels.append((x, y))
         return pixels
+
+    def _get_diagonal_pixel_chains(self, pixels):
+        """Group consecutive pixels on a diagonal into chains with the same pixel value."""
+        if not pixels:
+            return []
+
+        last_pixel = None
+        segments = []
+        current_chain = []
+
+        for x, y in pixels:
+            pixel = self.px(x, y)
+            on = 0 if pixel == self.skip_pixel else pixel
+
+            if on:
+                if on == last_pixel and current_chain:
+                    current_chain.append((x, y))
+                else:
+                    if current_chain:
+                        segments.append(
+                            [current_chain[0], current_chain[-1], last_pixel]
+                        )
+                    current_chain = [(x, y)]
+                last_pixel = on
+            else:
+                if current_chain:
+                    segments.append([current_chain[0], current_chain[-1], last_pixel])
+                    current_chain = []
+                last_pixel = on
+
+        if current_chain:
+            segments.append([current_chain[0], current_chain[-1], last_pixel])
+
+        return segments
 
     def _sort_diagonal_pixels(self, pixels, start_corner, diagonal_idx):
         """Sort pixels within a diagonal based on start corner and bidirectional settings."""
