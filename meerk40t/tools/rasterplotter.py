@@ -122,12 +122,14 @@ class RasterPlotter:
             RASTER_GREEDY_H: (None, None, None, True),  # greedy neighbour horizontal
             RASTER_GREEDY_V: (None, None, None, True),  # greedy neighbour
             RASTER_CROSSOVER: (None, None, None, True),  # true crossover
+            RASTER_DIAGONAL: (None, None, None, True),  # diagonal
         }
         def_x, def_y, def_hor, def_bidir = parameters.get(
             direction, (None, None, None, None)
         )
         self.start_minimum_x = start_minimum_x if def_x is None else def_x
         self.start_minimum_y = start_minimum_y if def_y is None else def_y
+        # print (f"Rasterplotter for {METHODS.get(direction, 'Unknown')} minX:{self.start_minimum_x} minY:{self.start_minimum_y} (was: {start_minimum_x}, {start_minimum_y}), override: {def_x}, {def_y}")
         self.horizontal = horizontal if def_hor is None else def_hor
         self.bidirectional = bidirectional if def_bidir is None else def_bidir
 
@@ -393,8 +395,19 @@ class RasterPlotter:
         @return: x,y coordinates of first pixel.
         """
         if self.direction == RASTER_DIAGONAL:
-            x = 0 if self.start_minimum_x else self.width - 1
-            y = 0 if self.start_minimum_y else self.height - 1
+            # For diagonal scanning, start from the corner specified by the flags
+            if self.start_minimum_x and self.start_minimum_y:
+                # Top-left corner
+                return 0, 0
+            elif not self.start_minimum_x and self.start_minimum_y:
+                # Top-right corner
+                return self.width - 1, 0
+            elif self.start_minimum_x and not self.start_minimum_y:
+                # Bottom-left corner
+                return 0, self.height - 1
+            else:  # not self.start_minimum_x and not self.start_minimum_y
+                # Bottom-right corner
+                return self.width - 1, self.height - 1
         elif self.direction == RASTER_SPIRAL:
             x = int(self.width / 2)
             y = int(self.height / 2)
@@ -713,7 +726,8 @@ class RasterPlotter:
         segments = []
         upper = self.width if is_x else self.height
         for idx in range(upper):
-            pixel = self.px(idx, xy) if is_x else self.px(xy, idx)
+            x, y = (idx, xy) if is_x else (xy, idx)
+            pixel = self.px(x, y)
             on = 0 if pixel == self.skip_pixel else pixel
             if on:
                 if on == last_pixel:
@@ -970,12 +984,16 @@ class RasterPlotter:
             if traveling_bottom:
                 while y < upper_bound:
                     try:
-                        pixel = self.px(x, y)
+                        raw_pixel = self.data[x, y]
+                        if raw_pixel == self.skip_pixel:
+                            pixel = 0
+                        else:
+                            pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     y = self.nextcolor_bottom(x, y, upper_bound)
                     y = min(y, upper_bound)
-                    if pixel == skip_pixel:
+                    if pixel == 0:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
@@ -989,7 +1007,7 @@ class RasterPlotter:
                         pixel = 0
                     y = self.nextcolor_top(x, y, lower_bound)
                     y = max(y, lower_bound)
-                    if pixel == skip_pixel:
+                    if pixel == self.skip_pixel:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
@@ -1043,12 +1061,16 @@ class RasterPlotter:
             if traveling_right:
                 while x < upper_bound:
                     try:
-                        pixel = self.px(x, y)
+                        raw_pixel = self.data[x, y]
+                        if raw_pixel == self.skip_pixel:
+                            pixel = 0
+                        else:
+                            pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     x = self.nextcolor_right(x, y, upper_bound)
                     x = min(x, upper_bound)
-                    if pixel == skip_pixel:
+                    if pixel == 0:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
@@ -1062,7 +1084,7 @@ class RasterPlotter:
                         pixel = 0
                     x = self.nextcolor_left(x, y, lower_bound)
                     x = max(x, lower_bound)
-                    if pixel == skip_pixel:
+                    if pixel == self.skip_pixel:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
@@ -1465,6 +1487,9 @@ class RasterPlotter:
                     # msg = ""
                     for idx in range(cols):
                         on = image[rowidx, idx]
+                        pixel = self.px(rowidx, idx)
+                        if pixel == self.skip_pixel:
+                            on = 0
                         # msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             if not covered_col[idx]:
@@ -1501,6 +1526,9 @@ class RasterPlotter:
                     # msg = ""
                     for idx in range(rows):
                         on = image[idx, colidx]
+                        pixel = self.px(idx, colidx)
+                        if pixel == self.skip_pixel:
+                            on = 0
                         # msg = f"{msg}{'X' if on else '.'}"
                         if on:
                             if not covered_row[idx]:
@@ -1545,7 +1573,8 @@ class RasterPlotter:
         for x in range(self.width):
             for y in range(self.height):
                 px = self.px(x, y)
-                if px == self.skip_pixel:
+                raw_pixel = self.data[x, y]
+                if raw_pixel == self.skip_pixel:
                     px = 0
                 image[x, y] = px
         t1 = perf_counter()
@@ -1650,20 +1679,13 @@ class RasterPlotter:
             tuple: (x, y, on) coordinates and on/off state
         """
         start_corner = f"{'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}"
-        print(
-            f"Diagonal scanning from {start_corner}: start at: ({self.initial_x}, {self.initial_y}), end at ({self.final_x}, {self.final_y})"
-        )
+        # if self.debug_level > 1:
+        #     print(
+        #         f"Diagonal scanning from {start_corner}: start at: ({self.initial_x}, {self.initial_y}), end at ({self.final_x}, {self.final_y})"
+        #     )
 
         # Track visited pixels to avoid duplicates
         visited = np.zeros((self.width, self.height), dtype=bool)
-
-        # Set initial position
-        self.initial_x = 0
-        self.initial_y = 0
-
-        # Track current position for travel moves
-        current_x = self.initial_x
-        current_y = self.initial_y
 
         # Determine if we should alternate direction (bidirectional)
         alternate_direction = self.bidirectional
@@ -1682,10 +1704,17 @@ class RasterPlotter:
             min_diagonal = -(self.height - 1)
             max_diagonal = self.width - 1
 
+        # Track current position for travel moves
+        current_x = self.initial_x
+        current_y = self.initial_y
+
         # For each diagonal (constant value), collect all pixels on that diagonal
-        for diagonal_idx, diagonal_value in enumerate(
-            range(min_diagonal, max_diagonal + 1)
-        ):
+        diagonal_range = range(min_diagonal, max_diagonal + 1)
+        if start_corner in ("top-right", "bottom-right"):
+            # For top-right and bottom-right, start with largest diagonal values
+            diagonal_range = range(max_diagonal, min_diagonal - 1, -1)
+
+        for diagonal_idx, diagonal_value in enumerate(diagonal_range):
             pixels_on_diagonal = []
 
             if diagonal_equation == "x_plus_y":
@@ -1752,7 +1781,10 @@ class RasterPlotter:
 
                         # Get pixel value
                         pixel = self.px(x, y)
-                        on = 0 if pixel == self.skip_pixel else pixel
+                        if pixel == self.skip_pixel:
+                            on = 0
+                        else:
+                            on = pixel
 
                         # Mark overlapping pixels as visited if overlap is enabled
                         if self.overlap > 0 and on:
