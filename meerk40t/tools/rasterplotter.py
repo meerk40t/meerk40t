@@ -72,6 +72,8 @@ METHODS = {
     RASTER_DIAGONAL: "Diagonal",
 }
 
+BLANK = 255
+
 
 class RasterPlotter:
     """
@@ -750,7 +752,6 @@ class RasterPlotter:
     def _debug_data(self, force=False):
         if self.debug_level < 3 and not force:
             return
-        BLANK = 255
         for y in range(self.height):
             msg: str = f"{y:3d}: "
             for x in range(self.width):
@@ -773,7 +774,6 @@ class RasterPlotter:
         return segments
 
     def _consume_pixel_chains(self, segments: list, xy: int, is_x: bool):
-        BLANK = 255
         # for x in range(5):
         #     msg1 = f"{x}: "
         #     msg2 = ""
@@ -801,58 +801,6 @@ class RasterPlotter:
                         self.data[nx, ny] = BLANK
         self._debug_data()
 
-    def _consume_diagonal_pixel_chains(self, segments, diag_value, equation_func):
-        """Consume overlapping pixels for diagonal pixel chains."""
-        BLANK = 255
-
-        for segment in segments:
-            (sx, sy), (ex, ey), on = segment
-
-            # Mark pixels in the chain as consumed
-            if equation_func(0, 0) == 0:  # x + y equation
-                if sx <= ex:  # left to right
-                    for x in range(sx, ex + 1):
-                        y = diag_value - x
-                        if 0 <= y < self.height:
-                            # Mark overlapping pixels
-                            for dx in range(-self.overlap, self.overlap + 1):
-                                for dy in range(-self.overlap, self.overlap + 1):
-                                    nx, ny = x + dx, y + dy
-                                    if 0 <= nx < self.width and 0 <= ny < self.height:
-                                        self.data[nx, ny] = BLANK
-                else:  # right to left
-                    for x in range(ex, sx + 1):
-                        y = diag_value - x
-                        if 0 <= y < self.height:
-                            # Mark overlapping pixels
-                            for dx in range(-self.overlap, self.overlap + 1):
-                                for dy in range(-self.overlap, self.overlap + 1):
-                                    nx, ny = x + dx, y + dy
-                                    if 0 <= nx < self.width and 0 <= ny < self.height:
-                                        self.data[nx, ny] = BLANK
-            else:  # x - y equation
-                if sx <= ex:  # left to right
-                    for x in range(sx, ex + 1):
-                        y = x - diag_value
-                        if 0 <= y < self.height:
-                            # Mark overlapping pixels
-                            for dx in range(-self.overlap, self.overlap + 1):
-                                for dy in range(-self.overlap, self.overlap + 1):
-                                    nx, ny = x + dx, y + dy
-                                    if 0 <= nx < self.width and 0 <= ny < self.height:
-                                        self.data[nx, ny] = BLANK
-                else:  # right to left
-                    for x in range(ex, sx + 1):
-                        y = x - diag_value
-                        if 0 <= y < self.height:
-                            # Mark overlapping pixels
-                            for dx in range(-self.overlap, self.overlap + 1):
-                                for dy in range(-self.overlap, self.overlap + 1):
-                                    nx, ny = x + dx, y + dy
-                                    if 0 <= nx < self.width and 0 <= ny < self.height:
-                                        self.data[nx, ny] = BLANK
-
-        self._debug_data()
 
     def _plot_vertical(self):
         """
@@ -1506,7 +1454,6 @@ class RasterPlotter:
                     self.final_x, self.final_y = last_x, last_y
                 # Now we need to empty overlapping pixels...
                 if self.overlap > 0:
-                    BLANK = 255
                     for (start_x, start_y), (end_x, end_y), on in segments:
                         sx = min(start_x, end_x)
                         ex = max(start_x, end_x)
@@ -1846,9 +1793,6 @@ class RasterPlotter:
             # Get pixel chains for this diagonal
             segments = self._get_diagonal_pixel_chains(pixels_on_diagonal)
 
-            # Consume overlapping pixels
-            self._consume_diagonal_pixel_chains(segments, diag_value, equation_func)
-
             if segments:
                 # Determine direction based on start corner and bidirectional setting
                 alternate = self.bidirectional and diagonal_idx % 2 == 1
@@ -1885,6 +1829,19 @@ class RasterPlotter:
                     current_x, current_y = ex, ey
 
                 first_diagonal = False
+
+            # Consume overlapping pixels
+            for px, py in pixels_on_diagonal:
+                pixel = self.px(px, py)
+                on = 0 if pixel == self.skip_pixel else pixel
+                if on and self.overlap > 0:
+                    for x_idx in range(-self.overlap, self.overlap + 1):
+                        for y_idx in range(-self.overlap, self.overlap + 1):
+                            nx = px + x_idx
+                            ny = py + y_idx
+                            if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
+                                continue
+                            self.data[nx, ny] = BLANK
 
         # Update final position
         self.final_x, self.final_y = current_x, current_y
@@ -1994,10 +1951,6 @@ class RasterPlotter:
                 pixel = self.px(x, y)
                 on = 0 if pixel == self.skip_pixel else pixel
 
-                # Handle pixel overlap
-                if self.overlap > 0 and on:
-                    self._mark_overlap_pixels(x, y, visited)
-
                 yield (x, y, on)
                 current_x, current_y = x, y
 
@@ -2006,7 +1959,6 @@ class RasterPlotter:
 
     def _mark_overlap_pixels(self, x, y, visited):
         """Mark overlapping pixels as visited and blank them in the data."""
-        BLANK = 255
         for dx in range(-self.overlap, self.overlap + 1):
             for dy in range(-self.overlap, self.overlap + 1):
                 nx, ny = x + dx, y + dy
