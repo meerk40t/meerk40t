@@ -1487,7 +1487,7 @@ class PanelStartPreference(wx.Panel):
             self.operation.raster_preference_left = value
             self._reload_display()
             self.context.elements.signal(
-                "element_property_update", self.operation, "slider_top"
+                "element_property_update", self.operation, "slider_left"
             )
 
     def on_slider_pref_top(
@@ -1498,7 +1498,7 @@ class PanelStartPreference(wx.Panel):
             self.operation.raster_preference_top = value
             self._reload_display()
             self.context.elements.signal(
-                "element_property_update", self.operation, "slider_left"
+                "element_property_update", self.operation, "slider_top"
             )
 
 
