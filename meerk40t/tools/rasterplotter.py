@@ -1838,7 +1838,7 @@ class RasterPlotter:
                 pixel = self.px(px, py)
                 on = 0 if pixel == self.skip_pixel else pixel
                 if on and self.overlap > 0:
-                    self._overlap_pixels(px, py)
+                    self._overlap_pixel(px, py)
 
         # Update final position
         self.final_x, self.final_y = current_x, current_y

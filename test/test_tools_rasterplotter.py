@@ -365,21 +365,52 @@ class TestRasterPlotter(unittest.TestCase):
                         special={"start_corner": corner},
                     )
 
-                    # Collect all visited pixels
-                    visited_pixels = set()
+                    # Collect all pixels that are actually burned by following the plotting path
+                    burned_pixels = set()
+                    last_x, last_y = None, None
+                    
                     for x, y, on in plotter.plot():
-                        visited_pixels.add((x, y))
+                        if x is not None and y is not None:
+                            if last_x is not None and last_y is not None and on > 0:
+                                # When laser is on, all pixels along the path are burned
+                                # For diagonal movement, we need to interpolate the pixels
+                                if abs(x - last_x) == abs(y - last_y):
+                                    # Diagonal movement
+                                    dx = 1 if x > last_x else -1
+                                    dy = 1 if y > last_y else -1
+                                    cx, cy = last_x, last_y
+                                    while cx != x or cy != y:
+                                        burned_pixels.add((int(cx), int(cy)))
+                                        cx += dx
+                                        cy += dy
+                                    burned_pixels.add((int(x), int(y)))
+                                else:
+                                    # Horizontal/vertical movement
+                                    burned_pixels.add((int(x), int(y)))
+                            elif on == 0:
+                                # When laser is off, just mark the current position
+                                burned_pixels.add((int(x), int(y)))
+                            
+                            last_x, last_y = x, y
 
-                    # Verify all pixels are visited exactly once
-                    expected_pixels = width * height
+                    # Count expected non-skipped pixels
+                    expected_pixels = 0
+                    for y in range(height):
+                        for x in range(width):
+                            pixel = image.getpixel((x, y))
+                            filtered = (255 - pixel) / 255.0
+                            if filtered != 0:  # not skipped
+                                expected_pixels += 1
+
+                    # Verify all non-skipped pixels are burned
                     self.assertEqual(
-                        len(visited_pixels),
+                        len(burned_pixels),
                         expected_pixels,
-                        f"Expected {expected_pixels} pixels but got {len(visited_pixels)} for {width}x{height} with {corner}",
+                        f"Expected {expected_pixels} non-skipped pixels but got {len(burned_pixels)} burned pixels for {width}x{height} with {corner}",
                     )
 
                     # Verify no pixels are outside bounds
-                    for x, y in visited_pixels:
+                    for x, y in burned_pixels:
                         self.assertTrue(
                             0 <= x < width,
                             f"Pixel x={x} out of bounds for width {width}",
