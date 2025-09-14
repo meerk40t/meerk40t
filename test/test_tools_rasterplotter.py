@@ -751,3 +751,120 @@ class TestRasterPlotter(unittest.TestCase):
         for i in range(1, len(results)):
             self.assertEqual(results[0], results[i],
                 f"Run {i+1} should match run 1 for consistency")
+
+    def test_diagonal_overlap_fully_black_image(self):
+        """
+        Test diagonal overlap with a fully black 10x10 image.
+        Compare pixel coverage with and without overlap to verify overlap consumption works.
+        This test demonstrates how pixel chains are generated and consumed by overlap.
+        """
+        width, height = 10, 10
+        
+        def image_filter(pixel):
+            return (255 - pixel) / 255.0
+
+        # Test without overlap (laserspot = 0)
+        image_no_overlap = Image.new("L", (width, height), 0)  # Fresh fully black image
+        plotter_no_overlap = RasterPlotter(
+            image_no_overlap.load(),
+            width,
+            height,
+            direction=RASTER_DIAGONAL,
+            horizontal=True,
+            bidirectional=False,
+            start_minimum_x=True,
+            start_minimum_y=True,
+            skip_pixel=0,
+            filter=image_filter,
+            laserspot=0,  # No overlap
+        )
+
+        # Collect burned pixels without overlap
+        burned_pixels_no_overlap = set()
+        for x, y, on in plotter_no_overlap.plot():
+            if on > 0:
+                burned_pixels_no_overlap.add((x, y))
+
+        # Test with overlap (laserspot = 3, gives overlap = 1)
+        image_with_overlap = Image.new("L", (width, height), 0)  # Fresh fully black image
+        plotter_with_overlap = RasterPlotter(
+            image_with_overlap.load(),
+            width,
+            height,
+            direction=RASTER_DIAGONAL,
+            horizontal=True,
+            bidirectional=False,
+            start_minimum_x=True,
+            start_minimum_y=True,
+            skip_pixel=0,
+            filter=image_filter,
+            laserspot=3,  # Gives overlap = 1
+        )
+
+        # Collect burned pixels with overlap
+        burned_pixels_with_overlap = set()
+        for x, y, on in plotter_with_overlap.plot():
+            if on > 0:
+                burned_pixels_with_overlap.add((x, y))
+
+        # Collect all pixels that are actually covered by the laser path
+        covered_pixels = set()
+        last_x, last_y = None, None
+        
+        for x, y, on in plotter_no_overlap.plot():
+            if last_x is not None and last_y is not None and on > 0:
+                # When laser is on, all pixels along the path are covered
+                # For diagonal movement, we need to interpolate the pixels
+                if abs(x - last_x) == abs(y - last_y):
+                    # Diagonal movement
+                    dx = 1 if x > last_x else -1
+                    dy = 1 if y > last_y else -1
+                    cx, cy = last_x, last_y
+                    while cx != x or cy != y:
+                        covered_pixels.add((int(cx), int(cy)))
+                        cx += dx
+                        cy += dy
+                    covered_pixels.add((int(x), int(y)))
+                else:
+                    # Horizontal/vertical movement
+                    covered_pixels.add((int(x), int(y)))
+            
+            if x is not None and y is not None:
+                last_x, last_y = x, y
+
+        # Test with overlap
+        covered_pixels_with_overlap = set()
+        last_x, last_y = None, None
+        
+        for x, y, on in plotter_with_overlap.plot():
+            if last_x is not None and last_y is not None and on > 0:
+                # When laser is on, all pixels along the path are covered
+                if abs(x - last_x) == abs(y - last_y):
+                    # Diagonal movement
+                    dx = 1 if x > last_x else -1
+                    dy = 1 if y > last_y else -1
+                    cx, cy = last_x, last_y
+                    while cx != x or cy != y:
+                        covered_pixels_with_overlap.add((int(cx), int(cy)))
+                        cx += dx
+                        cy += dy
+                    covered_pixels_with_overlap.add((int(x), int(y)))
+                else:
+                    # Horizontal/vertical movement
+                    covered_pixels_with_overlap.add((int(x), int(y)))
+            
+            if x is not None and y is not None:
+                last_x, last_y = x, y
+
+        print("\nDiagonal overlap test results:")
+        print(f"Without overlap: {len(covered_pixels)} covered pixels")
+        print(f"With overlap: {len(covered_pixels_with_overlap)} covered pixels")
+        print(f"Difference: {len(covered_pixels_with_overlap) - len(covered_pixels)} pixels")
+
+        # Verify that overlap reduces the number of covered pixels
+        self.assertLess(len(covered_pixels_with_overlap), len(covered_pixels),
+            "Overlap should reduce the number of pixels that are covered by the laser path")
+
+        # Verify that some pixels are still covered with overlap
+        self.assertGreater(len(covered_pixels_with_overlap), 0,
+            "Should still cover some pixels even with overlap")
