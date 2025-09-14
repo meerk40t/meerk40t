@@ -100,9 +100,16 @@ class TestRasterPlotter(unittest.TestCase):
                 pixels = 0
                 for x, y, on in plotter.plot():
                     i += 1
-                    if on:
-                        pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
-                    lastx, lasty = x, y
+                    if (
+                        x is not None
+                        and y is not None
+                        and lastx is not None
+                        and lasty is not None
+                    ):
+                        if on:
+                            pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
+                    if x is not None and y is not None:
+                        lastx, lasty = x, y
                 print(
                     f"{msgstr}.{case} (hor={horizontal}, bidir={bidirectional}, special={special_case}) found: {i} lines, {pixels} px, from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})"
                 )
@@ -174,9 +181,16 @@ class TestRasterPlotter(unittest.TestCase):
         pixels = 0
         for x, y, on in plotter.plot():
             i += 1
-            if on:
-                pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
-            lastx, lasty = x, y
+            if (
+                x is not None
+                and y is not None
+                and lastx is not None
+                and lasty is not None
+            ):
+                if on:
+                    pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
+            if x is not None and y is not None:
+                lastx, lasty = x, y
         print(
             f"\n{testcase} (horiz={horizontal}, bidir={bidirectional}) found: {i} lines, {pixels} pixels, ranging from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})"
         )
@@ -198,6 +212,14 @@ class TestRasterPlotter(unittest.TestCase):
         corners = ["top-left", "top-right", "bottom-left", "bottom-right"]
 
         for corner in corners:
+
+            def image_filter(pixel):
+                if isinstance(pixel, tuple):
+                    # Handle RGBA pixels by converting to grayscale
+                    return (255 - pixel[0]) / 255.0
+                else:
+                    return (255 - pixel) / 255.0
+
             plotter = RasterPlotter(
                 image.load(),
                 width,
@@ -207,6 +229,8 @@ class TestRasterPlotter(unittest.TestCase):
                 bidirectional=False,
                 start_minimum_x=True,
                 start_minimum_y=True,
+                skip_pixel=0,  # Skip inverted white pixels
+                filter=image_filter,
                 special={"start_corner": corner},
             )
 
@@ -221,9 +245,16 @@ class TestRasterPlotter(unittest.TestCase):
             for x, y, on in plotter.plot():
                 i += 1
                 coords.append((x, y, on))
-                if on:
-                    pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
-                lastx, lasty = x, y
+                if (
+                    x is not None
+                    and y is not None
+                    and lastx is not None
+                    and lasty is not None
+                ):
+                    if on:
+                        pixels += (abs(x - lastx) + 1) * (abs(y - lasty) + 1)
+                if x is not None and y is not None:
+                    lastx, lasty = x, y
 
             print(
                 f"Diagonal {corner} found: {i} lines, {pixels} pixels, from ({ipos[0]}, {ipos[1]}) to ({lpos[0]}, {lpos[1]})"
@@ -241,11 +272,7 @@ class TestRasterPlotter(unittest.TestCase):
         :return:
         """
         # Create a 3x3 test pattern
-        data = [
-            [255, 0, 255],
-            [0, 255, 0],
-            [255, 0, 255]
-        ]
+        data = [[255, 0, 255], [0, 255, 0], [255, 0, 255]]
 
         # Convert to PIL image
         image = Image.new("L", (3, 3), 255)
@@ -258,6 +285,10 @@ class TestRasterPlotter(unittest.TestCase):
         corners = ["top-left", "top-right", "bottom-left", "bottom-right"]
 
         for corner in corners:
+
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+
             plotter = RasterPlotter(
                 image.load(),
                 3,
@@ -267,6 +298,8 @@ class TestRasterPlotter(unittest.TestCase):
                 bidirectional=False,
                 start_minimum_x=True,
                 start_minimum_y=True,
+                skip_pixel=0,  # Skip inverted white pixels
+                filter=image_filter,
                 special={"start_corner": corner},
             )
 
@@ -283,7 +316,11 @@ class TestRasterPlotter(unittest.TestCase):
 
             # Check that we don't have duplicate coordinates
             unique_coords = set(coords)
-            self.assertEqual(len(coords), len(unique_coords), f"Duplicate coordinates found in {corner} traversal")
+            self.assertEqual(
+                len(coords),
+                len(unique_coords),
+                f"Duplicate coordinates found in {corner} traversal",
+            )
 
     def test_diagonal_scanning_rectangular_images(self):
         """
@@ -323,6 +360,8 @@ class TestRasterPlotter(unittest.TestCase):
                         bidirectional=False,
                         start_minimum_x=True,
                         start_minimum_y=True,
+                        skip_pixel=0,  # Skip inverted white pixels
+                        filter=lambda pixel: (255 - pixel) / 255.0,
                         special={"start_corner": corner},
                     )
 
@@ -333,13 +372,22 @@ class TestRasterPlotter(unittest.TestCase):
 
                     # Verify all pixels are visited exactly once
                     expected_pixels = width * height
-                    self.assertEqual(len(visited_pixels), expected_pixels,
-                        f"Expected {expected_pixels} pixels but got {len(visited_pixels)} for {width}x{height} with {corner}")
+                    self.assertEqual(
+                        len(visited_pixels),
+                        expected_pixels,
+                        f"Expected {expected_pixels} pixels but got {len(visited_pixels)} for {width}x{height} with {corner}",
+                    )
 
                     # Verify no pixels are outside bounds
                     for x, y in visited_pixels:
-                        self.assertTrue(0 <= x < width, f"Pixel x={x} out of bounds for width {width}")
-                        self.assertTrue(0 <= y < height, f"Pixel y={y} out of bounds for height {height}")
+                        self.assertTrue(
+                            0 <= x < width,
+                            f"Pixel x={x} out of bounds for width {width}",
+                        )
+                        self.assertTrue(
+                            0 <= y < height,
+                            f"Pixel y={y} out of bounds for height {height}",
+                        )
 
     def test_diagonal_scanning_empty_image(self):
         """
@@ -352,6 +400,10 @@ class TestRasterPlotter(unittest.TestCase):
         image = Image.new("L", (width, height), 255)  # All white
 
         for corner in ["top-left", "top-right", "bottom-left", "bottom-right"]:
+
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+
             plotter = RasterPlotter(
                 image.load(),
                 width,
@@ -361,6 +413,8 @@ class TestRasterPlotter(unittest.TestCase):
                 bidirectional=False,
                 start_minimum_x=True,
                 start_minimum_y=True,
+                skip_pixel=0,  # Skip inverted white pixels
+                filter=image_filter,
                 special={"start_corner": corner},
             )
 
@@ -369,7 +423,10 @@ class TestRasterPlotter(unittest.TestCase):
                 if on > 0:
                     pixels_found += 1
 
-            # The diagonal algorithm currently doesn't visit all pixels
-            # For now, just verify it visits some pixels and doesn't crash
-            self.assertGreater(pixels_found, 0, f"No pixels processed for {corner} in empty image")
-            self.assertLessEqual(pixels_found, width * height, f"Too many pixels found for {corner}")
+            # For an all-white image, after inversion all pixels become 0.0 (off)
+            # So we expect 0 pixels to be found
+            self.assertEqual(
+                pixels_found,
+                0,
+                f"Expected 0 pixels for all-white image with {corner}, but found {pixels_found}",
+            )

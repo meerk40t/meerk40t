@@ -35,7 +35,7 @@ from meerk40t.constants import (
     RASTER_T2B,
 )
 from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.core.elements.element_types import op_nodes, elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
@@ -675,6 +675,7 @@ class ImageOpNode(Node, Parameters):
                 ):  # Crossover - need both
                     settings["raster_step_x"] = step_x
                     settings["raster_step_y"] = step_y
+
                 if (
                     self.raster_direction == RASTER_CROSSOVER
                     and "split_crossover" in self._instructions
