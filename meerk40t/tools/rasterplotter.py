@@ -1746,150 +1746,152 @@ class RasterPlotter:
 
     def _plot_diagonal(self):
         """
-        Diagonal scanning algorithm that traverses the image diagonally using x+y=constant or x-y=constant equations.
+        Diagonal scanning algorithm that traverses the image diagonally.
 
-        This method implements a sophisticated diagonal rastering approach that:
-        - Supports all four corner starting positions (top-left, top-right, bottom-left, bottom-right)
-        - Uses appropriate diagonal equations based on start corner:
-          * Top-left/Bottom-right: x+y=constant (diagonal from top-left to bottom-right)
-          * Top-right/Bottom-left: x-y=constant (diagonal from top-right to bottom-left)
-        - Implements bidirectional scanning with direction alternation between diagonals
-        - Ensures each pixel is visited exactly once using a visited pixel tracking system
-        - Handles laser spot overlap by marking adjacent pixels as visited
-        - Inserts travel moves (laser off) between diagonal transitions for efficiency
-
-        The algorithm processes pixels in diagonal order, sorting within each diagonal based on
-        the start corner and bidirectional settings. For bidirectional mode, direction alternates
-        between diagonals to optimize laser movement patterns.
+        This method implements diagonal rastering that supports all four corner starting positions
+        with bidirectional scanning and proper pixel overlap handling.
 
         Yields:
             tuple: (x, y, on) coordinates and laser on/off state (0=off, pixel_value=on)
         """
+        # Determine start corner and diagonal equation parameters
         start_corner = f"{'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}"
-        # if self.debug_level > 1:
-        #     print(
-        #         f"Diagonal scanning from {start_corner}: start at: ({self.initial_x}, {self.initial_y}), end at ({self.final_x}, {self.final_y})"
-        #     )
 
-        # Track visited pixels to avoid duplicates
-        visited = np.zeros((self.width, self.height), dtype=bool)
-
-        # Determine if we should alternate direction (bidirectional)
-        alternate_direction = self.bidirectional
-
-        # Choose diagonal equation based on start_corner
-        # Top-left and bottom-right use x+y=constant (TL->BR direction)
-        # Top-right and bottom-left use x-y=constant (TR->BL direction)
+        # Configure diagonal scanning parameters based on start corner
         if start_corner in ("top-left", "bottom-right"):
-            diagonal_equation = "x_plus_y"
-            # For x+y=constant, range from 0 to width+height-2
-            min_diagonal = 0
-            max_diagonal = self.width + self.height - 2
+            equation_func = self._diagonal_sum
+            min_diag = 0
+            max_diag = self.width + self.height - 2
+            reverse_order = start_corner == "bottom-right"
         else:  # top-right, bottom-left
-            diagonal_equation = "x_minus_y"
-            # For x-y=constant, range from -(height-1) to (width-1)
-            min_diagonal = -(self.height - 1)
-            max_diagonal = self.width - 1
+            equation_func = self._diagonal_diff
+            min_diag = -(self.height - 1)
+            max_diag = self.width - 1
+            reverse_order = start_corner == "top-right"
 
-        # Track current position for travel moves
-        current_x = self.initial_x
-        current_y = self.initial_y
+        # Set up diagonal range
+        diagonal_range = (
+            range(max_diag, min_diag - 1, -1)
+            if reverse_order
+            else range(min_diag, max_diag + 1)
+        )
 
-        # For each diagonal (constant value), collect all pixels on that diagonal
-        diagonal_range = range(min_diagonal, max_diagonal + 1)
-        if start_corner in ("top-right", "bottom-right"):
-            # For top-right and bottom-right, start with largest diagonal values
-            diagonal_range = range(max_diagonal, min_diagonal - 1, -1)
+        # Track visited pixels and current position
+        visited = np.zeros((self.width, self.height), dtype=bool)
+        current_x, current_y = self.initial_x, self.initial_y
 
-        for diagonal_idx, diagonal_value in enumerate(diagonal_range):
-            pixels_on_diagonal = []
+        for diagonal_idx, diag_value in enumerate(diagonal_range):
+            # Collect pixels on this diagonal
+            pixels_on_diagonal = self._get_diagonal_pixels(diag_value, equation_func)
 
-            if diagonal_equation == "x_plus_y":
-                # x + y = diagonal_value
-                for x in range(
-                    max(0, diagonal_value - self.height + 1),
-                    min(diagonal_value + 1, self.width),
-                ):
-                    y = diagonal_value - x
-                    if 0 <= y < self.height:
-                        pixels_on_diagonal.append((x, y))
-            else:  # x_minus_y
-                # x - y = diagonal_value
-                for x in range(
-                    max(0, diagonal_value),
-                    min(self.width, diagonal_value + self.height),
-                ):
-                    y = x - diagonal_value
-                    if 0 <= y < self.height:
-                        pixels_on_diagonal.append((x, y))
-
-            # Sort pixels within diagonal based on start_corner and bidirectional setting
-            if start_corner == "top-left":
-                if alternate_direction and diagonal_idx % 2 == 1:
-                    # Alternate direction: right to left, bottom to top (decreasing X, decreasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (-p[0], -p[1]))
-                else:
-                    # Normal direction: left to right, top to bottom (increasing X, increasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (p[0], p[1]))
-            elif start_corner == "top-right":
-                if alternate_direction and diagonal_idx % 2 == 1:
-                    # Alternate direction: left to right, bottom to top (increasing X, decreasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (p[0], -p[1]))
-                else:
-                    # Normal direction: right to left, top to bottom (decreasing X, increasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (-p[0], p[1]))
-            elif start_corner == "bottom-left":
-                if alternate_direction and diagonal_idx % 2 == 1:
-                    # Alternate direction: right to left, top to bottom (decreasing X, increasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (-p[0], p[1]))
-                else:
-                    # Normal direction: left to right, bottom to top (increasing X, decreasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (p[0], -p[1]))
-            elif start_corner == "bottom-right":
-                if alternate_direction and diagonal_idx % 2 == 1:
-                    # Alternate direction: left to right, top to bottom (increasing X, increasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (p[0], p[1]))
-                else:
-                    # Normal direction: right to left, bottom to top (decreasing X, decreasing Y)
-                    pixels_on_diagonal.sort(key=lambda p: (-p[0], -p[1]))
+            # Sort pixels based on start corner and bidirectional setting
+            pixels_on_diagonal = self._sort_diagonal_pixels(
+                pixels_on_diagonal, start_corner, diagonal_idx
+            )
 
             # Process pixels on this diagonal
             if pixels_on_diagonal:
-                # Move to the first pixel of this diagonal (laser off for travel)
-                first_x, first_y = pixels_on_diagonal[0]
-                if first_x != current_x or first_y != current_y:
-                    yield first_x, first_y, 0  # Travel move with laser off
-                    current_x, current_y = first_x, first_y
-
-                # Visit each pixel on this diagonal
-                for x, y in pixels_on_diagonal:
-                    if not visited[x, y]:
-                        visited[x, y] = True
-
-                        # Get pixel value
-                        pixel = self.px(x, y)
-                        on = 0 if pixel == self.skip_pixel else pixel
-
-                        # Mark overlapping pixels as visited if overlap is enabled
-                        if self.overlap > 0 and on:
-                            BLANK = 255
-                            for x_idx in range(-self.overlap, self.overlap + 1):
-                                for y_idx in range(-self.overlap, self.overlap + 1):
-                                    nx = x + x_idx
-                                    ny = y + y_idx
-                                    if 0 <= nx < self.width and 0 <= ny < self.height:
-                                        visited[nx, ny] = True
-                                        if (
-                                            abs(x_idx) + abs(y_idx) > 0
-                                        ):  # Don't blank the center pixel
-                                            self.data[nx, ny] = BLANK
-
-                        yield x, y, on
-                        current_x, current_y = x, y
+                position = [current_x, current_y]
+                for result in self._process_diagonal_pixels(
+                    pixels_on_diagonal, visited, position
+                ):
+                    yield result
+                current_x, current_y = position[0], position[1]
 
         # Update final position
-        self.final_x = current_x
-        self.final_y = current_y
+        self.final_x, self.final_y = current_x, current_y
+
+    def _diagonal_sum(self, x, y):
+        """Calculate x + y for diagonal equations."""
+        return x + y
+
+    def _diagonal_diff(self, x, y):
+        """Calculate x - y for diagonal equations."""
+        return x - y
+
+    def _get_diagonal_pixels(self, diag_value, equation_func):
+        """Get all pixels that lie on a given diagonal."""
+        pixels = []
+        if equation_func(0, 0) == 0:  # x + y equation
+            for x in range(
+                max(0, diag_value - self.height + 1), min(diag_value + 1, self.width)
+            ):
+                y = diag_value - x
+                if 0 <= y < self.height:
+                    pixels.append((x, y))
+        else:  # x - y equation
+            for x in range(
+                max(0, diag_value), min(self.width, diag_value + self.height)
+            ):
+                y = x - diag_value
+                if 0 <= y < self.height:
+                    pixels.append((x, y))
+        return pixels
+
+    def _sort_diagonal_pixels(self, pixels, start_corner, diagonal_idx):
+        """Sort pixels within a diagonal based on start corner and bidirectional settings."""
+        alternate = self.bidirectional and diagonal_idx % 2 == 1
+
+        # Define sorting keys for each corner
+        def sort_top_left(p):
+            return (-p[0], -p[1]) if alternate else (p[0], p[1])
+
+        def sort_top_right(p):
+            return (p[0], -p[1]) if alternate else (-p[0], p[1])
+
+        def sort_bottom_left(p):
+            return (-p[0], p[1]) if alternate else (p[0], -p[1])
+
+        def sort_bottom_right(p):
+            return (p[0], p[1]) if alternate else (-p[0], -p[1])
+
+        sort_keys = {
+            "top-left": sort_top_left,
+            "top-right": sort_top_right,
+            "bottom-left": sort_bottom_left,
+            "bottom-right": sort_bottom_right,
+        }
+
+        return sorted(pixels, key=sort_keys[start_corner])
+
+    def _process_diagonal_pixels(self, pixels, visited, position):
+        """Process all pixels on a diagonal, yielding coordinates and handling overlaps."""
+        current_x, current_y = position
+
+        # Move to first pixel (travel move)
+        first_x, first_y = pixels[0]
+        if first_x != current_x or first_y != current_y:
+            yield (first_x, first_y, 0)
+            current_x, current_y = first_x, first_y
+
+        # Process each pixel
+        for x, y in pixels:
+            if not visited[x, y]:
+                visited[x, y] = True
+
+                pixel = self.px(x, y)
+                on = 0 if pixel == self.skip_pixel else pixel
+
+                # Handle pixel overlap
+                if self.overlap > 0 and on:
+                    self._mark_overlap_pixels(x, y, visited)
+
+                yield (x, y, on)
+                current_x, current_y = x, y
+
+        # Update position for caller
+        position[0], position[1] = current_x, current_y
+
+    def _mark_overlap_pixels(self, x, y, visited):
+        """Mark overlapping pixels as visited and blank them in the data."""
+        BLANK = 255
+        for dx in range(-self.overlap, self.overlap + 1):
+            for dy in range(-self.overlap, self.overlap + 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.width and 0 <= ny < self.height:
+                    visited[nx, ny] = True
+                    if abs(dx) + abs(dy) > 0:  # Don't blank center pixel
+                        self.data[nx, ny] = BLANK
 
     """
     # Testpattern generation
