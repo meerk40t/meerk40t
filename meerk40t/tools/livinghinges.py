@@ -21,8 +21,8 @@ from meerk40t.gui.wxutils import (
 
 # Import our dual algorithm optimization
 try:
-    from ..dual_algorithm_strategy import DualAlgorithmStrategy
-    from ..living_hinge_optimizer import LivingHingeOptimizer
+    from meerk40t.tools.dual_algorithm_strategy import DualAlgorithmStrategy
+    from meerk40t.tools.living_hinge_optimizer import LivingHingeOptimizer
     OPTIMIZATION_AVAILABLE = True
 except ImportError:
     # Fallback if optimization modules are not available

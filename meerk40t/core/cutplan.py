@@ -34,12 +34,6 @@ from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import UNITS_PER_MM, Length
 
-# Check shapely availability once at module level for performance
-try:
-    import importlib.util
-    _SHAPELY_AVAILABLE = importlib.util.find_spec("shapely") is not None
-except ImportError:
-    _SHAPELY_AVAILABLE = False
 
 """
 The time to compile does outweigh the benefit...
@@ -140,7 +134,9 @@ class CutPlan:
             for command in commands:
                 c_count += 1
                 if busy.shown:
-                    busy.change(msg=_("Spooling data {count}").format(count=c_count), keep=2)
+                    busy.change(
+                        msg=_("Spooling data {count}").format(count=c_count), keep=2
+                    )
                     busy.show()
                 command()
 
@@ -672,14 +668,22 @@ class CutPlan:
 
         if not self.plan:
             return
+        t0 = perf_counter()
         context = self.context
         grouped_plan = list(self._to_grouped_plan(self.plan))
+        t1 = perf_counter()
         if context.opt_merge_ops and not context.opt_merge_passes:
             blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
         else:
             blob_plan = list(self._to_blob_plan(grouped_plan))
+        t2 = perf_counter()
         self.plan.clear()
         self.plan.extend(self._to_merged_plan(blob_plan))
+        t3 = perf_counter()
+        if self.channel:
+            self.channel(
+                f"Blobbed in {t1 - t0:.3f}s, converted to cutcode in {t2 - t1:.3f}s, merged in {t3 - t2:.3f}s, total {t3 - t0:.3f}s"
+            )   
 
     def preopt(self):
         """
@@ -1065,7 +1069,7 @@ class CutPlan:
         etime = perf_counter()
         if self.channel:
             self.channel(
-                f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
+                f"Optimise {op_type} finished after {etime - stime:.2f} seconds, inflated {scount} operations to {ecount}"
             )
 
 
@@ -1152,59 +1156,65 @@ def is_inside(inner, outer, tolerance=0):
         return False
 
     # ADVANCED GEOMETRIC ALGORITHMS - Multiple approaches for maximum performance
-    
+
     def scanbeam_algorithm():
         """
         Scanbeam-based approach: Fastest algorithm for complex polygons.
         Uses advanced sweep-line algorithm for O(log n) point-in-polygon testing.
         """
         try:
-            from ..tools.geomstr import Polygon as Gpoly, Scanbeam
-            
+            from ..tools.geomstr import Polygon as Gpoly
+            from ..tools.geomstr import Scanbeam
+
             # Use existing ._geometry properties - no conversion needed!
-            outer_geom = getattr(outer, '_geometry', None)
-            inner_geom = getattr(inner, '_geometry', None)
-            
+            outer_geom = getattr(outer, "_geometry", None)
+            inner_geom = getattr(inner, "_geometry", None)
+
             if outer_geom is None or inner_geom is None:
                 return None  # Fall back if geometry not available
-            
+
             # Build scanbeam from outer geometry
             outer_points = list(outer_geom.as_equal_interpolated_points(distance=20))
             outer_polygon = Gpoly(*outer_points)
             scanbeam = Scanbeam(outer_polygon.geomstr)
-            
+
             # Adaptive sampling: fewer points for simple shapes
-            inner_bbox = getattr(inner, 'bounding_box', None)
+            inner_bbox = getattr(inner, "bounding_box", None)
             if inner_bbox:
-                bbox_perimeter = 2 * ((inner_bbox[2] - inner_bbox[0]) + (inner_bbox[3] - inner_bbox[1]))
+                bbox_perimeter = 2 * (
+                    (inner_bbox[2] - inner_bbox[0]) + (inner_bbox[3] - inner_bbox[1])
+                )
                 sample_distance = max(15, min(50, bbox_perimeter / 100))
             else:
                 sample_distance = 25
-                
+
             # Sample points from inner geometry directly
-            test_points = np.array(list(inner_geom.as_equal_interpolated_points(distance=sample_distance)))
-            
+            test_points = np.array(
+                list(inner_geom.as_equal_interpolated_points(distance=sample_distance))
+            )
+
             # Use scanbeam's optimized point-in-polygon test
             results = scanbeam.points_in_polygon(test_points)
             return np.all(results)
-            
+
         except (ImportError, AttributeError, Exception):
             return None  # Fall back to next algorithm
-    
+
     def winding_number_algorithm():
         """
         Winding number approach: More robust than ray casting, especially for complex polygons.
         """
         try:
+
             def winding_number(point, polygon):
                 """Calculate winding number for point with respect to polygon"""
                 wn = 0
                 n = len(polygon)
-                
+
                 for i in range(n):
                     p1 = polygon[i]
                     p2 = polygon[(i + 1) % n]
-                    
+
                     if p1[1] <= point[1]:
                         if p2[1] > point[1]:  # upward crossing
                             if is_left(p1, p2, point) > 0:  # point left of edge
@@ -1214,44 +1224,59 @@ def is_inside(inner, outer, tolerance=0):
                             if is_left(p1, p2, point) < 0:  # point right of edge
                                 wn -= 1
                 return wn != 0
-            
+
             def is_left(p0, p1, p2):
                 """Test if point p2 is left|on|right of line p0p1"""
-                return ((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]))
-            
+                return (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (
+                    p1[1] - p0[1]
+                )
+
             # Use existing ._geometry properties - no conversion needed!
-            inner_geom = getattr(inner, '_geometry', None)
-            outer_geom = getattr(outer, '_geometry', None)
-            
+            inner_geom = getattr(inner, "_geometry", None)
+            outer_geom = getattr(outer, "_geometry", None)
+
             if inner_geom is None or outer_geom is None:
                 return None  # Fall back if geometry not available
-            
+
             # Optimized sampling based on polygon complexity
-            inner_bbox = getattr(inner, 'bounding_box', None)
+            inner_bbox = getattr(inner, "bounding_box", None)
             if inner_bbox:
-                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (inner_bbox[3] - inner_bbox[1])
+                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (
+                    inner_bbox[3] - inner_bbox[1]
+                )
                 sample_distance = max(20, min(40, bbox_area / 5000))
             else:
                 sample_distance = 25
-            
+
             # Sample points directly from geometry
-            points = [(p.real, p.imag) for p in inner_geom.as_equal_interpolated_points(distance=sample_distance)]
-            vertices = [(p.real, p.imag) for p in outer_geom.as_equal_interpolated_points(distance=sample_distance)]
-            
+            points = [
+                (p.real, p.imag)
+                for p in inner_geom.as_equal_interpolated_points(
+                    distance=sample_distance
+                )
+            ]
+            vertices = [
+                (p.real, p.imag)
+                for p in outer_geom.as_equal_interpolated_points(
+                    distance=sample_distance
+                )
+            ]
+
             # Early exit: return False as soon as any point is found outside
             for point in points:
                 if not winding_number(point, vertices):
                     return False
             return True
-            
+
         except Exception:
             return None  # Fall back to next algorithm
-    
+
     def optimized_ray_tracing():
         """
         Improved ray tracing: Our previously optimized algorithm as fallback.
         """
         try:
+
             def sq_length(a, b):
                 return a * a + b * b
 
@@ -1262,21 +1287,22 @@ def is_inside(inner, outer, tolerance=0):
 
                 p1x, p1y = poly[0]
                 old_sq_dist = sq_length(p1x - x, p1y - y)
-                for i in range(n+1):
+                for i in range(n + 1):
                     p2x, p2y = poly[i % n]
                     new_sq_dist = sq_length(p2x - x, p2y - y)
                     reldist = (
-                        old_sq_dist + new_sq_dist +
-                        2.0 * np.sqrt(old_sq_dist * new_sq_dist) -
-                        sq_length(p2x - p1x, p2y - p1y)
+                        old_sq_dist
+                        + new_sq_dist
+                        + 2.0 * np.sqrt(old_sq_dist * new_sq_dist)
+                        - sq_length(p2x - p1x, p2y - p1y)
                     )
                     if reldist < tolerance_square:
                         return True
 
                     # Optimized condition merging
-                    if y > min(p1y,p2y) and y <= max(p1y,p2y) and x <= max(p1x,p2x):
+                    if y > min(p1y, p2y) and y <= max(p1y, p2y) and x <= max(p1x, p2x):
                         if p1y != p2y:
-                            xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                            xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
                         if p1x == p2x or x <= xints:
                             inside = not inside
                     p1x, p1y = p2x, p2y
@@ -1284,44 +1310,56 @@ def is_inside(inner, outer, tolerance=0):
                 return inside
 
             # Use existing ._geometry properties - no conversion needed!
-            inner_geom = getattr(inner, '_geometry', None)
-            outer_geom = getattr(outer, '_geometry', None)
-            
+            inner_geom = getattr(inner, "_geometry", None)
+            outer_geom = getattr(outer, "_geometry", None)
+
             if inner_geom is None or outer_geom is None:
                 # Fallback to path conversion if geometry not available
                 inner_geom = Geomstr.svg(inner_path.d())
                 outer_geom = Geomstr.svg(outer_path.d())
-            
+
             # Adaptive sampling based on polygon size
-            inner_bbox = getattr(inner, 'bounding_box', None)
+            inner_bbox = getattr(inner, "bounding_box", None)
             if inner_bbox:
-                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (inner_bbox[3] - inner_bbox[1])
+                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (
+                    inner_bbox[3] - inner_bbox[1]
+                )
                 adaptive_distance = max(12, min(25, bbox_area / 10000))
             else:
                 adaptive_distance = 15
-            
+
             # Sample points directly from geometry
-            points = [(p.real, p.imag) for p in inner_geom.as_equal_interpolated_points(distance=adaptive_distance)]
-            vertices = [(p.real, p.imag) for p in outer_geom.as_equal_interpolated_points(distance=adaptive_distance)]
-            
+            points = [
+                (p.real, p.imag)
+                for p in inner_geom.as_equal_interpolated_points(
+                    distance=adaptive_distance
+                )
+            ]
+            vertices = [
+                (p.real, p.imag)
+                for p in outer_geom.as_equal_interpolated_points(
+                    distance=adaptive_distance
+                )
+            ]
+
             # Early exit optimization: return False as soon as any point is found outside
             for x, y in points:
                 if not ray_tracing(x, y, vertices, tolerance):
                     return False
             return True
-            
+
         except Exception:
             return False  # Ultimate fallback
-    
+
     # Try algorithms in order of expected performance: Scanbeam -> Winding Number -> Ray Tracing
     result = scanbeam_algorithm()
     if result is not None:
         return result
-        
+
     result = winding_number_algorithm()
     if result is not None:
         return result
-        
+
     return optimized_ray_tracing()
 
 
@@ -1720,7 +1758,7 @@ def short_travel_cutcode_2opt(
         # Reduce frequency of expensive progress calculations
         if not channel or pos % max(1, length // 20) != 0:  # Update only 20 times max
             return
-            
+
         starts = endpoints[indexes0, -1]
         ends = endpoints[indexes1, 0]
         dists = np.abs(starts - ends)
@@ -1748,7 +1786,7 @@ def short_travel_cutcode_2opt(
         first = endpoints[0][0]
         cut_ends = endpoints[indexes0, -1]
         cut_starts = endpoints[indexes1, 0]
-        
+
         # Cache the distances between consecutive cuts for reuse
         consecutive_distances = np.abs(cut_ends - cut_starts)
 
@@ -1772,11 +1810,11 @@ def short_travel_cutcode_2opt(
             mid_source = endpoints[mid - 1, -1]
             mid_dest = endpoints[mid, 0]
             mid_source_to_dest_dist = np.abs(mid_source - mid_dest)
-            
+
             idxs = np.arange(mid, length - 1)
             cut_ends = endpoints[idxs, -1]
             cut_starts = endpoints[idxs + 1, 0]
-            
+
             # Vectorized calculation with pre-computed constant
             delta = (
                 np.abs(mid_source - cut_ends)
