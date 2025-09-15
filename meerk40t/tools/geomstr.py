@@ -3505,11 +3505,23 @@ class Geomstr:
     @classmethod
     def hatch(cls, outer, angle, distance, unidirectional=False):
         """
-        Create a hatch geometry from an outer shape, an angle (in radians) and distance (in units).
-        @param outer:
-        @param angle:
-        @param distance:
-        @return:
+        Create a hatch geometry from an outer shape using the traditional scanbeam algorithm.
+        
+        This is the original, well-tested scanbeam-based hatching implementation that provides
+        excellent results for all types of geometry, including complex shapes with many curves.
+        
+        For better performance on simple shapes, consider using hatch_direct_grid() which can
+        be 3-6x faster for rectangular/polygonal shapes with reasonable line spacing.
+        
+        @param outer: Outer shape to hatch (Geomstr object)
+        @param angle: Hatch angle in radians (0 = horizontal lines)
+        @param distance: Distance between hatch lines in units
+        @param unidirectional: If True, all lines go same direction; if False, alternating directions
+        @return: Geomstr object containing hatch line geometry
+        
+        See also:
+        - hatch_direct_grid(): High-performance alternative for simple shapes
+        - hatch_optimized(): Memory-optimized version with batch processing
         """
         outlines = outer.segmented()
         path = outlines
@@ -3780,7 +3792,7 @@ class Geomstr:
                 segment = working_shape.segments[i]
                 seg_type = working_shape._segtype(segment)
                 
-                if seg_type == 41:  # TYPE_LINE
+                if seg_type == TYPE_LINE:  # TYPE_LINE
                     p1 = segment[0]  # Start point
                     p2 = segment[4]  # End point
                     
@@ -5066,14 +5078,7 @@ class Geomstr:
         segment_types = np.real(segments[:, 2]).astype(int)
 
         # Pre-filter non-meta segments for efficiency
-        META_TYPES_SET = {
-            0,
-            159,
-            112,
-            160,
-            191,
-        }  # TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL
-        valid_mask = ~np.isin(segment_types, list(META_TYPES_SET))
+        valid_mask = ~np.isin(segment_types, list(META_TYPES))
 
         if not np.any(valid_mask):
             return np.nan, np.nan, np.nan, np.nan
@@ -5082,7 +5087,7 @@ class Geomstr:
         valid_types = segment_types[valid_mask]
 
         # Separate processing for different segment types for vectorization
-        line_mask = valid_types == 41  # TYPE_LINE
+        line_mask = valid_types == TYPE_LINE
 
         min_x_vals = []
         min_y_vals = []
@@ -5105,9 +5110,9 @@ class Geomstr:
             max_y_vals.append(np.max(y_coords, axis=0))
 
         # Optimized curve processing using vectorized calculations
-        quad_mask = valid_types == 63  # TYPE_QUAD
-        cubic_mask = valid_types == 79  # TYPE_CUBIC
-        arc_mask = valid_types == 95  # TYPE_ARC
+        quad_mask = valid_types == TYPE_QUAD
+        cubic_mask = valid_types == TYPE_CUBIC
+        arc_mask = valid_types == TYPE_ARC
 
         # Vectorized quadratic curve bbox calculation
         if np.any(quad_mask):
@@ -5800,7 +5805,7 @@ class Geomstr:
         total_length = 0.0
 
         # Vectorized processing for lines (most common and fastest)
-        line_mask = valid_types == 41  # TYPE_LINE
+        line_mask = valid_types == TYPE_LINE
         if np.any(line_mask):
             line_segments = valid_segments[line_mask]
             start_points = line_segments[:, 0]
@@ -5809,7 +5814,7 @@ class Geomstr:
             total_length += np.sum(line_lengths)
 
         # Process other types individually (quads, cubics, arcs have complex math)
-        other_mask = valid_types != 41
+        other_mask = valid_types != TYPE_LINE
         if np.any(other_mask):
             other_segments = valid_segments[other_mask]
             other_indices = np.where(valid_mask)[0][other_mask]  # Original indices
@@ -7485,19 +7490,6 @@ class Geomstr:
             # Pre-allocate reusable arrays for better memory efficiency
             t_array = np.linspace(0, 1, 1000)  # Reuse across segments
 
-            # Cache type constants (use values directly to avoid circular import)
-            TYPE_LINE_VAL = 41
-            TYPE_QUAD_VAL = 63
-            TYPE_CUBIC_VAL = 79
-            TYPE_END_VAL = 128
-            META_TYPES_SET = {
-                0,
-                159,
-                112,
-                160,
-                191,
-            }  # TYPE_NOP, TYPE_FUNCTION, TYPE_VERTEX, TYPE_UNTIL, TYPE_CALL
-
             at_start = True
             end = None
 
@@ -7505,7 +7497,7 @@ class Geomstr:
                 seg_type = segment_types[i]
 
                 # Skip meta types (matching original logic)
-                if seg_type in META_TYPES_SET:
+                if seg_type in META_TYPES:
                     continue
 
                 start = seg[0]
@@ -7516,29 +7508,29 @@ class Geomstr:
 
                 end = seg[4]
                 if at_start:
-                    if seg_type == TYPE_END_VAL:
+                    if seg_type == TYPE_END:
                         # End segments, flag new start but should not be returned.
                         continue
                     all_points.append(start)
                     at_start = False
 
-                if seg_type == TYPE_END_VAL:
+                if seg_type == TYPE_END:
                     at_start = True
                     continue
-                elif seg_type == TYPE_LINE_VAL:
+                elif seg_type == TYPE_LINE:
                     if expand_lines:
                         points = Geomstr._batch_line_equal_distance_expanded(
                             seg, distance, t_array
                         )
                         all_points.extend(points)
                     # For regular lines, don't add intermediate points
-                elif seg_type == TYPE_QUAD_VAL:
+                elif seg_type == TYPE_QUAD:
                     points = Geomstr._batch_quad_equal_distance(seg, distance, t_array)
                     all_points.extend(points)
-                elif seg_type == TYPE_CUBIC_VAL:
+                elif seg_type == TYPE_CUBIC:
                     points = Geomstr._batch_cubic_equal_distance(seg, distance, t_array)
                     all_points.extend(points)
-                elif seg_type == 95:  # TYPE_ARC
+                elif seg_type == TYPE_ARC:
                     points = Geomstr._batch_arc_equal_distance(seg, distance, t_array)
                     all_points.extend(points)
                 # Now we handle all common geometry types optimally
@@ -7882,21 +7874,13 @@ class Geomstr:
             path = Path()
             _open = True
 
-            # Cache frequently used type constants to avoid repeated lookups
-            TYPE_END_VAL = TYPE_END & 0xFF
-            TYPE_LINE_VAL = TYPE_LINE & 0xFF
-            TYPE_QUAD_VAL = TYPE_QUAD & 0xFF
-            TYPE_CUBIC_VAL = TYPE_CUBIC & 0xFF
-            TYPE_ARC_VAL = TYPE_ARC & 0xFF
-            TYPE_POINT_VAL = TYPE_POINT & 0xFF
-
             # Process segments with optimized branching
             for i in range(segment_count):
                 seg = segments[i]
                 s, c0, info, c1, e = seg
                 segtype = segment_types[i]
 
-                if segtype == TYPE_END_VAL:
+                if segtype == TYPE_END:
                     _open = True
                     continue
 
@@ -7906,15 +7890,15 @@ class Geomstr:
                     _open = False
 
                 # Optimized conditional dispatch using early returns
-                if segtype == TYPE_LINE_VAL:
+                if segtype == TYPE_LINE:
                     path.line(e)
-                elif segtype == TYPE_QUAD_VAL:
+                elif segtype == TYPE_QUAD:
                     path.quad(c0, e)
-                elif segtype == TYPE_CUBIC_VAL:
+                elif segtype == TYPE_CUBIC:
                     path.cubic(c0, c1, e)
-                elif segtype == TYPE_ARC_VAL:
+                elif segtype == TYPE_ARC:
                     path.append(Arc(start=s, control=c0, end=e))
-                elif segtype == TYPE_POINT_VAL:
+                elif segtype == TYPE_POINT:
                     path.move(s)
                     path.closed()
 
