@@ -6,4 +6,3 @@ numba
 scipy>=1.12.0,<=1.14.0
 vtracer
 psutil
-shapely
