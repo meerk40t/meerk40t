@@ -11,15 +11,15 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
       with:
         python-version: '3.9'
 
     - name: Cache Python packages
-      uses: actions/cache@v4
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/setup.py') }}
@@ -101,12 +101,20 @@ jobs:
 
         # Copy icon and convert to PNG if needed
         if [ -f "meerk40t.ico" ]; then
-          # Convert ICO to PNG for AppImage
-          convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          # Check if the ICO file is not empty
+          if [ ! -s "meerk40t.ico" ]; then
+            echo "ERROR: meerk40t.ico is empty or malformed. Aborting icon conversion." >&2
+            exit 1
+          fi
+          # Convert ICO to PNG for AppImage with error handling
+          if ! convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+            echo "ERROR: Failed to convert meerk40t.ico to PNG. Is ImageMagick installed and is the ICO valid?" >&2
+            exit 1
+          fi
         else
           echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
         fi
-
+        
         # Create desktop file
         cat > AppDir/usr/share/applications/meerk40t.desktop << EOF
         [Desktop Entry]
@@ -183,7 +191,7 @@ jobs:
 
     - name: Upload AppImage to Release
       if: github.event_name == 'release'
-      uses: softprops/action-gh-release@v2.0.9
+      uses: softprops/action-gh-release@e7a8f85e1c67a31e6ed99a94b41bd0b71bbee6b8
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
@@ -193,7 +201,7 @@ jobs:
 
     - name: Upload AppImage as Artifact
       if: github.event_name == 'workflow_dispatch'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: meerk40t-appimage
         path: meerk40t-${{ github.sha }}-x86_64.AppImage
