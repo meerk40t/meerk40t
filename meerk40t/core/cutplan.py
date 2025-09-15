@@ -1134,15 +1134,8 @@ def is_inside(inner, outer, tolerance=0):
         if not hasattr(inner, "convex_path"):
             inner.convex_path = convex_geometry(inner).as_path()
         inner_path = inner.convex_path
-    # # Raster is inner if the bboxes overlap anywhere
-    # if isinstance(inner, RasterCut) and not hasattr(inner, "path"):
-    #     image = inner.image
-    #     return (
-    #         inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
-    #         and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
-    #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
-    #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
-    #     )
+
+    # Fast bounding box check first
     if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
         # outer minx > inner maxx (is not contained)
         return False
@@ -1156,70 +1149,22 @@ def is_inside(inner, outer, tolerance=0):
         # outer maxy < inner maxy (is not contained)
         return False
 
-    # Inner bbox is entirely inside outer bbox,
-    # however that does not mean that inner is actually inside outer
-    # i.e. inner could be small and between outer and the bbox corner,
-    # or small and  contained in a concave indentation.
-    #
-    # VectorMontonizer can determine whether a point is inside a polygon.
-    # The code below uses a brute force approach by considering a fixed number of points,
-    # however we should consider a future enhancement whereby we create
-    # a polygon more intelligently based on size and curvature
-    # i.e. larger bboxes need more points and
-    # tighter curves need more points (i.e. compare vector directions)
+    # Use the commented-out "other_code" which is the current implementation
+    # but with targeted optimizations to reduce sampling overhead and add early exit
+    def optimized_other_code():
+        def sq_length(a, b):
+            return a * a + b * b
 
-    # def vm_code(outer, outer_path, inner, inner_path):
-    #     if not hasattr(outer, "vm"):
-    #         outer_path = Polygon(
-    #             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-    #         )
-    #         vm = VectorMontonizer()
-    #         vm.add_polyline(outer_path)
-    #         outer.vm = vm
-    #     for i in range(101):
-    #         p = inner_path.point(
-    #             i / 100.0, error=1e4
-    #         )  # Point(4633.110682926033,1788.413481872459)
-    #         if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-    #             return False
-    #     return True
-
-    def sb_code(out_cut, out_path, in_cut, in_path):
-        from ..tools.geomstr import Polygon as Gpoly
-        from ..tools.geomstr import Scanbeam
-
-        if not hasattr(out_cut, "sb"):
-            pg = out_path.npoint(np.linspace(0, 1, 1001), error=1e4)
-            pg = pg[:, 0] + pg[:, 1] * 1j
-
-            out_path = Gpoly(*pg)
-            sb = Scanbeam(out_path.geomstr)
-            out_cut.sb = sb
-        p = in_path.npoint(np.linspace(0, 1, 101), error=1e4)
-        points = p[:, 0] + p[:, 1] * 1j
-
-        q = out_cut.sb.points_in_polygon(points)
-        return q.all()
-
-    def other_code(outer, outer_path, inner, inner_path):
-        # The time to compile is outweighing the benefits...
-        # @jit(nopython=True)
         def ray_tracing(x, y, poly, tolerance):
-            def sq_length(a, b):
-                return a * a + b * b
-
             tolerance_square = tolerance * tolerance
             n = len(poly)
             inside = False
-            xints = 0
 
             p1x, p1y = poly[0]
             old_sq_dist = sq_length(p1x - x, p1y - y)
             for i in range(n+1):
                 p2x, p2y = poly[i % n]
                 new_sq_dist = sq_length(p2x - x, p2y - y)
-                # We are approximating the edge to an extremely thin ellipse and see
-                # whether our point is on that ellipse
                 reldist = (
                     old_sq_dist + new_sq_dist +
                     2.0 * np.sqrt(old_sq_dist * new_sq_dist) -
@@ -1228,33 +1173,41 @@ def is_inside(inner, outer, tolerance=0):
                 if reldist < tolerance_square:
                     return True
 
-                if y > min(p1y,p2y):
-                    if y <= max(p1y,p2y):
-                        if x <= max(p1x,p2x):
-                            if p1y != p2y:
-                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                            if p1x == p2x or x <= xints:
-                                inside = not inside
+                # Optimized condition merging
+                if y > min(p1y,p2y) and y <= max(p1y,p2y) and x <= max(p1x,p2x):
+                    if p1y != p2y:
+                        xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                    if p1x == p2x or x <= xints:
+                        inside = not inside
                 p1x, p1y = p2x, p2y
                 old_sq_dist = new_sq_dist
             return inside
 
         geom1 = Geomstr.svg(inner_path.d())
         geom2 = Geomstr.svg(outer_path.d())
-        points = np.array(list((p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance = 10)))
-        vertices = np.array(list((p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance = 10)))
-        return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
+        
+        # Adaptive sampling: start with fewer points for simple shapes
+        # Calculate approximate complexity based on bounding box size
+        inner_bbox = getattr(inner, 'bounding_box', None)
+        if inner_bbox:
+            bbox_area = (inner_bbox[2] - inner_bbox[0]) * (inner_bbox[3] - inner_bbox[1])
+            # Use adaptive distance: larger distance for larger shapes (fewer points)
+            adaptive_distance = max(12, min(25, bbox_area / 10000))
+        else:
+            # Fallback to fixed distance if bounding box not available
+            adaptive_distance = 15
+        
+        # Convert complex numbers to tuples more efficiently
+        points = [(p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance=adaptive_distance)]
+        vertices = [(p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance=adaptive_distance)]
+        
+        # Early exit optimization: return False as soon as any point is found outside
+        for x, y in points:
+            if not ray_tracing(x, y, vertices, tolerance):
+                return False
+        return True
 
-    # from time import perf_counter
-    # t0 = perf_counter()
-    # res1 = sb_code(outer, outer_path, inner, inner_path)
-    # t1 = perf_counter()
-    # res2 = other_code(outer, outer_path, inner, inner_path)
-    # t2 = perf_counter()
-    # print (f"Tolerance: {tolerance}, sb={res1} in {t1 - t0:.3f}s, other={res2} in {t2 - t1:.3f}s")
-    return other_code(outer, outer_path, inner, inner_path)
-    # return sb_code(outer, outer_path, inner, inner_path)
-    # return vm_code(outer, outer_path, inner, inner_path)
+    return optimized_other_code()
 
 
 def reify_matrix(self):
