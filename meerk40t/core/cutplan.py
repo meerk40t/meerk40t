@@ -1717,6 +1717,10 @@ def short_travel_cutcode_2opt(
     indexes1 = indexes0 + 1
 
     def log_progress(pos):
+        # Reduce frequency of expensive progress calculations
+        if not channel or pos % max(1, length // 20) != 0:  # Update only 20 times max
+            return
+            
         starts = endpoints[indexes0, -1]
         ends = endpoints[indexes1, 0]
         dists = np.abs(starts - ends)
@@ -1740,15 +1744,19 @@ def short_travel_cutcode_2opt(
     while improved:
         improved = False
 
+        # Pre-compute common values to avoid repeated calculations
         first = endpoints[0][0]
         cut_ends = endpoints[indexes0, -1]
         cut_starts = endpoints[indexes1, 0]
+        
+        # Cache the distances between consecutive cuts for reuse
+        consecutive_distances = np.abs(cut_ends - cut_starts)
 
-        # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
+        # First optimization: start of sequence
         delta = (
             np.abs(curr - cut_ends)
             + np.abs(first - cut_starts)
-            - np.abs(cut_ends - cut_starts)
+            - consecutive_distances
             - np.abs(curr - first)
         )
         index = int(np.argmin(delta))
@@ -1760,17 +1768,21 @@ def short_travel_cutcode_2opt(
             if channel:
                 log_progress(1)
         for mid in range(1, length - 1):
-            idxs = np.arange(mid, length - 1)
-
+            # Pre-compute values that don't change in the inner calculations
             mid_source = endpoints[mid - 1, -1]
             mid_dest = endpoints[mid, 0]
+            mid_source_to_dest_dist = np.abs(mid_source - mid_dest)
+            
+            idxs = np.arange(mid, length - 1)
             cut_ends = endpoints[idxs, -1]
             cut_starts = endpoints[idxs + 1, 0]
+            
+            # Vectorized calculation with pre-computed constant
             delta = (
                 np.abs(mid_source - cut_ends)
                 + np.abs(mid_dest - cut_starts)
                 - np.abs(cut_ends - cut_starts)
-                - np.abs(mid_source - mid_dest)
+                - mid_source_to_dest_dist
             )
             index = int(np.argmin(delta))
             if delta[index] < min_value:
@@ -1781,11 +1793,9 @@ def short_travel_cutcode_2opt(
                 if channel:
                     log_progress(mid)
 
+        # Final optimization: end of sequence (reuse pre-computed values)
         last = endpoints[-1, -1]
-        cut_ends = endpoints[indexes0, -1]
-        cut_starts = endpoints[indexes1, 0]
-
-        delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
+        delta = np.abs(cut_ends - last) - consecutive_distances
         index = int(np.argmin(delta))
         if delta[index] < min_value:
             endpoints[index + 1 :] = np.flip(
