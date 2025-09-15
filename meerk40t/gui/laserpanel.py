@@ -895,6 +895,34 @@ class JobPanel(wx.Panel):
             return
         self.context(f"plan{plan_name} spool\n")
 
+    def on_show_details(self, event):     
+        if self.list_plan.GetFirstSelected() == -1:
+            return
+        plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+        msgs = []
+        msgs.append(_("Details of Plan '{plan}':").format(plan=plan_name))
+        with self.context.planner._plan_lock:
+            states = self.context.planner._states.get(plan_name, {})
+        if states:
+            ordered = sorted(states.items(), key=lambda kv: kv[1])
+            start_time = ordered[0][1]
+            previous_time = start_time
+            total_time = ordered[-1][1] - start_time
+            for stage, timestamp in ordered:
+                stagename = self.context.planner.STAGE_DESCRIPTIONS[stage]
+                if total_time > 0:
+                    percent = f" ({100 * (timestamp - previous_time) / total_time:.1f}%)"
+                else:
+                    percent = ""
+                msgs.append(f"Stage '{stagename}': {timestamp - previous_time:.1f}s{percent}")
+                previous_time = timestamp
+            msgs.append(f"Total time: {total_time:.1f}s")
+        else:
+            msgs.append(_("Empty"))
+        # We look at the stages of the given plan.
+        info = "\n".join(msgs)
+        wx.MessageBox(info, _("Plan Details"), wx.OK | wx.ICON_INFORMATION)
+
     def on_clear_plan(self, event):
         if self.list_plan.GetFirstSelected() == -1:
             return
@@ -968,6 +996,9 @@ class JobPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.on_export_plan, item)
         item = menu.Append(wx.ID_ANY, _("Spool"))
         self.Bind(wx.EVT_MENU, self.on_spool_plan, item)
+        menu.AppendSeparator()
+        item = menu.AppendCheckItem(wx.ID_ANY, _("Details"))
+        self.Bind(wx.EVT_MENU, self.on_show_details, item)
         self.PopupMenu(menu)
         menu.Destroy()
 
