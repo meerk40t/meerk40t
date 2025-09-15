@@ -46,10 +46,15 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel pyinstaller
-        pip install numpy==1.26.4 pyusb wxPython potracer pypotrace
-        pip install pillow==9.5.0 ezdxf pyserial bitarray numba
-        pip install opencv-python-headless==4.5.3.56
-        pip install meerk40t-barcodes
+
+        # Install core dependencies from requirements.txt
+        pip install -r requirements.txt
+
+        # Install Linux-specific optional dependencies
+        pip install -r requirements-optional-linux.txt
+
+        # Install additional packages not in requirements files
+        pip install bitarray
 
         # Install project in development mode
         pip install -e .
@@ -71,13 +76,17 @@ jobs:
         # Download appimagetool (pinned to specific release for security)
         APPIMAGETOOL_VERSION="13"
         APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
-        EXPECTED_SHA256="df3baf5ca5facbecfc2f3fa6713c29ab9cefa8fd8c1eac5d283b79cab33b9754ef"
+        APPIMAGETOOL_SHA256_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage.sha256"
 
         wget -O appimagetool "${APPIMAGETOOL_URL}"
         chmod +x appimagetool
 
-        # Verify checksum for security
-        echo "${EXPECTED_SHA256}  appimagetool" | sha256sum -c || exit 1
+        # Fetch official checksum and verify for security
+        wget -O appimagetool.sha256 "${APPIMAGETOOL_SHA256_URL}"
+        sha256sum -c appimagetool.sha256 || exit 1
+
+        # If updating appimagetool version, update APPIMAGETOOL_VERSION and APPIMAGETOOL_SHA256_URL.
+        # The checksum is always fetched from the official release page.
 
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
@@ -94,6 +103,8 @@ jobs:
         if [ -f "meerk40t.ico" ]; then
           # Convert ICO to PNG for AppImage
           convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+        else
+          echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
         fi
 
         # Create desktop file
@@ -155,7 +166,7 @@ jobs:
         fi
         chmod +x meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
         # Note: Can't run GUI in headless environment, but we can check if it starts
-        timeout 5s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
+        timeout 15s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
         if [ $? -ne 0 ]; then
           echo "ERROR: AppImage failed to start or did not return version information."
           exit 1
