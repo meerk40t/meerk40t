@@ -752,7 +752,8 @@ class CutPlan:
             combined = 0
             for idx, cut in enumerate(pitem):
                 total += 1
-                if busy.shown and total % 100 == 0:
+                # Reduce progress reporting frequency for better performance
+                if busy.shown and total % 200 == 0:  # Less frequent than every 100
                     update_busy_info(busy, idx, l_pitem, plan_idx, l_plan)
                 if not isinstance(cut, CutGroup) or cut.origin is None:
                     continue
@@ -760,14 +761,15 @@ class CutPlan:
             return grouping, to_be_deleted, combined, total
 
         def process_cut(cut, grouping, pitem, idx, to_be_deleted):
-            if cut.origin not in grouping:
+            # Use dict.get() to avoid double lookup - more efficient than separate 'in' check
+            mastercut_idx = grouping.get(cut.origin)
+            if mastercut_idx is None:
                 grouping[cut.origin] = idx
                 return 0
-            mastercut = grouping[cut.origin]
             geom = cut._geometry
-            pitem[mastercut].skip = True
-            pitem[mastercut].extend(cut)
-            pitem[mastercut]._geometry.append(geom)
+            pitem[mastercut_idx].skip = True
+            pitem[mastercut_idx].extend(cut)
+            pitem[mastercut_idx]._geometry.append(geom)
             cut.clear()
             to_be_deleted.append(idx)
             return 1
