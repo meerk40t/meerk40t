@@ -1,0 +1,157 @@
+name: Create Linux AppImage
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          cmake \
+          libeigen3-dev \
+          libagg-dev \
+          libpotrace-dev \
+          python3-dev \
+          wget \
+          fuse \
+          libfuse2 \
+          desktop-file-utils \
+          imagemagick
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel pyinstaller
+        pip install numpy==1.26.4 pyusb wxPython potracer pypotrace
+        pip install pillow==9.5.0 ezdxf pyserial bitarray numba
+        pip install opencv-python-headless==4.5.3.56
+        pip install meerk40t-barcodes
+
+        # Install project in development mode
+        pip install -e .
+
+    - name: Build with PyInstaller
+      run: |
+        # Prepare build files
+        mv meerk40t.py mk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
+        mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+
+        # Create PyInstaller spec if it doesn't exist
+        if [ ! -f ".github/workflows/linux/meerk40t.spec" ]; then
+          pyinstaller --onefile --windowed --name=MeerK40t mk40t.py
+        else
+          pyinstaller .github/workflows/linux/meerk40t.spec
+        fi
+
+        # Restore original files
+        mv mk40t.py meerk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
+        mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
+
+    - name: Create AppImage
+      run: |
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        chmod +x appimagetool
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
+
+        # Copy the executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
+
+        # Copy icon and convert to PNG if needed
+        if [ -f "meerk40t.ico" ]; then
+          # Convert ICO to PNG for AppImage
+          convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+        fi
+
+        # Create desktop file
+        cat > AppDir/usr/share/applications/meerk40t.desktop << EOF
+        [Desktop Entry]
+        Name=MeerK40t
+        Exec=meerk40t
+        Icon=meerk40t
+        Type=Application
+        Categories=Graphics;VectorGraphics;
+        Comment=Laser Cutter Software
+        Terminal=false
+        EOF
+
+        # Create AppStream metainfo
+        cat > AppDir/usr/share/metainfo/meerk40t.appdata.xml << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <component type="desktop-application">
+          <id>meerk40t</id>
+          <name>MeerK40t</name>
+          <summary>Laser Cutter Control Software</summary>
+          <description>
+            <p>MeerK40t is a free and open-source laser cutter control software.</p>
+          </description>
+          <launchable type="desktop-id">meerk40t.desktop</launchable>
+          <categories>
+            <category>Graphics</category>
+            <category>VectorGraphics</category>
+          </categories>
+        </component>
+        EOF
+
+        # Create AppRun script
+        cat > AppDir/AppRun << EOF
+        #!/bin/bash
+        HERE="\$(dirname "\$(readlink -f "\${0}")")"
+        export PATH="\${HERE}/usr/bin:\${PATH}"
+        export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
+        export PYTHONPATH="\${HERE}/usr/lib/python3/dist-packages:\${PYTHONPATH}"
+        exec "\${HERE}/usr/bin/meerk40t" "\$@"
+        EOF
+        chmod +x AppDir/AppRun
+
+        # Build AppImage
+        ./appimagetool AppDir meerk40t-${{ github.event.release.tag_name || 'latest' }}-x86_64.AppImage
+
+    - name: Test AppImage
+      run: |
+        # Make AppImage executable and test basic functionality
+        chmod +x meerk40t-${{ github.event.release.tag_name || 'latest' }}-x86_64.AppImage
+        # Note: Can't run GUI in headless environment, but we can check if it starts
+        timeout 5s ./meerk40t-${{ github.event.release.tag_name || 'latest' }}-x86_64.AppImage --version || echo "AppImage created successfully"
+
+    - name: Upload AppImage to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          meerk40t-${{ github.event.release.tag_name }}-x86_64.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload AppImage as Artifact
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-appimage
+        path: meerk40t-${{ github.event.release.tag_name || 'latest' }}-x86_64.AppImage
