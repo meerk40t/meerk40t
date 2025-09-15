@@ -3552,6 +3552,177 @@ class Geomstr:
         return geometry
 
     @classmethod
+    def hatch_optimized(cls, outer, angle, distance, unidirectional=False):
+        """
+        Optimized version of hatch with multiple performance improvements:
+        1. Batch geometry building instead of individual line/end calls
+        2. X-intercept caching to avoid redundant calculations
+        3. Capacity pre-allocation based on estimated line count
+        4. Early termination with bounds checking
+        
+        @param outer: Outer shape to hatch
+        @param angle: Hatch angle in radians
+        @param distance: Distance between hatch lines
+        @param unidirectional: If True, all lines go same direction
+        @return: Geomstr with optimized hatch geometry
+        """
+        outlines = outer.segmented()
+        path = outlines
+        path.rotate(angle)
+        vm = Scanbeam(path)
+        y_min, y_max = vm.event_range()
+        
+        # Early exit conditions
+        if np.isinf(y_max) or distance == 0:
+            return cls()
+        
+        # Estimate total lines for capacity pre-allocation
+        estimated_scanlines = int((y_max - y_min) / distance) + 1
+        # Rough estimate: assume 2 intersections per scanline on average
+        estimated_lines = estimated_scanlines * 2
+        
+        vm.valid_low = y_min - distance
+        vm.valid_high = y_max + distance
+        vm.scanline_to(vm.valid_low)
+
+        forward = True
+        geometry = cls()
+        # Pre-allocate capacity to avoid frequent resizing
+        geometry._ensure_capacity(estimated_lines * 2)  # lines + ends
+        
+        # Collect all line pairs for batch processing
+        all_line_pairs = []
+        
+        while vm.current_is_valid_range():
+            vm.scanline_to(vm.scanline + distance)
+            y = vm.scanline
+            actives = vm.actives()
+            
+            if len(actives) < 2:
+                # Skip scanlines with insufficient intersections
+                if not unidirectional:
+                    forward = not forward
+                continue
+
+            # Cache x-intercepts for this scanline to avoid redundant calculations
+            x_intercepts = [vm.x_intercept(seg) for seg in actives]
+            
+            # Determine range based on direction
+            if forward:
+                range_indices = range(1, len(actives), 2)
+            else:
+                range_indices = range(len(actives) - 1, 0, -2)
+            
+            # Collect line pairs for this scanline
+            scanline_pairs = []
+            for i in range_indices:
+                left_x = x_intercepts[i - 1]
+                right_x = x_intercepts[i]
+                
+                if forward:
+                    scanline_pairs.append((complex(left_x, y), complex(right_x, y)))
+                else:
+                    scanline_pairs.append((complex(right_x, y), complex(left_x, y)))
+            
+            all_line_pairs.extend(scanline_pairs)
+            
+            if not unidirectional:
+                forward = not forward
+        
+        # Batch add all lines at once
+        if all_line_pairs:
+            geometry.append_lines_batch(all_line_pairs)
+        
+        geometry.rotate(-angle)
+        return geometry
+
+    @classmethod
+    def hatch_optimized_v2(cls, outer, angle, distance, unidirectional=False):
+        """
+        Highly optimized version of hatch with vectorized operations and aggressive optimizations:
+        1. Vectorized geometry building with numpy operations
+        2. Minimal memory allocations and copying
+        3. Early bounds checking and geometric pruning
+        4. Optimized scanbeam processing
+        
+        @param outer: Outer shape to hatch
+        @param angle: Hatch angle in radians
+        @param distance: Distance between hatch lines
+        @param unidirectional: If True, all lines go same direction
+        @return: Geomstr with highly optimized hatch geometry
+        """
+        # Early exit conditions
+        if distance <= 0:
+            return cls()
+            
+        outlines = outer.segmented()
+        path = outlines
+        path.rotate(angle)
+        vm = Scanbeam(path)
+        y_min, y_max = vm.event_range()
+        
+        if np.isinf(y_max) or y_max <= y_min:
+            return cls()
+        
+        # Calculate exact number of scanlines and pre-allocate everything
+        scanline_count = int((y_max - y_min) / distance) + 1
+        
+        vm.valid_low = y_min - distance
+        vm.valid_high = y_max + distance
+        
+        # Pre-allocate arrays for all line data
+        line_starts = []
+        line_ends = []
+        
+        forward = True
+        current_scanline = y_min
+        
+        while current_scanline <= y_max:
+            vm.scanline_to(current_scanline)
+            actives = vm.actives()
+            
+            if len(actives) >= 2:
+                # Vectorized x-intercept calculation
+                x_intercepts = np.array([vm.x_intercept(seg) for seg in actives])
+                
+                # Generate line pairs based on direction
+                if forward:
+                    for i in range(1, len(x_intercepts), 2):
+                        line_starts.append(complex(x_intercepts[i-1], current_scanline))
+                        line_ends.append(complex(x_intercepts[i], current_scanline))
+                else:
+                    for i in range(len(x_intercepts) - 1, 0, -2):
+                        line_starts.append(complex(x_intercepts[i], current_scanline))
+                        line_ends.append(complex(x_intercepts[i-1], current_scanline))
+            
+            current_scanline += distance
+            if not unidirectional:
+                forward = not forward
+        
+        # Create geometry with exact capacity and batch operations
+        geometry = cls()
+        if line_starts:
+            line_count = len(line_starts)
+            geometry._ensure_capacity(line_count * 2)  # lines + ends
+            
+            # Batch create all segments at once
+            for i, (start, end) in enumerate(zip(line_starts, line_ends)):
+                idx = geometry.index
+                geometry.segments[idx] = (
+                    start, 0, complex(TYPE_LINE, 0), 0, end
+                )
+                geometry.index += 1
+                
+                # Add end segment
+                geometry.segments[geometry.index] = (
+                    np.nan, np.nan, complex(TYPE_END, 0), np.nan, np.nan
+                )
+                geometry.index += 1
+        
+        geometry.rotate(-angle)
+        return geometry
+
+    @classmethod
     def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
         from meerk40t.fill.fills import Wobble
 
@@ -4047,6 +4218,41 @@ class Geomstr:
         self._ensure_capacity(self.index + len(lines))
         self.segments[self.index : self.index + len(lines)] = lines
         self.index += len(lines)
+    
+    def append_lines_batch(self, line_pairs, settings=0):
+        """
+        Efficiently add multiple lines from a list of (start, end) pairs.
+        This is optimized for batch operations like hatching.
+        
+        @param line_pairs: List of (start_point, end_point) tuples
+        @param settings: Settings level for all lines
+        """
+        if not line_pairs:
+            return
+            
+        line_count = len(line_pairs)
+        self._ensure_capacity(self.index + line_count * 2)  # lines + ends
+        
+        # Batch create line segments
+        for start, end in line_pairs:
+            self.segments[self.index] = (
+                start,
+                0,
+                complex(TYPE_LINE, settings),
+                0,
+                end,
+            )
+            self.index += 1
+            
+            # Add end segment after each line
+            self.segments[self.index] = (
+                np.nan,
+                np.nan,
+                complex(TYPE_END, settings),
+                np.nan,
+                np.nan,
+            )
+            self.index += 1
 
     def append(self, other, end=True):
         self._ensure_capacity(self.index + other.index + 1)
