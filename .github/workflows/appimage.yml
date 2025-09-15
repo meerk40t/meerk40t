@@ -138,16 +138,28 @@ jobs:
         chmod +x AppDir/AppRun
 
         # Build AppImage
-        APPIMAGE_TAG="${{ github.event.release.tag_name || github.sha }}"
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          APPIMAGE_TAG="${{ github.sha }}"
+        fi
         ./appimagetool AppDir meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
 
     - name: Test AppImage
       run: |
         # Make AppImage executable and test basic functionality
-        APPIMAGE_TAG="${{ github.event.release.tag_name || github.sha }}"
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          APPIMAGE_TAG="${{ github.sha }}"
+        fi
         chmod +x meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
         # Note: Can't run GUI in headless environment, but we can check if it starts
-        timeout 5s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version || echo "AppImage created successfully"
+        timeout 5s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
+        if [ $? -ne 0 ]; then
+          echo "ERROR: AppImage failed to start or did not return version information."
+          exit 1
+        fi
 
     - name: Check AppImage exists before upload
       if: github.event_name == 'release'
@@ -173,4 +185,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: meerk40t-appimage
-        path: meerk40t-${{ github.event.release.tag_name || github.sha }}-x86_64.AppImage
+        path: meerk40t-${{ github.sha }}-x86_64.AppImage
