@@ -363,6 +363,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
+        self.button_simulate.Bind(wx.EVT_RIGHT_DOWN, self.on_button_simulate_right)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_adjust, self.checkbox_adjust)
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
@@ -744,8 +745,13 @@ class LaserPanel(wx.Panel):
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("element* trace quick\n")
 
-    def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
+    def simulate(self, in_background=False):
+        if in_background:
+            prefix = "threaded "
+        else:
+            prefix = ""
+            self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
+        
         param = "0"
         last_plan = self.context.laserpane_plan or self.context.planner.get_last_plan()
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
@@ -754,13 +760,20 @@ class LaserPanel(wx.Panel):
             plan = self.context.planner.get_free_plan()
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    f"plan{plan} clear copy preprocess validate blob preopt optimize finish\n"
+                    f"{prefix}plan{plan} clear copy preprocess validate blob preopt optimize finish\n"
                 )
                 param = "1"
             else:
-                self.context(f"plan{plan} clear copy preprocess validate blob finish\n")
+                self.context(f"{prefix}plan{plan} clear copy preprocess validate blob finish\n")
         self.context(f"window open Simulation {plan} 0 {param}\n")
-        self.context.kernel.busyinfo.end()
+        if not in_background:
+            self.context.kernel.busyinfo.end()
+        
+    def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.simulate(in_background=False)
+
+    def on_button_simulate_right(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.simulate(in_background=True)
 
     def on_control_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("window open DeviceManager\n")
