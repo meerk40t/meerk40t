@@ -34,12 +34,6 @@ from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import UNITS_PER_MM, Length
 
-# Check shapely availability once at module level for performance
-try:
-    import importlib.util
-    _SHAPELY_AVAILABLE = importlib.util.find_spec("shapely") is not None
-except ImportError:
-    _SHAPELY_AVAILABLE = False
 
 """
 The time to compile does outweigh the benefit...
@@ -140,7 +134,9 @@ class CutPlan:
             for command in commands:
                 c_count += 1
                 if busy.shown:
-                    busy.change(msg=_("Spooling data {count}").format(count=c_count), keep=2)
+                    busy.change(
+                        msg=_("Spooling data {count}").format(count=c_count), keep=2
+                    )
                     busy.show()
                 command()
 
@@ -672,14 +668,22 @@ class CutPlan:
 
         if not self.plan:
             return
+        t0 = perf_counter()
         context = self.context
         grouped_plan = list(self._to_grouped_plan(self.plan))
+        t1 = perf_counter()
         if context.opt_merge_ops and not context.opt_merge_passes:
             blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
         else:
             blob_plan = list(self._to_blob_plan(grouped_plan))
+        t2 = perf_counter()
         self.plan.clear()
         self.plan.extend(self._to_merged_plan(blob_plan))
+        t3 = perf_counter()
+        if self.channel:
+            self.channel(
+                f"Blobbed in {t1 - t0:.3f}s, converted to cutcode in {t2 - t1:.3f}s, merged in {t3 - t2:.3f}s, total {t3 - t0:.3f}s"
+            )   
 
     def preopt(self):
         """
@@ -752,7 +756,8 @@ class CutPlan:
             combined = 0
             for idx, cut in enumerate(pitem):
                 total += 1
-                if busy.shown and total % 100 == 0:
+                # Reduce progress reporting frequency for better performance
+                if busy.shown and total % 200 == 0:  # Less frequent than every 100
                     update_busy_info(busy, idx, l_pitem, plan_idx, l_plan)
                 if not isinstance(cut, CutGroup) or cut.origin is None:
                     continue
@@ -760,14 +765,15 @@ class CutPlan:
             return grouping, to_be_deleted, combined, total
 
         def process_cut(cut, grouping, pitem, idx, to_be_deleted):
-            if cut.origin not in grouping:
+            # Use dict.get() to avoid double lookup - more efficient than separate 'in' check
+            mastercut_idx = grouping.get(cut.origin)
+            if mastercut_idx is None:
                 grouping[cut.origin] = idx
                 return 0
-            mastercut = grouping[cut.origin]
             geom = cut._geometry
-            pitem[mastercut].skip = True
-            pitem[mastercut].extend(cut)
-            pitem[mastercut]._geometry.append(geom)
+            pitem[mastercut_idx].skip = True
+            pitem[mastercut_idx].extend(cut)
+            pitem[mastercut_idx]._geometry.append(geom)
             cut.clear()
             to_be_deleted.append(idx)
             return 1
@@ -1063,7 +1069,7 @@ class CutPlan:
         etime = perf_counter()
         if self.channel:
             self.channel(
-                f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
+                f"Optimise {op_type} finished after {etime - stime:.2f} seconds, inflated {scount} operations to {ecount}"
             )
 
 
@@ -1134,15 +1140,8 @@ def is_inside(inner, outer, tolerance=0):
         if not hasattr(inner, "convex_path"):
             inner.convex_path = convex_geometry(inner).as_path()
         inner_path = inner.convex_path
-    # # Raster is inner if the bboxes overlap anywhere
-    # if isinstance(inner, RasterCut) and not hasattr(inner, "path"):
-    #     image = inner.image
-    #     return (
-    #         inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
-    #         and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
-    #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
-    #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
-    #     )
+
+    # Fast bounding box check first
     if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
         # outer minx > inner maxx (is not contained)
         return False
@@ -1156,105 +1155,212 @@ def is_inside(inner, outer, tolerance=0):
         # outer maxy < inner maxy (is not contained)
         return False
 
-    # Inner bbox is entirely inside outer bbox,
-    # however that does not mean that inner is actually inside outer
-    # i.e. inner could be small and between outer and the bbox corner,
-    # or small and  contained in a concave indentation.
-    #
-    # VectorMontonizer can determine whether a point is inside a polygon.
-    # The code below uses a brute force approach by considering a fixed number of points,
-    # however we should consider a future enhancement whereby we create
-    # a polygon more intelligently based on size and curvature
-    # i.e. larger bboxes need more points and
-    # tighter curves need more points (i.e. compare vector directions)
+    # ADVANCED GEOMETRIC ALGORITHMS - Multiple approaches for maximum performance
 
-    # def vm_code(outer, outer_path, inner, inner_path):
-    #     if not hasattr(outer, "vm"):
-    #         outer_path = Polygon(
-    #             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-    #         )
-    #         vm = VectorMontonizer()
-    #         vm.add_polyline(outer_path)
-    #         outer.vm = vm
-    #     for i in range(101):
-    #         p = inner_path.point(
-    #             i / 100.0, error=1e4
-    #         )  # Point(4633.110682926033,1788.413481872459)
-    #         if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-    #             return False
-    #     return True
+    def scanbeam_algorithm():
+        """
+        Scanbeam-based approach: Fastest algorithm for complex polygons.
+        Uses advanced sweep-line algorithm for O(log n) point-in-polygon testing.
+        """
+        try:
+            from ..tools.geomstr import Polygon as Gpoly
+            from ..tools.geomstr import Scanbeam
 
-    def sb_code(out_cut, out_path, in_cut, in_path):
-        from ..tools.geomstr import Polygon as Gpoly
-        from ..tools.geomstr import Scanbeam
+            # Use existing ._geometry properties - no conversion needed!
+            outer_geom = getattr(outer, "_geometry", None)
+            inner_geom = getattr(inner, "_geometry", None)
 
-        if not hasattr(out_cut, "sb"):
-            pg = out_path.npoint(np.linspace(0, 1, 1001), error=1e4)
-            pg = pg[:, 0] + pg[:, 1] * 1j
+            if outer_geom is None or inner_geom is None:
+                return None  # Fall back if geometry not available
 
-            out_path = Gpoly(*pg)
-            sb = Scanbeam(out_path.geomstr)
-            out_cut.sb = sb
-        p = in_path.npoint(np.linspace(0, 1, 101), error=1e4)
-        points = p[:, 0] + p[:, 1] * 1j
+            # Build scanbeam from outer geometry
+            outer_points = list(outer_geom.as_equal_interpolated_points(distance=20))
+            outer_polygon = Gpoly(*outer_points)
+            scanbeam = Scanbeam(outer_polygon.geomstr)
 
-        q = out_cut.sb.points_in_polygon(points)
-        return q.all()
+            # Adaptive sampling: fewer points for simple shapes
+            inner_bbox = getattr(inner, "bounding_box", None)
+            if inner_bbox:
+                bbox_perimeter = 2 * (
+                    (inner_bbox[2] - inner_bbox[0]) + (inner_bbox[3] - inner_bbox[1])
+                )
+                sample_distance = max(15, min(50, bbox_perimeter / 100))
+            else:
+                sample_distance = 25
 
-    def other_code(outer, outer_path, inner, inner_path):
-        # The time to compile is outweighing the benefits...
-        # @jit(nopython=True)
-        def ray_tracing(x, y, poly, tolerance):
+            # Sample points from inner geometry directly
+            test_points = np.array(
+                list(inner_geom.as_equal_interpolated_points(distance=sample_distance))
+            )
+
+            # Use scanbeam's optimized point-in-polygon test
+            results = scanbeam.points_in_polygon(test_points)
+            return np.all(results)
+
+        except (ImportError, AttributeError, Exception):
+            return None  # Fall back to next algorithm
+
+    def winding_number_algorithm():
+        """
+        Winding number approach: More robust than ray casting, especially for complex polygons.
+        """
+        try:
+
+            def winding_number(point, polygon):
+                """Calculate winding number for point with respect to polygon"""
+                wn = 0
+                n = len(polygon)
+
+                for i in range(n):
+                    p1 = polygon[i]
+                    p2 = polygon[(i + 1) % n]
+
+                    if p1[1] <= point[1]:
+                        if p2[1] > point[1]:  # upward crossing
+                            if is_left(p1, p2, point) > 0:  # point left of edge
+                                wn += 1
+                    else:
+                        if p2[1] <= point[1]:  # downward crossing
+                            if is_left(p1, p2, point) < 0:  # point right of edge
+                                wn -= 1
+                return wn != 0
+
+            def is_left(p0, p1, p2):
+                """Test if point p2 is left|on|right of line p0p1"""
+                return (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (
+                    p1[1] - p0[1]
+                )
+
+            # Use existing ._geometry properties - no conversion needed!
+            inner_geom = getattr(inner, "_geometry", None)
+            outer_geom = getattr(outer, "_geometry", None)
+
+            if inner_geom is None or outer_geom is None:
+                return None  # Fall back if geometry not available
+
+            # Optimized sampling based on polygon complexity
+            inner_bbox = getattr(inner, "bounding_box", None)
+            if inner_bbox:
+                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (
+                    inner_bbox[3] - inner_bbox[1]
+                )
+                sample_distance = max(20, min(40, bbox_area / 5000))
+            else:
+                sample_distance = 25
+
+            # Sample points directly from geometry
+            points = [
+                (p.real, p.imag)
+                for p in inner_geom.as_equal_interpolated_points(
+                    distance=sample_distance
+                )
+            ]
+            vertices = [
+                (p.real, p.imag)
+                for p in outer_geom.as_equal_interpolated_points(
+                    distance=sample_distance
+                )
+            ]
+
+            # Early exit: return False as soon as any point is found outside
+            for point in points:
+                if not winding_number(point, vertices):
+                    return False
+            return True
+
+        except Exception:
+            return None  # Fall back to next algorithm
+
+    def optimized_ray_tracing():
+        """
+        Improved ray tracing: Our previously optimized algorithm as fallback.
+        """
+        try:
+
             def sq_length(a, b):
                 return a * a + b * b
 
-            tolerance_square = tolerance * tolerance
-            n = len(poly)
-            inside = False
-            xints = 0
+            def ray_tracing(x, y, poly, tolerance):
+                tolerance_square = tolerance * tolerance
+                n = len(poly)
+                inside = False
 
-            p1x, p1y = poly[0]
-            old_sq_dist = sq_length(p1x - x, p1y - y)
-            for i in range(n+1):
-                p2x, p2y = poly[i % n]
-                new_sq_dist = sq_length(p2x - x, p2y - y)
-                # We are approximating the edge to an extremely thin ellipse and see
-                # whether our point is on that ellipse
-                reldist = (
-                    old_sq_dist + new_sq_dist +
-                    2.0 * np.sqrt(old_sq_dist * new_sq_dist) -
-                    sq_length(p2x - p1x, p2y - p1y)
+                p1x, p1y = poly[0]
+                old_sq_dist = sq_length(p1x - x, p1y - y)
+                for i in range(n + 1):
+                    p2x, p2y = poly[i % n]
+                    new_sq_dist = sq_length(p2x - x, p2y - y)
+                    reldist = (
+                        old_sq_dist
+                        + new_sq_dist
+                        + 2.0 * np.sqrt(old_sq_dist * new_sq_dist)
+                        - sq_length(p2x - p1x, p2y - p1y)
+                    )
+                    if reldist < tolerance_square:
+                        return True
+
+                    # Optimized condition merging
+                    if y > min(p1y, p2y) and y <= max(p1y, p2y) and x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xints:
+                            inside = not inside
+                    p1x, p1y = p2x, p2y
+                    old_sq_dist = new_sq_dist
+                return inside
+
+            # Use existing ._geometry properties - no conversion needed!
+            inner_geom = getattr(inner, "_geometry", None)
+            outer_geom = getattr(outer, "_geometry", None)
+
+            if inner_geom is None or outer_geom is None:
+                # Fallback to path conversion if geometry not available
+                inner_geom = Geomstr.svg(inner_path.d())
+                outer_geom = Geomstr.svg(outer_path.d())
+
+            # Adaptive sampling based on polygon size
+            inner_bbox = getattr(inner, "bounding_box", None)
+            if inner_bbox:
+                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (
+                    inner_bbox[3] - inner_bbox[1]
                 )
-                if reldist < tolerance_square:
-                    return True
+                adaptive_distance = max(12, min(25, bbox_area / 10000))
+            else:
+                adaptive_distance = 15
 
-                if y > min(p1y,p2y):
-                    if y <= max(p1y,p2y):
-                        if x <= max(p1x,p2x):
-                            if p1y != p2y:
-                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                            if p1x == p2x or x <= xints:
-                                inside = not inside
-                p1x, p1y = p2x, p2y
-                old_sq_dist = new_sq_dist
-            return inside
+            # Sample points directly from geometry
+            points = [
+                (p.real, p.imag)
+                for p in inner_geom.as_equal_interpolated_points(
+                    distance=adaptive_distance
+                )
+            ]
+            vertices = [
+                (p.real, p.imag)
+                for p in outer_geom.as_equal_interpolated_points(
+                    distance=adaptive_distance
+                )
+            ]
 
-        geom1 = Geomstr.svg(inner_path.d())
-        geom2 = Geomstr.svg(outer_path.d())
-        points = np.array(list((p.real, p.imag) for p in geom1.as_equal_interpolated_points(distance = 10)))
-        vertices = np.array(list((p.real, p.imag) for p in geom2.as_equal_interpolated_points(distance = 10)))
-        return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
+            # Early exit optimization: return False as soon as any point is found outside
+            for x, y in points:
+                if not ray_tracing(x, y, vertices, tolerance):
+                    return False
+            return True
 
-    # from time import perf_counter
-    # t0 = perf_counter()
-    # res1 = sb_code(outer, outer_path, inner, inner_path)
-    # t1 = perf_counter()
-    # res2 = other_code(outer, outer_path, inner, inner_path)
-    # t2 = perf_counter()
-    # print (f"Tolerance: {tolerance}, sb={res1} in {t1 - t0:.3f}s, other={res2} in {t2 - t1:.3f}s")
-    return other_code(outer, outer_path, inner, inner_path)
-    # return sb_code(outer, outer_path, inner, inner_path)
-    # return vm_code(outer, outer_path, inner, inner_path)
+        except Exception:
+            return False  # Ultimate fallback
+
+    # Try algorithms in order of expected performance: Scanbeam -> Winding Number -> Ray Tracing
+    result = scanbeam_algorithm()
+    if result is not None:
+        return result
+
+    result = winding_number_algorithm()
+    if result is not None:
+        return result
+
+    return optimized_ray_tracing()
 
 
 def reify_matrix(self):
@@ -1649,6 +1755,10 @@ def short_travel_cutcode_2opt(
     indexes1 = indexes0 + 1
 
     def log_progress(pos):
+        # Reduce frequency of expensive progress calculations
+        if not channel or pos % max(1, length // 20) != 0:  # Update only 20 times max
+            return
+
         starts = endpoints[indexes0, -1]
         ends = endpoints[indexes1, 0]
         dists = np.abs(starts - ends)
@@ -1672,15 +1782,19 @@ def short_travel_cutcode_2opt(
     while improved:
         improved = False
 
+        # Pre-compute common values to avoid repeated calculations
         first = endpoints[0][0]
         cut_ends = endpoints[indexes0, -1]
         cut_starts = endpoints[indexes1, 0]
 
-        # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
+        # Cache the distances between consecutive cuts for reuse
+        consecutive_distances = np.abs(cut_ends - cut_starts)
+
+        # First optimization: start of sequence
         delta = (
             np.abs(curr - cut_ends)
             + np.abs(first - cut_starts)
-            - np.abs(cut_ends - cut_starts)
+            - consecutive_distances
             - np.abs(curr - first)
         )
         index = int(np.argmin(delta))
@@ -1692,17 +1806,21 @@ def short_travel_cutcode_2opt(
             if channel:
                 log_progress(1)
         for mid in range(1, length - 1):
-            idxs = np.arange(mid, length - 1)
-
+            # Pre-compute values that don't change in the inner calculations
             mid_source = endpoints[mid - 1, -1]
             mid_dest = endpoints[mid, 0]
+            mid_source_to_dest_dist = np.abs(mid_source - mid_dest)
+
+            idxs = np.arange(mid, length - 1)
             cut_ends = endpoints[idxs, -1]
             cut_starts = endpoints[idxs + 1, 0]
+
+            # Vectorized calculation with pre-computed constant
             delta = (
                 np.abs(mid_source - cut_ends)
                 + np.abs(mid_dest - cut_starts)
                 - np.abs(cut_ends - cut_starts)
-                - np.abs(mid_source - mid_dest)
+                - mid_source_to_dest_dist
             )
             index = int(np.argmin(delta))
             if delta[index] < min_value:
@@ -1713,11 +1831,9 @@ def short_travel_cutcode_2opt(
                 if channel:
                     log_progress(mid)
 
+        # Final optimization: end of sequence (reuse pre-computed values)
         last = endpoints[-1, -1]
-        cut_ends = endpoints[indexes0, -1]
-        cut_starts = endpoints[indexes1, 0]
-
-        delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
+        delta = np.abs(cut_ends - last) - consecutive_distances
         index = int(np.argmin(delta))
         if delta[index] < min_value:
             endpoints[index + 1 :] = np.flip(
