@@ -3,6 +3,7 @@ import wx
 from meerk40t.constants import (
     RASTER_B2T,
     RASTER_CROSSOVER,
+    RASTER_DIAGONAL,
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_HATCH,
@@ -61,6 +62,7 @@ def validate_raster_settings(node):
         RASTER_GREEDY_H,
         RASTER_GREEDY_V,
         RASTER_SPIRAL,
+        RASTER_DIAGONAL,
     ):
         node.bidirectional = True
 
@@ -1118,7 +1120,7 @@ class PanelStartPreference(wx.Panel):
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
-        if w < 10 or h < 10:  # Ini initialisation phase and too small anyway...
+        if w < 10 or h < 10:  # In initialisation phase and too small anyway...
             return
 
         from_left = self.operation.raster_preference_left
@@ -1204,7 +1206,160 @@ class PanelStartPreference(wx.Panel):
                 if bidirectional:
                     from_left = not from_left
                 pos += step
-        if direction in (
+        if direction == RASTER_DIAGONAL:
+            # Draw direction arrows based on preferences
+            dir_arrow_left_right(self.operation.raster_preference_left)
+            dir_arrow_up_down(self.operation.raster_preference_top)
+
+            # Simple diagonal raster visualization
+            # Draw parallel diagonal lines that represent the scanning pattern
+            bidirectional = getattr(self.operation, "bidirectional", False)
+
+            # Calculate bounding box (10% margin)
+            left = w * 0.1
+            right = w * 0.9
+            top = h * 0.1
+            bottom = h * 0.9
+
+            # Map preferences to start_corner used by algorithm
+            start_corner = f"{'top' if self.operation.raster_preference_top else 'bottom'}-{'left' if self.operation.raster_preference_left else 'right'}"
+
+            # Choose diagonal equation based on start_corner (matches algorithm)
+            # Top-left and bottom-right use x+y=constant (TL->BR direction)
+            # Top-right and bottom-left use x-y=constant (TR->BL direction)
+            if start_corner in ("top-left", "bottom-right"):
+                diagonal_equation = "x_plus_y"
+                min_val = left + top  # Smallest sum (top-left area)
+                max_val = right + bottom  # Largest sum (bottom-right area)
+            else:  # top-right, bottom-left
+                diagonal_equation = "x_minus_y"
+                min_val = left - bottom  # Most negative difference (bottom-left area)
+                max_val = right - top  # Most positive difference (top-right area)
+
+            # Number of lines to draw
+            num_lines = 6
+
+            # Determine diagonal scan order based on start_corner
+            step = (max_val - min_val) / (num_lines - 1) if num_lines > 1 else 0
+
+            # Draw parallel diagonal lines
+            for idx, i in enumerate(range(num_lines)):
+                current_val = min_val + i * step
+                if i == num_lines - 1:
+                    current_val = max_val
+
+                # Find intersection points for the appropriate diagonal equation
+                intersections = []
+
+                if diagonal_equation == "x_plus_y":
+                    # Intersection with left edge (x = left)
+                    y_left = current_val - left
+                    if top <= y_left <= bottom:
+                        intersections.append((left, y_left))
+
+                    # Intersection with right edge (x = right)
+                    y_right = current_val - right
+                    if top <= y_right <= bottom:
+                        intersections.append((right, y_right))
+
+                    # Intersection with top edge (y = top)
+                    x_top = current_val - top
+                    if left <= x_top <= right:
+                        intersections.append((x_top, top))
+
+                    # Intersection with bottom edge (y = bottom)
+                    x_bottom = current_val - bottom
+                    if left <= x_bottom <= right:
+                        intersections.append((x_bottom, bottom))
+                else:  # x_minus_y
+                    # Intersection with left edge (x = left)
+                    y_left = left - current_val
+                    if top <= y_left <= bottom:
+                        intersections.append((left, y_left))
+
+                    # Intersection with right edge (x = right)
+                    y_right = right - current_val
+                    if top <= y_right <= bottom:
+                        intersections.append((right, y_right))
+
+                    # Intersection with top edge (y = top)
+                    x_top = current_val + top
+                    if left <= x_top <= right:
+                        intersections.append((x_top, top))
+
+                    # Intersection with bottom edge (y = bottom)
+                    x_bottom = current_val + bottom
+                    if left <= x_bottom <= right:
+                        intersections.append((x_bottom, bottom))
+
+                # Draw line if we have at least 2 intersection points
+                if len(intersections) >= 2:
+                    # Sort intersections based on conceptual scanning direction for this start_corner
+                    # Corrected Y-axis logic: lower Y = top, higher Y = bottom
+                    if start_corner == "top-left":
+                        # For TL start, draw from smallest x+y to largest x+y (TL->BR)
+                        # Primary: x+y, Secondary: Y (increasing Y for top to bottom)
+                        intersections.sort(key=lambda p: (p[0] + p[1], p[1]))
+                    elif start_corner == "top-right":
+                        # For TR start, draw from smallest (w-x)+y to largest (w-x)+y (TR->BL)
+                        # Primary: (w-x)+y, Secondary: Y (increasing Y for top to bottom)
+                        intersections.sort(key=lambda p: ((w - p[0]) + p[1], p[1]))
+                    elif start_corner == "bottom-left":
+                        # For BL start, draw from smallest x+(h-y) to largest x+(h-y) (BL->TR)
+                        # Primary: x+(h-y), Secondary: -Y (decreasing Y for bottom to top)
+                        intersections.sort(key=lambda p: (p[0] + (h - p[1]), -p[1]))
+                    elif start_corner == "bottom-right":
+                        # For BR start, draw from smallest (w-x)+(h-y) to largest (w-x)+(h-y) (BR->TL)
+                        # Primary: (w-x)+(h-y), Secondary: -Y (decreasing Y for bottom to top)
+                        intersections.sort(
+                            key=lambda p: ((w - p[0]) + (h - p[1]), -p[1])
+                        )
+
+                    x1, y1 = intersections[0]  # Start point
+                    x2, y2 = intersections[1]  # End point
+
+                    # Apply bidirectional alternation if enabled
+                    if bidirectional and (idx % 2 == 1):
+                        x1, x2 = x2, x1
+                        y1, y2 = y2, y1
+
+                    # Skip zero-length lines (points)
+                    if abs(x2 - x1) < 0.1 and abs(y2 - y1) < 0.1:
+                        continue
+
+                    r_start.append((x1, y1))
+                    r_end.append((x2, y2))
+
+                    # Add small directional arrow at the end of each line to show direction
+                    arrow_size = 4
+                    dx = x2 - x1
+                    dy = y2 - y1
+                    length = (dx * dx + dy * dy) ** 0.5
+                    if length > 0:
+                        # Normalize direction vector
+                        dx_norm = dx / length
+                        dy_norm = dy / length
+
+                        # Create perpendicular vector for arrow
+                        perp_x = -dy_norm * arrow_size
+                        perp_y = dx_norm * arrow_size
+
+                        # Add arrow lines
+                        r_start.append((x2, y2))
+                        r_end.append(
+                            (
+                                x2 - dx_norm * arrow_size + perp_x,
+                                y2 - dy_norm * arrow_size + perp_y,
+                            )
+                        )
+                        r_start.append((x2, y2))
+                        r_end.append(
+                            (
+                                x2 - dx_norm * arrow_size - perp_x,
+                                y2 - dy_norm * arrow_size - perp_y,
+                            )
+                        )
+        elif direction in (
             RASTER_R2L,
             RASTER_L2R,
             RASTER_HATCH,
@@ -1296,10 +1451,24 @@ class PanelStartPreference(wx.Panel):
         prefer_min_x = self.operation.raster_preference_left
 
         self.slider_pref_left.Enable(
-            direction in (RASTER_T2B, RASTER_B2T, RASTER_GREEDY_H, RASTER_GREEDY_V)
+            direction
+            in (
+                RASTER_T2B,
+                RASTER_B2T,
+                RASTER_GREEDY_H,
+                RASTER_GREEDY_V,
+                RASTER_DIAGONAL,
+            )
         )
         self.slider_pref_top.Enable(
-            direction in (RASTER_L2R, RASTER_R2L, RASTER_GREEDY_H, RASTER_GREEDY_V)
+            direction
+            in (
+                RASTER_L2R,
+                RASTER_R2L,
+                RASTER_GREEDY_H,
+                RASTER_GREEDY_V,
+                RASTER_DIAGONAL,
+            )
         )
         self.slider_pref_left.SetValue(0 if prefer_min_x else 1)
         self.slider_pref_top.SetValue(0 if prefer_min_y else 1)
@@ -1307,6 +1476,7 @@ class PanelStartPreference(wx.Panel):
     def _reload_display(self):
         self.raster_lines = None
         self.travel_lines = None
+        self.direction_lines = None
         self.refresh_display()
 
     def on_slider_pref_left(
@@ -1317,7 +1487,7 @@ class PanelStartPreference(wx.Panel):
             self.operation.raster_preference_left = value
             self._reload_display()
             self.context.elements.signal(
-                "element_property_update", self.operation, "slider_top"
+                "element_property_update", self.operation, "slider_left"
             )
 
     def on_slider_pref_top(
@@ -1328,7 +1498,7 @@ class PanelStartPreference(wx.Panel):
             self.operation.raster_preference_top = value
             self._reload_display()
             self.context.elements.signal(
-                "element_property_update", self.operation, "slider_left"
+                "element_property_update", self.operation, "slider_top"
             )
 
 
@@ -1467,6 +1637,7 @@ class RasterSettingsPanel(wx.Panel):
             (RASTER_GREEDY_V, "Greedy vertical"),
             (RASTER_CROSSOVER, "Crossover"),
             (RASTER_SPIRAL, "Spiral"),
+            (RASTER_DIAGONAL, "Diagonal"),
         ]
         # Look for registered raster (image) preprocessors,
         # these are routines that take one image as parameter
@@ -1671,7 +1842,7 @@ class RasterSettingsPanel(wx.Panel):
     def on_text_dpi(self):
         try:
             value = int(self.text_dpi.GetValue())
-        except ValueError as e:
+        except ValueError:
             # print (e)
             return
         if self.operation.dpi != value:
@@ -1793,6 +1964,9 @@ class RasterSettingsPanel(wx.Panel):
             + "\n"
             + _("  Usually much faster on an image with a lot of white pixels."),
             RASTER_SPIRAL: _("- Spiral: Starting in the center spiralling outwards"),
+            RASTER_DIAGONAL: _(
+                "- Digonal: Starting in one corner traversing the image diagonally"
+            ),
         }
         lines = [_("You can choose from the following modes to laser an image:")]
         lines.extend([info for key, info in inform.items() if key not in unsupported])
