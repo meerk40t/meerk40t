@@ -13,7 +13,7 @@ class BranchElementsNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Elements"
+        default_map["element_type"] = "Elements" if self.label is None else self.label
         return default_map
 
     def can_drop(self, drag_node):
@@ -22,7 +22,7 @@ class BranchElementsNode(Node):
             or hasattr(drag_node, "as_image")
             or drag_node.type == "group"
         )
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         if not self.can_drop(drag_node):
             return False
@@ -35,6 +35,6 @@ class BranchElementsNode(Node):
                 self.append_child(drag_node)
             return True
         return False
-    
+
     def is_draggable(self):
         return False
