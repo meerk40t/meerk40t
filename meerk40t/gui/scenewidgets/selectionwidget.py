@@ -18,7 +18,7 @@ import math
 import numpy as np
 import wx
 
-from meerk40t.core.elements.element_types import elem_nodes, elem_group_nodes
+from meerk40t.core.elements.element_types import elem_group_nodes, elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
@@ -41,6 +41,7 @@ from meerk40t.gui.wxutils import (
 )
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END
+
 # from time import perf_counter
 
 
@@ -49,16 +50,18 @@ ROTATION_THRESHOLD = 0.001
 POSITION_THRESHOLD = 0.0001
 
 
-def calculate_handle_offsets_and_deltas(half, handle_outside, inner_wd_half, inner_ht_half):
+def calculate_handle_offsets_and_deltas(
+    half, handle_outside, inner_wd_half, inner_ht_half
+):
     """
     Calculate handle offsets and deltas for widget positioning.
-    
+
     Args:
         half: Half the widget size
         handle_outside: Whether handles should be placed outside the selection
         inner_wd_half: Half width of the inner selection area
         inner_ht_half: Half height of the inner selection area
-        
+
     Returns:
         tuple: (offset_x, offset_y, dx, dy) for positioning calculations
     """
@@ -1769,8 +1772,10 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
+
             matrix = self.scene.widget_root.scene_widget.matrix
             did_snap_to_point = False
+
             if (
                 self.scene.context.snap_points
                 and modifiers
@@ -1844,13 +1849,19 @@ class MoveWidget(Widget):
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
                     if dist is not None and dist < gap:
-                        did_snap_to_point = True
                         if pt1 is not None and pt2 is not None:
-                            dx = pt1.real - pt2.real
-                            dy = pt1.imag - pt2.imag
-                            self.total_dx = 0
-                            self.total_dy = 0
-                            move_to(dx, dy, interim=False)
+                            try:
+                                dx = pt1[0] - pt2[0]
+                                dy = pt1[1] - pt2[1]
+
+                                self.total_dx = 0
+                                self.total_dy = 0
+                                move_to(dx, dy, interim=False)
+                                did_snap_to_point = True
+                            except (IndexError, TypeError, AttributeError):
+                                # Fallback: skip snapping if coordinate conversion fails
+                                did_snap_to_point = False
+
                 # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
                 if did_snap_to_point:
@@ -1884,20 +1895,16 @@ class MoveWidget(Widget):
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
                     if dist is not None and dist < gap:
-                        did_snap_to_point = True
                         if pt1 is not None and pt2 is not None:
-                            # Convert to real coordinates - pt1 and pt2 might be complex or tuples
+                            # Convert to real coordinates - pt1 and pt2 are ndarray
                             try:
-                                if hasattr(pt1, "real") and hasattr(pt2, "real"):
-                                    dx = pt1.real - pt2.real
-                                    dy = pt1.imag - pt2.imag
-                                else:
-                                    # Handle as tuples/arrays - suppress lint warnings with explicit conversion
-                                    dx = float(pt1[0]) - float(pt2[0])  # type: ignore
-                                    dy = float(pt1[1]) - float(pt2[1])  # type: ignore
+                                dx = pt1[0] - pt2[0]
+                                dy = pt1[1] - pt2[1]
+
                                 self.total_dx = 0
                                 self.total_dy = 0
                                 move_to(dx, dy, interim=False)
+                                did_snap_to_point = True
                             except (IndexError, TypeError, AttributeError):
                                 # Fallback: skip snapping if coordinate conversion fails
                                 did_snap_to_point = False
