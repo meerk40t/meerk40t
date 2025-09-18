@@ -404,7 +404,6 @@ def init_tree(kernel):
     def simplify_groups(node, **kwargs):
         self("simplify-group\n")
 
-
     def add_node_and_children(node):
         data = []
         data.append(node)
@@ -1379,16 +1378,14 @@ def init_tree(kernel):
 
             if empty:
                 to_delete.append(op)
-                
+
         todel = len(to_delete)
         if todel > 0 and self.kernel.yesno(
-                _("Do you really want to delete {num} entries?").format(
-                    num=todel
-                ),
-                caption=_("Operations"),
-            ):
-                with self.undoscope("Clear unused"):
-                    self.remove_operations(to_delete)
+            _("Do you really want to delete {num} entries?").format(num=todel),
+            caption=_("Operations"),
+        ):
+            with self.undoscope("Clear unused"):
+                self.remove_operations(to_delete)
 
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
@@ -2485,10 +2482,20 @@ def init_tree(kernel):
         help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
-    def append_operation_home(node, pos=None, **kwargs):
+    def append_operation_home(node, physical_home=False, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add(type="util home", pos=pos)
+            self.op_branch.add(type="util home", pos=pos, physical=physical_home)
         self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append Physical Home"),
+        node_type="branch ops",
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def append_operation_physical_home(node, pos=None, **kwargs):
+        append_operation_home(node, physical_home=True, pos=pos, **kwargs)
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
@@ -2645,7 +2652,20 @@ def init_tree(kernel):
         grouping="OPS_40_ADDITION",
     )
     def append_operation_home_beep_interrupt(node, **kwargs):
-        append_operation_home(node, **kwargs)
+        append_operation_home(node, physical_home=False, **kwargs)
+        append_operation_beep(node, **kwargs)
+        append_operation_interrupt(node, **kwargs)
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append Physical Home/Beep/Interrupt"),
+        node_type="branch ops",
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def append_operation_physical_home_beep_interrupt(node, **kwargs):
+        append_operation_home(node, physical_home=True, **kwargs)
         append_operation_beep(node, **kwargs)
         append_operation_interrupt(node, **kwargs)
         self.signal("updateop_tree")
@@ -3274,7 +3294,21 @@ def init_tree(kernel):
         grouping="OPS_40_ADDITION",
     )
     def add_operation_home(node, **kwargs):
-        append_operation_home(node, pos=add_after_index(node), **kwargs)
+        append_operation_home(
+            node, physical_home=False, pos=add_after_index(node), **kwargs
+        )
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(
+        _("Add Physical Home"),
+        node_type=op_nodes,
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def add_operation_physical_home(node, **kwargs):
+        append_operation_home(
+            node, physical_home=True, pos=add_after_index(node), **kwargs
+        )
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
@@ -3368,7 +3402,24 @@ def init_tree(kernel):
     )
     def add_operation_home_beep_interrupt(node, **kwargs):
         pos = add_after_index(node)
-        append_operation_home(node, pos=pos, **kwargs)
+        append_operation_home(node, physical_home=False, pos=pos, **kwargs)
+        if pos:
+            pos += 1
+        append_operation_beep(node, pos=pos, **kwargs)
+        if pos:
+            pos += 1
+        append_operation_interrupt(node, pos=pos, **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(
+        _("Add Physical Home/Beep/Interrupt"),
+        node_type=op_nodes,
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def add_operation_physical_home_beep_interrupt(node, **kwargs):
+        pos = add_after_index(node)
+        append_operation_home(node, physical_home=True, pos=pos, **kwargs)
         if pos:
             pos += 1
         append_operation_beep(node, pos=pos, **kwargs)

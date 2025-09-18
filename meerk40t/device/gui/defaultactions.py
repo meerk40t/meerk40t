@@ -61,7 +61,18 @@ class DefaultActionPanel(wx.Panel):
         self.SetHelpText("defaultactions")
 
         self.standards = [
-            (_("Home"), "util home", "", _("Move the laser head to the home position.")),
+            (
+                _("Home"),
+                "util home",
+                "",
+                _("Move the laser head to the home position."),
+            ),
+            (
+                _("Physical Home"),
+                "util home",
+                "True",
+                _("Move the laser head to the physicalhome position."),
+            ),
             (
                 _("Goto Origin"),
                 "util goto",
@@ -83,10 +94,16 @@ class DefaultActionPanel(wx.Panel):
             ),
             (_("Console"), "util console", "", _("Execute a command in the console.")),
             (_("Coolant on"), "util console", "coolant_on", _("Turn on the coolant.")),
-            (_("Coolant off"), "util console", "coolant_off", _("Turn off the coolant.")),
+            (
+                _("Coolant off"),
+                "util console",
+                "coolant_off",
+                _("Turn off the coolant."),
+            ),
         ]
         self.default_images = [
             ["console home -f", icons8_home_filled],
+            ["console physical_home", icons8_home_filled],
             ["console move_abs", icon_return],
             ["console beep", icon_bell],
             ["console interrupt", icon_round_stop],
@@ -271,9 +288,11 @@ class DefaultActionPanel(wx.Panel):
         self.setup_state_images()
         for entry in self.standards:
             item = self.option_list.InsertItem(
-                self.option_list.GetItemCount(), entry[self.STD_NAME]   
+                self.option_list.GetItemCount(), entry[self.STD_NAME]
             )
-            state = self.establish_state(entry[self.STD_COMMAND], entry[self.STD_PARAMETER])
+            state = self.establish_state(
+                entry[self.STD_COMMAND], entry[self.STD_PARAMETER]
+            )
             if state >= 0:
                 # print(
                 #     f"I would set image for {entry[self.STD_NAME]}={entry[self.STD_COMMAND]}.{entry[self.STD_PARAMETER]} to {state}"
@@ -625,7 +644,9 @@ class DefaultActionPanel(wx.Panel):
             item = self.prepend_list.InsertItem(
                 self.prepend_list.GetItemCount(), f"{idx:02d}# - {display_name}"
             )
-            state = self.establish_state(entry[self.OP_COMMAND], entry[self.OP_PARAMETER])
+            state = self.establish_state(
+                entry[self.OP_COMMAND], entry[self.OP_PARAMETER]
+            )
             if state >= 0:
                 # print (f"I would set image for {entry[self.OP_COMMAND]}.{entry[self.OP_PARAMETER]} to {state}")
                 self.prepend_list.SetItemImage(item, state)
@@ -645,13 +666,18 @@ class DefaultActionPanel(wx.Panel):
             for def_entry in self.standards:
                 if def_entry[self.STD_PARAMETER] is None:
                     def_entry[self.STD_PARAMETER] = ""
-                if def_entry[self.STD_COMMAND] == entry[self.OP_COMMAND] and def_entry[self.STD_PARAMETER] == entry[self.OP_PARAMETER]:
+                if (
+                    def_entry[self.STD_COMMAND] == entry[self.OP_COMMAND]
+                    and def_entry[self.STD_PARAMETER] == entry[self.OP_PARAMETER]
+                ):
                     display_name = def_entry[self.STD_NAME]
                     break
             item = self.append_list.InsertItem(
                 self.append_list.GetItemCount(), f"{idx:02d}# - {display_name}"
             )
-            state = self.establish_state(entry[self.OP_COMMAND], entry[self.OP_PARAMETER])
+            state = self.establish_state(
+                entry[self.OP_COMMAND], entry[self.OP_PARAMETER]
+            )
             if state >= 0:
                 self.append_list.SetItemImage(item, state)
         self.append_list.Refresh()
