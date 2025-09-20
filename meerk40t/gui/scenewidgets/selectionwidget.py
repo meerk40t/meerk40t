@@ -327,7 +327,7 @@ class BorderWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
-        if self.master.tool_running or not self.visible:  # We don't need that overhead
+        if not self.visible:  # We don't need that overhead
             return
 
         def get_length_text_and_extent(gc, value, units, secondary_units, rel_length):
