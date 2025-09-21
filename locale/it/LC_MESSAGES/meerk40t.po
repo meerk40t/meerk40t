@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 13-09-25 23:30:00UTC\n"
+"PO-Revision-Date: 21-09-25 15:58:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Language: it\n"
@@ -23934,7 +23934,7 @@ msgstr "Aggiornamento (in background)"
 
 #: meerk40t/gui/thread_info.py:23 meerk40t/gui/thread_info.py:186
 msgid "Tasks"
-msgstr "Compiti"
+msgstr "Attività"
 
 #: meerk40t/gui/thread_info.py:30
 msgid "Opens the tasks window with all background task information"
@@ -23963,7 +23963,7 @@ msgstr "Mostra Attività di Sistema"
 
 #: meerk40t/gui/thread_info.py:170
 msgid "Background Tasks"
-msgstr "Compiti di Fondo"
+msgstr "Attività in background"
 
 #: meerk40t/gui/thread_info.py:191
 msgid "Opens the window with all background task information"
