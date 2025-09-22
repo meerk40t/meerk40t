@@ -919,7 +919,6 @@ class CutPlan:
                         channel=channel,
                         tolerance=tolerance,
                     )
-                    c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
@@ -1500,6 +1499,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             channel(
                 f"Outer {type(outer).__name__} contains: {'None' if outer.contains is None else str(len(outer.contains))} cutcode elements"
             )
+    return context
 
 
 def short_travel_cutcode(
