@@ -1510,6 +1510,24 @@ def short_travel_cutcode(
     grouped_inner: Optional[bool] = False,
     hatch_optimize: Optional[bool] = False,
 ):
+    return short_travel_cutcode_optimized(
+        context=context,
+        kernel=kernel,
+        channel=channel,
+        complete_path=complete_path,
+        grouped_inner=grouped_inner,
+        hatch_optimize=hatch_optimize,
+    )
+
+
+def short_travel_cutcode_legacy(
+    context: CutCode,
+    kernel=None,
+    channel=None,
+    complete_path: Optional[bool] = False,
+    grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
+):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
     optimizing with greedy/brute for shortest distances optimizations.
@@ -1745,6 +1763,18 @@ def short_travel_cutcode_optimized(
     all_candidates = list(
         context.candidate(complete_path=complete_path, grouped_inner=grouped_inner)
     )
+
+    # For very large datasets, fall back to legacy algorithm for better performance
+    if len(all_candidates) > 1000:
+        # Use legacy algorithm for large datasets to avoid vectorization overhead
+        return short_travel_cutcode_legacy(
+            context=context,
+            kernel=kernel,
+            channel=channel,
+            complete_path=complete_path,
+            grouped_inner=grouped_inner,
+            hatch_optimize=hatch_optimize,
+        )
 
     if not all_candidates:
         # No candidates, return empty CutCode
