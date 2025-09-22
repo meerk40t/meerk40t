@@ -1699,3 +1699,267 @@ def short_travel_cutcode(
             f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return ordered
+
+
+def short_travel_cutcode_optimized(
+    context: CutCode,
+    kernel=None,
+    channel=None,
+    complete_path: Optional[bool] = False,
+    grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
+):
+    """
+    Optimized version of short_travel_cutcode using vectorized operations and spatial filtering.
+
+    Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
+    optimizing with greedy/brute for shortest distances optimizations.
+
+    For paths starting at exactly the same point forward paths are preferred over reverse paths
+
+    We start at either 0,0 or the value given in `context.start`
+    """
+    if channel:
+        start_length = context.length_travel(True)
+        start_time = time()
+        start_times = times()
+        channel("Executing Optimized Greedy Short-Travel optimization")
+        channel(f"Length at start: {start_length:.0f} steps")
+
+    unordered = []
+    for idx in range(len(context) - 1, -1, -1):
+        c = context[idx]
+        if isinstance(c, CutGroup) and c.skip:
+            unordered.append(c)
+            context.pop(idx)
+
+    curr = context.start
+    curr = 0 + 0j if curr is None else complex(curr[0], curr[1])
+
+    cutcode_len = 0
+    for c in context.flat():
+        cutcode_len += 1
+        c.burns_done = 0
+
+    # Pre-compute all candidates and their positions for faster lookup
+    all_candidates = list(
+        context.candidate(complete_path=complete_path, grouped_inner=grouped_inner)
+    )
+
+    if not all_candidates:
+        # No candidates, return empty CutCode
+        ordered = CutCode()
+        if context.start is not None:
+            ordered._start_x, ordered._start_y = context.start
+        else:
+            ordered._start_x = 0
+            ordered._start_y = 0
+        return ordered
+
+    # Cache candidate positions as complex numbers for faster distance calculations
+    candidate_data = []
+    for cut in all_candidates:
+        start_pos = complex(cut.start[0], cut.start[1])
+        end_pos = complex(cut.end[0], cut.end[1])
+        candidate_data.append(
+            {
+                "cut": cut,
+                "start": start_pos,
+                "end": end_pos,
+                "can_reverse": cut.reversible(),
+                "is_closed": getattr(cut, "closed", False),
+                "is_first": getattr(cut, "first", False),
+                "is_last": getattr(cut, "last", False),
+            }
+        )
+
+    # Create numpy arrays for vectorized distance calculations
+    start_positions = np.array([cd["start"] for cd in candidate_data])
+    end_positions = np.array([cd["end"] for cd in candidate_data])
+
+    ordered = CutCode()
+    current_pass = 0
+    if kernel:
+        busy = kernel.busyinfo
+        _ = kernel.translation
+    else:
+        busy = None
+
+    # Track which candidates are still available (not fully burned)
+    available_mask = np.ones(len(candidate_data), dtype=bool)
+
+    while True:
+        current_pass += 1
+        if current_pass % 50 == 0 and busy and busy.shown:
+            message = _("Pass {cpass}/{tpass}").format(
+                cpass=current_pass, tpass=cutcode_len
+            )
+            busy.change(msg=message, keep=2)
+            busy.show()
+
+        closest = None
+        backwards = False
+        distance = float("inf")
+
+        # Update available mask based on current burns_done state
+        for i, cd in enumerate(candidate_data):
+            available_mask[i] = cd["cut"].burns_done < cd["cut"].passes
+
+        # Try to continue on current path first (same logic as original)
+        try:
+            last_segment = ordered[-1]
+        except IndexError:
+            pass
+        else:
+            if last_segment.normal:
+                cut = last_segment.next
+                if cut and cut.burns_done < cut.passes:
+                    closest = cut
+                    backwards = False
+                    start = closest.start
+                    distance = abs(complex(start[0], start[1]) - curr)
+            else:
+                cut = last_segment.previous
+                if cut and cut.burns_done < cut.passes:
+                    closest = cut
+                    backwards = True
+                    end = closest.end
+                    distance = abs(complex(end[0], end[1]) - curr)
+
+            # Gap or continuing on path not permitted, try reversing
+            if (
+                distance > 50
+                and last_segment.burns_done < last_segment.passes
+                and last_segment.reversible()
+                and last_segment.next is not None
+            ):
+                closest = last_segment.next.previous
+                backwards = last_segment.normal
+                distance = 0
+
+        # If we didn't find a continuation or the gap is too large, search all candidates
+        if distance > 50:
+            # Vectorized distance calculation to all available candidates
+            if np.any(available_mask):
+                current_pos = np.full(len(candidate_data), curr, dtype=complex)
+
+                # Calculate distances to start positions
+                start_distances = np.abs(start_positions - current_pos)
+                # Calculate distances to end positions (only for reversible cuts)
+                end_distances = np.abs(end_positions - current_pos)
+
+                # Apply complete_path constraints
+                start_valid = available_mask.copy()
+                end_valid = available_mask.copy()
+
+                if complete_path:
+                    for i, cd in enumerate(candidate_data):
+                        if not cd["is_closed"] and not cd["is_first"]:
+                            start_valid[i] = False
+                        if not cd["is_closed"] and not cd["is_last"]:
+                            end_valid[i] = False
+
+                # Find minimum distances
+                min_start_dist = np.inf
+                min_end_dist = np.inf
+                best_start_idx = -1
+                best_end_idx = -1
+
+                if np.any(start_valid):
+                    valid_start_distances = np.where(
+                        start_valid, start_distances, np.inf
+                    )
+                    min_start_dist = np.min(valid_start_distances)
+                    if min_start_dist < np.inf:
+                        best_start_idx = np.argmin(valid_start_distances)
+
+                if np.any(end_valid):
+                    valid_end_distances = np.where(end_valid, end_distances, np.inf)
+                    min_end_dist = np.min(valid_end_distances)
+                    if min_end_dist < np.inf:
+                        best_end_idx = np.argmin(valid_end_distances)
+
+                # Choose the better option
+                if min_start_dist < min_end_dist:
+                    if min_start_dist < distance:
+                        closest = candidate_data[best_start_idx]["cut"]
+                        backwards = False
+                        distance = min_start_dist
+                elif min_end_dist < distance:
+                    if candidate_data[best_end_idx]["can_reverse"]:
+                        closest = candidate_data[best_end_idx]["cut"]
+                        backwards = True
+                        distance = min_end_dist
+
+        if closest is None:
+            break
+
+        # Change direction if other direction is coincident and has more burns remaining
+        if backwards:
+            if (
+                closest.next
+                and closest.next.burns_done <= closest.burns_done
+                and closest.next.start == closest.end
+            ):
+                closest = closest.next
+                backwards = False
+        elif closest.reversible():
+            if (
+                closest.previous
+                and closest.previous is not closest
+                and closest.previous.burns_done < closest.burns_done
+                and closest.previous.end == closest.start
+            ):
+                closest = closest.previous
+                backwards = True
+
+        closest.burns_done += 1
+
+        # Update burns_done in our cached data
+        for cd in candidate_data:
+            if cd["cut"] is closest:
+                cd["burns_done"] = closest.burns_done
+                break
+
+        c = copy(closest)
+        if backwards:
+            c.reverse()
+        end = c.end
+        curr = complex(end[0], end[1])
+        ordered.append(c)
+
+    # Handle unordered groups (same as original)
+    if hatch_optimize:
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                unordered[idx] = short_travel_cutcode_optimized(
+                    context=c,
+                    kernel=kernel,
+                    complete_path=False,
+                    grouped_inner=False,
+                    channel=channel,
+                )
+
+    ordered.extend(reversed(unordered))
+
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
+
+    if channel:
+        end_times = times()
+        end_length = ordered.length_travel(True)
+        try:
+            delta = (end_length - start_length) / start_length
+        except ZeroDivisionError:
+            delta = 0
+        channel(
+            f"Length at end: {end_length:.0f} steps "
+            f"({delta:+.0%}), "
+            f"optimized in {time() - start_time:.3f} "
+            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
+        )
+    return ordered
