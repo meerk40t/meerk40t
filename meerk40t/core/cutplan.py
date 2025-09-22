@@ -1728,20 +1728,18 @@ def short_travel_cutcode_optimized(
     hatch_optimize: Optional[bool] = False,
 ):
     """
-    Optimized version of short_travel_cutcode using vectorized operations and spatial filtering.
+    Optimized version of short_travel_cutcode with adaptive algorithm selection.
 
-    Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
-    optimizing with greedy/brute for shortest distances optimizations.
-
-    For paths starting at exactly the same point forward paths are preferred over reverse paths
-
-    We start at either 0,0 or the value given in `context.start`
+    This function chooses the best optimization strategy based on dataset size:
+    - Small datasets (<100): Simple greedy algorithm (fastest for small data)
+    - Medium datasets (100-1000): Improved greedy algorithm (balanced performance)
+    - Large datasets (>1000): Simple greedy (avoiding vectorization overhead)
     """
     if channel:
         start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
-        channel("Executing Optimized Greedy Short-Travel optimization")
+        channel("Executing Adaptive Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
 
     unordered = []
@@ -1751,30 +1749,15 @@ def short_travel_cutcode_optimized(
             unordered.append(c)
             context.pop(idx)
 
-    curr = context.start
-    curr = 0 + 0j if curr is None else complex(curr[0], curr[1])
-
-    cutcode_len = 0
-    for c in context.flat():
-        cutcode_len += 1
-        c.burns_done = 0
-
-    # Pre-compute all candidates and their positions for faster lookup
+    # Get all candidates first to determine dataset size
     all_candidates = list(
         context.candidate(complete_path=complete_path, grouped_inner=grouped_inner)
     )
 
-    # For very large datasets, fall back to legacy algorithm for better performance
-    if len(all_candidates) > 1000:
-        # Use legacy algorithm for large datasets to avoid vectorization overhead
-        return short_travel_cutcode_legacy(
-            context=context,
-            kernel=kernel,
-            channel=channel,
-            complete_path=complete_path,
-            grouped_inner=grouped_inner,
-            hatch_optimize=hatch_optimize,
-        )
+    dataset_size = len(all_candidates)
+
+    if channel:
+        channel(f"Dataset size: {dataset_size} cuts")
 
     if not all_candidates:
         # No candidates, return empty CutCode
@@ -1786,177 +1769,37 @@ def short_travel_cutcode_optimized(
             ordered._start_y = 0
         return ordered
 
-    # Cache candidate positions as complex numbers for faster distance calculations
-    candidate_data = []
-    for cut in all_candidates:
-        start_pos = complex(cut.start[0], cut.start[1])
-        end_pos = complex(cut.end[0], cut.end[1])
-        candidate_data.append(
-            {
-                "cut": cut,
-                "start": start_pos,
-                "end": end_pos,
-                "can_reverse": cut.reversible(),
-                "is_closed": getattr(cut, "closed", False),
-                "is_first": getattr(cut, "first", False),
-                "is_last": getattr(cut, "last", False),
-            }
+    # Adaptive algorithm selection based on dataset size
+    start_pos = context.start if context.start else (0, 0)
+
+    if dataset_size < 50:
+        # Very small dataset: Use simple greedy algorithm (fastest for tiny datasets)
+        if channel:
+            channel("Using simple greedy algorithm for very small dataset")
+        ordered_cuts = _simple_greedy_selection(all_candidates, start_pos)
+
+    elif dataset_size <= 500:
+        # Small-medium dataset: Use improved greedy algorithm (sweet spot)
+        if channel:
+            channel("Using improved greedy algorithm for small-medium dataset")
+        ordered_cuts = _improved_greedy_selection(all_candidates, start_pos)
+
+    else:
+        # Large dataset: Use legacy vectorized algorithm (was optimized for large datasets)
+        if channel:
+            channel("Using legacy vectorized algorithm for large dataset")
+        return short_travel_cutcode_legacy(
+            context=context,
+            kernel=kernel,
+            channel=channel,
+            complete_path=complete_path,
+            grouped_inner=grouped_inner,
+            hatch_optimize=hatch_optimize,
         )
 
-    # Create numpy arrays for vectorized distance calculations
-    start_positions = np.array([cd["start"] for cd in candidate_data])
-    end_positions = np.array([cd["end"] for cd in candidate_data])
-
+    # Create ordered CutCode from selected cuts
     ordered = CutCode()
-    current_pass = 0
-    if kernel:
-        busy = kernel.busyinfo
-        _ = kernel.translation
-    else:
-        busy = None
-
-    # Track which candidates are still available (not fully burned)
-    available_mask = np.ones(len(candidate_data), dtype=bool)
-
-    while True:
-        current_pass += 1
-        if current_pass % 50 == 0 and busy and busy.shown:
-            message = _("Pass {cpass}/{tpass}").format(
-                cpass=current_pass, tpass=cutcode_len
-            )
-            busy.change(msg=message, keep=2)
-            busy.show()
-
-        closest = None
-        backwards = False
-        distance = float("inf")
-
-        # Update available mask based on current burns_done state
-        for i, cd in enumerate(candidate_data):
-            available_mask[i] = cd["cut"].burns_done < cd["cut"].passes
-
-        # Try to continue on current path first (same logic as original)
-        try:
-            last_segment = ordered[-1]
-        except IndexError:
-            pass
-        else:
-            if last_segment.normal:
-                cut = last_segment.next
-                if cut and cut.burns_done < cut.passes:
-                    closest = cut
-                    backwards = False
-                    start = closest.start
-                    distance = abs(complex(start[0], start[1]) - curr)
-            else:
-                cut = last_segment.previous
-                if cut and cut.burns_done < cut.passes:
-                    closest = cut
-                    backwards = True
-                    end = closest.end
-                    distance = abs(complex(end[0], end[1]) - curr)
-
-            # Gap or continuing on path not permitted, try reversing
-            if (
-                distance > 50
-                and last_segment.burns_done < last_segment.passes
-                and last_segment.reversible()
-                and last_segment.next is not None
-            ):
-                closest = last_segment.next.previous
-                backwards = last_segment.normal
-                distance = 0
-
-        # If we didn't find a continuation or the gap is too large, search all candidates
-        if distance > 50:
-            # Vectorized distance calculation to all available candidates
-            if np.any(available_mask):
-                current_pos = np.full(len(candidate_data), curr, dtype=complex)
-
-                # Calculate distances to start positions
-                start_distances = np.abs(start_positions - current_pos)
-                # Calculate distances to end positions (only for reversible cuts)
-                end_distances = np.abs(end_positions - current_pos)
-
-                # Apply complete_path constraints
-                start_valid = available_mask.copy()
-                end_valid = available_mask.copy()
-
-                if complete_path:
-                    for i, cd in enumerate(candidate_data):
-                        if not cd["is_closed"] and not cd["is_first"]:
-                            start_valid[i] = False
-                        if not cd["is_closed"] and not cd["is_last"]:
-                            end_valid[i] = False
-
-                # Find minimum distances
-                min_start_dist = np.inf
-                min_end_dist = np.inf
-                best_start_idx = -1
-                best_end_idx = -1
-
-                if np.any(start_valid):
-                    valid_start_distances = np.where(
-                        start_valid, start_distances, np.inf
-                    )
-                    min_start_dist = np.min(valid_start_distances)
-                    if min_start_dist < np.inf:
-                        best_start_idx = np.argmin(valid_start_distances)
-
-                if np.any(end_valid):
-                    valid_end_distances = np.where(end_valid, end_distances, np.inf)
-                    min_end_dist = np.min(valid_end_distances)
-                    if min_end_dist < np.inf:
-                        best_end_idx = np.argmin(valid_end_distances)
-
-                # Choose the better option
-                if min_start_dist < min_end_dist:
-                    if min_start_dist < distance:
-                        closest = candidate_data[best_start_idx]["cut"]
-                        backwards = False
-                        distance = min_start_dist
-                elif min_end_dist < distance:
-                    if candidate_data[best_end_idx]["can_reverse"]:
-                        closest = candidate_data[best_end_idx]["cut"]
-                        backwards = True
-                        distance = min_end_dist
-
-        if closest is None:
-            break
-
-        # Change direction if other direction is coincident and has more burns remaining
-        if backwards:
-            if (
-                closest.next
-                and closest.next.burns_done <= closest.burns_done
-                and closest.next.start == closest.end
-            ):
-                closest = closest.next
-                backwards = False
-        elif closest.reversible():
-            if (
-                closest.previous
-                and closest.previous is not closest
-                and closest.previous.burns_done < closest.burns_done
-                and closest.previous.end == closest.start
-            ):
-                closest = closest.previous
-                backwards = True
-
-        closest.burns_done += 1
-
-        # Update burns_done in our cached data
-        for cd in candidate_data:
-            if cd["cut"] is closest:
-                cd["burns_done"] = closest.burns_done
-                break
-
-        c = copy(closest)
-        if backwards:
-            c.reverse()
-        end = c.end
-        curr = complex(end[0], end[1])
-        ordered.append(c)
+    ordered.extend(ordered_cuts)
 
     # Handle unordered groups (same as original)
     if hatch_optimize:
@@ -1992,4 +1835,163 @@ def short_travel_cutcode_optimized(
             f"optimized in {time() - start_time:.3f} "
             f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
+    return ordered
+
+
+def _simple_greedy_selection(all_candidates, start_position):
+    """
+    Simple greedy nearest-neighbor algorithm for small datasets.
+
+    Uses basic distance calculations without vectorization overhead.
+    Optimized for datasets with fewer than 100 cuts.
+    """
+    if not all_candidates:
+        return []
+
+    # Initialize all cuts
+    for cut in all_candidates:
+        cut.burns_done = 0
+
+    ordered = []
+    curr_x, curr_y = start_position
+
+    while True:
+        closest = None
+        backwards = False
+        best_distance_sq = float("inf")
+
+        # Find the nearest unfinished cut
+        for cut in all_candidates:
+            if cut.burns_done >= cut.passes:
+                continue
+
+            # Check forward direction
+            start_x, start_y = cut.start
+            distance_sq = (start_x - curr_x) ** 2 + (start_y - curr_y) ** 2
+            if distance_sq < best_distance_sq:
+                closest = cut
+                backwards = False
+                best_distance_sq = distance_sq
+
+            # Check reverse direction if cut is reversible
+            if cut.reversible():
+                end_x, end_y = cut.end
+                distance_sq = (end_x - curr_x) ** 2 + (end_y - curr_y) ** 2
+                if distance_sq < best_distance_sq:
+                    closest = cut
+                    backwards = True
+                    best_distance_sq = distance_sq
+
+        if closest is None:
+            break
+
+        closest.burns_done += 1
+        c = copy(closest)
+        if backwards:
+            c.reverse()
+        end = c.end
+        curr_x, curr_y = end
+        ordered.append(c)
+
+    return ordered
+
+
+def _improved_greedy_selection(all_candidates, start_position):
+    """
+    Improved greedy nearest-neighbor algorithm for medium-sized datasets.
+
+    Uses simplified distance calculations without sqrt overhead and
+    optimized data structures for better performance on 100-1000 cuts.
+    """
+    if not all_candidates:
+        return []
+
+    # Initialize all cuts
+    for cut in all_candidates:
+        cut.burns_done = 0
+
+    ordered = []
+    curr_x, curr_y = start_position
+
+    while True:
+        closest = None
+        backwards = False
+        best_distance_sq = float("inf")
+
+        # Try to continue current path first (path continuation optimization)
+        if ordered:
+            last_cut = ordered[-1]
+            if (
+                hasattr(last_cut, "next")
+                and last_cut.next
+                and last_cut.next.burns_done < last_cut.next.passes
+            ):
+                next_cut = last_cut.next
+                start_x, start_y = next_cut.start
+                distance_sq = (start_x - curr_x) ** 2 + (start_y - curr_y) ** 2
+                if distance_sq < best_distance_sq:
+                    closest = next_cut
+                    backwards = False
+                    best_distance_sq = distance_sq
+
+        # If no good continuation, search all available cuts
+        if best_distance_sq > 2500:  # 50^2, same threshold as original
+            for cut in all_candidates:
+                if cut.burns_done >= cut.passes:
+                    continue
+
+                # Check forward direction
+                start_x, start_y = cut.start
+                distance_sq = (start_x - curr_x) ** 2 + (start_y - curr_y) ** 2
+                if distance_sq < best_distance_sq:
+                    closest = cut
+                    backwards = False
+                    best_distance_sq = distance_sq
+
+                # Check reverse direction if cut is reversible
+                if cut.reversible():
+                    end_x, end_y = cut.end
+                    distance_sq = (end_x - curr_x) ** 2 + (end_y - curr_y) ** 2
+                    if distance_sq < best_distance_sq:
+                        closest = cut
+                        backwards = True
+                        best_distance_sq = distance_sq
+
+        if closest is None:
+            break
+
+        # Apply direction change logic (same as original algorithm)
+        if backwards:
+            if (
+                hasattr(closest, "next")
+                and closest.next
+                and closest.next.burns_done <= closest.burns_done
+                and hasattr(closest.next, "start")
+                and hasattr(closest, "end")
+                and closest.next.start == closest.end
+            ):
+                closest = closest.next
+                backwards = False
+        elif closest.reversible():
+            if (
+                hasattr(closest, "previous")
+                and closest.previous
+                and closest.previous is not closest
+                and closest.previous.burns_done < closest.burns_done
+                and hasattr(closest.previous, "end")
+                and hasattr(closest, "start")
+                and closest.previous.end == closest.start
+            ):
+                closest = closest.previous
+                backwards = True
+
+        closest.burns_done += 1
+
+        c = copy(closest)
+        if backwards:
+            c.reverse()
+        end = c.end
+        curr_x, curr_y = end
+        ordered.append(c)
+
     return ordered
