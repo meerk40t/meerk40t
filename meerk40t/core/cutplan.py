@@ -953,20 +953,25 @@ class CutPlan:
 
     def _dump_scenario(self):
         self.save_scenario(
-            filename="test_cutplan.json", description="Intermediate scenario dump"
+            filename="test_cutplan.json",
+            description="Intermediate scenario dump for algorithm testing",
+            algorithm_testing=True,
         )
 
-    def save_scenario(self, filename=None, description=""):
+    def save_scenario(self, filename=None, description="", algorithm_testing=False):
         """
-        Save the current cutplan state for scenario testing.
+        Save the current cutplan state for scenario testing and algorithm validation.
 
-        Saves minimal information needed to recreate this cutplan:
-        - Plan contents (operations and cutcode)
+        Saves comprehensive information needed to recreate and test this cutplan:
+        - Individual cut data with coordinates for algorithm testing
+        - Plan contents (operations and cutcode) for plan reconstruction
         - Key optimization settings from context
-        - Plan metadata
+        - Plan metadata and travel baselines
+        - Algorithm start position
 
         @param filename: Optional filename to save to. If None, returns the data dict.
         @param description: Optional description of this scenario
+        @param algorithm_testing: If True, saves detailed cut data for algorithm validation
         @return: Scenario data dict if filename is None, otherwise saves to file
         """
         import json
@@ -997,6 +1002,10 @@ class CutPlan:
 
         # Extract plan contents
         plan_data = []
+        individual_cuts = []
+        total_unoptimized_travel = 0
+        algorithm_start_position = None
+
         for item in self.plan:
             item_data = {
                 "type": type(item).__name__,
@@ -1022,6 +1031,9 @@ class CutPlan:
                 item_data["length"] = len(item)
                 if hasattr(item, "_start_x") and item._start_x is not None:
                     item_data["start_pos"] = (item._start_x, item._start_y)
+                    # Use first cut's start as algorithm start position if not set
+                    if algorithm_start_position is None:
+                        algorithm_start_position = (item._start_x, item._start_y)
                 if hasattr(item, "end"):
                     try:
                         end_pos = item.end
@@ -1029,6 +1041,55 @@ class CutPlan:
                             item_data["end_pos"] = (end_pos[0], end_pos[1])
                     except Exception:
                         pass
+
+                # Extract individual cuts for algorithm testing
+                if algorithm_testing and hasattr(item, "__iter__"):
+                    try:
+                        for cut in item:
+                            if hasattr(cut, "start") and hasattr(cut, "end"):
+                                cut_data = {
+                                    "start": [float(cut.start[0]), float(cut.start[1])],
+                                    "end": [float(cut.end[0]), float(cut.end[1])],
+                                    "passes": getattr(cut, "passes", 1),
+                                    "reversible": getattr(
+                                        cut, "reversible", lambda: True
+                                    )()
+                                    if callable(getattr(cut, "reversible", None))
+                                    else True,
+                                }
+
+                                # Add cut settings if available
+                                if hasattr(cut, "settings") and cut.settings:
+                                    settings_copy = {}
+                                    for key, value in cut.settings.items():
+                                        try:
+                                            json.dumps(value)  # Test serializability
+                                            settings_copy[key] = value
+                                        except (TypeError, ValueError):
+                                            settings_copy[key] = str(
+                                                type(value).__name__
+                                            )
+                                    cut_data["settings"] = settings_copy
+
+                                individual_cuts.append(cut_data)
+
+                                # Calculate unoptimized travel distance
+                                if individual_cuts:
+                                    prev_end = (
+                                        individual_cuts[-2]["end"]
+                                        if len(individual_cuts) > 1
+                                        else (algorithm_start_position or [0, 0])
+                                    )
+                                    travel_dist = (
+                                        (cut_data["start"][0] - prev_end[0]) ** 2
+                                        + (cut_data["start"][1] - prev_end[1]) ** 2
+                                    ) ** 0.5
+                                    total_unoptimized_travel += travel_dist
+                    except Exception as e:
+                        if self.channel:
+                            self.channel(
+                                f"Warning: Could not extract cuts from {type(item).__name__}: {e}"
+                            )
 
             # For operations, save key attributes
             if hasattr(item, "settings") and item.settings:
@@ -1044,7 +1105,11 @@ class CutPlan:
 
             plan_data.append(item_data)
 
-        # Create scenario data
+        # If no algorithm start position found, use reasonable default
+        if algorithm_start_position is None:
+            algorithm_start_position = [0, 0]
+
+        # Create base scenario data
         scenario_data = {
             "metadata": {
                 "description": description,
@@ -1052,16 +1117,50 @@ class CutPlan:
                 "plan_name": self.name,
                 "total_items": len(self.plan),
                 "total_travel": self._calculate_total_travel(),
+                "algorithm_testing_enabled": algorithm_testing,
             },
             "optimization_settings": opt_settings,
             "plan_contents": plan_data,
         }
 
+        # Add algorithm testing data if requested
+        if algorithm_testing and individual_cuts:
+            scenario_data["algorithm_testing"] = {
+                "start_position": algorithm_start_position,
+                "cuts": individual_cuts,
+                "original_travel": max(
+                    total_unoptimized_travel, self._calculate_total_travel()
+                ),
+                "cut_count": len(individual_cuts),
+            }
+
+            # Add work area bounds for analysis
+            if individual_cuts:
+                all_x = [cut["start"][0] for cut in individual_cuts] + [
+                    cut["end"][0] for cut in individual_cuts
+                ]
+                all_y = [cut["start"][1] for cut in individual_cuts] + [
+                    cut["end"][1] for cut in individual_cuts
+                ]
+                scenario_data["algorithm_testing"]["work_area"] = {
+                    "min_x": min(all_x),
+                    "max_x": max(all_x),
+                    "min_y": min(all_y),
+                    "max_y": max(all_y),
+                    "width": max(all_x) - min(all_x),
+                    "height": max(all_y) - min(all_y),
+                }
+
         if filename:
             with open(filename, "w") as f:
                 json.dump(scenario_data, f, indent=2, default=str)
             if self.channel:
-                self.channel(f"Saved cutplan scenario to {filename}")
+                if algorithm_testing:
+                    self.channel(
+                        f"Saved algorithm testing scenario to {filename} ({len(individual_cuts)} cuts)"
+                    )
+                else:
+                    self.channel(f"Saved cutplan scenario to {filename}")
             return None
         else:
             return scenario_data
@@ -1079,10 +1178,11 @@ class CutPlan:
 
     def load_scenario(self, filename_or_data):
         """
-        Load a previously saved scenario (for informational purposes only).
+        Load a previously saved scenario (for informational purposes and algorithm testing).
 
         Note: This doesn't recreate the full CutPlan as that would require
-        the original operations and context. It's primarily for analysis.
+        the original operations and context. It's primarily for analysis and
+        algorithm testing when the scenario includes algorithm_testing data.
 
         @param filename_or_data: Filename to load from, or scenario data dict
         @return: Scenario data dict
@@ -1104,7 +1204,66 @@ class CutPlan:
                 f"Items: {meta.get('total_items', 0)}, Travel: {meta.get('total_travel', 0):.0f}"
             )
 
+            # Report algorithm testing capability
+            if (
+                meta.get("algorithm_testing_enabled", False)
+                and "algorithm_testing" in scenario_data
+            ):
+                alg_data = scenario_data["algorithm_testing"]
+                self.channel(
+                    f"Algorithm testing data: {len(alg_data.get('cuts', []))} cuts, "
+                    f"start at {alg_data.get('start_position', [0, 0])}"
+                )
+
         return scenario_data
+
+    def create_cuts_from_scenario(self, scenario_data):
+        """
+        Create cut objects from saved scenario data for algorithm testing.
+
+        This function converts saved algorithm testing data back into cut objects
+        that can be used with optimization algorithms.
+
+        @param scenario_data: Scenario data dict (from load_scenario)
+        @return: Tuple of (cuts, start_position, original_travel) or None if no algorithm data
+        """
+        if "algorithm_testing" not in scenario_data:
+            if self.channel:
+                self.channel("No algorithm testing data in scenario")
+            return None
+
+        from meerk40t.core.cutcode.linecut import LineCut
+
+        alg_data = scenario_data["algorithm_testing"]
+        cuts = []
+
+        for cut_data in alg_data["cuts"]:
+            cut = LineCut(
+                (cut_data["start"][0], cut_data["start"][1]),
+                (cut_data["end"][0], cut_data["end"][1]),
+                settings=cut_data.get("settings", {"speed": 1000}),
+            )
+
+            # Set up reversibility
+            is_reversible = cut_data.get("reversible", True)
+            cut.reversible = lambda: is_reversible
+
+            # Set up pass count
+            cut.passes = cut_data.get("passes", 1)
+            cut.burns_done = 0  # Initialize for algorithm use
+
+            cuts.append(cut)
+
+        start_position = tuple(alg_data["start_position"])
+        original_travel = alg_data["original_travel"]
+
+        if self.channel:
+            self.channel(f"Created {len(cuts)} cuts for algorithm testing")
+            self.channel(
+                f"Start position: {start_position}, Original travel: {original_travel:.0f}"
+            )
+
+        return cuts, start_position, original_travel
 
     def clear(self):
         self._previous_bounds = None
@@ -2118,9 +2277,8 @@ def _improved_greedy_selection(all_candidates, start_position):
     """
     Improved greedy nearest-neighbor algorithm for medium-sized datasets.
 
-    Uses simplified distance calculations without sqrt overhead and
-    Active Set Optimization to maintain only unfinished cuts in search space.
-    This provides 20% speedup over basic improved algorithm.
+    Uses Active Set Optimization to maintain only unfinished cuts in search space
+    with the same logic as simple greedy for consistent performance.
     """
     if not all_candidates:
         return []
@@ -2141,53 +2299,75 @@ def _improved_greedy_selection(all_candidates, start_position):
         best_distance_sq = float("inf")
         closest_index = -1
 
-        # Try to continue current path first (path continuation optimization)
-        if ordered:
-            last_cut = ordered[-1]
-            if (
-                hasattr(last_cut, "next")
-                and last_cut.next
-                and last_cut.next.burns_done < last_cut.next.passes
-            ):
-                next_cut = last_cut.next
-                # Check if next_cut is still in active set
-                try:
-                    next_index = active_cuts.index(next_cut)
-                    start_x, start_y = next_cut.start
-                    distance_sq = (start_x - curr_x) ** 2 + (start_y - curr_y) ** 2
-                    if distance_sq < best_distance_sq:
-                        closest = next_cut
-                        backwards = False
-                        best_distance_sq = distance_sq
-                        closest_index = next_index
-                except ValueError:
-                    # next_cut not in active set anymore
-                    pass
+        # Find the nearest unfinished cut with early termination and deterministic tie-breaking
+        # Use same threshold as simple greedy for consistent performance
+        early_termination_threshold = 25  # 5^2, very close cut
 
-        # If no good continuation, search active cuts only with optimizations
-        if best_distance_sq > 2500:  # 50^2, same threshold as original
-            early_termination_threshold = 100  # 10^2, reasonably close cut
+        for i, cut in enumerate(active_cuts):
+            # Check forward direction
+            start_x, start_y = cut.start
+            dx = start_x - curr_x
+            dy = start_y - curr_y
+            distance_sq = dx * dx + dy * dy
 
-            for i, cut in enumerate(active_cuts):
-                # Check forward direction with optimized distance calculation
-                start_x, start_y = cut.start
-                dx = start_x - curr_x
-                dy = start_y - curr_y
+            # Deterministic tie-breaking: same logic as simple greedy
+            is_better = distance_sq < best_distance_sq or (
+                distance_sq == best_distance_sq
+                and closest is not None
+                and (
+                    start_y < closest.start[1]
+                    or (start_y == closest.start[1] and start_x < closest.start[0])
+                )
+            )
+
+            if is_better:
+                closest = cut
+                backwards = False
+                best_distance_sq = distance_sq
+                closest_index = i
+
+                # Early termination for very close cuts
+                if distance_sq <= early_termination_threshold:
+                    break
+
+            # Check reverse direction if cut is reversible
+            if cut.reversible():
+                end_x, end_y = cut.end
+                dx = end_x - curr_x
+                dy = end_y - curr_y
                 distance_sq = dx * dx + dy * dy
 
-                if distance_sq < best_distance_sq or (
+                # Deterministic tie-breaking for reverse direction: same logic as simple greedy
+                is_better = distance_sq < best_distance_sq or (
                     distance_sq == best_distance_sq
+                    and closest is not None
                     and (
-                        start_y < (closest.start[1] if closest else float("inf"))
+                        end_y
+                        < (
+                            closest.end[1]
+                            if backwards and closest.reversible()
+                            else closest.start[1]
+                        )
                         or (
-                            start_y == (closest.start[1] if closest else float("inf"))
-                            and start_x
-                            < (closest.start[0] if closest else float("inf"))
+                            end_y
+                            == (
+                                closest.end[1]
+                                if backwards and closest.reversible()
+                                else closest.start[1]
+                            )
+                            and end_x
+                            < (
+                                closest.end[0]
+                                if backwards and closest.reversible()
+                                else closest.start[0]
+                            )
                         )
                     )
-                ):
+                )
+
+                if is_better:
                     closest = cut
-                    backwards = False
+                    backwards = True
                     best_distance_sq = distance_sq
                     closest_index = i
 
@@ -2195,90 +2375,8 @@ def _improved_greedy_selection(all_candidates, start_position):
                     if distance_sq <= early_termination_threshold:
                         break
 
-                # Check reverse direction if cut is reversible
-                if cut.reversible():
-                    end_x, end_y = cut.end
-                    dx = end_x - curr_x
-                    dy = end_y - curr_y
-                    distance_sq = dx * dx + dy * dy
-
-                    if distance_sq < best_distance_sq or (
-                        distance_sq == best_distance_sq
-                        and (
-                            end_y
-                            < (
-                                closest.end[1]
-                                if closest and backwards
-                                else closest.start[1]
-                                if closest
-                                else float("inf")
-                            )
-                            or (
-                                end_y
-                                == (
-                                    closest.end[1]
-                                    if closest and backwards
-                                    else closest.start[1]
-                                    if closest
-                                    else float("inf")
-                                )
-                                and end_x
-                                < (
-                                    closest.end[0]
-                                    if closest and backwards
-                                    else closest.start[0]
-                                    if closest
-                                    else float("inf")
-                                )
-                            )
-                        )
-                    ):
-                        closest = cut
-                        backwards = True
-                        best_distance_sq = distance_sq
-                        closest_index = i
-
-                        # Early termination for very close cuts
-                        if distance_sq <= early_termination_threshold:
-                            break
-
         if closest is None:
             break
-
-        # Apply direction change logic (same as original algorithm)
-        if backwards:
-            if (
-                hasattr(closest, "next")
-                and closest.next
-                and closest.next.burns_done <= closest.burns_done
-                and hasattr(closest.next, "start")
-                and hasattr(closest, "end")
-                and closest.next.start == closest.end
-            ):
-                closest = closest.next
-                backwards = False
-                # Update closest_index for new closest cut
-                try:
-                    closest_index = active_cuts.index(closest)
-                except ValueError:
-                    closest_index = -1
-        elif closest.reversible():
-            if (
-                hasattr(closest, "previous")
-                and closest.previous
-                and closest.previous is not closest
-                and closest.previous.burns_done < closest.burns_done
-                and hasattr(closest.previous, "end")
-                and hasattr(closest, "start")
-                and closest.previous.end == closest.start
-            ):
-                closest = closest.previous
-                backwards = True
-                # Update closest_index for new closest cut
-                try:
-                    closest_index = active_cuts.index(closest)
-                except ValueError:
-                    closest_index = -1
 
         closest.burns_done += 1
 
