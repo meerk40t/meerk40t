@@ -1866,9 +1866,9 @@ def _simple_greedy_selection(all_candidates, start_position):
         backwards = False
         best_distance_sq = float("inf")
 
-        # Find the nearest unfinished cut with early termination
+        # Find the nearest unfinished cut with early termination and deterministic tie-breaking
         early_termination_threshold = 25  # 5^2, very close cut
-
+        
         for cut in all_candidates:
             if cut.burns_done >= cut.passes:
                 continue
@@ -1878,12 +1878,18 @@ def _simple_greedy_selection(all_candidates, start_position):
             dx = start_x - curr_x
             dy = start_y - curr_y
             distance_sq = dx * dx + dy * dy
-
-            if distance_sq < best_distance_sq:
+            
+            # Deterministic tie-breaking: prefer cuts with smaller Y, then smaller X coordinates
+            is_better = (distance_sq < best_distance_sq or 
+                        (distance_sq == best_distance_sq and closest is not None and
+                         (start_y < closest.start[1] or 
+                          (start_y == closest.start[1] and start_x < closest.start[0]))))
+            
+            if is_better:
                 closest = cut
                 backwards = False
                 best_distance_sq = distance_sq
-
+                
                 # Early termination for very close cuts
                 if distance_sq <= early_termination_threshold:
                     break
@@ -1894,12 +1900,19 @@ def _simple_greedy_selection(all_candidates, start_position):
                 dx = end_x - curr_x
                 dy = end_y - curr_y
                 distance_sq = dx * dx + dy * dy
-
-                if distance_sq < best_distance_sq:
+                
+                # Deterministic tie-breaking for reverse direction
+                is_better = (distance_sq < best_distance_sq or 
+                            (distance_sq == best_distance_sq and closest is not None and
+                             (end_y < (closest.end[1] if backwards and closest.reversible() else closest.start[1]) or 
+                              (end_y == (closest.end[1] if backwards and closest.reversible() else closest.start[1]) and 
+                               end_x < (closest.end[0] if backwards and closest.reversible() else closest.start[0])))))
+                
+                if is_better:
                     closest = cut
                     backwards = True
                     best_distance_sq = distance_sq
-
+                    
                     # Early termination for very close cuts
                     if distance_sq <= early_termination_threshold:
                         break
@@ -1979,7 +1992,9 @@ def _improved_greedy_selection(all_candidates, start_position):
                 dy = start_y - curr_y
                 distance_sq = dx * dx + dy * dy
 
-                if distance_sq < best_distance_sq:
+                if distance_sq < best_distance_sq or (distance_sq == best_distance_sq and 
+                    (start_y < (closest.start[1] if closest else float('inf')) or 
+                     (start_y == (closest.start[1] if closest else float('inf')) and start_x < (closest.start[0] if closest else float('inf'))))):
                     closest = cut
                     backwards = False
                     best_distance_sq = distance_sq
@@ -1996,7 +2011,9 @@ def _improved_greedy_selection(all_candidates, start_position):
                     dy = end_y - curr_y
                     distance_sq = dx * dx + dy * dy
 
-                    if distance_sq < best_distance_sq:
+                    if distance_sq < best_distance_sq or (distance_sq == best_distance_sq and 
+                        (end_y < (closest.end[1] if closest and backwards else closest.start[1] if closest else float('inf')) or 
+                         (end_y == (closest.end[1] if closest and backwards else closest.start[1] if closest else float('inf')) and end_x < (closest.end[0] if closest and backwards else closest.start[0] if closest else float('inf'))))):
                         closest = cut
                         backwards = True
                         best_distance_sq = distance_sq
@@ -2170,7 +2187,14 @@ def _spatial_optimized_selection(all_candidates, start_position):
                     distance_sq = (
                         dist * dist
                     )  # scipy returns actual distance, we need squared
-                    if distance_sq < best_distance_sq:
+                    
+                    # Get current position for tie-breaking
+                    current_pos = cut.end if is_reversed else cut.start
+                    current_y, current_x = current_pos[1], current_pos[0]
+                    
+                    if distance_sq < best_distance_sq or (distance_sq == best_distance_sq and 
+                        (current_y < (closest.end[1] if closest and backwards else closest.start[1] if closest else float('inf')) or 
+                         (current_y == (closest.end[1] if closest and backwards else closest.start[1] if closest else float('inf')) and current_x < (closest.end[0] if closest and backwards else closest.start[0] if closest else float('inf'))))):
                         closest = cut
                         backwards = is_reversed
                         best_distance_sq = distance_sq
