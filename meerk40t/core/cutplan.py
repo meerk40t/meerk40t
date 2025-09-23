@@ -2130,6 +2130,10 @@ def short_travel_cutcode_optimized(
             unordered.append(c)
             context.pop(idx)
 
+    # Initialize burns_done for all cuts BEFORE getting candidates
+    for c in context.flat():
+        c.burns_done = 0
+
     # Get all candidates first to determine dataset size
     all_candidates = list(
         context.candidate(complete_path=complete_path, grouped_inner=grouped_inner)
@@ -2235,10 +2239,7 @@ def _simple_greedy_selection(all_candidates, start_position):
     if not all_candidates:
         return []
 
-    # Initialize all cuts
-    for cut in all_candidates:
-        cut.burns_done = 0
-
+    # Burns_done already initialized in the calling function
     ordered = []
     curr_x, curr_y = start_position
 
@@ -2347,10 +2348,7 @@ def _improved_greedy_selection(all_candidates, start_position):
     if not all_candidates:
         return []
 
-    # Initialize all cuts
-    for cut in all_candidates:
-        cut.burns_done = 0
-
+    # Burns_done already initialized in the calling function
     # Active Set Optimization: maintain list of only unfinished cuts
     active_cuts = list(all_candidates)
 
@@ -2483,8 +2481,7 @@ def _spatial_optimized_selection(all_candidates, start_position):
         return []
 
     # Initialize all cuts
-    for cut in all_candidates:
-        cut.burns_done = 0
+    # Burns_done already initialized in the calling function
 
     # Build spatial index for fast nearest neighbor queries
     def rebuild_spatial_index(active_cuts):
@@ -2718,3 +2715,5 @@ def _spatial_optimized_selection(all_candidates, start_position):
         ordered.append(c)
 
     return ordered
+
+
