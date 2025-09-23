@@ -704,6 +704,9 @@ class CutPlan:
 
         if context.opt_effect_combine:
             self.commands.append(self.combine_effects)
+        if self.channel:
+            self.channel("Dumping scenarios:")
+            self.commands.append(self._dump_scenario)
 
         if context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
@@ -947,6 +950,161 @@ class CutPlan:
             if isinstance(cur, CutCode) and isinstance(prev, CutCode):
                 prev.extend(cur)
                 del self.plan[i]
+
+    def _dump_scenario(self):
+        self.save_scenario(
+            filename="test_cutplan.json", description="Intermediate scenario dump"
+        )
+
+    def save_scenario(self, filename=None, description=""):
+        """
+        Save the current cutplan state for scenario testing.
+
+        Saves minimal information needed to recreate this cutplan:
+        - Plan contents (operations and cutcode)
+        - Key optimization settings from context
+        - Plan metadata
+
+        @param filename: Optional filename to save to. If None, returns the data dict.
+        @param description: Optional description of this scenario
+        @return: Scenario data dict if filename is None, otherwise saves to file
+        """
+        import json
+        import datetime
+
+        # Extract key optimization settings that affect cutplan behavior
+        opt_settings = {}
+        if hasattr(self.context, "opt_nearest_neighbor"):
+            opt_settings["opt_nearest_neighbor"] = self.context.opt_nearest_neighbor
+        if hasattr(self.context, "opt_inner_first"):
+            opt_settings["opt_inner_first"] = self.context.opt_inner_first
+        if hasattr(self.context, "opt_merge_passes"):
+            opt_settings["opt_merge_passes"] = self.context.opt_merge_passes
+        if hasattr(self.context, "opt_merge_ops"):
+            opt_settings["opt_merge_ops"] = self.context.opt_merge_ops
+        if hasattr(self.context, "opt_complete_subpaths"):
+            opt_settings["opt_complete_subpaths"] = self.context.opt_complete_subpaths
+        if hasattr(self.context, "opt_inners_grouped"):
+            opt_settings["opt_inners_grouped"] = self.context.opt_inners_grouped
+        if hasattr(self.context, "opt_effect_optimize"):
+            opt_settings["opt_effect_optimize"] = self.context.opt_effect_optimize
+        if hasattr(self.context, "opt_closed_distance"):
+            opt_settings["opt_closed_distance"] = self.context.opt_closed_distance
+        if hasattr(self.context, "opt_jog_minimum"):
+            opt_settings["opt_jog_minimum"] = self.context.opt_jog_minimum
+        if hasattr(self.context, "opt_rapid_between"):
+            opt_settings["opt_rapid_between"] = self.context.opt_rapid_between
+
+        # Extract plan contents
+        plan_data = []
+        for item in self.plan:
+            item_data = {
+                "type": type(item).__name__,
+            }
+
+            # Handle different item types
+            if hasattr(item, "type") and item.type:
+                item_data["item_type"] = item.type
+            if hasattr(item, "original_op"):
+                item_data["original_op"] = item.original_op
+            if hasattr(item, "pass_index"):
+                item_data["pass_index"] = item.pass_index
+            if hasattr(item, "constrained"):
+                item_data["constrained"] = item.constrained
+            if hasattr(item, "length_travel"):
+                try:
+                    item_data["travel_length"] = item.length_travel(True)
+                except Exception:
+                    pass
+
+            # For CutCode objects, save cut count and basic structure
+            if hasattr(item, "__len__"):
+                item_data["length"] = len(item)
+                if hasattr(item, "_start_x") and item._start_x is not None:
+                    item_data["start_pos"] = (item._start_x, item._start_y)
+                if hasattr(item, "end"):
+                    try:
+                        end_pos = item.end
+                        if end_pos:
+                            item_data["end_pos"] = (end_pos[0], end_pos[1])
+                    except Exception:
+                        pass
+
+            # For operations, save key attributes
+            if hasattr(item, "settings") and item.settings:
+                # Save a copy of settings, excluding any non-serializable objects
+                settings_copy = {}
+                for key, value in item.settings.items():
+                    try:
+                        json.dumps(value)  # Test serializability
+                        settings_copy[key] = value
+                    except (TypeError, ValueError):
+                        settings_copy[key] = str(type(value).__name__)
+                item_data["settings"] = settings_copy
+
+            plan_data.append(item_data)
+
+        # Create scenario data
+        scenario_data = {
+            "metadata": {
+                "description": description,
+                "timestamp": datetime.datetime.now().isoformat(),
+                "plan_name": self.name,
+                "total_items": len(self.plan),
+                "total_travel": self._calculate_total_travel(),
+            },
+            "optimization_settings": opt_settings,
+            "plan_contents": plan_data,
+        }
+
+        if filename:
+            with open(filename, "w") as f:
+                json.dump(scenario_data, f, indent=2, default=str)
+            if self.channel:
+                self.channel(f"Saved cutplan scenario to {filename}")
+            return None
+        else:
+            return scenario_data
+
+    def _calculate_total_travel(self):
+        """Calculate total travel distance across all cutcode in the plan."""
+        total_travel = 0
+        for item in self.plan:
+            if hasattr(item, "length_travel"):
+                try:
+                    total_travel += item.length_travel(True)
+                except Exception:
+                    pass
+        return total_travel
+
+    def load_scenario(self, filename_or_data):
+        """
+        Load a previously saved scenario (for informational purposes only).
+
+        Note: This doesn't recreate the full CutPlan as that would require
+        the original operations and context. It's primarily for analysis.
+
+        @param filename_or_data: Filename to load from, or scenario data dict
+        @return: Scenario data dict
+        """
+        import json
+
+        if isinstance(filename_or_data, str):
+            with open(filename_or_data, "r") as f:
+                scenario_data = json.load(f)
+        else:
+            scenario_data = filename_or_data
+
+        if self.channel:
+            meta = scenario_data.get("metadata", {})
+            self.channel(
+                f"Loaded scenario: {meta.get('description', 'No description')}"
+            )
+            self.channel(
+                f"Items: {meta.get('total_items', 0)}, Travel: {meta.get('total_travel', 0):.0f}"
+            )
+
+        return scenario_data
 
     def clear(self):
         self._previous_bounds = None
