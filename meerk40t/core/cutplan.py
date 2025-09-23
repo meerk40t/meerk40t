@@ -1046,9 +1046,22 @@ class CutPlan:
                 # Extract individual cuts for algorithm testing
                 if algorithm_testing and hasattr(item, "__iter__"):
                     try:
-                        for cut in item:
+                        # For algorithm testing, we want individual cuts, not group structure
+                        # Use flat() method to get all cuts from groups
+                        def get_flat_cuts(cut_container):
+                            """Get flat list of individual cuts for algorithm testing."""
+                            for cut in cut_container:
+                                if isinstance(cut, CutGroup):
+                                    # Use flat() method to get all individual cuts from the group
+                                    yield from cut.flat()
+                                else:
+                                    # Regular cut object
+                                    yield cut
+
+                        for cut in get_flat_cuts(item):
                             if hasattr(cut, "start") and hasattr(cut, "end"):
                                 cut_data = {
+                                    "cut_type": type(cut).__name__,
                                     "start": [float(cut.start[0]), float(cut.start[1])],
                                     "end": [float(cut.end[0]), float(cut.end[1])],
                                     "passes": getattr(cut, "passes", 1),
@@ -1058,6 +1071,26 @@ class CutPlan:
                                     if callable(getattr(cut, "reversible", None))
                                     else True,
                                 }
+
+                                # Save cut-type specific data
+                                if hasattr(cut, "_control1") and hasattr(
+                                    cut, "_control2"
+                                ):
+                                    # CubicCut
+                                    cut_data["control1"] = [
+                                        float(cut._control1[0]),
+                                        float(cut._control1[1]),
+                                    ]
+                                    cut_data["control2"] = [
+                                        float(cut._control2[0]),
+                                        float(cut._control2[1]),
+                                    ]
+                                elif hasattr(cut, "_control"):
+                                    # QuadCut
+                                    cut_data["control"] = [
+                                        float(cut._control[0]),
+                                        float(cut._control[1]),
+                                    ]
 
                                 # Add cut settings if available
                                 if hasattr(cut, "settings") and cut.settings:
@@ -1074,18 +1107,20 @@ class CutPlan:
 
                                 individual_cuts.append(cut_data)
 
-                                # Calculate unoptimized travel distance
-                                if individual_cuts:
+                                # Calculate unoptimized travel distance for cuts with start positions
+                                if cut_data.get("start") and individual_cuts:
                                     prev_end = (
                                         individual_cuts[-2]["end"]
                                         if len(individual_cuts) > 1
+                                        and individual_cuts[-2].get("end")
                                         else (algorithm_start_position or [0, 0])
                                     )
-                                    travel_dist = (
-                                        (cut_data["start"][0] - prev_end[0]) ** 2
-                                        + (cut_data["start"][1] - prev_end[1]) ** 2
-                                    ) ** 0.5
-                                    total_unoptimized_travel += travel_dist
+                                    if prev_end:
+                                        travel_dist = (
+                                            (cut_data["start"][0] - prev_end[0]) ** 2
+                                            + (cut_data["start"][1] - prev_end[1]) ** 2
+                                        ) ** 0.5
+                                        total_unoptimized_travel += travel_dist
                     except Exception as e:
                         if self.channel:
                             self.channel(
@@ -1234,24 +1269,51 @@ class CutPlan:
             return None
 
         from meerk40t.core.cutcode.linecut import LineCut
+        from meerk40t.core.cutcode.quadcut import QuadCut
+        from meerk40t.core.cutcode.cubiccut import CubicCut
 
         alg_data = scenario_data["algorithm_testing"]
         cuts = []
 
         for cut_data in alg_data["cuts"]:
-            cut = LineCut(
-                (cut_data["start"][0], cut_data["start"][1]),
-                (cut_data["end"][0], cut_data["end"][1]),
-                settings=cut_data.get("settings", {"speed": 1000}),
-            )
+            cut_type = cut_data.get("cut_type", "LineCut")
+
+            # Create the appropriate cut type (no CutGroups for algorithm testing)
+            if (
+                cut_type == "CubicCut"
+                and "control1" in cut_data
+                and "control2" in cut_data
+            ):
+                cut = CubicCut(
+                    (cut_data["start"][0], cut_data["start"][1]),
+                    (cut_data["control1"][0], cut_data["control1"][1]),
+                    (cut_data["control2"][0], cut_data["control2"][1]),
+                    (cut_data["end"][0], cut_data["end"][1]),
+                    settings=cut_data.get("settings", {"speed": 1000}),
+                    passes=cut_data.get("passes", 1),
+                )
+            elif cut_type == "QuadCut" and "control" in cut_data:
+                cut = QuadCut(
+                    (cut_data["start"][0], cut_data["start"][1]),
+                    (cut_data["control"][0], cut_data["control"][1]),
+                    (cut_data["end"][0], cut_data["end"][1]),
+                    settings=cut_data.get("settings", {"speed": 1000}),
+                    passes=cut_data.get("passes", 1),
+                )
+            else:
+                # Default to LineCut for all other types (including CutGroup from old files)
+                cut = LineCut(
+                    (cut_data["start"][0], cut_data["start"][1]),
+                    (cut_data["end"][0], cut_data["end"][1]),
+                    settings=cut_data.get("settings", {"speed": 1000}),
+                    passes=cut_data.get("passes", 1),
+                )
 
             # Set up reversibility
             is_reversible = cut_data.get("reversible", True)
             cut.reversible = lambda: is_reversible
-
-            # Set up pass count
             cut.passes = cut_data.get("passes", 1)
-            cut.burns_done = 0  # Initialize for algorithm use
+            cut.burns_done = 0
 
             cuts.append(cut)
 
