@@ -1986,7 +1986,7 @@ def short_travel_cutcode_legacy(
                     distance = abs(complex(end[0], end[1]) - curr)
             # Gap or continuing on path not permitted, try reversing
             if (
-                distance > 50
+                distance > 5  # Fixed: 1/20" = ~5 pixels, not 50
                 and last_segment.burns_done < last_segment.passes
                 and last_segment.reversible()
                 and last_segment.next is not None
@@ -1998,7 +1998,8 @@ def short_travel_cutcode_legacy(
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is completely burned or gap > 1/20"
-        if distance > 50:
+        # Fixed: Original 1/20" = ~5 pixels, not 50. This restores 0.98b3 performance.
+        if distance > 5:
             for cut in context.candidate(
                 complete_path=complete_path, grouped_inner=grouped_inner
             ):
@@ -2543,7 +2544,7 @@ def _spatial_optimized_selection(all_candidates, start_position):
                         closest_index = -1
 
         # If no good continuation, use spatial index for fast search
-        if best_distance_sq > 2500 and tree is not None:
+        if best_distance_sq > 25 and tree is not None:  # Fixed: 5² = 25, not 50² = 2500
             try:
                 # Query k nearest neighbors (k=5 to handle edge cases)
                 distances, indices = tree.query(
