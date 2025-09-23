@@ -73,16 +73,15 @@ class CutPlan:
     def __init__(self, name, planner):
         self.name = name
         self.context = planner
-        self.plan = list()
-        self.spool_commands = list()
-        self.commands = list()
+        self.plan = []
+        self.spool_commands = []
+        self.commands = []
         self.channel = self.context.channel("optimize", timestamp=True)
         self.outline = None
         self._previous_bounds = None
 
     def __str__(self):
-        parts = list()
-        parts.append(self.name)
+        parts = [self.name]
         if len(self.plan):
             parts.append(f"#{len(self.plan)}")
             for p in self.plan:
@@ -345,7 +344,7 @@ class CutPlan:
         @return:
         """
         last_type = None
-        group = list()
+        group = []
         for c in plan:
             c_type = (
                 c.type
@@ -359,7 +358,7 @@ class CutPlan:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This cannot merge
                     yield group
-                    group = list()
+                    group = []
             group.append(c)
             last_type = c_type
         if group:
@@ -1346,10 +1345,10 @@ class CutPlan:
                 flagy = (bounds1[1] > bounds2[3] + margin) or (
                     bounds2[1] > bounds1[3] + margin
                 )
-                return bool(not (flagx or flagy))
+                return not (flagx or flagy)
 
-            clusters = list()
-            cluster_bounds = list()
+            clusters = []
+            cluster_bounds = []
             for child in operation.children:
                 try:
                     if child.type == "reference":
@@ -2715,5 +2714,3 @@ def _spatial_optimized_selection(all_candidates, start_position):
         ordered.append(c)
 
     return ordered
-
-
