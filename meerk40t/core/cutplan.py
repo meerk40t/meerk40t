@@ -28,6 +28,7 @@ from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
 from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
+from .elements.element_types import op_vector_nodes
 from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import Length
@@ -260,7 +261,7 @@ class CutPlan:
                 if op_type.startswith("place "):
                     continue
                 if (
-                    op_type == "op cut"
+                    op_type in op_vector_nodes
                     and self.context.opt_stitching
                     and self.context.do_optimization
                 ):
