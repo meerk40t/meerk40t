@@ -951,12 +951,12 @@ class CutPlan:
                 del self.plan[i]
 
     def _dump_scenario(self):
-        if False:
-            self.save_scenario(
-                filename="test_cutplan.json",
-                description="Intermediate scenario dump for algorithm testing",
-                algorithm_testing=True,
-            )
+        # self.save_scenario(
+        #     filename="test_cutplan.json",
+        #     description="Intermediate scenario dump for algorithm testing",
+        #     algorithm_testing=True,
+        # )
+        return
 
     def save_scenario(self, filename=None, description="", algorithm_testing=False):
         """
