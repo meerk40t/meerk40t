@@ -531,7 +531,11 @@ class Node:
             assert c in c._parent._children
             for q in c._references:
                 assert q.node is c
-            if c.type == "reference" and c.node is not None and hasattr(c.node, "_references"):
+            if (
+                c.type == "reference"
+                and c.node is not None
+                and hasattr(c.node, "_references")
+            ):
                 assert c in c.node._references
                 # Fix: Check if reference target exists and has back-reference
             c._validate_tree()
@@ -1341,9 +1345,15 @@ class Node:
         parent._children.remove(self)
         self.notify_detached(self)
         node = parent.add(*args, **kwargs, pos=index)
-        self.notify_destroyed()
+        node._references.clear()
         for ref in list(self._references):
-            ref.remove_node()
+            ref.node = node
+            if hasattr(ref, "_item"):
+                ref._item = None
+            node._references.append(ref)
+            # ref.remove_node()
+        self._references.clear()
+        self.notify_destroyed()
         if keep_children:
             for ref in list(self._children):
                 node._children.append(ref)
@@ -1517,10 +1527,10 @@ class Node:
 
         # Single pass through nodes with optimized attribute access
         for e in nodes:
-            # Use direct attribute access for speed (most common case)
-            if ignore_locked and e.lock:
+            # Use safe attribute access with defaults for reliability
+            if ignore_locked and getattr(e, "lock", False):
                 continue
-            if ignore_hidden and e.hidden:
+            if ignore_hidden and getattr(e, "hidden", False):
                 continue
 
             # Direct attribute access (avoid getattr overhead for common case)

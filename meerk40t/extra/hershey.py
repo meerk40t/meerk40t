@@ -173,6 +173,14 @@ class Meerk40tFonts:
             f_lower = info[0].lower()
             if f_lower.endswith(s_lower):
                 return info
+        # Hmm, we did not find it - there's a special case though, replace "-" with " " to see whether this helps
+        s_lower = s_lower.replace("-", " ")
+        for info in p:
+            # We don't care about capitalisation
+            f_lower = info[0].lower()
+            f_lower = f_lower.replace("-", " ")
+            if f_lower.endswith(s_lower):
+                return info
         return None
 
     def is_system_font(self, short):
@@ -450,7 +458,14 @@ class Meerk40tFonts:
         return font, font_path
 
     def create_linetext_node(
-        self, x, y, text, font=None, font_size=None, font_spacing=1.0, align="start",
+        self,
+        x,
+        y,
+        text,
+        font=None,
+        font_size=None,
+        font_spacing=1.0,
+        align="start",
     ):
         if font_size is None:
             font_size = Length("20px")
@@ -477,7 +492,14 @@ class Meerk40tFonts:
             path = FontPath(weld)
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
-            cfont.render(path, mytext, horizontal=horizontal, font_size=float(font_size), h_spacing=font_spacing, align=align)
+            cfont.render(
+                path,
+                mytext,
+                horizontal=horizontal,
+                font_size=float(font_size),
+                h_spacing=font_spacing,
+                align=align,
+            )
         except (AttributeError, ShxFontParseError):
             # Could not parse path.
             pass
@@ -753,7 +775,6 @@ def plugin(kernel, lifecycle):
         ):
             kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
-
         @context.console_argument("x", type=Length, help=_("X-Coordinate"))
         @context.console_argument("y", type=Length, help=_("Y-Coordinate"))
         @context.console_argument("text", type=str, help=_("Text to render"))
@@ -785,7 +806,9 @@ def plugin(kernel, lifecycle):
             **kwargs,
         ):
             if x is None or y is None or text is None:
-                channel(_("linetext <x> <y> <text> - please provide all required arguments"))
+                channel(
+                    _("linetext <x> <y> <text> - please provide all required arguments")
+                )
                 registered_fonts = context.fonts.available_fonts()
                 for item in registered_fonts:
                     channel(f"{item[1]} ({item[0]})")
@@ -799,7 +822,6 @@ def plugin(kernel, lifecycle):
             if text is None or text == "":
                 channel(_("No text given."))
                 return
-
 
             if font_spacing is None:
                 font_spacing = 1

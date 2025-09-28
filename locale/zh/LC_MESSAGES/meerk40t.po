@@ -23009,3 +23009,296 @@ msgstr "结束角度"
 #: meerk40t/core/elements/grid.py:382
 msgid "Copies"
 msgstr "副本"
+
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "这是一个测试字符串。"
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"另一个带有换行符的测试字符串。\n"
+"看到了吗？"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "带有制表符的字符串。\t看到了吗？"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "带有 {curly} 花括号的字符串。"
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "正在发送数据 {count}"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "正在添加尾随操作"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "正在复制数据 {count}"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "将分组元素重新父级化到根节点"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "组的标签"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "分组选中的元素"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "没有可分组的内容。"
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "已分组 {count} 个元素。"
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "取消分组选中的元素"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "未选择组或文件。"
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr "简化了 {count} 个组。移除了 {removed} 个不必要的组级别。"
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "转到原点"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "转到 0,0"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "蜂鸣声"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "冷却开启"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "冷却关闭"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "休眠关闭"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "休眠开启"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "分组 + 文件"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "操作 (特殊)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "元素 (效果)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "位置"
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr "带引号的字符串：\"看到了吗？\""
+
+#: meerk40t/core/elements/element_treeops.py:3182
+msgid "Optimisation"
+msgstr "优化"
+
+#: meerk40t/core/elements/element_treeops.py:3184
+msgid "Reduce travel moves"
+msgstr "减少移动路径"
+
+#: meerk40t/core/elements/element_treeops.py:3186
+msgid "Rearrange items within operation to reduce travel moves"
+msgstr "在操作内重新排列项目以减少移动路径"
+
+#: meerk40t/core/elements/element_treeops.py:3190
+msgid "Optimize travel moves"
+msgstr "优化移动路径"
+
+#: meerk40t/core/elements/manual_optimize.py:82
+msgid "Provide detailed debug output"
+msgstr "提供详细调试输出"
+
+#: meerk40t/core/elements/manual_optimize.py:85
+msgid "Starting X position"
+msgstr "起始X位置"
+
+#: meerk40t/core/elements/manual_optimize.py:88
+msgid "Starting Y position"
+msgstr "起始Y位置"
+
+#: meerk40t/core/elements/manual_optimize.py:92
+msgid "reorder elements for optimal cutting within an operation"
+msgstr "在操作内重新排序元素以实现最佳切割"
+
+#: meerk40t/core/elements/manual_optimize.py:115
+msgid "No operations to optimize"
+msgstr "没有可优化的操作"
+
+#: meerk40t/core/elements/manual_optimize.py:415
+msgid "Geometric tolerance for containment analysis"
+msgstr "包含分析的几何容差"
+
+#: meerk40t/core/elements/manual_optimize.py:419
+msgid "Optimize selected operations using containment-aware workflow"
+msgstr "使用包含感知工作流优化选定操作"
+
+#: meerk40t/core/elements/manual_optimize.py:431
+msgid "No operations selected for workflow optimization"
+msgstr "未选择任何操作进行工作流优化"
+
+#: meerk40t/core/elements/manual_optimize.py:448
+msgid "Workflow Optimization Results:"
+msgstr "工作流优化结果："
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:804
+msgid "Rotate element"
+msgstr "旋转元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1044
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr "调整元素大小（Alt键自由，Ctrl+Shift从中心）"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1277
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr "调整元素X方向大小（Ctrl+Shift从中心）"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1278
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr "调整元素Y方向大小（Ctrl+Shift从中心）"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1431
+msgid "Skew element in X-direction"
+msgstr "X方向倾斜元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1432
+msgid "Skew element in Y-direction"
+msgstr "Y方向倾斜元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1960
+msgid "Move element"
+msgstr "移动元素"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2093
+msgid "Move rotation center"
+msgstr "移动旋转中心"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2238
+msgid "Toggle reference status of element"
+msgstr "切换元素参考状态"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2364
+msgid "Remove the 'locked' status of the element"
+msgstr "移除元素的“锁定”状态"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr "注意：同时使用 '减少移动时间' 和 '先烧内侧' 时，移动优化发生在每个层次级别内（内侧在前，外侧在后）。"
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "附加物理原点"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "附加物理原点/蜂鸣/中断"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "添加物理原点"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "添加物理原点/蜂鸣/中断"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "将激光头移动到物理原点位置。"
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "字体缺失：{fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "计划 '{plan}' 的详细信息："
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "空"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "计划详细信息"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "计划仍在处理中"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "自动选择"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "扫描光束（默认）"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "直接网格（快速）"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "算法："
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr "- 对角线：从一个角开始对角线遍历图像"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "选择生成算法"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr "基于图案（复杂）：使用图案类处理复杂形状和详细图案"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr "直接网格（简单）：基于网格的快速生成简单平行图案"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr "自动选择：根据图案复杂性自动选择最佳算法"

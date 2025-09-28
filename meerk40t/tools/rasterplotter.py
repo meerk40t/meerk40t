@@ -1,6 +1,23 @@
 """
-The RasterPlotter is a plotter that maps particular raster pixels to directional and raster
-methods. This class should be expanded to cover most raster situations.
+The RasterPlotter is a comprehensive raster plotting system that maps pixel data to various directional
+and algorithmic raster methods for laser cutting/engraving applications.
+
+This class supports multiple raster scanning algorithms including:
+- Standard rastering (top-to-bottom, bottom-to-top, right-to-left, left-to-right)
+- Diagonal scanning with corner-based starting positions and bidirectional support
+- Greedy neighbor optimization for path efficiency
+- Crossover algorithm for optimized row/column processing
+- Spiral scanning from center outward
+- Legacy methods for backward compatibility
+
+Key Features:
+- Pixel filtering and skip-pixel logic for accurate representation
+- Corner-based diagonal scanning (top-left, top-right, bottom-left, bottom-right)
+- Bidirectional and unidirectional scanning modes
+- Type-safe implementation with None guards for robust operation
+- Overlap compensation for laser spot diameter
+- Distance tracking for travel and burn calculations
+- Debug output and performance monitoring
 
 The X_AXIS / Y_AXIS flag determines whether we raster across the X_AXIS or Y_AXIS. Standard
 right-to-left rastering starting at the top edge on the left is the default. This would be
@@ -16,6 +33,12 @@ The TOP, RIGHT, LEFT, BOTTOM combined give you the starting corner.
 
 The rasters can either be BIDIRECTIONAL or UNIDIRECTIONAL meaning they raster on both swings
 or only on forward swing.
+
+Recent enhancements include:
+- Fixed pixel processing logic using filtered values instead of raw pixel data
+- Improved diagonal scanning with proper corner-based logic and bidirectional alternation
+- Added comprehensive None guards to prevent runtime errors in all plotting methods
+- Optimized diagonal algorithms using x+y=constant and x-y=constant equations
 """
 
 from math import isinf, sqrt
@@ -26,6 +49,7 @@ import numpy as np
 from meerk40t.constants import (
     RASTER_B2T,
     RASTER_CROSSOVER,
+    RASTER_DIAGONAL,
     RASTER_GREEDY_H,
     RASTER_GREEDY_V,
     RASTER_HATCH,
@@ -35,8 +59,52 @@ from meerk40t.constants import (
     RASTER_T2B,
 )
 
+METHODS = {
+    RASTER_T2B: "Top2Bottom",
+    RASTER_B2T: "Bottom2Top",
+    RASTER_R2L: "Right2Left",
+    RASTER_L2R: "Left2Right",
+    RASTER_HATCH: "Hatch",
+    RASTER_GREEDY_H: "Greedy Neighbor Hor",
+    RASTER_GREEDY_V: "Greedy Neighbor Ver",
+    RASTER_CROSSOVER: "Crossover",
+    RASTER_SPIRAL: "Spiral",
+    RASTER_DIAGONAL: "Diagonal",
+}
+
+BLANK = 255
+
 
 class RasterPlotter:
+    """
+    A comprehensive raster plotting system for laser cutting/engraving applications.
+
+    This class implements multiple raster scanning algorithms to convert pixel data into
+    optimized laser movement paths. It supports various traversal patterns including
+    standard rastering, diagonal scanning, greedy neighbor optimization, crossover
+    algorithms, and spiral patterns.
+
+    Supported Raster Methods:
+    - Standard Rastering: Top-to-bottom, bottom-to-top, right-to-left, left-to-right
+    - Diagonal Scanning: Corner-based diagonal traversal with bidirectional alternation
+    - Greedy Neighbor: Path optimization using distance-based segment ordering
+    - Crossover: Alternating row/column processing for efficiency
+    - Spiral: Center-outward spiral pattern
+    - Legacy Methods: Backward-compatible implementations for specific controllers
+
+    Key Features:
+    - Pixel filtering and skip-pixel logic for accurate representation
+    - Corner-based starting positions (top-left, top-right, bottom-left, bottom-right)
+    - Bidirectional and unidirectional scanning modes
+    - Overlap compensation for laser spot diameter
+    - Distance tracking for travel and burn calculations
+    - Debug output and performance monitoring
+    - Type-safe implementation with None guards
+
+    The class handles coordinate transformations, pixel processing, and path optimization
+    to ensure efficient laser movement while maintaining image fidelity.
+    """
+
     def __init__(
         self,
         data,
@@ -108,6 +176,7 @@ class RasterPlotter:
             RASTER_GREEDY_H: (None, None, None, True),  # greedy neighbour horizontal
             RASTER_GREEDY_V: (None, None, None, True),  # greedy neighbour
             RASTER_CROSSOVER: (None, None, None, True),  # true crossover
+            RASTER_DIAGONAL: (None, None, None, True),  # true diagonal
         }
         def_x, def_y, def_hor, def_bidir = parameters.get(
             direction, (None, None, None, None)
@@ -140,19 +209,8 @@ class RasterPlotter:
         self._distance_burn = 0
 
     def __repr__(self):
-        methods = (
-            "Top2Bottom",
-            "Bottom2Top",
-            "Right2Left",
-            "Left2Right",
-            "Hatch",
-            "Greedy Neighbor Hor",
-            "Greedy Neighbor Ver",
-            "Crossover",
-            "Spiral",
-        )
-        if 0 <= self.direction < len(methods):
-            s_meth = f"Rasterplotter ({self.width}x{self.height}): {methods[self.direction]} ({self.direction})"
+        if self.direction in METHODS:
+            s_meth = f"Rasterplotter ({self.width}x{self.height}): {METHODS[self.direction]} ({self.direction})"
         else:
             s_meth = (
                 f"Rasterplotter ({self.width}x{self.height}): Unknown {self.direction}"
@@ -168,16 +226,16 @@ class RasterPlotter:
 
     def px(self, x, y):
         """
-        Returns the filtered pixel
+        Returns the filtered pixel value at the given coordinates.
 
-        @param x:
-        @param y:
-        @return: Filtered Pixel
+        @param x: The x-coordinate of the pixel
+        @param y: The y-coordinate of the pixel
+        @return: The filtered pixel value, or raises IndexError if coordinates are out of bounds
         """
         if 0 <= y < self.height and 0 <= x < self.width:
-            if self.filter is None:
-                return self.data[x, y]
-            return self.filter(self.data[x, y])
+            return (
+                self.data[x, y] if self.filter is None else self.filter(self.data[x, y])
+            )
         raise IndexError
 
     def leftmost_not_equal(self, y):
@@ -186,7 +244,7 @@ class RasterPlotter:
 
         if all pixels skipped returns None
         """
-        for x in range(0, self.width):
+        for x in range(self.width):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return x
@@ -198,7 +256,7 @@ class RasterPlotter:
 
         if all pixels skipped returns None
         """
-        for y in range(0, self.height):
+        for y in range(self.height):
             pixel = self.px(x, y)
             if pixel != self.skip_pixel:
                 return y
@@ -389,16 +447,22 @@ class RasterPlotter:
 
         @return: x,y coordinates of first pixel.
         """
-        if self.horizontal:
-            y = 0 if self.start_minimum_y else self.height - 1
-            dy = 1 if self.start_minimum_y else -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, self.start_minimum_x)
-            return x, y
-        else:
+        if self.direction == RASTER_DIAGONAL:
             x = 0 if self.start_minimum_x else self.width - 1
-            dx = 1 if self.start_minimum_x else -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, self.start_minimum_y)
-            return x, y
+            y = 0 if self.start_minimum_y else self.height - 1
+        elif self.direction == RASTER_SPIRAL:
+            x = int(self.width / 2)
+            y = int(self.height / 2)
+        else:
+            if self.horizontal:
+                y = 0 if self.start_minimum_y else self.height - 1
+                dy = 1 if self.start_minimum_y else -1
+                x, y = self.calculate_next_horizontal_pixel(y, dy, self.start_minimum_x)
+            else:
+                x = 0 if self.start_minimum_x else self.width - 1
+                dx = 1 if self.start_minimum_x else -1
+                x, y = self.calculate_next_vertical_pixel(x, dx, self.start_minimum_y)
+        return x, y
 
     def calculate_last_pixel(self):
         """
@@ -408,28 +472,38 @@ class RasterPlotter:
 
         @return: x,y coordinates of last pixel.
         """
-        if self.horizontal:
-            y = self.height - 1 if self.start_minimum_y else 0
-            dy = -1 if self.start_minimum_y else 1
-            start_on_left = (
-                self.start_minimum_x if self.width & 1 else not self.start_minimum_x
-            )
-            x, y = self.calculate_next_horizontal_pixel(y, dy, start_on_left)
-            return x, y
-        else:
+        if self.direction == RASTER_DIAGONAL:
             x = self.width - 1 if self.start_minimum_x else 0
-            dx = -1 if self.start_minimum_x else 1
-            start_on_top = (
-                self.start_minimum_y if self.height & 1 else not self.start_minimum_y
-            )
-            x, y = self.calculate_next_vertical_pixel(x, dx, start_on_top)
-            return x, y
+            y = self.height - 1 if self.start_minimum_y else 0
+        elif self.direction == RASTER_SPIRAL:
+            x = self.width - 1
+            y = self.height - 1
+        else:
+            if self.horizontal:
+                y = self.height - 1 if self.start_minimum_y else 0
+                dy = -1 if self.start_minimum_y else 1
+                start_on_left = (
+                    self.start_minimum_x if self.width & 1 else not self.start_minimum_x
+                )
+                x, y = self.calculate_next_horizontal_pixel(y, dy, start_on_left)
+            else:
+                x = self.width - 1 if self.start_minimum_x else 0
+                dx = -1 if self.start_minimum_x else 1
+                start_on_top = (
+                    self.start_minimum_y
+                    if self.height & 1
+                    else not self.start_minimum_y
+                )
+                x, y = self.calculate_next_vertical_pixel(x, dx, start_on_top)
+        return x, y
 
     def initial_position(self):
         """
         Returns raw initial position for the relevant pixel within the data.
         @return: initial position within the data.
         """
+        if self.initial_x is None or self.initial_y is None:
+            raise ValueError("Initial position is not set")
         if self.use_integers:
             return int(round(self.initial_x)), int(round(self.initial_y))
         else:
@@ -447,13 +521,13 @@ class RasterPlotter:
                 return self.offset_x, self.offset_y
         if self.use_integers:
             return (
-                int(round(self.offset_x + self.initial_x * self.step_x)),
-                int(round(self.offset_y + self.initial_y * self.step_y)),
+                int(round(self.offset_x + (self.initial_x or 0) * self.step_x)),
+                int(round(self.offset_y + (self.initial_y or 0) * self.step_y)),
             )
         else:
             return (
-                self.offset_x + self.initial_x * self.step_x,
-                self.offset_y + self.initial_y * self.step_y,
+                self.offset_x + (self.initial_x or 0) * self.step_x,
+                self.offset_y + (self.initial_y or 0) * self.step_y,
             )
 
     def final_position_in_scene(self):
@@ -469,13 +543,13 @@ class RasterPlotter:
                 return self.offset_x, self.offset_y
         if self.use_integers:
             return (
-                int(round(self.offset_x + self.final_x * self.step_x)),
-                int(round(self.offset_y + self.final_y * self.step_y)),
+                int(round(self.offset_x + (self.final_x or 0) * self.step_x)),
+                int(round(self.offset_y + (self.final_y or 0) * self.step_y)),
             )
         else:
             return (
-                self.offset_x + self.final_x * self.step_x,
-                self.offset_y + self.final_y * self.step_y,
+                self.offset_x + (self.final_x or 0) * self.step_x,
+                self.offset_y + (self.final_y or 0) * self.step_y,
             )
 
     def plot(self):
@@ -496,17 +570,6 @@ class RasterPlotter:
             # There is no image.
             return
         # Debug code....
-        methods = (
-            "Top2Bottom",
-            "Bottom2Top",
-            "Right2Left",
-            "Left2Right",
-            "Hatch",
-            "Greedy Neighbor Hor",
-            "Greedy Neighbor Ver",
-            "Crossover",
-            "Spiral",
-        )
         testmethods = (
             "Test: Horizontal Rectangle",
             "Test: Vertical Rectangle",
@@ -518,7 +581,7 @@ class RasterPlotter:
             if self.debug_level > 0:
                 try:
                     if self.direction >= 0:
-                        m = methods[self.direction]
+                        m = METHODS.get(self.direction, "Unknown")
                     else:
                         m = testmethods[abs(self.direction) - 1]
                     s_meth = f"Method: {m} ({self.direction})"
@@ -542,7 +605,7 @@ class RasterPlotter:
                     f.write(f"Startpoint: {self.initial_x}, {self.initial_y}\n")
                     f.write(f"Overlapping pixels to any side: {self.overlap}\n")
                     if self.special:
-                        f.write(f"Special instructions:\n")
+                        f.write("Special instructions:\n")
                         for key, value in self.special.items():
                             f.write(f"  {key} = {value}\n")
                     f.write(
@@ -670,6 +733,8 @@ class RasterPlotter:
             yield from self._plot_crossover()
         elif self.direction == RASTER_SPIRAL:
             yield from self._plot_spiral()
+        elif self.direction == RASTER_DIAGONAL:
+            yield from self._plot_diagonal()
         # elif self.direction < 0:
         #     yield from self.testpattern_generator()
         elif self.horizontal:
@@ -687,7 +752,6 @@ class RasterPlotter:
     def _debug_data(self, force=False):
         if self.debug_level < 3 and not force:
             return
-        BLANK = 255
         for y in range(self.height):
             msg: str = f"{y:3d}: "
             for x in range(self.width):
@@ -710,7 +774,6 @@ class RasterPlotter:
         return segments
 
     def _consume_pixel_chains(self, segments: list, xy: int, is_x: bool):
-        BLANK = 255
         # for x in range(5):
         #     msg1 = f"{x}: "
         #     msg2 = ""
@@ -729,14 +792,18 @@ class RasterPlotter:
                 else:
                     px = xy
                     py = idx
-                for x_idx in range(-self.overlap, self.overlap + 1):
-                    for y_idx in range(-self.overlap, self.overlap + 1):
-                        nx = px + x_idx
-                        ny = py + y_idx
-                        if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
-                            continue
-                        self.data[nx, ny] = BLANK
+                self._overlap_pixel(px, py)
+
         self._debug_data()
+
+    def _overlap_pixel(self, px, py):
+        for x_idx in range(-self.overlap, self.overlap + 1):
+            for y_idx in range(-self.overlap, self.overlap + 1):
+                nx = px + x_idx
+                ny = py + y_idx
+                if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
+                    continue
+                self.data[nx, ny] = BLANK
 
     def _plot_vertical(self):
         """
@@ -753,6 +820,14 @@ class RasterPlotter:
         b) we need to take care that we are not landing on the same pixel twice. So we move
            outside the new chain to avoid this
         """
+        if (
+            self.initial_x is None
+            or self.final_x is None
+            or self.initial_y is None
+            or self.final_y is None
+        ):
+            return
+
         unidirectional = not self.bidirectional
 
         dx = 1 if self.start_minimum_x else -1
@@ -842,6 +917,14 @@ class RasterPlotter:
         b) we need to take care that we are not landing on the same pixel twice. So we move
            outside the new chain to avoid this
         """
+        if (
+            self.initial_x is None
+            or self.final_x is None
+            or self.initial_y is None
+            or self.final_y is None
+        ):
+            return
+
         unidirectional = not self.bidirectional
 
         dx = 1 if self.start_minimum_x else -1
@@ -921,10 +1004,37 @@ class RasterPlotter:
     # This will be called if the appropriate device setting is in place
     def _legacy_plot_vertical(self):
         """
-        This code is for vertical rastering.
+        Legacy vertical rastering implementation for m2nano controller compatibility.
 
-        @return:
+        This method provides backward-compatible vertical rastering that has been optimized
+        for the m2nano controller's specific requirements. It includes comprehensive None guards
+        to prevent runtime errors when initial/final coordinates are not properly set.
+
+        The algorithm processes pixels column by column, finding pixel chains and consuming
+        overlapping pixels to prevent duplicate engraving. It supports bidirectional scanning
+        and handles edge cases where scanlines may be empty.
+
+        Key features:
+        - Early return if initial/final coordinates are None (type safety)
+        - Pixel chain detection and consumption for overlap handling
+        - Bidirectional scanning support with direction alternation
+        - Overscan compensation for multi-pass engraving
+        - Boundary detection for efficient scanning
+
+        Note: This is a legacy implementation maintained for device compatibility.
+        For new applications, consider using the standard _plot_vertical method.
+
+        Yields:
+            tuple: (x, y, on) coordinates and laser on/off state
         """
+        if (
+            self.initial_x is None
+            or self.final_x is None
+            or self.initial_y is None
+            or self.final_y is None
+        ):
+            return
+
         width = self.width
         unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
@@ -999,6 +1109,14 @@ class RasterPlotter:
 
         @return:
         """
+        if (
+            self.initial_x is None
+            or self.final_x is None
+            or self.initial_y is None
+            or self.final_y is None
+        ):
+            return
+
         height = self.height
         unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
@@ -1084,6 +1202,14 @@ class RasterPlotter:
         We update the current_point to the next point and mark the segment as visited.
         The path list is updated with the segment index and whether the start or end point is relevant.
         """
+        # Guard against None values in initial/final coordinates
+        if (
+            self.initial_x is None
+            or self.final_x is None
+            or self.initial_y is None
+            or self.final_y is None
+        ):
+            return
 
         def walk_segments(segments, horizontal=True, xy_penalty=1, width=1, height=1):
             n: int = len(segments)
@@ -1253,10 +1379,10 @@ class RasterPlotter:
         t3 = perf_counter()
         if self.debug_level > 1:
             print(
-                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3-t0:.2f}s - created: {len(line_parts)} segments"
+                f"Overall time for {'horizontal' if horizontal else 'vertical'} consumption: {t3 - t0:.2f}s - created: {len(line_parts)} segments"
             )
             print(
-                f"Computation: {t2-t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
+                f"Computation: {t2 - t0:.2f}s - Chain creation:{t1 - t0:.2f}s, Walk: {t2 - t1:.2f}s"
             )
         self.final_x = last_x
         self.final_y = last_y
@@ -1331,7 +1457,6 @@ class RasterPlotter:
                     self.final_x, self.final_y = last_x, last_y
                 # Now we need to empty overlapping pixels...
                 if self.overlap > 0:
-                    BLANK = 255
                     for (start_x, start_y), (end_x, end_y), on in segments:
                         sx = min(start_x, end_x)
                         ex = max(start_x, end_x)
@@ -1540,8 +1665,6 @@ class RasterPlotter:
         t2 = perf_counter()
         dx = +1
         dy = +1
-        first_x = 0
-        first_y = 0
         last_x = self.initial_x
         last_y = self.initial_y
         yield last_x, last_y, 0
@@ -1619,10 +1742,217 @@ class RasterPlotter:
         self.final_y = last_y
         t3 = perf_counter()
         if self.debug_level > 1:
-            print(f"Overall time for crossover consumption: {t3-t0:.2f}s")
+            print(f"Overall time for crossover consumption: {t3 - t0:.2f}s")
             print(
                 f"Computation: {t2 - t0:.2f}s - Array creation:{t1 - t0:.2f}s, Algorithm: {t2 - t1:.2f}s"
             )
+
+    def _plot_diagonal(self):
+        """
+        Diagonal scanning algorithm that traverses the image diagonally using pixel chains.
+
+        This method implements diagonal rastering that supports all four corner starting positions
+        with bidirectional scanning and proper pixel overlap handling. Uses pixel chains for
+        efficiency like other raster methods.
+
+        Yields:
+            tuple: (x, y, on) coordinates and laser on/off state (0=off, pixel_value=on)
+        """
+        # Determine start corner and diagonal equation parameters
+        start_corner = f"{'top' if self.start_minimum_y else 'bottom'}-{'left' if self.start_minimum_x else 'right'}"
+
+        # Configure diagonal scanning parameters based on start corner
+        if start_corner in ("top-left", "bottom-right"):
+            equation_func = self._diagonal_sum
+            min_diag = 0
+            max_diag = self.width + self.height - 2
+            reverse_order = start_corner == "bottom-right"
+        else:  # top-right, bottom-left
+            equation_func = self._diagonal_diff
+            min_diag = -(self.height - 1)
+            max_diag = self.width - 1
+            reverse_order = start_corner == "top-right"
+
+        # Set up diagonal range
+        diagonal_range = (
+            range(max_diag, min_diag - 1, -1)
+            if reverse_order
+            else range(min_diag, max_diag + 1)
+        )
+
+        # Track current position
+        current_x, current_y = self.initial_x, self.initial_y
+        first_diagonal = True
+
+        for diagonal_idx, diag_value in enumerate(diagonal_range):
+            # Collect pixels on this diagonal
+            pixels_on_diagonal = self._get_diagonal_pixels(diag_value, equation_func)
+
+            # Sort pixels based on start corner and bidirectional setting
+            pixels_on_diagonal = self._sort_diagonal_pixels(
+                pixels_on_diagonal, start_corner, diagonal_idx
+            )
+
+            # Get pixel chains for this diagonal
+            segments = self._get_diagonal_pixel_chains(pixels_on_diagonal)
+
+            if segments:
+                # Determine direction based on start corner and bidirectional setting
+                alternate = self.bidirectional and diagonal_idx % 2 == 1
+
+                if start_corner == "top-left":
+                    reverse_segments = alternate
+                elif start_corner == "top-right":
+                    reverse_segments = alternate
+                elif start_corner == "bottom-left":
+                    reverse_segments = not alternate
+                else:  # bottom-right
+                    reverse_segments = not alternate
+
+                if reverse_segments:
+                    segments = segments[::-1]
+
+                # Move to start of first segment
+                start_x, start_y = segments[0][0]
+                if first_diagonal or start_x != current_x or start_y != current_y:
+                    yield start_x, start_y, 0
+                    current_x, current_y = start_x, start_y
+
+                # Process each segment
+                for segment in segments:
+                    (sx, sy), (ex, ey), on = segment
+
+                    # Move to segment start if needed
+                    if sx != current_x or sy != current_y:
+                        yield sx, sy, 0
+                        current_x, current_y = sx, sy
+
+                    # Move to segment end with laser on
+                    yield ex, ey, on
+                    current_x, current_y = ex, ey
+
+                first_diagonal = False
+
+            # Consume overlapping pixels
+            for px, py in pixels_on_diagonal:
+                pixel = self.px(px, py)
+                on = 0 if pixel == self.skip_pixel else pixel
+                if on and self.overlap > 0:
+                    self._overlap_pixel(px, py)
+
+        # Update final position
+        self.final_x, self.final_y = current_x, current_y
+
+    def _diagonal_sum(self, x, y):
+        """Calculate x + y for diagonal equations."""
+        return x + y
+
+    def _diagonal_diff(self, x, y):
+        """Calculate x - y for diagonal equations."""
+        return x - y
+
+    def _get_diagonal_pixels(self, diag_value, equation_func):
+        """Get all pixels that lie on a given diagonal."""
+        pixels = []
+        if equation_func(0, 0) == 0:  # x + y equation
+            for x in range(
+                max(0, diag_value - self.height + 1), min(diag_value + 1, self.width)
+            ):
+                y = diag_value - x
+                if 0 <= y < self.height:
+                    pixels.append((x, y))
+        else:  # x - y equation
+            for x in range(
+                max(0, diag_value), min(self.width, diag_value + self.height)
+            ):
+                y = x - diag_value
+                if 0 <= y < self.height:
+                    pixels.append((x, y))
+        return pixels
+
+    def _get_diagonal_pixel_chains(self, pixels):
+        """Group consecutive pixels on a diagonal into chains with the same pixel value."""
+        if not pixels:
+            return []
+
+        last_pixel = None
+        segments = []
+        current_chain = []
+
+        for x, y in pixels:
+            pixel = self.px(x, y)
+            on = 0 if pixel == self.skip_pixel else pixel
+
+            if on:
+                if on == last_pixel and current_chain:
+                    current_chain.append((x, y))
+                else:
+                    if current_chain:
+                        segments.append(
+                            [current_chain[0], current_chain[-1], last_pixel]
+                        )
+                    current_chain = [(x, y)]
+                last_pixel = on
+            else:
+                if current_chain:
+                    segments.append([current_chain[0], current_chain[-1], last_pixel])
+                    current_chain = []
+                last_pixel = on
+
+        if current_chain:
+            segments.append([current_chain[0], current_chain[-1], last_pixel])
+
+        return segments
+
+    def _sort_diagonal_pixels(self, pixels, start_corner, diagonal_idx):
+        """Sort pixels within a diagonal based on start corner and bidirectional settings."""
+        alternate = self.bidirectional and diagonal_idx % 2 == 1
+
+        # Define sorting keys for each corner
+        def sort_top_left(p):
+            return (-p[0], -p[1]) if alternate else (p[0], p[1])
+
+        def sort_top_right(p):
+            return (p[0], -p[1]) if alternate else (-p[0], p[1])
+
+        def sort_bottom_left(p):
+            return (-p[0], p[1]) if alternate else (p[0], -p[1])
+
+        def sort_bottom_right(p):
+            return (p[0], p[1]) if alternate else (-p[0], -p[1])
+
+        sort_keys = {
+            "top-left": sort_top_left,
+            "top-right": sort_top_right,
+            "bottom-left": sort_bottom_left,
+            "bottom-right": sort_bottom_right,
+        }
+
+        return sorted(pixels, key=sort_keys[start_corner])
+
+    def _process_diagonal_pixels(self, pixels, visited, position):
+        """Process all pixels on a diagonal, yielding coordinates and handling overlaps."""
+        current_x, current_y = position
+
+        # Move to first pixel (travel move)
+        first_x, first_y = pixels[0]
+        if first_x != current_x or first_y != current_y:
+            yield (first_x, first_y, 0)
+            current_x, current_y = first_x, first_y
+
+        # Process each pixel
+        for x, y in pixels:
+            if not visited[x, y]:
+                visited[x, y] = True
+
+                pixel = self.px(x, y)
+                on = 0 if pixel == self.skip_pixel else pixel
+
+                yield (x, y, on)
+                current_x, current_y = x, y
+
+        # Update position for caller
+        position[0], position[1] = current_x, current_y
 
     """
     # Testpattern generation

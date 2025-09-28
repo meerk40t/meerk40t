@@ -268,9 +268,8 @@ class WobbleEffectNode(Node, Suppressable):
                     res.extend(subs)
                 elif e.type.startswith("elem"):
                     # Is this node hidden? If we autohide, then that's still relevant, if not ignore.
-                    if hasattr(e, "hidden") and e.hidden:
-                        if not self.autohide:
-                            continue
+                    if hasattr(e, "hidden") and e.hidden and not self.autohide:
+                        continue
                     res.append(e)
             return res
 

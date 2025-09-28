@@ -363,6 +363,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
         self.Bind(wx.EVT_BUTTON, self.on_button_simulate, self.button_simulate)
+        self.button_simulate.Bind(wx.EVT_RIGHT_DOWN, self.on_button_simulate_right)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_devices, self.combo_devices)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_adjust, self.checkbox_adjust)
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
@@ -744,8 +745,13 @@ class LaserPanel(wx.Panel):
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("element* trace quick\n")
 
-    def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
+    def simulate(self, in_background=False):
+        if in_background:
+            prefix = "threaded "
+        else:
+            prefix = ""
+            self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
+        
         param = "0"
         last_plan = self.context.laserpane_plan or self.context.planner.get_last_plan()
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
@@ -754,13 +760,20 @@ class LaserPanel(wx.Panel):
             plan = self.context.planner.get_free_plan()
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    f"plan{plan} clear copy preprocess validate blob preopt optimize finish\n"
+                    f"{prefix}plan{plan} clear copy preprocess validate blob preopt optimize finish\n"
                 )
                 param = "1"
             else:
-                self.context(f"plan{plan} clear copy preprocess validate blob finish\n")
+                self.context(f"{prefix}plan{plan} clear copy preprocess validate blob finish\n")
         self.context(f"window open Simulation {plan} 0 {param}\n")
-        self.context.kernel.busyinfo.end()
+        if not in_background:
+            self.context.kernel.busyinfo.end()
+        
+    def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.simulate(in_background=False)
+
+    def on_button_simulate_right(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.simulate(in_background=True)
 
     def on_control_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("window open DeviceManager\n")
@@ -895,6 +908,34 @@ class JobPanel(wx.Panel):
             return
         self.context(f"plan{plan_name} spool\n")
 
+    def on_show_details(self, event):     
+        if self.list_plan.GetFirstSelected() == -1:
+            return
+        plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+        msgs = []
+        msgs.append(_("Details of Plan '{plan}':").format(plan=plan_name))
+        with self.context.planner._plan_lock:
+            states = self.context.planner._states.get(plan_name, {})
+        if states:
+            ordered = sorted(states.items(), key=lambda kv: kv[1])
+            start_time = ordered[0][1]
+            previous_time = start_time
+            total_time = ordered[-1][1] - start_time
+            for stage, timestamp in ordered:
+                stagename = self.context.planner.STAGE_DESCRIPTIONS[stage]
+                if total_time > 0:
+                    percent = f" ({100 * (timestamp - previous_time) / total_time:.1f}%)"
+                else:
+                    percent = ""
+                msgs.append(f"Stage '{stagename}': {timestamp - previous_time:.1f}s{percent}")
+                previous_time = timestamp
+            msgs.append(f"Total time: {total_time:.1f}s")
+        else:
+            msgs.append(_("Empty"))
+        # We look at the stages of the given plan.
+        info = "\n".join(msgs)
+        wx.MessageBox(info, _("Plan Details"), wx.OK | wx.ICON_INFORMATION)
+
     def on_clear_plan(self, event):
         if self.list_plan.GetFirstSelected() == -1:
             return
@@ -968,6 +1009,9 @@ class JobPanel(wx.Panel):
         self.Bind(wx.EVT_MENU, self.on_export_plan, item)
         item = menu.Append(wx.ID_ANY, _("Spool"))
         self.Bind(wx.EVT_MENU, self.on_spool_plan, item)
+        menu.AppendSeparator()
+        item = menu.AppendCheckItem(wx.ID_ANY, _("Details"))
+        self.Bind(wx.EVT_MENU, self.on_show_details, item)
         self.PopupMenu(menu)
         menu.Destroy()
 

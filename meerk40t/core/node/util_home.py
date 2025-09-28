@@ -12,8 +12,9 @@ class HomeOperation(Node):
 
     def __init__(self, **kwargs):
         self.output = True
+        self.physical = False
         super().__init__(type="util home", **kwargs)
-        self._formatter = "{enabled}{element_type}"
+        self._formatter = "{enabled}{element_type}{physical}"
 
     def __repr__(self):
         return "HomeOperation()"
@@ -29,6 +30,7 @@ class HomeOperation(Node):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Home"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["physical"] = " (Physical)" if self.physical else ""
         default_map.update(self.__dict__)
         return default_map
 
@@ -58,4 +60,4 @@ class HomeOperation(Node):
         yield cut
 
     def generate(self):
-        yield "home"
+        yield "physical_home" if self.physical else "home"

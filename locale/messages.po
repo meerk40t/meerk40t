@@ -14,6 +14,26 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr ""
+
+#: translate_check.py:28
+msgid "Another test string with a newline.\nSee?"
+msgstr ""
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr ""
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr ""
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr ""
+
 #: meerk40t/balormk/device.py:91 meerk40t/grbl/device.py:54 meerk40t/gui/materialmanager.py:387 meerk40t/gui/wxmribbon.py:1476 meerk40t/gui/propertypanels/attributes.py:271 meerk40t/moshi/device.py:70 meerk40t/newly/device.py:131 meerk40t/ruida/device.py:58
 msgid "Label"
 msgstr ""
@@ -22,7 +42,7 @@ msgstr ""
 msgid "What is this device called."
 msgstr ""
 
-#: meerk40t/balormk/device.py:93 meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95 meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97 meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:99 meerk40t/balormk/device.py:121 meerk40t/balormk/device.py:137 meerk40t/balormk/device.py:149 meerk40t/balormk/device.py:163 meerk40t/balormk/device.py:275 meerk40t/balormk/device.py:288 meerk40t/balormk/device.py:300 meerk40t/balormk/device.py:312 meerk40t/balormk/device.py:589 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:621 meerk40t/balormk/device.py:635 meerk40t/balormk/device.py:649 meerk40t/balormk/device.py:662 meerk40t/balormk/device.py:674 meerk40t/core/elements/elements.py:440 meerk40t/core/elements/trace.py:427 meerk40t/device/gui/formatterpanel.py:103 meerk40t/device/gui/formatterpanel.py:118 meerk40t/gui/laserpanel.py:121 meerk40t/gui/plugin.py:117 meerk40t/gui/plugin.py:130 meerk40t/gui/plugin.py:141 meerk40t/gui/plugin.py:152 meerk40t/gui/plugin.py:165 meerk40t/gui/plugin.py:183 meerk40t/gui/plugin.py:196 meerk40t/gui/plugin.py:207 meerk40t/gui/preferences.py:750 meerk40t/gui/wxmmain.py:1381 meerk40t/gui/wxmmain.py:1394 meerk40t/gui/wxmmain.py:1409 meerk40t/gui/wxmmain.py:1426 meerk40t/gui/wxmmain.py:1443 meerk40t/gui/wxmmain.py:1456 meerk40t/lihuiyu/device.py:167 meerk40t/moshi/device.py:72 meerk40t/moshi/device.py:83 meerk40t/moshi/device.py:96 meerk40t/moshi/device.py:109 meerk40t/newly/device.py:133 meerk40t/newly/device.py:144 meerk40t/newly/device.py:158 meerk40t/newly/device.py:172 meerk40t/newly/device.py:281 meerk40t/newly/device.py:294 meerk40t/ruida/device.py:60
+#: meerk40t/balormk/device.py:93 meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95 meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97 meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:99 meerk40t/balormk/device.py:121 meerk40t/balormk/device.py:137 meerk40t/balormk/device.py:149 meerk40t/balormk/device.py:163 meerk40t/balormk/device.py:275 meerk40t/balormk/device.py:288 meerk40t/balormk/device.py:300 meerk40t/balormk/device.py:312 meerk40t/balormk/device.py:589 meerk40t/balormk/device.py:605 meerk40t/balormk/device.py:621 meerk40t/balormk/device.py:635 meerk40t/balormk/device.py:649 meerk40t/balormk/device.py:662 meerk40t/balormk/device.py:674 meerk40t/core/elements/elements.py:444 meerk40t/core/elements/trace.py:427 meerk40t/device/gui/formatterpanel.py:109 meerk40t/device/gui/formatterpanel.py:124 meerk40t/gui/laserpanel.py:121 meerk40t/gui/plugin.py:117 meerk40t/gui/plugin.py:130 meerk40t/gui/plugin.py:141 meerk40t/gui/plugin.py:152 meerk40t/gui/plugin.py:165 meerk40t/gui/plugin.py:183 meerk40t/gui/plugin.py:196 meerk40t/gui/plugin.py:207 meerk40t/gui/preferences.py:750 meerk40t/gui/wxmmain.py:1381 meerk40t/gui/wxmmain.py:1394 meerk40t/gui/wxmmain.py:1409 meerk40t/gui/wxmmain.py:1426 meerk40t/gui/wxmmain.py:1443 meerk40t/gui/wxmmain.py:1456 meerk40t/lihuiyu/device.py:167 meerk40t/moshi/device.py:72 meerk40t/moshi/device.py:83 meerk40t/moshi/device.py:96 meerk40t/moshi/device.py:109 meerk40t/newly/device.py:133 meerk40t/newly/device.py:144 meerk40t/newly/device.py:158 meerk40t/newly/device.py:172 meerk40t/newly/device.py:281 meerk40t/newly/device.py:294 meerk40t/ruida/device.py:60
 msgid "General"
 msgstr ""
 
@@ -46,7 +66,7 @@ msgstr ""
 msgid "Correction File"
 msgstr ""
 
-#: meerk40t/balormk/device.py:134 meerk40t/gui/wxmmain.py:4174
+#: meerk40t/balormk/device.py:134 meerk40t/gui/wxmmain.py:4111
 msgid "File"
 msgstr ""
 
@@ -274,7 +294,7 @@ msgstr ""
 msgid "Redlight preference will turn toggleable redlights on after a job completes."
 msgstr ""
 
-#: meerk40t/balormk/device.py:475 meerk40t/core/elements/element_treeops.py:1088 meerk40t/device/devicechoices.py:113 meerk40t/gui/laserpanel.py:319 meerk40t/gui/materialmanager.py:390 meerk40t/gui/materialmanager.py:503 meerk40t/gui/materialtest.py:806 meerk40t/gui/materialtest.py:815 meerk40t/gui/materialtest.py:822 meerk40t/gui/materialtest.py:829 meerk40t/gui/materialtest.py:838 meerk40t/gui/materialtest.py:847 meerk40t/gui/materialtest.py:867 meerk40t/gui/propertypanels/operationpropertymain.py:564 meerk40t/newly/device.py:403 meerk40t/newly/device.py:428 meerk40t/newly/device.py:446 meerk40t/tools/driver_to_path.py:429 meerk40t/tools/driver_to_path.py:443 meerk40t/tools/driver_to_path.py:457 meerk40t/tools/kerftest.py:117
+#: meerk40t/balormk/device.py:475 meerk40t/core/elements/element_treeops.py:1000 meerk40t/device/devicechoices.py:114 meerk40t/gui/laserpanel.py:319 meerk40t/gui/materialmanager.py:390 meerk40t/gui/materialmanager.py:503 meerk40t/gui/materialtest.py:806 meerk40t/gui/materialtest.py:815 meerk40t/gui/materialtest.py:822 meerk40t/gui/materialtest.py:829 meerk40t/gui/materialtest.py:838 meerk40t/gui/materialtest.py:847 meerk40t/gui/materialtest.py:867 meerk40t/gui/propertypanels/operationpropertymain.py:564 meerk40t/newly/device.py:403 meerk40t/newly/device.py:428 meerk40t/newly/device.py:446 meerk40t/tools/driver_to_path.py:429 meerk40t/tools/driver_to_path.py:443 meerk40t/tools/driver_to_path.py:457 meerk40t/tools/kerftest.py:117
 msgid "Power"
 msgstr ""
 
@@ -290,7 +310,7 @@ msgstr ""
 msgid "This is global setting that will be overruled by operation settings."
 msgstr ""
 
-#: meerk40t/balormk/device.py:491 meerk40t/balormk/device.py:526 meerk40t/device/devicechoices.py:125 meerk40t/gui/basicops.py:488 meerk40t/gui/laserpanel.py:335 meerk40t/gui/materialmanager.py:393 meerk40t/gui/materialtest.py:805 meerk40t/gui/materialtest.py:814 meerk40t/gui/materialtest.py:821 meerk40t/gui/materialtest.py:828 meerk40t/gui/materialtest.py:837 meerk40t/gui/materialtest.py:846 meerk40t/gui/materialtest.py:866 meerk40t/gui/propertypanels/operationpropertymain.py:413 meerk40t/lihuiyu/device.py:563 meerk40t/tools/driver_to_path.py:387 meerk40t/tools/driver_to_path.py:401 meerk40t/tools/driver_to_path.py:415 meerk40t/tools/kerftest.py:116
+#: meerk40t/balormk/device.py:491 meerk40t/balormk/device.py:526 meerk40t/device/devicechoices.py:126 meerk40t/gui/basicops.py:488 meerk40t/gui/laserpanel.py:335 meerk40t/gui/materialmanager.py:393 meerk40t/gui/materialtest.py:805 meerk40t/gui/materialtest.py:814 meerk40t/gui/materialtest.py:821 meerk40t/gui/materialtest.py:828 meerk40t/gui/materialtest.py:837 meerk40t/gui/materialtest.py:846 meerk40t/gui/materialtest.py:866 meerk40t/gui/propertypanels/operationpropertymain.py:413 meerk40t/lihuiyu/device.py:563 meerk40t/tools/driver_to_path.py:387 meerk40t/tools/driver_to_path.py:401 meerk40t/tools/driver_to_path.py:415 meerk40t/tools/kerftest.py:116
 msgid "Speed"
 msgstr ""
 
@@ -854,15 +874,15 @@ msgstr ""
 msgid "Generic UV-Laser"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:36 meerk40t/ch341/libusb.py:501 meerk40t/newly/usb_connection.py:33
+#: meerk40t/balormk/usb_connection.py:36 meerk40t/ch341/libusb.py:502 meerk40t/newly/usb_connection.py:33
 msgid "Using LibUSB to connect."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:37 meerk40t/ch341/libusb.py:62 meerk40t/newly/usb_connection.py:34
+#: meerk40t/balormk/usb_connection.py:37 meerk40t/ch341/libusb.py:63 meerk40t/newly/usb_connection.py:34
 msgid "Finding devices."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:50 meerk40t/ch341/libusb.py:83 meerk40t/newly/usb_connection.py:47
+#: meerk40t/balormk/usb_connection.py:50 meerk40t/ch341/libusb.py:84 meerk40t/newly/usb_connection.py:47
 msgid "Devices Not Found."
 msgstr ""
 
@@ -870,7 +890,7 @@ msgstr ""
 msgid "Galvo device detected:"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:61 meerk40t/ch341/libusb.py:73 meerk40t/newly/usb_connection.py:58
+#: meerk40t/balormk/usb_connection.py:61 meerk40t/ch341/libusb.py:74 meerk40t/newly/usb_connection.py:58
 msgid "Your OS does not give you permissions to access USB."
 msgstr ""
 
@@ -882,107 +902,107 @@ msgstr ""
 msgid "Galvo devices were found but they were rejected by device criteria in Controller."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:84 meerk40t/ch341/libusb.py:104 meerk40t/newly/usb_connection.py:74
+#: meerk40t/balormk/usb_connection.py:84 meerk40t/ch341/libusb.py:105 meerk40t/newly/usb_connection.py:74
 msgid "Attempting to detach kernel."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:86 meerk40t/ch341/libusb.py:106 meerk40t/newly/usb_connection.py:76
+#: meerk40t/balormk/usb_connection.py:86 meerk40t/ch341/libusb.py:107 meerk40t/newly/usb_connection.py:76
 msgid "Kernel detach: Success."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:91 meerk40t/ch341/libusb.py:111 meerk40t/newly/usb_connection.py:81
+#: meerk40t/balormk/usb_connection.py:91 meerk40t/ch341/libusb.py:112 meerk40t/newly/usb_connection.py:81
 msgid "Kernel detach: Failed."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:95 meerk40t/ch341/libusb.py:115 meerk40t/newly/usb_connection.py:85
+#: meerk40t/balormk/usb_connection.py:95 meerk40t/ch341/libusb.py:116 meerk40t/newly/usb_connection.py:85
 msgid "Kernel detach: Not Implemented."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:101 meerk40t/ch341/libusb.py:121 meerk40t/newly/usb_connection.py:91
+#: meerk40t/balormk/usb_connection.py:101 meerk40t/ch341/libusb.py:122 meerk40t/newly/usb_connection.py:91
 msgid "Getting Active Config"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:104 meerk40t/ch341/libusb.py:124 meerk40t/newly/usb_connection.py:94
+#: meerk40t/balormk/usb_connection.py:104 meerk40t/ch341/libusb.py:125 meerk40t/newly/usb_connection.py:94
 msgid "Active Config: Success."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:110 meerk40t/ch341/libusb.py:130 meerk40t/newly/usb_connection.py:100
+#: meerk40t/balormk/usb_connection.py:110 meerk40t/ch341/libusb.py:131 meerk40t/newly/usb_connection.py:100
 msgid "Active Config: Failed."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:115 meerk40t/ch341/libusb.py:135 meerk40t/newly/usb_connection.py:105
+#: meerk40t/balormk/usb_connection.py:115 meerk40t/ch341/libusb.py:136 meerk40t/newly/usb_connection.py:105
 msgid "Config Set"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:118 meerk40t/ch341/libusb.py:138 meerk40t/newly/usb_connection.py:108
+#: meerk40t/balormk/usb_connection.py:118 meerk40t/ch341/libusb.py:139 meerk40t/newly/usb_connection.py:108
 msgid "Config Set: Success"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:126 meerk40t/ch341/libusb.py:146 meerk40t/newly/usb_connection.py:116
+#: meerk40t/balormk/usb_connection.py:126 meerk40t/ch341/libusb.py:147 meerk40t/newly/usb_connection.py:116
 msgid "Config Set: Fail\n(Hint: may recover if you change where the USB is plugged in.)"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:133 meerk40t/ch341/libusb.py:159 meerk40t/newly/usb_connection.py:123
+#: meerk40t/balormk/usb_connection.py:133 meerk40t/ch341/libusb.py:160 meerk40t/newly/usb_connection.py:123
 msgid "Attempting to claim interface."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:135 meerk40t/ch341/libusb.py:161 meerk40t/newly/usb_connection.py:125
+#: meerk40t/balormk/usb_connection.py:135 meerk40t/ch341/libusb.py:162 meerk40t/newly/usb_connection.py:125
 msgid "Interface claim: Success"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:140 meerk40t/ch341/libusb.py:166 meerk40t/newly/usb_connection.py:130
+#: meerk40t/balormk/usb_connection.py:140 meerk40t/ch341/libusb.py:167 meerk40t/newly/usb_connection.py:130
 msgid "Interface claim: Failed. (Interface is in use.)"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:147 meerk40t/ch341/libusb.py:173 meerk40t/newly/usb_connection.py:137
+#: meerk40t/balormk/usb_connection.py:147 meerk40t/ch341/libusb.py:174 meerk40t/newly/usb_connection.py:137
 msgid "Attempting kernel attach"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:149 meerk40t/ch341/libusb.py:175 meerk40t/newly/usb_connection.py:139
+#: meerk40t/balormk/usb_connection.py:149 meerk40t/ch341/libusb.py:176 meerk40t/newly/usb_connection.py:139
 msgid "Kernel attach: Success."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:154 meerk40t/balormk/usb_connection.py:157 meerk40t/ch341/libusb.py:180 meerk40t/ch341/libusb.py:183 meerk40t/newly/usb_connection.py:144 meerk40t/newly/usb_connection.py:147
+#: meerk40t/balormk/usb_connection.py:154 meerk40t/balormk/usb_connection.py:157 meerk40t/ch341/libusb.py:181 meerk40t/ch341/libusb.py:184 meerk40t/newly/usb_connection.py:144 meerk40t/newly/usb_connection.py:147
 msgid "Kernel attach: Fail."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:162 meerk40t/ch341/libusb.py:188 meerk40t/newly/usb_connection.py:152
+#: meerk40t/balormk/usb_connection.py:162 meerk40t/ch341/libusb.py:189 meerk40t/newly/usb_connection.py:152
 msgid "Attempting to release interface."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:164 meerk40t/ch341/libusb.py:190 meerk40t/newly/usb_connection.py:154
+#: meerk40t/balormk/usb_connection.py:164 meerk40t/ch341/libusb.py:191 meerk40t/newly/usb_connection.py:154
 msgid "Interface released."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:169 meerk40t/ch341/libusb.py:195 meerk40t/newly/usb_connection.py:159
+#: meerk40t/balormk/usb_connection.py:169 meerk40t/ch341/libusb.py:196 meerk40t/newly/usb_connection.py:159
 msgid "Interface did not exist."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:174 meerk40t/ch341/libusb.py:200 meerk40t/newly/usb_connection.py:164
+#: meerk40t/balormk/usb_connection.py:174 meerk40t/ch341/libusb.py:201 meerk40t/newly/usb_connection.py:164
 msgid "Attempting to dispose resources."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:176 meerk40t/ch341/libusb.py:202 meerk40t/newly/usb_connection.py:166
+#: meerk40t/balormk/usb_connection.py:176 meerk40t/ch341/libusb.py:203 meerk40t/newly/usb_connection.py:166
 msgid "Dispose Resources: Success"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:181 meerk40t/ch341/libusb.py:207 meerk40t/newly/usb_connection.py:171
+#: meerk40t/balormk/usb_connection.py:181 meerk40t/ch341/libusb.py:208 meerk40t/newly/usb_connection.py:171
 msgid "Dispose Resources: Fail"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:186 meerk40t/ch341/libusb.py:212 meerk40t/newly/usb_connection.py:176
+#: meerk40t/balormk/usb_connection.py:186 meerk40t/ch341/libusb.py:213 meerk40t/newly/usb_connection.py:176
 msgid "Attempting USB reset."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:188 meerk40t/ch341/libusb.py:214 meerk40t/ch341/windriver.py:85 meerk40t/newly/usb_connection.py:178
+#: meerk40t/balormk/usb_connection.py:188 meerk40t/ch341/libusb.py:215 meerk40t/ch341/windriver.py:85 meerk40t/newly/usb_connection.py:178
 msgid "USB connection reset."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:193 meerk40t/ch341/libusb.py:219 meerk40t/ch341/libusb.py:550 meerk40t/ch341/libusb.py:556 meerk40t/ch341/mock.py:77 meerk40t/ch341/windriver.py:74 meerk40t/newly/usb_connection.py:183
+#: meerk40t/balormk/usb_connection.py:193 meerk40t/ch341/libusb.py:220 meerk40t/ch341/libusb.py:551 meerk40t/ch341/libusb.py:557 meerk40t/ch341/mock.py:77 meerk40t/ch341/windriver.py:74 meerk40t/newly/usb_connection.py:183
 msgid "USB connection did not exist."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:213 meerk40t/ch341/libusb.py:502 meerk40t/ch341/mock.py:50 meerk40t/ch341/windriver.py:42 meerk40t/newly/usb_connection.py:203
+#: meerk40t/balormk/usb_connection.py:213 meerk40t/ch341/libusb.py:503 meerk40t/ch341/mock.py:50 meerk40t/ch341/windriver.py:42 meerk40t/newly/usb_connection.py:203
 msgid "Attempting connection to USB."
 msgstr ""
 
@@ -990,7 +1010,7 @@ msgstr ""
 msgid "Device failed during detach and claim"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:230 meerk40t/ch341/libusb.py:524 meerk40t/ch341/mock.py:55 meerk40t/ch341/windriver.py:57 meerk40t/newly/usb_connection.py:220
+#: meerk40t/balormk/usb_connection.py:230 meerk40t/ch341/libusb.py:525 meerk40t/ch341/mock.py:55 meerk40t/ch341/windriver.py:57 meerk40t/newly/usb_connection.py:220
 msgid "USB Connected."
 msgstr ""
 
@@ -1002,19 +1022,19 @@ msgstr ""
 msgid "Consult the wiki: https://github.com/meerk40t/meerk40t/wiki/Install%3A-Windows"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:248 meerk40t/ch341/libusb.py:508 meerk40t/newly/usb_connection.py:224
+#: meerk40t/balormk/usb_connection.py:248 meerk40t/ch341/libusb.py:509 meerk40t/newly/usb_connection.py:224
 msgid "PyUsb detected no backend LibUSB driver."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:251 meerk40t/ch341/libusb.py:513 meerk40t/ch341/windriver.py:50 meerk40t/newly/usb_connection.py:227
+#: meerk40t/balormk/usb_connection.py:251 meerk40t/ch341/libusb.py:514 meerk40t/ch341/windriver.py:50 meerk40t/newly/usb_connection.py:227
 msgid "Connection to USB failed.\n"
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:258 meerk40t/ch341/libusb.py:554 meerk40t/ch341/mock.py:75 meerk40t/ch341/windriver.py:77 meerk40t/newly/usb_connection.py:234
+#: meerk40t/balormk/usb_connection.py:258 meerk40t/ch341/libusb.py:555 meerk40t/ch341/mock.py:75 meerk40t/ch341/windriver.py:77 meerk40t/newly/usb_connection.py:234
 msgid "Attempting disconnection from USB."
 msgstr ""
 
-#: meerk40t/balormk/usb_connection.py:267 meerk40t/ch341/libusb.py:560 meerk40t/ch341/mock.py:81 meerk40t/ch341/windriver.py:80 meerk40t/newly/usb_connection.py:243
+#: meerk40t/balormk/usb_connection.py:267 meerk40t/ch341/libusb.py:561 meerk40t/ch341/mock.py:81 meerk40t/ch341/windriver.py:80 meerk40t/newly/usb_connection.py:243
 msgid "USB Disconnection Successful.\n"
 msgstr ""
 
@@ -1250,7 +1270,7 @@ msgstr ""
 msgid "Live Full"
 msgstr ""
 
-#: meerk40t/balormk/gui/gui.py:86 meerk40t/core/elements/element_treeops.py:1622 meerk40t/core/node/rootnode.py:19
+#: meerk40t/balormk/gui/gui.py:86 meerk40t/core/elements/element_treeops.py:1534 meerk40t/core/node/rootnode.py:19
 msgid "Regmarks"
 msgstr ""
 
@@ -1298,7 +1318,7 @@ msgstr ""
 msgid "Red Dot Off"
 msgstr ""
 
-#: meerk40t/balormk/gui/gui.py:166 meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1138 meerk40t/gui/alignment.py:1139 meerk40t/gui/hersheymanager.py:392 meerk40t/gui/magnetoptions.py:63 meerk40t/gui/magnetoptions.py:264 meerk40t/gui/magnetoptions.py:304 meerk40t/gui/wxmmain.py:5505 meerk40t/gui/wxmmain.py:5506 meerk40t/gui/propertypanels/placementproperty.py:293 meerk40t/gui/propertypanels/textproperty.py:397 meerk40t/gui/scenewidgets/guidewidget.py:455
+#: meerk40t/balormk/gui/gui.py:166 meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1138 meerk40t/gui/alignment.py:1139 meerk40t/gui/hersheymanager.py:392 meerk40t/gui/magnetoptions.py:63 meerk40t/gui/magnetoptions.py:264 meerk40t/gui/magnetoptions.py:304 meerk40t/gui/wxmmain.py:5442 meerk40t/gui/wxmmain.py:5443 meerk40t/gui/propertypanels/placementproperty.py:293 meerk40t/gui/propertypanels/textproperty.py:397 meerk40t/gui/scenewidgets/guidewidget.py:455
 msgid "Center"
 msgstr ""
 
@@ -1586,7 +1606,7 @@ msgstr ""
 msgid "Duplicate"
 msgstr ""
 
-#: meerk40t/camera/gui/camerapanel.py:1251 meerk40t/camera/gui/camerapanel.py:1281 meerk40t/core/elements/element_treeops.py:184 meerk40t/gui/wordlisteditor.py:64 meerk40t/gui/wxmmain.py:4318
+#: meerk40t/camera/gui/camerapanel.py:1251 meerk40t/camera/gui/camerapanel.py:1281 meerk40t/core/elements/element_treeops.py:184 meerk40t/gui/wordlisteditor.py:64 meerk40t/gui/wxmmain.py:4255
 msgid "Edit"
 msgstr ""
 
@@ -1598,7 +1618,7 @@ msgstr ""
 msgid "Camera URI"
 msgstr ""
 
-#: meerk40t/camera/gui/camerapanel.py:1299 meerk40t/core/elements/element_treeops.py:1440 meerk40t/core/elements/element_treeops.py:1603 meerk40t/core/elements/element_treeops.py:1622 meerk40t/gui/spoolerpanel.py:616
+#: meerk40t/camera/gui/camerapanel.py:1299 meerk40t/core/elements/element_treeops.py:1352 meerk40t/core/elements/element_treeops.py:1515 meerk40t/core/elements/element_treeops.py:1534 meerk40t/gui/spoolerpanel.py:616
 msgid "Do you really want to delete all entries?"
 msgstr ""
 
@@ -1618,51 +1638,51 @@ msgstr ""
 msgid "Camera window not registered, cannot move window."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:79
+#: meerk40t/ch341/libusb.py:80
 msgid "K40 devices were found. But something else was connected to them."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:86
+#: meerk40t/ch341/libusb.py:87
 msgid "{count} device(s) were found."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:89
+#: meerk40t/ch341/libusb.py:90
 msgid "Device index {index} exceeds devices found."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:94
+#: meerk40t/ch341/libusb.py:95
 msgid "K40 device detected:"
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:153
+#: meerk40t/ch341/libusb.py:154
 msgid "Config Set: Fail\nSet Configuration is not implemented on this platform. Pass."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:518
+#: meerk40t/ch341/libusb.py:519
 msgid "Connection to USB failed: {e}.\n"
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:526 meerk40t/ch341/mock.py:56 meerk40t/ch341/windriver.py:58
+#: meerk40t/ch341/libusb.py:527 meerk40t/ch341/mock.py:56 meerk40t/ch341/windriver.py:58
 msgid "Sending CH341 mode change to EPP1.9."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:531 meerk40t/ch341/mock.py:59 meerk40t/ch341/windriver.py:61
+#: meerk40t/ch341/libusb.py:532 meerk40t/ch341/mock.py:59 meerk40t/ch341/windriver.py:61
 msgid "CH341 mode change to EPP1.9: Success."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:533 meerk40t/ch341/mock.py:62 meerk40t/ch341/windriver.py:63
+#: meerk40t/ch341/libusb.py:534 meerk40t/ch341/mock.py:62 meerk40t/ch341/windriver.py:63
 msgid "CH341 mode change to EPP1.9: Fail."
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:536 meerk40t/ch341/libusb.py:545 meerk40t/ch341/mock.py:66 meerk40t/ch341/windriver.py:66
+#: meerk40t/ch341/libusb.py:537 meerk40t/ch341/libusb.py:546 meerk40t/ch341/mock.py:66 meerk40t/ch341/windriver.py:66
 msgid "Device Connected.\n"
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:539
+#: meerk40t/ch341/libusb.py:540
 msgid "CH341 Chip Version: {chip_version}"
 msgstr ""
 
-#: meerk40t/ch341/libusb.py:543
+#: meerk40t/ch341/libusb.py:544
 msgid "Driver Detected: LibUsb"
 msgstr ""
 
@@ -1750,27 +1770,31 @@ msgstr ""
 msgid "This is not an alias."
 msgstr ""
 
-#: meerk40t/core/cutplan.py:728 meerk40t/core/cutplan.py:764
+#: meerk40t/core/cutplan.py:143
+msgid "Spooling data {count}"
+msgstr ""
+
+#: meerk40t/core/cutplan.py:742 meerk40t/core/cutplan.py:778
 msgid "Combine effect primitives"
 msgstr ""
 
-#: meerk40t/core/cutplan.py:797
+#: meerk40t/core/cutplan.py:811
 msgid "Optimize inner travel"
 msgstr ""
 
-#: meerk40t/core/cutplan.py:815 meerk40t/core/cutplan.py:838
+#: meerk40t/core/cutplan.py:829 meerk40t/core/cutplan.py:852
 msgid "Optimize cuts"
 msgstr ""
 
-#: meerk40t/core/cutplan.py:865 meerk40t/core/cutplan.py:892 meerk40t/core/elements/element_treeops.py:1028 meerk40t/core/elements/element_treeops.py:3250
+#: meerk40t/core/cutplan.py:879 meerk40t/core/cutplan.py:906 meerk40t/core/elements/element_treeops.py:940 meerk40t/core/elements/element_treeops.py:3162
 msgid "Optimize travel"
 msgstr ""
 
-#: meerk40t/core/cutplan.py:925
+#: meerk40t/core/cutplan.py:939
 msgid "Merging cutcode"
 msgstr ""
 
-#: meerk40t/core/cutplan.py:1503 meerk40t/core/cutplan.py:1603 meerk40t/core/cutplan.py:1809
+#: meerk40t/core/cutplan.py:1596 meerk40t/core/cutplan.py:1696 meerk40t/core/cutplan.py:1902
 msgid "Pass {cpass}/{tpass}"
 msgstr ""
 
@@ -2038,95 +2062,103 @@ msgstr ""
 msgid "Copy data"
 msgstr ""
 
-#: meerk40t/core/planner.py:752
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr ""
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr ""
+
+#: meerk40t/core/planner.py:765
 msgid "Copied Operations."
 msgstr ""
 
-#: meerk40t/core/planner.py:757
+#: meerk40t/core/planner.py:770
 msgid "index of location to insert command"
 msgstr ""
 
-#: meerk40t/core/planner.py:759
+#: meerk40t/core/planner.py:772
 msgid "console command to append"
 msgstr ""
 
-#: meerk40t/core/planner.py:762
+#: meerk40t/core/planner.py:775
 msgid "plan<?> command"
 msgstr ""
 
-#: meerk40t/core/planner.py:781
+#: meerk40t/core/planner.py:794
 msgid "plan console... requires a console command to inject into the current plan"
 msgstr ""
 
-#: meerk40t/core/planner.py:791
+#: meerk40t/core/planner.py:804
 msgid "Invalid index for command insert."
 msgstr ""
 
-#: meerk40t/core/planner.py:797
+#: meerk40t/core/planner.py:810
 msgid "plan<?> preprocess"
 msgstr ""
 
-#: meerk40t/core/planner.py:805
+#: meerk40t/core/planner.py:818
 msgid "Preprocessing"
 msgstr ""
 
-#: meerk40t/core/planner.py:814
+#: meerk40t/core/planner.py:827
 msgid "plan<?> validate"
 msgstr ""
 
-#: meerk40t/core/planner.py:822
+#: meerk40t/core/planner.py:835
 msgid "Validating"
 msgstr ""
 
-#: meerk40t/core/planner.py:836
+#: meerk40t/core/planner.py:849
 msgid "plan<?> geometry"
 msgstr ""
 
-#: meerk40t/core/planner.py:844 meerk40t/core/planner.py:861
+#: meerk40t/core/planner.py:857 meerk40t/core/planner.py:874
 msgid "Converting data"
 msgstr ""
 
-#: meerk40t/core/planner.py:853
+#: meerk40t/core/planner.py:866
 msgid "plan<?> blob"
 msgstr ""
 
-#: meerk40t/core/planner.py:870
+#: meerk40t/core/planner.py:883
 msgid "plan<?> preopt"
 msgstr ""
 
-#: meerk40t/core/planner.py:878
+#: meerk40t/core/planner.py:891
 msgid "Preparing optimisation"
 msgstr ""
 
-#: meerk40t/core/planner.py:887
+#: meerk40t/core/planner.py:900
 msgid "plan<?> optimize"
 msgstr ""
 
-#: meerk40t/core/planner.py:895
+#: meerk40t/core/planner.py:908
 msgid "Optimising"
 msgstr ""
 
-#: meerk40t/core/planner.py:904
+#: meerk40t/core/planner.py:917
 msgid "plan<?> clear"
 msgstr ""
 
-#: meerk40t/core/planner.py:912
+#: meerk40t/core/planner.py:925
 msgid "Clearing data"
 msgstr ""
 
-#: meerk40t/core/planner.py:921
+#: meerk40t/core/planner.py:934
 msgid "plan<?> finish"
 msgstr ""
 
-#: meerk40t/core/planner.py:932
+#: meerk40t/core/planner.py:945
 msgid "plan<?> return"
 msgstr ""
 
-#: meerk40t/core/planner.py:955
+#: meerk40t/core/planner.py:968
 msgid "Returned Operations."
 msgstr ""
 
-#: meerk40t/core/planner.py:967
+#: meerk40t/core/planner.py:980
 msgid "plan<?> sublist"
 msgstr ""
 
@@ -2342,123 +2374,123 @@ msgstr ""
 msgid "Webhelp not found."
 msgstr ""
 
-#: meerk40t/core/elements/align.py:180
+#: meerk40t/core/elements/align.py:226
 msgid "You need to provide parameters for both x and y"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:186
+#: meerk40t/core/elements/align.py:232
 msgid "Invalid alignment parameter for x"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:189
+#: meerk40t/core/elements/align.py:235
 msgid "Invalid alignment parameter for y"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:195 meerk40t/core/elements/align.py:201 meerk40t/core/elements/align.py:214
+#: meerk40t/core/elements/align.py:241 meerk40t/core/elements/align.py:247 meerk40t/core/elements/align.py:260
 msgid "No sense in aligning an element to itself"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:239 meerk40t/core/elements/align.py:253
+#: meerk40t/core/elements/align.py:285 meerk40t/core/elements/align.py:299
 msgid "pushes the current align mode to the stack"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:271 meerk40t/core/elements/align.py:317 meerk40t/core/elements/align.py:338 meerk40t/core/elements/align.py:359 meerk40t/core/elements/align.py:382 meerk40t/core/elements/align.py:413
+#: meerk40t/core/elements/align.py:317 meerk40t/core/elements/align.py:363 meerk40t/core/elements/align.py:384 meerk40t/core/elements/align.py:405 meerk40t/core/elements/align.py:428 meerk40t/core/elements/align.py:459
 msgid "New alignmode = {mode}"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:274 meerk40t/core/elements/align.py:320 meerk40t/core/elements/align.py:341 meerk40t/core/elements/align.py:362 meerk40t/core/elements/align.py:385 meerk40t/core/elements/align.py:416
+#: meerk40t/core/elements/align.py:320 meerk40t/core/elements/align.py:366 meerk40t/core/elements/align.py:387 meerk40t/core/elements/align.py:408 meerk40t/core/elements/align.py:431 meerk40t/core/elements/align.py:462
 msgid "Align boundaries = {bound}"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:282
+#: meerk40t/core/elements/align.py:328
 msgid "Set the requested alignment to treat selection as group"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:293
+#: meerk40t/core/elements/align.py:339
 msgid "Set the requested alignment to treat selection as individuals"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:304
+#: meerk40t/core/elements/align.py:350
 msgid "align within selection - all equal"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:328
+#: meerk40t/core/elements/align.py:374
 msgid "Set the requested alignment to first element selected"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:349
+#: meerk40t/core/elements/align.py:395
 msgid "Set the requested alignment to last element selected"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:370
+#: meerk40t/core/elements/align.py:416
 msgid "Set the requested alignment to within the bed"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:396
+#: meerk40t/core/elements/align.py:442
 msgid "Set the requested alignment to the reference object"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:404
+#: meerk40t/core/elements/align.py:450
 msgid "You need to provide the boundaries for align-mode {mode}"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:424
+#: meerk40t/core/elements/align.py:470
 msgid "align selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:450 meerk40t/core/elements/align.py:453
+#: meerk40t/core/elements/align.py:496 meerk40t/core/elements/align.py:499
 msgid "One of 'min', 'center', 'max', 'none'"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:457
+#: meerk40t/core/elements/align.py:503
 msgid "align elements in x and y"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:476
+#: meerk40t/core/elements/align.py:522
 msgid "align elements at top"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:487
+#: meerk40t/core/elements/align.py:533
 msgid "align elements at bottom"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:498
+#: meerk40t/core/elements/align.py:544
 msgid "align elements at left"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:509
+#: meerk40t/core/elements/align.py:555
 msgid "align elements at right"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:520
+#: meerk40t/core/elements/align.py:566
 msgid "align elements at center"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:531
+#: meerk40t/core/elements/align.py:577
 msgid "align elements at center horizontally"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:542
+#: meerk40t/core/elements/align.py:588
 msgid "align elements at center vertically"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:580 meerk40t/gui/alignment.py:1586
+#: meerk40t/core/elements/align.py:626 meerk40t/gui/alignment.py:1586
 msgid "Distribute"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:601 meerk40t/core/elements/align.py:622
+#: meerk40t/core/elements/align.py:647 meerk40t/core/elements/align.py:668
 msgid "distribute elements across horizontal space"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:613 meerk40t/core/elements/align.py:634 meerk40t/core/elements/align.py:655 meerk40t/core/elements/align.py:676 meerk40t/core/elements/align.py:741
+#: meerk40t/core/elements/align.py:659 meerk40t/core/elements/align.py:680 meerk40t/core/elements/align.py:701 meerk40t/core/elements/align.py:722 meerk40t/core/elements/align.py:787
 msgid "Your selection contains a locked element, that cannot be moved"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:643 meerk40t/core/elements/align.py:664
+#: meerk40t/core/elements/align.py:689 meerk40t/core/elements/align.py:710
 msgid "distribute elements across vertical space"
 msgstr ""
 
-#: meerk40t/core/elements/align.py:691
+#: meerk40t/core/elements/align.py:737
 msgid "align elements within viewbox"
 msgstr ""
 
@@ -2646,11 +2678,11 @@ msgstr ""
 msgid "<outputop, inputop> - Create new utility operation"
 msgstr ""
 
-#: meerk40t/core/elements/branches.py:840 meerk40t/core/elements/element_treeops.py:2580 meerk40t/gui/propertypanels/gotoproperty.py:26
+#: meerk40t/core/elements/branches.py:840 meerk40t/core/elements/element_treeops.py:2492 meerk40t/gui/propertypanels/gotoproperty.py:26
 msgid "X-Coordinate of Goto?"
 msgstr ""
 
-#: meerk40t/core/elements/branches.py:846 meerk40t/core/elements/element_treeops.py:2579 meerk40t/gui/propertypanels/gotoproperty.py:34
+#: meerk40t/core/elements/branches.py:846 meerk40t/core/elements/element_treeops.py:2491 meerk40t/gui/propertypanels/gotoproperty.py:34
 msgid "Y-Coordinate of Goto?"
 msgstr ""
 
@@ -2750,7 +2782,7 @@ msgstr ""
 msgid "Frequency for '{name}' updated {old_frequency} -> {frequency}"
 msgstr ""
 
-#: meerk40t/core/elements/branches.py:1107 meerk40t/core/elements/element_treeops.py:1175
+#: meerk40t/core/elements/branches.py:1107 meerk40t/core/elements/element_treeops.py:1087
 msgid "Set operation passes"
 msgstr ""
 
@@ -3026,371 +3058,371 @@ msgstr ""
 msgid "Clipboard-Entries: {index}"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:187
+#: meerk40t/core/elements/elements.py:191
 msgid "Don't autoload operations on empty set"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:188
+#: meerk40t/core/elements/elements.py:192
 msgid "Leave empty operations, don't load a default set"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:190 meerk40t/core/elements/elements.py:371 meerk40t/core/elements/elements.py:538
+#: meerk40t/core/elements/elements.py:194 meerk40t/core/elements/elements.py:375 meerk40t/core/elements/elements.py:542
 msgid "Auto-Generation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:198
+#: meerk40t/core/elements/elements.py:202
 msgid "Classify Reversed"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:201
+#: meerk40t/core/elements/elements.py:205
 msgid "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:203 meerk40t/core/elements/elements.py:277 meerk40t/core/elements/elements.py:302 meerk40t/core/elements/elements.py:321 meerk40t/core/elements/elements.py:338 meerk40t/core/elements/elements.py:354
+#: meerk40t/core/elements/elements.py:207 meerk40t/core/elements/elements.py:281 meerk40t/core/elements/elements.py:306 meerk40t/core/elements/elements.py:325 meerk40t/core/elements/elements.py:342 meerk40t/core/elements/elements.py:358
 msgid "Assignment-Logic"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:212
+#: meerk40t/core/elements/elements.py:216
 msgid "Legacy Classify"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:224
+#: meerk40t/core/elements/elements.py:228
 msgid "Track changes and allow undo"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:225
+#: meerk40t/core/elements/elements.py:229
 msgid "MK will save intermediate states to undo/redo changes"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:227
+#: meerk40t/core/elements/elements.py:231
 msgid "This may consume a significant amount of memory"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:229 meerk40t/core/elements/elements.py:243 meerk40t/gui/wxmmain.py:2508 meerk40t/gui/wxmmain.py:4229
+#: meerk40t/core/elements/elements.py:233 meerk40t/core/elements/elements.py:247 meerk40t/gui/wxmmain.py:2508 meerk40t/gui/wxmmain.py:4166
 msgid "Undo"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:240
+#: meerk40t/core/elements/elements.py:244
 msgid "Levels of Undo-States"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:241
+#: meerk40t/core/elements/elements.py:245
 msgid "How many undo-levels shall MeerK40t hold in memory"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:253
+#: meerk40t/core/elements/elements.py:257
 msgid "Classify elements after creation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:256
+#: meerk40t/core/elements/elements.py:260
 msgid "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:260
+#: meerk40t/core/elements/elements.py:264
 msgid "if you want to defer this to apply manual assignment, then untick this option."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:262 meerk40t/core/elements/elements.py:396 meerk40t/core/elements/elements.py:413 meerk40t/core/elements/elements.py:426
+#: meerk40t/core/elements/elements.py:266 meerk40t/core/elements/elements.py:400 meerk40t/core/elements/elements.py:417 meerk40t/core/elements/elements.py:430
 msgid "GUI-Behaviour"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:270
+#: meerk40t/core/elements/elements.py:274
 msgid "Fuzzy color-logic"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:273
+#: meerk40t/core/elements/elements.py:277
 msgid "Unticked: Classify elements into operations with an *exact* color match"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:275
+#: meerk40t/core/elements/elements.py:279
 msgid "Ticked: Allow a certain color-distance for classification"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:285
+#: meerk40t/core/elements/elements.py:289
 msgid "Color distance"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:296
+#: meerk40t/core/elements/elements.py:300
 msgid "The color distance of an element to an operations that will still allow classifiation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:300
+#: meerk40t/core/elements/elements.py:304
 msgid "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:312
+#: meerk40t/core/elements/elements.py:316
 msgid "Treat 'Black' as raster even for basic elements (like Whisperer does)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:315
+#: meerk40t/core/elements/elements.py:319
 msgid "Ticked: Classify will assign black elements to a raster operation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:319
+#: meerk40t/core/elements/elements.py:323
 msgid "Unticked: Classify will assign black elements to an engrave operation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:329
+#: meerk40t/core/elements/elements.py:333
 msgid "Classify elements on fill"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:332
+#: meerk40t/core/elements/elements.py:336
 msgid "Usually MK will use the fill attribute as an indicator for a raster and will not distinguish between individual colors."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:336
+#: meerk40t/core/elements/elements.py:340
 msgid "If you want to distinguish between different raster types then activate this option."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:347
+#: meerk40t/core/elements/elements.py:351
 msgid "Assign to default operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:348 meerk40t/core/elements/elements.py:363
+#: meerk40t/core/elements/elements.py:352 meerk40t/core/elements/elements.py:367
 msgid "If classification did not find a match,"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:350 meerk40t/core/elements/elements.py:365
+#: meerk40t/core/elements/elements.py:354 meerk40t/core/elements/elements.py:369
 msgid "either with color matching (exact or fuzzy, see above)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:352
+#: meerk40t/core/elements/elements.py:356
 msgid "then it will try to assign it to matching 'default' operation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:362
+#: meerk40t/core/elements/elements.py:366
 msgid "Autogenerate Operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:367
+#: meerk40t/core/elements/elements.py:371
 msgid "or by assigning to a default operation (see above),"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:369
+#: meerk40t/core/elements/elements.py:373
 msgid "then MeerK40t can create a matching operation for you."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:379
+#: meerk40t/core/elements/elements.py:383
 msgid "Autoinherit for empty operation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:404
+#: meerk40t/core/elements/elements.py:408
 msgid "Classify after color-change"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:405
+#: meerk40t/core/elements/elements.py:409
 msgid "Whenever you change an elements color (stroke or fill),"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:409
+#: meerk40t/core/elements/elements.py:413
 msgid "MK will then reclassify this element. You can turn this feature off"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:411
+#: meerk40t/core/elements/elements.py:415
 msgid "by disabling this option."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:421
+#: meerk40t/core/elements/elements.py:425
 msgid "Remove unused default operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:424
+#: meerk40t/core/elements/elements.py:428
 msgid "If a default operation is no longer used it will be removed from the list of active operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:435
+#: meerk40t/core/elements/elements.py:439
 msgid "Locked element may move"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:438
+#: meerk40t/core/elements/elements.py:442
 msgid "Locked elements cannot be modified, but can still be moved if this option is checked."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:453
+#: meerk40t/core/elements/elements.py:457
 msgid "Display 'default' for unchanged values"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:456
+#: meerk40t/core/elements/elements.py:460
 msgid "Ticked: For power and speed display a 'default' string if default values in place."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:458
+#: meerk40t/core/elements/elements.py:462
 msgid "Unticked: Show their current value."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:460
+#: meerk40t/core/elements/elements.py:464
 msgid "Display"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:468
+#: meerk40t/core/elements/elements.py:472
 msgid "Allow dragging of regmarks to operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:471
+#: meerk40t/core/elements/elements.py:475
 msgid "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:475
+#: meerk40t/core/elements/elements.py:479
 msgid "Unticked: A drag operation of regmark nodes to an operation will be ignored."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:477 meerk40t/moshi/device.py:236 meerk40t/moshi/device.py:254
+#: meerk40t/core/elements/elements.py:481 meerk40t/moshi/device.py:236 meerk40t/moshi/device.py:254
 msgid "Behaviour"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:485
+#: meerk40t/core/elements/elements.py:489
 msgid "Reuse existing"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:488
+#: meerk40t/core/elements/elements.py:492
 msgid "Ticked: When loading a file we will reuse an existing operation with the same principal properties."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:492
+#: meerk40t/core/elements/elements.py:496
 msgid "Unticked: We will add another operation alongside existing ones (always the case if properties differ)."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:494
+#: meerk40t/core/elements/elements.py:498
 msgid "Loading"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:502
+#: meerk40t/core/elements/elements.py:506
 msgid "Statusbar display"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:505
+#: meerk40t/core/elements/elements.py:509
 msgid "As in operations tree"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:506
+#: meerk40t/core/elements/elements.py:510
 msgid "Group types together (CC EE RR II)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:507
+#: meerk40t/core/elements/elements.py:511
 msgid "Matching (CERI CERI)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:512
+#: meerk40t/core/elements/elements.py:516
 msgid "Choose if and how you want to group together / display the default operations at the bottom of the screen"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:514
+#: meerk40t/core/elements/elements.py:518
 msgid "Default Operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:529
+#: meerk40t/core/elements/elements.py:533
 msgid "Autogenerate both for fill and stroke"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:532
+#: meerk40t/core/elements/elements.py:536
 msgid "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:536
+#: meerk40t/core/elements/elements.py:540
 msgid "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:549
+#: meerk40t/core/elements/elements.py:553
 msgid "Copy will increase {variable} references"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:552
+#: meerk40t/core/elements/elements.py:556
 msgid "Active: if you copy a text-element containing a wordlist-reference, this will be increased (effectively referencing the next entry in the wordlist)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:554 meerk40t/gui/wordlisteditor.py:42 meerk40t/gui/wxmmain.py:2854
+#: meerk40t/core/elements/elements.py:558 meerk40t/gui/wordlisteditor.py:42 meerk40t/gui/wxmmain.py:2791
 msgid "Wordlist"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:566 meerk40t/gui/autoexec.py:181
+#: meerk40t/core/elements/elements.py:570 meerk40t/gui/autoexec.py:181
 msgid "File startup commands"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:569 meerk40t/gui/wxmmain.py:5696
+#: meerk40t/core/elements/elements.py:573 meerk40t/gui/wxmmain.py:5633
 msgid "Ignore"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:570
+#: meerk40t/core/elements/elements.py:574
 msgid "Ask"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:571
+#: meerk40t/core/elements/elements.py:575
 msgid "Allow"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:577
+#: meerk40t/core/elements/elements.py:581
 msgid "Choose if file startup commands are allowed in principle or will all be ignored."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:579
+#: meerk40t/core/elements/elements.py:583
 msgid "Note: They still need to be activated on a per file basis."
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:593 meerk40t/core/elements/elements.py:4292 meerk40t/core/elements/elements.py:4300 meerk40t/core/elements/elements.py:4302 meerk40t/gui/simpleui.py:225 meerk40t/gui/wxmmain.py:5662
+#: meerk40t/core/elements/elements.py:597 meerk40t/core/elements/elements.py:4274 meerk40t/core/elements/elements.py:4282 meerk40t/core/elements/elements.py:4284 meerk40t/gui/simpleui.py:225 meerk40t/gui/wxmmain.py:5599
 msgid "File is Malformed"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1563
+#: meerk40t/core/elements/elements.py:1539
 msgid "Cut ({percent}, {speed}mm/s)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1566
+#: meerk40t/core/elements/elements.py:1542
 msgid "Engrave ({percent}, {speed}mm/s)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1569
+#: meerk40t/core/elements/elements.py:1545
 msgid "Raster ({percent}, {speed}mm/s)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1572
+#: meerk40t/core/elements/elements.py:1548
 msgid "Image ({percent}, {speed}mm/s)"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1629
+#: meerk40t/core/elements/elements.py:1605
 msgid "Load operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1917
+#: meerk40t/core/elements/elements.py:1893
 msgid "Element altered"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1925
+#: meerk40t/core/elements/elements.py:1901
 msgid "Element modified"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1936 meerk40t/gui/scenewidgets/selectionwidget.py:1872
+#: meerk40t/core/elements/elements.py:1912 meerk40t/gui/scenewidgets/selectionwidget.py:1924
 msgid "Element shifted"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1947 meerk40t/gui/scenewidgets/selectionwidget.py:892 meerk40t/gui/scenewidgets/selectionwidget.py:1124
+#: meerk40t/core/elements/elements.py:1923 meerk40t/gui/scenewidgets/selectionwidget.py:923 meerk40t/gui/scenewidgets/selectionwidget.py:1152
 msgid "Element scaled"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1952
+#: meerk40t/core/elements/elements.py:1928
 msgid "Element added"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:1956
+#: meerk40t/core/elements/elements.py:1932
 msgid "Element deleted"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:2127 meerk40t/core/elements/elements.py:2138
+#: meerk40t/core/elements/elements.py:2103 meerk40t/core/elements/elements.py:2114
 msgid "Load default operations"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:2423
+#: meerk40t/core/elements/elements.py:2399
 msgid "Drag and drop"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:4255
+#: meerk40t/core/elements/elements.py:4237
 msgid "Load elements"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:4291
+#: meerk40t/core/elements/elements.py:4273
 msgid "File is Empty"
 msgstr ""
 
-#: meerk40t/core/elements/elements.py:4318
+#: meerk40t/core/elements/elements.py:4300
 msgid "All valid types"
 msgstr ""
 
@@ -3494,7 +3526,7 @@ msgstr ""
 msgid "Content of {filenode}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:389 meerk40t/gui/wxmmain.py:2797
+#: meerk40t/core/elements/element_treeops.py:389 meerk40t/gui/wxmmain.py:2734
 msgid "Ungroup elements"
 msgstr ""
 
@@ -3502,1563 +3534,1575 @@ msgstr ""
 msgid "Ungroup the child elements of this node and remove the node"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:420
+#: meerk40t/core/elements/element_treeops.py:399
 msgid "Simplify group"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:422
+#: meerk40t/core/elements/element_treeops.py:401 meerk40t/core/elements/groups.py:234
 msgid "Unlevel groups if they just contain another group"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:458
-msgid "Elements in scene..."
-msgstr ""
-
-#: meerk40t/core/elements/element_treeops.py:493 meerk40t/core/elements/element_treeops.py:511 meerk40t/core/elements/element_treeops.py:529 meerk40t/core/elements/element_treeops.py:532
+#: meerk40t/core/elements/element_treeops.py:434 meerk40t/core/elements/element_treeops.py:452 meerk40t/core/elements/element_treeops.py:470 meerk40t/core/elements/element_treeops.py:473
 msgid "Toggle visibility"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:496
+#: meerk40t/core/elements/element_treeops.py:437
 msgid "Hide elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:498 meerk40t/core/elements/element_treeops.py:516 meerk40t/core/elements/element_treeops.py:534
+#: meerk40t/core/elements/element_treeops.py:439 meerk40t/core/elements/element_treeops.py:457 meerk40t/core/elements/element_treeops.py:475
 msgid "When invisible the element will neither been displayed nor burnt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:514
+#: meerk40t/core/elements/element_treeops.py:455
 msgid "Show elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:550
+#: meerk40t/core/elements/element_treeops.py:491
 msgid "Group elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:552
+#: meerk40t/core/elements/element_treeops.py:493
 msgid "Group selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:592 meerk40t/core/elements/element_treeops.py:603
+#: meerk40t/core/elements/element_treeops.py:504 meerk40t/core/elements/element_treeops.py:515
 msgid "Remove all items from operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:594
+#: meerk40t/core/elements/element_treeops.py:506
 msgid "Clear all assignments from this operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:611
+#: meerk40t/core/elements/element_treeops.py:523
 msgid "Enable/Disable ops"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:613
+#: meerk40t/core/elements/element_treeops.py:525
 msgid "When disabled the operation will be ignored during a burn"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:639
+#: meerk40t/core/elements/element_treeops.py:551
 msgid "Show/Hide contained elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:641
+#: meerk40t/core/elements/element_treeops.py:553
 msgid "Temporarily suppress all assigned elements of this operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:645
+#: meerk40t/core/elements/element_treeops.py:557
 msgid "Show/Hide elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:664
+#: meerk40t/core/elements/element_treeops.py:576
 msgid "Enable similar"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:666
+#: meerk40t/core/elements/element_treeops.py:578
 msgid "Enable all operations of this type"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:681
+#: meerk40t/core/elements/element_treeops.py:593
 msgid "Disable similar"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:683
+#: meerk40t/core/elements/element_treeops.py:595
 msgid "Disable all operations of this type"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:701
+#: meerk40t/core/elements/element_treeops.py:613
 msgid "Operation order"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:728 meerk40t/core/elements/element_treeops.py:739 meerk40t/core/elements/element_treeops.py:749 meerk40t/core/elements/element_treeops.py:759 meerk40t/core/elements/element_treeops.py:769
+#: meerk40t/core/elements/element_treeops.py:640 meerk40t/core/elements/element_treeops.py:651 meerk40t/core/elements/element_treeops.py:661 meerk40t/core/elements/element_treeops.py:671 meerk40t/core/elements/element_treeops.py:681
 msgid "Burning sequence"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:730
+#: meerk40t/core/elements/element_treeops.py:642
 msgid "Dragging works as well..."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:741
+#: meerk40t/core/elements/element_treeops.py:653
 msgid "Burn first"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:743 meerk40t/core/elements/element_treeops.py:753 meerk40t/core/elements/element_treeops.py:763 meerk40t/core/elements/element_treeops.py:773
+#: meerk40t/core/elements/element_treeops.py:655 meerk40t/core/elements/element_treeops.py:665 meerk40t/core/elements/element_treeops.py:675 meerk40t/core/elements/element_treeops.py:685
 msgid "Establish the sequence of operations during burntime"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:751
+#: meerk40t/core/elements/element_treeops.py:663
 msgid "Burn earlier"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:761
+#: meerk40t/core/elements/element_treeops.py:673
 msgid "Burn later"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:771
+#: meerk40t/core/elements/element_treeops.py:683
 msgid "Burn last"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:779 meerk40t/core/elements/element_treeops.py:801 meerk40t/core/elements/element_treeops.py:823 meerk40t/core/elements/element_treeops.py:845 meerk40t/core/elements/element_treeops.py:867
+#: meerk40t/core/elements/element_treeops.py:691 meerk40t/core/elements/element_treeops.py:713 meerk40t/core/elements/element_treeops.py:735 meerk40t/core/elements/element_treeops.py:757 meerk40t/core/elements/element_treeops.py:779
 msgid "Convert operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:781
+#: meerk40t/core/elements/element_treeops.py:693
 msgid "Convert to Image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:785 meerk40t/core/elements/element_treeops.py:807 meerk40t/core/elements/element_treeops.py:829 meerk40t/core/elements/element_treeops.py:851 meerk40t/core/elements/element_treeops.py:873
+#: meerk40t/core/elements/element_treeops.py:697 meerk40t/core/elements/element_treeops.py:719 meerk40t/core/elements/element_treeops.py:741 meerk40t/core/elements/element_treeops.py:763 meerk40t/core/elements/element_treeops.py:785
 msgid "Convert an operation to a different type maintaining properties and assigned elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:803
+#: meerk40t/core/elements/element_treeops.py:715
 msgid "Convert to Raster"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:825
+#: meerk40t/core/elements/element_treeops.py:737
 msgid "Convert to Engrave"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:847
+#: meerk40t/core/elements/element_treeops.py:759
 msgid "Convert to Cut"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:869
+#: meerk40t/core/elements/element_treeops.py:781
 msgid "Convert to Dots"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:889 meerk40t/core/elements/element_treeops.py:915 meerk40t/gui/propertypanels/imageproperty.py:1254
+#: meerk40t/core/elements/element_treeops.py:801 meerk40t/core/elements/element_treeops.py:827 meerk40t/gui/propertypanels/imageproperty.py:1254
 msgid "Raster-Wizard"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:891 meerk40t/gui/propertypanels/imageproperty.py:1941
+#: meerk40t/core/elements/element_treeops.py:803 meerk40t/gui/propertypanels/imageproperty.py:1941
 msgid "Set to None"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:893
+#: meerk40t/core/elements/element_treeops.py:805
 msgid "Remove stored image operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:918 meerk40t/gui/propertypanels/imageproperty.py:1943
+#: meerk40t/core/elements/element_treeops.py:830 meerk40t/gui/propertypanels/imageproperty.py:1943
 msgid "Apply: {script}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:920
+#: meerk40t/core/elements/element_treeops.py:832
 msgid "Apply a predefined script to an image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:984 meerk40t/core/elements/element_treeops.py:995 meerk40t/core/elements/element_treeops.py:1011 meerk40t/core/elements/element_treeops.py:1025 meerk40t/core/elements/element_treeops.py:2066
+#: meerk40t/core/elements/element_treeops.py:896 meerk40t/core/elements/element_treeops.py:907 meerk40t/core/elements/element_treeops.py:923 meerk40t/core/elements/element_treeops.py:937 meerk40t/core/elements/element_treeops.py:1978
 msgid "Convert to Path"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:986 meerk40t/core/elements/element_treeops.py:3214 meerk40t/gui/magnetoptions.py:261 meerk40t/gui/utilitywidgets/togglewidget.py:80
+#: meerk40t/core/elements/element_treeops.py:898 meerk40t/core/elements/element_treeops.py:3126 meerk40t/gui/magnetoptions.py:261 meerk40t/gui/utilitywidgets/togglewidget.py:80
 msgid "Horizontal"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:988
+#: meerk40t/core/elements/element_treeops.py:900
 msgid "Create a horizontal linepattern from the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:992 meerk40t/core/elements/element_treeops.py:3220
+#: meerk40t/core/elements/element_treeops.py:904 meerk40t/core/elements/element_treeops.py:3132
 msgid "To path: Horizontal"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:997 meerk40t/core/elements/element_treeops.py:3225 meerk40t/gui/magnetoptions.py:301 meerk40t/gui/utilitywidgets/togglewidget.py:81
+#: meerk40t/core/elements/element_treeops.py:909 meerk40t/core/elements/element_treeops.py:3137 meerk40t/gui/magnetoptions.py:301 meerk40t/gui/utilitywidgets/togglewidget.py:81
 msgid "Vertical"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:999
+#: meerk40t/core/elements/element_treeops.py:911
 msgid "Create a vertical linepattern from the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1015 meerk40t/core/elements/element_treeops.py:1294 meerk40t/core/elements/element_treeops.py:3237 meerk40t/gui/propertypanels/operationpropertymain.py:1539
+#: meerk40t/core/elements/element_treeops.py:927 meerk40t/core/elements/element_treeops.py:1206 meerk40t/core/elements/element_treeops.py:3149 meerk40t/gui/propertypanels/operationpropertymain.py:1539
 msgid "Bidirectional"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1019 meerk40t/core/elements/element_treeops.py:1032 meerk40t/core/elements/element_treeops.py:3241 meerk40t/core/elements/element_treeops.py:3254
+#: meerk40t/core/elements/element_treeops.py:931 meerk40t/core/elements/element_treeops.py:944 meerk40t/core/elements/element_treeops.py:3153 meerk40t/core/elements/element_treeops.py:3166
 msgid "Shall the line pattern be able to travel back and forth or will it always start at the same side"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1041
+#: meerk40t/core/elements/element_treeops.py:953
 msgid "Speed for Raster-operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1045 meerk40t/core/elements/element_treeops.py:1067
+#: meerk40t/core/elements/element_treeops.py:957 meerk40t/core/elements/element_treeops.py:979
 msgid "{speed}mm/s"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1047 meerk40t/core/elements/element_treeops.py:1069
+#: meerk40t/core/elements/element_treeops.py:959 meerk40t/core/elements/element_treeops.py:981
 msgid "Set speed for the operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1063
+#: meerk40t/core/elements/element_treeops.py:975
 msgid "Speed for Vector-operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1093
+#: meerk40t/core/elements/element_treeops.py:1005
 msgid "{power}ppi ({power_10}%)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1095
+#: meerk40t/core/elements/element_treeops.py:1007
 msgid "Set power for the operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1119 meerk40t/core/elements/element_treeops.py:1142 meerk40t/gui/materialtest.py:831 meerk40t/gui/materialtest.py:840
+#: meerk40t/core/elements/element_treeops.py:1031 meerk40t/core/elements/element_treeops.py:1054 meerk40t/gui/materialtest.py:831 meerk40t/gui/materialtest.py:840
 msgid "DPI"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1123 meerk40t/core/elements/element_treeops.py:1146
+#: meerk40t/core/elements/element_treeops.py:1035 meerk40t/core/elements/element_treeops.py:1058
 msgid "DPI {dpi}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1125 meerk40t/core/elements/element_treeops.py:1151
+#: meerk40t/core/elements/element_treeops.py:1037 meerk40t/core/elements/element_treeops.py:1063
 msgid "Change dpi values"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1179
+#: meerk40t/core/elements/element_treeops.py:1091
 msgid "Passes {passvalue}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1181
+#: meerk40t/core/elements/element_treeops.py:1093
 msgid "Define the amount of executions/passes for the operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1201
+#: meerk40t/core/elements/element_treeops.py:1113
 msgid "Set placement loops"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1205
+#: meerk40t/core/elements/element_treeops.py:1117
 msgid "Loops {loopvalue}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1207
+#: meerk40t/core/elements/element_treeops.py:1119
 msgid "Set amount of passes/execution at this placement"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1225
+#: meerk40t/core/elements/element_treeops.py:1137
 msgid "Remove all placements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1227
+#: meerk40t/core/elements/element_treeops.py:1139
 msgid "Remove this and all other placements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1243
+#: meerk40t/core/elements/element_treeops.py:1155
 msgid "Move laser to placement"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1245
+#: meerk40t/core/elements/element_treeops.py:1157
 msgid "Move the laserhead to the jobstart position"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1268
+#: meerk40t/core/elements/element_treeops.py:1180
 msgid "Burn direction"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1274
+#: meerk40t/core/elements/element_treeops.py:1186
 msgid "Define the burn-direction for this operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1293 meerk40t/gui/propertypanels/hatchproperty.py:125 meerk40t/gui/propertypanels/operationpropertymain.py:1539
+#: meerk40t/core/elements/element_treeops.py:1205 meerk40t/gui/propertypanels/hatchproperty.py:125 meerk40t/gui/propertypanels/operationpropertymain.py:1539
 msgid "Unidirectional"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1304
+#: meerk40t/core/elements/element_treeops.py:1216
 msgid "Directional Raster"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1310
+#: meerk40t/core/elements/element_treeops.py:1222
 msgid "Define the behaviour for this operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1328 meerk40t/core/elements/element_treeops.py:1342
+#: meerk40t/core/elements/element_treeops.py:1240 meerk40t/core/elements/element_treeops.py:1254
 msgid "Reset to device default values"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1332
+#: meerk40t/core/elements/element_treeops.py:1244
 msgid "Will reset power / speed and some other properties to device default values"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1388
+#: meerk40t/core/elements/element_treeops.py:1300
 msgid "Execute operation(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1390
+#: meerk40t/core/elements/element_treeops.py:1302
 msgid "Execute Job for the selected operation(s)."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1401
+#: meerk40t/core/elements/element_treeops.py:1313
 msgid "Simulate operation(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1403
+#: meerk40t/core/elements/element_treeops.py:1315
 msgid "Run simulation for the selected operation(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1422
+#: meerk40t/core/elements/element_treeops.py:1334
 msgid "Global operation settings"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1424
+#: meerk40t/core/elements/element_treeops.py:1336
 msgid "Define global loops and other properties"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1433 meerk40t/core/elements/element_treeops.py:1595 meerk40t/core/elements/element_treeops.py:1615 meerk40t/gui/autoexec.py:139 meerk40t/gui/magnetoptions.py:361
+#: meerk40t/core/elements/element_treeops.py:1345 meerk40t/core/elements/element_treeops.py:1507 meerk40t/core/elements/element_treeops.py:1527 meerk40t/gui/autoexec.py:139 meerk40t/gui/magnetoptions.py:361
 msgid "Clear all"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1435
+#: meerk40t/core/elements/element_treeops.py:1347
 msgid "Delete all operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1440 meerk40t/core/elements/element_treeops.py:1462 meerk40t/core/node/rootnode.py:17 meerk40t/gui/basicops.py:441 meerk40t/gui/opassignment.py:27 meerk40t/gui/operation_info.py:309 meerk40t/gui/preferences.py:753 meerk40t/gui/simulation.py:890
+#: meerk40t/core/elements/element_treeops.py:1352 meerk40t/core/elements/element_treeops.py:1374 meerk40t/core/node/rootnode.py:17 meerk40t/device/gui/formatterpanel.py:156 meerk40t/gui/basicops.py:441 meerk40t/gui/opassignment.py:27 meerk40t/gui/operation_info.py:309 meerk40t/gui/preferences.py:753 meerk40t/gui/simulation.py:890
 msgid "Operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1446
+#: meerk40t/core/elements/element_treeops.py:1358
 msgid "Clear unused"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1448
+#: meerk40t/core/elements/element_treeops.py:1360
 msgid "Clear operations without children"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1459
+#: meerk40t/core/elements/element_treeops.py:1371
 msgid "Do you really want to delete {num} entries?"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1476
+#: meerk40t/core/elements/element_treeops.py:1388
 msgid "Scale speed settings"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1480
+#: meerk40t/core/elements/element_treeops.py:1392
 msgid "Max speed = {speed}mm/s"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1482
+#: meerk40t/core/elements/element_treeops.py:1394
 msgid "Scale all operation speed values relative to a new maximum"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1514
+#: meerk40t/core/elements/element_treeops.py:1426
 msgid "Scale power settings"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1519
+#: meerk40t/core/elements/element_treeops.py:1431
 msgid "Max power = {power}ppi ({power_10}%)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1521
+#: meerk40t/core/elements/element_treeops.py:1433
 msgid "Scale all operation power values relative to a new maximum"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1560 meerk40t/core/elements/element_treeops.py:1562
+#: meerk40t/core/elements/element_treeops.py:1472 meerk40t/core/elements/element_treeops.py:1474
 msgid "Enable all operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1570 meerk40t/core/elements/element_treeops.py:1572
+#: meerk40t/core/elements/element_treeops.py:1482 meerk40t/core/elements/element_treeops.py:1484
 msgid "Disable all operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1581
+#: meerk40t/core/elements/element_treeops.py:1493
 msgid "Toggle all operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1583
+#: meerk40t/core/elements/element_treeops.py:1495
 msgid "Toggle enabled-status of all operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1597
+#: meerk40t/core/elements/element_treeops.py:1509
 msgid "Delete all elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1603 meerk40t/core/node/rootnode.py:18
+#: meerk40t/core/elements/element_treeops.py:1515 meerk40t/core/node/rootnode.py:18 meerk40t/device/gui/formatterpanel.py:155
 msgid "Elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1605
+#: meerk40t/core/elements/element_treeops.py:1517
 msgid "Clear all elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1617
+#: meerk40t/core/elements/element_treeops.py:1529
 msgid "Delete all registration marks"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1624
+#: meerk40t/core/elements/element_treeops.py:1536
 msgid "Clear all regmarks"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1647
+#: meerk40t/core/elements/element_treeops.py:1559
 msgid "Remove {ecount} selected items from operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1649
+#: meerk40t/core/elements/element_treeops.py:1561
 msgid "Delete all selected operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1656
+#: meerk40t/core/elements/element_treeops.py:1568
 msgid "Remove items from operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1670
+#: meerk40t/core/elements/element_treeops.py:1582
 msgid "Delete operation '{name}' fully"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1672
+#: meerk40t/core/elements/element_treeops.py:1584
 msgid "Delete the selected operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1677 meerk40t/core/elements/element_treeops.py:1719
+#: meerk40t/core/elements/element_treeops.py:1589 meerk40t/core/elements/element_treeops.py:1631
 msgid "Delete operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1688
+#: meerk40t/core/elements/element_treeops.py:1600
 msgid "Delete blob '{name}' fully"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1690
+#: meerk40t/core/elements/element_treeops.py:1602
 msgid "Delete the selected binary object"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1695
+#: meerk40t/core/elements/element_treeops.py:1607
 msgid "Delete blob"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1710
+#: meerk40t/core/elements/element_treeops.py:1622
 msgid "Delete {ecount} operations fully"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1712 meerk40t/core/elements/element_treeops.py:1870
+#: meerk40t/core/elements/element_treeops.py:1624 meerk40t/core/elements/element_treeops.py:1782
 msgid "Delete the selected operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1743
+#: meerk40t/core/elements/element_treeops.py:1655
 msgid "Delete group '{name}' and all its child-elements fully"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1745
+#: meerk40t/core/elements/element_treeops.py:1657
 msgid "Delete the selected group and all its content"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1750
+#: meerk40t/core/elements/element_treeops.py:1662
 msgid "Delete group"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1763
+#: meerk40t/core/elements/element_treeops.py:1675
 msgid "Remove loaded file '{name}' and all its child-elements fully"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1765
+#: meerk40t/core/elements/element_treeops.py:1677
 msgid "Delete the content of the loaded file"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1786
+#: meerk40t/core/elements/element_treeops.py:1698
 msgid "Remove file"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1795 meerk40t/core/elements/element_treeops.py:1832
+#: meerk40t/core/elements/element_treeops.py:1707 meerk40t/core/elements/element_treeops.py:1744
 msgid "Remove transparent objects"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1797
+#: meerk40t/core/elements/element_treeops.py:1709
 msgid "Remove all elements that neither have a border nor a fill color"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1854
+#: meerk40t/core/elements/element_treeops.py:1766
 msgid "Delete {ecount} operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1878
+#: meerk40t/core/elements/element_treeops.py:1790
 msgid "Select all elements of same type"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1880
+#: meerk40t/core/elements/element_treeops.py:1792
 msgid "Select all elements in scene, that have the same type as this node"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1903
+#: meerk40t/core/elements/element_treeops.py:1815
 msgid "Delete {ecount} elements, as selected in scene"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1905 meerk40t/gui/wxmmain.py:996
+#: meerk40t/core/elements/element_treeops.py:1817 meerk40t/gui/wxmmain.py:996
 msgid "Delete the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1913 meerk40t/gui/scenewidgets/selectionwidget.py:2729
+#: meerk40t/core/elements/element_treeops.py:1825 meerk40t/gui/scenewidgets/selectionwidget.py:2859
 msgid "Become reference object"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1915
+#: meerk40t/core/elements/element_treeops.py:1827
 msgid "Make the selected object the reference object for alignment"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1925
+#: meerk40t/core/elements/element_treeops.py:1837
 msgid "Make Polygon regular"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1927
+#: meerk40t/core/elements/element_treeops.py:1839
 msgid "Change the selected polygon so that all sides have equal length"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1982 meerk40t/core/elements/element_treeops.py:2024
+#: meerk40t/core/elements/element_treeops.py:1894 meerk40t/core/elements/element_treeops.py:1936
 msgid "Convert to Elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:1984 meerk40t/core/elements/element_treeops.py:2026
+#: meerk40t/core/elements/element_treeops.py:1896 meerk40t/core/elements/element_treeops.py:1938
 msgid "Convert attached binary object to elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2008
+#: meerk40t/core/elements/element_treeops.py:1920
 msgid "Blob-Conversion"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2011
+#: meerk40t/core/elements/element_treeops.py:1923
 msgid "You can influence the way MK will process the attached binary data:"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2043
+#: meerk40t/core/elements/element_treeops.py:1955
 msgid "Execute Blob"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2045
+#: meerk40t/core/elements/element_treeops.py:1957
 msgid "Run the given blob on the current device"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2057
+#: meerk40t/core/elements/element_treeops.py:1969
 msgid "Convert to Cutcode"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2059
+#: meerk40t/core/elements/element_treeops.py:1971
 msgid "Recreate cutcode from the binary object"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2068
+#: meerk40t/core/elements/element_treeops.py:1980
 msgid "Recreate a path element from the selected cutcode"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2085 meerk40t/core/elements/element_treeops.py:2095
+#: meerk40t/core/elements/element_treeops.py:1997 meerk40t/core/elements/element_treeops.py:2007
 msgid "Clone reference"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2087 meerk40t/core/elements/element_treeops.py:3676 meerk40t/core/elements/element_treeops.py:3752
+#: meerk40t/core/elements/element_treeops.py:1999 meerk40t/core/elements/element_treeops.py:3601 meerk40t/core/elements/element_treeops.py:3677
 msgid "Make 1 copy"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2089
+#: meerk40t/core/elements/element_treeops.py:2001
 msgid "Add an additional reference of the master element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2098 meerk40t/core/elements/element_treeops.py:3688 meerk40t/core/elements/element_treeops.py:3764
+#: meerk40t/core/elements/element_treeops.py:2010 meerk40t/core/elements/element_treeops.py:3613 meerk40t/core/elements/element_treeops.py:3689
 msgid "Make {copies} copies"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2100
+#: meerk40t/core/elements/element_treeops.py:2012
 msgid "Add more references of the master element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2116
+#: meerk40t/core/elements/element_treeops.py:2028
 msgid "Reverse subitems order"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2128
+#: meerk40t/core/elements/element_treeops.py:2040
 msgid "Reverse the items within this subitem"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2135 meerk40t/core/elements/element_treeops.py:2146 meerk40t/core/elements/element_treeops.py:2164 meerk40t/core/elements/element_treeops.py:2177 meerk40t/core/elements/element_treeops.py:2183 meerk40t/core/elements/element_treeops.py:2195 meerk40t/core/elements/element_treeops.py:2212 meerk40t/core/elements/element_treeops.py:2226 meerk40t/core/elements/element_treeops.py:2232 meerk40t/gui/basicops.py:126 meerk40t/gui/preferences.py:752
+#: meerk40t/core/elements/element_treeops.py:2047 meerk40t/core/elements/element_treeops.py:2058 meerk40t/core/elements/element_treeops.py:2076 meerk40t/core/elements/element_treeops.py:2089 meerk40t/core/elements/element_treeops.py:2095 meerk40t/core/elements/element_treeops.py:2107 meerk40t/core/elements/element_treeops.py:2124 meerk40t/core/elements/element_treeops.py:2138 meerk40t/core/elements/element_treeops.py:2144 meerk40t/gui/basicops.py:126 meerk40t/gui/preferences.py:752
 msgid "Classification"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2137
+#: meerk40t/core/elements/element_treeops.py:2049
 msgid "Generate operations if needed"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2139
+#: meerk40t/core/elements/element_treeops.py:2051
 msgid "Will create mising operations if required"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2148 meerk40t/core/elements/element_treeops.py:2197
+#: meerk40t/core/elements/element_treeops.py:2060 meerk40t/core/elements/element_treeops.py:2109
 msgid "Refresh classification for all"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2150
+#: meerk40t/core/elements/element_treeops.py:2062
 msgid "Reclassify elements and create operations if necessary"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2156 meerk40t/core/elements/element_treeops.py:2205
+#: meerk40t/core/elements/element_treeops.py:2068 meerk40t/core/elements/element_treeops.py:2117
 msgid "Refresh classification"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2166 meerk40t/core/elements/element_treeops.py:2215
+#: meerk40t/core/elements/element_treeops.py:2078 meerk40t/core/elements/element_treeops.py:2127
 msgid "Classification for unassigned"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2168 meerk40t/gui/wxmtree.py:212
+#: meerk40t/core/elements/element_treeops.py:2080 meerk40t/gui/wxmtree.py:212
 msgid "Classify unassigned elements and create operations if necessary"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2186
+#: meerk40t/core/elements/element_treeops.py:2098
 msgid "Use only existing operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2188
+#: meerk40t/core/elements/element_treeops.py:2100
 msgid "Stick with existing operations only"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2199
+#: meerk40t/core/elements/element_treeops.py:2111
 msgid "Reclassify all elements and use only existing operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2217 meerk40t/gui/wxmtree.py:215
+#: meerk40t/core/elements/element_treeops.py:2129 meerk40t/gui/wxmtree.py:215
 msgid "Classify unassigned elements and use only existing operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2235
+#: meerk40t/core/elements/element_treeops.py:2147
 msgid "Clear all assignments"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2237
+#: meerk40t/core/elements/element_treeops.py:2149
 msgid "Remove all assignments of elements to operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2241 meerk40t/core/elements/element_treeops.py:2816
+#: meerk40t/core/elements/element_treeops.py:2153 meerk40t/core/elements/element_treeops.py:2728
 msgid "Clear classification"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2248
+#: meerk40t/core/elements/element_treeops.py:2160
 msgid "Select unassigned elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2250
+#: meerk40t/core/elements/element_treeops.py:2162
 msgid "Select all elements that won't be burned"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2266
+#: meerk40t/core/elements/element_treeops.py:2178
 msgid "Material Manager"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2268
+#: meerk40t/core/elements/element_treeops.py:2180
 msgid "Open the Material Manager"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2276
+#: meerk40t/core/elements/element_treeops.py:2188
 msgid "<Previous set>"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2321 meerk40t/core/elements/element_treeops.py:2337 meerk40t/core/elements/element_treeops.py:2401 meerk40t/gui/materialmanager.py:795
+#: meerk40t/core/elements/element_treeops.py:2233 meerk40t/core/elements/element_treeops.py:2249 meerk40t/core/elements/element_treeops.py:2313 meerk40t/gui/materialmanager.py:795
 msgid "Materials"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2378 meerk40t/gui/magnetoptions.py:100 meerk40t/gui/materialtest.py:54
+#: meerk40t/core/elements/element_treeops.py:2290 meerk40t/gui/magnetoptions.py:100 meerk40t/gui/materialtest.py:54
 msgid "Load"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2385
+#: meerk40t/core/elements/element_treeops.py:2297
 msgid "Populate the operation template list at the bottom"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2404
+#: meerk40t/core/elements/element_treeops.py:2316
 msgid "Update Statusbar on load"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2406
+#: meerk40t/core/elements/element_treeops.py:2318
 msgid "Loading an entry will update the statusbar icons, too, if checked"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2414 meerk40t/core/elements/element_treeops.py:2437
+#: meerk40t/core/elements/element_treeops.py:2326 meerk40t/core/elements/element_treeops.py:2349
 msgid "Add effect"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2416
+#: meerk40t/core/elements/element_treeops.py:2328
 msgid "Add hatch effect"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2418
+#: meerk40t/core/elements/element_treeops.py:2330
 msgid "Add an hatch effect to the operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2439
+#: meerk40t/core/elements/element_treeops.py:2351
 msgid "Add wobble effect"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2441
+#: meerk40t/core/elements/element_treeops.py:2353
 msgid "Add a wobble effect to the operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2461 meerk40t/core/elements/element_treeops.py:2476 meerk40t/core/elements/element_treeops.py:2491 meerk40t/core/elements/element_treeops.py:2506 meerk40t/core/elements/element_treeops.py:2521 meerk40t/core/elements/element_treeops.py:2540 meerk40t/core/elements/element_treeops.py:2735
+#: meerk40t/core/elements/element_treeops.py:2373 meerk40t/core/elements/element_treeops.py:2388 meerk40t/core/elements/element_treeops.py:2403 meerk40t/core/elements/element_treeops.py:2418 meerk40t/core/elements/element_treeops.py:2433 meerk40t/core/elements/element_treeops.py:2452 meerk40t/core/elements/element_treeops.py:2647
 msgid "Append operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2463
+#: meerk40t/core/elements/element_treeops.py:2375
 msgid "Append Image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2465 meerk40t/core/elements/element_treeops.py:2480 meerk40t/core/elements/element_treeops.py:2495 meerk40t/core/elements/element_treeops.py:2510 meerk40t/core/elements/element_treeops.py:2525 meerk40t/core/elements/element_treeops.py:2544 meerk40t/core/elements/element_treeops.py:2559 meerk40t/core/elements/element_treeops.py:2571 meerk40t/core/elements/element_treeops.py:2601 meerk40t/core/elements/element_treeops.py:2617 meerk40t/core/elements/element_treeops.py:2634 meerk40t/core/elements/element_treeops.py:2650 meerk40t/core/elements/element_treeops.py:2668 meerk40t/core/elements/element_treeops.py:2686 meerk40t/core/elements/element_treeops.py:2702 meerk40t/core/elements/element_treeops.py:2718 meerk40t/core/elements/element_treeops.py:2731 meerk40t/core/elements/element_treeops.py:2745 meerk40t/core/elements/element_treeops.py:2762 meerk40t/core/elements/element_treeops.py:3274 meerk40t/core/elements/element_treeops.py:3284 meerk40t/core/elements/element_treeops.py:3294 meerk40t/core/elements/element_treeops.py:3304 meerk40t/core/elements/element_treeops.py:3314 meerk40t/core/elements/element_treeops.py:3324 meerk40t/core/elements/element_treeops.py:3334 meerk40t/core/elements/element_treeops.py:3344 meerk40t/core/elements/element_treeops.py:3354 meerk40t/core/elements/element_treeops.py:3364 meerk40t/core/elements/element_treeops.py:3375 meerk40t/core/elements/element_treeops.py:3387 meerk40t/core/elements/element_treeops.py:3397 meerk40t/core/elements/element_treeops.py:3407 meerk40t/core/elements/element_treeops.py:3417 meerk40t/core/elements/element_treeops.py:3427 meerk40t/core/elements/element_treeops.py:3444
+#: meerk40t/core/elements/element_treeops.py:2377 meerk40t/core/elements/element_treeops.py:2392 meerk40t/core/elements/element_treeops.py:2407 meerk40t/core/elements/element_treeops.py:2422 meerk40t/core/elements/element_treeops.py:2437 meerk40t/core/elements/element_treeops.py:2456 meerk40t/core/elements/element_treeops.py:2471 meerk40t/core/elements/element_treeops.py:2483 meerk40t/core/elements/element_treeops.py:2513 meerk40t/core/elements/element_treeops.py:2529 meerk40t/core/elements/element_treeops.py:2546 meerk40t/core/elements/element_treeops.py:2562 meerk40t/core/elements/element_treeops.py:2580 meerk40t/core/elements/element_treeops.py:2598 meerk40t/core/elements/element_treeops.py:2614 meerk40t/core/elements/element_treeops.py:2630 meerk40t/core/elements/element_treeops.py:2643 meerk40t/core/elements/element_treeops.py:2657 meerk40t/core/elements/element_treeops.py:2674 meerk40t/core/elements/element_treeops.py:3199 meerk40t/core/elements/element_treeops.py:3209 meerk40t/core/elements/element_treeops.py:3219 meerk40t/core/elements/element_treeops.py:3229 meerk40t/core/elements/element_treeops.py:3239 meerk40t/core/elements/element_treeops.py:3249 meerk40t/core/elements/element_treeops.py:3259 meerk40t/core/elements/element_treeops.py:3269 meerk40t/core/elements/element_treeops.py:3279 meerk40t/core/elements/element_treeops.py:3289 meerk40t/core/elements/element_treeops.py:3300 meerk40t/core/elements/element_treeops.py:3312 meerk40t/core/elements/element_treeops.py:3322 meerk40t/core/elements/element_treeops.py:3332 meerk40t/core/elements/element_treeops.py:3342 meerk40t/core/elements/element_treeops.py:3352 meerk40t/core/elements/element_treeops.py:3369
 msgid "Add an operation to the tree"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2478
+#: meerk40t/core/elements/element_treeops.py:2390
 msgid "Append Raster"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2493
+#: meerk40t/core/elements/element_treeops.py:2405
 msgid "Append Engrave"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2508
+#: meerk40t/core/elements/element_treeops.py:2420
 msgid "Append Cut"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2523
+#: meerk40t/core/elements/element_treeops.py:2435
 msgid "Append new Hatch"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2542
+#: meerk40t/core/elements/element_treeops.py:2454
 msgid "Append Dots"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2555 meerk40t/core/elements/element_treeops.py:2567 meerk40t/core/elements/element_treeops.py:2578 meerk40t/core/elements/element_treeops.py:2597 meerk40t/core/elements/element_treeops.py:2613 meerk40t/core/elements/element_treeops.py:2629 meerk40t/core/elements/element_treeops.py:2646 meerk40t/core/elements/element_treeops.py:2664 meerk40t/core/elements/element_treeops.py:2682 meerk40t/core/elements/element_treeops.py:2698 meerk40t/core/elements/element_treeops.py:2714 meerk40t/core/elements/element_treeops.py:2727 meerk40t/core/elements/element_treeops.py:2741 meerk40t/core/elements/element_treeops.py:2757 meerk40t/core/elements/element_treeops.py:2774 meerk40t/core/elements/element_treeops.py:2795
+#: meerk40t/core/elements/element_treeops.py:2467 meerk40t/core/elements/element_treeops.py:2479 meerk40t/core/elements/element_treeops.py:2490 meerk40t/core/elements/element_treeops.py:2509 meerk40t/core/elements/element_treeops.py:2525 meerk40t/core/elements/element_treeops.py:2541 meerk40t/core/elements/element_treeops.py:2558 meerk40t/core/elements/element_treeops.py:2576 meerk40t/core/elements/element_treeops.py:2594 meerk40t/core/elements/element_treeops.py:2610 meerk40t/core/elements/element_treeops.py:2626 meerk40t/core/elements/element_treeops.py:2639 meerk40t/core/elements/element_treeops.py:2653 meerk40t/core/elements/element_treeops.py:2669 meerk40t/core/elements/element_treeops.py:2686 meerk40t/core/elements/element_treeops.py:2707
 msgid "Append special operation(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2557
+#: meerk40t/core/elements/element_treeops.py:2469
 msgid "Append Home"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2569
+#: meerk40t/core/elements/element_treeops.py:2481
 msgid "Append Return to Origin"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2582
+#: meerk40t/core/elements/element_treeops.py:2494
 msgid "Append Goto Location"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2584
+#: meerk40t/core/elements/element_treeops.py:2496
 msgid "Send laser to specific location."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2599
+#: meerk40t/core/elements/element_treeops.py:2511
 msgid "Append Beep"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2615
+#: meerk40t/core/elements/element_treeops.py:2527
 msgid "Append Interrupt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2630 meerk40t/core/elements/element_treeops.py:3371
+#: meerk40t/core/elements/element_treeops.py:2542 meerk40t/core/elements/element_treeops.py:3296
 msgid "Wait for how long (in seconds)?"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2632
+#: meerk40t/core/elements/element_treeops.py:2544
 msgid "Append Wait"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2648
+#: meerk40t/core/elements/element_treeops.py:2560
 msgid "Append Output"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2666
+#: meerk40t/core/elements/element_treeops.py:2578
 msgid "Append Input"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2684
+#: meerk40t/core/elements/element_treeops.py:2596
 msgid "Append Coolant On"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2700
+#: meerk40t/core/elements/element_treeops.py:2612
 msgid "Append Coolant Off"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2716
+#: meerk40t/core/elements/element_treeops.py:2628
 msgid "Append Home/Beep/Interrupt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2729
+#: meerk40t/core/elements/element_treeops.py:2641
 msgid "Append Origin/Beep/Interrupt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2743
+#: meerk40t/core/elements/element_treeops.py:2655
 msgid "Append Shutdown"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2758
+#: meerk40t/core/elements/element_treeops.py:2670
 msgid "Console command to append to operations?"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2760
+#: meerk40t/core/elements/element_treeops.py:2672
 msgid "Append Console"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2775
+#: meerk40t/core/elements/element_treeops.py:2687
 msgid "Y-Coordinate for placement to append?"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2776
+#: meerk40t/core/elements/element_treeops.py:2688
 msgid "X-Coordinate for placement to append?"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2778
+#: meerk40t/core/elements/element_treeops.py:2690
 msgid "Append absolute placement"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2780
+#: meerk40t/core/elements/element_treeops.py:2692
 msgid "Start job at specicic location"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2797
+#: meerk40t/core/elements/element_treeops.py:2709
 msgid "Append relative placement"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2799
+#: meerk40t/core/elements/element_treeops.py:2711
 msgid "Start job at current laserposition"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2810 meerk40t/core/elements/element_treeops.py:3602
+#: meerk40t/core/elements/element_treeops.py:2722 meerk40t/core/elements/element_treeops.py:3527
 msgid "Remove all assignments from operations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2812
+#: meerk40t/core/elements/element_treeops.py:2724
 msgid "Any existing assignment of elements to operations will be removed"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2842 meerk40t/core/elements/element_treeops.py:2862 meerk40t/core/elements/element_treeops.py:2878 meerk40t/core/elements/element_treeops.py:2894 meerk40t/core/elements/element_treeops.py:2910
+#: meerk40t/core/elements/element_treeops.py:2754 meerk40t/core/elements/element_treeops.py:2774 meerk40t/core/elements/element_treeops.py:2790 meerk40t/core/elements/element_treeops.py:2806 meerk40t/core/elements/element_treeops.py:2822
 msgid "Apply hatch"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2858 meerk40t/core/elements/element_treeops.py:2874 meerk40t/core/elements/element_treeops.py:2890 meerk40t/core/elements/element_treeops.py:2906 meerk40t/core/elements/element_treeops.py:2939 meerk40t/core/elements/element_treeops.py:2957 meerk40t/core/elements/element_treeops.py:2975 meerk40t/core/elements/element_treeops.py:2993 meerk40t/core/elements/element_treeops.py:3011
+#: meerk40t/core/elements/element_treeops.py:2770 meerk40t/core/elements/element_treeops.py:2786 meerk40t/core/elements/element_treeops.py:2802 meerk40t/core/elements/element_treeops.py:2818 meerk40t/core/elements/element_treeops.py:2851 meerk40t/core/elements/element_treeops.py:2869 meerk40t/core/elements/element_treeops.py:2887 meerk40t/core/elements/element_treeops.py:2905 meerk40t/core/elements/element_treeops.py:2923
 msgid "Apply special effect"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2860
+#: meerk40t/core/elements/element_treeops.py:2772
 msgid "Append Line-fill 0.1mm"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2876
+#: meerk40t/core/elements/element_treeops.py:2788
 msgid "Append diagonal Line-fill 0.1mm"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2892
+#: meerk40t/core/elements/element_treeops.py:2804
 msgid "Append Line-Fill 1mm"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2908
+#: meerk40t/core/elements/element_treeops.py:2820
 msgid "Append diagonal Line-Fill 1mm"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2923
+#: meerk40t/core/elements/element_treeops.py:2835
 msgid "Apply wobble"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2941 meerk40t/core/elements/element_treeops.py:2959 meerk40t/core/elements/element_treeops.py:2977 meerk40t/core/elements/element_treeops.py:2995
+#: meerk40t/core/elements/element_treeops.py:2853 meerk40t/core/elements/element_treeops.py:2871 meerk40t/core/elements/element_treeops.py:2889 meerk40t/core/elements/element_treeops.py:2907
 msgid "Append wobble {type} {radius} @{interval}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2942 meerk40t/core/elements/element_treeops.py:2960 meerk40t/core/elements/element_treeops.py:2978 meerk40t/gui/wxmmain.py:2242
+#: meerk40t/core/elements/element_treeops.py:2854 meerk40t/core/elements/element_treeops.py:2872 meerk40t/core/elements/element_treeops.py:2890 meerk40t/gui/wxmmain.py:2242
 msgid "Circle"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2945 meerk40t/core/elements/element_treeops.py:2963 meerk40t/core/elements/element_treeops.py:2981 meerk40t/core/elements/element_treeops.py:2999
+#: meerk40t/core/elements/element_treeops.py:2857 meerk40t/core/elements/element_treeops.py:2875 meerk40t/core/elements/element_treeops.py:2893 meerk40t/core/elements/element_treeops.py:2911
 msgid "Apply a wobble (contour follower)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:2996
+#: meerk40t/core/elements/element_treeops.py:2908
 msgid "Meander"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3013
+#: meerk40t/core/elements/element_treeops.py:2925
 msgid "Append Warp"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3015
+#: meerk40t/core/elements/element_treeops.py:2927
 msgid "Apply a warp effect"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3019
+#: meerk40t/core/elements/element_treeops.py:2931
 msgid "Apply warp"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3033
+#: meerk40t/core/elements/element_treeops.py:2945
 msgid "Duplicate operation(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3035
+#: meerk40t/core/elements/element_treeops.py:2947
 msgid "duplicate operation nodes"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3081 meerk40t/core/elements/element_treeops.py:3092 meerk40t/core/elements/element_treeops.py:3750 meerk40t/core/elements/element_treeops.py:3761
+#: meerk40t/core/elements/element_treeops.py:2993 meerk40t/core/elements/element_treeops.py:3004 meerk40t/core/elements/element_treeops.py:3675 meerk40t/core/elements/element_treeops.py:3686
 msgid "Duplicate element(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3083
+#: meerk40t/core/elements/element_treeops.py:2995
 msgid "Duplicate elements 1 time"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3085 meerk40t/core/elements/element_treeops.py:3754
+#: meerk40t/core/elements/element_treeops.py:2997 meerk40t/core/elements/element_treeops.py:3679
 msgid "Create one copy of the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3095
+#: meerk40t/core/elements/element_treeops.py:3007
 msgid "Duplicate elements {copies} times"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3097 meerk40t/core/elements/element_treeops.py:3766
+#: meerk40t/core/elements/element_treeops.py:3009 meerk40t/core/elements/element_treeops.py:3691
 msgid "Create multiple copies of the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3152 meerk40t/core/elements/element_treeops.py:3211 meerk40t/core/elements/element_treeops.py:3223 meerk40t/core/elements/element_treeops.py:3233 meerk40t/core/elements/element_treeops.py:3247
+#: meerk40t/core/elements/element_treeops.py:3064 meerk40t/core/elements/element_treeops.py:3123 meerk40t/core/elements/element_treeops.py:3135 meerk40t/core/elements/element_treeops.py:3145 meerk40t/core/elements/element_treeops.py:3159
 msgid "Create image/path"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3154
+#: meerk40t/core/elements/element_treeops.py:3066
 msgid "Make raster image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3156
+#: meerk40t/core/elements/element_treeops.py:3068
 msgid "Create an image from the assigned elements."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3178
+#: meerk40t/core/elements/element_treeops.py:3090
 msgid "Creating image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3216
+#: meerk40t/core/elements/element_treeops.py:3128
 msgid "Create a horizontal linepattern from the raster"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3227
+#: meerk40t/core/elements/element_treeops.py:3139
 msgid "Create a vertical linepattern from the raster"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3270 meerk40t/core/elements/element_treeops.py:3280 meerk40t/core/elements/element_treeops.py:3290 meerk40t/core/elements/element_treeops.py:3300 meerk40t/core/elements/element_treeops.py:3310 meerk40t/core/elements/element_treeops.py:3320
+#: meerk40t/core/elements/element_treeops.py:3182
+msgid "Optimisation"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3184
+msgid "Reduce travel moves"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3186
+msgid "Rearrange items within operation to reduce travel moves"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3190
+msgid "Optimize travel moves"
+msgstr ""
+
+#: meerk40t/core/elements/element_treeops.py:3195 meerk40t/core/elements/element_treeops.py:3205 meerk40t/core/elements/element_treeops.py:3215 meerk40t/core/elements/element_treeops.py:3225 meerk40t/core/elements/element_treeops.py:3235 meerk40t/core/elements/element_treeops.py:3245
 msgid "Insert operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3272 meerk40t/gui/materialmanager.py:2696
+#: meerk40t/core/elements/element_treeops.py:3197 meerk40t/gui/materialmanager.py:2696
 msgid "Add Image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3282 meerk40t/gui/materialmanager.py:2686
+#: meerk40t/core/elements/element_treeops.py:3207 meerk40t/gui/materialmanager.py:2686
 msgid "Add Raster"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3292 meerk40t/gui/materialmanager.py:2708
+#: meerk40t/core/elements/element_treeops.py:3217 meerk40t/gui/materialmanager.py:2708
 msgid "Add Engrave"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3302 meerk40t/gui/materialmanager.py:2719
+#: meerk40t/core/elements/element_treeops.py:3227 meerk40t/gui/materialmanager.py:2719
 msgid "Add Cut"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3312
+#: meerk40t/core/elements/element_treeops.py:3237
 msgid "Add Hatch"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3322
+#: meerk40t/core/elements/element_treeops.py:3247
 msgid "Add Dots"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3330 meerk40t/core/elements/element_treeops.py:3340 meerk40t/core/elements/element_treeops.py:3350 meerk40t/core/elements/element_treeops.py:3360 meerk40t/core/elements/element_treeops.py:3370 meerk40t/core/elements/element_treeops.py:3383 meerk40t/core/elements/element_treeops.py:3393 meerk40t/core/elements/element_treeops.py:3403 meerk40t/core/elements/element_treeops.py:3413 meerk40t/core/elements/element_treeops.py:3423 meerk40t/core/elements/element_treeops.py:3440
+#: meerk40t/core/elements/element_treeops.py:3255 meerk40t/core/elements/element_treeops.py:3265 meerk40t/core/elements/element_treeops.py:3275 meerk40t/core/elements/element_treeops.py:3285 meerk40t/core/elements/element_treeops.py:3295 meerk40t/core/elements/element_treeops.py:3308 meerk40t/core/elements/element_treeops.py:3318 meerk40t/core/elements/element_treeops.py:3328 meerk40t/core/elements/element_treeops.py:3338 meerk40t/core/elements/element_treeops.py:3348 meerk40t/core/elements/element_treeops.py:3365
 msgid "Insert special operation(s)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3332
+#: meerk40t/core/elements/element_treeops.py:3257
 msgid "Add Home"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3342
+#: meerk40t/core/elements/element_treeops.py:3267
 msgid "Add Return to Origin"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3352
+#: meerk40t/core/elements/element_treeops.py:3277
 msgid "Add Beep"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3362
+#: meerk40t/core/elements/element_treeops.py:3287
 msgid "Add Interrupt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3373
+#: meerk40t/core/elements/element_treeops.py:3298
 msgid "Add Wait"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3385
+#: meerk40t/core/elements/element_treeops.py:3310
 msgid "Add Output"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3395
+#: meerk40t/core/elements/element_treeops.py:3320
 msgid "Add Input"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3405
+#: meerk40t/core/elements/element_treeops.py:3330
 msgid "Add Coolant on"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3415
+#: meerk40t/core/elements/element_treeops.py:3340
 msgid "Add Coolant Off"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3425
+#: meerk40t/core/elements/element_treeops.py:3350
 msgid "Add Home/Beep/Interrupt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3442
+#: meerk40t/core/elements/element_treeops.py:3367
 msgid "Add Origin/Beep/Interrupt"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3458
+#: meerk40t/core/elements/element_treeops.py:3383
 msgid "Reload '{name}'"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3460
+#: meerk40t/core/elements/element_treeops.py:3385
 msgid "Reload the content of the file"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3468 meerk40t/core/elements/element_treeops.py:3534
+#: meerk40t/core/elements/element_treeops.py:3393 meerk40t/core/elements/element_treeops.py:3459
 msgid "The file no longer exists!"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3469 meerk40t/core/elements/element_treeops.py:3535
+#: meerk40t/core/elements/element_treeops.py:3394 meerk40t/core/elements/element_treeops.py:3460
 msgid "File does not exist."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3493
+#: meerk40t/core/elements/element_treeops.py:3418
 msgid "Open containing folder: '{name}'"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3495
+#: meerk40t/core/elements/element_treeops.py:3420
 msgid "Open this file working directory in the system's file manager"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3522
+#: meerk40t/core/elements/element_treeops.py:3447
 msgid "Open in System: '{name}'"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3526
+#: meerk40t/core/elements/element_treeops.py:3451
 msgid "Open this file in the system application associated with this type of file"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3561 meerk40t/core/elements/element_treeops.py:3600 meerk40t/core/elements/element_treeops.py:3625 meerk40t/core/elements/element_treeops.py:3642 meerk40t/core/elements/element_treeops.py:3659
+#: meerk40t/core/elements/element_treeops.py:3486 meerk40t/core/elements/element_treeops.py:3525 meerk40t/core/elements/element_treeops.py:3550 meerk40t/core/elements/element_treeops.py:3567 meerk40t/core/elements/element_treeops.py:3584
 msgid "Assign Operation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3566
+#: meerk40t/core/elements/element_treeops.py:3491
 msgid "Assign an operation to the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3604
+#: meerk40t/core/elements/element_treeops.py:3529
 msgid "Any existing assignment of this element to operations will be removed"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3617
+#: meerk40t/core/elements/element_treeops.py:3542
 msgid "Remove assignments"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3628
+#: meerk40t/core/elements/element_treeops.py:3553
 msgid "Exclusive assignment"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3632
+#: meerk40t/core/elements/element_treeops.py:3557
 msgid "An assignment will remove all other classifications of this element if checked"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3645
+#: meerk40t/core/elements/element_treeops.py:3570
 msgid "Inherit stroke and classify similar"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3647
+#: meerk40t/core/elements/element_treeops.py:3572
 msgid "Operation will inherit element stroke color"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3662
+#: meerk40t/core/elements/element_treeops.py:3587
 msgid "Inherit fill and classify similar"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3664
+#: meerk40t/core/elements/element_treeops.py:3589
 msgid "Operation will inherit element fill color"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3674 meerk40t/core/elements/element_treeops.py:3685
+#: meerk40t/core/elements/element_treeops.py:3599 meerk40t/core/elements/element_treeops.py:3610
 msgid "Duplicate group"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3678
+#: meerk40t/core/elements/element_treeops.py:3603
 msgid "Create one copy of the selected group"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3690
+#: meerk40t/core/elements/element_treeops.py:3615
 msgid "Create multiple copies of the selected group"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3858
+#: meerk40t/core/elements/element_treeops.py:3783
 msgid "Increase Wordlist-Reference"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3863
+#: meerk40t/core/elements/element_treeops.py:3788
 msgid "Adjusts the reference value for a wordlist, i.e. {name} to {name#+1}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3888
+#: meerk40t/core/elements/element_treeops.py:3813
 msgid "Decrease Wordlist-Reference"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3895
+#: meerk40t/core/elements/element_treeops.py:3820
 msgid "Adjusts the reference value for a wordlist, i.e. {name#+3} to {name#+2}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3919
+#: meerk40t/core/elements/element_treeops.py:3844
 msgid "Outline element(s)..."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3922
+#: meerk40t/core/elements/element_treeops.py:3847
 msgid "...with {offset}mm distance"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3924
+#: meerk40t/core/elements/element_treeops.py:3849
 msgid "Create an outline around the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3935 meerk40t/core/elements/element_treeops.py:3951
+#: meerk40t/core/elements/element_treeops.py:3860 meerk40t/core/elements/element_treeops.py:3876
 msgid "Offset shapes..."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3938
+#: meerk40t/core/elements/element_treeops.py:3863
 msgid "...to outside with {offset}mm distance"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3940
+#: meerk40t/core/elements/element_treeops.py:3865
 msgid "Create an outer offset around the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3954
+#: meerk40t/core/elements/element_treeops.py:3879
 msgid "...to inside with {offset}mm distance"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3956
+#: meerk40t/core/elements/element_treeops.py:3881
 msgid "Create an inner offset around the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3983
+#: meerk40t/core/elements/element_treeops.py:3908
 msgid "Merge elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:3991
+#: meerk40t/core/elements/element_treeops.py:3916
 msgid "Merge two or more elements together into a single path"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4073 meerk40t/core/elements/element_treeops.py:4089 meerk40t/core/elements/element_treeops.py:4100 meerk40t/core/elements/element_treeops.py:4120 meerk40t/core/elements/element_treeops.py:4153 meerk40t/core/elements/element_treeops.py:4166 meerk40t/core/elements/element_treeops.py:4178 meerk40t/core/elements/element_treeops.py:4190
+#: meerk40t/core/elements/element_treeops.py:3998 meerk40t/core/elements/element_treeops.py:4014 meerk40t/core/elements/element_treeops.py:4025 meerk40t/core/elements/element_treeops.py:4045 meerk40t/core/elements/element_treeops.py:4078 meerk40t/core/elements/element_treeops.py:4091 meerk40t/core/elements/element_treeops.py:4103 meerk40t/core/elements/element_treeops.py:4115
 msgid "Vectorization..."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4077
+#: meerk40t/core/elements/element_treeops.py:4002
 msgid "Trace bitmap"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4082 meerk40t/core/elements/element_treeops.py:4094
+#: meerk40t/core/elements/element_treeops.py:4007 meerk40t/core/elements/element_treeops.py:4019
 msgid "Vectorize the given element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4092
+#: meerk40t/core/elements/element_treeops.py:4017
 msgid "Trace bitmap via vtracer"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4102
+#: meerk40t/core/elements/element_treeops.py:4027
 msgid "Contour detection - shapes"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4104 meerk40t/core/elements/element_treeops.py:4125
+#: meerk40t/core/elements/element_treeops.py:4029 meerk40t/core/elements/element_treeops.py:4050
 msgid "Recognize contours=shapes on the given element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4123
+#: meerk40t/core/elements/element_treeops.py:4048
 msgid "Contour detection - bounding"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4156 meerk40t/image/imagetools.py:2002
+#: meerk40t/core/elements/element_treeops.py:4081 meerk40t/image/imagetools.py:2002
 msgid "Ignore inner areas"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4158
+#: meerk40t/core/elements/element_treeops.py:4083
 msgid "Inner areas will be ignored"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4169
+#: meerk40t/core/elements/element_treeops.py:4094
 msgid "Big objects"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4171
+#: meerk40t/core/elements/element_treeops.py:4096
 msgid "Only large object will be recognized if checked"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4181
+#: meerk40t/core/elements/element_treeops.py:4106
 msgid "Normal objects"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4183
+#: meerk40t/core/elements/element_treeops.py:4108
 msgid "Also medium sized objects will be recognized if checked"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4193
+#: meerk40t/core/elements/element_treeops.py:4118
 msgid "Small objects"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4195
+#: meerk40t/core/elements/element_treeops.py:4120
 msgid "Also small objects will be recognized if checked"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4203
+#: meerk40t/core/elements/element_treeops.py:4128
 msgid "Convert to vector text"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4205
+#: meerk40t/core/elements/element_treeops.py:4130
 msgid "Convert bitmap text to vector text"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4289 meerk40t/core/elements/element_treeops.py:4320
+#: meerk40t/core/elements/element_treeops.py:4214 meerk40t/core/elements/element_treeops.py:4245
 msgid "Convert to path"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4367
+#: meerk40t/core/elements/element_treeops.py:4292
 msgid "Add a keyhole"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4369
+#: meerk40t/core/elements/element_treeops.py:4294
 msgid "Add a keyhole effect between the selected elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4381 meerk40t/core/elements/element_treeops.py:4860 meerk40t/gui/propertypanels/imageproperty.py:767
+#: meerk40t/core/elements/element_treeops.py:4306 meerk40t/core/elements/element_treeops.py:4785 meerk40t/gui/propertypanels/imageproperty.py:767
 msgid "Remove keyhole"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4394 meerk40t/core/elements/element_treeops.py:4414
+#: meerk40t/core/elements/element_treeops.py:4319 meerk40t/core/elements/element_treeops.py:4339
 msgid "Flip"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4399
+#: meerk40t/core/elements/element_treeops.py:4324
 msgid "Horizontally"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4401
+#: meerk40t/core/elements/element_treeops.py:4326
 msgid "Mirror Horizontally"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4417
+#: meerk40t/core/elements/element_treeops.py:4342
 msgid "Vertically"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4419
+#: meerk40t/core/elements/element_treeops.py:4344
 msgid "Flip Vertically"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4433 meerk40t/grbl/device.py:101 meerk40t/grbl/device.py:113 meerk40t/gui/navigationpanels.py:2363 meerk40t/gui/propertypanels/attributes.py:799 meerk40t/gui/statusbarwidgets/strokewidget.py:169 meerk40t/moshi/device.py:126 meerk40t/moshi/device.py:140 meerk40t/rotary/rotary.py:61 meerk40t/rotary/rotary.py:71
+#: meerk40t/core/elements/element_treeops.py:4358 meerk40t/grbl/device.py:101 meerk40t/grbl/device.py:113 meerk40t/gui/navigationpanels.py:2363 meerk40t/gui/propertypanels/attributes.py:799 meerk40t/gui/statusbarwidgets/strokewidget.py:169 meerk40t/moshi/device.py:126 meerk40t/moshi/device.py:140 meerk40t/rotary/rotary.py:61 meerk40t/rotary/rotary.py:71
 msgid "Scale"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4437
+#: meerk40t/core/elements/element_treeops.py:4362
 msgid "Scale {scale_percent}%"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4439
+#: meerk40t/core/elements/element_treeops.py:4364
 msgid "Scale Element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4455 meerk40t/core/elements/grid.py:382 meerk40t/core/elements/shapes.py:2144 meerk40t/gui/alignment.py:476 meerk40t/gui/statusbarwidgets/selectionwidget.py:26
+#: meerk40t/core/elements/element_treeops.py:4380 meerk40t/core/elements/grid.py:382 meerk40t/core/elements/shapes.py:2144 meerk40t/gui/alignment.py:476 meerk40t/gui/statusbarwidgets/selectionwidget.py:26
 msgid "Rotate"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4490
+#: meerk40t/core/elements/element_treeops.py:4415
 msgid "Rotate {angle}°"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4492
+#: meerk40t/core/elements/element_treeops.py:4417
 msgid "Rotate the selected elements by the given amount"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4510
+#: meerk40t/core/elements/element_treeops.py:4435
 msgid "Reify user changes"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4512
+#: meerk40t/core/elements/element_treeops.py:4437
 msgid "Integrate user scale, translate and rotate changes"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4523
+#: meerk40t/core/elements/element_treeops.py:4448
 msgid "Break Subpaths"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4525
+#: meerk40t/core/elements/element_treeops.py:4450
 msgid "Split paths into subelements (if any)"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4536
+#: meerk40t/core/elements/element_treeops.py:4461
 msgid "Reset user changes"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4538
+#: meerk40t/core/elements/element_treeops.py:4463
 msgid "Revert user scale, translate and rotate changes"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4547
+#: meerk40t/core/elements/element_treeops.py:4472
 msgid "Merge items"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4549
+#: meerk40t/core/elements/element_treeops.py:4474
 msgid "Merge this node's children into 1 path."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4563
+#: meerk40t/core/elements/element_treeops.py:4488
 msgid "Unlock element, allows manipulation"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4565
+#: meerk40t/core/elements/element_treeops.py:4490
 msgid "Remove manipulation protection flag"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4573
+#: meerk40t/core/elements/element_treeops.py:4498
 msgid "Lock elements, prevents manipulations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4575
+#: meerk40t/core/elements/element_treeops.py:4500
 msgid "Set manipulation protection flag"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4584 meerk40t/gui/propertypanels/regbranchproperties.py:22
+#: meerk40t/core/elements/element_treeops.py:4509 meerk40t/gui/propertypanels/regbranchproperties.py:22
 msgid "Toggle visibility of regmarks"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4586
+#: meerk40t/core/elements/element_treeops.py:4511
 msgid "Show/Hide the content of the regmark branch"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4595 meerk40t/gui/propertypanels/regbranchproperties.py:24
+#: meerk40t/core/elements/element_treeops.py:4520 meerk40t/gui/propertypanels/regbranchproperties.py:24
 msgid "Move back to elements"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4597
+#: meerk40t/core/elements/element_treeops.py:4522
 msgid "Move the selected regmarks back to the element branch"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4616
+#: meerk40t/core/elements/element_treeops.py:4541
 msgid "Move to regmarks"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4618
+#: meerk40t/core/elements/element_treeops.py:4543
 msgid "Move the selected elements to the regmark branch"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4639
+#: meerk40t/core/elements/element_treeops.py:4564
 msgid "Create placement"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4641
+#: meerk40t/core/elements/element_treeops.py:4566
 msgid "Define a job starting point aka placement"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4668 meerk40t/core/elements/element_treeops.py:4681
+#: meerk40t/core/elements/element_treeops.py:4593 meerk40t/core/elements/element_treeops.py:4606
 msgid "Toggle magnet-lines"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4670
+#: meerk40t/core/elements/element_treeops.py:4595
 msgid "Around border"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4672
+#: meerk40t/core/elements/element_treeops.py:4597
 msgid "Set/remove magnet lines around the regmark element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4683
+#: meerk40t/core/elements/element_treeops.py:4608
 msgid "At center"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4687
+#: meerk40t/core/elements/element_treeops.py:4612
 msgid "Set/remove magnet lines right through the middle of the regmark element"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4696
+#: meerk40t/core/elements/element_treeops.py:4621
 msgid "Z-depth divide"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4699
+#: meerk40t/core/elements/element_treeops.py:4624
 msgid "Divide into {divide} images"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4701
+#: meerk40t/core/elements/element_treeops.py:4626
 msgid "Split image into multiple subimages based on the grayscale level"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4715 meerk40t/core/elements/element_treeops.py:4726 meerk40t/core/elements/element_treeops.py:4737 meerk40t/core/elements/element_treeops.py:4749 meerk40t/core/elements/element_treeops.py:4761 meerk40t/core/elements/element_treeops.py:4773 meerk40t/core/elements/element_treeops.py:4785 meerk40t/core/elements/element_treeops.py:4797 meerk40t/core/elements/element_treeops.py:4810 meerk40t/core/elements/element_treeops.py:4823 meerk40t/core/elements/element_treeops.py:4835 meerk40t/core/elements/element_treeops.py:4846 meerk40t/core/elements/element_treeops.py:4857 meerk40t/device/devicechoices.py:92 meerk40t/gui/materialtest.py:203 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1408
+#: meerk40t/core/elements/element_treeops.py:4640 meerk40t/core/elements/element_treeops.py:4651 meerk40t/core/elements/element_treeops.py:4662 meerk40t/core/elements/element_treeops.py:4674 meerk40t/core/elements/element_treeops.py:4686 meerk40t/core/elements/element_treeops.py:4698 meerk40t/core/elements/element_treeops.py:4710 meerk40t/core/elements/element_treeops.py:4722 meerk40t/core/elements/element_treeops.py:4735 meerk40t/core/elements/element_treeops.py:4748 meerk40t/core/elements/element_treeops.py:4760 meerk40t/core/elements/element_treeops.py:4771 meerk40t/core/elements/element_treeops.py:4782 meerk40t/device/devicechoices.py:93 meerk40t/gui/materialtest.py:203 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1408
 msgid "Image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4717
+#: meerk40t/core/elements/element_treeops.py:4642
 msgid "Unlock manipulations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4719
+#: meerk40t/core/elements/element_treeops.py:4644
 msgid "Allow manipulations of the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4728
+#: meerk40t/core/elements/element_treeops.py:4653
 msgid "Lock manipulations"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4730
+#: meerk40t/core/elements/element_treeops.py:4655
 msgid "Prevent manipulations of the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4739
+#: meerk40t/core/elements/element_treeops.py:4664
 msgid "Dither to 1 bit"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4741
+#: meerk40t/core/elements/element_treeops.py:4666
 msgid "Create a pixelated b/w copy of the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4751
+#: meerk40t/core/elements/element_treeops.py:4676
 msgid "Invert image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4753
+#: meerk40t/core/elements/element_treeops.py:4678
 msgid "Invert the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4763
+#: meerk40t/core/elements/element_treeops.py:4688
 msgid "Mirror horizontal"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4765
+#: meerk40t/core/elements/element_treeops.py:4690
 msgid "Mirror the image along the Y-Axis"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4775
+#: meerk40t/core/elements/element_treeops.py:4700
 msgid "Flip vertical"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4777
+#: meerk40t/core/elements/element_treeops.py:4702
 msgid "Mirror the image along the X-Axis"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4787
+#: meerk40t/core/elements/element_treeops.py:4712
 msgid "Rotate 90° CW"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4789
+#: meerk40t/core/elements/element_treeops.py:4714
 msgid "Rotate the image by 90° clockwise"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4799
+#: meerk40t/core/elements/element_treeops.py:4724
 msgid "Rotate 90° CCW"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4801
+#: meerk40t/core/elements/element_treeops.py:4726
 msgid "Rotate the image by 90° counterclockwise"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4812
+#: meerk40t/core/elements/element_treeops.py:4737
 msgid "Identify inner white areas"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4814
+#: meerk40t/core/elements/element_treeops.py:4739
 msgid "Identify and mark bigger white areas inside the image"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4825 meerk40t/image/imagetools.py:2346
+#: meerk40t/core/elements/element_treeops.py:4750 meerk40t/image/imagetools.py:2346
 msgid "Split image along white areas"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4827
+#: meerk40t/core/elements/element_treeops.py:4752
 msgid "Split image along white areas to reduce rastering time"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4838
+#: meerk40t/core/elements/element_treeops.py:4763
 msgid "Save original image to output.png"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4840
+#: meerk40t/core/elements/element_treeops.py:4765
 msgid "Save the unmodified image to disk"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4848
+#: meerk40t/core/elements/element_treeops.py:4773
 msgid "Save processed image to output.png"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4850
+#: meerk40t/core/elements/element_treeops.py:4775
 msgid "Save the modified image to disk"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4862
+#: meerk40t/core/elements/element_treeops.py:4787
 msgid "Remove the keyhole-link between image and shape"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4872
+#: meerk40t/core/elements/element_treeops.py:4797
 msgid "Expand all children"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4888
+#: meerk40t/core/elements/element_treeops.py:4813
 msgid "Expand all children of this given node."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4896
+#: meerk40t/core/elements/element_treeops.py:4821
 msgid "Collapse all children"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4912
+#: meerk40t/core/elements/element_treeops.py:4837
 msgid "Collapse all children of this given node."
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4918 meerk40t/core/elements/element_treeops.py:4932 meerk40t/core/elements/element_treeops.py:4946 meerk40t/core/elements/element_treeops.py:4968 meerk40t/core/elements/element_treeops.py:4983 meerk40t/core/elements/element_treeops.py:4997
+#: meerk40t/core/elements/element_treeops.py:4843 meerk40t/core/elements/element_treeops.py:4857 meerk40t/core/elements/element_treeops.py:4871 meerk40t/core/elements/element_treeops.py:4893 meerk40t/core/elements/element_treeops.py:4908 meerk40t/core/elements/element_treeops.py:4922
 msgid "Magnets"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4920
+#: meerk40t/core/elements/element_treeops.py:4845
 msgid "...around horizontal edges"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4922
+#: meerk40t/core/elements/element_treeops.py:4847
 msgid "Create magnets around horizontal edges"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4934 meerk40t/core/elements/element_treeops.py:4985
+#: meerk40t/core/elements/element_treeops.py:4859 meerk40t/core/elements/element_treeops.py:4910
 msgid "...including center"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4936
+#: meerk40t/core/elements/element_treeops.py:4861
 msgid "Create magnets around horizontal edges + center"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4949 meerk40t/core/elements/element_treeops.py:5000
+#: meerk40t/core/elements/element_treeops.py:4874 meerk40t/core/elements/element_treeops.py:4925
 msgid "...create edges plus every 1/{steps}"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4951
+#: meerk40t/core/elements/element_treeops.py:4876
 msgid "Create magnets equally spaced along horizontal extension"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4971
+#: meerk40t/core/elements/element_treeops.py:4896
 msgid "...around vertical edges"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4973
+#: meerk40t/core/elements/element_treeops.py:4898
 msgid "Create magnets around vertical edges"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:4987
+#: meerk40t/core/elements/element_treeops.py:4912
 msgid "Create magnets around vertical edges + center"
 msgstr ""
 
-#: meerk40t/core/elements/element_treeops.py:5002
+#: meerk40t/core/elements/element_treeops.py:4927
 msgid "Create magnets equally spaced along vertical extension"
 msgstr ""
 
@@ -5278,11 +5322,11 @@ msgstr ""
 msgid "Y Distance"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:129 meerk40t/extra/imageactions.py:167
+#: meerk40t/core/elements/grid.py:129 meerk40t/core/elements/manual_optimize.py:108 meerk40t/extra/imageactions.py:167
 msgid "Number of columns"
 msgstr ""
 
-#: meerk40t/core/elements/grid.py:135 meerk40t/extra/imageactions.py:168
+#: meerk40t/core/elements/grid.py:135 meerk40t/core/elements/manual_optimize.py:107 meerk40t/extra/imageactions.py:168
 msgid "Number of rows"
 msgstr ""
 
@@ -5388,6 +5432,142 @@ msgstr ""
 
 #: meerk40t/core/elements/grid.py:473
 msgid "Create circular copy"
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr ""
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:82
+msgid "Number of shapes to create"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:87
+msgid "Create test case for optimization"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:109
+msgid "Shape type"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:112
+msgid "Create grid pattern test case for optimization"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:137
+msgid "Number of shapes in circle"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:140
+msgid "Circle radius (percentage)"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:144
+msgid "Create circular pattern test case for optimization"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:168
+msgid "Number of nesting levels"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:172
+msgid "Create nested shapes test case for containment testing"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:199
+msgid "Provide detailed debug output"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:202
+msgid "Starting X position"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:205
+msgid "Starting Y position"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:209
+msgid "reorder elements for optimal cutting within an operation"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:232
+msgid "No operations to optimize"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:532
+msgid "Geometric tolerance for containment analysis"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:536
+msgid "Optimize selected operations using containment-aware workflow"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:548
+msgid "No operations selected for workflow optimization"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:565
+msgid "Workflow Optimization Results:"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:590
+msgid "Run the operation workflow test suite"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:601
+msgid "Running Operation Workflow Test Suite..."
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:646
+msgid "✓ All available workflow tests passed successfully!"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:648
+msgid "✗ Some workflow tests failed. Check output for details."
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:659
+msgid "Demo scenario: nested, shared, travel, or performance"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:663
+msgid "Create demonstration workflow scenarios"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:710
+msgid "Run realistic workflow test scenarios"
+msgstr ""
+
+#: meerk40t/core/elements/manual_optimize.py:744
+msgid "Running Realistic Workflow Scenarios..."
 msgstr ""
 
 #: meerk40t/core/elements/materials.py:64
@@ -6766,23 +6946,23 @@ msgstr ""
 msgid "Default Wobble Interval"
 msgstr ""
 
-#: meerk40t/device/devicechoices.py:89 meerk40t/gui/materialtest.py:200 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1405 meerk40t/gui/wxmmain.py:2386 meerk40t/newly/device.py:510 meerk40t/newly/device.py:526
+#: meerk40t/device/devicechoices.py:90 meerk40t/gui/materialtest.py:200 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1405 meerk40t/gui/wxmmain.py:2386 meerk40t/newly/device.py:510 meerk40t/newly/device.py:526
 msgid "Cut"
 msgstr ""
 
-#: meerk40t/device/devicechoices.py:90 meerk40t/gui/materialtest.py:201 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1406
+#: meerk40t/device/devicechoices.py:91 meerk40t/gui/materialtest.py:201 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1406
 msgid "Engrave"
 msgstr ""
 
-#: meerk40t/device/devicechoices.py:91 meerk40t/gui/materialtest.py:202 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1407 meerk40t/newly/device.py:484 meerk40t/newly/device.py:564 meerk40t/newly/device.py:579
+#: meerk40t/device/devicechoices.py:92 meerk40t/gui/materialtest.py:202 meerk40t/gui/materialtest.py:1234 meerk40t/gui/materialtest.py:1407 meerk40t/newly/device.py:484 meerk40t/newly/device.py:564 meerk40t/newly/device.py:579
 msgid "Raster"
 msgstr ""
 
-#: meerk40t/device/devicechoices.py:114
+#: meerk40t/device/devicechoices.py:115
 msgid "Default power for {op}"
 msgstr ""
 
-#: meerk40t/device/devicechoices.py:126
+#: meerk40t/device/devicechoices.py:127
 msgid "Default speed for {op}"
 msgstr ""
 
@@ -6822,115 +7002,171 @@ msgstr ""
 msgid "Scale factor for the Y-axis. Board units to actual physical units."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:50
+#: meerk40t/device/gui/defaultactions.py:64 meerk40t/grbl/gui/grblcontroller.py:83 meerk40t/grbl/gui/gui.py:133 meerk40t/gui/wxmeerk40t.py:349 meerk40t/lihuiyu/gui/gui.py:109
+msgid "Home"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:64
 msgid "Move the laser head to the home position."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:55
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:69
 msgid "Move the laser head to the origin position."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:61
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:75
 msgid "Move the laser head to the absolute position 0,0."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:63
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:77
 msgid "Make audible beep."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:68
+#: meerk40t/device/gui/defaultactions.py:79 meerk40t/gui/plugin.py:433
+msgid "Interrupt"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:82
 msgid "Interrupt the current operation and display a message."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:70
+#: meerk40t/device/gui/defaultactions.py:84 meerk40t/gui/consolepanel.py:83 meerk40t/gui/consolepanel.py:678 meerk40t/gui/consolepanel.py:688
+msgid "Console"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:84
 msgid "Execute a command in the console."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:71
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:85
 msgid "Turn on the coolant."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:72
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:86
 msgid "Turn off the coolant."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:95
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:109
 msgid "Prevent the system from entering hibernation mode."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:101
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr ""
+
+#: meerk40t/device/gui/defaultactions.py:115
 msgid "Allow the system to enter hibernation mode."
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:112
+#: meerk40t/device/gui/defaultactions.py:126
 msgid "At job start"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:113
+#: meerk40t/device/gui/defaultactions.py:127
 msgid "At job end"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:128
+#: meerk40t/device/gui/defaultactions.py:142
 msgid "Add to Job Start"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:129
+#: meerk40t/device/gui/defaultactions.py:143
 msgid "Add to Job End"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:167
+#: meerk40t/device/gui/defaultactions.py:181
 msgid "Operation parameter:"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:205
+#: meerk40t/device/gui/defaultactions.py:219
 msgid "Add the selected operation to the default 'Job Start' list"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:208
+#: meerk40t/device/gui/defaultactions.py:222
 msgid "Add the selected operation to the default 'Job End' list"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:211 meerk40t/device/gui/defaultactions.py:214
+#: meerk40t/device/gui/defaultactions.py:225 meerk40t/device/gui/defaultactions.py:228
 msgid "Remove the selected operation from the list"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:217 meerk40t/device/gui/defaultactions.py:223
+#: meerk40t/device/gui/defaultactions.py:231 meerk40t/device/gui/defaultactions.py:237
 msgid "Decrease the position of the selected operation"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:220 meerk40t/device/gui/defaultactions.py:226
+#: meerk40t/device/gui/defaultactions.py:234 meerk40t/device/gui/defaultactions.py:240
 msgid "Increase the position of the selected operation"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:229
+#: meerk40t/device/gui/defaultactions.py:243
 msgid "Modify the default parameter of the operation to be added"
 msgstr ""
 
-#: meerk40t/device/gui/defaultactions.py:232 meerk40t/device/gui/defaultactions.py:235
+#: meerk40t/device/gui/defaultactions.py:246 meerk40t/device/gui/defaultactions.py:249
 msgid "Modify the parameter of the selected operation"
 msgstr ""
 
-#: meerk40t/device/gui/formatterpanel.py:97
+#: meerk40t/device/gui/formatterpanel.py:103
 msgid "Show power as %"
 msgstr ""
 
-#: meerk40t/device/gui/formatterpanel.py:102
+#: meerk40t/device/gui/formatterpanel.py:108
 msgid "Active: Full power will be shown as 100%\nInactive: Full power will be shown as 1000 ppi"
 msgstr ""
 
-#: meerk40t/device/gui/formatterpanel.py:112
+#: meerk40t/device/gui/formatterpanel.py:118
 msgid "Show speed in mm/min"
 msgstr ""
 
-#: meerk40t/device/gui/formatterpanel.py:117
+#: meerk40t/device/gui/formatterpanel.py:123
 msgid "Active: Speed will be shown in mm/min\nInactive: Speed will be shown in mm/s"
 msgstr ""
 
-#: meerk40t/device/gui/formatterpanel.py:161
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr ""
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr ""
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr ""
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr ""
+
+#: meerk40t/device/gui/formatterpanel.py:176
 msgid "Do yo want to use a bespoke formatter?"
 msgstr ""
 
-#: meerk40t/device/gui/formatterpanel.py:175
+#: meerk40t/device/gui/formatterpanel.py:190
 msgid "Bespoke formatter for this node-type"
 msgstr ""
 
@@ -7146,7 +7382,7 @@ msgstr ""
 msgid "Calling inkscape..."
 msgstr ""
 
-#: meerk40t/extra/inkscape.py:204 meerk40t/gui/simpleui.py:211 meerk40t/gui/wxmmain.py:5598
+#: meerk40t/extra/inkscape.py:204 meerk40t/gui/simpleui.py:211 meerk40t/gui/wxmmain.py:5535
 msgid "Loading File..."
 msgstr ""
 
@@ -7566,7 +7802,7 @@ msgstr ""
 msgid "Force a found message"
 msgstr ""
 
-#: meerk40t/extra/updater.py:102 meerk40t/gui/wxmmain.py:4855
+#: meerk40t/extra/updater.py:102 meerk40t/gui/wxmmain.py:4792
 msgid "Check whether a newer version of Meerk40t is available"
 msgstr ""
 
@@ -8258,10 +8494,6 @@ msgstr ""
 msgid "Send laser to physical home-position"
 msgstr ""
 
-#: meerk40t/grbl/gui/grblcontroller.py:83 meerk40t/grbl/gui/gui.py:133 meerk40t/gui/wxmeerk40t.py:349 meerk40t/lihuiyu/gui/gui.py:109
-msgid "Home"
-msgstr ""
-
 #: meerk40t/grbl/gui/grblcontroller.py:83
 msgid "Send laser to logical home-position"
 msgstr ""
@@ -8274,7 +8506,7 @@ msgstr ""
 msgid "Reset laser"
 msgstr ""
 
-#: meerk40t/grbl/gui/grblcontroller.py:88 meerk40t/gui/about.py:1697 meerk40t/gui/devicepanel.py:237 meerk40t/gui/laserpanel.py:803 meerk40t/gui/spoolerpanel.py:244 meerk40t/gui/spoolerpanel.py:293 meerk40t/gui/thread_info.py:62 meerk40t/gui/scenewidgets/rectselectwidget.py:274 meerk40t/lihuiyu/gui/tcpcontroller.py:118
+#: meerk40t/grbl/gui/grblcontroller.py:88 meerk40t/gui/about.py:1697 meerk40t/gui/devicepanel.py:237 meerk40t/gui/laserpanel.py:803 meerk40t/gui/spoolerpanel.py:244 meerk40t/gui/spoolerpanel.py:293 meerk40t/gui/thread_info.py:62 meerk40t/gui/scenewidgets/rectselectwidget.py:324 meerk40t/lihuiyu/gui/tcpcontroller.py:118
 msgid "Status"
 msgstr ""
 
@@ -8498,7 +8730,7 @@ msgstr ""
 msgid "Copy to Clipboard"
 msgstr ""
 
-#: meerk40t/gui/about.py:1578 meerk40t/gui/wxmmain.py:4854
+#: meerk40t/gui/about.py:1578 meerk40t/gui/wxmmain.py:4791
 msgid "Check for Updates"
 msgstr ""
 
@@ -8546,7 +8778,7 @@ msgstr ""
 msgid "Faulty, please report"
 msgstr ""
 
-#: meerk40t/gui/about.py:2050 meerk40t/gui/about.py:2062 meerk40t/gui/wxmmain.py:3560
+#: meerk40t/gui/about.py:2050 meerk40t/gui/about.py:2062 meerk40t/gui/wxmmain.py:3497
 msgid "About"
 msgstr ""
 
@@ -8606,19 +8838,19 @@ msgstr ""
 msgid "Leave"
 msgstr ""
 
-#: meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:1138 meerk40t/gui/hersheymanager.py:392 meerk40t/gui/magnetoptions.py:263 meerk40t/gui/wxmmain.py:2835 meerk40t/gui/propertypanels/imageproperty.py:958 meerk40t/gui/propertypanels/textproperty.py:397
+#: meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:1138 meerk40t/gui/hersheymanager.py:392 meerk40t/gui/magnetoptions.py:263 meerk40t/gui/wxmmain.py:2772 meerk40t/gui/propertypanels/imageproperty.py:958 meerk40t/gui/propertypanels/textproperty.py:397
 msgid "Left"
 msgstr ""
 
-#: meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:1138 meerk40t/gui/hersheymanager.py:392 meerk40t/gui/magnetoptions.py:265 meerk40t/gui/wxmmain.py:2939 meerk40t/gui/propertypanels/imageproperty.py:960 meerk40t/gui/propertypanels/textproperty.py:397
+#: meerk40t/gui/alignment.py:219 meerk40t/gui/alignment.py:422 meerk40t/gui/alignment.py:1138 meerk40t/gui/hersheymanager.py:392 meerk40t/gui/magnetoptions.py:265 meerk40t/gui/wxmmain.py:2876 meerk40t/gui/propertypanels/imageproperty.py:960 meerk40t/gui/propertypanels/textproperty.py:397
 msgid "Right"
 msgstr ""
 
-#: meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1139 meerk40t/gui/magnetoptions.py:303 meerk40t/gui/wxmmain.py:2957 meerk40t/gui/propertypanels/imageproperty.py:964
+#: meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1139 meerk40t/gui/magnetoptions.py:303 meerk40t/gui/wxmmain.py:2894 meerk40t/gui/propertypanels/imageproperty.py:964
 msgid "Top"
 msgstr ""
 
-#: meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1139 meerk40t/gui/magnetoptions.py:305 meerk40t/gui/wxmmain.py:2975 meerk40t/gui/propertypanels/imageproperty.py:962
+#: meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:423 meerk40t/gui/alignment.py:1139 meerk40t/gui/magnetoptions.py:305 meerk40t/gui/wxmmain.py:2912 meerk40t/gui/propertypanels/imageproperty.py:962
 msgid "Bottom"
 msgstr ""
 
@@ -8654,7 +8886,7 @@ msgstr ""
 msgid "As Group"
 msgstr ""
 
-#: meerk40t/gui/alignment.py:418 meerk40t/gui/alignment.py:425 meerk40t/gui/mkdebug.py:52 meerk40t/gui/position.py:26 meerk40t/gui/propertypanels/textproperty.py:505 meerk40t/gui/scenewidgets/selectionwidget.py:2322
+#: meerk40t/gui/alignment.py:418 meerk40t/gui/alignment.py:425 meerk40t/gui/mkdebug.py:52 meerk40t/gui/position.py:26 meerk40t/gui/propertypanels/textproperty.py:505 meerk40t/gui/scenewidgets/selectionwidget.py:2391
 msgid "Position"
 msgstr ""
 
@@ -8802,7 +9034,7 @@ msgstr ""
 msgid "Align"
 msgstr ""
 
-#: meerk40t/gui/alignment.py:1598 meerk40t/gui/wxmmain.py:2821
+#: meerk40t/gui/alignment.py:1598 meerk40t/gui/wxmmain.py:2758
 msgid "Alignment"
 msgstr ""
 
@@ -9012,10 +9244,6 @@ msgstr ""
 
 #: meerk40t/gui/choicepropertypanel.py:2239
 msgid "Restore defaults"
-msgstr ""
-
-#: meerk40t/gui/consolepanel.py:83 meerk40t/gui/consolepanel.py:678 meerk40t/gui/consolepanel.py:688
-msgid "Console"
 msgstr ""
 
 #: meerk40t/gui/consolepanel.py:90 meerk40t/gui/consolepanel.py:706
@@ -9262,7 +9490,7 @@ msgstr ""
 msgid "Execute a laser job"
 msgstr ""
 
-#: meerk40t/gui/functionwrapper.py:83 meerk40t/gui/helper.py:27 meerk40t/gui/helper.py:34 meerk40t/gui/wxmmain.py:4900 meerk40t/gui/propertypanels/operationpropertymain.py:1802
+#: meerk40t/gui/functionwrapper.py:83 meerk40t/gui/helper.py:27 meerk40t/gui/helper.py:34 meerk40t/gui/wxmmain.py:4837 meerk40t/gui/propertypanels/operationpropertymain.py:1802
 msgid "Help"
 msgstr ""
 
@@ -9490,7 +9718,7 @@ msgstr ""
 msgid "Fonts"
 msgstr ""
 
-#: meerk40t/gui/hersheymanager.py:1048 meerk40t/gui/materialmanager.py:570 meerk40t/gui/materialmanager.py:3018 meerk40t/gui/preferences.py:160 meerk40t/gui/wxmmain.py:3238
+#: meerk40t/gui/hersheymanager.py:1048 meerk40t/gui/materialmanager.py:570 meerk40t/gui/materialmanager.py:3018 meerk40t/gui/preferences.py:160 meerk40t/gui/wxmmain.py:3175
 msgid "Import"
 msgstr ""
 
@@ -9890,7 +10118,7 @@ msgstr ""
 msgid "Updating Plan..."
 msgstr ""
 
-#: meerk40t/gui/laserpanel.py:936 meerk40t/gui/wxmmain.py:3267
+#: meerk40t/gui/laserpanel.py:936 meerk40t/gui/wxmmain.py:3204
 msgid "Save Project"
 msgstr ""
 
@@ -11306,11 +11534,11 @@ msgstr ""
 msgid "Open a control window to move the laser around"
 msgstr ""
 
-#: meerk40t/gui/notes.py:19 meerk40t/gui/notes.py:125 meerk40t/gui/wxmmain.py:2903 meerk40t/gui/wxmmain.py:2913
+#: meerk40t/gui/notes.py:19 meerk40t/gui/notes.py:125 meerk40t/gui/wxmmain.py:2840 meerk40t/gui/wxmmain.py:2850
 msgid "Notes"
 msgstr ""
 
-#: meerk40t/gui/notes.py:26 meerk40t/gui/opassignment.py:34 meerk40t/gui/wordlisteditor.py:49 meerk40t/gui/wxmmain.py:3884 meerk40t/gui/wxmribbon.py:80 meerk40t/lihuiyu/gui/lhycontrollergui.py:729 meerk40t/moshi/gui/moshicontrollergui.py:470
+#: meerk40t/gui/notes.py:26 meerk40t/gui/opassignment.py:34 meerk40t/gui/wordlisteditor.py:49 meerk40t/gui/wxmmain.py:3821 meerk40t/gui/wxmribbon.py:80 meerk40t/lihuiyu/gui/lhycontrollergui.py:729 meerk40t/moshi/gui/moshicontrollergui.py:470
 msgid "Tools"
 msgstr ""
 
@@ -11570,10 +11798,6 @@ msgstr ""
 msgid "Press Cancel to abort the Program."
 msgstr ""
 
-#: meerk40t/gui/plugin.py:433
-msgid "Interrupt"
-msgstr ""
-
 #: meerk40t/gui/plugin.py:520
 msgid "Loading main module"
 msgstr ""
@@ -11814,7 +12038,7 @@ msgstr ""
 msgid "Coordinate Space"
 msgstr ""
 
-#: meerk40t/gui/preferences.py:784 meerk40t/gui/preferences.py:870 meerk40t/gui/wxmmain.py:3566
+#: meerk40t/gui/preferences.py:784 meerk40t/gui/preferences.py:870 meerk40t/gui/wxmmain.py:3503
 msgid "Preferences"
 msgstr ""
 
@@ -11866,19 +12090,19 @@ msgstr ""
 msgid "Load Project"
 msgstr ""
 
-#: meerk40t/gui/simpleui.py:141 meerk40t/gui/wxmmain.py:2031 meerk40t/gui/wxmmain.py:3218 meerk40t/gui/wxmmain.py:5370
+#: meerk40t/gui/simpleui.py:141 meerk40t/gui/wxmmain.py:2031 meerk40t/gui/wxmmain.py:3155 meerk40t/gui/wxmmain.py:5307
 msgid "Open"
 msgstr ""
 
-#: meerk40t/gui/simpleui.py:161 meerk40t/gui/wxmmain.py:5466
+#: meerk40t/gui/simpleui.py:161 meerk40t/gui/wxmmain.py:5403
 msgid "Cleaning up..."
 msgstr ""
 
-#: meerk40t/gui/simpleui.py:186 meerk40t/gui/wxmmain.py:767 meerk40t/gui/wxmmain.py:5724
+#: meerk40t/gui/simpleui.py:186 meerk40t/gui/wxmmain.py:767 meerk40t/gui/wxmmain.py:5661
 msgid "Some files were unrecognized:\n{rejected_files}"
 msgstr ""
 
-#: meerk40t/gui/simpleui.py:190 meerk40t/gui/wxmmain.py:769 meerk40t/gui/wxmmain.py:5728
+#: meerk40t/gui/simpleui.py:190 meerk40t/gui/wxmmain.py:769 meerk40t/gui/wxmmain.py:5665
 msgid "Error encountered"
 msgstr ""
 
@@ -12170,7 +12394,7 @@ msgstr ""
 msgid "Zoom Out"
 msgstr ""
 
-#: meerk40t/gui/simulation.py:1508 meerk40t/gui/wxmmain.py:4351 meerk40t/gui/wxmscene.py:1520
+#: meerk40t/gui/simulation.py:1508 meerk40t/gui/wxmmain.py:4288 meerk40t/gui/wxmscene.py:1520
 msgid "Make the scene smaller"
 msgstr ""
 
@@ -12178,7 +12402,7 @@ msgstr ""
 msgid "Zoom In"
 msgstr ""
 
-#: meerk40t/gui/simulation.py:1517 meerk40t/gui/wxmmain.py:4359 meerk40t/gui/wxmscene.py:1529
+#: meerk40t/gui/simulation.py:1517 meerk40t/gui/wxmmain.py:4296 meerk40t/gui/wxmscene.py:1529
 msgid "Make the scene larger"
 msgstr ""
 
@@ -12186,7 +12410,7 @@ msgstr ""
 msgid "Zoom to Bed"
 msgstr ""
 
-#: meerk40t/gui/simulation.py:1526 meerk40t/gui/wxmmain.py:4376 meerk40t/gui/wxmscene.py:1538
+#: meerk40t/gui/simulation.py:1526 meerk40t/gui/wxmmain.py:4313 meerk40t/gui/wxmscene.py:1538
 msgid "View the whole laser bed"
 msgstr ""
 
@@ -12518,11 +12742,11 @@ msgstr ""
 msgid "Display wordlist advancement controls"
 msgstr ""
 
-#: meerk40t/gui/wordlisteditor.py:68 meerk40t/gui/wordlisteditor.py:960 meerk40t/gui/wxmmain.py:1052 meerk40t/gui/wxmmain.py:2856 meerk40t/gui/wxmmain.py:2868
+#: meerk40t/gui/wordlisteditor.py:68 meerk40t/gui/wordlisteditor.py:960 meerk40t/gui/wxmmain.py:1052 meerk40t/gui/wxmmain.py:2793 meerk40t/gui/wxmmain.py:2805
 msgid "Manages Wordlist-Entries"
 msgstr ""
 
-#: meerk40t/gui/wordlisteditor.py:70 meerk40t/gui/wxmmain.py:2881
+#: meerk40t/gui/wordlisteditor.py:70 meerk40t/gui/wxmmain.py:2818
 msgid "Next"
 msgstr ""
 
@@ -12530,7 +12754,7 @@ msgstr ""
 msgid "Wordlist: go to next page (right-click to next entry)"
 msgstr ""
 
-#: meerk40t/gui/wordlisteditor.py:78 meerk40t/gui/wxmmain.py:2887
+#: meerk40t/gui/wordlisteditor.py:78 meerk40t/gui/wxmmain.py:2824
 msgid "Prev"
 msgstr ""
 
@@ -12678,7 +12902,7 @@ msgstr ""
 msgid "Import/Export"
 msgstr ""
 
-#: meerk40t/gui/wordlisteditor.py:936 meerk40t/gui/wordlisteditor.py:958 meerk40t/gui/wxmmain.py:2870
+#: meerk40t/gui/wordlisteditor.py:936 meerk40t/gui/wordlisteditor.py:958 meerk40t/gui/wxmmain.py:2807
 msgid "Wordlist Editor"
 msgstr ""
 
@@ -12922,7 +13146,7 @@ msgstr ""
 msgid "Paste text"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:894 meerk40t/gui/wxmmain.py:5871
+#: meerk40t/gui/wxmmain.py:894 meerk40t/gui/wxmmain.py:5808
 msgid "&Undo\tCtrl-Z"
 msgstr ""
 
@@ -12930,7 +13154,7 @@ msgstr ""
 msgid "Undo last action"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:904 meerk40t/gui/wxmmain.py:5882
+#: meerk40t/gui/wxmmain.py:904 meerk40t/gui/wxmmain.py:5819
 msgid "&Redo\tCtrl-Shift-Z"
 msgstr ""
 
@@ -13534,7 +13758,7 @@ msgstr ""
 msgid "Redo last operation"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2522 meerk40t/gui/wxmmain.py:4244
+#: meerk40t/gui/wxmmain.py:2522 meerk40t/gui/wxmmain.py:4181
 msgid "Redo"
 msgstr ""
 
@@ -13610,855 +13834,855 @@ msgstr ""
 msgid "Create a intersection of the selected elements"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2749
+#: meerk40t/gui/wxmmain.py:2709
 msgid "Group"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2751
+#: meerk40t/gui/wxmmain.py:2711
 msgid "Group elements together"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2795
+#: meerk40t/gui/wxmmain.py:2732
 msgid "Ungroup"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2810
+#: meerk40t/gui/wxmmain.py:2747
 msgid "Alignment to first element"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2813
+#: meerk40t/gui/wxmmain.py:2750
 msgid "When aligning several elements to each other, they will be aligned to the element..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2815
+#: meerk40t/gui/wxmmain.py:2752
 msgid "Ticked: ...that was selected first"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2817
+#: meerk40t/gui/wxmmain.py:2754
 msgid "Unticked: ...that was selected last"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2819
+#: meerk40t/gui/wxmmain.py:2756
 msgid "(Requires a restart to take effect)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2839
+#: meerk40t/gui/wxmmain.py:2776
 msgid "Align selected elements at the leftmost position (right click: of the bed)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2858 meerk40t/gui/wxmmain.py:2869 meerk40t/gui/wxmmain.py:2890
+#: meerk40t/gui/wxmmain.py:2795 meerk40t/gui/wxmmain.py:2806 meerk40t/gui/wxmmain.py:2827
 msgid " (right go to next entry)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2878
+#: meerk40t/gui/wxmmain.py:2815
 msgid "Wordlist: go to next entry"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2879
+#: meerk40t/gui/wxmmain.py:2816
 msgid " (right go to prev entry)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2889
+#: meerk40t/gui/wxmmain.py:2826
 msgid "Wordlist: go to prev entry"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2905 meerk40t/gui/wxmmain.py:2915
+#: meerk40t/gui/wxmmain.py:2842 meerk40t/gui/wxmmain.py:2852
 msgid "Open Notes Window"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2922
+#: meerk40t/gui/wxmmain.py:2859
 msgid "Startup"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2924
+#: meerk40t/gui/wxmmain.py:2861
 msgid "Edit file startup commands"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2943
+#: meerk40t/gui/wxmmain.py:2880
 msgid "Align selected elements at the rightmost position (right click: of the bed)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2961
+#: meerk40t/gui/wxmmain.py:2898
 msgid "Align selected elements at the topmost position (right click: of the bed)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2979
+#: meerk40t/gui/wxmmain.py:2916
 msgid "Align selected elements at the lowest position (right click: of the bed)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2993
+#: meerk40t/gui/wxmmain.py:2930
 msgid "Center X"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:2997
+#: meerk40t/gui/wxmmain.py:2934
 msgid "Align selected elements at their center horizontally (right click: of the bed)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3013
+#: meerk40t/gui/wxmmain.py:2950
 msgid "Center Y"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3017
+#: meerk40t/gui/wxmmain.py:2954
 msgid "Align selected elements at their center vertically (right click: of the bed)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3033
+#: meerk40t/gui/wxmmain.py:2970
 msgid "Distr. Hor."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3035
+#: meerk40t/gui/wxmmain.py:2972
 msgid "Distribute Space Horizontally"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3037 meerk40t/gui/wxmmain.py:3057
+#: meerk40t/gui/wxmmain.py:2974 meerk40t/gui/wxmmain.py:2994
 msgid "Left click: Equal distances"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3039 meerk40t/gui/wxmmain.py:3059
+#: meerk40t/gui/wxmmain.py:2976 meerk40t/gui/wxmmain.py:2996
 msgid "Right click: Equal centers"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3053
+#: meerk40t/gui/wxmmain.py:2990
 msgid "Distr. Vert."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3055
+#: meerk40t/gui/wxmmain.py:2992
 msgid "Distribute Space Vertically"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3084
+#: meerk40t/gui/wxmmain.py:3021
 msgid "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, etc..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3085
+#: meerk40t/gui/wxmmain.py:3022
 msgid "Transform Entry"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3105
+#: meerk40t/gui/wxmmain.py:3042
 msgid "The entered command does nothing."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3106
+#: meerk40t/gui/wxmmain.py:3043
 msgid "Non-Useful Matrix."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3125
+#: meerk40t/gui/wxmmain.py:3062
 msgid "Material must be jigged at 0,0.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3126
+#: meerk40t/gui/wxmmain.py:3063
 msgid "Double Side Flip"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3145
+#: meerk40t/gui/wxmmain.py:3082
 msgid "Enter SVG Path Data"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3145
+#: meerk40t/gui/wxmmain.py:3082
 msgid "Path Entry"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3152
+#: meerk40t/gui/wxmmain.py:3089
 msgid "Add path"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3201
+#: meerk40t/gui/wxmmain.py:3138
 msgid "Enter Forced Gear"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3201
+#: meerk40t/gui/wxmmain.py:3138
 msgid "Gear Entry"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3290 meerk40t/gui/wxmmain.py:3337
+#: meerk40t/gui/wxmmain.py:3227 meerk40t/gui/wxmmain.py:3274
 msgid "Saving Failed"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3331
+#: meerk40t/gui/wxmmain.py:3268
 msgid "Succesfully saved {file}"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3382
+#: meerk40t/gui/wxmmain.py:3319
 msgid "control various panes for main window"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3388 meerk40t/gui/wxmmain.py:3404
+#: meerk40t/gui/wxmmain.py:3325 meerk40t/gui/wxmmain.py:3341
 msgid "configuration to load"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3392 meerk40t/gui/wxmmain.py:3408
+#: meerk40t/gui/wxmmain.py:3329 meerk40t/gui/wxmmain.py:3345
 msgid "load pane configuration"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3398
+#: meerk40t/gui/wxmmain.py:3335
 msgid "Perspective not found"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3414
+#: meerk40t/gui/wxmmain.py:3351
 msgid "pane to be shown"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3418 meerk40t/gui/wxmmain.py:3440
+#: meerk40t/gui/wxmmain.py:3355 meerk40t/gui/wxmmain.py:3377
 msgid "show the pane"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3424 meerk40t/gui/wxmmain.py:3446 meerk40t/gui/wxmmain.py:3468 meerk40t/gui/wxmmain.py:3488 meerk40t/gui/wxmmain.py:3570
+#: meerk40t/gui/wxmmain.py:3361 meerk40t/gui/wxmmain.py:3383 meerk40t/gui/wxmmain.py:3405 meerk40t/gui/wxmmain.py:3425 meerk40t/gui/wxmmain.py:3507
 msgid "Pane not found."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3436
+#: meerk40t/gui/wxmmain.py:3373
 msgid "pane to be hidden"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3458
+#: meerk40t/gui/wxmmain.py:3395
 msgid "pane to be float"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3462
+#: meerk40t/gui/wxmmain.py:3399
 msgid "Float the pane"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3478
+#: meerk40t/gui/wxmmain.py:3415
 msgid "pane to be dock"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3482
+#: meerk40t/gui/wxmmain.py:3419
 msgid "Dock the pane"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3501
+#: meerk40t/gui/wxmmain.py:3438
 msgid "Hides/Restores all the visible panes (except scene)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3512
+#: meerk40t/gui/wxmmain.py:3449
 msgid "Panes restored."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3524
+#: meerk40t/gui/wxmmain.py:3461
 msgid "Panes hidden."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3529
+#: meerk40t/gui/wxmmain.py:3466
 msgid "reset all panes restoring the default perspective"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3537
+#: meerk40t/gui/wxmmain.py:3474
 msgid "lock the panes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3545
+#: meerk40t/gui/wxmmain.py:3482
 msgid "unlock the panes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3550
+#: meerk40t/gui/wxmmain.py:3487
 msgid "pane to create"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3554
+#: meerk40t/gui/wxmmain.py:3491
 msgid "create a floating about pane"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3715
+#: meerk40t/gui/wxmmain.py:3652
 msgid "Theming information and assignments"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3773
+#: meerk40t/gui/wxmmain.py:3710
 msgid "Panes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3844
+#: meerk40t/gui/wxmmain.py:3781
 msgid "Lock Panes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3846
+#: meerk40t/gui/wxmmain.py:3783
 msgid "Lock the pane positions / allow panes to be moved"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3856
+#: meerk40t/gui/wxmmain.py:3793
 msgid "Reset Panes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3859
+#: meerk40t/gui/wxmmain.py:3796
 msgid "Reset pane positions to a default value"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3995
+#: meerk40t/gui/wxmmain.py:3932
 msgid "Reset Windows"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:3997
+#: meerk40t/gui/wxmmain.py:3934
 msgid "Forget stored window positions"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4128
+#: meerk40t/gui/wxmmain.py:4065
 msgid "&New\tCtrl-N"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4128
+#: meerk40t/gui/wxmmain.py:4065
 msgid "Clear Operations, Elements and Notes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4134
+#: meerk40t/gui/wxmmain.py:4071
 msgid "&Open Project\tCtrl-O"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4135
+#: meerk40t/gui/wxmmain.py:4072
 msgid "Clear existing elements and notes and open a new file"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4136 meerk40t/gui/wxmmain.py:4149 meerk40t/gui/wxmmain.py:5415
+#: meerk40t/gui/wxmmain.py:4073 meerk40t/gui/wxmmain.py:4086 meerk40t/gui/wxmmain.py:5352
 msgid " (keep the Shift-Key pressed to be asked for a target location)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4143
+#: meerk40t/gui/wxmmain.py:4080
 msgid "&Recent"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4147
+#: meerk40t/gui/wxmmain.py:4084
 msgid "&Import File"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4148
+#: meerk40t/gui/wxmmain.py:4085
 msgid "Import another file into the same project"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4155
+#: meerk40t/gui/wxmmain.py:4092
 msgid "&Save\tCtrl-S"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4156
+#: meerk40t/gui/wxmmain.py:4093
 msgid "Save the project as an SVG file (overwriting any existing file)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4161
+#: meerk40t/gui/wxmmain.py:4098
 msgid "Save &As\tCtrl-Shift-S"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4162
+#: meerk40t/gui/wxmmain.py:4099
 msgid "Save the project in a new SVG file"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4168
+#: meerk40t/gui/wxmmain.py:4105
 msgid "&Close Window\tCtrl-W"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4168 meerk40t/gui/wxmmain.py:4172
+#: meerk40t/gui/wxmmain.py:4105 meerk40t/gui/wxmmain.py:4109
 msgid "Close Meerk40t"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4172
+#: meerk40t/gui/wxmmain.py:4109
 msgid "E&xit"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4217
+#: meerk40t/gui/wxmmain.py:4154
 msgid "Undo/Redo States"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4267
+#: meerk40t/gui/wxmmain.py:4204
 msgid "Editing History"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4280
+#: meerk40t/gui/wxmmain.py:4217
 msgid "Recall..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4350
+#: meerk40t/gui/wxmmain.py:4287
 msgid "Zoom &Out\tCtrl--"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4358
+#: meerk40t/gui/wxmmain.py:4295
 msgid "Zoom &In\tCtrl-+"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4366
+#: meerk40t/gui/wxmmain.py:4303
 msgid "Zoom to &Selected\tCtrl-Shift-B"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4367 meerk40t/gui/wxmscene.py:1548
+#: meerk40t/gui/wxmmain.py:4304 meerk40t/gui/wxmscene.py:1548
 msgid "Fill the scene area with the selected elements"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4375
+#: meerk40t/gui/wxmmain.py:4312
 msgid "Zoom to &Bed\tCtrl-B"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4388
+#: meerk40t/gui/wxmmain.py:4325
 msgid "GUI-Elements"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4390 meerk40t/gui/wxmmain.py:4398 meerk40t/gui/wxmmain.py:4409
+#: meerk40t/gui/wxmmain.py:4327 meerk40t/gui/wxmmain.py:4335 meerk40t/gui/wxmmain.py:4346
 msgid "GUI Appearance"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4394
+#: meerk40t/gui/wxmmain.py:4331
 msgid "Show/Hide UI-Panels\tCtrl-U"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4395
+#: meerk40t/gui/wxmmain.py:4332
 msgid "Show/Hide all panels/ribbon bar"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4403
+#: meerk40t/gui/wxmmain.py:4340
 msgid "Hide Icons"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4404
+#: meerk40t/gui/wxmmain.py:4341
 msgid "Don't use icons in the tree"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4415
+#: meerk40t/gui/wxmmain.py:4352
 msgid "Hide Origin-Indicator"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4416
+#: meerk40t/gui/wxmmain.py:4353
 msgid "Don't show the origin indicator"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4421 meerk40t/gui/wxmmain.py:4432 meerk40t/gui/wxmmain.py:4443 meerk40t/gui/wxmmain.py:4454 meerk40t/gui/wxmmain.py:4465 meerk40t/gui/wxmmain.py:4477 meerk40t/gui/wxmmain.py:4489 meerk40t/gui/wxmmain.py:4499 meerk40t/gui/wxmmain.py:4510 meerk40t/gui/wxmmain.py:4521 meerk40t/gui/wxmmain.py:4532 meerk40t/gui/wxmmain.py:4543 meerk40t/gui/wxmmain.py:4555
+#: meerk40t/gui/wxmmain.py:4358 meerk40t/gui/wxmmain.py:4369 meerk40t/gui/wxmmain.py:4380 meerk40t/gui/wxmmain.py:4391 meerk40t/gui/wxmmain.py:4402 meerk40t/gui/wxmmain.py:4414 meerk40t/gui/wxmmain.py:4426 meerk40t/gui/wxmmain.py:4436 meerk40t/gui/wxmmain.py:4447 meerk40t/gui/wxmmain.py:4458 meerk40t/gui/wxmmain.py:4469 meerk40t/gui/wxmmain.py:4480 meerk40t/gui/wxmmain.py:4492
 msgid "Scene Appearance"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4426
+#: meerk40t/gui/wxmmain.py:4363
 msgid "Hide Grid"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4427
+#: meerk40t/gui/wxmmain.py:4364
 msgid "Don't show the sizing grid"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4437
+#: meerk40t/gui/wxmmain.py:4374
 msgid "Hide Background"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4438
+#: meerk40t/gui/wxmmain.py:4375
 msgid "Don't show any background image"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4448
+#: meerk40t/gui/wxmmain.py:4385
 msgid "Hide Guides"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4449
+#: meerk40t/gui/wxmmain.py:4386
 msgid "Don't show the measurement guides"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4459
+#: meerk40t/gui/wxmmain.py:4396
 msgid "Hide Regmarks"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4460
+#: meerk40t/gui/wxmmain.py:4397
 msgid "Don't show elements under the regmark branch"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4469
+#: meerk40t/gui/wxmmain.py:4406
 msgid "Hide Laserpath"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4472
+#: meerk40t/gui/wxmmain.py:4409
 msgid "Don't show the path that the laserhead has followed (blue line)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4481
+#: meerk40t/gui/wxmmain.py:4418
 msgid "Hide Reticle"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4484
+#: meerk40t/gui/wxmmain.py:4421
 msgid "Don't show the small read circle showing the current laserhead position"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4493
+#: meerk40t/gui/wxmmain.py:4430
 msgid "Do Not Alpha/Black Images"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4494
+#: meerk40t/gui/wxmmain.py:4431
 msgid "Don't preprocess images for display, i.e. keep color"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4504
+#: meerk40t/gui/wxmmain.py:4441
 msgid "Do Not Cache Image"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4505
+#: meerk40t/gui/wxmmain.py:4442
 msgid "Forces a recalculation of nodes when drawing"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4515
+#: meerk40t/gui/wxmmain.py:4452
 msgid "Do Not Animate"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4516
+#: meerk40t/gui/wxmmain.py:4453
 msgid "Don't use animations when zooming"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4526 meerk40t/gui/propertypanels/imageproperty.py:81 meerk40t/gui/propertypanels/imageproperty.py:1953
+#: meerk40t/gui/wxmmain.py:4463 meerk40t/gui/propertypanels/imageproperty.py:81 meerk40t/gui/propertypanels/imageproperty.py:1953
 msgid "Invert"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4527
+#: meerk40t/gui/wxmmain.py:4464
 msgid "Show a negative image of the scene by inverting colours"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4537
+#: meerk40t/gui/wxmmain.py:4474
 msgid "Flip XY"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4538
+#: meerk40t/gui/wxmmain.py:4475
 msgid "Effectively rotate the scene display by 180 degrees"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4549
+#: meerk40t/gui/wxmmain.py:4486
 msgid "Do Not Refresh"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4550
+#: meerk40t/gui/wxmmain.py:4487
 msgid "Don't refresh the scene when requested"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4562
+#: meerk40t/gui/wxmmain.py:4499
 msgid "Affect treatment of elements during render"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4565 meerk40t/gui/wxmmain.py:4574
+#: meerk40t/gui/wxmmain.py:4502 meerk40t/gui/wxmmain.py:4511
 msgid "Advanced options! Tampering with these might break your burn!"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4566 meerk40t/gui/wxmmain.py:4575 meerk40t/gui/wxmmain.py:4585 meerk40t/gui/wxmmain.py:4595 meerk40t/gui/wxmmain.py:4605 meerk40t/gui/wxmmain.py:4618 meerk40t/gui/wxmmain.py:4629 meerk40t/gui/wxmmain.py:4635 meerk40t/gui/wxmmain.py:4646
+#: meerk40t/gui/wxmmain.py:4503 meerk40t/gui/wxmmain.py:4512 meerk40t/gui/wxmmain.py:4522 meerk40t/gui/wxmmain.py:4532 meerk40t/gui/wxmmain.py:4542 meerk40t/gui/wxmmain.py:4555 meerk40t/gui/wxmmain.py:4566 meerk40t/gui/wxmmain.py:4572 meerk40t/gui/wxmmain.py:4583
 msgid "Render-Options"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4571
+#: meerk40t/gui/wxmmain.py:4508
 msgid "(both on screen and at the burn-phase)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4580
+#: meerk40t/gui/wxmmain.py:4517
 msgid "Hide Shapes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4581
+#: meerk40t/gui/wxmmain.py:4518
 msgid "Don't show shapes (i.e. Rectangles, Paths etc.)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4590
+#: meerk40t/gui/wxmmain.py:4527
 msgid "Hide Text"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4591
+#: meerk40t/gui/wxmmain.py:4528
 msgid "Don't show text elements"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4600
+#: meerk40t/gui/wxmmain.py:4537
 msgid "Hide Images"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4601
+#: meerk40t/gui/wxmmain.py:4538
 msgid "Don't show images"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4612
+#: meerk40t/gui/wxmmain.py:4549
 msgid "Hide Strokes"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4613
+#: meerk40t/gui/wxmmain.py:4550
 msgid "Don't show the strokes (i.e. the edges of SVG shapes)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4623
+#: meerk40t/gui/wxmmain.py:4560
 msgid "Hide Fills"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4624
+#: meerk40t/gui/wxmmain.py:4561
 msgid "Don't show fills (i.e. the fill inside strokes)"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4640
+#: meerk40t/gui/wxmmain.py:4577
 msgid "No Stroke-Width Render"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4641
+#: meerk40t/gui/wxmmain.py:4578
 msgid "Ignore the stroke width when drawing the stroke"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4651
+#: meerk40t/gui/wxmmain.py:4588
 msgid "Show Variables"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4652
+#: meerk40t/gui/wxmmain.py:4589
 msgid "Replace variables in textboxes by their 'real' content"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4663 meerk40t/gui/propertypanels/blobproperty.py:31
+#: meerk40t/gui/wxmmain.py:4600 meerk40t/gui/propertypanels/blobproperty.py:31
 msgid "View"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4688
+#: meerk40t/gui/wxmmain.py:4625
 msgid "Window"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4716
+#: meerk40t/gui/wxmmain.py:4653
 msgid "Offline help file (\"{help}\") was not found."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4719
+#: meerk40t/gui/wxmmain.py:4656
 msgid "File Not Found"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4747
+#: meerk40t/gui/wxmmain.py:4684
 msgid "&MeerK40t Help"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4747
+#: meerk40t/gui/wxmmain.py:4684
 msgid "Open the MeerK40t Mac help file"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4751
+#: meerk40t/gui/wxmmain.py:4688
 msgid "&Online Help"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4751
+#: meerk40t/gui/wxmmain.py:4688
 msgid "Open the Meerk40t online wiki"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4761
+#: meerk40t/gui/wxmmain.py:4698
 msgid "&Help\tF1"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4762 meerk40t/gui/wxmmain.py:4785
+#: meerk40t/gui/wxmmain.py:4699 meerk40t/gui/wxmmain.py:4722
 msgid "Open the Meerk40t online wiki Beginners page"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4773
+#: meerk40t/gui/wxmmain.py:4710
 msgid "Online Reference\tF11"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4774
+#: meerk40t/gui/wxmmain.py:4711
 msgid "Display online reference"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4784
+#: meerk40t/gui/wxmmain.py:4721
 msgid "&Beginners' Help"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4793
+#: meerk40t/gui/wxmmain.py:4730
 msgid "&Github"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4793
+#: meerk40t/gui/wxmmain.py:4730
 msgid "Visit Meerk40t's Github homepage"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4802
+#: meerk40t/gui/wxmmain.py:4739
 msgid "&Releases"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4803
+#: meerk40t/gui/wxmmain.py:4740
 msgid "Check for a new release on Meerk40t's Github releases page"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4812
+#: meerk40t/gui/wxmmain.py:4749
 msgid "&Facebook"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4813
+#: meerk40t/gui/wxmmain.py:4750
 msgid "Get help from the K40 Meerk40t Facebook group"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4822
+#: meerk40t/gui/wxmmain.py:4759
 msgid "&Discord"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4823
+#: meerk40t/gui/wxmmain.py:4760
 msgid "Chat with developers to get help on the Meerk40t Discord server"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4832
+#: meerk40t/gui/wxmmain.py:4769
 msgid "&Makers Forum"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4833
+#: meerk40t/gui/wxmmain.py:4770
 msgid "Get help from the Meerk40t page on the Makers Forum"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4843
+#: meerk40t/gui/wxmmain.py:4780
 msgid "Feature request/feedback"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4844
+#: meerk40t/gui/wxmmain.py:4781
 msgid "You feel something is missing or could be improved? Let us know..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4878
+#: meerk40t/gui/wxmmain.py:4815
 msgid "Tips && Tricks"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4879
+#: meerk40t/gui/wxmmain.py:4816
 msgid "Show some Tips & Tricks"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4889
+#: meerk40t/gui/wxmmain.py:4826
 msgid "&About MeerK40t"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4892
+#: meerk40t/gui/wxmmain.py:4829
 msgid "Toggle the About window acknowledging those who contributed to creating Meerk40t"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:4936 meerk40t/gui/wxmmain.py:4973
+#: meerk40t/gui/wxmmain.py:4873 meerk40t/gui/wxmmain.py:4910
 msgid "Languages"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5007
+#: meerk40t/gui/wxmmain.py:4944
 msgid "Restart"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5009
+#: meerk40t/gui/wxmmain.py:4946
 msgid "Restart needed to apply new parameters"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5027
+#: meerk40t/gui/wxmmain.py:4964
 msgid "The device is actively sending data. Really quit?"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5029
+#: meerk40t/gui/wxmmain.py:4966
 msgid "Currently Sending Data..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5037
+#: meerk40t/gui/wxmmain.py:4974
 msgid "Save changes to project before closing?\n\nYour changes will be lost if you do not save them."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5039
+#: meerk40t/gui/wxmmain.py:4976
 msgid "Save Project..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5162
+#: meerk40t/gui/wxmmain.py:5099
 msgid "No active device existed. Add a primary device."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5163
+#: meerk40t/gui/wxmmain.py:5100
 msgid "Active Device"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5199
+#: meerk40t/gui/wxmmain.py:5136
 msgid "All attempts to connect to USB have failed."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5200
+#: meerk40t/gui/wxmmain.py:5137
 msgid "Usb Connection Problem."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5210
+#: meerk40t/gui/wxmmain.py:5147
 msgid "Cut planning failed because: {error}"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5211
+#: meerk40t/gui/wxmmain.py:5148
 msgid "Cut Planning Failed"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5233
+#: meerk40t/gui/wxmmain.py:5170
 msgid "Usb: {index}"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5244
+#: meerk40t/gui/wxmmain.py:5181
 msgid "Controller: {state}"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5253
+#: meerk40t/gui/wxmmain.py:5190
 msgid "Spooler: {state}"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5290
+#: meerk40t/gui/wxmmain.py:5227
 msgid "Export image"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5413
+#: meerk40t/gui/wxmmain.py:5350
 msgid "Load {file}..."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5430
+#: meerk40t/gui/wxmmain.py:5367
 msgid "Clear Recent"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5431
+#: meerk40t/gui/wxmmain.py:5368
 msgid "Delete the list of recent projects"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5470
+#: meerk40t/gui/wxmmain.py:5407
 msgid "Clear Project"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5498
+#: meerk40t/gui/wxmmain.py:5435
 msgid "Place elements"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5505 meerk40t/gui/wxmmain.py:5506 meerk40t/gui/propertypanels/operationpropertymain.py:176 meerk40t/lihuiyu/device.py:505
+#: meerk40t/gui/wxmmain.py:5442 meerk40t/gui/wxmmain.py:5443 meerk40t/gui/propertypanels/operationpropertymain.py:176 meerk40t/lihuiyu/device.py:505
 msgid "Default"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5505
+#: meerk40t/gui/wxmmain.py:5442
 msgid "Left Edge"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5505
+#: meerk40t/gui/wxmmain.py:5442
 msgid "Right Edge"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5506
+#: meerk40t/gui/wxmmain.py:5443
 msgid "Top Edge"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5506
+#: meerk40t/gui/wxmmain.py:5443
 msgid "Bottom Edge"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5509
+#: meerk40t/gui/wxmmain.py:5446
 msgid "Where do you want to place the content of the file?"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5513
+#: meerk40t/gui/wxmmain.py:5450
 msgid "Horizontal:"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5521
+#: meerk40t/gui/wxmmain.py:5458
 msgid "Vertical:"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5694
+#: meerk40t/gui/wxmmain.py:5631
 msgid "This file contains an active autostart sequence!\nDo you wish to execute it?"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5695
+#: meerk40t/gui/wxmmain.py:5632
 msgid "Execute"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5697
+#: meerk40t/gui/wxmmain.py:5634
 msgid "Startup-sequence found"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5932
+#: meerk40t/gui/wxmmain.py:5869
 msgid "No help text"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5968
+#: meerk40t/gui/wxmmain.py:5905
 msgid "Apparently MeerK40t did crash during the last session, we apologize for this invconvenience."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5974
+#: meerk40t/gui/wxmmain.py:5911
 msgid "There is an autosave file ({filename}),\nthat was last saved at {filedate}."
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5977
+#: meerk40t/gui/wxmmain.py:5914
 msgid "Do you want to load this file?"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5978
+#: meerk40t/gui/wxmmain.py:5915
 msgid "Crash-Recovery"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5981
+#: meerk40t/gui/wxmmain.py:5918
 msgid "Load work"
 msgstr ""
 
-#: meerk40t/gui/wxmmain.py:5982
+#: meerk40t/gui/wxmmain.py:5919
 msgid "Start fresh"
 msgstr ""
 
@@ -16786,103 +17010,143 @@ msgstr ""
 msgid "Create magnets along grid"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:618
+#: meerk40t/gui/scenewidgets/selectionwidget.py:642
 msgid "Element rotated"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1335
+#: meerk40t/gui/scenewidgets/selectionwidget.py:784
+msgid "Rotate element"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1025
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1260
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1261
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1361
 msgid "Element skewed"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2308
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1414
+msgid "Skew element in X-direction"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1415
+msgid "Skew element in Y-direction"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1943
+msgid "Move element"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2076
+msgid "Move rotation center"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2221
+msgid "Toggle reference status of element"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2347
+msgid "Remove the 'locked' status of the element"
+msgstr ""
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2377
 msgid "Align Selection"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2315
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2384
 msgid "Move the selection into the reference object and scale the elements."
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2330
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2399
 msgid "Align the selection to the top left corner of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2336
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2405
 msgid "Align the selection to the left side of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2342
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2411
 msgid "Align the selection to the bottom left corner of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2351
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2420
 msgid "Align the selection to the upper side of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2360
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2429
 msgid "Align the selection to the lower side of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2369
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2438
 msgid "Align the selection to the top right corner of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2378
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2447
 msgid "Align the selection to the bottom right corner of the reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2382
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2451
 msgid "Scaling"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2386
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2455
 msgid "Unchanged"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2388
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2457
 msgid "Don't change the size of the object(s)"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2391
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2460
 msgid "Fit"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2393
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2462
 msgid "Scale the object(s) while maintaining the aspect ratio"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2397
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2466
 msgid "Squeeze"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2399
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2468
 msgid "Scale the object(s) to make them fit the target"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2403
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2472
 msgid "Autorotate"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2405
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2474
 msgid "Rotate the object(s) if they would fit better"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2413
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2482
 msgid "Align and scale the elements"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2418
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2487
 msgid "Close without applying any changes"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2723
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2853
 msgid "Align to reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2734
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2864
 msgid "Clear reference object"
 msgstr ""
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2738
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2868
 msgid "Reference Object"
 msgstr ""
 
@@ -20773,3 +21037,4 @@ msgstr ""
 #: barcodes/main.py:459 build/lib/barcodes/main.py:459
 msgid "Create an ean-barcode or a qr-code"
 msgstr ""
+

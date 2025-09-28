@@ -136,6 +136,11 @@ class EllipseTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "move":
             if self.p1 is not None:
+                if nearest_snap is not None:
+                    dist = abs(self.p1 - complex(nearest_snap[0], nearest_snap[1]))
+                    if dist == 0:
+                        nearest_snap = None
+
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
@@ -155,6 +160,11 @@ class EllipseTool(ToolWidget):
             try:
                 if self.p1 is None:
                     return RESPONSE_ABORT
+                if nearest_snap is not None:
+                    dist = abs(self.p1 - complex(nearest_snap[0], nearest_snap[1]))
+                    if dist == 0:
+                        nearest_snap = None
+                
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:

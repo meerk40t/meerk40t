@@ -440,47 +440,56 @@ class Length:
     @property
     def length_inches(self):
         amount = self.inches
-        return f"{round(amount, 8)}in"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}in"
 
     @property
     def length_cm(self):
         amount = self.cm
-        return f"{round(amount, 8)}cm"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}cm"
 
     @property
     def length_mm(self):
         amount = self.mm
-        return f"{round(amount, 8)}mm"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}mm"
 
     @property
     def length_nm(self):
         amount = self.nm
-        return f"{round(amount, 8)}nm"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}nm"
 
     @property
     def length_mil(self):
         amount = self.mil
-        return f"{round(amount, 8)}mil"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}mil"
 
     @property
     def length_um(self):
         amount = self.um
-        return f"{round(amount, 8)}um"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}um"
 
     @property
     def length_pt(self):
         amount = self.pt
-        return f"{round(amount, 8)}pt"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}pt"
 
     @property
     def length_spx(self):
         amount = self.spx
-        return f"{round(amount, 8)}spx"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}spx"
 
     @property
     def length_percent(self):
         amount = self.percent
-        return f"{round(amount, 8)}%"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}%"
 
     @property
     def length_units(self):

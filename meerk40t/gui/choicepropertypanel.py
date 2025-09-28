@@ -2418,7 +2418,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         attr = choice["attr"]
 
         def on_update_listener(choice, ctrl, sourceobj):
-            def listen_to_myself(origin, value, target=None):
+            def listen_to_myself(origin, value, target=None, dict_key=None):
                 if self.context.kernel.is_shutdown:
                     return
 

@@ -392,28 +392,7 @@ def init_tree(kernel):
         grouping="40_ELEM_GROUPS",
     )
     def ungroup_elements(node, **kwargs):
-        with self.undoscope("Ungroup elements"):
-            to_treat = []
-            for gnode in self.flat(
-                selected=True, cascade=False, types=("group", "file")
-            ):
-                enode = gnode
-                while True:
-                    if enode.parent is None or enode.parent is self.elem_branch:
-                        if enode not in to_treat:
-                            to_treat.append(enode)
-                        break
-                    if enode.parent.selected:
-                        enode = enode.parent
-                    else:
-                        if enode not in to_treat:
-                            to_treat.append(enode)
-                        break
-            with self.node_lock:
-                for gnode in to_treat:
-                    for n in list(gnode.children):
-                        gnode.insert_sibling(n, below=False)
-                    gnode.remove_node()  # Removing group/file node.
+        self("ungroup\n")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -423,46 +402,7 @@ def init_tree(kernel):
         grouping="40_ELEM_GROUPS",
     )
     def simplify_groups(node, **kwargs):
-        def straighten(snode):
-            amount = 0
-            needs_repetition = True
-            while needs_repetition:
-                needs_repetition = False
-                cl = list(snode.children)
-                if len(cl) == 0:
-                    # No Children? Remove
-                    amount = 1
-                    snode.remove_node()
-                elif len(cl) == 1:
-                    gnode = cl[0]
-                    if gnode is not None and gnode.type == "group":
-                        for n in list(gnode.children):
-                            gnode.insert_sibling(n)
-                        gnode.remove_node()  # Removing group/file node.
-                        needs_repetition = True
-                else:
-                    for n in cl:
-                        if n is not None and n.type == "group":
-                            fnd = straighten(n)
-                            amount += fnd
-            return amount
-
-        with self.undoscope("Simplify group"):
-            with self.node_lock:
-                res = straighten(node)
-        if res > 0:
-            self.signal("rebuild_tree", "elements")
-
-    # @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
-    # @tree_operation(
-    #     _("Elements in scene..."),
-    #     node_type=elem_nodes,
-    #     help="",
-    #     enable=False,
-    #     grouping="50_ELEM_",
-    # )
-    # def element_label(node, **kwargs):
-    #     return
+        self("simplify-group\n")
 
     def add_node_and_children(node):
         data = []
@@ -553,36 +493,7 @@ def init_tree(kernel):
         grouping="40_ELEM_GROUPS",
     )
     def group_elements(node, **kwargs):
-        def minimal_parent(data):
-            result = None
-            root = self.elem_branch
-            curr_level = None
-            for node in data:
-                plevel = 0
-                candidate = node.parent
-                while candidate is not None and candidate.parent is not root:
-                    candidate = candidate.parent
-                    plevel += 1
-                if curr_level is None or plevel < curr_level:
-                    curr_level = plevel
-                    result = node.parent
-                if plevel == 0:
-                    # No need to continue
-                    break
-            if result is None:
-                result = root
-            return result
-
-        raw_data = list(self.elems(emphasized=True))
-        data = self.condense_elements(raw_data, expand_at_end=False)
-        if not data:
-            return
-        with self.undoscope("Group elements"):
-            parent_node = minimal_parent(data)
-            with self.node_lock:
-                group_node = parent_node.add(type="group", label="Group", expanded=True)
-                for e in data:
-                    group_node.append_child(e)
+        self("group\n")
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
@@ -1451,18 +1362,30 @@ def init_tree(kernel):
     def clear_unused(node, **kwargs):
         to_delete = []
         for op in self.ops():
-            # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0 and not op.type == "blob":
+            if op.type == "blob":
+                continue
+            empty = True
+
+            def contains_reference(c):
+                if c.type == "reference":
+                    return True
+                for cc in c.children:
+                    if contains_reference(cc):
+                        return True
+                return False
+
+            empty = not contains_reference(op)
+
+            if empty:
                 to_delete.append(op)
-        if len(to_delete) > 0:
-            if self.kernel.yesno(
-                _("Do you really want to delete {num} entries?").format(
-                    num=len(to_delete)
-                ),
-                caption=_("Operations"),
-            ):
-                with self.undoscope("Clear unused"):
-                    self.remove_operations(to_delete)
+
+        todel = len(to_delete)
+        if todel > 0 and self.kernel.yesno(
+            _("Do you really want to delete {num} entries?").format(num=todel),
+            caption=_("Operations"),
+        ):
+            with self.undoscope("Clear unused"):
+                self.remove_operations(to_delete)
 
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
@@ -2559,10 +2482,20 @@ def init_tree(kernel):
         help=_("Add an operation to the tree"),
         grouping="OPS_40_ADDITION",
     )
-    def append_operation_home(node, pos=None, **kwargs):
+    def append_operation_home(node, physical_home=False, pos=None, **kwargs):
         with self.undoscope("Append operation"):
-            self.op_branch.add(type="util home", pos=pos)
+            self.op_branch.add(type="util home", pos=pos, physical=physical_home)
         self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append Physical Home"),
+        node_type="branch ops",
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def append_operation_physical_home(node, pos=None, **kwargs):
+        append_operation_home(node, physical_home=True, pos=pos, **kwargs)
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
@@ -2719,7 +2652,20 @@ def init_tree(kernel):
         grouping="OPS_40_ADDITION",
     )
     def append_operation_home_beep_interrupt(node, **kwargs):
-        append_operation_home(node, **kwargs)
+        append_operation_home(node, physical_home=False, **kwargs)
+        append_operation_beep(node, **kwargs)
+        append_operation_interrupt(node, **kwargs)
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append Physical Home/Beep/Interrupt"),
+        node_type="branch ops",
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def append_operation_physical_home_beep_interrupt(node, **kwargs):
+        append_operation_home(node, physical_home=True, **kwargs)
         append_operation_beep(node, **kwargs)
         append_operation_interrupt(node, **kwargs)
         self.signal("updateop_tree")
@@ -3266,6 +3212,19 @@ def init_tree(kernel):
         except (ValueError, IndexError):
             return None
 
+    @tree_conditional(lambda node: node.count_children() > 1)
+    @tree_submenu(_("Optimisation"))
+    @tree_operation(
+        _("Reduce travel moves"),
+        node_type=op_burnable_nodes,
+        help=_("Rearrange items within operation to reduce travel moves"),
+        grouping="80_OPS_OPTIMIZE",
+    )
+    def op_travel_opt(node, **kwargs):
+        # Hint for translation _("Optimize travel moves")
+        with self.undoscope("Optimize travel moves"):
+            self("reorder\n")
+
     ## @tree_separator_before()
     @tree_submenu(_("Insert operation"))
     @tree_operation(
@@ -3335,7 +3294,21 @@ def init_tree(kernel):
         grouping="OPS_40_ADDITION",
     )
     def add_operation_home(node, **kwargs):
-        append_operation_home(node, pos=add_after_index(node), **kwargs)
+        append_operation_home(
+            node, physical_home=False, pos=add_after_index(node), **kwargs
+        )
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(
+        _("Add Physical Home"),
+        node_type=op_nodes,
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def add_operation_physical_home(node, **kwargs):
+        append_operation_home(
+            node, physical_home=True, pos=add_after_index(node), **kwargs
+        )
 
     @tree_submenu(_("Insert special operation(s)"))
     @tree_operation(
@@ -3429,7 +3402,24 @@ def init_tree(kernel):
     )
     def add_operation_home_beep_interrupt(node, **kwargs):
         pos = add_after_index(node)
-        append_operation_home(node, pos=pos, **kwargs)
+        append_operation_home(node, physical_home=False, pos=pos, **kwargs)
+        if pos:
+            pos += 1
+        append_operation_beep(node, pos=pos, **kwargs)
+        if pos:
+            pos += 1
+        append_operation_interrupt(node, pos=pos, **kwargs)
+
+    @tree_submenu(_("Insert special operation(s)"))
+    @tree_operation(
+        _("Add Physical Home/Beep/Interrupt"),
+        node_type=op_nodes,
+        help=_("Add an operation to the tree"),
+        grouping="OPS_40_ADDITION",
+    )
+    def add_operation_physical_home_beep_interrupt(node, **kwargs):
+        pos = add_after_index(node)
+        append_operation_home(node, physical_home=True, pos=pos, **kwargs)
         if pos:
             pos += 1
         append_operation_beep(node, pos=pos, **kwargs)
