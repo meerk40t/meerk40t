@@ -1965,7 +1965,7 @@ class RasterSettingsPanel(wx.Panel):
             + _("  Usually much faster on an image with a lot of white pixels."),
             RASTER_SPIRAL: _("- Spiral: Starting in the center spiralling outwards"),
             RASTER_DIAGONAL: _(
-                "- Digonal: Starting in one corner traversing the image diagonally"
+                "- Diagonal: Starting in one corner traversing the image diagonally"
             ),
         }
         lines = [_("You can choose from the following modes to laser an image:")]
