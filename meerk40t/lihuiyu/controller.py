@@ -755,13 +755,35 @@ class LihuiyuController:
         if buffer is None:
             return False
 
-        # Extract packet from buffer
-        (
-            packet,
-            length,
-            post_send_command,
-            default_checksum,
-        ) = self._extract_packet_from_buffer(buffer)
+        # Extract packet from buffer with error handling
+        try:
+            (
+                packet,
+                length,
+                post_send_command,
+                default_checksum,
+            ) = self._extract_packet_from_buffer(buffer)
+        except (ValueError, TypeError) as e:
+            # Buffer is invalid - log the error and clear the problematic buffer
+            self.usb_log(f"Invalid buffer detected: {e}")
+            self.usb_log(
+                f"Buffer type: {type(buffer)}, length: {len(buffer) if buffer else 'N/A'}"
+            )
+
+            # Clear the problematic buffer to prevent infinite loops
+            self._acquire_all_buffer_locks()
+            try:
+                if realtime:
+                    self._realtime_buffer.clear()
+                    self.usb_log("Cleared corrupted realtime buffer")
+                else:
+                    self._buffer.clear()
+                    self.usb_log("Cleared corrupted main buffer")
+            finally:
+                self._release_all_buffer_locks()
+
+            self.update_buffer()
+            return False
 
         # Check if we should process this packet
         if not realtime and self.state in ("pause", "busy"):
@@ -801,22 +823,50 @@ class LihuiyuController:
 
         @param buffer: The buffer bytes to extract from
         @return: tuple of (packet, length, post_send_command, default_checksum)
+        @raises: ValueError if buffer is invalid
         """
-        # Find buffer of PACKET_SIZE or containing '\n'.
-        find = buffer.find(b"\n", 0, PACKET_SIZE)
-        if find == -1:  # No end found.
-            length = min(PACKET_SIZE, len(buffer))
-        else:  # Line end found.
-            length = min(PACKET_SIZE, len(buffer), find + 1)
-        packet = bytes(buffer[:length])
+        # Validate buffer input
+        if buffer is None:
+            raise ValueError("Buffer cannot be None")
 
-        # Handle edge condition of catching only pipe command without '\n'
-        if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"%", b"\x18")):
-            packet += buffer[length : length + 1]
-            length += 1
+        if not isinstance(buffer, (bytes, bytearray)):
+            raise TypeError(f"Buffer must be bytes or bytearray, got {type(buffer)}")
 
-        # Process pipe commands and prepare packet
-        return self._process_pipe_commands(packet, length)
+        if len(buffer) == 0:
+            # Empty buffer - return empty packet
+            return b"", 0, None, True
+
+        try:
+            # Find buffer of PACKET_SIZE or containing '\n'.
+            find = buffer.find(b"\n", 0, PACKET_SIZE)
+            if find == -1:  # No end found.
+                length = min(PACKET_SIZE, len(buffer))
+            else:  # Line end found.
+                length = min(PACKET_SIZE, len(buffer), find + 1)
+
+            # Validate length is reasonable
+            if length < 0:
+                raise ValueError(f"Invalid packet length calculated: {length}")
+
+            packet = bytes(buffer[:length])
+
+            # Handle edge condition of catching only pipe command without '\n'
+            if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"%", b"\x18")):
+                # Check if we can safely access the next byte
+                if length < len(buffer):
+                    packet += buffer[length : length + 1]
+                    length += 1
+                # If we can't access the next byte, proceed with current packet
+
+            # Process pipe commands and prepare packet
+            return self._process_pipe_commands(packet, length)
+
+        except (AttributeError, IndexError) as e:
+            # Handle buffer access errors
+            raise ValueError(f"Buffer access error: {e}") from e
+        except Exception as e:
+            # Handle any other unexpected errors
+            raise ValueError(f"Unexpected error processing buffer: {e}") from e
 
     def _process_pipe_commands(self, packet, length):
         """
