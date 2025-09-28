@@ -599,17 +599,42 @@ class GRBLDevice(Service, Status):
 
         choices = [
             {
-                "attr": "require_validator",
+                "attr": "validate_on_connect",
                 "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Require Validator"),
-                "tip": _(
-                    "Do not validate the connection without seeing the welcome message at start."
-                ),
+                "default": "proactive",
+                "type": str,
+                "label": _("Connection validation"),
+                "style": "option",
+                "choices": [
+                    "skip",
+                    "strict",
+                    "proactive",
+                    "timeout",
+                ],
+                "display": [
+                    _("Skip Validation - Connection assumed immediately valid"),
+                    _("Strict Validation - Requires welcome message before validation"),
+                    _(
+                        "Proactive Validation - Starts validation proactively without waiting"
+                    ),
+                    _("Timeout Validation - Strict with timeout fallback mechanisms"),
+                ],
+                "tip": _("Do we need to wait for a welcome message?"),
                 # Hint for translation _("Validation")
                 "section": "_40_Validation",
             },
+            # {
+            #     "attr": "require_validator",
+            #     "object": self,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("Require Validator"),
+            #     "tip": _(
+            #         "Do not validate the connection without seeing the welcome message at start."
+            #     ),
+            #     # Hint for translation _("Validation")
+            #     "section": "_40_Validation",
+            # },
             {
                 "attr": "welcome",
                 "object": self,
@@ -1121,6 +1146,61 @@ class GRBLDevice(Service, Status):
                 if line.startswith("#"):
                     continue
                 self.driver(f"{line}{self.driver.line_end}")
+
+        # === Commands for grbl variant detection ===
+        @self.console_command(
+            "grbl_variant_info", help=_("Display detected GRBL variant information.")
+        )
+        def grbl_variant(channel, _, **kwargs):
+            self.controller.grbl_variant_info(channel)
+
+        @self.console_argument("cmd", type=str, help=_("Command to check"))
+        @self.console_command(
+            "grbl_check_command",
+            help=_("Check if a command is compatible with detected variant"),
+        )
+        def grbl_cmd_check(channel, _, cmd=None, **kwargs):
+            self.controller.grbl_check_command(channel, cmd)
+
+        # === Commands for grbl settings management ===
+        @self.console_command(
+            "grbl_list_settings", help=_("List all known GRBL hardware settings")
+        )
+        def grbl_list_settings_cmd(channel, _, **kwargs):
+            self.controller.grbl_list_settings(channel)
+
+        @self.console_argument("code", type=int, help=_("GRBL setting code number"))
+        @self.console_command(
+            "grbl_setting_info", help=_("Get information about a specific GRBL setting")
+        )
+        def grbl_setting_info_cmd(channel, _, code=None, **kwargs):
+            self.controller.grbl_setting_info(channel, code)
+
+        @self.console_argument("code", type=int, help=_("Setting code number"))
+        @self.console_argument("default_value", help=_("Default value"))
+        @self.console_argument("description", help=_("Setting description"))
+        @self.console_argument("units", help=_("Units of measurement"))
+        @self.console_argument(
+            "value_type", type=str, help=_("Data type: 'int' or 'float'")
+        )
+        @self.console_argument("doc_url", help=_("Optional documentation URL"))
+        @self.console_command(
+            "grbl_add_setting", help=_("Add a custom GRBL setting definition")
+        )
+        def grbl_add_setting_cmd(
+            channel,
+            _,
+            code=None,
+            default_value=None,
+            description=None,
+            units=None,
+            value_type=None,
+            doc_url=None,
+            **kwargs,
+        ):
+            self.controller.grbl_add_setting(
+                channel, code, default_value, description, units, value_type, doc_url
+            )
 
     @property
     def safe_label(self):
