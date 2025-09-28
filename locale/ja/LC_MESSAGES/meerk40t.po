@@ -23349,3 +23349,92 @@ msgstr "要素の参照ステータスを切り替える"
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2364
 msgid "Remove the 'locked' status of the element"
 msgstr "要素の「ロック」ステータスを解除する"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr "注意: '移動時間を短縮' と '内側を先に焼く' の両方を使用する場合、移動最適化は各階層レベル内で発生します (内側が外側より先)。"
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "物理ホームを追加"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "物理ホーム/ビープ/割り込みを追加"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "物理ホームを追加"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "物理ホーム/ビープ/割り込みを追加"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "レーザーヘッドを物理ホーム位置に移動します。"
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "フォントが見つかりません: {fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "プラン '{plan}' の詳細:"
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "空"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "プランの詳細"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "プランはまだ処理中です"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "自動選択"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "スキャンビーム (デフォルト)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "直接グリッド (高速)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "アルゴリズム:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr "- 対角線: 一つの角から始めて画像を対角線に横断"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "生成アルゴリズムを選択"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr "パターン・ベース (複雑): 複雑な形状と詳細なパターンにパターンクラスを使用"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr "直接グリッド (シンプル): シンプルな平行パターンの高速グリッドベース生成"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr "自動選択: パターンの複雑さに基づいて最適なアルゴリズムを自動的に選択"

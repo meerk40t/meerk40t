@@ -24553,3 +24553,102 @@ msgstr "Basculer le statut de référence de l'élément"
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2364
 msgid "Remove the 'locked' status of the element"
 msgstr "Retirer le statut 'verrouillé' de l'élément"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr ""
+"Note : Lorsque vous utilisez à la fois 'Réduire le temps de trajet' et "
+"'Brûler l'intérieur en premier', l'optimisation du trajet se produit au sein"
+" de chaque niveau de hiérarchie (intérieurs avant extérieurs)."
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "Ajouter l'Origine Physique"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "Ajouter Origine Physique/Bip/Interruption"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "Ajouter l'Origine Physique"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "Ajouter Origine Physique/Bip/Interruption"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "Déplacer la tête laser vers la position d'origine physique."
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "Police manquante : {fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "Détails du Plan '{plan}' :"
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "Vide"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "Détails du Plan"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "Le plan est encore en cours de traitement"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "Sélection Automatique"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "Faisceau de Balayage (Par Défaut)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "Grille Directe (Rapide)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "Algorithme :"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr ""
+"- Diagonal : Commencer dans un coin en traversant l'image diagonalement"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "Choisir l'algorithme de génération"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr ""
+"Basé sur Motif (Complexe) : Utilise la classe Motif pour les formes "
+"complexes et les motifs détaillés"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr ""
+"Grille Directe (Simple) : Génération rapide basée sur grille pour les motifs"
+" parallèles simples"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr ""
+"Sélection Automatique : Choisit automatiquement le meilleur algorithme basé "
+"sur la complexité du motif"

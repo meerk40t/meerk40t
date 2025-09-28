@@ -24154,3 +24154,101 @@ msgstr "Referentiestatus van element wisselen"
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2364
 msgid "Remove the 'locked' status of the element"
 msgstr "De 'vergrendeld'-status van het element verwijderen"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr ""
+"Noot: Bij gebruik van zowel 'Reistijd verminderen' als 'Binnenste eerst "
+"branden', vindt reisoptimalisatie plaats binnen elk hiërarchieniveau "
+"(binnenste voor buitenste)."
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "Fysieke Home toevoegen"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "Fysieke Home/Beep/Interrupt toevoegen"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "Fysieke Home toevoegen"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "Fysieke Home/Beep/Interrupt toevoegen"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "Verplaats de laserhead naar de fysieke home positie."
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "Lettertype ontbreekt: {fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "Details van Plan '{plan}':"
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "Leeg"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "Plan Details"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "Plan wordt nog verwerkt"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "Auto-Selecteren"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "Scanstraal (Standaard)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "Direct Raster (Snel)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "Algoritme:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr "- Diagonaal: Beginnend in een hoek het beeld diagonaal doorkruisend"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "Kies het generatie algoritme"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr ""
+"Patroon-Gebaseerd (Complex): Gebruikt Patroon klasse voor complexe vormen en"
+" gedetailleerde patronen"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr ""
+"Direct Raster (Simpel): Snelle raster-gebaseerde generatie voor simpele "
+"parallelle patronen"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr ""
+"Auto-Selecteren: Selecteert automatisch het beste algoritme gebaseerd op "
+"patroon complexiteit"

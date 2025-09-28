@@ -24267,3 +24267,101 @@ msgstr "Elem referenciastátuszának váltása"
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2364
 msgid "Remove the 'locked' status of the element"
 msgstr "Elem 'zárolt' állapotának eltávolítása"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr ""
+"Megjegyzés: Ha egyszerre használja az 'Utazási idő csökkentése' és a "
+"'Belülről égetés először' opciót, az utazás optimalizálása minden "
+"hierarchiaszinten belül történik (belsők a külsők előtt)."
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "Fizikai Kezdőpont Hozzáadása"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "Fizikai Kezdőpont/Síp/Interrupt Hozzáadása"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "Fizikai Kezdőpont Hozzáadása"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "Fizikai Kezdőpont/Síp/Interrupt Hozzáadása"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "Mozgassa a lézerfejet a fizikai kezdőpozícióba."
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "Betűtípus hiányzik: {fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "'{plan}' Terv Részletei:"
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "Üres"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "Terv Részletei"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "A terv még feldolgozás alatt van"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "Automatikus Kiválasztás"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "Szkenner Sugár (Alapértelmezett)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "Közvetlen Rács (Gyors)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "Algoritmus:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr "- Átlós: Kezdés egy sarokban, az kép átlós bejárása"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "Válassza ki a generálási algoritmust"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr ""
+"Minta-Alapú (Összetett): A Minta osztályt használja összetett alakzatokhoz "
+"és részletes mintákhoz"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr ""
+"Közvetlen Rács (Egyszerű): Gyors rács-alapú generálás egyszerű párhuzamos "
+"mintákhoz"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr ""
+"Automatikus Kiválasztás: Automatikusan választja ki a legjobb algoritmust a "
+"minta összetettsége alapján"

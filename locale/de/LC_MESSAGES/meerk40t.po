@@ -24227,3 +24227,101 @@ msgstr "Referenzstatus des Elements umschalten"
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2364
 msgid "Remove the 'locked' status of the element"
 msgstr "Den 'gesperrt'-Status des Elements entfernen"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr ""
+"Notabene: Bei gleichzeitiger Verwendung von 'Reisezeit reduzieren' und "
+"'Innere zuerst brennen' erfolgt die Reiseoptimierung innerhalb jeder "
+"Hierarchieebene (Innere vor Äußeren)."
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "Physische Home-Position anhängen"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "Physische Home-Position/Piep/Interrupt anhängen"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "Physische Home-Position hinzufügen"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "Physische Home-Position/Piep/Interrupt hinzufügen"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "Bewegen Sie den Laserstrahl zur physischen Home-Position."
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "Schriftart fehlt: {fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "Details des Plans '{plan}':"
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "Leer"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "Plan-Details"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "Plan wird noch verarbeitet"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "Automatisch auswählen"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "Scanstrahl (Standard)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "Direktes Raster (Schnell)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "Algorithmus:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr "- Diagonal: Beginnend in einer Ecke, das Bild diagonal durchquerend"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "Wählen Sie den Generierungsalgorithmus"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr ""
+"Musterbasiert (Komplex): Verwendet die Pattern-Klasse für komplexe Formen "
+"und detaillierte Muster"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr ""
+"Direktes Raster (Einfach): Schnelle rasterbasierte Generierung für einfache "
+"parallele Muster"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr ""
+"Automatisch auswählen: Wählt automatisch den besten Algorithmus basierend "
+"auf der Musterkomplexität"
