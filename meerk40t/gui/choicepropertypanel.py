@@ -2497,6 +2497,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 ctrl.SetValue(str(data))
             else:
                 least = None
+                if choicelist is None:
+                    choicelist = []
                 for entry in choicelist:
                     if least is None:
                         least = entry
