@@ -114,6 +114,7 @@ class GrblIoButtons(wx.Panel):
 
     def on_url_click(self, event):
         import webbrowser
+
         url = "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md"
         webbrowser.open(url, new=0, autoraise=True)
 
@@ -164,14 +165,34 @@ class GrblHardwareProperties(ScrolledPanel):
         chart.resize_columns()
 
     def fill_chart(self):
+        """Fill the settings chart with appropriate settings for the detected GRBL variant"""
+        from ..controller import get_variant_compatible_settings, hardware_settings
+
         chart = self.chart
         chart.DeleteAllItems()
-        settings = hardware_settings
-        for i in range(200):
-            d = settings(i)
+
+        # Get the detected variant from the service
+        detected_variant = "grbl"  # Default fallback
+        try:
+            if hasattr(self.service, "_detected_variant"):
+                detected_variant = self.service._detected_variant
+            elif hasattr(self.service, "grbl_variant"):
+                detected_variant = self.service.grbl_variant
+        except:
+            pass  # Use default
+
+        # Get settings compatible with the detected variant
+        compatible_settings = get_variant_compatible_settings(detected_variant)
+
+        # Add settings that are compatible with the current variant
+        for i in compatible_settings:
+            d = hardware_settings(i)
             if d is None:
                 continue
-            ignore, parameter, units, data_type, url = d
+
+            # Extract the data - let the controller handle format differences
+            ignore, parameter, units, data_type, url = d[:5]  # Take first 5 elements
+
             value = ""
             if i in self.service.hardware_config:
                 try:
@@ -186,6 +207,24 @@ class GrblHardwareProperties(ScrolledPanel):
             chart.SetItem(row_id, 3, str(units))
             chart.SetItem(row_id, 4, str(parameter.upper()))
             chart.SetItem(row_id, 5, str(url))
+
+        # Show variant info in the title if possible
+        variant_display = {
+            "grbl": "Standard GRBL",
+            "grblhal": "GrblHAL",
+            "fluidnc": "FluidNC",
+            "grbl_esp32": "GRBL-ESP32",
+        }.get(detected_variant, detected_variant)
+
+        try:
+            # Try to update the parent window title to show variant
+            parent = self.GetParent()
+            if parent and hasattr(parent, "SetTitle"):
+                current_title = parent.GetTitle()
+                if "GRBL Hardware" in current_title:
+                    parent.SetTitle(f"GRBL Hardware Configuration ({variant_display})")
+        except:
+            pass  # Don't fail if title update unavailable
 
     def on_label_start_edit(self, event):
         col_id = event.GetColumn()  # Get the current column
@@ -213,6 +252,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
     def on_double_click(self, event):
         import webbrowser
+
         x, y = event.GetPosition()
         row_id, flags = self.chart.HitTest((x, y))
         if row_id < 0:
