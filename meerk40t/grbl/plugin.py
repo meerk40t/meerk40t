@@ -72,8 +72,8 @@ def plugin(kernel, lifecycle=None):
                         "default": "fluidnc",
                     },
                     {
-                        "attr": "require_validator",
-                        "default": False,
+                        "attr": "validate_on_connect",
+                        "default": "skip",
                     },
                 ],
             },
@@ -108,8 +108,8 @@ def plugin(kernel, lifecycle=None):
                         "default": "co2",
                     },
                     {
-                        "attr": "require_validator",
-                        "default": True,
+                        "attr": "validate_on_connect",
+                        "default": "proactive",
                     },
                 ],
             },
@@ -162,8 +162,8 @@ def plugin(kernel, lifecycle=None):
                         "default": "diode",
                     },
                     {
-                        "attr": "require_validator",
-                        "default": False,
+                        "attr": "validate_on_connect",
+                        "default": "proactive",
                     },
                     {"attr": "bedheight", "default": "430mm"},
                     {"attr": "bedwidth", "default": "400mm"},
@@ -194,8 +194,8 @@ def plugin(kernel, lifecycle=None):
                         "default": "diode",
                     },
                     {
-                        "attr": "require_validator",
-                        "default": False,
+                        "attr": "validate_on_connect",
+                        "default": "skip",
                     },
                     {"attr": "bedheight", "default": "450mm"},
                     {"attr": "bedwidth", "default": "450mm"},
