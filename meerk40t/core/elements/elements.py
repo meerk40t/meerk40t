@@ -14,9 +14,9 @@ operations and preferences.
 
 import contextlib
 import os.path
+import threading
 from copy import copy
 from time import time
-import threading
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.node.node import Node
@@ -33,7 +33,7 @@ from meerk40t.kernel import ConsoleFunction, Service, Settings
 from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from . import offset_clpr, offset_mk
-from .element_types import elem_nodes, elem_group_nodes, place_nodes, op_parent_nodes
+from .element_types import elem_group_nodes, elem_nodes, op_parent_nodes, place_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -69,6 +69,7 @@ def plugin(kernel, lifecycle=None):
             geometry,
             grid,
             groups,
+            manual_optimize,
             materials,
             notes,
             placements,
@@ -79,8 +80,6 @@ def plugin(kernel, lifecycle=None):
             tree_commands,
             undo_redo,
             wordlist,
-            manual_optimize,
-            # optimization_scenarios,
         )
 
         return [
@@ -1184,7 +1183,10 @@ class Elemental(Service):
                 # Set emphasized_time to minimum of children
                 min_time = None
                 for child in node.children:
-                    if hasattr(child, '_emphasized_time') and child._emphasized_time is not None:
+                    if (
+                        hasattr(child, "_emphasized_time")
+                        and child._emphasized_time is not None
+                    ):
                         if min_time is None or child._emphasized_time < min_time:
                             min_time = child._emphasized_time
                 if min_time is not None:
@@ -1202,8 +1204,14 @@ class Elemental(Service):
                         # Set emphasized_time to minimum of children
                         min_time = None
                         for child in parent.children:
-                            if hasattr(child, '_emphasized_time') and child._emphasized_time is not None:
-                                if min_time is None or child._emphasized_time < min_time:
+                            if (
+                                hasattr(child, "_emphasized_time")
+                                and child._emphasized_time is not None
+                            ):
+                                if (
+                                    min_time is None
+                                    or child._emphasized_time < min_time
+                                ):
                                     min_time = child._emphasized_time
                         if min_time is not None:
                             parent._emphasized_time = min_time
@@ -1323,6 +1331,7 @@ class Elemental(Service):
                     dy = groupdy
                 # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
                 self.translate_node(q, dx, dy)
+        self.signal("modified_by_tool")
         self.signal("refresh_scene", "Scene")
         self.signal("warn_state_update")
 
@@ -1824,7 +1833,9 @@ class Elemental(Service):
                 label = parts[0].split()[1] if " " in parts[0] else parts[0]
                 try:
                     with self._node_lock:
-                        effnode = op_to_use.add(type=parts[0], label=f"Autocreated {label}")
+                        effnode = op_to_use.add(
+                            type=parts[0], label=f"Autocreated {label}"
+                        )
                     effnode.set_effect_descriptor(effects)
                     if hasattr(effnode, "stroke") and hasattr(op, "color"):
                         effnode.stroke = op_to_use.color
@@ -2836,7 +2847,9 @@ class Elemental(Service):
             for cand_op in operations:
                 if cand_op.type != "op raster":
                     continue
-                if not self._valid_color(cand_op.color) or not self._valid_color(node.fill):
+                if not self._valid_color(cand_op.color) or not self._valid_color(
+                    node.fill
+                ):
                     continue
                 col_d = Color.distance(cand_op.color, abs(node.fill))
                 if col_d > fuzzydistance:
@@ -2931,9 +2944,9 @@ class Elemental(Service):
                     is_black = False
                     perform_classification = True
                     if (
-                        hasattr(node, "stroke") and 
-                        self._valid_color(node.stroke) and
-                        node.type != "elem text"
+                        hasattr(node, "stroke")
+                        and self._valid_color(node.stroke)
+                        and node.type != "elem text"
                     ):
                         if fuzzy:  # No need to distinguish tempfuzzy here
                             is_black = (
@@ -3220,7 +3233,9 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)) and self._valid_color(op_candidate.color):
+                            if isinstance(
+                                op_candidate, (CutOpNode, EngraveOpNode)
+                            ) and self._valid_color(op_candidate.color):
                                 if tempfuzzy:
                                     classified = (
                                         Color.distance(
