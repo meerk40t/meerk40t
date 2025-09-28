@@ -57,7 +57,8 @@ def plugin(kernel, lifecycle=None):
         ]
         kernel.register_choices("planner", choices)
         INNER_WARNING = _(
-            "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+            "Notabene: When using both Reduce Travel Time and Burn Inner First, "
+            "travel optimization occurs within each hierarchy level (inners before outers)."
         )
         choices = [
             {
@@ -724,7 +725,9 @@ class Planner(Service):
             for c in operations:
                 c_count += 1
                 if busy.shown and (c_count % update_interval) == 0:
-                    busy.change(msg=_("Copying data {count}").format(count=c_count), keep=2)
+                    busy.change(
+                        msg=_("Copying data {count}").format(count=c_count), keep=2
+                    )
                     busy.show()
 
                 isactive = True
@@ -1124,5 +1127,4 @@ class Planner(Service):
             return False
         with self._plan_lock:
             finished = STAGE_PLAN_FINISHED in self._states[plan_name]
-        return finished 
-    
+        return finished
