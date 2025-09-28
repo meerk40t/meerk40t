@@ -303,81 +303,46 @@ def hardware_settings(code):
 
 
 def grbl_error_code(code):
+    error_messages = {
+        1: "GCode Command letter was not found.",
+        2: "GCode Command value invalid or missing.",
+        3: "Grbl '$' not recognized or supported.",
+        4: "Negative value for an expected positive value.",
+        5: "Homing fail. Homing not enabled in settings.",
+        6: "Min step pulse must be greater than 3usec.",
+        7: "EEPROM read failed. Default values used.",
+        8: "Grbl '$' command Only valid when Idle.",
+        9: "GCode commands invalid in alarm or jog state.",
+        10: "Soft limits require homing to be enabled.",
+        11: "Max characters per line exceeded. Ignored.",
+        12: "Grbl '$' setting exceeds the maximum step rate.",
+        13: "Safety door opened and door state initiated.",
+        14: "Build info or start-up line > EEPROM line length",
+        15: "Jog target exceeds machine travel, ignored.",
+        16: "Jog Cmd missing '=' or has prohibited GCode.",
+        17: "Laser mode requires PWM output.",
+        20: "Unsupported or invalid GCode command.",
+        21: "> 1 GCode command in a modal group in block.",
+        22: "Feed rate has not yet been set or is undefined.",
+        23: "GCode command requires an integer value.",
+        24: "> 1 GCode command using axis words found.",
+        25: "Repeated GCode word found in block.",
+        26: "No axis words found in command block.",
+        27: "Line number value is invalid.",
+        28: "GCode Cmd missing a required value word.",
+        29: "G59.x WCS are not supported.",
+        30: "G53 only valid with G0 and G1 motion modes.",
+        31: "Unneeded Axis words found in block.",
+        32: "G2/G3 arcs need >= 1 in-plane axis word.",
+        33: "Motion command target is invalid.",
+        34: "Arc radius value is invalid.",
+        35: "G2/G3 arcs need >= 1 in-plane offset word.",
+        36: "Unused value words found in block.",
+        37: "G43.1 offset not assigned to tool length axis.",
+        38: "Tool number greater than max value.",
+    }
     short = f"Error #{code}"
-    if code == 1:
-        long = "GCode Command letter was not found."
-    elif code == 2:
-        long = "GCode Command value invalid or missing."
-    elif code == 3:
-        long = "Grbl '$' not recognized or supported."
-    elif code == 4:
-        long = "Negative value for an expected positive value."
-    elif code == 5:
-        long = "Homing fail. Homing not enabled in settings."
-    elif code == 6:
-        long = "Min step pulse must be greater than 3usec."
-    elif code == 7:
-        long = "EEPROM read failed. Default values used."
-    elif code == 8:
-        long = "Grbl '$' command Only valid when Idle."
-    elif code == 9:
-        long = "GCode commands invalid in alarm or jog state."
-    elif code == 10:
-        long = "Soft limits require homing to be enabled."
-    elif code == 11:
-        long = "Max characters per line exceeded. Ignored."
-    elif code == 12:
-        long = "Grbl '$' setting exceeds the maximum step rate."
-    elif code == 13:
-        long = "Safety door opened and door state initiated."
-    elif code == 14:
-        long = "Build info or start-up line > EEPROM line length"
-    elif code == 15:
-        long = "Jog target exceeds machine travel, ignored."
-    elif code == 16:
-        long = "Jog Cmd missing '=' or has prohibited GCode."
-    elif code == 17:
-        long = "Laser mode requires PWM output."
-    elif code == 20:
-        long = "Unsupported or invalid GCode command."
-    elif code == 21:
-        long = "> 1 GCode command in a modal group in block."
-    elif code == 22:
-        long = "Feed rate has not yet been set or is undefined."
-    elif code == 23:
-        long = "GCode command requires an integer value."
-    elif code == 24:
-        long = "> 1 GCode command using axis words found."
-    elif code == 25:
-        long = "Repeated GCode word found in block."
-    elif code == 26:
-        long = "No axis words found in command block."
-    elif code == 27:
-        long = "Line number value is invalid."
-    elif code == 28:
-        long = "GCode Cmd missing a required value word."
-    elif code == 29:
-        long = "G59.x WCS are not supported."
-    elif code == 30:
-        long = "G53 only valid with G0 and G1 motion modes."
-    elif code == 31:
-        long = "Unneeded Axis words found in block."
-    elif code == 32:
-        long = "G2/G3 arcs need >= 1 in-plane axis word."
-    elif code == 33:
-        long = "Motion command target is invalid."
-    elif code == 34:
-        long = "Arc radius value is invalid."
-    elif code == 35:
-        long = "G2/G3 arcs need >= 1 in-plane offset word."
-    elif code == 36:
-        long = "Unused value words found in block."
-    elif code == 37:
-        long = "G43.1 offset not assigned to tool length axis."
-    elif code == 38:
-        long = "Tool number greater than max value."
-    else:
-        long = f"Unrecognised error code #{code}"
+    long = error_messages.get(code, f"Unrecognised error code #{code}")
     return short, long
 
 
@@ -471,6 +436,60 @@ class GrblController:
         self._watchers = []
         self.is_shutdown = False
 
+        # Validation timeout tracking
+        self._validation_start_time = None
+        self._validation_timeout = 5.0  # 5 seconds timeout per stage
+
+        # Timeout analysis tracking
+        self._timeout_history = []  # Track timeout events with details
+        self._current_stage_messages = []  # Track messages sent in current stage
+        self._stage_start_commands = {}  # Track what command started each stage
+        self._welcome_message_history = []  # Track welcome messages for analysis
+
+        # Validation mode selection logic
+        self._validation_mode = self._select_validation_mode()
+        self._update_validation_timeout()
+
+    def _select_validation_mode(self):
+        """
+        Select the appropriate validation mode based on device configuration.
+
+        Returns:
+            str: Validation mode - 'strict', 'timeout', 'proactive', or 'skip'
+        """
+        # Mode 1: Skip validation entirely
+        if (
+            not self.service.require_validator
+            and not self.service.boot_connect_sequence
+        ):
+            return "skip"
+
+        # Mode 2: Strict validation (traditional GRBL approach)
+        if self.service.require_validator and self.service.boot_connect_sequence:
+            return "strict"
+
+        # Mode 3: Proactive validation (for non-compliant devices)
+        if not self.service.require_validator and self.service.boot_connect_sequence:
+            return "proactive"
+
+        # Mode 4: Timeout-based validation (fallback)
+        return "timeout"
+
+    def get_validation_mode_description(self):
+        """
+        Get a human-readable description of the current validation mode.
+
+        Returns:
+            str: Description of the validation mode
+        """
+        descriptions = {
+            "skip": "Skip Validation - Connection assumed immediately valid",
+            "strict": "Strict Validation - Requires welcome message before validation",
+            "proactive": "Proactive Validation - Starts validation proactively without waiting",
+            "timeout": "Timeout Validation - Strict with timeout fallback mechanisms",
+        }
+        return descriptions.get(self._validation_mode, "Unknown validation mode")
+
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
 
@@ -526,7 +545,7 @@ class GrblController:
             try:
                 self.connection = WSOutput(self.service, self)
             except ModuleNotFoundError:
-                response = self.service.kernel.prompt(
+                self.service.kernel.prompt(
                     str, "Could not open websocket-connection (websocket installed?)"
                 )
         else:
@@ -574,15 +593,14 @@ class GrblController:
             self.log("Could not connect.", type="event")
             return
         self.log("Connecting to GRBL...", type="event")
+        self.log(f"Using {self.get_validation_mode_description()}", type="event")
+
         if self.service.reset_on_connect:
             self.driver.reset()
-        if not self.service.require_validator:
-            # We are required to wait for the validation.
-            if self.service.boot_connect_sequence:
-                self._validation_stage = 1
-                self.validate_start("$")
-            else:
-                self._validation_stage = 5
+
+        # Apply validation mode logic
+        self._apply_validation_mode()
+
         if self.service.startup_commands:
             self.log("Queue startup commands", type="event")
             lines = self.service.startup_commands.split("\n")
@@ -592,6 +610,52 @@ class GrblController:
                     self.log(f"Startup: {line}", type="event")
                 else:
                     self.service.driver(f"{line}{line_end}")
+
+    def _apply_validation_mode(self):
+        """Apply the selected validation mode strategy."""
+        if self._validation_mode == "skip":
+            # Skip validation entirely - immediately mark as validated
+            self.log("Validation Mode: Skip - Connection assumed valid", type="event")
+            self._validation_stage = 5
+
+        elif self._validation_mode == "strict":
+            # Strict mode - wait for welcome message, then validate
+            self.log("Validation Mode: Strict - Awaiting welcome message", type="event")
+            # Stage 0: Wait for welcome message (handled in _recving)
+            self._validation_stage = 0
+
+        elif self._validation_mode == "proactive":
+            # Proactive mode - start validation after brief delay
+            self.log(
+                "Validation Mode: Proactive - Starting validation sequence",
+                type="event",
+            )
+            if self.service.boot_connect_sequence:
+                # Give device a moment to settle, then start validation
+                name = self.service.safe_label
+                self.service(f".timer-proactive-{name} 1 1.0 grbl_force_validate")
+            else:
+                self._validation_stage = 5
+
+        elif self._validation_mode == "timeout":
+            # Timeout mode - combination of strict with timeout fallback
+            self.log("Validation Mode: Timeout - Strict with fallback", type="event")
+            if self.service.boot_connect_sequence:
+                self._start_validation_sequence("timeout mode")
+            else:
+                self._validation_stage = 5
+
+    def force_validate_if_needed(self):
+        """Force validation to start if we haven't received a welcome message"""
+        if self._validation_stage == 0 and self.connection.connected:
+            self.log(
+                "No welcome message received, forcing validation start", type="event"
+            )
+            if self.service.boot_connect_sequence:
+                self._validation_stage = 1
+                self.validate_start("$")
+            else:
+                self._validation_stage = 5
 
     def close(self):
         """
@@ -658,7 +722,8 @@ class GrblController:
             self.add_watcher(self._channel_log)
 
         if self._sending_thread is None or (
-            self._sending_thread != True and not self._sending_thread.is_alive()
+            not isinstance(self._sending_thread, bool)
+            and not self._sending_thread.is_alive()
         ):
             self._sending_thread = True  # Avoid race condition.
             self._sending_thread = self.service.threaded(
@@ -668,7 +733,8 @@ class GrblController:
                 daemon=True,
             )
         if self._recving_thread is None or (
-            self._recving_thread != True and not self._recving_thread.is_alive()
+            not isinstance(self._recving_thread, bool)
+            and not self._recving_thread.is_alive()
         ):
             self._recving_thread = True  # Avoid race condition.
             self._recving_thread = self.service.threaded(
@@ -683,11 +749,22 @@ class GrblController:
         self._forward_buffer.clear()
 
     def validate_start(self, cmd):
-        if cmd == "$":
-            delay = self.service.connect_delay / 1000
-        else:
-            delay = 0
+        delay = self.service.connect_delay / 1000 if cmd == "$" else 0
         name = self.service.safe_label
+
+        # Start timeout tracking for this validation stage
+        self._validation_start_time = time.time()
+
+        # Track what command started this stage and reset message tracking
+        self._stage_start_commands[self._validation_stage] = cmd
+        self._current_stage_messages = []
+
+        # Log the command being sent for this stage
+        self.log(
+            f"Stage {self._validation_stage}: Starting validation with command '{cmd}'",
+            type="event",
+        )
+
         if delay:
             self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
             self.service(
@@ -697,17 +774,352 @@ class GrblController:
             self.service(f".gcode_realtime {cmd}")
             self.service(f".timer-{name}{cmd} 0 1 gcode_realtime {cmd}")
 
+        # Track this message as sent for the current stage
+        self._current_stage_messages.append(
+            {
+                "command": cmd,
+                "timestamp": time.time(),
+                "stage": self._validation_stage,
+                "delay": delay,
+            }
+        )
+
+    def _check_validation_timeout(self):
+        """Check if current validation stage has timed out and advance if needed"""
+        if (
+            self._validation_start_time is None
+            or self._validation_stage == 0
+            or self._validation_stage == 5
+        ):
+            return False
+
+        elapsed = time.time() - self._validation_start_time
+        if elapsed > self._validation_timeout:
+            # Record timeout event with detailed information
+            timeout_info = {
+                "timestamp": time.time(),
+                "stage": self._validation_stage,
+                "elapsed_time": elapsed,
+                "timeout_limit": self._validation_timeout,
+                "validation_mode": self._validation_mode,
+                "start_command": self._stage_start_commands.get(
+                    self._validation_stage, "unknown"
+                ),
+                "messages_sent": self._current_stage_messages.copy(),
+                "responses_received": [],  # Will be populated by _recving thread
+            }
+
+            # Log timeout with detailed analysis
+            self._log_timeout_analysis(timeout_info)
+
+            # Add to timeout history
+            self._timeout_history.append(timeout_info)
+
+            # Advance to next stage
+            self._advance_validation_stage()
+            return True
+        return False
+
+    def _start_validation_sequence(self, reason=""):
+        """Start the validation sequence (stage 1 with $ command)."""
+        log_msg = "Starting validation sequence"
+        if reason:
+            log_msg += f" ({reason})"
+        self.log(log_msg, type="event")
+        self._validation_stage = 1
+        self.validate_start("$")
+
+    def _suggest_welcome_setting(self, setting_value, description):
+        """Log a welcome setting suggestion with consistent format."""
+        self.log(
+            f">> Suggestion: Change welcome setting to '{setting_value}'", type="event"
+        )
+        self.log(f"   {description}", type="event")
+
+    def _log_welcome_variants_header(self):
+        """Log the header for welcome message variants section."""
+        self.log("", type="event")
+        self.log("Unique welcome message variants found:", type="event")
+
+    def _handle_variant_detection(self, response):
+        """Handle GRBL variant detection and apply variant-specific behavior."""
+        variant = self._detect_grbl_variant(response)
+        if variant != "unknown":
+            self._apply_variant_specific_behavior(variant, response)
+
+    def _log_stage_advancement(self, stage_number, message):
+        """Log validation stage advancement with consistent format."""
+        self.log(f"Stage {stage_number}: {message}", type="event")
+        self._validation_stage = stage_number
+
+    def _detect_grbl_variant(self, welcome_message):
+        """Detect GRBL firmware variant from welcome message."""
+        if not welcome_message:
+            return "unknown"
+
+        msg_lower = welcome_message.lower()
+
+        # Detect specific variants
+        if "grblhal" in msg_lower:
+            return "grblhal"
+        elif "fluidnc" in msg_lower:
+            return "fluidnc"
+        elif msg_lower.startswith("grbl ") or msg_lower.startswith("grbl v"):
+            return "grbl"
+        elif "grbl_esp32" in msg_lower or "grbl-esp32" in msg_lower:
+            return "grbl_esp32"
+        elif "grbl-mega" in msg_lower:
+            return "grbl_mega"
+        elif "grbl" in msg_lower:
+            return "grbl_variant"
+        else:
+            return "unknown"
+
+    def _get_variant_specific_settings(self, variant):
+        """Get variant-specific configuration settings."""
+        settings = {
+            "grbl": {
+                "supports_laser_mode": True,
+                "supports_real_time": True,
+                "max_buffer_size": 128,
+                "requires_ok": True,
+                "supports_probe": True,
+                "supports_z_axis": True,
+                "home_commands": ["$H", "$HZ"],
+                "reset_after_alarm": False,
+            },
+            "grblhal": {
+                "supports_laser_mode": True,
+                "supports_real_time": True,
+                "max_buffer_size": 256,  # Often larger buffer
+                "requires_ok": True,
+                "supports_probe": True,
+                "supports_z_axis": True,
+                "home_commands": ["$H", "$HX", "$HY", "$HZ"],  # Individual axis homing
+                "reset_after_alarm": False,
+                "supports_enhanced_status": True,  # Extended status reports
+            },
+            "fluidnc": {
+                "supports_laser_mode": True,
+                "supports_real_time": True,
+                "max_buffer_size": 256,  # ESP32 based, larger buffer
+                "requires_ok": True,
+                "supports_probe": True,
+                "supports_z_axis": True,
+                "home_commands": ["$H", "$HX", "$HY", "$HZ"],
+                "reset_after_alarm": True,  # May need reset after alarms
+                "supports_wifi": True,  # ESP32 WiFi capabilities
+                "supports_sd_card": True,  # SD card support
+            },
+            "grbl_esp32": {
+                "supports_laser_mode": True,
+                "supports_real_time": True,
+                "max_buffer_size": 256,
+                "requires_ok": True,
+                "supports_probe": True,
+                "supports_z_axis": True,
+                "home_commands": ["$H"],
+                "reset_after_alarm": True,
+                "supports_wifi": True,
+            },
+            "grbl_mega": {
+                "supports_laser_mode": True,
+                "supports_real_time": True,
+                "max_buffer_size": 128,
+                "requires_ok": True,
+                "supports_probe": False,  # Limited probe support
+                "supports_z_axis": True,
+                "home_commands": ["$H"],
+                "reset_after_alarm": False,
+            },
+            "unknown": {
+                "supports_laser_mode": False,  # Conservative defaults
+                "supports_real_time": False,
+                "max_buffer_size": 64,
+                "requires_ok": True,
+                "supports_probe": False,
+                "supports_z_axis": False,
+                "home_commands": ["$H"],
+                "reset_after_alarm": False,
+            },
+        }
+
+        return settings.get(variant, settings["unknown"])
+
+    def _apply_variant_specific_behavior(self, variant, welcome_message):
+        """Apply variant-specific controller behavior."""
+        settings = self._get_variant_specific_settings(variant)
+
+        self.log("=== GRBL Variant Detection ===", type="event")
+        self.log(f"Detected variant: {variant.upper()}", type="event")
+        self.log(f"Welcome message: '{welcome_message}'", type="event")
+
+        # Log capabilities
+        capabilities = []
+        if settings["supports_laser_mode"]:
+            capabilities.append("Laser Mode")
+        if settings["supports_real_time"]:
+            capabilities.append("Real-time Commands")
+        if settings["supports_probe"]:
+            capabilities.append("Probing")
+        if settings.get("supports_enhanced_status"):
+            capabilities.append("Enhanced Status")
+        if settings.get("supports_wifi"):
+            capabilities.append("WiFi")
+        if settings.get("supports_sd_card"):
+            capabilities.append("SD Card")
+
+        self.log(
+            f"Capabilities: {', '.join(capabilities) if capabilities else 'Basic GRBL'}",
+            type="event",
+        )
+        self.log(
+            f"Recommended buffer size: {settings['max_buffer_size']} bytes",
+            type="event",
+        )
+
+        # Apply buffer size recommendation
+        if hasattr(self.service, "planning_buffer_size"):
+            current_buffer = getattr(self.service, "planning_buffer_size", 128)
+            recommended_buffer = settings["max_buffer_size"]
+            if current_buffer != recommended_buffer:
+                self.log(
+                    f">> Recommendation: Update planning buffer to {recommended_buffer} bytes",
+                    type="event",
+                )
+                self.log(
+                    f"   Current: {current_buffer} bytes | Optimal for {variant}: {recommended_buffer} bytes",
+                    type="event",
+                )
+
+        # Store variant info for later use
+        self._detected_variant = variant
+        self._variant_settings = settings
+
+        return settings
+
+    def _log_timeout_analysis(self, timeout_info):
+        """Log detailed timeout analysis for debugging and pattern recognition"""
+        stage = timeout_info["stage"]
+        elapsed = timeout_info["elapsed_time"]
+        command = timeout_info["start_command"]
+        mode = timeout_info["validation_mode"]
+
+        self.log(f"*** TIMEOUT ANALYSIS - Stage {stage} ***", type="event")
+        self.log(
+            f"   Mode: {mode} | Command: '{command}' | Elapsed: {elapsed:.2f}s",
+            type="event",
+        )
+
+        if timeout_info["messages_sent"]:
+            self.log("   Messages sent during this stage:", type="event")
+            for msg in timeout_info["messages_sent"]:
+                delay_info = f" (delayed {msg['delay']}s)" if msg["delay"] > 0 else ""
+                self.log(
+                    f"     - '{msg['command']}' at {time.strftime('%H:%M:%S', time.localtime(msg['timestamp']))}{delay_info}",
+                    type="event",
+                )
+        else:
+            self.log("     - No messages were sent in this stage", type="event")
+
+        # Provide suggestions based on timeout pattern
+        self._suggest_timeout_solutions(timeout_info)
+
+    def _suggest_timeout_solutions(self, timeout_info):
+        """Suggest solutions based on timeout patterns and device behavior"""
+        stage = timeout_info["stage"]
+        command = timeout_info["start_command"]
+        mode = timeout_info["validation_mode"]
+
+        suggestions = []
+
+        if stage == 1 and command == "$":
+            suggestions.extend(
+                [
+                    "Device may not respond to '$' command (help request)",
+                    "Try increasing connect_delay in device settings",
+                    "Consider switching to 'proactive' validation mode",
+                    "Device may be non-standard GRBL firmware",
+                ]
+            )
+        elif stage == 2 and command in ["$$", "$G"]:
+            suggestions.extend(
+                [
+                    "Device may not support settings query ('$$') or modal state ('$G')",
+                    "This could be a minimal GRBL implementation",
+                    "Consider adding custom validation pattern for this device type",
+                ]
+            )
+        elif stage == 4 and command == "?":
+            suggestions.extend(
+                [
+                    "Device may not support status reporting ('?')",
+                    "Device might be in alarm state preventing status reports",
+                    "Try manual device reset before connection",
+                ]
+            )
+
+        if mode in ["timeout", "proactive"]:
+            suggestions.append(
+                "Current mode includes timeout fallbacks - connection should still work"
+            )
+        elif mode == "strict":
+            suggestions.append(
+                "Consider switching to 'timeout' mode for better device compatibility"
+            )
+
+        # Display suggestions
+        if suggestions:
+            self.log("   >> Suggested solutions:", type="event")
+            for suggestion in suggestions:
+                self.log(f"     - {suggestion}", type="event")
+        else:
+            self.log(
+                "   >> No specific suggestions available for this timeout pattern",
+                type="event",
+            )
+
+        # Log pattern for potential new validation methods
+        pattern_id = f"{stage}_{command}_{mode}"
+        self.log(
+            f"   [PATTERN] {pattern_id} (use for adding new validation methods)",
+            type="event",
+        )
+
+    def _advance_validation_stage(self):
+        """Advance to next validation stage due to timeout or fallback"""
+        if self._validation_stage == 1:
+            # $ command timed out, try $$ and $G anyway
+            self._log_stage_advancement(2, "Advancing without $ confirmation (timeout)")
+            self.validate_stop("$")
+            self.validate_start("$$")
+            self.validate_start("$G")
+        elif self._validation_stage == 2:
+            # $$ timed out, assume it worked
+            self._log_stage_advancement(3, "Assuming $$ worked (timeout)")
+            self.validate_stop("$$")
+        elif self._validation_stage == 3:
+            # $G timed out, try status anyway
+            self._log_stage_advancement(
+                4, "Advancing without $G confirmation (timeout)"
+            )
+            self.validate_stop("$G")
+            self.validate_start("?")
+        elif self._validation_stage == 4:
+            # Status timed out, assume we're connected
+            self._log_stage_advancement(5, "Connection assumed valid (timeout)")
+            self.validate_stop("?")
+
     def validate_stop(self, cmd):
         name = self.service.safe_label
         if cmd == "*":
             self.service(f".timer-{name}* -q --off")
             return
         self.service(f".timer-{name}{cmd} -q --off")
-        if cmd == "$":
-            if len(self._forward_buffer) > 3:
-                # If the forward planning buffer is longer than 3 it must have filled with failed attempts.
-                with self._forward_lock:
-                    self._forward_buffer.clear()
+        if cmd == "$" and len(self._forward_buffer) > 3:
+            # If the forward planning buffer is longer than 3 it must have filled with failed attempts.
+            with self._forward_lock:
+                self._forward_buffer.clear()
 
     def _rstop(self, *args):
         self._recving_thread = None
@@ -743,6 +1155,16 @@ class GrblController:
             self._forward_buffer += bytes(line, encoding="latin-1")
         self.connection.write(line)
         self.log(line, type="send")
+
+        # Track sent messages during validation stages
+        if self._validation_stage in [1, 2, 3, 4] and not self.fully_validated():
+            message_info = {
+                "command": line.strip(),
+                "timestamp": time.time(),
+                "stage": self._validation_stage,
+                "delay": 0,
+            }
+            self._current_stage_messages.append(message_info)
 
     def _sending_realtime(self):
         """
@@ -863,6 +1285,10 @@ class GrblController:
         @return:
         """
         while self.connection.connected:
+            # Check for validation timeouts
+            if self._check_validation_timeout():
+                continue
+
             # reading responses.
             response = None
             while not response:
@@ -874,6 +1300,9 @@ class GrblController:
                     time.sleep(0.01)
                     if self.is_shutdown:
                         return
+                    # Check timeout again during waiting
+                    if self._check_validation_timeout():
+                        break
             self.service.signal("grbl;response", response)
             self.log(response, type="recv")
             if response == "ok":
@@ -948,28 +1377,126 @@ class GrblController:
                 self._assembled_response = []
             elif response.startswith(">"):
                 self.log(f"STARTUP: {response}", type="event")
-            elif response.startswith(self.service.welcome):
-                if not self.service.require_validator:
-                    # Validation is not required, we reboot.
-                    if self.fully_validated():
-                        if self.service.boot_connect_sequence:
-                            # Boot sequence is required. Restart sequence.
-                            self.log(
-                                "Device Reset, revalidation required", type="event"
-                            )
-                            self._validation_stage = 1
-                            self.validate_start("$")
-                else:
-                    # Validation is required. This was stage 0.
+            elif self._is_welcome_message(response):
+                self._handle_welcome_message(response)
+            else:
+                self._assembled_response.append(response)
+
+    def _is_welcome_message(self, response):
+        """
+        Check if a response looks like a welcome message from GRBL or GRBL-compatible firmware.
+
+        This method is more flexible than exact string matching and can recognize:
+        - Standard GRBL: "Grbl 1.1f ['$' for help]"
+        - Case variations: "grbl", "GRBL"
+        - Version variations: "Grbl v1.1h", "grbl 0.9j"
+        - Custom variants: "grbl-Mega", "GrblHAL"
+
+        Args:
+            response (str): The response string to check
+
+        Returns:
+            bool: True if this looks like a welcome message
+        """
+        if not response or not isinstance(response, str):
+            return False
+
+        response_lower = response.lower().strip()
+
+        # Primary check: starts with configured welcome message (exact match)
+        if response.startswith(self.service.welcome):
+            return True
+
+        # Flexible patterns for GRBL-like welcome messages
+        welcome_patterns = [
+            "grbl ",  # Standard: "Grbl 1.1f"
+            "grbl v",  # Version format: "Grbl v1.1h"
+            "grbl-",  # Custom variants: "grbl-Mega"
+            "grblhal",  # GrblHAL firmware
+            "grbl_esp32",  # ESP32 variants
+            "fluidnc",  # FluidNC (GRBL-compatible)
+        ]
+
+        # Check if response starts with any known GRBL pattern
+        for pattern in welcome_patterns:
+            if response_lower.startswith(pattern):
+                self.log(
+                    f"Recognized GRBL-like welcome: '{response}' (pattern: {pattern})",
+                    type="event",
+                )
+
+                # Detect and apply variant-specific behavior
+                self._handle_variant_detection(response)
+
+                return True
+
+        # Additional heuristic: contains "grbl" and looks like version info
+        if "grbl" in response_lower and any(char.isdigit() for char in response):
+            # Likely a version string containing GRBL
+            self.log(f"Heuristic match for GRBL welcome: '{response}'", type="event")
+
+            # Detect and apply variant-specific behavior
+            self._handle_variant_detection(response)
+
+            return True
+
+        return False
+
+    def _handle_welcome_message(self, response):
+        """Handle welcome message based on current validation mode."""
+        # Track the welcome message for analysis
+        welcome_info = {
+            "timestamp": time.time(),
+            "message": response,
+            "validation_mode": self._validation_mode,
+            "expected_welcome": self.service.welcome,
+            "exact_match": response.startswith(self.service.welcome),
+        }
+        self._welcome_message_history.append(welcome_info)
+
+        if self._validation_mode == "skip":
+            # Skip mode - already validated
+            return
+
+        # Log the actual received welcome message
+        self.log(f"Welcome message received: '{response}'", type="event")
+        if not welcome_info["exact_match"]:
+            self.log(
+                f"Note: Welcome differs from expected '{self.service.welcome}'",
+                type="event",
+            )
+
+        if self._validation_mode == "strict":
+            # Strict mode - welcome message is required
+            if self.service.boot_connect_sequence:
+                self._start_validation_sequence("strict mode")
+            else:
+                self._validation_stage = 5
+
+        elif self._validation_mode in ("proactive", "timeout"):
+            # For proactive and timeout modes, handle welcome message if received
+            if not self.service.require_validator:
+                # Validation not required, handle reset if needed
+                if self.fully_validated():
                     if self.service.boot_connect_sequence:
                         # Boot sequence is required. Restart sequence.
-                        self._validation_stage = 1
-                        self.validate_start("$")
+                        self._start_validation_sequence("device reset")
+                else:
+                    # Start validation sequence
+                    if self.service.boot_connect_sequence:
+                        # Boot sequence is required. Start sequence.
+                        self._start_validation_sequence("proactive/timeout mode")
                     else:
                         # No boot sequence required. Declare fully connected.
                         self._validation_stage = 5
             else:
-                self._assembled_response.append(response)
+                # Validation is required. This was stage 0.
+                if self.service.boot_connect_sequence:
+                    # Boot sequence is required. Start sequence.
+                    self._start_validation_sequence("validation required")
+                else:
+                    # No boot sequence required. Declare fully connected.
+                    self._validation_stage = 5
 
     def fully_validated(self):
         return self._validation_stage == 5
@@ -977,6 +1504,373 @@ class GrblController:
     def force_validate(self):
         self._validation_stage = 5
         self.validate_stop("*")
+
+    def grbl_force_validate(self):
+        """Command handler for forced validation start"""
+        self.force_validate_if_needed()
+
+    def grbl_validation_info(self):
+        """Command handler to show validation mode information"""
+        self.log(f"Current validation mode: {self._validation_mode}", type="event")
+        self.log(self.get_validation_mode_description(), type="event")
+        self.log(f"Validation stage: {self._validation_stage}", type="event")
+        self.log(f"Validation timeout: {self._validation_timeout}s", type="event")
+        self.log(f"Timeout events recorded: {len(self._timeout_history)}", type="event")
+        self.log(
+            f"Welcome messages recorded: {len(self._welcome_message_history)}",
+            type="event",
+        )
+
+        if self._current_stage_messages:
+            self.log(
+                f"Current stage messages: {len(self._current_stage_messages)}",
+                type="event",
+            )
+
+        # Show available timeout analysis commands
+        self.log("Available analysis commands:", type="event")
+        self.log(
+            "  > grbl_timeout_history [count] - Show recent timeout events",
+            type="event",
+        )
+        self.log("  > grbl_timeout_patterns - Analyze timeout patterns", type="event")
+        self.log(
+            "  > grbl_welcome_history [count] - Show recent welcome messages",
+            type="event",
+        )
+        self.log(
+            "  > grbl_welcome_patterns - Analyze welcome message patterns", type="event"
+        )
+        self.log(
+            "  > grbl_suggest_welcome_pattern - Suggest optimal welcome setting",
+            type="event",
+        )
+        self.log(
+            "  > grbl_clear_timeout_history - Clear recorded timeout data", type="event"
+        )
+        self.log(
+            "  > grbl_export_timeout_data - Export timeout data for analysis",
+            type="event",
+        )
+
+    def grbl_set_validation_mode(self, mode):
+        """Command handler to manually set validation mode"""
+        valid_modes = ["skip", "strict", "proactive", "timeout"]
+        if mode not in valid_modes:
+            self.log(
+                f"Invalid mode '{mode}'. Valid modes: {', '.join(valid_modes)}",
+                type="event",
+            )
+            return
+
+        old_mode = self._validation_mode
+        self._validation_mode = mode
+        self._update_validation_timeout()
+
+        self.log(f"Validation mode changed from '{old_mode}' to '{mode}'", type="event")
+        self.log(self.get_validation_mode_description(), type="event")
+
+        # If currently connected, reapply the validation mode
+        if hasattr(self.connection, "connected") and self.connection.connected:
+            self.log("Reapplying validation mode to current connection", type="event")
+            self._apply_validation_mode()
+
+    def grbl_timeout_history(self, count=None):
+        """Command handler to show timeout history"""
+        if not self._timeout_history:
+            self.log("No timeout events recorded", type="event")
+            return
+
+        # Show recent timeouts (default 5, or all if count specified)
+        display_count = int(count) if count and count.isdigit() else 5
+        recent_timeouts = self._timeout_history[-display_count:]
+
+        self.log(
+            f"=== Timeout History (showing {len(recent_timeouts)} of {len(self._timeout_history)} events) ===",
+            type="event",
+        )
+
+        for i, timeout in enumerate(recent_timeouts, 1):
+            timestamp = time.strftime("%H:%M:%S", time.localtime(timeout["timestamp"]))
+            self.log(
+                f"  {i}. [{timestamp}] Stage {timeout['stage']} - '{timeout['start_command']}' "
+                f"({timeout['elapsed_time']:.2f}s/{timeout['timeout_limit']:.1f}s, {timeout['validation_mode']} mode)",
+                type="event",
+            )
+
+            if timeout["messages_sent"]:
+                for msg in timeout["messages_sent"]:
+                    msg_time = time.strftime(
+                        "%H:%M:%S", time.localtime(msg["timestamp"])
+                    )
+                    self.log(
+                        f"       Sent: '{msg['command']}' at {msg_time}", type="event"
+                    )
+
+    def grbl_timeout_patterns(self):
+        """Command handler to analyze timeout patterns and suggest new validation methods"""
+        if not self._timeout_history:
+            self.log("No timeout data available for pattern analysis", type="event")
+            return
+
+        # Analyze patterns
+        patterns = {}
+        for timeout in self._timeout_history:
+            pattern_key = f"Stage_{timeout['stage']}_{timeout['start_command']}"
+            if pattern_key not in patterns:
+                patterns[pattern_key] = {
+                    "count": 0,
+                    "total_time": 0,
+                    "modes": set(),
+                    "suggestions": [],
+                }
+
+            patterns[pattern_key]["count"] += 1
+            patterns[pattern_key]["total_time"] += timeout["elapsed_time"]
+            patterns[pattern_key]["modes"].add(timeout["validation_mode"])
+
+        self.log("=== Timeout Pattern Analysis ===", type="event")
+
+        for pattern, data in patterns.items():
+            avg_time = data["total_time"] / data["count"]
+            modes_str = ", ".join(sorted(data["modes"]))
+
+            self.log(f"  Pattern: {pattern}", type="event")
+            self.log(
+                f"    Occurrences: {data['count']} | Avg Time: {avg_time:.2f}s | Modes: {modes_str}",
+                type="event",
+            )
+
+            # Generate suggestions for new validation methods
+            stage, command = pattern.split("_")[1], pattern.split("_", 2)[2]
+            suggestions = self._generate_pattern_suggestions(
+                stage, command, data["count"], avg_time
+            )
+
+            if suggestions:
+                self.log("    >> Suggestions for new validation method:", type="event")
+                for suggestion in suggestions:
+                    self.log(f"       - {suggestion}", type="event")
+
+    def _generate_pattern_suggestions(self, stage, command, count, avg_time):
+        """Generate suggestions for new validation methods based on patterns"""
+        suggestions = []
+
+        if count >= 3:  # Frequent timeout pattern
+            suggestions.append(
+                f"Create specialized handler for devices that don't respond to '{command}'"
+            )
+
+        if avg_time > 8.0:  # Very slow responses
+            suggestions.append(
+                "Implement extended timeout validation mode for slow devices"
+            )
+
+        if stage == "1" and command == "$":
+            suggestions.extend(
+                [
+                    "Add 'no-help' validation mode that skips '$' command entirely",
+                    "Implement alternative device detection using different commands",
+                ]
+            )
+
+        elif stage == "2" and command in ["$$", "$G"]:
+            suggestions.append(
+                "Create 'minimal-grbl' validation mode for basic implementations"
+            )
+
+        elif stage == "4" and command == "?":
+            suggestions.append(
+                "Add 'status-free' validation mode that doesn't require status reporting"
+            )
+
+        return suggestions
+
+    def grbl_clear_timeout_history(self):
+        """Command handler to clear timeout history"""
+        count = len(self._timeout_history)
+        self._timeout_history.clear()
+        self.log(f"Cleared {count} timeout events from history", type="event")
+
+    def grbl_export_timeout_data(self):
+        """Command handler to export timeout data for analysis"""
+        if not self._timeout_history:
+            self.log("No timeout data to export", type="event")
+            return
+
+        self.log("=== Timeout Data Export ===", type="event")
+        self.log(
+            "Format: timestamp,stage,command,elapsed_time,timeout_limit,mode,messages_sent",
+            type="event",
+        )
+
+        for timeout in self._timeout_history:
+            messages = ";".join([msg["command"] for msg in timeout["messages_sent"]])
+            export_line = (
+                f"{timeout['timestamp']},{timeout['stage']},{timeout['start_command']},"
+                f"{timeout['elapsed_time']:.2f},{timeout['timeout_limit']:.1f},"
+                f"{timeout['validation_mode']},{messages}"
+            )
+            self.log(export_line, type="event")
+
+        self.log(f"Exported {len(self._timeout_history)} timeout events", type="event")
+
+    def grbl_welcome_history(self, count=None):
+        """Command handler to show welcome message history"""
+        if not self._welcome_message_history:
+            self.log("No welcome messages recorded", type="event")
+            return
+
+        # Show recent welcome messages (default 10, or all if count specified)
+        display_count = int(count) if count and count.isdigit() else 10
+        recent_welcomes = self._welcome_message_history[-display_count:]
+
+        self.log(
+            f"=== Welcome Message History (showing {len(recent_welcomes)} of {len(self._welcome_message_history)} messages) ===",
+            type="event",
+        )
+
+        for i, welcome in enumerate(recent_welcomes, 1):
+            timestamp = time.strftime("%H:%M:%S", time.localtime(welcome["timestamp"]))
+            match_status = "EXACT" if welcome["exact_match"] else "PATTERN"
+            self.log(
+                f"  {i}. [{timestamp}] {match_status}: '{welcome['message']}'",
+                type="event",
+            )
+            if not welcome["exact_match"]:
+                self.log(
+                    f"       Expected: '{welcome['expected_welcome']}'", type="event"
+                )
+
+    def grbl_welcome_patterns(self):
+        """Command handler to analyze welcome message patterns"""
+        if not self._welcome_message_history:
+            self.log(
+                "No welcome message data available for pattern analysis", type="event"
+            )
+            return
+
+        self.log("=== Welcome Message Pattern Analysis ===", type="event")
+
+        exact_matches = 0
+        pattern_matches = 0
+        unique_messages = set()
+
+        for welcome in self._welcome_message_history:
+            unique_messages.add(welcome["message"])
+            if welcome["exact_match"]:
+                exact_matches += 1
+            else:
+                pattern_matches += 1
+
+        total = len(self._welcome_message_history)
+        self.log(f"Total welcome messages: {total}", type="event")
+        self.log(
+            f"Exact matches: {exact_matches} ({exact_matches/total*100:.1f}%)",
+            type="event",
+        )
+        self.log(
+            f"Pattern matches: {pattern_matches} ({pattern_matches/total*100:.1f}%)",
+            type="event",
+        )
+        self.log(f"Unique message variants: {len(unique_messages)}", type="event")
+
+        if len(unique_messages) > 1:
+            self._log_welcome_variants_header()
+            for i, message in enumerate(sorted(unique_messages), 1):
+                self.log(f"  {i}. '{message}'", type="event")
+
+            self.log("", type="event")
+            self.log(">> Suggestions:", type="event")
+            if pattern_matches > 0:
+                self.log(
+                    "  - Consider updating the 'welcome' setting to match the most common variant",
+                    type="event",
+                )
+                self.log(
+                    "  - The pattern matching is working correctly for non-exact matches",
+                    type="event",
+                )
+            if len(unique_messages) > 3:
+                self.log(
+                    "  - Multiple firmware variants detected - this is normal for different GRBL versions",
+                    type="event",
+                )
+
+    def grbl_suggest_welcome_pattern(self):
+        """Command handler to suggest optimal welcome pattern based on collected data"""
+        if not self._welcome_message_history:
+            self.log("No welcome message data available", type="event")
+            return
+
+        # Count frequency of different messages
+        message_counts = {}
+        for welcome in self._welcome_message_history:
+            msg = welcome["message"]
+            message_counts[msg] = message_counts.get(msg, 0) + 1
+
+        # Find most common message
+        most_common = max(message_counts.items(), key=lambda x: x[1])
+        current_setting = self.service.welcome
+
+        self.log("=== Welcome Pattern Suggestion ===", type="event")
+        self.log(f"Current setting: '{current_setting}'", type="event")
+        self.log(
+            f"Most common message: '{most_common[0]}' ({most_common[1]} times)",
+            type="event",
+        )
+
+        if most_common[0] != current_setting:
+            # Extract a better pattern
+            common_msg = most_common[0].lower()
+
+            # Suggest patterns based on analysis
+            if common_msg.startswith("grbl "):
+                # Standard GRBL with version
+                suggested = "Grbl"
+                self._suggest_welcome_setting(
+                    suggested, "This will match standard GRBL version strings"
+                )
+            elif "grblhal" in common_msg:
+                suggested = "GrblHAL"
+                self._suggest_welcome_setting(
+                    suggested, "This will match GrblHAL firmware variants"
+                )
+            elif "fluidnc" in common_msg:
+                suggested = "FluidNC"
+                self._suggest_welcome_setting(
+                    suggested, "This will match FluidNC firmware"
+                )
+            else:
+                # Try to extract common prefix
+                words = most_common[0].split()
+                if words:
+                    suggested = words[0]
+                    self._suggest_welcome_setting(
+                        suggested, "Based on the first word of most common message"
+                    )
+        else:
+            self.log(">> Current welcome setting appears optimal", type="event")
+
+    def _get_validation_timeout_for_mode(self):
+        """Get appropriate timeout value for current validation mode."""
+        timeouts = {
+            "skip": 0,  # No timeout needed
+            "strict": 10.0,  # Longer timeout for strict mode
+            "proactive": 3.0,  # Shorter timeout for proactive
+            "timeout": 5.0,  # Standard timeout
+        }
+        return timeouts.get(self._validation_mode, 5.0)
+
+    def _update_validation_timeout(self):
+        """Update validation timeout based on current mode."""
+        new_timeout = self._get_validation_timeout_for_mode()
+        if new_timeout != self._validation_timeout:
+            self._validation_timeout = new_timeout
+            self.log(
+                f"Validation timeout updated to {self._validation_timeout}s for mode '{self._validation_mode}'",
+                type="event",
+            )
 
     def _process_status_message(self, response):
         message = response[1:-1]
@@ -1198,3 +2092,131 @@ class GrblController:
                 self.service.signal("grbl:hwsettings", key, value)
             except ValueError:
                 pass
+
+    # Variant-specific command handlers
+
+    def grbl_variant_info(self):
+        """Command to display detected GRBL variant information."""
+        if hasattr(self, "_detected_variant"):
+            variant = self._detected_variant
+            settings = self._variant_settings
+
+            self.log("=== GRBL Variant Information ===", type="event")
+            self.log(f"Detected Variant: {variant.upper()}", type="event")
+
+            # Display capabilities
+            self.log("Capabilities:", type="event")
+            capabilities = [
+                ("Laser Mode", settings.get("supports_laser_mode", False)),
+                ("Real-time Commands", settings.get("supports_real_time", False)),
+                ("Probing", settings.get("supports_probe", False)),
+                ("Enhanced Status", settings.get("supports_enhanced_status", False)),
+                ("WiFi Support", settings.get("supports_wifi", False)),
+                ("SD Card Support", settings.get("supports_sd_card", False)),
+                ("Z-Axis", settings.get("supports_z_axis", False)),
+            ]
+
+            for cap_name, supported in capabilities:
+                status = "Yes" if supported else "No"
+                self.log(f"  {cap_name}: {status}", type="event")
+
+            self.log(
+                f"Max Buffer Size: {settings.get('max_buffer_size', 128)} bytes",
+                type="event",
+            )
+            self.log(
+                f"Home Commands: {', '.join(settings.get('home_commands', ['$H']))}",
+                type="event",
+            )
+
+            # Variant-specific recommendations
+            self._provide_variant_recommendations(variant, settings)
+        else:
+            self.log(
+                "No GRBL variant detected yet. Connect to device first.", type="event"
+            )
+
+    def _provide_variant_recommendations(self, variant, settings):
+        """Provide variant-specific configuration recommendations."""
+        self.log("", type="event")
+        self.log("=== Configuration Recommendations ===", type="event")
+
+        if variant == "grblhal":
+            self.log("GrblHAL Recommendations:", type="event")
+            self.log(
+                "  - Use individual axis homing commands ($HX, $HY, $HZ) for better control",
+                type="event",
+            )
+            self.log(
+                "  - Enable enhanced status reports for better feedback", type="event"
+            )
+            self.log(
+                "  - Consider using larger planning buffer (256+ bytes)", type="event"
+            )
+
+        elif variant == "fluidnc":
+            self.log("FluidNC Recommendations:", type="event")
+            self.log("  - ESP32-based controller with WiFi capabilities", type="event")
+            self.log(
+                "  - May support SD card operations for offline jobs", type="event"
+            )
+            self.log("  - Reset after alarms may be required", type="event")
+            self.log(
+                "  - Consider using larger buffer sizes (256+ bytes)", type="event"
+            )
+
+        elif variant == "grbl":
+            self.log("Standard GRBL Recommendations:", type="event")
+            self.log("  - Classic GRBL with proven stability", type="event")
+            self.log("  - Standard buffer size (128 bytes) is optimal", type="event")
+            self.log("  - Enable laser mode ($32=1) for laser operations", type="event")
+
+        elif variant == "grbl_esp32":
+            self.log("GRBL-ESP32 Recommendations:", type="event")
+            self.log("  - ESP32-based with potential WiFi support", type="event")
+            self.log("  - May need reset after alarm conditions", type="event")
+            self.log("  - Larger buffer sizes supported", type="event")
+
+        # Universal recommendations based on capabilities
+        if settings.get("supports_laser_mode"):
+            self.log(
+                "  - Ensure laser mode is enabled in firmware settings", type="event"
+            )
+
+        if not settings.get("supports_probe"):
+            self.log(
+                "  - Probing operations not supported by this variant", type="event"
+            )
+
+    def grbl_suggest_buffer_size(self):
+        """Command to suggest optimal buffer size based on detected variant."""
+        if hasattr(self, "_detected_variant"):
+            settings = self._variant_settings
+            recommended = settings.get("max_buffer_size", 128)
+            current = getattr(self.service, "planning_buffer_size", 128)
+
+            self.log("=== Buffer Size Recommendation ===", type="event")
+            self.log(
+                f"Detected Variant: {self._detected_variant.upper()}", type="event"
+            )
+            self.log(f"Current Buffer Size: {current} bytes", type="event")
+            self.log(f"Recommended Size: {recommended} bytes", type="event")
+
+            if current != recommended:
+                self.log("", type="event")
+                self.log(
+                    f">> Recommendation: Update planning buffer to {recommended} bytes",
+                    type="event",
+                )
+                self.log(
+                    "   This can improve performance and reduce communication timeouts",
+                    type="event",
+                )
+            else:
+                self.log(
+                    "   Current buffer size is optimal for this variant", type="event"
+                )
+        else:
+            self.log(
+                "No GRBL variant detected yet. Connect to device first.", type="event"
+            )
