@@ -3,13 +3,13 @@ GRBL Controller
 
 Tasked with sending data to the different connection.
 
-Validation Stages.
-        Stage 0, we are disconnected and invalid.
-        Stage 1, we are connected and need to check if we are GRBL send $
-        Stage 2, we parsed $ and need to try $$ $G
-        Stage 3, we successfully parsed $$
-        Stage 4, we successfully parsed $G, send ?
-        Stage 5, we successfully parsed ?
+Validation Stages:
+        Stage 0 (VALIDATION_STAGE_DISCONNECTED): Disconnected and invalid
+        Stage 1 (VALIDATION_STAGE_HELP_REQUEST): Connected, need to check if GRBL with $
+        Stage 2 (VALIDATION_STAGE_SETTINGS_QUERY): Parsed $, need to try $$ and $G
+        Stage 3 (VALIDATION_STAGE_SETTINGS_PARSED): Successfully parsed $$
+        Stage 4 (VALIDATION_STAGE_MODAL_QUERY): Successfully parsed $G, send ?
+        Stage 5 (VALIDATION_STAGE_VALIDATED): Successfully parsed ?, fully validated
 """
 import ast
 import re
@@ -18,7 +18,869 @@ import time
 
 from meerk40t.kernel import signal_listener
 
+# GRBL Validation Stage Constants
+VALIDATION_STAGE_DISCONNECTED = 0  # Disconnected and invalid
+VALIDATION_STAGE_HELP_REQUEST = 1  # Connected, need to check if GRBL with $
+VALIDATION_STAGE_SETTINGS_QUERY = 2  # Parsed $, need to try $$ and $G
+VALIDATION_STAGE_SETTINGS_PARSED = 3  # Successfully parsed $$
+VALIDATION_STAGE_MODAL_QUERY = 4  # Successfully parsed $G, send ?
+VALIDATION_STAGE_VALIDATED = 5  # Successfully parsed ?, fully validated
+
 SETTINGS_MESSAGE = re.compile(r"^\$([0-9]+)=(.*)")
+
+# GRBL Hardware Settings Database
+# Format: code -> (default_value, description, units, type, documentation_url, variants)
+# variants is a list of GRBL variants that support this setting:
+# ['grbl'] = Standard GRBL only
+# ['grbl', 'grblhal'] = Standard GRBL and GrblHAL
+# ['grblhal'] = GrblHAL only
+# ['fluidnc'] = FluidNC only
+# ['grbl_esp32'] = GRBL-ESP32 only
+# ['all'] = All variants (universal)
+GRBL_HARDWARE_SETTINGS = {
+    # Standard GRBL settings - supported by all variants
+    0: (
+        10,
+        "step pulse time",
+        "microseconds",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#0--step-pulse-microseconds",
+        ["all"],
+    ),
+    1: (
+        25,
+        "step idle delay",
+        "milliseconds",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#1---step-idle-delay-milliseconds",
+        ["all"],
+    ),
+    # Step port invert settings
+    2: (
+        0,
+        "step pulse invert",
+        "bitmask",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#2--step-port-invert-mask",
+        ["all"],
+    ),
+    3: (
+        0,
+        "step direction invert",
+        "bitmask",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#3--direction-port-invert-mask",
+        ["all"],
+    ),
+    4: (
+        0,
+        "invert step enable pin",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#4---step-enable-invert-boolean",
+        ["all"],
+    ),
+    5: (
+        0,
+        "invert limit pins",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#5----limit-pins-invert-boolean",
+        ["all"],
+    ),
+    6: (
+        0,
+        "invert probe pin",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#6----probe-pin-invert-boolean",
+        ["all"],
+    ),
+    # Status report settings
+    10: (
+        255,
+        "status report options",
+        "bitmask",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#10---status-report-mask",
+        ["all"],
+    ),
+    11: (
+        0.010,
+        "Junction deviation",
+        "mm",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#11---junction-deviation-mm",
+        ["all"],
+    ),
+    12: (
+        0.002,
+        "arc tolerance",
+        "mm",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#12--arc-tolerance-mm",
+        ["all"],
+    ),
+    13: (
+        0,
+        "Report in inches",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#13---report-inches-boolean",
+        ["all"],
+    ),
+    # Limit and homing settings
+    20: (
+        0,
+        "Soft limits enabled",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#20---soft-limits-boolean",
+        ["all"],
+    ),
+    21: (
+        0,
+        "hard limits enabled",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#21---hard-limits-boolean",
+        ["grbl", "grblhal"],
+    ),  # FluidNC uses YAML config
+    22: (
+        0,
+        "Homing cycle enable",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#22---homing-cycle-boolean",
+        ["grbl", "grblhal"],
+    ),  # FluidNC uses YAML config
+    23: (
+        0,
+        "Homing direction invert",
+        "bitmask",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#23---homing-dir-invert-mask",
+        ["all"],
+    ),
+    24: (
+        25.000,
+        "Homing locate feed rate",
+        "mm/min",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#24---homing-feed-mmmin",
+        ["all"],
+    ),
+    25: (
+        500.000,
+        "Homing search seek rate",
+        "mm/min",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#25---homing-seek-mmmin",
+        ["all"],
+    ),
+    26: (
+        250,
+        "Homing switch debounce delay",
+        "ms",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#26---homing-debounce-milliseconds",
+        ["all"],
+    ),
+    27: (
+        1.000,
+        "Homing switch pull-off distance",
+        "mm",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#27---homing-pull-off-mm",
+        ["all"],
+    ),
+    # Spindle settings
+    30: (
+        1000,
+        "Maximum spindle speed",
+        "RPM",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#30---max-spindle-speed-rpm",
+        ["all"],
+    ),
+    31: (
+        0,
+        "Minimum spindle speed",
+        "RPM",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#31---min-spindle-speed-rpm",
+        ["all"],
+    ),
+    32: (
+        1,
+        "Laser mode enable",
+        "boolean",
+        int,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#32---laser-mode-boolean",
+        ["grbl", "grblhal", "grbl_esp32"],
+    ),  # FluidNC uses YAML config
+    # X/Y/Z axis steps per mm
+    100: (
+        250.000,
+        "X-axis steps per millimeter",
+        "steps",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm",
+        ["all"],
+    ),
+    101: (
+        250.000,
+        "Y-axis steps per millimeter",
+        "steps",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm",
+        ["all"],
+    ),
+    102: (
+        250.000,
+        "Z-axis steps per millimeter",
+        "steps",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm",
+        ["all"],
+    ),
+    # X/Y/Z axis max rates
+    110: (
+        500.000,
+        "X-axis max rate",
+        "mm/min",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin",
+        ["all"],
+    ),
+    111: (
+        500.000,
+        "Y-axis max rate",
+        "mm/min",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin",
+        ["all"],
+    ),
+    112: (
+        500.000,
+        "Z-axis max rate",
+        "mm/min",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin",
+        ["all"],
+    ),
+    # X/Y/Z axis acceleration
+    120: (
+        10.000,
+        "X-axis acceleration",
+        "mm/s^2",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2",
+        ["all"],
+    ),
+    121: (
+        10.000,
+        "Y-axis acceleration",
+        "mm/s^2",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2",
+        ["all"],
+    ),
+    122: (
+        10.000,
+        "Z-axis acceleration",
+        "mm/s^2",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2",
+        ["all"],
+    ),
+    # X/Y/Z axis max travel
+    130: (
+        200.000,
+        "X-axis max travel",
+        "mm",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm",
+        ["all"],
+    ),
+    131: (
+        200.000,
+        "Y-axis max travel",
+        "mm",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm",
+        ["all"],
+    ),
+    132: (
+        200.000,
+        "Z-axis max travel",
+        "mm",
+        float,
+        "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm",
+        ["all"],
+    ),
+    # === GRBL Variant Extended Settings ===
+    # These settings are available in GrblHAL, FluidNC, GRBL-ESP32 and other advanced variants
+    # Extended control and inversion settings (GrblHAL)
+    14: (
+        73,
+        "invert control signals",
+        "control_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    15: (
+        0,
+        "invert coolant signals",
+        "coolant_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    16: (
+        0,
+        "invert spindle signals",
+        "spindle_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    17: (
+        0,
+        "disable control pullup",
+        "control_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    18: (
+        0,
+        "disable limit pullup",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    19: (
+        0,
+        "disable probe pullup",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    # Extended homing and motion settings
+    28: (
+        1.000,
+        "G73 retract distance",
+        "mm",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    29: (
+        0,
+        "step pulse delay",
+        "microseconds",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    # Extended spindle settings (GrblHAL/FluidNC)
+    33: (
+        5000,
+        "Spindle PWM frequency",
+        "Hz",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "grbl_esp32"],
+    ),
+    34: (
+        0,
+        "Spindle off PWM duty cycle",
+        "percent",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "grbl_esp32"],
+    ),
+    35: (
+        0,
+        "Spindle minimum PWM duty cycle",
+        "percent",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "grbl_esp32"],
+    ),
+    36: (
+        100,
+        "Spindle maximum PWM duty cycle",
+        "percent",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "grbl_esp32"],
+    ),
+    37: (
+        0,
+        "Steppers deenergized mask",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    38: (
+        1,
+        "Spindle encoder PPR",
+        "pulses",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    39: (
+        1,
+        "Enable printable realtime commands",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    # Advanced features (GrblHAL)
+    40: (
+        0,
+        "Soft limits for jogging",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    43: (
+        1,
+        "Number of homing locate cycles",
+        "cycles",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    # Homing axis priorities (GrblHAL)
+    44: (
+        0,
+        "Homing axis priority 1",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    45: (
+        0,
+        "Homing axis priority 2",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    46: (
+        0,
+        "Homing axis priority 3",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    47: (
+        0,
+        "Homing axis priority 4",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    48: (
+        0,
+        "Homing axis priority 5",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    49: (
+        0,
+        "Homing axis priority 6",
+        "axis_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal"],
+    ),
+    # Jogging settings (GrblHAL/FluidNC)
+    50: (
+        100,
+        "Jogging step speed",
+        "mm/min",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "fluidnc"],
+    ),
+    51: (
+        1000,
+        "Jogging slow speed",
+        "mm/min",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "fluidnc"],
+    ),
+    52: (
+        5000,
+        "Jogging fast speed",
+        "mm/min",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "fluidnc"],
+    ),
+    53: (
+        0.1,
+        "Jogging step distance",
+        "mm",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "fluidnc"],
+    ),
+    54: (
+        10,
+        "Jogging slow distance",
+        "mm",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "fluidnc"],
+    ),
+    55: (
+        100,
+        "Jogging fast distance",
+        "mm",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ["grblhal", "fluidnc"],
+    ),
+    # System behavior settings (GrblHAL)
+    60: (
+        1,
+        "Restore overrides after program",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    61: (
+        0,
+        "Ignore safety door when idle",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    62: (
+        0,
+        "Enable sleep function",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    63: (
+        0,
+        "Disable laser during hold",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    64: (
+        0,
+        "Force initialization alarm",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    65: (
+        0,
+        "Allow feed override during probe",
+        "boolean",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    # Network settings (GrblHAL/FluidNC with WiFi/Ethernet)
+    70: (
+        0,
+        "Network services enabled",
+        "network_mask",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    71: (
+        "GRBL",
+        "Bluetooth device name",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    72: (
+        "GRBL serial port",
+        "Bluetooth service name",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    73: (
+        0,
+        "WiFi mode",
+        "wifi_mode",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    74: (
+        "",
+        "WiFi STA SSID",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    75: (
+        "",
+        "WiFi STA password",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    76: (
+        "GRBL",
+        "WiFi AP SSID",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    77: (
+        "",
+        "WiFi AP password",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    78: (
+        "",
+        "WiFi AP country",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    79: (
+        0,
+        "WiFi AP channel",
+        "channel",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    # PID control settings (Advanced GrblHAL with closed-loop spindle control)
+    80: (
+        0.0,
+        "Spindle PID proportional gain",
+        "gain",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    81: (
+        0.0,
+        "Spindle PID integral gain",
+        "gain",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    82: (
+        0.0,
+        "Spindle PID derivative gain",
+        "gain",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    84: (
+        0.0,
+        "Spindle PID max output error",
+        "error",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    85: (
+        0.0,
+        "Spindle PID max integral error",
+        "error",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    90: (
+        0.0,
+        "Spindle sync PID proportional gain",
+        "gain",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    91: (
+        0.0,
+        "Spindle sync PID integral gain",
+        "gain",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    92: (
+        0.0,
+        "Spindle sync PID derivative gain",
+        "gain",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    # Network interface settings (GrblHAL/FluidNC - Interface 0)
+    300: (
+        "GRBL",
+        "Network interface 0 hostname",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    301: (
+        1,
+        "Network interface 0 IP mode",
+        "ip_mode",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    302: (
+        "192.168.1.1",
+        "Network interface 0 gateway",
+        "ip_address",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    303: (
+        "192.168.1.100",
+        "Network interface 0 IP address",
+        "ip_address",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    304: (
+        "255.255.255.0",
+        "Network interface 0 netmask",
+        "ip_address",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    305: (
+        23,
+        "Network interface 0 telnet port",
+        "port",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    306: (
+        80,
+        "Network interface 0 HTTP port",
+        "port",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    307: (
+        81,
+        "Network interface 0 websocket port",
+        "port",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    # Network interface settings (GrblHAL/FluidNC - Interface 1 - WiFi AP)
+    310: (
+        "GRBL-AP",
+        "Network interface 1 hostname",
+        "string",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    311: (
+        0,
+        "Network interface 1 IP mode",
+        "ip_mode",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    312: (
+        "192.168.4.1",
+        "Network interface 1 gateway",
+        "ip_address",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    313: (
+        "192.168.4.1",
+        "Network interface 1 IP address",
+        "ip_address",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    314: (
+        "255.255.255.0",
+        "Network interface 1 netmask",
+        "ip_address",
+        str,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    315: (
+        23,
+        "Network interface 1 telnet port",
+        "port",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    316: (
+        80,
+        "Network interface 1 HTTP port",
+        "port",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    317: (
+        81,
+        "Network interface 1 websocket port",
+        "port",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    # Advanced tool change and spindle control (GrblHAL with ATC)
+    340: (
+        0,
+        "Spindle at speed tolerance",
+        "percent",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    341: (
+        0,
+        "Manual tool change mode",
+        "mode",
+        int,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    342: (
+        30,
+        "Tool change probing distance",
+        "mm",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    343: (
+        25,
+        "Tool change probing slow feed",
+        "mm/min",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+    344: (
+        200,
+        "Tool change probing seek feed",
+        "mm/min",
+        float,
+        "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+    ),
+}
 
 
 def hardware_settings(code):
@@ -26,280 +888,268 @@ def hardware_settings(code):
     Given a $# code returns the parameter and the units.
 
     @param code: $$ code.
-    @return: parameter, units
+    @return: (default_value, description, units, type, documentation_url, variants) or None if unknown
     """
-    if code == 0:
-        return (
-            10,
-            "step pulse time",
-            "microseconds",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#0--step-pulse-microseconds",
+    return GRBL_HARDWARE_SETTINGS.get(code)
+
+
+def get_variant_compatible_settings(detected_variant="grbl"):
+    """
+    Get all settings that are compatible with the specified GRBL variant.
+
+    @param detected_variant: The detected GRBL variant ('grbl', 'grblhal', 'fluidnc', 'grbl_esp32')
+    @return: List of setting codes that are supported by the variant
+    """
+    compatible_settings = []
+
+    for code, setting_data in GRBL_HARDWARE_SETTINGS.items():
+        # Handle both old 5-tuple format and new 6-tuple format
+        if len(setting_data) >= 6:
+            variants = setting_data[5]  # New format with variant info
+            if "all" in variants or detected_variant in variants:
+                compatible_settings.append(code)
+        else:
+            # Old format - assign default variant compatibility based on setting code
+            # This is a temporary transition approach
+            if _is_setting_compatible_with_variant(code, detected_variant):
+                compatible_settings.append(code)
+
+    return sorted(compatible_settings)
+
+
+def _is_setting_compatible_with_variant(code, variant):
+    """
+    Temporary function to determine compatibility for old format settings.
+    This provides default behavior during the transition period.
+    """
+    # Basic GRBL settings (0-32, 100-132) - supported by all variants
+    basic_settings = list(range(0, 33)) + list(range(100, 133))
+    if code in basic_settings:
+        return True
+
+    # Extended GrblHAL-specific settings
+    grblhal_only = list(range(14, 20)) + list(range(33, 100)) + list(range(300, 350))
+    if code in grblhal_only:
+        return variant in ["grblhal"]
+
+    # Network settings - supported by variants with network capability
+    network_settings = list(range(70, 80)) + list(range(300, 320))
+    if code in network_settings:
+        return variant in ["grblhal", "fluidnc", "grbl_esp32"]
+
+    # Default: assume basic GRBL compatibility
+    return variant in ["grbl", "grblhal"]
+
+
+def add_hardware_setting(
+    code, default_value, description, units, value_type, doc_url=None, variants=None
+):
+    """
+    Dynamically add a hardware setting definition (useful for variant-specific settings).
+
+    @param code: Setting code number
+    @param default_value: Default value for the setting
+    @param description: Human-readable description
+    @param units: Units of measurement
+    @param value_type: Data type (int or float)
+    @param doc_url: Optional documentation URL
+    @param variants: List of compatible variants, defaults to ['all']
+    """
+    if doc_url is None:
+        doc_url = (
+            f"https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#{code}"
         )
-    if code == 1:
-        return (
-            25,
-            "step idle delay",
-            "milliseconds",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#1---step-idle-delay-milliseconds",
-        )
-    if code == 2:
-        return (
-            0,
-            "step pulse invert",
-            "bitmask",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#2--step-port-invert-mask",
-        )
-    if code == 3:
-        return (
-            0,
-            "step direction invert",
-            "bitmask",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#3--direction-port-invert-mask",
-        )
-    if code == 4:
-        return (
-            0,
-            "invert step enable pin",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#4---step-enable-invert-boolean",
-        )
-    if code == 5:
-        return (
-            0,
-            "invert limit pins",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#5----limit-pins-invert-boolean",
-        )
-    if code == 6:
-        return (
-            0,
-            "invert probe pin",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#6----probe-pin-invert-boolean",
-        )
-    if code == 10:
-        return (
-            255,
-            "status report options",
-            "bitmask",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#10---status-report-mask",
-        )
-    if code == 11:
-        return (
-            0.010,
-            "Junction deviation",
-            "mm",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#11---junction-deviation-mm",
-        )
-    if code == 12:
-        return (
-            0.002,
-            "arc tolerance",
-            "mm",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#12--arc-tolerance-mm",
-        )
-    if code == 13:
-        return (
-            0,
-            "Report in inches",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#13---report-inches-boolean",
-        )
-    if code == 20:
-        return (
-            0,
-            "Soft limits enabled",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#20---soft-limits-boolean",
-        )
-    if code == 21:
-        return (
-            0,
-            "hard limits enabled",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#21---hard-limits-boolean",
-        )
-    if code == 22:
-        return (
-            0,
-            "Homing cycle enable",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#22---homing-cycle-boolean",
-        )
-    if code == 23:
-        return (
-            0,
-            "Homing direction invert",
-            "bitmask",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#23---homing-dir-invert-mask",
-        )
-    if code == 24:
-        return (
-            25.000,
-            "Homing locate feed rate",
-            "mm/min",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#24---homing-feed-mmmin",
-        )
-    if code == 25:
-        return (
-            500.000,
-            "Homing search seek rate",
-            "mm/min",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#25---homing-seek-mmmin",
-        )
-    if code == 26:
-        return (
-            250,
-            "Homing switch debounce delay",
-            "ms",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#26---homing-debounce-milliseconds",
-        )
-    if code == 27:
-        return (
-            1.000,
-            "Homing switch pull-off distance",
-            "mm",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#27---homing-pull-off-mm",
-        )
-    if code == 30:
-        return (
-            1000,
-            "Maximum spindle speed",
-            "RPM",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#30---max-spindle-speed-rpm",
-        )
-    if code == 31:
-        return (
-            0,
-            "Minimum spindle speed",
-            "RPM",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#31---min-spindle-speed-rpm",
-        )
-    if code == 32:
-        return (
-            1,
-            "Laser mode enable",
-            "boolean",
-            int,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#32---laser-mode-boolean",
-        )
-    if code == 100:
-        return (
+
+    if variants is None:
+        variants = ["all"]
+
+    GRBL_HARDWARE_SETTINGS[code] = (
+        default_value,
+        description,
+        units,
+        value_type,
+        doc_url,
+        variants,
+    )
+
+
+def get_all_settings_codes():
+    """Get all known GRBL settings codes."""
+    return list(GRBL_HARDWARE_SETTINGS.keys())
+
+
+def populate_variant_specific_settings():
+    """
+    Automatically populate variant-specific settings that may not be in the base dictionary.
+    This can be called to dynamically add known variant extensions.
+    """
+    # Additional 4th, 5th, 6th axis settings for 6-axis GrblHAL variants
+    axis_extensions = {
+        # A-axis (4th axis) settings
+        103: (
             250.000,
-            "X-axis steps per millimeter",
+            "A-axis steps per millimeter",
             "steps",
             float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm",
-        )
-    if code == 101:
-        return (
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        113: (
+            500.000,
+            "A-axis max rate",
+            "mm/min",
+            float,
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        123: (
+            10.000,
+            "A-axis acceleration",
+            "mm/s^2",
+            float,
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        133: (
+            200.000,
+            "A-axis max travel",
+            "mm",
+            float,
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        # B-axis (5th axis) settings
+        104: (
             250.000,
-            "Y-axis steps per millimeter",
+            "B-axis steps per millimeter",
             "steps",
             float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm",
-        )
-    if code == 102:
-        return (
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        114: (
+            500.000,
+            "B-axis max rate",
+            "mm/min",
+            float,
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        124: (
+            10.000,
+            "B-axis acceleration",
+            "mm/s^2",
+            float,
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        134: (
+            200.000,
+            "B-axis max travel",
+            "mm",
+            float,
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        # C-axis (6th axis) settings
+        105: (
             250.000,
-            "Z-axis steps per millimeter",
+            "C-axis steps per millimeter",
             "steps",
             float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#100-101-and-102--xyz-stepsmm",
-        )
-    if code == 110:
-        return (
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        115: (
             500.000,
-            "X-axis max rate",
+            "C-axis max rate",
             "mm/min",
             float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin",
-        )
-    if code == 111:
-        return (
-            500.000,
-            "Y-axis max rate",
-            "mm/min",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin",
-        )
-    if code == 112:
-        return (
-            500.000,
-            "Z-axis max rate",
-            "mm/min",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#110-111-and-112--xyz-max-rate-mmmin",
-        )
-    if code == 120:
-        return (
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        125: (
             10.000,
-            "X-axis acceleration",
+            "C-axis acceleration",
             "mm/s^2",
             float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2",
-        )
-    if code == 121:
-        return (
-            10.000,
-            "Y-axis acceleration",
-            "mm/s^2",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2",
-        )
-    if code == 122:
-        return (
-            10.000,
-            "Z-axis acceleration",
-            "mm/s^2",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#120-121-122--xyz-acceleration-mmsec2",
-        )
-    if code == 130:
-        return (
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+        135: (
             200.000,
-            "X-axis max travel",
+            "C-axis max travel",
             "mm",
             float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm",
-        )
-    if code == 131:
-        return (
-            200.000,
-            "Y-axis max travel",
-            "mm",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm",
-        )
-    if code == 132:
-        return (
-            200.000,
-            "Z-axis max travel",
-            "mm",
-            float,
-            "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md#130-131-132--xyz-max-travel-mm",
-        )
+            "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+        ),
+    }
+
+    # Add axis extensions if not already present
+    for code, setting in axis_extensions.items():
+        if code not in GRBL_HARDWARE_SETTINGS:
+            GRBL_HARDWARE_SETTINGS[code] = setting
+
+
+def add_variant_specific_settings(variant_name):
+    """
+    Add settings specific to a detected GRBL variant.
+
+    @param variant_name: Name of detected variant (grbl, grblhal, fluidnc, etc.)
+    """
+    if variant_name == "grblhal":
+        # GrblHAL may have additional settings
+        grblhal_specific = {
+            # More precise timing control
+            41: (
+                0,
+                "Limit switches debounce delay",
+                "ms",
+                int,
+                "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+            ),
+            42: (
+                0,
+                "Probe debounce delay",
+                "ms",
+                int,
+                "https://github.com/grblHAL/core/wiki/Additional-or-extended-settings",
+            ),
+        }
+
+        for code, setting in grblhal_specific.items():
+            if code not in GRBL_HARDWARE_SETTINGS:
+                add_hardware_setting(code, *setting)
+
+    elif variant_name == "fluidnc":
+        # FluidNC has different configuration approach (YAML), but may have some numeric settings
+        fluidnc_specific = {
+            # FluidNC may use some compatibility settings
+            400: (
+                0,
+                "FluidNC compatibility mode",
+                "mode",
+                int,
+                "http://wiki.fluidnc.com/en/config/overview",
+            ),
+        }
+
+        for code, setting in fluidnc_specific.items():
+            if code not in GRBL_HARDWARE_SETTINGS:
+                add_hardware_setting(code, *setting)
+
+    elif variant_name in ["grbl_esp32", "grbl-esp32"]:
+        # GRBL-ESP32 specific settings
+        esp32_specific = {
+            # ESP32 specific power management
+            350: (
+                0,
+                "WiFi power mode",
+                "mode",
+                int,
+                "https://github.com/bdring/Grbl_Esp32",
+            ),
+            351: (
+                1,
+                "Bluetooth enable",
+                "boolean",
+                int,
+                "https://github.com/bdring/Grbl_Esp32",
+            ),
+        }
+
+        for code, setting in esp32_specific.items():
+            if code not in GRBL_HARDWARE_SETTINGS:
+                add_hardware_setting(code, *setting)
 
 
 def grbl_error_code(code):
@@ -410,7 +1260,7 @@ class GrblController:
     def __init__(self, context):
         self.service = context
         self.connection = None
-        self._validation_stage = 0
+        self._validation_stage = VALIDATION_STAGE_DISCONNECTED
 
         self.update_connection()
 
@@ -437,6 +1287,7 @@ class GrblController:
         self.is_shutdown = False
 
         # Validation timeout tracking
+        self._cached_descriptions = {}
         self._validation_start_time = None
         self._validation_timeout = 5.0  # 5 seconds timeout per stage
 
@@ -447,33 +1298,11 @@ class GrblController:
         self._welcome_message_history = []  # Track welcome messages for analysis
 
         # Validation mode selection logic
-        self._validation_mode = self._select_validation_mode()
+        self._validation_mode = self._get_validation_mode()
         self._update_validation_timeout()
 
-    def _select_validation_mode(self):
-        """
-        Select the appropriate validation mode based on device configuration.
-
-        Returns:
-            str: Validation mode - 'strict', 'timeout', 'proactive', or 'skip'
-        """
-        # Mode 1: Skip validation entirely
-        if (
-            not self.service.require_validator
-            and not self.service.boot_connect_sequence
-        ):
-            return "skip"
-
-        # Mode 2: Strict validation (traditional GRBL approach)
-        if self.service.require_validator and self.service.boot_connect_sequence:
-            return "strict"
-
-        # Mode 3: Proactive validation (for non-compliant devices)
-        if not self.service.require_validator and self.service.boot_connect_sequence:
-            return "proactive"
-
-        # Mode 4: Timeout-based validation (fallback)
-        return "timeout"
+    def _get_validation_mode(self):
+        return self.service.validate_on_connect
 
     def get_validation_mode_description(self):
         """
@@ -482,13 +1311,22 @@ class GrblController:
         Returns:
             str: Description of the validation mode
         """
-        descriptions = {
-            "skip": "Skip Validation - Connection assumed immediately valid",
-            "strict": "Strict Validation - Requires welcome message before validation",
-            "proactive": "Proactive Validation - Starts validation proactively without waiting",
-            "timeout": "Timeout Validation - Strict with timeout fallback mechanisms",
-        }
-        return descriptions.get(self._validation_mode, "Unknown validation mode")
+        # We read the descriptions dictionary
+        if not self._cached_descriptions:
+            lookup_choice = self.service.lookup("choices", "protocol")
+            if lookup_choice is None:
+                return "Could not find choices - call too early?"
+            for entry in lookup_choice:
+                if entry.get("attr") == "validate_on_connect":
+                    keys = entry.get("choices", [])
+                    descriptions = entry.get("display", [])
+                    for key, desc in zip(keys, descriptions):
+                        self._cached_descriptions[key] = desc
+                    break
+
+        return self._cached_descriptions.get(
+            self._validation_mode, "Unknown validation mode"
+        )
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -616,13 +1454,13 @@ class GrblController:
         if self._validation_mode == "skip":
             # Skip validation entirely - immediately mark as validated
             self.log("Validation Mode: Skip - Connection assumed valid", type="event")
-            self._validation_stage = 5
+            self._validation_stage = VALIDATION_STAGE_VALIDATED
 
         elif self._validation_mode == "strict":
             # Strict mode - wait for welcome message, then validate
             self.log("Validation Mode: Strict - Awaiting welcome message", type="event")
             # Stage 0: Wait for welcome message (handled in _recving)
-            self._validation_stage = 0
+            self._validation_stage = VALIDATION_STAGE_DISCONNECTED
 
         elif self._validation_mode == "proactive":
             # Proactive mode - start validation after brief delay
@@ -635,7 +1473,7 @@ class GrblController:
                 name = self.service.safe_label
                 self.service(f".timer-proactive-{name} 1 1.0 grbl_force_validate")
             else:
-                self._validation_stage = 5
+                self._validation_stage = VALIDATION_STAGE_VALIDATED
 
         elif self._validation_mode == "timeout":
             # Timeout mode - combination of strict with timeout fallback
@@ -643,19 +1481,22 @@ class GrblController:
             if self.service.boot_connect_sequence:
                 self._start_validation_sequence("timeout mode")
             else:
-                self._validation_stage = 5
+                self._validation_stage = VALIDATION_STAGE_VALIDATED
 
     def force_validate_if_needed(self):
         """Force validation to start if we haven't received a welcome message"""
-        if self._validation_stage == 0 and self.connection.connected:
+        if (
+            self._validation_stage == VALIDATION_STAGE_DISCONNECTED
+            and self.connection.connected
+        ):
             self.log(
                 "No welcome message received, forcing validation start", type="event"
             )
             if self.service.boot_connect_sequence:
-                self._validation_stage = 1
+                self._validation_stage = VALIDATION_STAGE_HELP_REQUEST
                 self.validate_start("$")
             else:
-                self._validation_stage = 5
+                self._validation_stage = VALIDATION_STAGE_VALIDATED
 
     def close(self):
         """
@@ -668,7 +1509,7 @@ class GrblController:
         self.connection.disconnect()
         self.log("Disconnecting from GRBL...", type="event")
         self.validate_stop("*")
-        self._validation_stage = 0
+        self._validation_stage = VALIDATION_STAGE_DISCONNECTED
 
     def write(self, data):
         """
@@ -788,8 +1629,8 @@ class GrblController:
         """Check if current validation stage has timed out and advance if needed"""
         if (
             self._validation_start_time is None
-            or self._validation_stage == 0
-            or self._validation_stage == 5
+            or self._validation_stage == VALIDATION_STAGE_DISCONNECTED
+            or self._validation_stage == VALIDATION_STAGE_VALIDATED
         ):
             return False
 
@@ -821,12 +1662,12 @@ class GrblController:
         return False
 
     def _start_validation_sequence(self, reason=""):
-        """Start the validation sequence (stage 1 with $ command)."""
+        """Start the validation sequence (VALIDATION_STAGE_HELP_REQUEST with $ command)."""
         log_msg = "Starting validation sequence"
         if reason:
             log_msg += f" ({reason})"
         self.log(log_msg, type="event")
-        self._validation_stage = 1
+        self._validation_stage = VALIDATION_STAGE_HELP_REQUEST
         self.validate_start("$")
 
     def _suggest_welcome_setting(self, setting_value, description):
@@ -954,6 +1795,18 @@ class GrblController:
         self.log(f"Detected variant: {variant.upper()}", type="event")
         self.log(f"Welcome message: '{welcome_message}'", type="event")
 
+        # Populate variant-specific settings in the hardware settings database
+        try:
+            add_variant_specific_settings(variant)
+            self.log(
+                f"Added {variant.upper()}-specific hardware settings to database",
+                type="event",
+            )
+        except Exception as e:
+            self.log(
+                f"Note: Could not add variant-specific settings: {e}", type="event"
+            )
+
         # Log capabilities
         capabilities = []
         if settings["supports_laser_mode"]:
@@ -978,54 +1831,202 @@ class GrblController:
             type="event",
         )
 
-        # Apply buffer size recommendation
-        if hasattr(self.service, "planning_buffer_size"):
-            current_buffer = getattr(self.service, "planning_buffer_size", 128)
-            recommended_buffer = settings["max_buffer_size"]
-            if current_buffer != recommended_buffer:
-                self.log(
-                    f">> Recommendation: Update planning buffer to {recommended_buffer} bytes",
-                    type="event",
-                )
-                self.log(
-                    f"   Current: {current_buffer} bytes | Optimal for {variant}: {recommended_buffer} bytes",
-                    type="event",
-                )
-
         # Store variant info for later use
         self._detected_variant = variant
         self._variant_settings = settings
 
+        # ACTUALLY APPLY THE VARIANT-SPECIFIC SETTINGS
+        self._apply_variant_configuration(settings)
+
         return settings
 
-    def _log_timeout_analysis(self, timeout_info):
+    def _apply_variant_configuration(self, settings):
+        """Apply detected variant settings to controller configuration."""
+        # Apply buffer size optimization
+        recommended_buffer = settings["max_buffer_size"]
+        if self._device_buffer_size != recommended_buffer:
+            old_buffer = self._device_buffer_size
+            self._device_buffer_size = recommended_buffer
+            self.log(
+                f"Applied buffer size: {old_buffer} → {recommended_buffer} bytes",
+                type="event",
+            )
+
+        # Apply validation timeout adjustments for slower variants
+        if settings.get("reset_after_alarm"):
+            self.log(
+                "Note: This variant may require reset after alarm conditions",
+                type="event",
+            )
+
+        # Adjust validation timeout based on variant characteristics
+        if self._validation_mode in ["strict", "timeout"]:
+            original_timeout = self._validation_timeout
+
+            # ESP32-based variants may be slower to respond
+            if self._detected_variant in ["fluidnc", "grbl_esp32"]:
+                self._validation_timeout = max(self._validation_timeout, 8.0)
+            # GrblHAL may have more features but should be fast
+            elif self._detected_variant == "grblhal":
+                self._validation_timeout = max(self._validation_timeout, 6.0)
+            # Unknown variants get conservative timeout
+            elif self._detected_variant == "unknown":
+                self._validation_timeout = max(self._validation_timeout, 10.0)
+
+            if self._validation_timeout != original_timeout:
+                self.log(
+                    f"Adjusted validation timeout: {original_timeout}s → {self._validation_timeout}s",
+                    type="event",
+                )
+
+        # Set variant-specific service properties for other components to use
+        self.service._grbl_variant = self._detected_variant
+        self.service._grbl_variant_settings = settings
+
+        self.log(
+            f"Applied {self._detected_variant.upper()} variant configuration",
+            type="event",
+        )
+
+    def apply_manual_variant(self, variant_name):
+        """Manually apply a specific GRBL variant configuration."""
+        if variant_name not in [
+            "grbl",
+            "grblhal",
+            "fluidnc",
+            "grbl_esp32",
+            "grbl_mega",
+            "unknown",
+        ]:
+            self.log(
+                f"Unknown variant: {variant_name}. Available: grbl, grblhal, fluidnc, grbl_esp32, grbl_mega, unknown",
+                type="event",
+            )
+            return
+
+        settings = self._get_variant_specific_settings(variant_name)
+
+        self.log(
+            f"=== Manually Applying {variant_name.upper()} Configuration ===",
+            type="event",
+        )
+
+        # Store the variant info
+        self._detected_variant = variant_name
+        self._variant_settings = settings
+
+        # Apply the configuration
+        self._apply_variant_configuration(settings)
+
+        self.log(
+            f"Successfully applied {variant_name.upper()} variant configuration",
+            type="event",
+        )
+
+    def get_variant_specific_commands(self, channel):
+        """Get variant-specific command recommendations."""
+        if not hasattr(self, "_detected_variant"):
+            channel("No variant detected yet. Connect to device first.")
+            return
+
+        variant = self._detected_variant
+        settings = self._variant_settings
+
+        channel(f"=== {variant.upper()} Command Recommendations ===")
+
+        # Home commands
+        home_commands = settings.get("home_commands", ["$H"])
+        channel(f"Home Commands: {', '.join(home_commands)}")
+
+        if len(home_commands) > 1:
+            channel("  Use individual axis homing for better control:")
+            for cmd in home_commands:
+                axis = cmd.replace("$H", "")
+                axis_name = {"X": "X-axis", "Y": "Y-axis", "Z": "Z-axis"}.get(
+                    axis, "All axes" if not axis else f"{axis}-axis"
+                )
+                channel(f"    {cmd} - Home {axis_name}")
+
+        # Variant-specific command recommendations
+        if variant == "grblhal":
+            channel("GrblHAL Specific Commands:")
+            channel("  $ES - Show extended settings")
+            channel("  $S - Show startup lines")
+            channel("  $RST=* - Factory reset")
+
+        elif variant == "fluidnc":
+            channel("FluidNC Specific Commands:")
+            channel("  $SD/List - List SD card files")
+            channel("  $LocalFS/List - List local filesystem")
+            channel("  $WiFi/IP - Show WiFi IP address")
+            channel("  $Settings/List - Show all settings")
+
+        elif variant == "grbl_esp32":
+            channel("GRBL-ESP32 Specific Commands:")
+            channel("  $WIFI - WiFi configuration")
+            channel("  $SLEEP - Enter sleep mode")
+
+        # Common settings recommendations
+        channel("Common Settings:")
+        if settings.get("supports_laser_mode"):
+            channel("  $32=1 - Enable laser mode (recommended for lasers)")
+
+        channel("  $10=255 - Enable all status reports")
+        channel("  $13=0 - Report in millimeters")
+
+    def check_variant_compatibility(self, command):
+        """Check if a command is compatible with the detected variant."""
+        if not hasattr(self, "_detected_variant"):
+            return True  # Unknown compatibility, assume compatible
+
+        variant = self._detected_variant
+        settings = self._variant_settings
+
+        # Define variant-specific command compatibility
+        incompatible_commands = {
+            "unknown": ["$SD/", "$WiFi", "$LocalFS/", "$ES", "$SLEEP"],
+            "grbl": ["$SD/", "$WiFi", "$LocalFS/", "$ES", "$SLEEP"],
+            "grbl_mega": ["$SD/", "$WiFi", "$LocalFS/", "$ES", "$SLEEP"],
+        }
+
+        if variant in incompatible_commands:
+            for incompatible in incompatible_commands[variant]:
+                if command.upper().startswith(incompatible.upper()):
+                    self.log(
+                        f"Warning: Command '{command}' may not be supported by {variant.upper()}",
+                        type="event",
+                    )
+                    return False
+
+        return True
+
+    def _log_timeout_analysis(self, channel, timeout_info):
         """Log detailed timeout analysis for debugging and pattern recognition"""
         stage = timeout_info["stage"]
         elapsed = timeout_info["elapsed_time"]
         command = timeout_info["start_command"]
         mode = timeout_info["validation_mode"]
 
-        self.log(f"*** TIMEOUT ANALYSIS - Stage {stage} ***", type="event")
-        self.log(
+        channel(f"*** TIMEOUT ANALYSIS - Stage {stage} ***")
+        channel(
             f"   Mode: {mode} | Command: '{command}' | Elapsed: {elapsed:.2f}s",
-            type="event",
         )
 
         if timeout_info["messages_sent"]:
-            self.log("   Messages sent during this stage:", type="event")
+            channel("   Messages sent during this stage:")
             for msg in timeout_info["messages_sent"]:
                 delay_info = f" (delayed {msg['delay']}s)" if msg["delay"] > 0 else ""
-                self.log(
+                channel(
                     f"     - '{msg['command']}' at {time.strftime('%H:%M:%S', time.localtime(msg['timestamp']))}{delay_info}",
-                    type="event",
                 )
+
         else:
-            self.log("     - No messages were sent in this stage", type="event")
+            channel("     - No messages were sent in this stage")
 
         # Provide suggestions based on timeout pattern
-        self._suggest_timeout_solutions(timeout_info)
+        self._suggest_timeout_solutions(channel, timeout_info)
 
-    def _suggest_timeout_solutions(self, timeout_info):
+    def _suggest_timeout_solutions(self, channel, timeout_info):
         """Suggest solutions based on timeout patterns and device behavior"""
         stage = timeout_info["stage"]
         command = timeout_info["start_command"]
@@ -1033,7 +2034,7 @@ class GrblController:
 
         suggestions = []
 
-        if stage == 1 and command == "$":
+        if stage == VALIDATION_STAGE_HELP_REQUEST and command == "$":
             suggestions.extend(
                 [
                     "Device may not respond to '$' command (help request)",
@@ -1042,7 +2043,7 @@ class GrblController:
                     "Device may be non-standard GRBL firmware",
                 ]
             )
-        elif stage == 2 and command in ["$$", "$G"]:
+        elif stage == VALIDATION_STAGE_SETTINGS_QUERY and command in ["$$", "$G"]:
             suggestions.extend(
                 [
                     "Device may not support settings query ('$$') or modal state ('$G')",
@@ -1050,7 +2051,7 @@ class GrblController:
                     "Consider adding custom validation pattern for this device type",
                 ]
             )
-        elif stage == 4 and command == "?":
+        elif stage == VALIDATION_STAGE_MODAL_QUERY and command == "?":
             suggestions.extend(
                 [
                     "Device may not support status reporting ('?')",
@@ -1070,44 +2071,50 @@ class GrblController:
 
         # Display suggestions
         if suggestions:
-            self.log("   >> Suggested solutions:", type="event")
+            channel("   >> Suggested solutions:")
             for suggestion in suggestions:
-                self.log(f"     - {suggestion}", type="event")
+                channel(f"     - {suggestion}")
         else:
-            self.log(
+            channel(
                 "   >> No specific suggestions available for this timeout pattern",
-                type="event",
             )
 
         # Log pattern for potential new validation methods
         pattern_id = f"{stage}_{command}_{mode}"
-        self.log(
+        channel(
             f"   [PATTERN] {pattern_id} (use for adding new validation methods)",
-            type="event",
         )
 
     def _advance_validation_stage(self):
         """Advance to next validation stage due to timeout or fallback"""
-        if self._validation_stage == 1:
+        if self._validation_stage == VALIDATION_STAGE_HELP_REQUEST:
             # $ command timed out, try $$ and $G anyway
-            self._log_stage_advancement(2, "Advancing without $ confirmation (timeout)")
+            self._log_stage_advancement(
+                VALIDATION_STAGE_SETTINGS_QUERY,
+                "Advancing without $ confirmation (timeout)",
+            )
             self.validate_stop("$")
             self.validate_start("$$")
             self.validate_start("$G")
-        elif self._validation_stage == 2:
+        elif self._validation_stage == VALIDATION_STAGE_SETTINGS_QUERY:
             # $$ timed out, assume it worked
-            self._log_stage_advancement(3, "Assuming $$ worked (timeout)")
+            self._log_stage_advancement(
+                VALIDATION_STAGE_SETTINGS_PARSED, "Assuming $$ worked (timeout)"
+            )
             self.validate_stop("$$")
-        elif self._validation_stage == 3:
+        elif self._validation_stage == VALIDATION_STAGE_SETTINGS_PARSED:
             # $G timed out, try status anyway
             self._log_stage_advancement(
-                4, "Advancing without $G confirmation (timeout)"
+                VALIDATION_STAGE_MODAL_QUERY,
+                "Advancing without $G confirmation (timeout)",
             )
             self.validate_stop("$G")
             self.validate_start("?")
-        elif self._validation_stage == 4:
+        elif self._validation_stage == VALIDATION_STAGE_MODAL_QUERY:
             # Status timed out, assume we're connected
-            self._log_stage_advancement(5, "Connection assumed valid (timeout)")
+            self._log_stage_advancement(
+                VALIDATION_STAGE_VALIDATED, "Connection assumed valid (timeout)"
+            )
             self.validate_stop("?")
 
     def validate_stop(self, cmd):
@@ -1151,13 +2158,20 @@ class GrblController:
         @param line:
         @return:
         """
+
         with self._forward_lock:
             self._forward_buffer += bytes(line, encoding="latin-1")
         self.connection.write(line)
         self.log(line, type="send")
 
         # Track sent messages during validation stages
-        if self._validation_stage in [1, 2, 3, 4] and not self.fully_validated():
+        validation_stages = [
+            VALIDATION_STAGE_HELP_REQUEST,
+            VALIDATION_STAGE_SETTINGS_QUERY,
+            VALIDATION_STAGE_SETTINGS_PARSED,
+            VALIDATION_STAGE_MODAL_QUERY,
+        ]
+        if self._validation_stage in validation_stages and not self.fully_validated():
             message_info = {
                 "command": line.strip(),
                 "timestamp": time.time(),
@@ -1351,10 +2365,10 @@ class GrblController:
                 self._process_feedback_message(response)
                 continue
             elif response.startswith("$"):
-                if self._validation_stage == 2:
+                if self._validation_stage == VALIDATION_STAGE_SETTINGS_QUERY:
                     self.log("Stage 3: $$ was successfully parsed.", type="event")
                     self.validate_stop("$$")
-                    self._validation_stage = 3
+                    self._validation_stage = VALIDATION_STAGE_SETTINGS_PARSED
                 self._process_settings_message(response)
             elif response.startswith("Alarm|"):
                 # There's no errorcode
@@ -1405,6 +2419,7 @@ class GrblController:
 
         # Primary check: starts with configured welcome message (exact match)
         if response.startswith(self.service.welcome):
+            self._handle_variant_detection(response)
             return True
 
         # Flexible patterns for GRBL-like welcome messages
@@ -1488,7 +2503,7 @@ class GrblController:
                         self._start_validation_sequence("proactive/timeout mode")
                     else:
                         # No boot sequence required. Declare fully connected.
-                        self._validation_stage = 5
+                        self._validation_stage = VALIDATION_STAGE_VALIDATED
             else:
                 # Validation is required. This was stage 0.
                 if self.service.boot_connect_sequence:
@@ -1496,13 +2511,13 @@ class GrblController:
                     self._start_validation_sequence("validation required")
                 else:
                     # No boot sequence required. Declare fully connected.
-                    self._validation_stage = 5
+                    self._validation_stage = VALIDATION_STAGE_VALIDATED
 
     def fully_validated(self):
-        return self._validation_stage == 5
+        return self._validation_stage == VALIDATION_STAGE_VALIDATED
 
     def force_validate(self):
-        self._validation_stage = 5
+        self._validation_stage = VALIDATION_STAGE_VALIDATED
         self.validate_stop("*")
 
     def grbl_force_validate(self):
@@ -1666,7 +2681,7 @@ class GrblController:
                 "Implement extended timeout validation mode for slow devices"
             )
 
-        if stage == "1" and command == "$":
+        if stage == str(VALIDATION_STAGE_HELP_REQUEST) and command == "$":
             suggestions.extend(
                 [
                     "Add 'no-help' validation mode that skips '$' command entirely",
@@ -1674,12 +2689,12 @@ class GrblController:
                 ]
             )
 
-        elif stage == "2" and command in ["$$", "$G"]:
+        elif stage == str(VALIDATION_STAGE_SETTINGS_QUERY) and command in ["$$", "$G"]:
             suggestions.append(
                 "Create 'minimal-grbl' validation mode for basic implementations"
             )
 
-        elif stage == "4" and command == "?":
+        elif stage == str(VALIDATION_STAGE_MODAL_QUERY) and command == "?":
             suggestions.append(
                 "Add 'status-free' validation mode that doesn't require status reporting"
             )
@@ -1932,9 +2947,14 @@ class GrblController:
             # Lim: limits states
             # Ctl: control pins and mask (binary).
             self.service.signal(f"grbl:status:{name}", info)
-        if self._validation_stage in (2, 3, 4):
+        validation_stages_to_validate = (
+            VALIDATION_STAGE_SETTINGS_QUERY,
+            VALIDATION_STAGE_SETTINGS_PARSED,
+            VALIDATION_STAGE_MODAL_QUERY,
+        )
+        if self._validation_stage in validation_stages_to_validate:
             self.log("Connection Confirmed.", type="event")
-            self._validation_stage = 5
+            self._validation_stage = VALIDATION_STAGE_VALIDATED
             self.validate_stop("*")
 
     def _process_feedback_message(self, response):
@@ -1949,7 +2969,7 @@ class GrblController:
             if not self.fully_validated():
                 self.log("Stage 4: $G was successfully parsed.", type="event")
                 self.driver.declare_modals(states)
-                self._validation_stage = 4
+                self._validation_stage = VALIDATION_STAGE_MODAL_QUERY
                 self.validate_stop("$G")
                 self.validate_start("?")
             self.log(message, type="event")
@@ -1957,9 +2977,9 @@ class GrblController:
         elif response.startswith("[HLP:"):
             # Parsing $
             message = response[5:-1]
-            if self._validation_stage == 1:
+            if self._validation_stage == VALIDATION_STAGE_HELP_REQUEST:
                 self.log("Stage 2: $ was successfully parsed.", type="event")
-                self._validation_stage = 2
+                self._validation_stage = VALIDATION_STAGE_SETTINGS_QUERY
                 self.validate_stop("$")
                 if "$$" in message:
                     self.validate_start("$$")
@@ -2095,17 +3115,17 @@ class GrblController:
 
     # Variant-specific command handlers
 
-    def grbl_variant_info(self):
+    def grbl_variant_info(self, channel):
         """Command to display detected GRBL variant information."""
         if hasattr(self, "_detected_variant"):
             variant = self._detected_variant
             settings = self._variant_settings
 
-            self.log("=== GRBL Variant Information ===", type="event")
-            self.log(f"Detected Variant: {variant.upper()}", type="event")
+            channel("=== GRBL Variant Information ===")
+            channel(f"Detected Variant: {variant.upper()}")
 
             # Display capabilities
-            self.log("Capabilities:", type="event")
+            channel("Capabilities:")
             capabilities = [
                 ("Laser Mode", settings.get("supports_laser_mode", False)),
                 ("Real-time Commands", settings.get("supports_real_time", False)),
@@ -2118,105 +3138,332 @@ class GrblController:
 
             for cap_name, supported in capabilities:
                 status = "Yes" if supported else "No"
-                self.log(f"  {cap_name}: {status}", type="event")
+                channel(f"  {cap_name}: {status}")
 
-            self.log(
-                f"Max Buffer Size: {settings.get('max_buffer_size', 128)} bytes",
-                type="event",
-            )
-            self.log(
-                f"Home Commands: {', '.join(settings.get('home_commands', ['$H']))}",
-                type="event",
+            channel(f"Max Buffer Size: {settings.get('max_buffer_size', 128)} bytes")
+            channel(
+                f"Home Commands: {', '.join(settings.get('home_commands', ['$H']))}"
             )
 
             # Variant-specific recommendations
-            self._provide_variant_recommendations(variant, settings)
+            self._provide_variant_recommendations(variant, settings, channel)
         else:
-            self.log(
-                "No GRBL variant detected yet. Connect to device first.", type="event"
-            )
+            channel("No GRBL variant detected yet. Connect to device first.")
 
-    def _provide_variant_recommendations(self, variant, settings):
+    def _provide_variant_recommendations(self, variant, settings, channel):
         """Provide variant-specific configuration recommendations."""
-        self.log("", type="event")
+        channel("=== Configuration Recommendations ===")
         self.log("=== Configuration Recommendations ===", type="event")
 
         if variant == "grblhal":
-            self.log("GrblHAL Recommendations:", type="event")
-            self.log(
-                "  - Use individual axis homing commands ($HX, $HY, $HZ) for better control",
-                type="event",
+            channel("GrblHAL Recommendations:")
+            channel(
+                "  - Use individual axis homing commands ($HX, $HY, $HZ) for better control"
             )
-            self.log(
-                "  - Enable enhanced status reports for better feedback", type="event"
-            )
-            self.log(
-                "  - Consider using larger planning buffer (256+ bytes)", type="event"
-            )
+            channel("  - Enable enhanced status reports for better feedback")
+            channel("  - Consider using larger planning buffer (256+ bytes)")
 
         elif variant == "fluidnc":
-            self.log("FluidNC Recommendations:", type="event")
-            self.log("  - ESP32-based controller with WiFi capabilities", type="event")
-            self.log(
-                "  - May support SD card operations for offline jobs", type="event"
-            )
-            self.log("  - Reset after alarms may be required", type="event")
-            self.log(
-                "  - Consider using larger buffer sizes (256+ bytes)", type="event"
-            )
+            channel("FluidNC Recommendations:")
+            channel("  - ESP32-based controller with WiFi capabilities")
+            channel("  - May support SD card operations for offline jobs")
+            channel("  - Reset after alarms may be required")
+            channel("  - Consider using larger buffer sizes (256+ bytes)")
 
         elif variant == "grbl":
-            self.log("Standard GRBL Recommendations:", type="event")
-            self.log("  - Classic GRBL with proven stability", type="event")
-            self.log("  - Standard buffer size (128 bytes) is optimal", type="event")
-            self.log("  - Enable laser mode ($32=1) for laser operations", type="event")
+            channel("Standard GRBL Recommendations:")
+            channel("  - Classic GRBL with proven stability")
+            channel("  - Standard buffer size (128 bytes) is optimal")
+            channel("  - Enable laser mode ($32=1) for laser operations")
 
         elif variant == "grbl_esp32":
-            self.log("GRBL-ESP32 Recommendations:", type="event")
-            self.log("  - ESP32-based with potential WiFi support", type="event")
-            self.log("  - May need reset after alarm conditions", type="event")
-            self.log("  - Larger buffer sizes supported", type="event")
+            channel("GRBL-ESP32 Recommendations:")
+            channel("  - ESP32-based with potential WiFi support")
+            channel("  - May need reset after alarm conditions")
+            channel("  - Larger buffer sizes supported")
 
         # Universal recommendations based on capabilities
         if settings.get("supports_laser_mode"):
-            self.log(
-                "  - Ensure laser mode is enabled in firmware settings", type="event"
-            )
+            channel("  - Ensure laser mode is enabled in firmware settings")
 
         if not settings.get("supports_probe"):
-            self.log(
-                "  - Probing operations not supported by this variant", type="event"
-            )
+            channel("  - Probing operations not supported by this variant")
 
-    def grbl_suggest_buffer_size(self):
+    def grbl_suggest_buffer_size(self, channel):
         """Command to suggest optimal buffer size based on detected variant."""
         if hasattr(self, "_detected_variant"):
             settings = self._variant_settings
             recommended = settings.get("max_buffer_size", 128)
             current = getattr(self.service, "planning_buffer_size", 128)
 
-            self.log("=== Buffer Size Recommendation ===", type="event")
-            self.log(
-                f"Detected Variant: {self._detected_variant.upper()}", type="event"
-            )
-            self.log(f"Current Buffer Size: {current} bytes", type="event")
-            self.log(f"Recommended Size: {recommended} bytes", type="event")
+            channel("=== Buffer Size Recommendation ===")
+            channel(f"Detected Variant: {self._detected_variant.upper()}")
+            channel(f"Current Buffer Size: {current} bytes")
+            channel(f"Recommended Size: {recommended} bytes")
 
             if current != recommended:
-                self.log("", type="event")
-                self.log(
-                    f">> Recommendation: Update planning buffer to {recommended} bytes",
-                    type="event",
+                channel("")
+                channel(
+                    f">> Recommendation: Update planning buffer to {recommended} bytes"
                 )
-                self.log(
-                    "   This can improve performance and reduce communication timeouts",
-                    type="event",
+                channel(
+                    "   This can improve performance and reduce communication timeouts"
                 )
             else:
-                self.log(
-                    "   Current buffer size is optimal for this variant", type="event"
-                )
+                channel("   Current buffer size is optimal for this variant")
         else:
-            self.log(
-                "No GRBL variant detected yet. Connect to device first.", type="event"
+            channel("No GRBL variant detected yet. Connect to device first.")
+
+    # Additional variant-related command handlers
+
+    def grbl_apply_variant(self, channel, variant_name=None):
+        """Command handler to manually apply a GRBL variant configuration."""
+        if variant_name is None:
+            channel("Usage: grbl_apply_variant <variant_name>")
+            channel(
+                "Available variants: grbl, grblhal, fluidnc, grbl_esp32, grbl_mega, unknown"
             )
+            return
+
+        self.apply_manual_variant(variant_name)
+
+    def grbl_variant_commands(self, channel):
+        """Command handler to show variant-specific command recommendations."""
+        self.get_variant_specific_commands(channel)
+
+    def grbl_list_variants(self, channel):
+        """Command handler to list all available GRBL variants and their features."""
+        channel("=== Available GRBL Variants ===")
+
+        variants = ["grbl", "grblhal", "fluidnc", "grbl_esp32", "grbl_mega", "unknown"]
+
+        for variant in variants:
+            settings = self._get_variant_specific_settings(variant)
+            channel(f"  {variant.upper()}:")
+
+            features = []
+            if settings["supports_laser_mode"]:
+                features.append("Laser Mode")
+            if settings["supports_real_time"]:
+                features.append("Real-time")
+            if settings["supports_probe"]:
+                features.append("Probing")
+            if settings.get("supports_enhanced_status"):
+                features.append("Enhanced Status")
+            if settings.get("supports_wifi"):
+                features.append("WiFi")
+            if settings.get("supports_sd_card"):
+                features.append("SD Card")
+
+            channel(f"    Features: {', '.join(features) if features else 'Basic'}")
+            channel(f"    Buffer: {settings['max_buffer_size']} bytes")
+
+        channel("")
+        channel("Use 'grbl_apply_variant <name>' to manually apply a variant")
+        channel("Use 'grbl_variant_commands' to see variant-specific commands")
+
+    def grbl_check_command(self, channel, command=None):
+        """Command handler to check if a command is compatible with detected variant."""
+        if command is None:
+            channel("Usage: grbl_check_command <command>")
+            return
+
+        if not hasattr(self, "_detected_variant"):
+            channel("No variant detected yet. All commands assumed compatible.")
+            return
+
+        is_compatible = self.check_variant_compatibility(command)
+        variant = self._detected_variant.upper()
+
+        if is_compatible:
+            channel(f"✓ Command '{command}' is compatible with {variant}")
+        else:
+            channel(f"⚠ Command '{command}' may not be supported by {variant}")
+
+    def grbl_reset_variant(self, channel):
+        """Command handler to reset variant detection (force re-detection on next connect)."""
+        if hasattr(self, "_detected_variant"):
+            old_variant = self._detected_variant
+            delattr(self, "_detected_variant")
+            delattr(self, "_variant_settings")
+
+            # Reset service properties
+            if hasattr(self.service, "_grbl_variant"):
+                delattr(self.service, "_grbl_variant")
+            if hasattr(self.service, "_grbl_variant_settings"):
+                delattr(self.service, "_grbl_variant_settings")
+
+            channel(f"Reset variant detection (was: {old_variant.upper()})")
+            channel("Variant will be re-detected on next device connection")
+        else:
+            channel("No variant currently detected")
+
+    # Hardware Settings Management Commands
+
+    def grbl_list_settings(self, channel):
+        """Command handler to list all known GRBL hardware settings."""
+        channel("=== Known GRBL Hardware Settings ===")
+        channel("")
+
+        # Group settings by category
+        categories = {
+            "Step Configuration": [0, 1, 2, 3, 4, 29],
+            "Input/Output Control": [5, 6, 14, 15, 16, 17, 18, 19],
+            "Status Reporting": [10, 11, 12, 13],
+            "Limits and Homing": [
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                40,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                49,
+            ],
+            "Spindle/Laser Control": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 340],
+            "System Behavior": [60, 61, 62, 63, 64, 65],
+            "Jogging Control": [50, 51, 52, 53, 54, 55],
+            "PID Control": [80, 81, 82, 84, 85, 90, 91, 92],
+            "Network/WiFi": [70, 71, 72, 73, 74, 75, 76, 77, 78, 79],
+            "Network Interface 0": [300, 301, 302, 303, 304, 305, 306, 307],
+            "Network Interface 1": [310, 311, 312, 313, 314, 315, 316, 317],
+            "Tool Change": [341, 342, 343, 344],
+            "X-Axis": [100, 110, 120, 130],
+            "Y-Axis": [101, 111, 121, 131],
+            "Z-Axis": [102, 112, 122, 132],
+            "A-Axis (4th)": [103, 113, 123, 133],
+            "B-Axis (5th)": [104, 114, 124, 134],
+            "C-Axis (6th)": [105, 115, 125, 135],
+        }
+
+        settings_found = 0
+
+        for category, codes in categories.items():
+            found_in_category = False
+            category_settings = []
+
+            for code in codes:
+                setting = hardware_settings(code)
+                if setting:
+                    found_in_category = True
+                    default, desc, units, value_type, _ = setting
+                    category_settings.append(
+                        f"  ${code:3d} = {str(default):>8} ({units:<12}) - {desc}"
+                    )
+                    settings_found += 1
+
+            if found_in_category:
+                channel(f"--- {category} ---")
+                for setting_line in category_settings:
+                    channel(setting_line)
+                channel("")
+
+        # Show any additional settings not in categories
+        all_categorized = set()
+        for codes in categories.values():
+            all_categorized.update(codes)
+
+        additional = set(get_all_settings_codes()) - all_categorized
+        if additional:
+            channel("--- Additional/Variant-Specific Settings ---")
+            for code in sorted(additional):
+                setting = hardware_settings(code)
+                if setting:
+                    default, desc, units, value_type, _ = setting
+                    channel(f"  ${code:3d} = {str(default):>8} ({units:<12}) - {desc}")
+                    settings_found += 1
+            channel("")
+
+        channel(
+            f"Total: {settings_found} known settings ({len(get_all_settings_codes())} in database)"
+        )
+        channel(
+            "Use 'grbl_setting_info <code>' for detailed information about a specific setting."
+        )
+
+        # Show variant information if available
+        if hasattr(self, "_detected_variant") and self._detected_variant:
+            channel(f"Current variant: {self._detected_variant.upper()}")
+            channel(
+                "Some settings may be variant-specific and not available on all GRBL controllers."
+            )
+
+    def grbl_setting_info(self, channel, code):
+        """Command handler to get information about a specific GRBL setting."""
+        if code is None:
+            channel("Usage: grbl_setting_info <code>")
+            channel("Example: grbl_setting_info 32")
+            return
+
+        setting = hardware_settings(code)
+        if setting is None:
+            channel(f"Setting ${code} is not known in the current database.")
+            channel("Use 'grbl_add_setting' to add custom setting definitions.")
+            return
+
+        default, desc, units, value_type, doc_url = setting
+
+        channel(f"=== GRBL Setting ${code} ===")
+        channel(f"Description: {desc}")
+        channel(f"Default Value: {default}")
+        channel(f"Units: {units}")
+        channel(f"Data Type: {value_type.__name__}")
+        channel(f"Documentation: {doc_url}")
+
+    def grbl_add_setting(
+        self, channel, code, default_value, description, units, value_type, doc_url=None
+    ):
+        """Command handler to add a custom GRBL setting definition."""
+        if None in (code, default_value, description, units, value_type):
+            channel(
+                "Usage: grbl_add_setting <code> <default_value> <description> <units> <value_type> [doc_url]"
+            )
+            channel(
+                "Example: grbl_add_setting 200 1000 'Custom parameter' 'steps' 'float' 'http://...'"
+            )
+            return
+
+        # Parse value_type
+        if value_type.lower() == "int":
+            parsed_type = int
+            try:
+                parsed_default = int(default_value)
+            except ValueError:
+                channel(f"Cannot convert default value '{default_value}' to int")
+                return
+        elif value_type.lower() == "float":
+            parsed_type = float
+            try:
+                parsed_default = float(default_value)
+            except ValueError:
+                channel(f"Cannot convert default value '{default_value}' to float")
+                return
+        else:
+            channel(f"Invalid value_type '{value_type}'. Must be 'int' or 'float'")
+            return
+
+        # Check if setting already exists
+        existing = hardware_settings(code)
+        if existing:
+            channel(f"Setting ${code} already exists: {existing[1]}")
+            channel("Continuing will overwrite the existing definition.")
+
+        # Add the setting
+        add_hardware_setting(
+            code, parsed_default, description, units, parsed_type, doc_url
+        )
+
+        channel(f"Added setting ${code}: {description}")
+        channel(f"  Default: {parsed_default} ({units})")
+        channel(f"  Type: {parsed_type.__name__}")
+        if doc_url:
+            channel(f"  Documentation: {doc_url}")
