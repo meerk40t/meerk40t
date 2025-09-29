@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "description": "Intermediate scenario dump for algorithm testing",
+    "timestamp": "2025-09-29T20:58:37.694714",
+    "plan_name": "test",
+    "total_items": 1,
+    "total_travel": 0.0,
+    "algorithm_testing_enabled": true
+  },
+  "optimization_settings": {
+    "opt_nearest_neighbor": false,
+    "opt_inner_first": false,
+    "opt_inners_grouped": false
+  },
+  "plan_contents": [
+    {
+      "type": "CutCode",
+      "original_op": null,
+      "pass_index": -1,
+      "constrained": false,
+      "travel_length": 0.0,
+      "length": 1,
+      "end_pos": [
+        0,
+        0
+      ]
+    }
+  ],
+  "algorithm_testing": {
+    "start_position": [
+      0,
+      0
+    ],
+    "cuts": [
+      {
+        "cut_type": "LineCut",
+        "start": [
+          0.0,
+          0.0
+        ],
+        "end": [
+          10.0,
+          0.0
+        ],
+        "passes": 3,
+        "reversible": true
+      },
+      {
+        "cut_type": "LineCut",
+        "start": [
+          10.0,
+          0.0
+        ],
+        "end": [
+          10.0,
+          10.0
+        ],
+        "passes": 3,
+        "reversible": true
+      },
+      {
+        "cut_type": "LineCut",
+        "start": [
+          10.0,
+          10.0
+        ],
+        "end": [
+          0.0,
+          10.0
+        ],
+        "passes": 3,
+        "reversible": true
+      },
+      {
+        "cut_type": "LineCut",
+        "start": [
+          0.0,
+          10.0
+        ],
+        "end": [
+          0.0,
+          0.0
+        ],
+        "passes": 3,
+        "reversible": true
+      }
+    ],
+    "original_travel": 0.0,
+    "cut_count": 4,
+    "work_area": {
+      "min_x": 0.0,
+      "max_x": 10.0,
+      "min_y": 0.0,
+      "max_y": 10.0,
+      "width": 10.0,
+      "height": 10.0
+    }
+  }
+}
