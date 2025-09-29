@@ -713,9 +713,9 @@ class CutPlan:
 
         if context.opt_effect_combine:
             self.commands.append(self.combine_effects)
-        if self.channel:
-            self.channel("Dumping scenarios:")
-            self.commands.append(self._dump_scenario)
+        # if self.channel:
+        #     self.channel("Dumping scenarios:")
+        #     self.commands.append(self._dump_scenario)
 
         if context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
@@ -731,10 +731,6 @@ class CutPlan:
             # Fallback: ensure burns_done logic is handled even when optimization is disabled
             self.commands.append(self.basic_cutcode_sequencing)
         self.commands.append(self.merge_cutcode)
-        if context.opt_reduce_directions:
-            pass
-        if context.opt_remove_overlap:
-            pass
 
     def combine_effects(self):
         """
@@ -1026,6 +1022,7 @@ class CutPlan:
                 del self.plan[i]
 
     def _dump_scenario(self):
+        # Only used for debugging purposes.
         self.save_scenario(
             filename="test_cutplan.json",
             description="Intermediate scenario dump for algorithm testing",
@@ -1220,18 +1217,6 @@ class CutPlan:
                                         except Exception:
                                             pass
 
-                                    # Save parent group bounding box
-                                    if (
-                                        hasattr(cut.parent, "bounding_box")
-                                        and cut.parent.bounding_box is not None
-                                    ):
-                                        try:
-                                            cut_data["parent_bounding_box"] = list(
-                                                cut.parent.bounding_box
-                                            )
-                                        except Exception:
-                                            pass
-
                                 individual_cuts.append(cut_data)
 
                                 # Calculate unoptimized travel distance for cuts with start positions
@@ -1389,9 +1374,6 @@ class CutPlan:
         but we need to recreate the original closed path structure for inner-first
         optimization to work correctly.
         """
-        from collections import defaultdict
-
-        from meerk40t.core.cutcode.cutgroup import CutGroup
 
         if not cuts:
             return []
@@ -1688,7 +1670,7 @@ class CutPlan:
         if self.channel:
             if len(cutgroups) != len(cuts):
                 # We successfully reconstructed groups
-                closed_count = sum(1 for g in cutgroups if g.closed)
+                closed_count = sum(bool(g.closed) for g in cutgroups)
                 total_individual_cuts = sum(
                     len(g) if hasattr(g, "__len__") else 1 for g in cutgroups
                 )
@@ -1958,10 +1940,10 @@ def is_inside(inner, outer, tolerance=0, debug=False):
         return is_contained
 
     if debug:
-        print(f"DEBUG is_inside: Fast bounds check passed")
+        print("DEBUG is_inside: Fast bounds check passed")
         print(f"  Outer bounds: {outer.bounding_box}")
         print(f"  Inner bounds: {inner.bounding_box}")
-        print(f"  Trying geometric algorithms...")
+        print("  Trying geometric algorithms...")
 
     # ADVANCED GEOMETRIC ALGORITHMS - Multiple approaches for maximum performance
 
@@ -2976,7 +2958,9 @@ def _group_preserving_selection(context, complete_path, channel):
     return ordered
 
 
-def _simple_greedy_selection(all_candidates, start_position):
+def _simple_greedy_selection(
+    all_candidates, start_position, early_termination_threshold=25
+):
     """
     Simple greedy nearest-neighbor algorithm for travel optimization.
 
@@ -2986,6 +2970,7 @@ def _simple_greedy_selection(all_candidates, start_position):
     Args:
         all_candidates: List of cuts to optimize
         start_position: Starting (x, y) position tuple
+        early_termination_threshold: Distance threshold for early termination (default: 25)
 
     Returns:
         List of cuts in optimized order
@@ -3003,7 +2988,7 @@ def _simple_greedy_selection(all_candidates, start_position):
         best_distance_sq = float("inf")
 
         # Find the nearest unfinished cut
-        early_termination_threshold = 25  # 5^2, very close cut
+        # early_termination_threshold now configurable parameter
 
         for cut in all_candidates:
             if cut.burns_done >= cut.passes:
@@ -3243,6 +3228,8 @@ def _spatial_optimized_selection(all_candidates, start_position):
         from scipy.spatial import cKDTree  # Optional dependency
     except ImportError:
         # Fall back to improved greedy if scipy not available
+        # import logging
+        # logging.getLogger(__name__).warning("scipy.spatial not available, falling back to improved greedy algorithm")
         return _improved_greedy_selection(all_candidates, start_position)
 
     if not all_candidates:

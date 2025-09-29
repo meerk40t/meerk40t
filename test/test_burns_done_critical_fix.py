@@ -42,8 +42,6 @@ class MockContext:
         self.opt_inners_grouped = opt_inners_grouped
         self.opt_inner_tolerance = 0
         self.opt_effect_combine = False
-        self.opt_reduce_directions = False
-        self.opt_remove_overlap = False
         self.kernel = MockKernel()
 
     def channel(self, name, **kwargs):
