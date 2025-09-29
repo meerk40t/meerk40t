@@ -138,14 +138,28 @@ class CutGroup(list, CutObject, ABC):
             candidates = []
             for piece in pieces:
                 # Sort within piece: inners first (groups with .inside), then outers (groups with .contains)
-                inners = [grp for grp in piece if grp.inside is not None]
-                outers = [grp for grp in piece if grp.contains is not None]
+                # Note: A group can be both inner AND outer (e.g., medium group), so we need to avoid duplicates
+                inners = [
+                    grp
+                    for grp in piece
+                    if grp.inside is not None and grp.contains is None
+                ]
+                outers = [
+                    grp
+                    for grp in piece
+                    if grp.contains is not None and grp.inside is None
+                ]
+                both = [
+                    grp
+                    for grp in piece
+                    if grp.inside is not None and grp.contains is not None
+                ]
                 others = [
                     grp for grp in piece if grp.inside is None and grp.contains is None
                 ]
 
-                # Add to candidates in order: inners, others, outers (within each piece)
-                candidates.extend(inners + others + outers)
+                # Add to candidates in order: inners, both (inner+outer), others, outers (within each piece)
+                candidates.extend(inners + both + others + outers)
 
         # Different yielding strategies based on grouped_inner
         if grouped_inner:
