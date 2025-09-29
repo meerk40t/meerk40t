@@ -79,6 +79,8 @@ class CutGroup(list, CutObject, ABC):
         grouped_inner: Optional[bool] = False,
     ):
         """
+        Generate candidate cut objects for processing based on burns_done constraints.
+
         Candidates are CutObjects:
         1. That do not contain one or more unburned inner constrained cutcode objects.
         2. With Group Inner Burns, containing object is a candidate only if:
@@ -86,6 +88,15 @@ class CutGroup(list, CutObject, ABC):
             b. There are no containing objects with at least one inner element burned.
         3. With burns done < passes (> 1 only if merge passes)
         4. With Burn Complete Paths on and non-closed subpath, only first and last segments of the subpath else all segments
+
+        When grouped_inner=True:
+        - Uses sophisticated piece-based organization
+        - Creates "pieces" of related inner/outer group pairs
+        - Processes complete pieces together with inner-first ordering within each piece
+
+        When grouped_inner=False:
+        - Uses hierarchical yielding with inner-first constraints
+        - Processes groups individually while respecting containment hierarchy
         """
         candidates = list(self)
 
@@ -127,19 +138,33 @@ class CutGroup(list, CutObject, ABC):
             candidates = []
             for piece in pieces:
                 # Sort within piece: inners first (groups with .inside), then outers (groups with .contains)
-                inners = [grp for grp in piece if grp.inside is not None]
-                outers = [grp for grp in piece if grp.contains is not None]
+                # Note: A group can be both inner AND outer (e.g., medium group), so we need to avoid duplicates
+                inners = [
+                    grp
+                    for grp in piece
+                    if grp.inside is not None and grp.contains is None
+                ]
+                outers = [
+                    grp
+                    for grp in piece
+                    if grp.contains is not None and grp.inside is None
+                ]
+                both = [
+                    grp
+                    for grp in piece
+                    if grp.inside is not None and grp.contains is not None
+                ]
                 others = [
                     grp for grp in piece if grp.inside is None and grp.contains is None
                 ]
 
-                # Add to candidates in order: inners, others, outers (within each piece)
-                candidates.extend(inners + others + outers)
+                # Add to candidates in order: inners, both (inner+outer), others, outers (within each piece)
+                candidates.extend(inners + both + others + outers)
 
         # Different yielding strategies based on grouped_inner
         if grouped_inner:
             # For grouped_inner: respect the piece ordering we've established
-            # Yield candidates in the order they appear (pieces are complete)
+            # Process complete pieces together: inner groups first, then outer group within each piece
             for grp in candidates:
                 # Skip if already burned
                 if grp.is_burned():
@@ -167,11 +192,11 @@ class CutGroup(list, CutObject, ABC):
                 ready_to_burn = []
                 for grp in remaining_candidates:
                     can_burn = True
-                    if grp.contains is not None:
+                    if hasattr(grp, "contains") and grp.contains is not None:
                         for inner in grp.contains:
                             if (
                                 id(inner) not in processed_group_ids
-                                and inner.burns_done < inner.passes
+                                and not inner.is_burned()
                             ):
                                 can_burn = False
                                 break
@@ -179,7 +204,6 @@ class CutGroup(list, CutObject, ABC):
                         ready_to_burn.append(grp)
 
                 # If no groups are ready, break to avoid infinite loop
-                # (This handles edge cases where relationships may be incomplete)
                 if not ready_to_burn:
                     break
 

@@ -394,8 +394,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register_choices("optimize", choices)
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)
-        context.setting(bool, "opt_reduce_directions", False)
-        context.setting(bool, "opt_remove_overlap", False)
         context.setting(bool, "opt_start_from_position", False)
 
         # context.setting(int, "opt_closed_distance", 15)
