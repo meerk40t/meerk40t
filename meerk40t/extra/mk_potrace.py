@@ -489,6 +489,7 @@ detrand_t = (
 )
 
 
+@njit(cache=True)
 def detrand(x: int, y: int) -> int:
     """deterministically and efficiently hash (x,y) into a pseudo-random bit"""
     # /* 0x04b3e375 and 0x05a8ef93 are chosen to contain every possible 5-bit sequence */
@@ -502,30 +503,33 @@ def detrand(x: int, y: int) -> int:
     return z
 
 
-def majority(bm: np.array, x: int, y: int) -> int:
+@njit(cache=True)
+def majority(bm, x: int, y: int) -> int:
     """
      /* return the "majority" value of bitmap bm at intersection (x,y). We
     assume that the bitmap is balanced at "radius" 1.  */
     """
+    h, w = bm.shape
     for i in range(2, 5):  # /* check at "radius" i */
         ct = 0
         for a in range(-i + 1, i - 2):
-            try:
-                ct += 1 if bm[y + i - 1][x + a] else -1
-            except IndexError:
-                pass
-            try:
-                ct += 1 if bm[y + a - 1][x + i - 1] else -1
-            except IndexError:
-                pass
-            try:
-                ct += 1 if bm[y - i][x + a - 1] else -1
-            except IndexError:
-                pass
-            try:
-                ct += 1 if bm[y + a][x - i] else -1
-            except IndexError:
-                pass
+            # Check bounds before accessing to avoid exceptions
+            y_idx = y + i - 1
+            if 0 <= y_idx < h and 0 <= x + a < w:
+                ct += 1 if bm[y_idx, x + a] else -1
+            
+            y_idx = y + a - 1
+            if 0 <= y_idx < h and 0 <= x + i - 1 < w:
+                ct += 1 if bm[y_idx, x + i - 1] else -1
+            
+            y_idx = y - i
+            if 0 <= y_idx < h and 0 <= x + a - 1 < w:
+                ct += 1 if bm[y_idx, x + a - 1] else -1
+            
+            y_idx = y + a
+            if 0 <= y_idx < h and 0 <= x - i < w:
+                ct += 1 if bm[y_idx, x - i] else -1
+        
         if ct > 0:
             return 1
         elif ct < 0:
@@ -539,6 +543,7 @@ def majority(bm: np.array, x: int, y: int) -> int:
 """
 
 
+@njit(cache=True)
 def xor_to_ref(bm: np.array, x: int, y: int, xa: int) -> None:
     """
      /* efficiently invert bits [x,infty) and [xa,infty) in line y. Here xa
@@ -575,25 +580,23 @@ def xor_path(bm: np.array, p: _Path) -> None:
             y1 = y
 
 
-def findpath(bm: np.array, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Path:
+@njit(cache=True)
+def _findpath_jit(bm, x0: int, y0: int, sign: bool, turnpolicy: int):
     """
-    /* compute a path in the given pixmap, separating black from white.
-    Start path at the point (x0,x1), which must be an upper left corner
-    of the path. Also compute the area enclosed by the path. Return a
-    new path_t object, or NULL on error (note that a legitimate path
-    cannot have length 0). Sign is required for correct interpretation
-    of turnpolicies. */"""
-
+    JIT-compiled version of findpath for performance.
+    Returns tuple of (points_list, area, sign) instead of Path object.
+    """
     x = x0
     y = y0
     dirx = 0
     diry = -1  # diry-1
     pt = []
     area = 0
+    h, w = bm.shape
 
     while True:  # /* while this path */
         # /* add point to path */
-        pt.append(_Point(int(x), int(y)))
+        pt.append((int(x), int(y)))
 
         # /* move to next point */
         x += dirx
@@ -607,16 +610,13 @@ def findpath(bm: np.array, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Pa
         # /* determine next direction */
         cy = y + (diry - dirx - 1) // 2
         cx = x + (dirx + diry - 1) // 2
-        try:
-            c = bm[cy][cx]
-        except IndexError:
-            c = 0
+        # Bounds checking without exceptions
+        c = bm[cy, cx] if 0 <= cy < h and 0 <= cx < w else 0
+        
         dy = y + (diry + dirx - 1) // 2
         dx = x + (dirx - diry - 1) // 2
-        try:
-            d = bm[dy][dx]
-        except IndexError:
-            d = 0
+        # Bounds checking without exceptions  
+        d = bm[dy, dx] if 0 <= dy < h and 0 <= dx < w else 0
 
         if c and not d:  # /* ambiguous turn */
             if (
@@ -645,11 +645,30 @@ def findpath(bm: np.array, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Pa
             dirx = -diry
             diry = tmp
 
+    # Return simple tuple for JIT compatibility
+    return pt, area, sign
+
+
+def findpath(bm, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Path:
+    """
+    /* compute a path in the given pixmap, separating black from white.
+    Start path at the point (x0,x1), which must be an upper left corner
+    of the path. Also compute the area enclosed by the path. Return a
+    new path_t object, or NULL on error (note that a legitimate path
+    cannot have length 0). Sign is required for correct interpretation
+    of turnpolicies. */"""
+    
+    # Use JIT-compiled version for performance
+    pt_tuples, area, sign = _findpath_jit(bm, x0, y0, sign, turnpolicy)
+    
+    # Convert tuples back to _Point objects
+    pt = [_Point(x, y) for x, y in pt_tuples]
+    
     # /* allocate new path object */
     return _Path(pt, area, sign)
 
 
-@njit()
+@njit(cache=True)
 def findnext(bm: np.array) -> Optional[Tuple[Union[int], int]]:
     """
     /* find the next set pixel in a row <= y. Pixels are searched first
@@ -658,14 +677,21 @@ def findnext(bm: np.array) -> Optional[Tuple[Union[int], int]]:
        (*xp,*yp). Else return 1. Note that this function assumes that
        excess bytes have been cleared with bm_clearexcess. */
     """
-    w = np.nonzero(bm)
-    if len(w[0]) == 0:
+    # Find the maximum y-coordinate (last row with any set pixels)
+    y_coords, x_coords = np.nonzero(bm)
+    if len(y_coords) == 0:
         return None
 
-    q = np.where(w[0] == w[0][-1])
-    y = w[0][q]
-    x = w[1][q]
-    return y[0], x[0]
+    # Find the maximum y value
+    max_y_idx = np.argmax(y_coords)
+    max_y = y_coords[max_y_idx]
+
+    # For this y, find the maximum x value
+    row_mask = (y_coords == max_y)
+    max_x_idx = np.argmax(x_coords[row_mask])
+    max_x = x_coords[row_mask][max_x_idx]
+
+    return max_y, max_x
 
 
 def setbbox_path(p: _Path):
@@ -859,6 +885,7 @@ def bm_to_pathlist(
 # /* auxiliary functions */
 
 
+@njit(cache=True)
 def sign(x):
     if x > 0:
         return 1
@@ -868,6 +895,7 @@ def sign(x):
         return 0
 
 
+@njit(cache=True)
 def mod(a: int, n: int) -> int:
     """Note: the "mod" macro works correctly for
     negative a. Also note that the test for a>=n, while redundant,
@@ -1013,6 +1041,7 @@ def quadform(Q: list, w: _Point) -> float:
     return sum
 
 
+@njit(cache=True)
 def xprod(p1x, p1y, p2x, p2y) -> float:
     """calculate p1 x p2"""
     return p1x * p2y - p1y * p2x
