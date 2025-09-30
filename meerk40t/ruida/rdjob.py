@@ -1444,7 +1444,7 @@ class RDJob:
         self.array_end()
         self.block_end()
         # self.encoder.set_setting(0x320, 142, 142)
-        self.set_file_sum(self.file_sum())
+        self.set_file_sum(self.file_sum() + 0xD7) # Account for the EOF.
         self.end_of_file()
 
     def jump(self, x, y, dx, dy):
