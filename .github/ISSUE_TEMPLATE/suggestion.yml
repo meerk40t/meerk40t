@@ -2,7 +2,7 @@ name: Suggestion
 description: Suggest an enhancement
 title: "[Suggestion]: "
 labels: ["Type: Enhancement"]
-assignees: tatarize
+assignees: jpirnay
 body:
   - type: markdown
     attributes:
