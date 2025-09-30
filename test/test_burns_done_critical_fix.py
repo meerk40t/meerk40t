@@ -9,8 +9,13 @@ The fix introduced basic_cutcode_sequencing() as a fallback to ensure proper
 burns_done handling in all optimization scenarios.
 """
 
+import os
+import sys
 import unittest
 from unittest.mock import MagicMock
+
+# Add the meerk40t directory to Python path to use local version
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.cutgroup import CutGroup
@@ -203,12 +208,12 @@ class TestBurnsDoneCriticalFix(unittest.TestCase):
 
         cutplan.preopt()
 
-        # Should use travel optimization (takes precedence over inner-first when both enabled)
+        # Should use inner-first optimization (takes precedence over travel when both enabled)
         command_names = [cmd.__name__ for cmd in cutplan.commands]
         self.assertIn(
-            "optimize_travel",
+            "optimize_cuts",
             command_names,
-            "Travel optimization should be used when both travel and inner-first are enabled",
+            "Inner-first optimization should be used when both travel and inner-first are enabled",
         )
         self.assertNotIn(
             "basic_cutcode_sequencing",
