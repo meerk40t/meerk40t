@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -567,7 +567,7 @@ def majority(bm: np.ndarray, x: int, y: int) -> int:
 
 
 @njit(cache=True, nopython=True)
-def xor_to_ref(bm: np.array, x: int, y: int, xa: int) -> None:
+def xor_to_ref(bm: np.ndarray, x: int, y: int, xa: int) -> None:
     """
      /* efficiently invert bits [x,infty) and [xa,infty) in line y. Here xa
     must be a multiple of BM_WORDBITS. */
@@ -579,7 +579,7 @@ def xor_to_ref(bm: np.array, x: int, y: int, xa: int) -> None:
         bm[y, xa:x] ^= True
 
 
-def xor_path(bm: np.array, p: _Path) -> None:
+def xor_path(bm: np.ndarray, p: _Path) -> None:
     """
     a path is represented as an array of points, which are thought to
     lie on the corners of pixels (not on their centers). The path point
@@ -713,7 +713,7 @@ def setbbox_path(p: _Path):
     return x0, y0, x1, y1
 
 
-def pathlist_to_tree(plist: list, bm: np.array) -> None:
+def pathlist_to_tree(plist: list, bm: np.ndarray) -> None:
     """
     /* Give a tree structure to the given path list, based on "insideness"
        testing. I.e., path A is considered "below" path B if it is inside
@@ -838,7 +838,7 @@ def pathlist_to_tree(plist: list, bm: np.array) -> None:
 
 
 def bm_to_pathlist(
-    bm: np.array, turdsize: int = 2, turnpolicy: int = POTRACE_TURNPOLICY_MINORITY
+    bm: np.ndarray, turdsize: int = 2, turnpolicy: int = POTRACE_TURNPOLICY_MINORITY
 ) -> list:
     """
     /* Decompose the given bitmap into paths. Returns a linked list of
@@ -1003,16 +1003,16 @@ def pointslope(pp: _Path, i: int, j: int, ctr: _Point, dir: _Point) -> None:
     c -= lambda2
 
     if math.fabs(a) >= math.fabs(c):
-        l = math.sqrt(a * a + b * b)
-        if l != 0:
-            dir.x = -b / l
-            dir.y = a / l
+        length = math.sqrt(a * a + b * b)
+        if length != 0:
+            dir.x = -b / length
+            dir.y = a / length
     else:
-        l = math.sqrt(c * c + b * b)
-        if l != 0:
-            dir.x = -c / l
-            dir.y = b / l
-    if l == 0:
+        length = math.sqrt(c * c + b * b)
+        if length != 0:
+            dir.x = -c / length
+            dir.y = b / length
+    if length == 0:
         # sometimes this can happen when k=4:
         # the two eigenvalues coincide */
         dir.x = 0
@@ -1505,9 +1505,9 @@ def _adjust_vertices(pp: _Path) -> int:
             v[0] = dir[i].y
             v[1] = -dir[i].x
             v[2] = -v[1] * ctr[i].y - v[0] * ctr[i].x
-            for l in range(3):
+            for idx in range(3):
                 for k in range(3):
-                    q[i][l][k] = v[l] * v[k] / d
+                    q[i][idx][k] = v[idx] * v[k] / d
 
     """/* now calculate the "intersections" of consecutive segments.
          Instead of using the actual intersection, we find the point
@@ -1527,9 +1527,9 @@ def _adjust_vertices(pp: _Path) -> int:
         j = mod(i - 1, m)
 
         # /* add quadratic forms */
-        for l in range(3):
+        for idx in range(3):
             for k in range(3):
-                Q[l][k] = q[j][l][k] + q[i][l][k]
+                Q[idx][k] = q[j][idx][k] + q[i][idx][k]
 
         while True:
             # /* minimize the quadratic form Q on the unit square */
@@ -1557,9 +1557,9 @@ def _adjust_vertices(pp: _Path) -> int:
                 v[1] = 0
             d = sq(v[0]) + sq(v[1])
             v[2] = -v[1] * s.y - v[0] * s.x
-            for l in range(3):
+            for idx in range(3):
                 for k in range(3):
-                    Q[l][k] += v[l] * v[k] / d
+                    Q[idx][k] += v[idx] * v[k] / d
         dx = math.fabs(w.x - s.x)
         dy = math.fabs(w.y - s.y)
         if dx <= 0.5 and dy <= 0.5:
@@ -1594,9 +1594,9 @@ def _adjust_vertices(pp: _Path) -> int:
                     xmin = w.x
                     ymin = w.y
         # /* check four corners */
-        for l in range(2):
+        for idx in range(2):
             for k in range(2):
-                w = _Point(s.x - 0.5 + l, s.y - 0.5 + k)
+                w = _Point(s.x - 0.5 + idx, s.y - 0.5 + k)
                 cand = quadform(Q, w)
                 if cand < min:
                     min = cand
