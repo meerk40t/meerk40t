@@ -489,7 +489,7 @@ detrand_t = (
 )
 
 
-@njit(cache=True)
+@njit(cache=True, nopython=True)
 def detrand(x: int, y: int) -> int:
     """deterministically and efficiently hash (x,y) into a pseudo-random bit"""
     # /* 0x04b3e375 and 0x05a8ef93 are chosen to contain every possible 5-bit sequence */
@@ -503,33 +503,56 @@ def detrand(x: int, y: int) -> int:
     return z
 
 
-@njit(cache=True)
-def majority(bm, x: int, y: int) -> int:
+@njit(cache=True, nopython=True)
+def _safe_get(bm: np.ndarray, y: int, x: int) -> int:
+    """Safe bitmap access with bounds checking."""
+    h, w = bm.shape
+    return bm[y, x] if 0 <= y < h and 0 <= x < w else 0
+
+
+@njit(cache=True, nopython=True)
+def _should_turn_right(turnpolicy: int, sign: bool, x: int, y: int, bm: np.ndarray) -> bool:
+    """Determine if we should turn right based on turn policy."""
+    if turnpolicy == POTRACE_TURNPOLICY_RIGHT:
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_BLACK and sign:
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_WHITE and not sign:
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_RANDOM and detrand(x, y):
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_MAJORITY and majority(bm, x, y):
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_MINORITY and not majority(bm, x, y):
+        return True
+    return False
+
+
+@njit(cache=True, nopython=True)
+def _turn_right(dirx: int, diry: int) -> Tuple[int, int]:
+    """Turn direction 90 degrees to the right."""
+    return diry, -dirx
+
+
+@njit(cache=True, nopython=True)
+def _turn_left(dirx: int, diry: int) -> Tuple[int, int]:
+    """Turn direction 90 degrees to the left."""
+    return -diry, dirx
+
+
+@njit(cache=True, nopython=True)
+def majority(bm: np.ndarray, x: int, y: int) -> int:
     """
      /* return the "majority" value of bitmap bm at intersection (x,y). We
     assume that the bitmap is balanced at "radius" 1.  */
     """
-    h, w = bm.shape
     for i in range(2, 5):  # /* check at "radius" i */
         ct = 0
         for a in range(-i + 1, i - 2):
-            # Check bounds before accessing to avoid exceptions
-            y_idx = y + i - 1
-            if 0 <= y_idx < h and 0 <= x + a < w:
-                ct += 1 if bm[y_idx, x + a] else -1
-            
-            y_idx = y + a - 1
-            if 0 <= y_idx < h and 0 <= x + i - 1 < w:
-                ct += 1 if bm[y_idx, x + i - 1] else -1
-            
-            y_idx = y - i
-            if 0 <= y_idx < h and 0 <= x + a - 1 < w:
-                ct += 1 if bm[y_idx, x + a - 1] else -1
-            
-            y_idx = y + a
-            if 0 <= y_idx < h and 0 <= x - i < w:
-                ct += 1 if bm[y_idx, x - i] else -1
-        
+            ct += 1 if _safe_get(bm, y + i - 1, x + a) else -1
+            ct += 1 if _safe_get(bm, y + a - 1, x + i - 1) else -1
+            ct += 1 if _safe_get(bm, y - i, x + a - 1) else -1
+            ct += 1 if _safe_get(bm, y + a, x - i) else -1
         if ct > 0:
             return 1
         elif ct < 0:
@@ -543,7 +566,7 @@ def majority(bm, x: int, y: int) -> int:
 """
 
 
-@njit(cache=True)
+@njit(cache=True, nopython=True)
 def xor_to_ref(bm: np.array, x: int, y: int, xa: int) -> None:
     """
      /* efficiently invert bits [x,infty) and [xa,infty) in line y. Here xa
@@ -580,8 +603,8 @@ def xor_path(bm: np.array, p: _Path) -> None:
             y1 = y
 
 
-@njit(cache=True)
-def _findpath_jit(bm, x0: int, y0: int, sign: bool, turnpolicy: int):
+@njit(cache=True, nopython=True)
+def _findpath_jit(bm: np.ndarray, x0: int, y0: int, sign: bool, turnpolicy: int):
     """
     JIT-compiled version of findpath for performance.
     Returns tuple of (points_list, area, sign) instead of Path object.
@@ -589,63 +612,43 @@ def _findpath_jit(bm, x0: int, y0: int, sign: bool, turnpolicy: int):
     x = x0
     y = y0
     dirx = 0
-    diry = -1  # diry-1
+    diry = -1  # Start moving up
     pt = []
     area = 0
-    h, w = bm.shape
 
-    while True:  # /* while this path */
-        # /* add point to path */
+    while True:  # Main path tracing loop
+        # Add current point to path
         pt.append((int(x), int(y)))
 
-        # /* move to next point */
+        # Move to next point
         x += dirx
         y += diry
         area += x * diry
 
-        # /* path complete? */
+        # Check if path is complete (back to start)
         if x == x0 and y == y0:
             break
 
-        # /* determine next direction */
+        # Determine next direction based on neighboring pixels
         cy = y + (diry - dirx - 1) // 2
         cx = x + (dirx + diry - 1) // 2
-        # Bounds checking without exceptions
-        c = bm[cy, cx] if 0 <= cy < h and 0 <= cx < w else 0
-        
+        c = _safe_get(bm, cy, cx)
+
         dy = y + (diry + dirx - 1) // 2
         dx = x + (dirx - diry - 1) // 2
-        # Bounds checking without exceptions  
-        d = bm[dy, dx] if 0 <= dy < h and 0 <= dx < w else 0
+        d = _safe_get(bm, dy, dx)
 
-        if c and not d:  # /* ambiguous turn */
-            if (
-                turnpolicy == POTRACE_TURNPOLICY_RIGHT
-                or (turnpolicy == POTRACE_TURNPOLICY_BLACK and sign)
-                or (turnpolicy == POTRACE_TURNPOLICY_WHITE and not sign)
-                or (turnpolicy == POTRACE_TURNPOLICY_RANDOM and detrand(x, y))
-                or (turnpolicy == POTRACE_TURNPOLICY_MAJORITY and majority(bm, x, y))
-                or (
-                    turnpolicy == POTRACE_TURNPOLICY_MINORITY and not majority(bm, x, y)
-                )
-            ):
-                tmp = dirx  # /* right turn */
-                dirx = diry
-                diry = -tmp
+        # Decide turn direction based on pixel configuration
+        if c and not d:  # Ambiguous turn - use turn policy
+            if _should_turn_right(turnpolicy, sign, x, y, bm):
+                dirx, diry = _turn_right(dirx, diry)
             else:
-                tmp = dirx  # /* left turn */
-                dirx = -diry
-                diry = tmp
-        elif c:  # /* right turn */
-            tmp = dirx
-            dirx = diry
-            diry = -tmp
-        elif not d:  # /* left turn */
-            tmp = dirx
-            dirx = -diry
-            diry = tmp
+                dirx, diry = _turn_left(dirx, diry)
+        elif c:  # Right turn
+            dirx, diry = _turn_right(dirx, diry)
+        elif not d:  # Left turn
+            dirx, diry = _turn_left(dirx, diry)
 
-    # Return simple tuple for JIT compatibility
     return pt, area, sign
 
 
@@ -668,8 +671,8 @@ def findpath(bm, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Path:
     return _Path(pt, area, sign)
 
 
-@njit(cache=True)
-def findnext(bm: np.array) -> Optional[Tuple[Union[int], int]]:
+@njit(cache=True, nopython=True)
+def findnext(bm: np.ndarray) -> Optional[Tuple[int, int]]:
     """
     /* find the next set pixel in a row <= y. Pixels are searched first
        left-to-right, then top-down. In other words, (x,y)<(x',y') if y>y'
@@ -677,21 +680,13 @@ def findnext(bm: np.array) -> Optional[Tuple[Union[int], int]]:
        (*xp,*yp). Else return 1. Note that this function assumes that
        excess bytes have been cleared with bm_clearexcess. */
     """
-    # Find the maximum y-coordinate (last row with any set pixels)
-    y_coords, x_coords = np.nonzero(bm)
-    if len(y_coords) == 0:
-        return None
-
-    # Find the maximum y value
-    max_y_idx = np.argmax(y_coords)
-    max_y = y_coords[max_y_idx]
-
-    # For this y, find the maximum x value
-    row_mask = (y_coords == max_y)
-    max_x_idx = np.argmax(x_coords[row_mask])
-    max_x = x_coords[row_mask][max_x_idx]
-
-    return max_y, max_x
+    h, w = bm.shape
+    # scan bottom-up, left-to-right
+    for y in range(h - 1, -1, -1):
+        for x in range(w):
+            if bm[y, x]:
+                return y, x
+    return None
 
 
 def setbbox_path(p: _Path):
@@ -885,7 +880,7 @@ def bm_to_pathlist(
 # /* auxiliary functions */
 
 
-@njit(cache=True)
+@njit(cache=True, nopython=True)
 def sign(x):
     if x > 0:
         return 1
@@ -895,7 +890,7 @@ def sign(x):
         return 0
 
 
-@njit(cache=True)
+@njit(cache=True, nopython=True)
 def mod(a: int, n: int) -> int:
     """Note: the "mod" macro works correctly for
     negative a. Also note that the test for a>=n, while redundant,
@@ -1041,7 +1036,7 @@ def quadform(Q: list, w: _Point) -> float:
     return sum
 
 
-@njit(cache=True)
+@njit(cache=True, nopython=True)
 def xprod(p1x, p1y, p2x, p2y) -> float:
     """calculate p1 x p2"""
     return p1x * p2y - p1y * p2x
