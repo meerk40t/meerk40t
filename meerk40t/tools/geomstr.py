@@ -8159,7 +8159,7 @@ class Geomstr:
                     indices[start_index + 1 : last_index] = False
             return indices
 
-        def _is_geometric_shape_to_protect(points, tolerance_factor=0.1):
+        def _is_geometric_shape_to_protect(points, epsilon, tolerance_factor=0.1):
             """
             Detect if a closed shape should be protected from over-simplification.
             This prevents loss of important geometric features in various shapes.
@@ -8169,7 +8169,7 @@ class Geomstr:
                 
             # For a closed shape, the last point should be close to the first
             is_closed = False
-            if len(points) >= 4 and np.linalg.norm(points[0] - points[-1]) < tolerance * tolerance_factor:
+            if len(points) >= 4 and np.linalg.norm(points[0] - points[-1]) < epsilon * tolerance_factor:
                 # Remove the duplicate closing point for analysis
                 points = points[:-1]
                 is_closed = True
@@ -8242,6 +8242,25 @@ class Geomstr:
                 if length_ratio > parallel_tolerance:
                     return False
             
+            # Check if adjacent sides are perpendicular (for rotated rectangles)
+            for i in range(4):
+                side1 = sides[i]
+                side2 = sides[(i + 1) % 4]
+                
+                side1_len = np.linalg.norm(side1)
+                side2_len = np.linalg.norm(side2)
+                
+                if side1_len == 0 or side2_len == 0:
+                    return False
+                
+                # Calculate dot product for perpendicularity check
+                dot_product = np.dot(side1, side2)
+                normalized_dot = abs(dot_product) / (side1_len * side2_len)
+                
+                # Adjacent sides should be perpendicular (dot product near zero)
+                if normalized_dot > parallel_tolerance:
+                    return False
+            
             return True
 
         def _is_triangle_shape(points):
@@ -8312,7 +8331,12 @@ class Geomstr:
                         return float(np.arctan2(diff[1], diff[0]))
                     else:
                         return 0.0
-            except (TypeError, AttributeError, IndexError):
+            except (TypeError, AttributeError, IndexError) as e:
+                import warnings
+                warnings.warn(
+                    f"_safe_extract_angle: Failed to extract angle for point={point}, center={center}. Error: {e}. Returning fallback value 0.0.",
+                    RuntimeWarning
+                )
                 return 0.0
 
         def _is_elliptical_shape(points):
@@ -8445,10 +8469,13 @@ class Geomstr:
 
         def _rdp(points, epsilon: float):
             # Protect various geometric shapes from over-simplification
-            if len(points) >= 3 and _is_geometric_shape_to_protect(points):
+            if len(points) >= 3 and _is_geometric_shape_to_protect(points, epsilon):
                 # For protected shapes, use a much tighter tolerance
                 # Scale based on shape size to avoid over-protection of very large shapes
-                shape_size = np.max([np.linalg.norm(p1 - p2) for p1 in points for p2 in points])
+                # Efficient shape size calculation using bounding box diagonal
+                min_pt = np.min(points, axis=0)
+                max_pt = np.max(points, axis=0)
+                shape_size = np.linalg.norm(max_pt - min_pt)
                 if shape_size > 0:
                     # Use adaptive tolerance based on shape size
                     size_factor = min(1.0, 1000.0 / shape_size)  # Smaller factor for larger shapes
