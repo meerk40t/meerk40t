@@ -578,7 +578,14 @@ class CH341Device:
             self._pointer_buffer,
             0x28,
         )
-        return tuple(self.buffer)
+        result = tuple(self.buffer)
+        # Fallback for shorter/empty status data
+        if not result:
+            return (0, 0, 0, 0, 0, 0)
+        elif len(result) < 6:
+            # Pad with zeros to ensure minimum 6-byte format expected by controller
+            return result + (0,) * (6 - len(result))
+        return result
 
     def CH341GetVerIC(self):
         self.ioctl(
