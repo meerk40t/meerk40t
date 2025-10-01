@@ -8159,8 +8159,307 @@ class Geomstr:
                     indices[start_index + 1 : last_index] = False
             return indices
 
+        def _is_geometric_shape_to_protect(points, tolerance_factor=0.1):
+            """
+            Detect if a closed shape should be protected from over-simplification.
+            This prevents loss of important geometric features in various shapes.
+            """
+            if len(points) < 3:
+                return False
+                
+            # For a closed shape, the last point should be close to the first
+            is_closed = False
+            if len(points) >= 4 and np.linalg.norm(points[0] - points[-1]) < tolerance * tolerance_factor:
+                # Remove the duplicate closing point for analysis
+                points = points[:-1]
+                is_closed = True
+            
+            num_points = len(points)
+            
+            # Protect any closed shape with few points (likely intentional geometry)
+            if is_closed and num_points <= 8:
+                return True
+                
+            # Specific shape detection and protection
+            
+            # 1. Rectangle detection (original logic)
+            if num_points == 4:
+                return _is_rectangular_shape_detailed(points)
+            
+            # 2. Triangle detection
+            if num_points == 3:
+                return _is_triangle_shape(points)
+            
+            # 3. Regular polygon detection (pentagon, hexagon, octagon, etc.)
+            if 5 <= num_points <= 12:
+                return _is_regular_polygon(points)
+            
+            # 4. Ellipse/circle detection (many points in roughly circular pattern)
+            if num_points >= 8:
+                return _is_elliptical_shape(points)
+            
+            # 5. Star pattern detection
+            if num_points >= 6:
+                return _is_star_pattern(points)
+                
+            return False
+
+        def _is_rectangular_shape_detailed(points):
+            """Enhanced rectangle detection with better tolerance handling."""
+            if len(points) != 4:
+                return False
+                
+            # Calculate vectors for all sides
+            sides = []
+            for i in range(4):
+                side = points[(i + 1) % 4] - points[i]
+                sides.append(side)
+            
+            # Check if opposite sides are parallel and equal (within tolerance)
+            parallel_tolerance = 0.15  # 15% tolerance for parallelism
+            
+            # Check sides 0&2, 1&3 for parallelism and equal length
+            for i in range(2):
+                side1 = sides[i]
+                side2 = sides[i + 2]
+                
+                # Check if parallel (cross product should be near zero)
+                cross = abs(np.cross(side1, side2))
+                side1_len = np.linalg.norm(side1)
+                side2_len = np.linalg.norm(side2)
+                
+                if side1_len == 0 or side2_len == 0:
+                    return False
+                    
+                # Normalize cross product by the product of lengths
+                normalized_cross = cross / (side1_len * side2_len)
+                
+                if normalized_cross > parallel_tolerance:
+                    return False
+                    
+                # Check if lengths are approximately equal
+                length_ratio = abs(side1_len - side2_len) / max(side1_len, side2_len)
+                if length_ratio > parallel_tolerance:
+                    return False
+            
+            return True
+
+        def _is_triangle_shape(points):
+            """Detect triangular shapes that should be preserved."""
+            if len(points) != 3:
+                return False
+                
+            # Calculate side lengths
+            sides = []
+            for i in range(3):
+                side_length = np.linalg.norm(points[(i + 1) % 3] - points[i])
+                sides.append(side_length)
+            
+            # Ensure it's a valid triangle (not degenerate)
+            sides.sort()
+            return sides[0] + sides[1] > sides[2] * 1.01  # Small tolerance for numerical errors
+
+        def _is_regular_polygon(points):
+            """Detect regular polygons (pentagon, hexagon, etc.)."""
+            n = len(points)
+            if n < 5 or n > 12:
+                return False
+            
+            # Calculate center point
+            center = np.mean(points, axis=0)
+            
+            # Calculate distances from center to each vertex
+            distances = [np.linalg.norm(p - center) for p in points]
+            
+            # Check if all distances are approximately equal (regular polygon)
+            mean_dist = np.mean(distances)
+            if mean_dist == 0:
+                return False
+                
+            # Allow 10% variation in distances
+            dist_variation = max(abs(d - mean_dist) / mean_dist for d in distances)
+            if dist_variation > 0.1:
+                return False
+            
+            # Check if angles between consecutive vertices are approximately equal
+            angles = []
+            for i in range(n):
+                v1 = points[i] - center
+                v2 = points[(i + 1) % n] - center
+                angle = np.arctan2(np.cross(v1, v2), np.dot(v1, v2))
+                angles.append(angle)
+            
+            expected_angle = 2 * np.pi / n
+            angle_tolerance = 0.2  # Allow 20% variation in angles
+            
+            for angle in angles:
+                if abs(angle - expected_angle) / expected_angle > angle_tolerance:
+                    return False
+                    
+            return True
+
+        def _safe_extract_angle(point, center):
+            """Safely extract angle from point relative to center, handling both complex and array types."""
+            try:
+                if hasattr(point, 'real') and hasattr(point, 'imag'):
+                    # Complex number
+                    diff = point - center
+                    return float(np.arctan2(diff.imag, diff.real))
+                else:
+                    # Numpy array or tuple
+                    diff = np.array(point) - np.array(center)
+                    if len(diff) >= 2:
+                        return float(np.arctan2(diff[1], diff[0]))
+                    else:
+                        return 0.0
+            except (TypeError, AttributeError, IndexError):
+                return 0.0
+
+        def _is_elliptical_shape(points):
+            """Detect elliptical or circular shapes."""
+            n = len(points)
+            if n < 8:
+                return False
+            
+            try:
+                # Calculate center point
+                center = np.mean(points, axis=0)
+                
+                # Calculate distances from center
+                distances = []
+                for p in points:
+                    try:
+                        dist = np.linalg.norm(p - center)
+                        distances.append(float(dist))
+                    except (TypeError, ValueError):
+                        return False
+                
+                # For a circle, all distances should be equal
+                # For an ellipse, distances should follow a pattern
+                
+                min_dist = min(distances)
+                max_dist = max(distances)
+                
+                if min_dist == 0:
+                    return False
+                
+                # Check if this could be an ellipse (ratio of major to minor axis)
+                axis_ratio = max_dist / min_dist
+                
+                # If points are very roughly circular or elliptical
+                if axis_ratio <= 3.0:  # Allow up to 3:1 ellipse ratio
+                    # Check if distances follow a smooth pattern (not random)
+                    # Sort points by angle from center
+                    angles = []
+                    for p in points:
+                        angle = _safe_extract_angle(p, center)
+                        angles.append(angle)
+                    
+                    # Create angle-distance pairs and sort by angle
+                    angle_dist_pairs = list(zip(angles, distances))
+                    angle_dist_pairs.sort(key=lambda x: x[0])
+                    
+                    # Check if distances change smoothly with angle
+                    sorted_distances = [pair[1] for pair in angle_dist_pairs]
+                    
+                    # Calculate variation in consecutive distance ratios
+                    if len(sorted_distances) >= 4:
+                        ratios = []
+                        for i in range(len(sorted_distances)):
+                            curr_dist = sorted_distances[i]
+                            next_dist = sorted_distances[(i + 1) % len(sorted_distances)]
+                            if curr_dist > 0:
+                                ratios.append(next_dist / curr_dist)
+                        
+                        # If ratios are relatively stable, likely an ellipse
+                        if len(ratios) > 0:
+                            ratio_mean = np.mean(ratios)
+                            ratio_std = np.std(ratios)
+                            if ratio_std / ratio_mean < 0.3:  # Low variation in ratios
+                                return True
+            except Exception:
+                # If any error occurs in ellipse detection, don't protect
+                return False
+            
+            return False
+
+        def _is_star_pattern(points):
+            """Detect star-like patterns that should be preserved."""
+            n = len(points)
+            if n < 6:
+                return False
+            
+            try:
+                # Calculate center point
+                center = np.mean(points, axis=0)
+                
+                # Calculate distances from center
+                distances = []
+                for p in points:
+                    try:
+                        dist = np.linalg.norm(p - center)
+                        distances.append(float(dist))
+                    except (TypeError, ValueError):
+                        return False
+                
+                # For a star pattern, we expect alternating long and short distances
+                # Sort points by angle to analyze the distance pattern
+                angles = []
+                for p in points:
+                    angle = _safe_extract_angle(p, center)
+                    angles.append(angle)
+                
+                # Create angle-distance pairs and sort by angle
+                angle_dist_pairs = list(zip(angles, distances))
+                angle_dist_pairs.sort(key=lambda x: x[0])
+                sorted_distances = [pair[1] for pair in angle_dist_pairs]
+                
+                # Check for alternating pattern (star shape)
+                # Look for peaks and valleys in the distance pattern
+                peaks = 0
+                valleys = 0
+                
+                for i in range(len(sorted_distances)):
+                    prev_dist = sorted_distances[i - 1]
+                    curr_dist = sorted_distances[i]
+                    next_dist = sorted_distances[(i + 1) % len(sorted_distances)]
+                    
+                    if curr_dist > prev_dist and curr_dist > next_dist:
+                        peaks += 1
+                    elif curr_dist < prev_dist and curr_dist < next_dist:
+                        valleys += 1
+                
+                # Star pattern should have multiple peaks and valleys
+                # and they should be roughly equal in number
+                if peaks >= 3 and valleys >= 3 and abs(peaks - valleys) <= 2:
+                    # Check if the variation in distances is significant
+                    min_dist = min(sorted_distances)
+                    max_dist = max(sorted_distances)
+                    if min_dist > 0 and max_dist / min_dist > 1.5:  # Significant variation
+                        return True
+            except Exception:
+                # If any error occurs in star detection, don't protect
+                return False
+            
+            return False
+
         def _rdp(points, epsilon: float):
-            mask = _mask(points, epsilon)
+            # Protect various geometric shapes from over-simplification
+            if len(points) >= 3 and _is_geometric_shape_to_protect(points):
+                # For protected shapes, use a much tighter tolerance
+                # Scale based on shape size to avoid over-protection of very large shapes
+                shape_size = np.max([np.linalg.norm(p1 - p2) for p1 in points for p2 in points])
+                if shape_size > 0:
+                    # Use adaptive tolerance based on shape size
+                    size_factor = min(1.0, 1000.0 / shape_size)  # Smaller factor for larger shapes
+                    protected_epsilon = epsilon * 0.05 * size_factor  # Much more conservative
+                    protected_epsilon = max(protected_epsilon, 0.1)  # Minimum protection
+                    protected_epsilon = min(protected_epsilon, 5.0)   # Maximum protection
+                else:
+                    protected_epsilon = min(epsilon * 0.1, 2.0)
+                mask = _mask(points, protected_epsilon)
+            else:
+                mask = _mask(points, epsilon)
             return points[mask]
 
         geoms = self.segments[: self.index]
