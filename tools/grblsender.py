@@ -20,7 +20,7 @@ class GrblSender:
         self.serial = serial.Serial(port, baudrate, timeout=0.1)
         self.command_queue = queue.PriorityQueue()
         self.response_map = {}
-        self.buffer_size = 128
+        self.buffer_size = 128  # Default for GRBL 1.1.
         self.buffer_remaining = self.buffer_size
         self.status_interval = status_interval
         self.running = False
@@ -37,7 +37,7 @@ class GrblSender:
         self.running = True
         self.receiver_thread.start()
         self.sender_thread.start()
-        self.status_thread.start()
+        # self.status_thread.start()
         print("GRBL sender started.")
 
     def stop(self):
@@ -46,10 +46,13 @@ class GrblSender:
         print("GRBL sender stopped.")
 
     def send_command(self, command: str, priority=10):
-        cmd_id = self.last_command_id
-        self.last_command_id += 1
+        cmd_id = None
+        if priority != 0:
+            cmd_id = self.last_command_id
+            self.last_command_id += 1
+            self.response_map[cmd_id] = CommandTracker(cmd_id, command)
+
         self.command_queue.put((priority, cmd_id, command))
-        self.response_map[cmd_id] = CommandTracker(cmd_id, command)
         return cmd_id
 
     def send_realtime(self, command: str):
@@ -57,14 +60,8 @@ class GrblSender:
 
     def get_response(self, cmd_id):
         tracker = self.response_map.get(cmd_id)
-        if tracker:
-            print(
-                f"Tracker for cmd_id={cmd_id}: complete={tracker.complete}, error={tracker.error}, lines={len(tracker.responses)}"
-            )
-            if tracker.complete:
-                return tracker.responses
-        else:
-            print(f"No tracker found for cmd_id={cmd_id}")
+        if tracker and tracker.complete:
+            return tracker.responses
         return None
 
     def _send_loop(self):
@@ -75,11 +72,16 @@ class GrblSender:
 
             try:
                 priority, cmd_id, command = self.command_queue.get(timeout=0.1)
+                print(
+                    f"[Dispatch] priority={priority}, cmd_id={cmd_id}, command={command}"
+                )
                 if priority == 0 or len(command) + 1 <= self.buffer_remaining:
-                    self.serial.write((command + "\n").encode())
-                    self.serial.flush()
+                    if len(command) > 1:  # regular command
+                        self.serial.write((command + "\n").encode())
+                    else:  # realtime command
+                        self.serial.write(command.encode())
                     print(f"Sent: {command}")
-                    if priority != 0:
+                    if cmd_id is not None:
                         self.buffer_remaining -= len(command) + 1
                         self.active_cmd_id = cmd_id
                 else:
@@ -87,15 +89,17 @@ class GrblSender:
                     time.sleep(0.05)
             except queue.Empty:
                 time.sleep(0.05)
+            except serial.SerialException as e:
+                print(f"Serial write error: {e}")
+                time.sleep(0.1)
 
     def _receive_loop(self):
         while self.running:
             try:
                 raw = self.serial.readline()
                 line = raw.decode("utf-8", errors="ignore").strip()
-                if not line:
-                    continue
-                self._handle_response(line)
+                if line:
+                    self._handle_response(line)
             except Exception as e:
                 print("Receive error:", e)
 
@@ -106,6 +110,8 @@ class GrblSender:
             self._handle_welcome(line)
         elif line.startswith("<"):
             self._handle_status(line)
+        elif line.startswith("["):
+            print("Bracketed message:", line)
         elif line == "ok":
             self._finalize_response(error=False)
             self.buffer_remaining = self.buffer_size
@@ -128,6 +134,7 @@ class GrblSender:
             print(f"Appended to cmd_id={self.active_cmd_id}: {line}")
 
     def _finalize_response(self, error=False):
+        print(f"[Finalize] active_cmd_id={self.active_cmd_id}")
         if self.active_cmd_id is None:
             print("No active command to finalize.")
             return
@@ -136,7 +143,7 @@ class GrblSender:
             tracker.complete = True
             tracker.error = error
             print(
-                f"Finalized cmd_id={self.active_cmd_id} with {'error' if error else 'ok'}"
+                f"Finalized cmd_id={self.active_cmd_id}.{tracker.command} with {'error' if error else 'ok'}"
             )
             self.active_cmd_id = None
 
@@ -174,6 +181,7 @@ if __name__ == "__main__":
     sender.start()
 
     time.sleep(4)
+    cmd_id = None
     # Send a regular command
     cmd_id = sender.send_command("$$")  # will produce multi-line response
 
