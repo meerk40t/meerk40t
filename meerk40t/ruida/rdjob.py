@@ -214,6 +214,9 @@ ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
 MEM_CARD_ID = 0x02FE
 
+def encode_switch(state):
+    assert state == 0 or state == 1
+    return bytes([state])
 
 def encode_part(part):
     assert 0 <= part <= 255
@@ -1433,7 +1436,7 @@ class RDJob:
         self.max_power_1(power)
         self.min_power_2(power)
         self.max_power_2(power)
-        self.en_laser_tube_start()
+        self.en_laser_tube_start(1)
         self.en_ex_io(0)
 
     def write_tail(self):
@@ -1441,7 +1444,7 @@ class RDJob:
         self.array_end()
         self.block_end()
         # self.encoder.set_setting(0x320, 142, 142)
-        self.set_file_sum(self.file_sum())
+        self.set_file_sum(self.file_sum() + 0xD7) # Account for the EOF.
         self.end_of_file()
 
     def jump(self, x, y, dx, dy):
@@ -1702,8 +1705,8 @@ class RDJob:
     def layer_number_part(self, part, output=None):
         self(LAYER_NUMBER_PART, encode_part(part), output=output)
 
-    def en_laser_tube_start(self, output=None):
-        self(EN_LASER_TUBE_START, output=output)
+    def en_laser_tube_start(self, switch, output=None):
+        self(EN_LASER_TUBE_START, encode_switch(switch),output=output)
 
     def x_sign_map(self, value, output=None):
         self(X_SIGN_MAP, encode_index(value), output=output)

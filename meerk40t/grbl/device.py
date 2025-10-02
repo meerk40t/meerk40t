@@ -325,6 +325,7 @@ class GRBLDevice(Service, Status):
                 "subsection": "_00_",
                 "dynamic": update,
                 "exclusive": not is_linux,
+                "signals": "update_interface",
             },
             {
                 "attr": "baud_rate",
@@ -336,6 +337,7 @@ class GRBLDevice(Service, Status):
                 # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
+                "signals": "update_interface",
             },
         ]
         if self.permit_serial:
