@@ -16,7 +16,7 @@ APPLICATION_VERSION = "0.9.8210"
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
     # Otherwise we are running from source
-    if os.path.isdir(os.path.realpath(sys.path[0]) + "/.git"):
+    if os.path.isdir(os.path.join(sys.path[0], ".git")):
         APPLICATION_VERSION += " git"
         try:
             head_file = os.path.join(sys.path[0], ".git", "HEAD")
@@ -35,7 +35,7 @@ if not getattr(sys, "frozen", False):
             # Entirely optional, also this code segment may run in python2
             pass
 
-    elif os.path.isdir(sys.path[0] + "/.github"):
+    elif os.path.isdir(os.path.join(sys.path[0], ".github")):
         APPLICATION_VERSION += " src"
     else:
         APPLICATION_VERSION += " pkg"
