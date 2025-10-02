@@ -64,6 +64,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface_radio.Add(self.radio_mock, 1, wx.EXPAND, 0)
 
+        self.radio_experimental = wx.RadioButton(self, wx.ID_ANY, _("Experimental"))
+        self.radio_experimental.SetToolTip(
+            _("Select this for a different serial connection.")
+        )
+        sizer_interface_radio.Add(self.radio_experimental, 1, wx.EXPAND, 0)
+
         self.panel_serial_settings = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="serial"
         )
@@ -85,6 +91,9 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
         if self.context.permit_serial:
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_serial)
+            self.Bind(
+                wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_experimental
+            )
         if self.context.permit_tcp:
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
         if self.context.permit_ws:
@@ -129,6 +138,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         try:
             if self.radio_serial.GetValue():
                 self.context.interface = "serial"
+                self.context.signal("update_interface")
+                self.panel_serial_settings.Show()
+                self.panel_tcp_config.Hide()
+                self.panel_ws_config.Hide()
+            if self.radio_experimental.GetValue():
+                self.context.interface = "experimental"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Show()
                 self.panel_tcp_config.Hide()

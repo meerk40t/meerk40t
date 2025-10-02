@@ -20,7 +20,7 @@ class GrblSender:
         self.serial = serial.Serial(port, baudrate, timeout=0.1)
         self.command_queue = queue.PriorityQueue()
         self.response_map = {}
-        self.buffer_size = 128  # Default for GRBL 1.1.
+        self.buffer_size = 128  # Default for GRBL 1.1
         self.buffer_remaining = self.buffer_size
         self.status_interval = status_interval
         self.running = False
@@ -37,8 +37,11 @@ class GrblSender:
         self.running = True
         self.receiver_thread.start()
         self.sender_thread.start()
-        # self.status_thread.start()
+        self.status_thread.start()
         print("GRBL sender started.")
+        self.serial.write(b"\x18")  # Ctrl-X: soft reset
+        time.sleep(0.1)  # Give GRBL time to respond
+        self.send_command("$I", priority=5)  # Request version info
 
     def stop(self):
         self.running = False
@@ -72,16 +75,15 @@ class GrblSender:
 
             try:
                 priority, cmd_id, command = self.command_queue.get(timeout=0.1)
-                print(
-                    f"[Dispatch] priority={priority}, cmd_id={cmd_id}, command={command}"
-                )
                 if priority == 0 or len(command) + 1 <= self.buffer_remaining:
-                    if len(command) > 1:  # regular command
-                        self.serial.write((command + "\n").encode())
-                    else:  # realtime command
-                        self.serial.write(command.encode())
+                    if len(command) == 1:
+                        self.serial.write(command.encode())  # Realtime: raw byte
+                    else:
+                        self.serial.write(
+                            (command + "\n").encode()
+                        )  # G-code: with newline
                     print(f"Sent: {command}")
-                    if cmd_id is not None:
+                    if priority != 0 and cmd_id is not None:
                         self.buffer_remaining -= len(command) + 1
                         self.active_cmd_id = cmd_id
                 else:
@@ -111,7 +113,7 @@ class GrblSender:
         elif line.startswith("<"):
             self._handle_status(line)
         elif line.startswith("["):
-            print("Bracketed message:", line)
+            self._handle_bracketed(line)
         elif line == "ok":
             self._finalize_response(error=False)
             self.buffer_remaining = self.buffer_size
@@ -134,7 +136,6 @@ class GrblSender:
             print(f"Appended to cmd_id={self.active_cmd_id}: {line}")
 
     def _finalize_response(self, error=False):
-        print(f"[Finalize] active_cmd_id={self.active_cmd_id}")
         if self.active_cmd_id is None:
             print("No active command to finalize.")
             return
@@ -143,13 +144,13 @@ class GrblSender:
             tracker.complete = True
             tracker.error = error
             print(
-                f"Finalized cmd_id={self.active_cmd_id}.{tracker.command} with {'error' if error else 'ok'}"
+                f"Finalized cmd_id={self.active_cmd_id} with {'error' if error else 'ok'}"
             )
             self.active_cmd_id = None
 
     def _handle_welcome(self, line):
         print("Controller welcome:", line)
-        self.send_command("$I", priority=5)
+        # Optional: self.send_command('$I', priority=5)
 
     def _handle_status(self, line):
         mpos = re.search(r"MPos:([\d\.\-]+),([\d\.\-]+),([\d\.\-]+)", line)
@@ -159,6 +160,15 @@ class GrblSender:
             feed = int(fs.group(1))
             spindle = int(fs.group(2))
             print(f"Status: Pos={pos}, Feed={feed}, Spindle={spindle}")
+
+    def _handle_bracketed(self, line):
+        print("Bracketed message:", line)
+        m = re.search(r"\[BUFFER:(\d+)\]", line)
+        if m:
+            new_size = int(m.group(1))
+            self.buffer_size = new_size
+            self.buffer_remaining = new_size
+            print(f"Detected buffer size: {new_size}")
 
     def _handle_reset(self):
         print("Controller reset detected. Clearing queue.")

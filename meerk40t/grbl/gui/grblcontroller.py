@@ -230,6 +230,8 @@ class GRBLControllerPanel(wx.Panel):
         context = self.service
         if context.permit_serial and context.interface == "serial":
             iface = "?" if context.serial_port is None else context.serial_port
+        elif context.permit_serial and context.interface == "experimental":
+            iface = "?" if context.serial_port is None else context.serial_port
         elif context.permit_tcp and context.interface == "tcp":
             iface = f"{context.address}:{context.port}"
         elif context.permit_ws and context.interface == "tcp":
