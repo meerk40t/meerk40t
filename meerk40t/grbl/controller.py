@@ -470,6 +470,18 @@ class GrblController:
         self._paused = False
         self._watchers = []
         self.is_shutdown = False
+        self._last_state = None
+
+    @property
+    def last_state(self):
+        return self._last_state
+
+    @property
+    def error_condition(self):
+        # Testcase
+        if self._last_state is not None:
+            return self._last_state in ("alarm", "hold", "door", "check")
+        return False
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -742,6 +754,8 @@ class GrblController:
         with self._forward_lock:
             self._forward_buffer += bytes(line, encoding="latin-1")
         self.connection.write(line)
+        # print(f"OUT: {line.strip()} [timestamp={time.time():.2f}]")
+
         self.log(line, type="send")
 
     def _sending_realtime(self):
@@ -868,6 +882,9 @@ class GrblController:
             while not response:
                 try:
                     response = self.connection.read()
+                    # # Dump the response to see whats happening:
+                    # if response:
+                    #     print(f"IN : {response} [timestamp={time.time():.2f}]")
                 except (ConnectionAbortedError, AttributeError):
                     return
                 if not response:
@@ -979,8 +996,13 @@ class GrblController:
         self.validate_stop("*")
 
     def _process_status_message(self, response):
+        if not response.endswith(">"):
+            self.log(f"Status message not terminated: {response}", type="event")
+            return
         message = response[1:-1]
         data = list(message.split("|"))
+        self._last_state = data[0].lower()
+        # print (f"Data: {data[0]} -> last_state={self._last_state} -> error_condition={self.error_condition}")
         self.service.signal("grbl:state", data[0])
         for datum in data[1:]:
             # While valid some grbl replies might violate the parsing convention.
