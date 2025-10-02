@@ -43,10 +43,10 @@ INTERFACE_LASER_GATE_UP = b"\xA5\x51\x12"
 INTERFACE_ORIGIN_DOWN = b"\xA5\x50\x08"
 INTERFACE_ORIGIN_UP = b"\xA5\x51\x08"
 AXIS_X_MOVE = b"\x80\x00"  # abscoord(x)
-AXIS_Z_MOVE = b"\x80\x01"  # abscoord(z),
+AXIS_Z_MOVE = b"\x80\x01"  # abscoord(z) TODO: Should be 0x80 0x08?
 MOVE_ABS_XY = b"\x88"  # abscoord(x), abscoord(y)
 MOVE_REL_XY = b"\x89"  # relcoord(dx), relcoord(dy)
-AXIS_A_MOVE = b"\xA0\x00"  # abscoord(a)
+AXIS_A_MOVE = b"\xA0\x00"  # abscoord(a) TODO: Should be AXIS_Y_MOVE?
 AXIS_U_MOVE = b"\xA0\x08"  # abscoord(u)
 MOVE_REL_X = b"\x8A"  # relcoord(dx)
 MOVE_REL_Y = b"\x8B"  # relcoord(dy)
@@ -182,7 +182,8 @@ ARRAY_MAX_POINT = b"\xE7\x17"  # abscoord(5), abscoord(5)
 ARRAY_ADD = b"\xE7\x23"  # abscoord(5), abscoord(5)
 ARRAY_MIRROR = b"\xE7\x24"  # mirror(1)
 BLOCK_X_SIZE = b"\xE7\x35"  # abscoord(5), abscoord(5)
-BY_TEST = b"\xE7\x35"  # 0x11227766
+BY_TEST = b"\xE7\x35"  # 0x11227766 TODO: Unclear why?
+# TODO: SET_FILE_EMPTY = b"\xE7\x36 # value(1)
 ARRAY_EVEN_DISTANCE = b"\xE7\x37"
 SET_FEED_AUTO_PAUSE = b"\xE7\x38"
 UNION_BLOCK_PROPERTY = b"\xE7\x3A"
@@ -213,6 +214,9 @@ ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
 MEM_CARD_ID = 0x02FE
 
+def encode_switch(state):
+    assert state == 0 or state == 1
+    return bytes([state])
 
 def encode_part(part):
     assert 0 <= part <= 255
@@ -1432,7 +1436,7 @@ class RDJob:
         self.max_power_1(power)
         self.min_power_2(power)
         self.max_power_2(power)
-        self.en_laser_tube_start()
+        self.en_laser_tube_start(1)
         self.en_ex_io(0)
 
     def write_tail(self):
@@ -1440,7 +1444,7 @@ class RDJob:
         self.array_end()
         self.block_end()
         # self.encoder.set_setting(0x320, 142, 142)
-        self.set_file_sum(self.file_sum())
+        self.set_file_sum(self.file_sum() + 0xD7) # Account for the EOF.
         self.end_of_file()
 
     def jump(self, x, y, dx, dy):
@@ -1701,8 +1705,8 @@ class RDJob:
     def layer_number_part(self, part, output=None):
         self(LAYER_NUMBER_PART, encode_part(part), output=output)
 
-    def en_laser_tube_start(self, output=None):
-        self(EN_LASER_TUBE_START, output=output)
+    def en_laser_tube_start(self, switch, output=None):
+        self(EN_LASER_TUBE_START, encode_switch(switch),output=output)
 
     def x_sign_map(self, value, output=None):
         self(X_SIGN_MAP, encode_index(value), output=output)
