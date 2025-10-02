@@ -6,7 +6,8 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 *   Do burns with multiple passes all at the same time (Merge Passes)
 *   Sort burns for all operations at the same time rather than operation by operation
 *   Ensure that elements inside closed cut paths are burned before the outside path
-*   Group these inner burns so that one component on a sheet is completed before the next one is started
+*   Group related inner/outer burns into spatial pieces so that each component on a sheet
+    is completed before the next one is started, with inner-first constraints maintained within each piece
 *   Ensure that non-closed paths start from one of the ends and burned in one continuous burn
     rather than being burned in 2 or more separate parts
 *   Split raster images in to self-contained areas to avoid sweeping over large empty areas
@@ -33,7 +34,6 @@ from .node.node import Node
 from .node.util_console import ConsoleOperation
 from .units import Length
 
-
 """
 The time to compile does outweigh the benefit...
 try:
@@ -55,7 +55,7 @@ class CutPlanningFailedError(Exception):
 
 class CutPlan:
     """
-    CutPlan is a centralized class to modify plans during cutplanning. It is typically is used to progress from
+    CutPlan is a centralized class to modify plans during cutplanning. It is typically used to progress from
     copied operations through the stages to being properly optimized cutcode.
 
     The stages are:
@@ -66,7 +66,9 @@ class CutPlan:
         a. Calls `execute` operation.
     4. Blob: We convert all the operations/elements into proper cutcode. Some operations do not necessarily need to
         convert to cutcode. They merely need to convert to some type of spoolable operation.
-    5. Preopt: Preoptimize adds in the relevant optimization operations into the cutcode.
+    5. Preopt: Preoptimize adds in the relevant optimization operations into the cutcode. This stage now includes
+        three optimization paths: travel optimization, inner-first optimization, and basic cutcode sequencing
+        (fallback when no optimization is enabled to ensure proper burns_done handling).
     6. Optimize: This calls the added functions set during the preopt process.
         a. Calls `execute` operation.
     """
@@ -685,8 +687,23 @@ class CutPlan:
 
     def preopt(self):
         """
-        Add commands for optimize stage. This stage tends to do very little but checks the settings and adds the
-        relevant operations.
+        Add commands for optimize stage. This stage checks the settings and adds the
+        relevant optimization operations.
+
+        The optimization pipeline includes three main paths with clear priority hierarchy:
+        1. Inner-first optimization (when opt_inner_first is enabled) - highest priority
+           - Takes precedence over travel-only optimization
+           - Includes travel optimization within the inner-first algorithm
+           - Uses piece-based processing when grouped_inner is enabled
+        2. Travel optimization (when opt_reduce_travel is enabled but opt_inner_first is disabled)
+           - Uses nearest neighbor and/or 2-opt algorithms
+           - Optimizes travel distance without inner-first constraints
+        3. Basic cutcode sequencing (fallback when no optimization is enabled)
+           - Ensures proper burns_done logic for multi-pass cuts
+           - Maintains cut sequence without optimization
+
+        The basic_cutcode_sequencing fallback ensures burns_done logic is properly
+        handled for multi-pass cuts even when all optimization is disabled.
 
         @return:
         """
@@ -704,25 +721,25 @@ class CutPlan:
 
         if context.opt_effect_combine:
             self.commands.append(self.combine_effects)
-        if self.channel:
-            self.channel("Dumping scenarios:")
-            self.commands.append(self._dump_scenario)
+        # if self.channel:
+        #     self.channel("Dumping scenarios:")
+        #     self.commands.append(self._dump_scenario)
 
-        if context.opt_reduce_travel and (
+        if context.opt_inner_first:
+            # Inner-first optimization takes priority and includes travel optimization
+            self.commands.append(self.optimize_cuts)
+        elif context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
         ):
+            # Travel optimization only (when inner-first is not enabled)
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
-            if context.opt_2opt and not context.opt_inner_first:
+            if context.opt_2opt:
                 self.commands.append(self.optimize_travel_2opt)
-
-        elif context.opt_inner_first:
-            self.commands.append(self.optimize_cuts)
+        else:
+            # Fallback: ensure burns_done logic is handled even when optimization is disabled
+            self.commands.append(self.basic_cutcode_sequencing)
         self.commands.append(self.merge_cutcode)
-        if context.opt_reduce_directions:
-            pass
-        if context.opt_remove_overlap:
-            pass
 
     def combine_effects(self):
         """
@@ -807,6 +824,62 @@ class CutPlan:
         if self.channel:
             self.channel(f"Combined: {combined}, groups: {group_count}")
 
+    def basic_cutcode_sequencing(self):
+        """
+        Basic cutcode sequencing when no optimization is enabled.
+
+        Ensures burns_done logic is properly handled for multi-pass cuts
+        even when travel optimization is disabled. Based on the inner_selection_cutcode
+        function from 0.98b2 that handled this case.
+        """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Basic cutcode sequencing"), keep=1)
+            busy.show()
+
+        for i, cutcode in enumerate(self.plan):
+            if isinstance(cutcode, CutCode):
+                if busy.shown:
+                    busy.change(
+                        msg=_("Basic cutcode sequencing")
+                        + f" {i + 1}/{len(self.plan)}",
+                        keep=1,
+                    )
+                    busy.show()
+
+                # Initialize burns_done for all cuts
+                for cut in cutcode.flat():
+                    cut.burns_done = 0
+
+                # Process cuts respecting burns_done and passes
+                ordered = CutCode()
+                iterations = 0
+
+                while True:
+                    # Get available candidates (burns_done < passes)
+                    candidates = list(cutcode.candidate(grouped_inner=False))
+                    if not candidates:
+                        break
+
+                    # Increment burns_done for all candidates
+                    for cut in candidates:
+                        cut.burns_done += 1
+
+                    # Add copies to the ordered sequence
+                    ordered.extend(copy(candidates))
+                    iterations += 1
+
+                # Set start position if available
+                if cutcode.start is not None:
+                    ordered._start_x, ordered._start_y = cutcode.start
+                else:
+                    ordered._start_x = 0
+                    ordered._start_y = 0
+
+                # Replace the original cutcode with the sequenced version
+                self.plan[i] = ordered
+
     def optimize_travel_2opt(self):
         """
         Optimize travel 2opt at optimize stage on cutcode
@@ -826,7 +899,23 @@ class CutPlan:
 
     def optimize_cuts(self):
         """
-        Optimize cuts at optimize stage on cutcode
+        Optimize cuts using inner-first algorithm and travel optimization.
+
+        This method handles both inner-first identification (when constrained cutcode
+        is present) and travel optimization. The grouped_inner setting determines
+        the optimization strategy:
+
+        - grouped_inner=True: Piece-based optimization where related inner/outer
+          groups are spatially grouped into pieces. Travel optimization occurs
+          between pieces while inner-first constraints are maintained within each piece.
+
+        - grouped_inner=False: Hierarchical processing where groups are processed
+          individually while respecting containment relationships.
+
+        The piece-based approach ensures that each spatial component on the sheet
+        is completed before moving to the next, minimizing overall travel distance
+        while preserving inner-first cutting constraints.
+
         @return:
         """
         # Update Info-panel if displayed
@@ -952,11 +1041,12 @@ class CutPlan:
                 del self.plan[i]
 
     def _dump_scenario(self):
-        # self.save_scenario(
-        #     filename="test_cutplan.json",
-        #     description="Intermediate scenario dump for algorithm testing",
-        #     algorithm_testing=True,
-        # )
+        # Only used for debugging purposes.
+        self.save_scenario(
+            filename="test_cutplan.json",
+            description="Intermediate scenario dump for algorithm testing",
+            algorithm_testing=True,
+        )
         return
 
     def save_scenario(self, filename=None, description="", algorithm_testing=False):
@@ -975,8 +1065,8 @@ class CutPlan:
         @param algorithm_testing: If True, saves detailed cut data for algorithm validation
         @return: Scenario data dict if filename is None, otherwise saves to file
         """
-        import json
         import datetime
+        import json
 
         # Extract key optimization settings that affect cutplan behavior
         opt_settings = {}
@@ -1104,6 +1194,47 @@ class CutPlan:
                                                 type(value).__name__
                                             )
                                     cut_data["settings"] = settings_copy
+
+                                # Add parent group information for reconstruction
+                                if hasattr(cut, "parent") and isinstance(
+                                    cut.parent, CutGroup
+                                ):
+                                    cut_data["parent_group_id"] = id(cut.parent)
+                                    cut_data["parent_closed"] = getattr(
+                                        cut.parent, "closed", False
+                                    )
+                                    # Find position within parent group
+                                    try:
+                                        cut_data["group_index"] = list(
+                                            cut.parent
+                                        ).index(cut)
+                                        cut_data["group_size"] = len(cut.parent)
+                                    except (ValueError, TypeError):
+                                        pass
+
+                                    # Save parent group path information for geometric testing
+                                    if (
+                                        hasattr(cut.parent, "path")
+                                        and cut.parent.path is not None
+                                    ):
+                                        try:
+                                            cut_data[
+                                                "parent_path_d"
+                                            ] = cut.parent.path.d()
+                                        except Exception:
+                                            pass
+
+                                    # Save parent group bounding box for faster containment checks
+                                    if (
+                                        hasattr(cut.parent, "bounding_box")
+                                        and cut.parent.bounding_box is not None
+                                    ):
+                                        try:
+                                            cut_data["parent_bounding_box"] = list(
+                                                cut.parent.bounding_box
+                                            )
+                                        except Exception:
+                                            pass
 
                                 individual_cuts.append(cut_data)
 
@@ -1253,12 +1384,232 @@ class CutPlan:
 
         return scenario_data
 
+    def reconstruct_cutgroups_from_cuts(self, cuts, closed_distance=15):
+        """
+        Reconstruct CutGroup objects from individual cuts by analyzing connectivity
+        and using saved parent group information when available.
+
+        This is needed for algorithm testing scenarios where cuts were flattened
+        but we need to recreate the original closed path structure for inner-first
+        optimization to work correctly.
+        """
+
+        if not cuts:
+            return []
+
+        # Check if we have saved parent group information
+        has_parent_info = any(
+            hasattr(cut, "parent_group_id")
+            or (hasattr(cut, "__dict__") and "parent_group_id" in cut.__dict__)
+            for cut in cuts
+        )
+
+        if has_parent_info:
+            # Use saved parent group information for accurate reconstruction
+            return self._reconstruct_from_parent_info(cuts)
+        else:
+            # Fall back to connectivity analysis
+            return self._reconstruct_from_connectivity(cuts, closed_distance)
+
+    def _reconstruct_from_parent_info(self, cuts):
+        """Reconstruct CutGroups using saved parent group information"""
+        from collections import defaultdict
+
+        from meerk40t.core.cutcode.cutgroup import CutGroup
+
+        # Group cuts by their parent group ID
+        groups_by_id = defaultdict(list)
+
+        for cut in cuts:
+            parent_id = getattr(cut, "parent_group_id", None)
+            if parent_id is not None:
+                groups_by_id[parent_id].append(cut)
+            else:
+                # Standalone cut without parent - create individual group
+                groups_by_id[id(cut)].append(cut)
+
+        cutgroups = []
+
+        for group_id, group_cuts in groups_by_id.items():
+            if not group_cuts:
+                continue
+
+            # Sort cuts by their group_index if available
+            group_cuts.sort(key=lambda c: getattr(c, "group_index", 0))
+
+            # Get closed status from first cut's parent info
+            is_closed = getattr(group_cuts[0], "parent_closed", False)
+
+            # Create CutGroup
+            group = CutGroup(
+                parent=None,
+                children=group_cuts,
+                closed=is_closed,
+                settings=group_cuts[0].settings if group_cuts else None,
+                passes=group_cuts[0].passes if group_cuts else 1,
+            )
+
+            # CRITICAL: Populate geometric attributes needed by is_inside function
+            # This mirrors what path_to_cutobjects does in nutils.py
+
+            # First, try to restore saved path information if available
+            first_cut = group_cuts[0]
+            path_restored = False
+
+            if hasattr(first_cut, "parent_path_d"):
+                try:
+                    from ..svgelements import Path
+                    from ..tools.geomstr import Geomstr
+
+                    path_obj = Path(first_cut.parent_path_d)
+                    setattr(group, "path", path_obj)
+                    setattr(group, "_geometry", Geomstr.svg(path_obj.d()))
+                    path_restored = True
+                except Exception:
+                    pass
+
+            # If no saved path, reconstruct from individual cuts
+            if not path_restored and len(group_cuts) > 0:
+                try:
+                    from ..svgelements import Close, Line, Move, Path
+                    from ..tools.geomstr import Geomstr
+
+                    path_segments = []
+                    path_segments.append(Move(group_cuts[0].start))
+
+                    for cut in group_cuts:
+                        if hasattr(cut, "end") and hasattr(cut, "start"):
+                            path_segments.append(Line(cut.start, cut.end))
+
+                    # Close the path if the group is marked as closed
+                    if is_closed and len(group_cuts) > 2:
+                        first_start = group_cuts[0].start
+                        last_end = group_cuts[-1].end
+                        # Add closing line if needed
+                        if abs(complex(*first_start) - complex(*last_end)) > 0.1:
+                            path_segments.append(Line(last_end, first_start))
+                        path_segments.append(Close(first_start))
+
+                    # Create the path and geometry objects (essential for is_inside)
+                    constructed_path = Path(*path_segments)
+                    setattr(group, "path", constructed_path)
+                    setattr(group, "_geometry", Geomstr.svg(constructed_path.d()))
+
+                except Exception:
+                    # If path creation fails, at least try to set basic bounding box
+                    pass
+
+            # Restore saved bounding box if available
+            if hasattr(first_cut, "parent_bounding_box"):
+                try:
+                    setattr(group, "bounding_box", first_cut.parent_bounding_box)
+                except Exception:
+                    pass
+
+            # Set up cut relationships within group
+            for i, cut in enumerate(group_cuts):
+                cut.parent = group
+                cut.closed = is_closed
+                cut.first = i == 0
+                cut.last = i == len(group_cuts) - 1
+                cut.next = group_cuts[(i + 1) % len(group_cuts)]
+                cut.previous = group_cuts[i - 1]
+
+            cutgroups.append(group)
+
+        return cutgroups
+
+    def _reconstruct_from_connectivity(self, cuts, closed_distance):
+        """Reconstruct CutGroups using connectivity analysis (fallback method)"""
+        from collections import defaultdict
+
+        from meerk40t.core.cutcode.cutgroup import CutGroup
+
+        # Build connectivity mapping
+        cut_endpoints = {}
+        connections = defaultdict(list)
+
+        for i, cut in enumerate(cuts):
+            start = cut.start
+            end = cut.end
+            cut_endpoints[i] = (start, end)
+            connections[start].append((i, "start"))
+            connections[end].append((i, "end"))
+
+        # Find connected components (paths)
+        visited = set()
+        cutgroups = []
+
+        for start_idx in range(len(cuts)):
+            if start_idx in visited:
+                continue
+
+            # Trace connected path
+            path_cuts = []
+            current_cut = start_idx
+
+            while current_cut is not None and current_cut not in visited:
+                visited.add(current_cut)
+                path_cuts.append(cuts[current_cut])
+
+                # Find next connected cut
+                start, end = cut_endpoints[current_cut]
+
+                # Try to continue the path (prefer connected endpoints)
+                next_cut = None
+                for next_point in [end, start]:  # Try end first, then start
+                    for cut_idx, connection_type in connections[next_point]:
+                        if cut_idx not in visited:
+                            next_cut = cut_idx
+                            break
+                    if next_cut is not None:
+                        break
+
+                current_cut = next_cut
+
+            if path_cuts:
+                # Determine if path is closed
+                if len(path_cuts) > 1:
+                    first_start = path_cuts[0].start
+                    last_end = path_cuts[-1].end
+                    distance = (
+                        (first_start[0] - last_end[0]) ** 2
+                        + (first_start[1] - last_end[1]) ** 2
+                    ) ** 0.5
+                    is_closed = distance <= closed_distance
+                else:
+                    is_closed = False
+
+                # Create CutGroup
+                group = CutGroup(
+                    parent=None,
+                    children=path_cuts,
+                    closed=is_closed,
+                    settings=path_cuts[0].settings if path_cuts else None,
+                    passes=path_cuts[0].passes if path_cuts else 1,
+                )
+
+                # Set up cut relationships within group
+                for i, cut in enumerate(path_cuts):
+                    cut.parent = group
+                    cut.closed = is_closed
+                    cut.first = i == 0
+                    cut.last = i == len(path_cuts) - 1
+                    cut.next = path_cuts[(i + 1) % len(path_cuts)]
+                    cut.previous = path_cuts[i - 1]
+
+                cutgroups.append(group)
+
+        return cutgroups
+
     def create_cuts_from_scenario(self, scenario_data):
         """
         Create cut objects from saved scenario data for algorithm testing.
 
         This function converts saved algorithm testing data back into cut objects
-        that can be used with optimization algorithms.
+        that can be used with optimization algorithms. When parent group information
+        is available, it reconstructs the original CutGroup structure needed for
+        proper inner-first hierarchy detection.
 
         @param scenario_data: Scenario data dict (from load_scenario)
         @return: Tuple of (cuts, start_position, original_travel) or None if no algorithm data
@@ -1268,9 +1619,9 @@ class CutPlan:
                 self.channel("No algorithm testing data in scenario")
             return None
 
+        from meerk40t.core.cutcode.cubiccut import CubicCut
         from meerk40t.core.cutcode.linecut import LineCut
         from meerk40t.core.cutcode.quadcut import QuadCut
-        from meerk40t.core.cutcode.cubiccut import CubicCut
 
         alg_data = scenario_data["algorithm_testing"]
         cuts = []
@@ -1278,7 +1629,7 @@ class CutPlan:
         for cut_data in alg_data["cuts"]:
             cut_type = cut_data.get("cut_type", "LineCut")
 
-            # Create the appropriate cut type (no CutGroups for algorithm testing)
+            # Create the appropriate cut type
             if (
                 cut_type == "CubicCut"
                 and "control1" in cut_data
@@ -1315,18 +1666,155 @@ class CutPlan:
             cut.passes = cut_data.get("passes", 1)
             cut.burns_done = 0
 
+            # Store parent group information for reconstruction
+            if "parent_group_id" in cut_data:
+                cut._parent_group_id = cut_data["parent_group_id"]
+                cut._parent_closed = cut_data.get("parent_closed", False)
+                cut._group_index = cut_data.get("group_index", 0)
+                cut._group_size = cut_data.get("group_size", 1)
+                if "parent_path_d" in cut_data:
+                    cut._parent_path_d = cut_data["parent_path_d"]
+                if "parent_bounding_box" in cut_data:
+                    cut._parent_bounding_box = cut_data["parent_bounding_box"]
+
             cuts.append(cut)
 
         start_position = tuple(alg_data["start_position"])
         original_travel = alg_data["original_travel"]
 
-        if self.channel:
-            self.channel(f"Created {len(cuts)} cuts for algorithm testing")
-            self.channel(
-                f"Start position: {start_position}, Original travel: {original_travel:.0f}"
+        # Check if we have parent group information to reconstruct CutGroups
+        has_parent_info = any(hasattr(cut, "_parent_group_id") for cut in cuts)
+
+        if has_parent_info:
+            # Reconstruct CutGroups from parent information for proper hierarchy detection
+            if self.channel:
+                self.channel("Reconstructing CutGroups from saved parent information")
+            cutgroups = self._reconstruct_cutgroups_from_cuts(cuts)
+            return cutgroups, start_position, original_travel
+        else:
+            # No group information available - return individual cuts
+            if self.channel:
+                self.channel("No parent group information - returning individual cuts")
+            return cuts, start_position, original_travel
+
+    def _reconstruct_cutgroups_from_cuts(self, cuts):
+        """
+        Reconstruct CutGroup objects from individual cuts using saved parent group information.
+
+        This is essential for algorithm testing scenarios where the original CutGroup structure
+        with closed path detection and geometric properties needs to be restored for proper
+        inner-first hierarchy detection to work.
+        """
+        from collections import defaultdict
+
+        from meerk40t.core.cutcode.cutgroup import CutGroup
+
+        # Group cuts by their parent group ID
+        groups_by_id = defaultdict(list)
+
+        for cut in cuts:
+            parent_id = getattr(cut, "_parent_group_id", None)
+            if parent_id is not None:
+                groups_by_id[parent_id].append(cut)
+            else:
+                # Standalone cut without parent - create individual group
+                groups_by_id[id(cut)].append(cut)
+
+        cutgroups = []
+
+        for group_id, group_cuts in groups_by_id.items():
+            if not group_cuts:
+                continue
+
+            # Sort cuts by their group_index if available
+            group_cuts.sort(key=lambda c: getattr(c, "_group_index", 0))
+
+            # Get closed status from first cut's parent info
+            is_closed = getattr(group_cuts[0], "_parent_closed", False)
+
+            # Create CutGroup
+            group = CutGroup(
+                parent=None,
+                children=group_cuts,
+                closed=is_closed,
+                settings=group_cuts[0].settings if group_cuts else None,
+                passes=group_cuts[0].passes if group_cuts else 1,
             )
 
-        return cuts, start_position, original_travel
+            # Restore geometric properties essential for is_inside detection
+            first_cut = group_cuts[0]
+
+            # Restore saved path information if available
+            if hasattr(first_cut, "_parent_path_d"):
+                try:
+                    from ..svgelements import Path
+                    from ..tools.geomstr import Geomstr
+
+                    path_obj = Path(first_cut._parent_path_d)
+                    setattr(group, "path", path_obj)
+                    setattr(group, "_geometry", Geomstr.svg(path_obj.d()))
+                except Exception:
+                    # If path restoration fails, construct from cuts
+                    self._construct_path_from_cuts(group, group_cuts, is_closed)
+            else:
+                # Construct path from individual cuts
+                self._construct_path_from_cuts(group, group_cuts, is_closed)
+
+            # Restore saved bounding box if available
+            if hasattr(first_cut, "_parent_bounding_box"):
+                try:
+                    setattr(group, "bounding_box", first_cut._parent_bounding_box)
+                except Exception:
+                    pass
+
+            # Set up cut relationships within group
+            for i, cut in enumerate(group_cuts):
+                cut.parent = group
+                cut.closed = is_closed
+                cut.first = i == 0
+                cut.last = i == len(group_cuts) - 1
+                cut.next = group_cuts[(i + 1) % len(group_cuts)]
+                cut.previous = group_cuts[i - 1]
+
+            cutgroups.append(group)
+
+        return cutgroups
+
+    def _construct_path_from_cuts(self, group, group_cuts, is_closed):
+        """
+        Construct Path and geometry objects from individual cuts.
+        This is essential for the is_inside function to work properly.
+        """
+        try:
+            from ..svgelements import Close, Line, Move, Path
+            from ..tools.geomstr import Geomstr
+
+            path_segments = []
+            if group_cuts:
+                path_segments.append(Move(group_cuts[0].start))
+
+                for cut in group_cuts:
+                    if hasattr(cut, "end") and hasattr(cut, "start"):
+                        path_segments.append(Line(cut.start, cut.end))
+
+                # Close the path if the group is marked as closed
+                if is_closed and len(group_cuts) > 2:
+                    first_start = group_cuts[0].start
+                    last_end = group_cuts[-1].end
+                    # Add closing line if needed
+                    if abs(complex(*first_start) - complex(*last_end)) > 0.1:
+                        path_segments.append(Line(last_end, first_start))
+                    path_segments.append(Close(first_start))
+
+                # Create the path and geometry objects (essential for is_inside)
+                constructed_path = Path(*path_segments)
+                setattr(group, "path", constructed_path)
+                setattr(group, "_geometry", Geomstr.svg(constructed_path.d()))
+
+        except Exception as e:
+            # If path construction fails, at least log it
+            if self.channel:
+                self.channel(f"Failed to construct path for group: {e}")
 
     def clear(self):
         self._previous_bounds = None
@@ -1450,12 +1938,13 @@ class CutPlan:
             )
 
 
-def is_inside(inner, outer, tolerance=0):
+def is_inside(inner, outer, tolerance=0, debug=False):
     """
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
     @param tolerance: 0
+    @param debug: if True, print debug information
     @return: whether path1 is wholly inside path2.
     """
 
@@ -1500,6 +1989,8 @@ def is_inside(inner, outer, tolerance=0):
     inner_path = inner
     outer_path = outer
     if outer == inner:  # This is the same object.
+        if debug:
+            print("DEBUG is_inside: Same object - returning False")
         return False
     if hasattr(inner, "path") and inner.path is not None:
         inner_path = inner.path
@@ -1510,8 +2001,12 @@ def is_inside(inner, outer, tolerance=0):
     if not hasattr(outer, "bounding_box"):
         outer.bounding_box = Group.union_bbox([outer_path])
     if outer.bounding_box is None:
+        if debug:
+            print("DEBUG is_inside: outer.bounding_box is None - returning False")
         return False
     if inner.bounding_box is None:
+        if debug:
+            print("DEBUG is_inside: inner.bounding_box is None - returning False")
         return False
     if isinstance(inner, RasterCut):
         if not hasattr(inner, "convex_path"):
@@ -1521,16 +2016,65 @@ def is_inside(inner, outer, tolerance=0):
     # Fast bounding box check first
     if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
         # outer minx > inner maxx (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.left ({outer.bounding_box[0]}) > inner.right ({inner.bounding_box[2]})"
+            )
         return False
     if outer.bounding_box[1] > inner.bounding_box[3] + tolerance:
         # outer miny > inner maxy (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.top ({outer.bounding_box[1]}) > inner.bottom ({inner.bounding_box[3]})"
+            )
         return False
     if outer.bounding_box[2] < inner.bounding_box[0] - tolerance:
         # outer maxx < inner minx (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.right ({outer.bounding_box[2]}) < inner.left ({inner.bounding_box[0]})"
+            )
         return False
     if outer.bounding_box[3] < inner.bounding_box[1] - tolerance:
         # outer maxy < inner maxy (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.bottom ({outer.bounding_box[3]}) < inner.top ({inner.bounding_box[1]})"
+            )
         return False
+
+    # Special case for degenerate shapes (lines with zero height/width)
+    inner_width = inner.bounding_box[2] - inner.bounding_box[0]
+    inner_height = inner.bounding_box[3] - inner.bounding_box[1]
+
+    if inner_width == 0 or inner_height == 0:
+        # This is a degenerate shape (line), use simple point-in-bounds test
+        if debug:
+            print(
+                f"DEBUG is_inside: Degenerate shape detected (w={inner_width}, h={inner_height})"
+            )
+
+        # For lines, check if both endpoints are within outer bounds
+        inner_center_x = (inner.bounding_box[0] + inner.bounding_box[2]) / 2
+        inner_center_y = (inner.bounding_box[1] + inner.bounding_box[3]) / 2
+
+        is_contained = (
+            outer.bounding_box[0] <= inner_center_x <= outer.bounding_box[2]
+            and outer.bounding_box[1] <= inner_center_y <= outer.bounding_box[3]
+        )
+
+        if debug:
+            print(f"DEBUG is_inside: Degenerate shape containment: {is_contained}")
+            print(f"  Inner center: ({inner_center_x}, {inner_center_y})")
+            print(f"  Outer bounds: {outer.bounding_box}")
+
+        return is_contained
+
+    if debug:
+        print("DEBUG is_inside: Fast bounds check passed")
+        print(f"  Outer bounds: {outer.bounding_box}")
+        print(f"  Inner bounds: {inner.bounding_box}")
+        print("  Trying geometric algorithms...")
 
     # ADVANCED GEOMETRIC ALGORITHMS - Multiple approaches for maximum performance
 
@@ -1574,7 +2118,9 @@ def is_inside(inner, outer, tolerance=0):
             results = scanbeam.points_in_polygon(test_points)
             return np.all(results)
 
-        except (ImportError, AttributeError, Exception):
+        except (ImportError, AttributeError, Exception) as e:
+            if debug:
+                print(f"  DEBUG: Scanbeam algorithm failed: {e}")
             return None  # Fall back to next algorithm
 
     def winding_number_algorithm():
@@ -1645,7 +2191,9 @@ def is_inside(inner, outer, tolerance=0):
                     return False
             return True
 
-        except Exception:
+        except Exception as e:
+            if debug:
+                print(f"  DEBUG: Winding number algorithm failed: {e}")
             return None  # Fall back to next algorithm
 
     def optimized_ray_tracing():
@@ -1725,19 +2273,34 @@ def is_inside(inner, outer, tolerance=0):
                     return False
             return True
 
-        except Exception:
+        except Exception as e:
+            if debug:
+                print(f"  DEBUG: Ray tracing algorithm failed: {e}")
             return False  # Ultimate fallback
 
     # Try algorithms in order of expected performance: Scanbeam -> Winding Number -> Ray Tracing
+    if debug:
+        print("  Trying scanbeam algorithm...")
     result = scanbeam_algorithm()
     if result is not None:
+        if debug:
+            print(f"  Scanbeam result: {result}")
         return result
 
+    if debug:
+        print("  Trying winding number algorithm...")
     result = winding_number_algorithm()
     if result is not None:
+        if debug:
+            print(f"  Winding number result: {result}")
         return result
 
-    return optimized_ray_tracing()
+    if debug:
+        print("  Trying ray tracing algorithm...")
+    result = optimized_ray_tracing()
+    if debug:
+        print(f"  Ray tracing result: {result}")
+    return result
 
 
 def reify_matrix(self):
@@ -1843,7 +2406,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
                 busy.change(msg=message, keep=2)
                 busy.show()
 
-            if is_inside(inner, outer, tolerance):
+            if is_inside(inner, outer, tolerance, debug=False):
                 constrained = True
                 if outer.contains is None:
                     outer.contains = []
@@ -2109,18 +2672,41 @@ def short_travel_cutcode_optimized(
     hatch_optimize: Optional[bool] = False,
 ):
     """
-    Optimized version of short_travel_cutcode with adaptive algorithm selection.
+    Optimized short-travel cutcode algorithm with adaptive strategy selection.
 
-    This function chooses the best optimization strategy based on dataset size:
-    - Small datasets (<100): Simple greedy algorithm (fastest for small data)
-    - Medium datasets (100-1000): Improved greedy algorithm (balanced performance)
-    - Large datasets (>1000): Simple greedy (avoiding vectorization overhead)
+    Chooses the best optimization strategy based on dataset characteristics:
+    - Group-aware: When grouped_inner=True, processes related inner/outer groups together
+    - Group-preserving: When inner-first constraints exist, processes groups individually
+    - Standard algorithms: For unconstrained optimization, uses size-appropriate algorithms
+
+    Args:
+        context: CutCode containing cuts and groups to optimize
+        kernel: Optional kernel for progress reporting
+        channel: Optional logging channel
+        complete_path: Whether to require complete path traversal
+        grouped_inner: Whether to group inner/outer relationships together
+        hatch_optimize: Whether to optimize hatch patterns
+
+    Returns:
+        CutCode with optimized travel order
     """
+    # Check for group-aware optimization first
+    if grouped_inner:
+        if channel:
+            channel("Using group-aware optimization for containment hierarchy")
+        # Use group-aware optimization to preserve hierarchy
+        return _group_aware_selection(
+            context=context,
+            all_candidates=context,
+            complete_path=complete_path,
+            channel=channel,
+        )
+
     if channel:
         start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
-        channel("Executing Adaptive Short-Travel optimization")
+        channel("Executing adaptive short-travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
 
     unordered = []
@@ -2154,39 +2740,59 @@ def short_travel_cutcode_optimized(
             ordered._start_y = 0
         return ordered
 
-    # Adaptive algorithm selection based on dataset size
-    start_pos = context.start if context.start else (0, 0)
-
-    if dataset_size < 50:
-        # Very small dataset: Use simple greedy algorithm (fastest for tiny datasets)
+    # Check optimization strategy based on constraints and dataset
+    if grouped_inner:
+        # Use group-aware optimization that respects containment relationships
         if channel:
-            channel("Using simple greedy algorithm for very small dataset")
-        ordered_cuts = _simple_greedy_selection(all_candidates, start_pos)
-
-    elif dataset_size < 100:
-        # Small-medium dataset: Use improved greedy with active set optimization
-        if channel:
-            channel("Using improved greedy algorithm for small-medium dataset")
-        ordered_cuts = _improved_greedy_selection(all_candidates, start_pos)
-
-    elif dataset_size <= 500:
-        # Medium-large dataset: Use spatial-indexed algorithm (optimal for 100-500 cuts)
-        if channel:
-            channel("Using spatial-indexed algorithm for medium-large dataset")
-        ordered_cuts = _spatial_optimized_selection(all_candidates, start_pos)
-
+            channel("Using group-aware optimization for inner-first hierarchy")
+        return _group_aware_selection(context, all_candidates, complete_path, channel)
     else:
-        # Very large dataset: Use legacy vectorized algorithm (was optimized for large datasets)
-        if channel:
-            channel("Using legacy vectorized algorithm for very large dataset")
-        return short_travel_cutcode_legacy(
-            context=context,
-            kernel=kernel,
-            channel=channel,
-            complete_path=complete_path,
-            grouped_inner=grouped_inner,
-            hatch_optimize=hatch_optimize,
+        # Check if we have inner-first hierarchy that should be preserved
+        has_containment_hierarchy = any(
+            hasattr(group, "contains") and group.contains
+            for group in context
+            if hasattr(group, "contains")
         )
+
+        if has_containment_hierarchy:
+            # Use group-preserving optimization that respects inner-first without grouping pieces
+            if channel:
+                channel("Using group-preserving optimization for inner-first hierarchy")
+            return _group_preserving_selection(context, complete_path, channel)
+        else:
+            # Use standard travel optimization on individual cuts
+            start_pos = context.start or (0, 0)
+
+        if dataset_size < 50:
+            # Very small dataset: Use simple greedy algorithm
+            if channel:
+                channel("Using simple greedy algorithm for small dataset")
+            ordered_cuts = _simple_greedy_selection(all_candidates, start_pos)
+
+        elif dataset_size < 100:
+            # Small-medium dataset: Use improved greedy with active set optimization
+            if channel:
+                channel("Using improved greedy algorithm for medium dataset")
+            ordered_cuts = _improved_greedy_selection(all_candidates, start_pos)
+
+        elif dataset_size <= 500:
+            # Medium-large dataset: Use spatial-indexed algorithm
+            if channel:
+                channel("Using spatial-indexed algorithm for large dataset")
+            ordered_cuts = _spatial_optimized_selection(all_candidates, start_pos)
+
+        else:
+            # Very large dataset: Use legacy algorithm
+            if channel:
+                channel("Using legacy algorithm for very large dataset")
+            return short_travel_cutcode_legacy(
+                context=context,
+                kernel=kernel,
+                channel=channel,
+                complete_path=complete_path,
+                grouped_inner=grouped_inner,
+                hatch_optimize=hatch_optimize,
+            )
 
     # Create ordered CutCode from selected cuts
     ordered = CutCode()
@@ -2229,12 +2835,431 @@ def short_travel_cutcode_optimized(
     return ordered
 
 
-def _simple_greedy_selection(all_candidates, start_position):
+def process_piece_with_inner_first(
+    piece_groups, start_position, complete_path, channel
+):
     """
-    Simple greedy nearest-neighbor algorithm for small datasets.
+    Process a piece (collection of related groups) with inner-first constraints within the piece.
 
-    Uses basic distance calculations without vectorization overhead.
-    Optimized for datasets with fewer than 100 cuts.
+    Args:
+        piece_groups: List of CutGroups that belong to this piece
+        start_position: Starting (x, y) position
+        complete_path: Path completion requirement
+        channel: Optional logging channel
+
+    Returns:
+        List of cuts in optimized order maintaining inner-first within piece
+    """
+    if not piece_groups:
+        return []
+
+    # Separate groups within this piece into inner and outer
+    inner_groups = [g for g in piece_groups if hasattr(g, "inside") and g.inside]
+    outer_groups = [g for g in piece_groups if hasattr(g, "contains") and g.contains]
+    other_groups = [
+        g for g in piece_groups if g not in inner_groups and g not in outer_groups
+    ]
+
+    piece_cuts = []
+    curr_x, curr_y = start_position
+
+    if channel and (inner_groups or outer_groups):
+        channel(
+            f"  Piece has {len(inner_groups)} inner, {len(outer_groups)} outer, {len(other_groups)} other groups"
+        )
+
+    # Phase 1: Process inner groups within this piece first
+    if inner_groups:
+        inner_cuts = []
+        for group in inner_groups:
+            for cut in group.candidate(complete_path=complete_path, grouped_inner=True):
+                if cut.burns_done < cut.passes:
+                    inner_cuts.append(cut)
+
+        if inner_cuts:
+            # Travel optimize within inner cuts of this piece
+            inner_optimized = _simple_greedy_selection(inner_cuts, (curr_x, curr_y))
+            piece_cuts.extend(inner_optimized)
+            if inner_optimized:
+                curr_x, curr_y = inner_optimized[-1].end
+
+    # Phase 2: Process outer groups within this piece
+    if outer_groups:
+        outer_cuts = []
+        for group in outer_groups:
+            for cut in group.candidate(complete_path=complete_path, grouped_inner=True):
+                if cut.burns_done < cut.passes:
+                    outer_cuts.append(cut)
+
+        if outer_cuts:
+            # Travel optimize within outer cuts of this piece
+            outer_optimized = _simple_greedy_selection(outer_cuts, (curr_x, curr_y))
+            piece_cuts.extend(outer_optimized)
+            if outer_optimized:
+                curr_x, curr_y = outer_optimized[-1].end
+
+    # Phase 3: Process other groups within this piece
+    if other_groups:
+        other_cuts = []
+        for group in other_groups:
+            for cut in group.candidate(complete_path=complete_path, grouped_inner=True):
+                if cut.burns_done < cut.passes:
+                    other_cuts.append(cut)
+
+        if other_cuts:
+            # Travel optimize within other cuts of this piece
+            other_optimized = _simple_greedy_selection(other_cuts, (curr_x, curr_y))
+            piece_cuts.extend(other_optimized)
+
+    return piece_cuts
+
+
+def _group_aware_selection(context, all_candidates, complete_path, channel):
+    """
+    Group-aware travel optimization for opt_inners_grouped=True.
+
+    Processes inner and outer groups together as cohesive pieces to ensure
+    inner groups are burned before their containing outer groups, while
+    optimizing travel distance within each piece.
+
+    This creates pieces where all inner groups and their outer container
+    are processed together, then applies travel optimization to all cuts
+    within each piece.
+
+    Args:
+        context: CutCode containing CutGroups with containment relationships
+        all_candidates: All candidate cuts (not used in this implementation)
+        complete_path: Path completion requirement (not used in this implementation)
+        channel: Optional logging channel
+
+    Returns:
+        CutCode with optimized individual cuts maintaining inner-first hierarchy
+    """
+    if channel:
+        channel(f"Group-aware optimization: processing {len(context)} groups")
+
+    # Work directly with CutGroups from context - these should be our candidate groups
+    candidate_groups = list(context)
+
+    # Check if we have proper CutGroups with containment relationships
+    has_cutgroups = any(isinstance(group, CutGroup) for group in candidate_groups)
+    has_containment = any(
+        hasattr(group, "contains") and group.contains is not None
+        for group in candidate_groups
+        if isinstance(group, CutGroup)
+    )
+
+    if not has_cutgroups:
+        if channel:
+            channel(
+                "No CutGroups found - this suggests inner_first_ident was not run properly"
+            )
+            channel("Falling back to simple greedy optimization")
+        # Fall back to simple greedy optimization for individual cuts
+        individual_cuts = []
+        for item in candidate_groups:
+            if hasattr(item, "flat"):
+                individual_cuts.extend(item.flat())
+            else:
+                individual_cuts.append(item)
+
+        start_pos = context.start or (0, 0)
+        ordered_cuts = _simple_greedy_selection(individual_cuts, start_pos)
+
+        ordered = CutCode()
+        ordered.extend(ordered_cuts)
+        if context.start is not None:
+            ordered._start_x, ordered._start_y = context.start
+        else:
+            ordered._start_x = 0
+            ordered._start_y = 0
+        return ordered
+
+    if not has_containment:
+        if channel:
+            channel("CutGroups found but no containment relationships detected")
+            channel(
+                "This may indicate closed path detection failed or no nested shapes"
+            )
+
+    # Initialize burns_done for all cuts within groups
+    for group in candidate_groups:
+        for cut in group.flat():
+            cut.burns_done = 0
+
+    # Create pieces: group related inner/outer groups together spatially
+    pieces = []  # List of pieces, each piece contains related inner+outer groups
+    processed_groups = set()
+
+    # Strategy: For each outer group, create a piece containing it and all its inner groups
+    outer_groups = [
+        g for g in candidate_groups if hasattr(g, "contains") and g.contains
+    ]
+
+    for outer_group in outer_groups:
+        if id(outer_group) in processed_groups:
+            continue
+
+        # Create a piece with this outer group and all its contained inner groups
+        piece_groups = [outer_group]
+        processed_groups.add(id(outer_group))
+
+        if outer_group.contains:
+            for inner_group in outer_group.contains:
+                if id(inner_group) not in processed_groups:
+                    piece_groups.append(inner_group)
+                    processed_groups.add(id(inner_group))
+
+        pieces.append(piece_groups)
+        if channel:
+            inner_count = len(
+                [g for g in piece_groups if hasattr(g, "inside") and g.inside]
+            )
+            outer_count = len(
+                [g for g in piece_groups if hasattr(g, "contains") and g.contains]
+            )
+            channel(f"Created piece: {inner_count} inner + {outer_count} outer groups")
+
+    # Add remaining groups as individual pieces
+    remaining_groups = [g for g in candidate_groups if id(g) not in processed_groups]
+    for group in remaining_groups:
+        pieces.append([group])
+        if channel:
+            channel(f"Created standalone piece: 1 group")
+
+    if channel:
+        channel(f"Total pieces created: {len(pieces)}")
+
+    # Process pieces with travel optimization between pieces and inner-first within pieces
+    ordered_cuts = []
+    curr_x, curr_y = context.start or (0, 0)
+
+    # Travel optimize between pieces: choose closest piece each time
+    remaining_pieces = pieces[:]
+
+    while remaining_pieces:
+        # Find the closest piece based on first available cut
+        best_piece = None
+        best_distance = float("inf")
+        best_piece_index = -1
+
+        for piece_idx, piece in enumerate(remaining_pieces):
+            # Get the first available cut from this piece to calculate distance
+            first_cut = None
+            for group in piece:
+                for cut in group.candidate(
+                    complete_path=complete_path, grouped_inner=True
+                ):
+                    if cut.burns_done < cut.passes:
+                        first_cut = cut
+                        break
+                if first_cut:
+                    break
+
+            if first_cut:
+                start_x, start_y = first_cut.start
+                distance = ((start_x - curr_x) ** 2 + (start_y - curr_y) ** 2) ** 0.5
+
+                if distance < best_distance:
+                    best_distance = distance
+                    best_piece = piece
+                    best_piece_index = piece_idx
+
+        if best_piece is None:
+            break
+
+        # Remove the selected piece from remaining pieces
+        remaining_pieces.pop(best_piece_index)
+
+        if channel:
+            channel(
+                f"Processing piece at distance {best_distance:.1f} with {len(best_piece)} groups"
+            )
+
+        # Process this piece with inner-first constraints within the piece
+        piece_cuts = process_piece_with_inner_first(
+            best_piece, (curr_x, curr_y), complete_path, channel
+        )
+        ordered_cuts.extend(piece_cuts)
+
+        # Update position for next piece selection
+        if piece_cuts:
+            curr_x, curr_y = piece_cuts[-1].end
+
+    # Create ordered CutCode from the optimized cuts (maintaining group structure)
+    ordered = CutCode()
+    ordered.extend(ordered_cuts)
+
+    # Set start position
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
+
+    if channel:
+        channel(
+            f"Group-aware optimization: {len(pieces)} pieces, {len(ordered_cuts)} cuts optimized"
+        )
+
+    return ordered
+
+
+def _group_preserving_selection(context, complete_path, channel):
+    """
+    Group-preserving travel optimization for opt_inners_grouped=False.
+
+    Processes groups individually while respecting inner-first constraints.
+    This mode processes groups one at a time in dependency order, optimizing
+    travel within each group and choosing the closest available group to
+    process next.
+
+    Groups are only processed after all their inner dependencies have been
+    completed, ensuring the inner-first constraint is maintained.
+
+    Args:
+        context: CutCode containing CutGroups with containment relationships
+        complete_path: Path completion requirement (not used in this implementation)
+        channel: Optional logging channel
+
+    Returns:
+        CutCode with optimized individual cuts maintaining inner-first hierarchy
+    """
+    if channel:
+        channel(
+            f"Group-preserving optimization: {len(context)} groups with inner-first constraints"
+        )
+
+    # Work directly with CutGroups from context
+    candidate_groups = list(context)
+
+    # Initialize burns_done for all cuts within groups
+    for group in candidate_groups:
+        for cut in group.flat():
+            cut.burns_done = 0
+
+    # Process groups individually while respecting inner-first constraints
+    ordered_cuts = []
+    processed_groups = set()
+    curr_x, curr_y = context.start or (0, 0)
+
+    # Keep processing until all groups are ordered
+    while len(processed_groups) < len(candidate_groups):
+        # Find groups that can be processed now (no unburned inner dependencies)
+        ready_groups = []
+
+        for group in candidate_groups:
+            if id(group) in processed_groups:
+                continue
+
+            # Check if this group can be processed (all its inner groups are done)
+            can_process = True
+            if hasattr(group, "contains") and group.contains:
+                for inner_group in group.contains:
+                    if id(inner_group) not in processed_groups:
+                        can_process = False
+                        break
+
+            if can_process:
+                ready_groups.append(group)
+
+        if not ready_groups:
+            # Safety break - add remaining groups to avoid infinite loop
+            for group in candidate_groups:
+                if id(group) not in processed_groups:
+                    ready_groups.append(group)
+            if channel:
+                channel(
+                    f"Warning: Breaking inner-first loop, added {len(ready_groups)} remaining groups"
+                )
+
+        # Choose the closest ready group to minimize travel distance
+        if len(ready_groups) == 1:
+            # Only one choice
+            group = ready_groups[0]
+            best_start_distance = 0
+        else:
+            # Multiple ready groups - choose the one with best connection to current position
+            best_group = None
+            best_start_distance = float("inf")
+
+            for candidate_group in ready_groups:
+                group_cuts = list(candidate_group.flat())
+                if not group_cuts:
+                    continue
+
+                # Find the best starting point in this group
+                min_distance = float("inf")
+                for cut in group_cuts:
+                    # Check start point
+                    start_dist = (
+                        (cut.start[0] - curr_x) ** 2 + (cut.start[1] - curr_y) ** 2
+                    ) ** 0.5
+                    min_distance = min(min_distance, start_dist)
+
+                    # Check end point if reversible
+                    if hasattr(cut, "reversible") and cut.reversible():
+                        end_dist = (
+                            (cut.end[0] - curr_x) ** 2 + (cut.end[1] - curr_y) ** 2
+                        ) ** 0.5
+                        min_distance = min(min_distance, end_dist)
+
+                if min_distance < best_start_distance:
+                    best_start_distance = min_distance
+                    best_group = candidate_group
+
+            group = best_group or ready_groups[0]
+
+        # Optimize travel within the selected group
+        # Only include cuts that still need burns (don't reset burns_done)
+        group_cuts = [cut for cut in group.flat() if cut.burns_done < cut.passes]
+
+        # Apply travel optimization to this group's cuts
+        group_ordered = _simple_greedy_selection(group_cuts, (curr_x, curr_y))
+        ordered_cuts.extend(group_ordered)
+
+        processed_groups.add(id(group))
+
+        # Update current position for next group
+        if group_ordered:
+            last_cut = group_ordered[-1]
+            curr_x, curr_y = last_cut.end
+
+    # Create ordered CutCode from the optimized individual cuts
+    ordered = CutCode()
+    ordered.extend(ordered_cuts)
+
+    # Set start position
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
+
+    if channel:
+        channel(
+            f"Group-preserving optimization: {len(candidate_groups)} groups, {len(ordered_cuts)} cuts optimized"
+        )
+
+    return ordered
+
+
+def _simple_greedy_selection(
+    all_candidates, start_position, early_termination_threshold=25
+):
+    """
+    Simple greedy nearest-neighbor algorithm for travel optimization.
+
+    Iteratively selects the closest unfinished cut to the current position,
+    choosing the optimal direction (forward or reverse) for each cut.
+
+    Args:
+        all_candidates: List of cuts to optimize
+        start_position: Starting (x, y) position tuple
+        early_termination_threshold: Distance threshold for early termination (default: 25)
+
+    Returns:
+        List of cuts in optimized order
     """
     if not all_candidates:
         return []
@@ -2248,8 +3273,8 @@ def _simple_greedy_selection(all_candidates, start_position):
         backwards = False
         best_distance_sq = float("inf")
 
-        # Find the nearest unfinished cut with early termination and deterministic tie-breaking
-        early_termination_threshold = 25  # 5^2, very close cut
+        # Find the nearest unfinished cut
+        # early_termination_threshold now configurable parameter
 
         for cut in all_candidates:
             if cut.burns_done >= cut.passes:
@@ -2342,8 +3367,15 @@ def _improved_greedy_selection(all_candidates, start_position):
     """
     Improved greedy nearest-neighbor algorithm for medium-sized datasets.
 
-    Uses Active Set Optimization to maintain only unfinished cuts in search space
-    with the same logic as simple greedy for consistent performance.
+    Uses Active Set Optimization to maintain only unfinished cuts in the search space,
+    reducing the algorithm complexity as cuts are completed.
+
+    Args:
+        all_candidates: List of cuts to optimize
+        start_position: Starting (x, y) position tuple
+
+    Returns:
+        List of cuts in optimized order
     """
     if not all_candidates:
         return []
@@ -2465,16 +3497,25 @@ def _improved_greedy_selection(all_candidates, start_position):
 
 def _spatial_optimized_selection(all_candidates, start_position):
     """
-    Spatial-indexed greedy algorithm for maximum performance.
+    Spatial-indexed greedy algorithm for large datasets.
 
     Uses scipy.spatial.cKDTree for O(log n) nearest neighbor search
-    instead of O(n) linear search. Provides 30-60% speedup for medium datasets.
+    instead of O(n) linear search. Provides significant speedup for medium-large datasets.
     Falls back to improved greedy if scipy is not available.
+
+    Args:
+        all_candidates: List of cuts to optimize
+        start_position: Starting (x, y) position tuple
+
+    Returns:
+        List of cuts in optimized order
     """
     try:
-        from scipy.spatial import cKDTree
+        from scipy.spatial import cKDTree  # Optional dependency
     except ImportError:
         # Fall back to improved greedy if scipy not available
+        # import logging
+        # logging.getLogger(__name__).warning("scipy.spatial not available, falling back to improved greedy algorithm")
         return _improved_greedy_selection(all_candidates, start_position)
 
     if not all_candidates:

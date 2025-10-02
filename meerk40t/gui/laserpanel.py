@@ -751,7 +751,7 @@ class LaserPanel(wx.Panel):
         else:
             prefix = ""
             self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
-        
+
         param = "0"
         last_plan = self.context.laserpane_plan or self.context.planner.get_last_plan()
         if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
@@ -764,11 +764,13 @@ class LaserPanel(wx.Panel):
                 )
                 param = "1"
             else:
-                self.context(f"{prefix}plan{plan} clear copy preprocess validate blob finish\n")
+                self.context(
+                    f"{prefix}plan{plan} clear copy preprocess validate blob finish\n"
+                )
         self.context(f"window open Simulation {plan} 0 {param}\n")
         if not in_background:
             self.context.kernel.busyinfo.end()
-        
+
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.simulate(in_background=False)
 
@@ -908,7 +910,7 @@ class JobPanel(wx.Panel):
             return
         self.context(f"plan{plan_name} spool\n")
 
-    def on_show_details(self, event):     
+    def on_show_details(self, event):
         if self.list_plan.GetFirstSelected() == -1:
             return
         plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
@@ -924,10 +926,14 @@ class JobPanel(wx.Panel):
             for stage, timestamp in ordered:
                 stagename = self.context.planner.STAGE_DESCRIPTIONS[stage]
                 if total_time > 0:
-                    percent = f" ({100 * (timestamp - previous_time) / total_time:.1f}%)"
+                    percent = (
+                        f" ({100 * (timestamp - previous_time) / total_time:.1f}%)"
+                    )
                 else:
                     percent = ""
-                msgs.append(f"Stage '{stagename}': {timestamp - previous_time:.1f}s{percent}")
+                msgs.append(
+                    f"Stage '{stagename}': {timestamp - previous_time:.1f}s{percent}"
+                )
                 previous_time = timestamp
             msgs.append(f"Total time: {total_time:.1f}s")
         else:
@@ -1073,25 +1079,6 @@ class OptimizePanel(wx.Panel):
         if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
-
-    def ensure_mutually_exclusive(self, prio: str):
-        # Ensure that opt_inner_first and opt_reduce_travel are mutually exclusive
-        inner_first = self.context.planner.opt_inner_first
-        reduce_travel = self.context.planner.opt_reduce_travel
-        if inner_first and reduce_travel:
-            if prio == "opt_inner_first":
-                self.context.planner.opt_reduce_travel = False
-            else:
-                self.context.planner.opt_inner_first = False
-            self.optimize_panel.reload()
-
-    @signal_listener("opt_inner_first")
-    def opt_inner_update(self, origin, *message):
-        self.ensure_mutually_exclusive("opt_inner_first")
-
-    @signal_listener("opt_reduce_travel")
-    def opt_reduce_travel_update(self, origin, *message):
-        self.ensure_mutually_exclusive("opt_reduce_travel")
 
     def on_optimize(self, event):
         newvalue = bool(self.checkbox_optimize.GetValue())

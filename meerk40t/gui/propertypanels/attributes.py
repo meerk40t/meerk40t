@@ -742,7 +742,7 @@ class LinePropPanel(wx.Panel):
             val = node.mktabpositions
             if val is None:
                 val = ""
-            self.tab_positions.SetValue(val)
+            self.tab_positions.SetValue(str(val))
 
         self.combo_cap.Show(vis1)
         self.sizer_cap.Show(vis1)
