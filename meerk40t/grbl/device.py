@@ -15,7 +15,7 @@ from ..core.spoolers import Spooler
 from ..core.units import MM_PER_INCH, Length
 from ..core.view import View
 from ..device.mixins import Status
-from .controller import GrblController
+from .controller import ExperimentalGrblController, GrblController
 from .driver import GRBLDriver
 
 
@@ -411,6 +411,9 @@ class GRBLDevice(Service, Status):
             list_display.append(_("WebSocket-Network"))
         list_interfaces.append("mock")
         list_display.append(_("Mock"))
+        if self.permit_serial:
+            list_interfaces.append("experimental")
+            list_display.append(_("Simple serial"))
         choices = [
             {
                 "attr": "interface",
@@ -716,7 +719,10 @@ class GRBLDevice(Service, Status):
         self.register_choices("protocol", choices)
 
         self.driver = GRBLDriver(self)
-        self.controller = GrblController(self)
+        if self.interface == "experimental":
+            self.controller = ExperimentalGrblController(self)
+        else:
+            self.controller = GrblController(self)
         self.driver.out_pipe = self.controller.write
         self.driver.out_real = self.controller.realtime
 

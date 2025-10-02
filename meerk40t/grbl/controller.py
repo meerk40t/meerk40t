@@ -15,6 +15,8 @@ import ast
 import re
 import threading
 import time
+from queue import Empty, PriorityQueue
+from uuid import uuid4
 
 from meerk40t.kernel import signal_listener
 
@@ -1197,4 +1199,285 @@ class GrblController:
                 self.service.hardware_config[key] = value
                 self.service.signal("grbl:hwsettings", key, value)
             except ValueError:
+                pass
+
+
+class ExperimentalGrblController(GrblController):
+    def __init__(self, context, poll_interval=0.5, command_timeout=5, max_retries=3):
+        super().__init__(context)
+        from .serial_connection import SerialConnection
+
+        self.connection = SerialConnection(self.service, self)
+        self.ser = None
+        self.command_queue = PriorityQueue()
+        self.running = True
+        self.poll_interval = poll_interval
+        self.command_timeout = command_timeout
+        self.max_retries = max_retries
+        self.status_thread = threading.Thread(target=self._poll_status)
+        self.command_thread = threading.Thread(target=self._process_commands)
+        self.lock = threading.Lock()
+        self.command_durations = {}
+
+        self.log("GRBLController initialized", type="event")
+
+    def start(self):
+        if self.running:
+            return
+
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
+        self.status_thread.start()
+        self.command_thread.start()
+        self.connection.connect()
+        if not self.connection.connected:
+            self.log("Could not connect.", type="event")
+            self.running = False
+            return
+        self.ser = self.connection.laser
+        self.log("GRBLController started", type="event")
+        # We are validated by default.
+        self._validation_stage = 5
+        self.running = True
+        self.is_shutdown = False
+
+    def stop(self):
+        if not self.running:
+            return
+        self.status_thread.join()
+        self.command_thread.join()
+        # self.connection.disconnect()
+        self.shutdown()
+        self.running = False
+        try:
+            self.remove_watcher(self._channel_log)
+        except (AttributeError, ValueError):
+            pass
+        self.log("GRBLController stopped", type="event")
+
+    def open(self):
+        super().open()
+        self._validation_stage = 5
+
+    def send_command(self, command, priority=10, tag=None, metadata=None):
+        if tag is None:
+            tag = str(uuid4())
+        self.command_queue.put((priority, tag, command, metadata))
+        self.log(
+            f"Queued command [{tag}]: '{command}' with priority {priority}",
+            type="event",
+        )
+
+    def _process_commands(self):
+        while self.running and not self.is_shutdown:
+            try:
+                priority, tag, command, metadata = self.command_queue.get(timeout=1)
+            except Empty:
+                continue
+
+            for attempt in range(1, self.max_retries + 1):
+                with self.lock:
+                    self.log(
+                        f"Sending [{tag}] '{command}' (Attempt {attempt})", type="event"
+                    )
+                    self.connection.write((command + "\n").encode())
+                    start_time = time.time()
+                    success = False
+
+                    while (
+                        time.time() - start_time < self.command_timeout
+                        and not self.is_shutdown
+                    ):
+                        response = self.ser.readline().decode().strip()
+                        if self._check_for_reset(response):
+                            self.log(f"Reset detected: '{response}'", type="warning")
+                            self.ser.reset_input_buffer()
+                            with self.command_queue.mutex:
+                                self.command_queue.queue.clear()
+                            self.log(
+                                "Cleared serial buffer and command queue", type="event"
+                            )
+                            break
+                        elif response == "ok":
+                            duration = time.time() - start_time
+                            self.command_durations[tag] = duration
+                            self.log(
+                                f"Command [{tag}] OK received in {duration:.3f}s",
+                                type="event",
+                            )
+                            success = True
+                            break
+                        elif response.startswith("<") and response.endswith(">"):
+                            self._parse_status(response)
+                        elif response.startswith("[echo:"):
+                            message = response[6:-1]
+                            self.service.channel("console")(message)
+
+                        elif response:
+                            self.log(f"[{tag}] GRBL: {response}", type="debug")
+
+                    if success:
+                        break
+                    else:
+                        self.log(
+                            f"Timeout on [{tag}] '{command}' (Attempt {attempt})",
+                            type="warning",
+                        )
+
+            else:
+                self.log(
+                    f"Command [{tag}] failed after {self.max_retries} attempts: '{command}'",
+                    type="error",
+                )
+
+    def _poll_status(self):
+        while self.running and not self.is_shutdown:
+            with self.lock:
+                self.ser.write(b"?\n")
+                status = self.ser.readline().decode().strip()
+                if self._check_for_reset(status):
+                    self.log(
+                        f"Reset detected during status poll: '{status}'", type="warning"
+                    )
+                    self.ser.reset_input_buffer()
+                    with self.command_queue.mutex:
+                        self.command_queue.queue.clear()
+                    self.log("Cleared serial buffer and command queue", type="event")
+                elif status.startswith("<") and status.endswith(">"):
+                    self._parse_status(status)
+                elif status:
+                    self.log(f"Status (raw): {status}", type="debug")
+            time.sleep(self.poll_interval)
+
+    def _parse_status(self, status):
+        def get_feed_spindle_defaults(status_parts):
+            feed = None
+            spindle = None
+            for part in status_parts:
+                if part.startswith("FS:"):
+                    try:
+                        f, s = part[3:].split(",")
+                        feed = float(f)
+                        spindle = float(s)
+                    except ValueError:
+                        pass
+                elif part.startswith("F:"):
+                    try:
+                        feed = float(part[2:])
+                    except ValueError:
+                        pass
+                elif part.startswith("S:"):
+                    try:
+                        spindle = float(part[2:])
+                    except ValueError:
+                        pass
+            return feed, spindle
+
+        try:
+            status = status.strip("<>").split("|")
+            state = status[0]
+            pos = next((s for s in status if s.startswith("MPos:")), None)
+            wpos = next((s for s in status if s.startswith("WPos:")), None)
+            feed, spindle = get_feed_spindle_defaults(status)
+            self.log(f"State: {state}", type="event")
+            if pos:
+                coords = pos.replace("MPos:", "").split(",")
+                try:
+                    nx = float(coords[0])
+                    ny = float(coords[1])
+
+                    # During validation, we declare positions.
+                    self.driver.declare_position(nx, ny)
+                    ox = self.driver.mpos_x
+                    oy = self.driver.mpos_y
+
+                    x, y = self.service.view_mm.position(f"{nx}mm", f"{ny}mm")
+
+                    (
+                        self.driver.mpos_x,
+                        self.driver.mpos_y,
+                    ) = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
+
+                    if len(coords) >= 3:
+                        self.driver.mpos_z = float(coords[2])
+                    self.service.signal(
+                        "status;position",
+                        (ox, oy, self.driver.mpos_x, self.driver.mpos_y),
+                    )
+                except ValueError:
+                    pass
+                self.log(
+                    f"Position: X={coords[0]} Y={coords[1]} Z={coords[2]}", type="event"
+                )
+            if wpos:
+                coords = wpos.replace("WPos:", "").split(",")
+                self.driver.wpos_x = coords[0]
+                self.driver.wpos_y = coords[1]
+                if len(coords) >= 3:
+                    self.driver.wpos_z = coords[2]
+                # See: https://github.com/grbl/grbl/blob/master/grbl/report.c#L421
+                # MPos: Coord values. Machine Position.
+                # WPos: MPos but with applied work coordinates. Work Position.
+                self.log(
+                    f"Work Position: X={coords[0]} Y={coords[1]} Z={coords[2]}",
+                    type="event",
+                )
+            if feed:
+                self.service.signal("grbl:speed", feed)
+            if spindle:
+                self.service.signal("grbl:power", spindle)
+        except Exception as e:
+            self.log(f"Failed to parse status: {status} ({e})", type="error")
+
+    def _check_for_reset(self, response):
+        if not response:
+            return False
+        reset_keywords = [
+            f.lower()
+            for f in (
+                "Grbl",
+                "grblHAL",
+                "Initializing",
+                "Resetting",
+                "Board restarted",
+                "Welcome",
+            )
+        ]
+        resp = response.lower()
+        return any(keyword in resp for keyword in reset_keywords)
+
+    def write(self, data):
+        """
+        Write data to the sending queue.
+
+        @param data:
+        @return:
+        """
+        self.start()
+        self.service.signal("grbl;write", data)
+        self.send_command(data, priority=10)
+
+    def realtime(self, data):
+        """
+        Write data to the realtime queue.
+
+        The realtime queue should preemt the regular dataqueue.
+
+        @param data:
+        @return:
+        """
+        self.start()
+        self.service.signal("grbl;write", data)
+        self.send_command(data, priority=1)
+
+    @signal_listener("update_interface")
+    def update_connection(self, origin=None, *args):
+        if self.service.permit_serial and self.service.interface == "experimental":
+            self.close()
+
+            try:
+                from .serial_connection import SerialConnection
+
+                self.connection = SerialConnection(self.service, self)
+            except ImportError:
                 pass
