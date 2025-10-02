@@ -3,6 +3,6 @@ pypotrace
 pyclipr
 meerk40t-barcodes
 numba
-scipy
+scipy>=1.12.0,<=1.14.0
 vtracer
 psutil
