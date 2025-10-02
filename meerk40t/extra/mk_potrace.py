@@ -489,7 +489,7 @@ detrand_t = (
 )
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def detrand(x: int, y: int) -> int:
     """deterministically and efficiently hash (x,y) into a pseudo-random bit"""
     # /* 0x04b3e375 and 0x05a8ef93 are chosen to contain every possible 5-bit sequence */
@@ -503,15 +503,17 @@ def detrand(x: int, y: int) -> int:
     return z
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def _safe_get(bm: np.ndarray, y: int, x: int) -> int:
     """Safe bitmap access with bounds checking."""
     h, w = bm.shape
     return bm[y, x] if 0 <= y < h and 0 <= x < w else 0
 
 
-@njit(cache=True, nopython=True)
-def _should_turn_right(turnpolicy: int, sign: bool, x: int, y: int, bm: np.ndarray) -> bool:
+@njit(cache=True)
+def _should_turn_right(
+    turnpolicy: int, sign: bool, x: int, y: int, bm: np.ndarray
+) -> bool:
     """Determine if we should turn right based on turn policy."""
     if turnpolicy == POTRACE_TURNPOLICY_RIGHT:
         return True
@@ -528,19 +530,19 @@ def _should_turn_right(turnpolicy: int, sign: bool, x: int, y: int, bm: np.ndarr
     return False
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def _turn_right(dirx: int, diry: int) -> Tuple[int, int]:
     """Turn direction 90 degrees to the right."""
     return diry, -dirx
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def _turn_left(dirx: int, diry: int) -> Tuple[int, int]:
     """Turn direction 90 degrees to the left."""
     return -diry, dirx
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def majority(bm: np.ndarray, x: int, y: int) -> int:
     """
      /* return the "majority" value of bitmap bm at intersection (x,y). We
@@ -566,7 +568,7 @@ def majority(bm: np.ndarray, x: int, y: int) -> int:
 """
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def xor_to_ref(bm: np.ndarray, x: int, y: int, xa: int) -> None:
     """
      /* efficiently invert bits [x,infty) and [xa,infty) in line y. Here xa
@@ -603,7 +605,7 @@ def xor_path(bm: np.ndarray, p: _Path) -> None:
             y1 = y
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def _findpath_jit(bm: np.ndarray, x0: int, y0: int, sign: bool, turnpolicy: int):
     """
     JIT-compiled version of findpath for performance.
@@ -660,18 +662,18 @@ def findpath(bm, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Path:
     new path_t object, or NULL on error (note that a legitimate path
     cannot have length 0). Sign is required for correct interpretation
     of turnpolicies. */"""
-    
+
     # Use JIT-compiled version for performance
     pt_tuples, area, sign = _findpath_jit(bm, x0, y0, sign, turnpolicy)
-    
+
     # Convert tuples back to _Point objects
     pt = [_Point(x, y) for x, y in pt_tuples]
-    
+
     # /* allocate new path object */
     return _Path(pt, area, sign)
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def findnext(bm: np.ndarray) -> Optional[Tuple[int, int]]:
     """
     /* find the next set pixel in a row <= y. Pixels are searched first
@@ -880,7 +882,7 @@ def bm_to_pathlist(
 # /* auxiliary functions */
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def sign(x):
     if x > 0:
         return 1
@@ -890,7 +892,7 @@ def sign(x):
         return 0
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def mod(a: int, n: int) -> int:
     """Note: the "mod" macro works correctly for
     negative a. Also note that the test for a>=n, while redundant,
@@ -1036,7 +1038,7 @@ def quadform(Q: list, w: _Point) -> float:
     return sum
 
 
-@njit(cache=True, nopython=True)
+@njit(cache=True)
 def xprod(p1x, p1y, p2x, p2y) -> float:
     """calculate p1 x p2"""
     return p1x * p2y - p1y * p2x

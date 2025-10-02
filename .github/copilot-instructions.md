@@ -105,6 +105,15 @@ self.register_choices("category", choices)
 ### Translation
 Always wrap user-facing strings: `_("Text to translate")`
 
+### Performance Optimization with Numba
+When using Numba's `@njit` decorator, avoid redundant parameters:
+```python
+@njit(cache=True)  # Correct - nopython=True is implicit
+def fast_function():
+    pass
+```
+**Avoid**: `@njit(cache=True, nopython=True)` - causes runtime warnings
+
 ## Integration Points
 
 ### GRBL Variant Detection
