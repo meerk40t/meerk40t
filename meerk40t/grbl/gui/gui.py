@@ -22,9 +22,9 @@ def plugin(service, lifecycle):
             icons8_emergency_stop_button,
             icons8_flash_off,
             icons8_flash_on,
+            icons8_home_filled,
             icons8_info,
             icons8_pause,
-            icons8_home_filled,
         )
 
         service.register("window/GRBLController", GRBLController)
@@ -116,6 +116,12 @@ def plugin(service, lifecycle):
             },
         )
 
+        def in_error_state():
+            if hasattr(service, "controller"):
+                if service.controller is not None:
+                    return service.controller.error_condition
+            return False
+
         service.register(
             "button/control/ClearAlarm",
             {
@@ -123,6 +129,7 @@ def plugin(service, lifecycle):
                 "icon": icons8_info,
                 "tip": _("Send a GRBL Clear Alarm command"),
                 "help": "devicegrbl",
+                "rule_enabled": lambda v: in_error_state(),
                 "action": lambda v: service("clear_alarm\n"),
             },
         )
