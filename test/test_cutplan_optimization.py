@@ -28,8 +28,13 @@ cutplan system don't reintroduce the cutcode suppression bug or break the
 hierarchical optimization logic.
 """
 
+import os
+import sys
 import unittest
 from unittest.mock import MagicMock
+
+# Add the meerk40t directory to Python path to use local version
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.cutgroup import CutGroup

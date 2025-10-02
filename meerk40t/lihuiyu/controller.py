@@ -969,7 +969,9 @@ class LihuiyuController:
         for attempts in range(MAX_CONFIRMATION_ATTEMPTS):
             try:
                 self.update_status()
-                status = self._status[1]
+                # Make sure we have a valid status
+                if self._status is not None and len(self._status) > 1:
+                    status = self._status[1]
                 if attempts > CONFIRMATION_DELAY_START:
                     time.sleep(
                         min(MIN_CONFIRMATION_DELAY * attempts, MAX_CONFIRMATION_DELAY)

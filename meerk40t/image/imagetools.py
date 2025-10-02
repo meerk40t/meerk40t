@@ -33,7 +33,7 @@ def img_to_polygons(
         import cv2
         from PIL import ImageOps
     except ImportError:
-        return [[], []]
+        return []
     geom_list = list()
 
     # Convert the image to grayscale
@@ -49,7 +49,7 @@ def img_to_polygons(
         )
     except ValueError:
         # Invalid data
-        return [[], []]
+        return []
 
     # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
     width, height = node_image.size
@@ -397,7 +397,7 @@ def img_to_rectangles(
         import cv2
         from PIL import ImageOps
     except ImportError:
-        return ([], [])
+        return []
     geom_list = []
 
     # Convert the image to grayscale
@@ -417,7 +417,7 @@ def img_to_rectangles(
         )
     except ValueError:
         # Invalid data
-        return ([], [])
+        return []
 
     # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
     width, height = node_image.size

@@ -69,6 +69,9 @@ class TCPConnection:
         except OSError as e:
             self.close()
             self.service.signal("tcp;status", f"Host down {str(e)}")
+        except Exception as e:
+            self.close()
+            self.service.signal("tcp;status", f"unknown error on connect: {str(e)}")
 
     def close(self):
         if not self.connected:
