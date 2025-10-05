@@ -89,25 +89,33 @@ class GRBLControllerPanel(wx.Panel):
                     _("Physical Home"),
                     _("Send laser to physical home-position"),
                     None,
+                    False,
                 ),
             )
         else:
             self.gcode_commands.append(
-                ("G28", _("Home"), _("Send laser to logical home-position"), None)
+                (
+                    "G28",
+                    _("Home"),
+                    _("Send laser to logical home-position"),
+                    None,
+                    False,
+                )
             )
         self.gcode_commands.extend(
             [
-                ("\x18", _("Reset"), _("Reset laser"), None),
-                ("?", _("Status"), _("Query status"), None),
-                ("$X", _("Clear Alarm"), _("Kills alarms and locks"), None),
-                ("$#", _("Gcode"), _("Display active Gcode-parameters"), None),
-                ("$$", _("GRBL"), _("Display active GRBL-parameters"), None),
-                ("$I", _("Info"), _("Show Build-Info"), None),
+                # Cmd, Label, Tooltip, Icon, realtime
+                ("\x18", _("Reset"), _("Reset laser"), None, True),
+                ("?", _("Status"), _("Query status"), None, True),
+                ("$X", _("Clear Alarm"), _("Kills alarms and locks"), None, False),
+                ("$#", _("Gcode"), _("Display active Gcode-parameters"), None, False),
+                ("$$", _("GRBL"), _("Display active GRBL-parameters"), None, False),
+                ("$I", _("Info"), _("Show Build-Info"), None, False),
             ]
         )
         for entry in self.gcode_commands:
             btn = wxButton(self, wx.ID_ANY, entry[1])
-            btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
+            btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0], entry[4]))
             btn.SetToolTip(entry[2])
             if entry[3] is not None:
                 btn.SetBitmap(
@@ -123,7 +131,7 @@ class GRBLControllerPanel(wx.Panel):
         for idx in range(5):
             macrotext = self.service.setting(str, f"macro_{idx}", "")
             self.macros.append(macrotext)
-            btn = wxButton(self, wx.ID_ANY, f"Macro {idx+1}")
+            btn = wxButton(self, wx.ID_ANY, f"Macro {idx + 1}")
             btn.Bind(wx.EVT_BUTTON, self.send_macro(idx))
             btn.Bind(wx.EVT_RIGHT_DOWN, self.edit_macro(idx))
             btn.SetToolTip(_("Send list of commands to device. Right click to edit."))
@@ -256,11 +264,14 @@ class GRBLControllerPanel(wx.Panel):
         else:
             self.service.controller.start()
 
-    def send_gcode(self, gcode_cmd):
+    def send_gcode(self, gcode_cmd, realtime):
         def handler(event):
-            self.service(f"gcode_realtime {gcode_cmd}")
-            if gcode_cmd == "$X" and self.service.extended_alarm_clear:
-                self.service("gcode_realtime \x18")
+            if realtime:
+                self.service(f"gcode_realtime {gcode_cmd}")
+            else:
+                self.service(f"gcode {gcode_cmd}")
+                if gcode_cmd == "$X" and self.service.extended_alarm_clear:
+                    self.service("gcode_realtime \x18")
 
         return handler
 

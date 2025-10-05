@@ -117,9 +117,15 @@ class GrblSender:
         self.sender_thread.start()
         self.status_thread.start()
         self.debug_print("GRBL sender started.")
-        self.serial.write(b"\x18")  # Ctrl-X: soft reset
+        # Removed automatic soft reset - let controller decide when to reset
         time.sleep(0.1)  # Give GRBL time to respond
         self.send_command("$I", priority=5)  # Request version info
+
+    def soft_reset(self):
+        """Send soft reset command (Ctrl-X) to GRBL controller."""
+        self.serial.write(b"\x18")  # Ctrl-X: soft reset
+        time.sleep(0.1)  # Give GRBL time to respond
+        self.debug_print("Soft reset sent to GRBL")
 
     def stop(self):
         self.running = False
@@ -396,7 +402,7 @@ class GrblSender:
         elif "ALARM" in line:
             with self.response_lock:
                 self.alarm_state = True
-        elif "RESET" in line or "Grbl" in line:
+        elif self._check_for_reset(line):
             self._handle_reset()
         else:
             self._append_to_response(line)
@@ -582,6 +588,24 @@ class GrblSender:
                 self.buffer_size = new_size
                 self.buffer_remaining = new_size
             self.debug_print(f"Detected buffer size: {new_size}")
+
+    def _check_for_reset(self, response):
+        """Check if a response indicates GRBL has been reset/restarted."""
+        if not response:
+            return False
+        reset_keywords = [
+            f.lower()
+            for f in (
+                "Grbl",
+                "grblHAL",
+                "Initializing",
+                "Resetting",
+                "Board restarted",
+                "Welcome",
+            )
+        ]
+        resp = response.lower()
+        return any(keyword in resp for keyword in reset_keywords)
 
     def _handle_reset(self):
         self.debug_print("Controller reset detected. Clearing queue.")

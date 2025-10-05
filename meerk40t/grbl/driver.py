@@ -783,7 +783,16 @@ class GRBLDriver(Parameters):
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
-        self(f"\x18{self.line_end}", real=True)
+
+        # Use GrblSender's soft_reset if available, otherwise send directly
+        if (
+            hasattr(self.service.controller, "grbl_sender")
+            and self.service.controller.grbl_sender
+        ):
+            self.service.controller.grbl_sender.soft_reset()
+        else:
+            self(f"\x18{self.line_end}", real=True)
+
         self._g94_feedrate()
         self._g21_units_mm()
         self._g90_absolute()
@@ -970,12 +979,12 @@ class GRBLDriver(Parameters):
         # Upward loop
         start = 1.0
         while start < 2.0 and start < factor:
-            self("\x9B\r", real=True)
+            self("\x9b\r", real=True)
             start += 0.1
         # Downward loop
         start = 1.0
         while start > 0.0 and start > factor:
-            self("\x9A\r", real=True)
+            self("\x9a\r", real=True)
             start -= 0.1
 
     def set_speed_scale(self, factor):

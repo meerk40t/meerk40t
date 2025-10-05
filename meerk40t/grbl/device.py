@@ -809,7 +809,7 @@ class GRBLDevice(Service, Status):
         def gcode_realtime(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.driver(remainder + self.driver.line_end, real=True)
+                self.driver(remainder, real=True)
 
         @self.console_command(
             "grbl_validate",

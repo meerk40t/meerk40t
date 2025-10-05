@@ -1282,6 +1282,12 @@ class ExperimentalGrblController(GrblController):
                 "GrblSender initialized and started with shared serial connection",
                 type="event",
             )
+
+            # Send soft reset if configured
+            if self.service.reset_on_connect:
+                self.grbl_sender.soft_reset()
+                self.log("Soft reset sent to GRBL device", type="event")
+
         except Exception as e:
             self.log(f"Failed to initialize GrblSender: {e}", type="error")
             self.running = False
@@ -1444,23 +1450,6 @@ class ExperimentalGrblController(GrblController):
         except Exception as e:
             self.log(f"Failed to update controller from status: {e}", type="error")
 
-    def _check_for_reset(self, response):
-        if not response:
-            return False
-        reset_keywords = [
-            f.lower()
-            for f in (
-                "Grbl",
-                "grblHAL",
-                "Initializing",
-                "Resetting",
-                "Board restarted",
-                "Welcome",
-            )
-        ]
-        resp = response.lower()
-        return any(keyword in resp for keyword in reset_keywords)
-
     def write(self, data):
         """
         Write data to the sending queue.
@@ -1487,5 +1476,5 @@ class ExperimentalGrblController(GrblController):
         self.start()
         d = data.strip()
         self.service.signal("grbl;write", d)
-        print(f"Calling send_command('{d}', priority=1)")
+        # print(f"Calling send_command('{d}', priority=1)")
         self.send_command(data, priority=1)
