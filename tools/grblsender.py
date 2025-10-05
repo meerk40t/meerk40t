@@ -14,12 +14,50 @@ class CommandTracker:
         self.responses = []
         self.complete = False
         self.error = False
+        self.timeout = 10.0  # Default timeout in seconds
         self.timestamp = time.time()
 
 
 class GrblSender:
+    """
+    GRBL CNC Controller Communication Module
+
+    Provides a robust interface for communicating with GRBL-based CNC controllers
+    over serial connections. Features include:
+    - Thread-safe command queuing and response handling
+    - Automatic buffer management to prevent overflow
+    - Connection health monitoring and automatic reconnection
+    - Comprehensive status parsing (position, feed rate, spindle speed, etc.)
+    - GRBL error code interpretation
+    - Command timeout handling
+    - Debug logging capabilities
+
+    Example usage:
+        sender = GrblSender(port="COM3", baudrate=115200, debug=True)
+        sender.start()
+
+        # Send a command and wait for response
+        cmd_id = sender.send_command("$$")  # Get GRBL settings
+        time.sleep(2)
+        response = sender.get_response(cmd_id)
+
+        sender.stop()
+    """
+
     def __init__(self, port, baudrate=115200, status_interval=2.0, debug=False):
-        self.serial = serial.Serial(port, baudrate, timeout=0.1)
+        # Validate inputs
+        if not port:
+            raise ValueError("Serial port must be specified")
+        if baudrate not in [9600, 19200, 38400, 57600, 115200, 230400, 250000]:
+            raise ValueError(f"Unsupported baudrate: {baudrate}")
+        if status_interval <= 0:
+            raise ValueError("Status interval must be positive")
+
+        try:
+            self.serial = serial.Serial(port, baudrate, timeout=0.1)
+        except serial.SerialException as e:
+            raise ConnectionError(f"Failed to open serial port {port}: {e}")
+
         self.command_queue = queue.PriorityQueue()
         self.response_map = {}
         self.buffer_size = 128  # Default for GRBL 1.1
@@ -34,6 +72,9 @@ class GrblSender:
         self.alarm_state = False
         self.active_cmd_id = None
         self.current_status = None
+        self.connection_lost = False
+        self.last_status_time = 0
+        self.command_timeout = 10.0
 
         self.receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.sender_thread = threading.Thread(target=self._send_loop, daemon=True)
@@ -56,16 +97,39 @@ class GrblSender:
 
     def stop(self):
         self.running = False
-        self.serial.close()
-        self.debug_print("GRBL sender stopped.")
 
-    def send_command(self, command: str, priority=10):
+        # Wait for threads to finish
+        if self.sender_thread.is_alive():
+            self.sender_thread.join(timeout=2.0)
+        if self.receiver_thread.is_alive():
+            self.receiver_thread.join(timeout=2.0)
+        if self.status_thread.is_alive():
+            self.status_thread.join(timeout=2.0)  # Clean up serial connection
+        if hasattr(self, "serial") and self.serial.is_open:
+            self.serial.close()
+
+        # Clear command queue and response map
+        with self.response_lock:
+            self.response_map.clear()
+
+        # Clear command queue (non-blocking)
+        try:
+            while True:
+                self.command_queue.get_nowait()
+        except queue.Empty:
+            pass
+
+        self.debug_print("GRBL sender stopped and cleaned up.")
+
+    def send_command(self, command: str, priority=10, timeout=10.0):
         cmd_id = None
         if priority != 0:
             with self.response_lock:
                 cmd_id = self.last_command_id
                 self.last_command_id += 1
-                self.response_map[cmd_id] = CommandTracker(cmd_id, command)
+                tracker = CommandTracker(cmd_id, command)
+                tracker.timeout = timeout
+                self.response_map[cmd_id] = tracker
 
         self.command_queue.put((priority, cmd_id, command))
         return cmd_id
@@ -85,12 +149,113 @@ class GrblSender:
         with self.response_lock:
             return self.current_status.copy() if self.current_status else None
 
+    def is_connected(self):
+        """Check if the GRBL connection is healthy."""
+        if self.connection_lost:
+            return False
+        # Consider disconnected if no status update for 3x the status interval
+        return (time.time() - self.last_status_time) < (self.status_interval * 3)
+
+    def get_connection_stats(self):
+        """Get connection statistics and health information."""
+        current_time = time.time()
+        return {
+            "connected": self.is_connected(),
+            "connection_lost": self.connection_lost,
+            "last_status_time": self.last_status_time,
+            "time_since_last_status": current_time - self.last_status_time,
+            "status_interval": self.status_interval,
+            "serial_open": self.serial.is_open if hasattr(self, "serial") else False,
+            "buffer_remaining": self.buffer_remaining,
+            "buffer_size": self.buffer_size,
+            "active_commands": len(
+                [t for t in self.response_map.values() if not t.complete]
+            ),
+            "completed_commands": len(
+                [t for t in self.response_map.values() if t.complete]
+            ),
+        }
+
+    def flush_pending_commands(self):
+        """Flush all pending commands from the queue."""
+        flushed_count = 0
+        try:
+            while True:
+                self.command_queue.get_nowait()
+                flushed_count += 1
+        except queue.Empty:
+            pass
+
+        self.debug_print(f"Flushed {flushed_count} pending commands")
+        return flushed_count
+
+    def wait_for_all_commands(self, timeout=30.0):
+        """Wait for all pending commands to complete or timeout."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            with self.response_lock:
+                if not any(
+                    not tracker.complete for tracker in self.response_map.values()
+                ):
+                    return True
+            time.sleep(0.1)
+        return False
+
+    def get_error_description(self, error_code):
+        """Get human-readable description for GRBL error codes."""
+        error_descriptions = {
+            1: "G-code words consist of an improper command",
+            2: "Numeric value format is not valid or missing an expected value",
+            3: "GRBL '$' system command was not recognized or supported",
+            4: "Negative value received for an expected positive value",
+            5: "Homing cycle is not enabled via settings",
+            6: "Minimum step pulse time must be greater than 3usec",
+            7: "EEPROM read failed. Reset and restored to default values",
+            8: "GRBL '$' command cannot be used unless GRBL is idle",
+            9: "G-code locked out during alarm or jog state",
+            10: "Soft limits cannot be enabled without homing also enabled",
+            11: "Max characters per line exceeded. Line was not processed and executed",
+            12: "GRBL '$' setting value exceeds the maximum step rate supported",
+            13: "Safety door detected as opened and door state initiated",
+            14: "Build info or startup line exceeded EEPROM line length limit",
+            15: "Jog target exceeds machine travel. Command ignored",
+            16: "Jog command with no '=' or contains prohibited g-code",
+            17: "Laser mode requires PWM output",
+            20: "Unsupported or invalid g-code command found in block",
+            21: "More than one g-code command from same modal group found in block",
+            22: "Feed rate has not yet been set or is undefined",
+            23: "G-code command in block requires an integer value",
+            24: "Two G-code commands that both require the use of the XYZ axis words in the block",
+            25: "Repeated G-code word found in block",
+            26: "No axis words found in block for G-code command or current modal state",
+            27: "No axis word targets found in block",
+            28: "Line number value is not within the valid range of 1 - 9,999,999",
+            29: "G-code command requires an axis word in the block",
+            30: "Line number word missing",
+            31: "G59.x work coordinate systems are not supported",
+            32: "G53 only allowed with G0 and G1 motion modes",
+            33: "Axis words found in block when no command or current modal state uses them",
+            34: "G2/G3 arc radius value cannot be zero",
+            35: "G2/G3 arc coordinate values are invalid",
+            36: "G2/G3 arc coordinates have no solution to target",
+            37: "Invalid motion command target",
+            38: "Arc radius value is too large for the given coordinates",
+            39: "No solution to probe within G38.2/G38.3 search distance",
+            40: "G38.2/G38.3 probe target is behind the current position",
+        }
+        return error_descriptions.get(error_code, f"Unknown error code: {error_code}")
+
     def _send_loop(self):
         while self.running:
             with self.response_lock:
                 alarm_active = self.alarm_state
 
             if alarm_active:
+                time.sleep(0.5)
+                continue
+
+            # Skip sending if connection is lost
+            if self.connection_lost:
                 time.sleep(0.5)
                 continue
 
@@ -102,42 +267,74 @@ class GrblSender:
                     )
 
                 if can_send:
-                    if len(command) == 1:
-                        self.serial.write(command.encode())  # Realtime: raw byte
-                    else:
-                        self.serial.write(
-                            (command + "\n").encode()
-                        )  # G-code: with newline
-                    self.debug_print(f"Sent: {command}")
+                    try:
+                        if len(command) == 1:
+                            self.serial.write(command.encode())  # Realtime: raw byte
+                        else:
+                            self.serial.write(
+                                (command + "\n").encode()
+                            )  # G-code: with newline
+                        self.debug_print(f"Sent: {command}")
 
-                    # For realtime commands, don't track buffer or active command
-                    if priority != 0 and cmd_id is not None:
-                        with self.response_lock:
-                            self.active_cmd_id = cmd_id
-                        # Decrement buffer space when command is sent
-                        with self.buffer_lock:
-                            self.buffer_remaining -= len(command) + 1
-                            # Ensure buffer doesn't go negative
-                            self.buffer_remaining = max(0, self.buffer_remaining)
+                        # For realtime commands, don't track buffer or active command
+                        if priority != 0 and cmd_id is not None:
+                            with self.response_lock:
+                                self.active_cmd_id = cmd_id
+                            # Decrement buffer space when command is sent
+                            with self.buffer_lock:
+                                self.buffer_remaining -= len(command) + 1
+                                # Ensure buffer doesn't go negative
+                                self.buffer_remaining = max(0, self.buffer_remaining)
+                    except serial.SerialException as e:
+                        self.debug_print(f"Serial write error: {e}")
+                        self.connection_lost = True
+                        # Put command back in queue for retry
+                        self.command_queue.put((priority, cmd_id, command))
+                        time.sleep(0.5)
                 else:
                     # Put command back in queue if buffer is full
                     self.command_queue.put((priority, cmd_id, command))
                     time.sleep(0.05)
             except queue.Empty:
-                time.sleep(0.05)
-            except serial.SerialException as e:
-                self.debug_print(f"Serial write error: {e}")
+                continue  # Normal, just no commands to send
+            except Exception as e:
+                self.debug_print(f"Unexpected send loop error: {e}")
                 time.sleep(0.1)
 
     def _receive_loop(self):
+        consecutive_errors = 0
+        max_consecutive_errors = 5
+
         while self.running:
             try:
                 raw = self.serial.readline()
+                if not raw:  # Empty read, might indicate connection issue
+                    consecutive_errors += 1
+                    if consecutive_errors >= max_consecutive_errors:
+                        self.debug_print(
+                            "Multiple consecutive empty reads, possible connection issue"
+                        )
+                        self.connection_lost = True
+                        time.sleep(1.0)  # Back off to avoid busy waiting
+                    continue
+
                 line = raw.decode("utf-8", errors="ignore").strip()
                 if line:
+                    consecutive_errors = 0  # Reset error counter on successful read
                     self._handle_response(line)
+
+            except serial.SerialException as e:
+                self.debug_print(f"Serial read error: {e}")
+                self.connection_lost = True
+                consecutive_errors += 1
+                time.sleep(0.5)
+            except UnicodeDecodeError as e:
+                self.debug_print(f"Unicode decode error: {e}")
+                consecutive_errors += 1
             except Exception as e:
-                self.debug_print("Receive error:", e)
+                self.debug_print(f"Unexpected receive error: {e}")
+                consecutive_errors += 1
+                time.sleep(0.1)
 
     def _handle_response(self, line):
         self.debug_print("Received:", line)
@@ -152,6 +349,22 @@ class GrblSender:
             self._finalize_response(error=False)
             # Buffer space is incremented in _finalize_response
         elif "error" in line.lower():
+            # Parse GRBL error codes: "error:X" where X is the error number
+            error_match = re.search(r"error:(\d+)", line.lower())
+            if error_match:
+                error_code = int(error_match.group(1))
+                error_desc = self.get_error_description(error_code)
+                self.debug_print(f"GRBL Error {error_code}: {error_desc}")
+                # Store error information in the response
+                with self.response_lock:
+                    if self.active_cmd_id is not None:
+                        tracker = self.response_map.get(self.active_cmd_id)
+                        if tracker:
+                            tracker.responses.append(
+                                f"ERROR {error_code}: {error_desc}"
+                            )
+            else:
+                self.debug_print(f"Unrecognized error format: {line}")
             self._finalize_response(error=True)
             # Buffer space is incremented in _finalize_response
         elif "ALARM" in line:
@@ -284,6 +497,56 @@ class GrblSender:
             "timestamp": time.time(),
         }
 
+        # Update connection health
+        self.last_status_time = time.time()
+        if self.connection_lost:
+            self.connection_lost = False
+            self.debug_print("GRBL connection restored")
+
+    def _check_connection_health(self):
+        """Check if GRBL connection is still healthy based on status updates."""
+        if self.connection_lost:
+            # Try to reconnect
+            self._attempt_reconnection()
+            return
+
+        current_time = time.time()
+        time_since_last_status = current_time - self.last_status_time
+
+        # If we haven't received a status update in 5x the status interval, consider connection lost
+        connection_timeout = self.status_interval * 5.0
+
+        if time_since_last_status > connection_timeout:
+            if not self.connection_lost:
+                self.connection_lost = True
+                self.debug_print(
+                    f"GRBL connection lost - no status update for {time_since_last_status:.1f}s"
+                )
+                self._attempt_reconnection()
+
+    def _attempt_reconnection(self):
+        """Attempt to reconnect to GRBL device."""
+        if not self.connection_lost:
+            return
+
+        try:
+            if not self.serial.is_open:
+                self.debug_print("Attempting to reopen serial connection...")
+                self.serial.open()
+
+            # Send a simple status request to test connection
+            self.serial.write(b"?")
+            time.sleep(0.1)
+
+            # Reset connection lost flag - will be set again if status check fails
+            self.connection_lost = False
+            self.last_status_time = time.time()
+            self.debug_print("GRBL reconnection successful")
+
+        except serial.SerialException as e:
+            self.debug_print(f"Reconnection failed: {e}")
+            # Keep connection_lost = True
+
     def _handle_bracketed(self, line):
         self.debug_print("Bracketed message:", line)
         m = re.search(r"\[BUFFER:(\d+)\]", line)
@@ -312,6 +575,8 @@ class GrblSender:
         while self.running:
             self.send_realtime("?")
             time.sleep(self.status_interval)
+            # Check connection health
+            self._check_connection_health()
             # Periodic cleanup of old completed commands
             self._cleanup_completed_commands()
 
@@ -333,7 +598,8 @@ class GrblSender:
             timed_out = [
                 cmd_id
                 for cmd_id, tracker in self.response_map.items()
-                if not tracker.complete and (current_time - tracker.timestamp) > 10.0
+                if not tracker.complete
+                and (current_time - tracker.timestamp) > tracker.timeout
             ]
 
             for cmd_id in timed_out:
