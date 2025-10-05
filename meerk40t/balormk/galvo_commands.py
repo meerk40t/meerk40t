@@ -82,23 +82,32 @@ def plugin(service, lifecycle):
             service.job.set_travel_speed(simulation_speed)
         service.spooler.send(service.job)
 
+    def run_light_job(service, mode, toggle=False):
+        if service.job is not None:
+            if isinstance(service.job, LiveLightJob):
+                service.job.stop()
+                service.job = None
+                if toggle:
+                    return
+        service.job = LiveLightJob(service, mode=mode)
+        service.spooler.send(service.job)
+
+    @service.console_option(
+        "toggle", "t", type=bool, action="store_true", help="Toggle hull light mode"
+    )
     @service.console_command("select-light", help=_("Execute selection light idle job"))
     def select_light(**kwargs):
         """
         Start a live bounds job.
         """
-        # Live Bounds Job.
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="bounds")
-        service.spooler.send(service.job)
+        run_light_job(service, "bounds", toggle=kwargs.get("toggle", False))
 
+    @service.console_option(
+        "toggle", "t", type=bool, action="store_true", help="Toggle hull light mode"
+    )
     @service.console_command("full-light", help=_("Execute full light idle job"))
     def full_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service)
-        service.spooler.send(service.job)
+        run_light_job(service, "full", toggle=kwargs.get("toggle", False))
 
     # @service.console_command(
     #     "regmark-light", help=_("Execute regmark live light idle job")
@@ -109,12 +118,12 @@ def plugin(service, lifecycle):
     #     service.job = LiveLightJob(service, mode="regmarks")
     #     service.spooler.send(service.job)
 
+    @service.console_option(
+        "toggle", "t", type=bool, action="store_true", help="Toggle hull light mode"
+    )
     @service.console_command("hull-light", help=_("Execute convex hull light idle job"))
     def hull_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="hull")
-        service.spooler.send(service.job)
+        run_light_job(service, "hull", toggle=kwargs.get("toggle", False))
 
     @service.console_command(
         "stop",
