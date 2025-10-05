@@ -10,6 +10,7 @@ class CommandTracker:
     def __init__(self, cmd_id, command):
         self.cmd_id = cmd_id
         self.command = command
+        self.command_size = len(command) + 1  # +1 for newline
         self.responses = []
         self.complete = False
         self.error = False
@@ -17,7 +18,7 @@ class CommandTracker:
 
 
 class GrblSender:
-    def __init__(self, port, baudrate=115200, status_interval=2.0):
+    def __init__(self, port, baudrate=115200, status_interval=2.0, debug=False):
         self.serial = serial.Serial(port, baudrate, timeout=0.1)
         self.command_queue = queue.PriorityQueue()
         self.response_map = {}
@@ -25,23 +26,30 @@ class GrblSender:
         self.buffer_remaining = self.buffer_size
         self.status_interval = status_interval
         self.running = False
+        self.debug = debug
         self.lock = threading.Lock()
         self.response_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
         self.last_command_id = 0
         self.alarm_state = False
         self.active_cmd_id = None
+        self.current_status = None
 
         self.receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.sender_thread = threading.Thread(target=self._send_loop, daemon=True)
         self.status_thread = threading.Thread(target=self._status_loop, daemon=True)
+
+    def debug_print(self, *args, **kwargs):
+        """Print debug messages only if debug mode is enabled."""
+        if self.debug:
+            print(*args, **kwargs)
 
     def start(self):
         self.running = True
         self.receiver_thread.start()
         self.sender_thread.start()
         self.status_thread.start()
-        print("GRBL sender started.")
+        self.debug_print("GRBL sender started.")
         self.serial.write(b"\x18")  # Ctrl-X: soft reset
         time.sleep(0.1)  # Give GRBL time to respond
         self.send_command("$I", priority=5)  # Request version info
@@ -49,7 +57,7 @@ class GrblSender:
     def stop(self):
         self.running = False
         self.serial.close()
-        print("GRBL sender stopped.")
+        self.debug_print("GRBL sender stopped.")
 
     def send_command(self, command: str, priority=10):
         cmd_id = None
@@ -71,6 +79,11 @@ class GrblSender:
             if tracker and tracker.complete:
                 return tracker.responses
         return None
+
+    def get_current_status(self):
+        """Get the most recent status information from GRBL."""
+        with self.response_lock:
+            return self.current_status.copy() if self.current_status else None
 
     def _send_loop(self):
         while self.running:
@@ -95,13 +108,17 @@ class GrblSender:
                         self.serial.write(
                             (command + "\n").encode()
                         )  # G-code: with newline
-                    print(f"Sent: {command}")
+                    self.debug_print(f"Sent: {command}")
 
                     # For realtime commands, don't track buffer or active command
                     if priority != 0 and cmd_id is not None:
                         with self.response_lock:
                             self.active_cmd_id = cmd_id
-                        # Note: Buffer space will be decremented when GRBL acknowledges with "ok"
+                        # Decrement buffer space when command is sent
+                        with self.buffer_lock:
+                            self.buffer_remaining -= len(command) + 1
+                            # Ensure buffer doesn't go negative
+                            self.buffer_remaining = max(0, self.buffer_remaining)
                 else:
                     # Put command back in queue if buffer is full
                     self.command_queue.put((priority, cmd_id, command))
@@ -109,7 +126,7 @@ class GrblSender:
             except queue.Empty:
                 time.sleep(0.05)
             except serial.SerialException as e:
-                print(f"Serial write error: {e}")
+                self.debug_print(f"Serial write error: {e}")
                 time.sleep(0.1)
 
     def _receive_loop(self):
@@ -120,10 +137,10 @@ class GrblSender:
                 if line:
                     self._handle_response(line)
             except Exception as e:
-                print("Receive error:", e)
+                self.debug_print("Receive error:", e)
 
     def _handle_response(self, line):
-        print("Received:", line)
+        self.debug_print("Received:", line)
 
         if line.startswith("Grbl"):
             self._handle_welcome(line)
@@ -133,14 +150,10 @@ class GrblSender:
             self._handle_bracketed(line)
         elif line == "ok":
             self._finalize_response(error=False)
-            # Reset buffer when command is acknowledged
-            with self.buffer_lock:
-                self.buffer_remaining = self.buffer_size
+            # Buffer space is incremented in _finalize_response
         elif "error" in line.lower():
             self._finalize_response(error=True)
-            # Reset buffer on error too
-            with self.buffer_lock:
-                self.buffer_remaining = self.buffer_size
+            # Buffer space is incremented in _finalize_response
         elif "ALARM" in line:
             with self.response_lock:
                 self.alarm_state = True
@@ -152,53 +165,137 @@ class GrblSender:
     def _append_to_response(self, line):
         with self.response_lock:
             if self.active_cmd_id is None:
-                print("No active command to append to.")
+                self.debug_print("No active command to append to.")
                 return
             tracker = self.response_map.get(self.active_cmd_id)
             if tracker and not tracker.complete:
                 tracker.responses.append(line)
-                print(f"Appended to cmd_id={self.active_cmd_id}: {line}")
+                self.debug_print(f"Appended to cmd_id={self.active_cmd_id}: {line}")
 
     def _finalize_response(self, error=False):
         with self.response_lock:
             if self.active_cmd_id is None:
-                print("No active command to finalize.")
+                self.debug_print("No active command to finalize.")
                 return
             tracker = self.response_map.get(self.active_cmd_id)
             if tracker and not tracker.complete:
                 tracker.complete = True
                 tracker.error = error
-                print(
+                self.debug_print(
                     f"Finalized cmd_id={self.active_cmd_id} with {'error' if error else 'ok'}"
                 )
+                # Increment buffer space when command is acknowledged
+                with self.buffer_lock:
+                    self.buffer_remaining += tracker.command_size
+                    # Ensure we don't exceed buffer size
+                    self.buffer_remaining = min(self.buffer_remaining, self.buffer_size)
                 # Clear active command
                 self.active_cmd_id = None
 
     def _handle_welcome(self, line):
-        print("Controller welcome:", line)
+        self.debug_print("Controller welcome:", line)
         # Optional: self.send_command('$I', priority=5)
 
     def _handle_status(self, line):
-        mpos = re.search(r"MPos:([\d\.\-]+),([\d\.\-]+),([\d\.\-]+)", line)
-        fs = re.search(r"FS:(\d+),(\d+)", line)
-        if mpos and fs:
-            pos = tuple(map(float, mpos.groups()))
-            feed = int(fs.group(1))
-            spindle = int(fs.group(2))
-            print(f"Status: Pos={pos}, Feed={feed}, Spindle={spindle}")
+        # Parse complete GRBL status message: <State|MPos:X,Y,Z|FS:F,S|WCO:X,Y,Z|...>
+        # Extract state first
+        state_match = re.search(r"<([^|]+)", line)
+        state = state_match.group(1) if state_match else "Unknown"
+
+        # Extract machine position
+        mpos_match = re.search(r"MPos:([\d\.\-]+),([\d\.\-]+),([\d\.\-]+)", line)
+        mpos = None
+        if mpos_match:
+            mpos = tuple(map(float, mpos_match.groups()))
+
+        # Extract work position (if available)
+        wpos_match = re.search(r"WPos:([\d\.\-]+),([\d\.\-]+),([\d\.\-]+)", line)
+        wpos = None
+        if wpos_match:
+            wpos = tuple(map(float, wpos_match.groups()))
+
+        # Extract feed rate and spindle speed (can appear together or separately)
+        feed_rate = spindle_speed = None
+
+        # Check for combined FS format first
+        fs_match = re.search(r"FS:(\d+),(\d+)", line)
+        if fs_match:
+            feed_rate = int(fs_match.group(1))
+            spindle_speed = int(fs_match.group(2))
+        else:
+            # Check for separate F and S formats
+            f_match = re.search(r"F:(\d+)", line)
+            if f_match:
+                feed_rate = int(f_match.group(1))
+
+            s_match = re.search(r"S:(\d+)", line)
+            if s_match:
+                spindle_speed = int(s_match.group(1))
+
+        # Extract work coordinate offset
+        wco_match = re.search(r"WCO:([\d\.\-]+),([\d\.\-]+),([\d\.\-]+)", line)
+        wco = None
+        if wco_match:
+            wco = tuple(map(float, wco_match.groups()))
+
+        # Extract overrides (if available)
+        ov_match = re.search(r"Ov:(\d+),(\d+),(\d+)", line)
+        overrides = None
+        if ov_match:
+            overrides = {
+                "feed": int(ov_match.group(1)),
+                "rapid": int(ov_match.group(2)),
+                "spindle": int(ov_match.group(3)),
+            }
+
+        # Extract accessories (if available)
+        accessories_match = re.search(r"A:([SFM]+)", line)
+        accessories = accessories_match.group(1) if accessories_match else None
+
+        # Log the parsed status
+        status_info = f"State={state}"
+        if mpos:
+            status_info += f", MPos={mpos}"
+        if wpos:
+            status_info += f", WPos={wpos}"
+        if wco:
+            status_info += f", WCO={wco}"
+        if feed_rate is not None:
+            status_info += f", Feed={feed_rate}"
+        if spindle_speed is not None:
+            status_info += f", Spindle={spindle_speed}"
+        if overrides:
+            status_info += f", Overrides={overrides}"
+        if accessories:
+            status_info += f", Accessories={accessories}"
+
+        self.debug_print(f"Status: {status_info}")
+
+        # Store current status for external access
+        self.current_status = {
+            "state": state,
+            "mpos": mpos,
+            "wpos": wpos,
+            "wco": wco,
+            "feed_rate": feed_rate,
+            "spindle_speed": spindle_speed,
+            "overrides": overrides,
+            "accessories": accessories,
+            "timestamp": time.time(),
+        }
 
     def _handle_bracketed(self, line):
-        print("Bracketed message:", line)
+        self.debug_print("Bracketed message:", line)
         m = re.search(r"\[BUFFER:(\d+)\]", line)
         if m:
             new_size = int(m.group(1))
             with self.buffer_lock:
                 self.buffer_size = new_size
                 self.buffer_remaining = new_size
-            print(f"Detected buffer size: {new_size}")
+            self.debug_print(f"Detected buffer size: {new_size}")
 
     def _handle_reset(self):
-        print("Controller reset detected. Clearing queue.")
+        self.debug_print("Controller reset detected. Clearing queue.")
         with self.lock:
             while not self.command_queue.empty():
                 try:
@@ -208,10 +305,8 @@ class GrblSender:
         with self.response_lock:
             self.response_map.clear()
             self.active_cmd_id = None
-        with self.buffer_lock:
-            self.buffer_remaining = self.buffer_size
-        with self.response_lock:
             self.alarm_state = False
+            self.current_status = None
 
     def _status_loop(self):
         while self.running:
@@ -232,7 +327,7 @@ class GrblSender:
 
             for cmd_id in to_remove:
                 del self.response_map[cmd_id]
-                print(f"Cleaned up completed command {cmd_id}")
+                self.debug_print(f"Cleaned up completed command {cmd_id}")
 
             # Also check for timed out commands
             timed_out = [
@@ -246,7 +341,7 @@ class GrblSender:
                 tracker.complete = True
                 tracker.error = True
                 tracker.responses.append("TIMEOUT")
-                print(f"Command {cmd_id} timed out: {tracker.command}")
+                self.debug_print(f"Command {cmd_id} timed out: {tracker.command}")
 
 
 if __name__ == "__main__":
@@ -254,7 +349,7 @@ if __name__ == "__main__":
 
     comport = sys.argv[1] if len(sys.argv) > 1 else "com6"
     try:
-        sender = GrblSender(port=comport, baudrate=115200)
+        sender = GrblSender(port=comport, baudrate=115200, debug=False)
         sender.start()
     except Exception as e:
         print("Failed to start GRBL sender:", e)
