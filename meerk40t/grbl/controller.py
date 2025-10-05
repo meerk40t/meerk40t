@@ -11,11 +11,11 @@ Validation Stages.
         Stage 4, we successfully parsed $G, send ?
         Stage 5, we successfully parsed ?
 """
+
 import ast
 import re
 import threading
 import time
-from queue import Empty, PriorityQueue
 
 from meerk40t.kernel import signal_listener
 
@@ -1230,19 +1230,22 @@ class ExperimentalGrblController(GrblController):
         self.running = False
 
         from .serial_connection import SerialConnection
+        from ...tools.grblsender import GrblSender
 
         self.connection = SerialConnection(self.service, self)
         self.ser = None
-        self.command_queue = PriorityQueue()
         self.poll_interval = poll_interval
         self.command_timeout = command_timeout
         self.max_retries = max_retries
+
+        # Use the improved GrblSender for communication
+        self.grbl_sender = None
         self.status_thread = threading.Thread(target=self._poll_status)
-        self.command_thread = threading.Thread(target=self._process_commands)
+        self.response_thread = threading.Thread(target=self._process_responses)
         self.lock = threading.Lock()
         self.command_durations = {}
 
-        self.log("GRBLController initialized", type="event")
+        self.log("ExperimentalGrblController initialized with GrblSender", type="event")
 
     def start(self):
         print(f"Called START while running={self.running}")
@@ -1254,16 +1257,40 @@ class ExperimentalGrblController(GrblController):
             self.add_watcher(self._channel_log)
         self.running = True
         self.is_shutdown = False
-        self.status_thread.start()
-        self.command_thread.start()
+
+        # Connect first to get serial port info
         self.connection.connect()
         if not self.connection.connected:
             self.log("Could not connect.", type="event")
             self.running = False
             return
+
         print("Connected")
         self.ser = self.connection.laser
-        self.log("GRBLController started", type="event")
+
+        # Initialize GrblSender with the connected serial port
+        try:
+            from ...tools.grblsender import GrblSender
+
+            # Extract port and baudrate from the connection
+            port = self.connection.port
+            baudrate = getattr(self.connection, "baudrate", 115200)
+            self.grbl_sender = GrblSender(
+                port=port,
+                baudrate=baudrate,
+                status_interval=self.poll_interval,
+                debug=False,
+            )
+            self.grbl_sender.start()
+            self.log("GrblSender initialized and started", type="event")
+        except Exception as e:
+            self.log(f"Failed to initialize GrblSender: {e}", type="error")
+            self.running = False
+            return
+
+        self.status_thread.start()
+        self.response_thread.start()
+        self.log("ExperimentalGrblController started", type="event")
         # We are validated by default.
         self._validation_stage = 5
 
@@ -1271,16 +1298,25 @@ class ExperimentalGrblController(GrblController):
         print("Called STOP")
         if not self.running:
             return
-        self.status_thread.join()
-        self.command_thread.join()
+        self.running = False
+
+        # Stop GrblSender
+        if self.grbl_sender:
+            self.grbl_sender.stop()
+
+        # Wait for threads
+        if self.status_thread.is_alive():
+            self.status_thread.join(timeout=2.0)
+        if self.response_thread.is_alive():
+            self.response_thread.join(timeout=2.0)
+
         # self.connection.disconnect()
         self.shutdown()
-        self.running = False
         try:
             self.remove_watcher(self._channel_log)
         except (AttributeError, ValueError):
             pass
-        self.log("GRBLController stopped", type="event")
+        self.log("ExperimentalGrblController stopped", type="event")
 
     def open(self):
         print("Called OPEN")
@@ -1289,144 +1325,66 @@ class ExperimentalGrblController(GrblController):
 
     def send_command(self, command, priority=10):
         command = str(command).strip()
-        self.command_queue.put((priority, command))
-        self.log(
-            f"Queued command: '{command}' with priority {priority} - entries in queue: {self.command_queue.qsize()} ",
-            type="event",
-        )
-        print(
-            f"Threads alive: status={self.status_thread.is_alive()} command={self.command_thread.is_alive()} running={self.running}"
-        )
+        if self.grbl_sender:
+            cmd_id = self.grbl_sender.send_command(
+                command, priority=priority, timeout=self.command_timeout
+            )
+            self.log(
+                f"Queued command: '{command}' with priority {priority} (ID: {cmd_id})",
+                type="event",
+            )
+            print(
+                f"Threads alive: status={self.status_thread.is_alive()} response={self.response_thread.is_alive()} running={self.running}"
+            )
+            return cmd_id
+        else:
+            self.log("GrblSender not available", type="error")
+            return None
 
-    def _process_commands(self):
+    def _process_responses(self):
+        """Process responses from GrblSender and integrate with controller logic."""
         while self.running and not self.is_shutdown:
-            try:
-                priority, command = self.command_queue.get(timeout=1)
-            except Empty:
+            if not self.grbl_sender:
+                time.sleep(0.1)
                 continue
-            print(f"Processing command: '{command.strip()}' with priority {priority}")
-            for attempt in range(1, self.max_retries + 1):
-                with self.lock:
-                    self.log(
-                        f"Sending '{command.strip()}' (Attempt {attempt})", type="event"
-                    )
-                    if not isinstance(command, bytes):
-                        command = bytes(f"{command}", encoding="latin-1")
-                    self.ser.write(command)
-                    start_time = time.time()
-                    success = False
 
-                    while (
-                        time.time() - start_time < self.command_timeout
-                        and not self.is_shutdown
-                    ):
-                        response = self.ser.readline().decode().strip()
-                        if self._check_for_reset(response):
-                            self.log(f"Reset detected: '{response}'", type="warning")
-                            self.ser.reset_input_buffer()
-                            with self.command_queue.mutex:
-                                self.command_queue.queue.clear()
-                            self.log(
-                                "Cleared serial buffer and command queue", type="event"
-                            )
-                            break
-                        elif response == "ok":
-                            duration = time.time() - start_time
-                            self.log(
-                                f"Command OK received in {duration:.3f}s",
-                                type="event",
-                            )
-                            success = True
-                            break
-                        elif response.startswith("<") and response.endswith(">"):
-                            self._parse_status(response)
-                        elif response.startswith("[echo:"):
-                            message = response[6:-1]
-                            self.service.channel("console")(message)
-                        elif response.startswith("$"):
-                            self._process_settings_message(response)
+            # Get current status from GrblSender
+            status = self.grbl_sender.get_current_status()
+            if status:
+                self._update_controller_from_status(status)
 
-                        elif response:
-                            self.log(f"GRBL: {response}", type="debug")
+            # Check for completed commands and process their responses
+            # Note: GrblSender handles most response processing internally,
+            # but we can add controller-specific logic here
 
-                    if success:
-                        break
-                    else:
-                        self.log(
-                            f"Timeout on '{command}' (Attempt {attempt})",
-                            type="warning",
-                        )
-
-            else:
-                self.log(
-                    f"Command failed after {self.max_retries} attempts: '{command}'",
-                    type="error",
-                )
+            time.sleep(0.1)  # Prevent busy waiting
 
     def _poll_status(self):
+        """Poll for status updates and handle connection monitoring."""
         while self.running and not self.is_shutdown:
-            if self.connection.connected:
-                with self.lock:
-                    self.ser.write(b"?\n")
-                    status = self.ser.readline().decode().strip()
-                    if self._check_for_reset(status):
-                        self.log(
-                            f"Reset detected during status poll: '{status}'",
-                            type="warning",
-                        )
-                        self.ser.reset_input_buffer()
-                        with self.command_queue.mutex:
-                            self.command_queue.queue.clear()
-                        self.log(
-                            "Cleared serial buffer and command queue", type="event"
-                        )
-                    elif status.startswith("<") and status.endswith(">"):
-                        self._parse_status(status)
-                    elif status:
-                        self.log(f"Status (raw): {status}", type="debug")
+            if self.grbl_sender and self.grbl_sender.is_connected():
+                # GrblSender handles status polling internally, but we can
+                # add controller-specific status monitoring here
+                pass
             else:
-                self.log(f"Couldnt poll status, wasn't connected", type="debug")
+                self.log(
+                    "Could not poll status, GrblSender not connected", type="debug"
+                )
 
             time.sleep(self.poll_interval)
 
-    def _parse_status(self, status):
-        def get_feed_spindle_defaults(status_parts):
-            feed = None
-            spindle = None
-            for part in status_parts:
-                if part.startswith("FS:"):
-                    try:
-                        f, s = part[3:].split(",")
-                        feed = float(f)
-                        spindle = float(s)
-                    except ValueError:
-                        pass
-                elif part.startswith("F:"):
-                    try:
-                        feed = float(part[2:])
-                    except ValueError:
-                        pass
-                elif part.startswith("S:"):
-                    try:
-                        spindle = float(part[2:])
-                    except ValueError:
-                        pass
-            return feed, spindle
-
+    def _update_controller_from_status(self, status):
+        """Update controller state from GrblSender status information."""
         try:
-            status = status.strip("<>").split("|")
-            state = status[0]
+            state = status.get("state", "Unknown")
             self._last_state = state.lower()
 
-            pos = next((s for s in status if s.startswith("MPos:")), None)
-            wpos = next((s for s in status if s.startswith("WPos:")), None)
-            feed, spindle = get_feed_spindle_defaults(status)
-            self.log(f"State: {state}", type="event")
-            if pos:
-                coords = pos.replace("MPos:", "").split(",")
+            # Update position information
+            if status.get("mpos"):
+                mpos = status["mpos"]
                 try:
-                    nx = float(coords[0])
-                    ny = float(coords[1])
+                    nx = float(mpos[0])
+                    ny = float(mpos[1])
 
                     # During validation, we declare positions.
                     self.driver.declare_position(nx, ny)
@@ -1440,36 +1398,52 @@ class ExperimentalGrblController(GrblController):
                         self.driver.mpos_y,
                     ) = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
 
-                    if len(coords) >= 3:
-                        self.driver.mpos_z = float(coords[2])
+                    if len(mpos) >= 3:
+                        self.driver.mpos_z = float(mpos[2])
                     self.service.signal(
                         "status;position",
                         (ox, oy, self.driver.mpos_x, self.driver.mpos_y),
                     )
-                except ValueError:
-                    pass
-                self.log(
-                    f"Position: X={coords[0]} Y={coords[1]} Z={coords[2]}", type="event"
-                )
-            if wpos:
-                coords = wpos.replace("WPos:", "").split(",")
-                self.driver.wpos_x = coords[0]
-                self.driver.wpos_y = coords[1]
-                if len(coords) >= 3:
-                    self.driver.wpos_z = coords[2]
-                # See: https://github.com/grbl/grbl/blob/master/grbl/report.c#L421
-                # MPos: Coord values. Machine Position.
-                # WPos: MPos but with applied work coordinates. Work Position.
-                self.log(
-                    f"Work Position: X={coords[0]} Y={coords[1]} Z={coords[2]}",
-                    type="event",
-                )
-            if feed:
-                self.service.signal("grbl:speed", feed)
-            if spindle:
-                self.service.signal("grbl:power", spindle)
+                except (ValueError, IndexError) as e:
+                    self.log(f"Failed to parse machine position: {e}", type="warning")
+
+            # Update work position
+            if status.get("wpos"):
+                wpos = status["wpos"]
+                try:
+                    self.driver.wpos_x = str(wpos[0])
+                    self.driver.wpos_y = str(wpos[1])
+                    if len(wpos) >= 3:
+                        self.driver.wpos_z = str(wpos[2])
+                except (ValueError, IndexError) as e:
+                    self.log(f"Failed to parse work position: {e}", type="warning")
+
+            # Update feed rate and spindle speed
+            if status.get("feed_rate") is not None:
+                self.service.signal("grbl:speed", status["feed_rate"])
+            if status.get("spindle_speed") is not None:
+                self.service.signal("grbl:power", status["spindle_speed"])
+
+            # Log status periodically (not on every update to avoid spam)
+            current_time = time.time()
+            if (
+                not hasattr(self, "_last_status_log")
+                or current_time - self._last_status_log > 5.0
+            ):
+                self._last_status_log = current_time
+                status_parts = [f"State: {state}"]
+                if status.get("mpos"):
+                    status_parts.append(f"MPos: {status['mpos']}")
+                if status.get("wpos"):
+                    status_parts.append(f"WPos: {status['wpos']}")
+                if status.get("feed_rate") is not None:
+                    status_parts.append(f"Feed: {status['feed_rate']}")
+                if status.get("spindle_speed") is not None:
+                    status_parts.append(f"Spindle: {status['spindle_speed']}")
+                self.log(" | ".join(status_parts), type="event")
+
         except Exception as e:
-            self.log(f"Failed to parse status: {status} ({e})", type="error")
+            self.log(f"Failed to update controller from status: {e}", type="error")
 
     def _check_for_reset(self, response):
         if not response:
