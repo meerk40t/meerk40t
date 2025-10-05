@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 21-09-25 15:58:00UTC\n"
+"PO-Revision-Date: 05-10-25 18:50:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Language: it\n"
@@ -17933,8 +17933,7 @@ msgstr "La modalità silenziosa è ora DISATTIVATA."
 
 #: meerk40t/kernel/kernel.py:2960
 msgid "Silent mode is on, no beep will be played."
-msgstr ""
-"La modalità silenziosa è attiva, nessun segnale acustico verrà emesso."
+msgstr "La modalità silenziosa è attiva, nessun segnale acustico verrà emesso."
 
 #: meerk40t/gui/materialtest.py:951 meerk40t/gui/materialtest.py:990
 msgid "Select the values you want to test for {param}"
@@ -17975,8 +17974,7 @@ msgstr "La potenza del laser per il punto rosso è ora: {power}"
 #: meerk40t/grbl/device.py:939
 msgid "Laser strength for red dot must be between 0 and 1000, not {power}"
 msgstr ""
-"<La potenza del laser per il punto rosso deve essere tra 0 e 1000, non "
-"{power}"
+"<La potenza del laser per il punto rosso deve essere tra 0 e 1000, non {power}"
 
 #: meerk40t/grbl/device.py:944
 msgid "Red light is now off."
@@ -18095,7 +18093,8 @@ msgstr "Impedisci/consenti l'ibernazione del sistema."
 
 #: meerk40t/kernel/kernel.py:2901
 msgid "Inhibitor is not available on this system."
-msgstr "La funzione di inibizione non è disponibile su questo sistema."
+msgstr ""
+"La funzione di inibizione non è disponibile su questo sistema."
 
 #: meerk40t/kernel/kernel.py:2905
 msgid "Please specify 'prevent' or 'allow'."
@@ -18103,8 +18102,7 @@ msgstr "Specificare 'impedisci' o 'consenti'."
 
 #: meerk40t/kernel/kernel.py:2911
 msgid "You might need system administrator priviliges."
-msgstr ""
-"Potrebbero essere necessari i privilegi di amministratore del sistema."
+msgstr "Potrebbero essere necessari i privilegi di amministratore del sistema."
 
 #: meerk40t/kernel/kernel.py:2913
 msgid "System hibernation is prevented."
@@ -19131,8 +19129,7 @@ msgstr "Cambia la distanza delle linee tratteggiate di questa quantità"
 
 #: meerk40t/core/elements/branches.py:1142
 msgid "Change hatch-distance for each item in order"
-msgstr ""
-"Modificare la distanza del tratteggio per ciascun elemento in sequenza"
+msgstr "Modificare la distanza del tratteggio per ciascun elemento in sequenza"
 
 #: meerk40t/core/elements/branches.py:1146
 msgid "hatch-distance <distance>"
@@ -19516,8 +19513,7 @@ msgstr "Numero di ripetizioni"
 
 #: meerk40t/core/elements/grid.py:273
 msgid "radial <repeats> <radius> <startangle> <endangle> <rotate>"
-msgstr ""
-"radiale <ripetizioni> <raggio> <angoloiniziale> <angolofinale> <rotazione>"
+msgstr "radiale <ripetizioni> <raggio> <angoloiniziale> <angolofinale> <rotazione>"
 
 #: meerk40t/core/elements/grid.py:307
 msgid "repeats should be greater or equal to 2"
@@ -20067,8 +20063,7 @@ msgstr "Non sono state selezionate/fornite immagini"
 
 #: meerk40t/core/elements/render.py:781
 msgid "Removes keyhole frame for selected images"
-msgstr ""
-"Rimuove la cornice delle maschera di ritaglio per le immagini selezionate"
+msgstr "Rimuove la cornice delle maschera di ritaglio per le immagini selezionate"
 
 #: meerk40t/core/elements/shapes.py:137
 msgid "ellipse <cx> <cy> <rx> <ry>"
@@ -20090,9 +20085,7 @@ msgstr "Raggio principale dell'ellisse"
 
 #: meerk40t/core/elements/shapes.py:133 meerk40t/core/elements/shapes.py:182
 msgid "Secondary radius of ellipse (default equal to primary radius=circle)"
-msgstr ""
-"Raggio secondario dell'ellisse (predefinito uguale al raggio principale = "
-"cerchio)"
+msgstr "Raggio secondario dell'ellisse (predefinito uguale al raggio principale=cerchio)"
 
 #: meerk40t/core/elements/shapes.py:185
 msgid "Start angle of arc (default 0°)"
@@ -22127,8 +22120,7 @@ msgstr "Non invertire l'immagine"
 
 #: meerk40t/image/imagetools.py:2009
 msgid "Create minimum-area bounding rectangle instead of the contour"
-msgstr ""
-"Crea un rettangolo di delimitazione di area minima al posto del contorno"
+msgstr "Crea un rettangolo di delimitazione di area minima al posto del contorno"
 
 #: meerk40t/image/imagetools.py:2016
 msgid "Use alternative simplification method"
@@ -22144,8 +22136,7 @@ msgstr "utilizzare l'immagine come sfondo del letto"
 
 #: meerk40t/image/imagetools.py:2186
 msgid "Create a linefill representation of the provided images"
-msgstr ""
-"Creare una rappresentazione a riempimento di linee delle immagini fornite"
+msgstr "Creare una rappresentazione a riempimento di linee delle immagini fornite"
 
 #: meerk40t/kernel/kernel.py:1312
 msgid "{context}: Finalizing Module {path}: {object}"
@@ -22296,7 +22287,8 @@ msgstr "Nessun comando trovato contenente: [red]{string}[normal]"
 
 #: meerk40t/kernel/kernel.py:2700
 msgid "If you want to have a list of all available commands, just type 'help'"
-msgstr "Se vuoi un elenco di tutti i comandi disponibili, digita 'help'"
+msgstr ""
+"Se vuoi un elenco di tutti i comandi disponibili, digita 'help'"
 
 #: meerk40t/kernel/kernel.py:2707
 msgid "show threads"
@@ -22516,8 +22508,7 @@ msgstr "Esegui la riga situata all'indice specificato"
 
 #: meerk40t/kernel/kernel.py:3389
 msgid "disable/enable the command at the particular index"
-msgstr ""
-"disabilitare/abilitare il comando in corrispondenza di un determinato indice"
+msgstr "disabilitare/abilitare il comando in corrispondenza di un determinato indice"
 
 #: meerk40t/kernel/kernel.py:3406
 msgid "channel (open|close|save|list|print) <channel_name>"
@@ -22632,8 +22623,7 @@ msgstr "Salva una copia della configurazione corrente"
 #: meerk40t/kernel/kernel.py:3644
 msgid "You need to provide a target directory: setting_export <targetdir>"
 msgstr ""
-"È necessario fornire una directory di destinazione: setting_export "
-"<targetdir>"
+"È necessario fornire una directory di destinazione: setting_export <targetdir>"
 
 #: meerk40t/kernel/kernel.py:3655
 msgid "Persistent settings exported to {file}."
@@ -22669,8 +22659,7 @@ msgstr "invia un segnale"
 
 #: meerk40t/kernel/kernel.py:3685
 msgid "Please provide a signal to send, attached listeners:"
-msgstr ""
-"Si prega di fornire un segnale da inviare, in allegato gli ascoltatori"
+msgstr "Si prega di fornire un segnale da inviare, in allegato gli ascoltatori"
 
 #: meerk40t/kernel/kernel.py:3706
 msgid "shuts down all processes and exits"
@@ -23231,8 +23220,7 @@ msgstr "Device Newly rilevato:"
 #: meerk40t/newly/usb_connection.py:64
 msgid "Newly devices were found. But something else was connected to them."
 msgstr ""
-"Sono stati trovati nuovi dispositivi, ma qualcos'altro era collegato ad "
-"essi."
+"Sono stati trovati nuovi dispositivi, ma qualcos'altro era collegato ad essi."
 
 #: meerk40t/newly/gui/newlycontroller.py:176
 msgid "Newly-Controller"
@@ -24224,8 +24212,7 @@ msgstr "Nessun gruppo o file selezionato."
 #: meerk40t/core/elements/groups.py:304
 msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
 msgstr ""
-"Semplificati {count} gruppi. Rimossi {removed} livelli di gruppo non "
-"necessari."
+"Semplificati {count} gruppi. Rimossi {removed} livelli di gruppo non necessari."
 
 #: meerk40t/device/gui/defaultactions.py:66
 msgid "Goto Origin"
@@ -24275,48 +24262,22 @@ msgstr "Posizionamenti"
 msgid "String with a quote: \"See?\""
 msgstr "Stringa con una virgoletta: \"Vedi?\""
 
-#: meerk40t/core/planner.py:62
-msgid ""
-"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
-"optimization occurs within each hierarchy level (inners before outers)."
-msgstr ""
-"Nota: Quando si utilizzano sia 'Riduci tempo di viaggio' che 'Brucia interno"
-" prima', l'ottimizzazione del viaggio avviene all'interno di ogni livello "
-"gerarchico (interni prima degli esterni)."
-
-#: meerk40t/core/elements/element_treeops.py:2492
-msgid "Append Physical Home"
-msgstr "Aggiungi Home Fisico"
-
-#: meerk40t/core/elements/element_treeops.py:2662
-msgid "Append Physical Home/Beep/Interrupt"
-msgstr "Aggiungi Home Fisico/Suono/Interruzione"
-
-#: meerk40t/core/elements/element_treeops.py:3216
+#: meerk40t/core/elements/element_treeops.py:3182
 msgid "Optimisation"
 msgstr "Ottimizzazione"
 
-#: meerk40t/core/elements/element_treeops.py:3218
+#: meerk40t/core/elements/element_treeops.py:3184
 msgid "Reduce travel moves"
 msgstr "Riduci movimenti di viaggio"
 
-#: meerk40t/core/elements/element_treeops.py:3220
+#: meerk40t/core/elements/element_treeops.py:3186
 msgid "Rearrange items within operation to reduce travel moves"
 msgstr ""
-"Riorganizza gli elementi all'interno dell'operazione per ridurre i movimenti"
-" di viaggio"
+"Riorganizza gli elementi all'interno dell'operazione per ridurre i movimenti di viaggio"
 
-#: meerk40t/core/elements/element_treeops.py:3224
+#: meerk40t/core/elements/element_treeops.py:3190
 msgid "Optimize travel moves"
 msgstr "Ottimizza movimenti di viaggio"
-
-#: meerk40t/core/elements/element_treeops.py:3303
-msgid "Add Physical Home"
-msgstr "Aggiungi Home Fisico"
-
-#: meerk40t/core/elements/element_treeops.py:3415
-msgid "Add Physical Home/Beep/Interrupt"
-msgstr "Aggiungi Home Fisico/Suono/Interruzione"
 
 #: meerk40t/core/elements/manual_optimize.py:82
 msgid "Provide detailed debug output"
@@ -24332,8 +24293,7 @@ msgstr "Posizione Y iniziale"
 
 #: meerk40t/core/elements/manual_optimize.py:92
 msgid "reorder elements for optimal cutting within an operation"
-msgstr ""
-"riordina gli elementi per un taglio ottimale all'interno di un'operazione"
+msgstr "riordina gli elementi per un taglio ottimale all'interno di un'operazione"
 
 #: meerk40t/core/elements/manual_optimize.py:115
 msgid "No operations to optimize"
@@ -24351,12 +24311,76 @@ msgstr ""
 
 #: meerk40t/core/elements/manual_optimize.py:431
 msgid "No operations selected for workflow optimization"
-msgstr ""
-"Nessuna operazione selezionata per l'ottimizzazione del flusso di lavoro"
+msgstr "Nessuna operazione selezionata per l'ottimizzazione del flusso di lavoro"
 
 #: meerk40t/core/elements/manual_optimize.py:448
 msgid "Workflow Optimization Results:"
 msgstr "Risultati dell'Ottimizzazione del Flusso di Lavoro:"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:804
+msgid "Rotate element"
+msgstr "Ruota elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1044
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr "Ridimensiona elemento (con Alt-Key liberamente, con Ctrl+shift dal centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1277
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr "Ridimensiona elemento in direzione X (con Ctrl+shift dal centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1278
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr "Ridimensiona elemento in direzione Y (con Ctrl+shift dal centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1431
+msgid "Skew element in X-direction"
+msgstr "Inclina elemento in direzione X"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1432
+msgid "Skew element in Y-direction"
+msgstr "Inclina elemento in direzione Y"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1960
+msgid "Move element"
+msgstr "Sposta elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2093
+msgid "Move rotation center"
+msgstr "Sposta centro di rotazione"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2238
+msgid "Toggle reference status of element"
+msgstr "Attiva/disattiva stato di riferimento dell'elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2364
+msgid "Remove the 'locked' status of the element"
+msgstr "Rimuovi lo stato 'bloccato' dell'elemento"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr ""
+"Nota: Quando si utilizzano sia 'Riduci tempo di viaggio' che 'Brucia interno"
+" prima', l'ottimizzazione del viaggio avviene all'interno di ogni livello "
+"gerarchico (interni prima degli esterni)."
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "Aggiungi Home Fisico"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "Aggiungi Home Fisico/Suono/Interruzione"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "Aggiungi Home Fisico"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "Aggiungi Home Fisico/Suono/Interruzione"
 
 #: meerk40t/device/gui/defaultactions.py:74
 msgid "Move the laser head to the physicalhome position."
@@ -24401,49 +24425,7 @@ msgstr "Algoritmo:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1969
 msgid "- Diagonal: Starting in one corner traversing the image diagonally"
-msgstr ""
-"- Diagonale: Iniziando in un angolo attraversando l'immagine diagonalmente"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:807
-msgid "Rotate element"
-msgstr "Ruota elemento"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1047
-msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
-msgstr ""
-"Ridimensiona elemento (con Alt-Key liberamente, con Ctrl+shift dal centro)"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1280
-msgid "Size element in X-direction (with Ctrl+shift from center)"
-msgstr "Ridimensiona elemento in direzione X (con Ctrl+shift dal centro)"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1281
-msgid "Size element in Y-direction (with Ctrl+shift from center)"
-msgstr "Ridimensiona elemento in direzione Y (con Ctrl+shift dal centro)"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1434
-msgid "Skew element in X-direction"
-msgstr "Inclina elemento in direzione X"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1435
-msgid "Skew element in Y-direction"
-msgstr "Inclina elemento in direzione Y"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:1967
-msgid "Move element"
-msgstr "Sposta elemento"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2100
-msgid "Move rotation center"
-msgstr "Sposta centro di rotazione"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2245
-msgid "Toggle reference status of element"
-msgstr "Attiva/disattiva stato di riferimento dell'elemento"
-
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2371
-msgid "Remove the 'locked' status of the element"
-msgstr "Rimuovi lo stato 'bloccato' dell'elemento"
+msgstr "- Diagonale: Iniziando in un angolo attraversando l'immagine diagonalmente"
 
 #: meerk40t/tools/livinghinges.py:364
 msgid "Choose the generation algorithm"
