@@ -824,19 +824,48 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Get combo configuration
         combo_config = self._get_combo_control_config(data_type, choice)
 
-        # Create choices list
-        choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+        # Check if display/choices separation is needed
+        has_display = "display" in choice and choice["display"] != choice.get("choices")
+        if has_display:
+            # Use display/choices separation like "option" style
+            display_list = list(map(str, choice.get("display")))
+            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
 
-        # Create the control
-        control = wxComboBox(
-            self,
-            wx.ID_ANY,
-            choices=choice_list,
-            style=combo_config["style"],
-        )
+            # Handle value not in list
+            try:
+                index = choice_list.index(str(data))
+            except ValueError:
+                index = 0
+                if data is None:
+                    data = choice.get("default")
+                display_list.insert(0, str(data))
+                choice_list.insert(0, str(data))
 
-        # Set display value
-        self._set_combo_value(control, data, data_type, choice_list)
+            # Create the control
+            control = wxComboBox(
+                self,
+                wx.ID_ANY,
+                choices=display_list,
+                style=combo_config["style"],
+            )
+            control.SetSelection(index)
+
+            # Store choice list for handler
+            control._choice_list = choice_list
+        else:
+            # Standard combo without display/choices separation
+            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+
+            # Create the control
+            control = wxComboBox(
+                self,
+                wx.ID_ANY,
+                choices=choice_list,
+                style=combo_config["style"],
+            )
+
+            # Set display value
+            self._set_combo_value(control, data, data_type, choice_list)
 
         # Apply width constraints
         if data_style == "combosmall":
@@ -853,10 +882,19 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         # Set up event handler
         if handler_factory:
-            control.Bind(wx.EVT_COMBOBOX, handler_factory())
+            if has_display:
+                # Use option handler for display/choices separation
+                real_handler = self._make_combosmall_option_handler(control, choice)
+                control.Bind(wx.EVT_COMBOBOX, real_handler)
+            else:
+                # Use the provided handler factory
+                control.Bind(wx.EVT_COMBOBOX, handler_factory())
             # For combosmall non-exclusive, also bind text events
             if data_style == "combosmall" and not choice.get("exclusive", True):
-                control.Bind(wx.EVT_TEXT, handler_factory())
+                if has_display:
+                    control.Bind(wx.EVT_TEXT, real_handler)
+                else:
+                    control.Bind(wx.EVT_TEXT, handler_factory())
 
         return control, control_sizer
 
