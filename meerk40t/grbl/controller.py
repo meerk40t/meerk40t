@@ -1230,7 +1230,7 @@ class ExperimentalGrblController(GrblController):
         self.running = False
 
         from .serial_connection import SerialConnection
-        from ...tools.grblsender import GrblSender
+        from .grblsender import GrblSender
 
         self.connection = SerialConnection(self.service, self)
         self.ser = None
@@ -1268,21 +1268,20 @@ class ExperimentalGrblController(GrblController):
         print("Connected")
         self.ser = self.connection.laser
 
-        # Initialize GrblSender with the connected serial port
+        # Initialize GrblSender with the existing serial connection
         try:
-            from ...tools.grblsender import GrblSender
+            from .grblsender import GrblSender
 
-            # Extract port and baudrate from the connection
-            port = self.connection.port
-            baudrate = getattr(self.connection, "baudrate", 115200)
             self.grbl_sender = GrblSender(
-                port=port,
-                baudrate=baudrate,
+                serial_connection=self.ser,
                 status_interval=self.poll_interval,
                 debug=False,
             )
             self.grbl_sender.start()
-            self.log("GrblSender initialized and started", type="event")
+            self.log(
+                "GrblSender initialized and started with shared serial connection",
+                type="event",
+            )
         except Exception as e:
             self.log(f"Failed to initialize GrblSender: {e}", type="error")
             self.running = False

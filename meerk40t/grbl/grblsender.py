@@ -33,7 +33,14 @@ class GrblSender:
     - Debug logging capabilities
 
     Example usage:
+        # Using a port (GrblSender creates its own connection)
         sender = GrblSender(port="COM3", baudrate=115200, debug=True)
+        sender.start()
+
+        # Using an existing serial connection
+        import serial
+        ser = serial.Serial("COM3", 115200, timeout=0.1)
+        sender = GrblSender(serial_connection=ser, debug=True)
         sender.start()
 
         # Send a command and wait for response
@@ -44,19 +51,38 @@ class GrblSender:
         sender.stop()
     """
 
-    def __init__(self, port, baudrate=115200, status_interval=2.0, debug=False):
-        # Validate inputs
-        if not port:
-            raise ValueError("Serial port must be specified")
-        if baudrate not in [9600, 19200, 38400, 57600, 115200, 230400, 250000]:
-            raise ValueError(f"Unsupported baudrate: {baudrate}")
-        if status_interval <= 0:
-            raise ValueError("Status interval must be positive")
+    def __init__(
+        self,
+        port=None,
+        serial_connection=None,
+        baudrate=115200,
+        status_interval=2.0,
+        debug=False,
+    ):
+        # Validate inputs - must have either port or existing serial connection
+        if not port and not serial_connection:
+            raise ValueError(
+                "Either serial port or existing serial connection must be specified"
+            )
+        if port and serial_connection:
+            raise ValueError("Cannot specify both port and existing serial connection")
 
-        try:
-            self.serial = serial.Serial(port, baudrate, timeout=0.1)
-        except serial.SerialException as e:
-            raise ConnectionError(f"Failed to open serial port {port}: {e}")
+        self.owns_serial = port is not None  # Track if we created the serial connection
+
+        if port:
+            # Validate inputs for port mode
+            if baudrate not in [9600, 19200, 38400, 57600, 115200, 230400, 250000]:
+                raise ValueError(f"Unsupported baudrate: {baudrate}")
+            if status_interval <= 0:
+                raise ValueError("Status interval must be positive")
+
+            try:
+                self.serial = serial.Serial(port, baudrate, timeout=0.1)
+            except serial.SerialException as e:
+                raise ConnectionError(f"Failed to open serial port {port}: {e}")
+        else:
+            # Use existing serial connection
+            self.serial = serial_connection
 
         self.command_queue = queue.PriorityQueue()
         self.response_map = {}
@@ -105,7 +131,7 @@ class GrblSender:
             self.receiver_thread.join(timeout=2.0)
         if self.status_thread.is_alive():
             self.status_thread.join(timeout=2.0)  # Clean up serial connection
-        if hasattr(self, "serial") and self.serial.is_open:
+        if hasattr(self, "serial") and self.owns_serial and self.serial.is_open:
             self.serial.close()
 
         # Clear command queue and response map
