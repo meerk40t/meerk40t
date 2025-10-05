@@ -77,6 +77,7 @@ class GrblSender:
                 raise ValueError("Status interval must be positive")
 
             try:
+                print(f"Trying to open serial port {port} at {baudrate} baud...")
                 self.serial = serial.Serial(port, baudrate, timeout=0.1)
             except serial.SerialException as e:
                 raise ConnectionError(f"Failed to open serial port {port}: {e}")
@@ -371,7 +372,7 @@ class GrblSender:
     def _handle_response(self, line):
         self.debug_print("Received:", line)
 
-        if line.startswith("Grbl"):
+        if self._is_welcome_message(line):
             self._handle_welcome(line)
         elif line.startswith("<"):
             self._handle_status(line)
@@ -441,7 +442,38 @@ class GrblSender:
         self.debug_print("Controller welcome:", line)
         # Optional: self.send_command('$I', priority=5)
 
-    def _handle_status(self, line):
+    def _is_welcome_message(self, line):
+        """Check if a line appears to be a GRBL welcome/version message."""
+        if not line:
+            return False
+
+        line_lower = line.lower()
+
+        # Check for known GRBL variant prefixes (most reliable)
+        known_prefixes = ["grbl", "fluidnc", "grbl-mega", "grblhal"]
+        if any(line_lower.startswith(prefix) for prefix in known_prefixes):
+            return True
+
+        # Check for version patterns that look like software versions
+        # Must contain version-like pattern AND welcome indicators
+        import re
+
+        has_version = re.search(r"\b\d+\.\d+", line)  # Contains x.y pattern
+        has_welcome_indicator = any(
+            indicator in line_lower
+            for indicator in ["for help", "ready", "initialized", "started", "version"]
+        )
+
+        # Only consider it a welcome if it has both version AND welcome indicators
+        # OR if it looks like a software name followed by version
+        if has_version and has_welcome_indicator:
+            return True
+
+        # Check for software name + version pattern (e.g., "SoftwareName v1.2")
+        if re.search(r"\w+\s+v?\d+\.\d+", line):
+            return True
+
+        return False
         # Parse complete GRBL status message: <State|MPos:X,Y,Z|FS:F,S|WCO:X,Y,Z|...>
         # Extract state first
         state_match = re.search(r"<([^|]+)", line)
@@ -590,22 +622,18 @@ class GrblSender:
             self.debug_print(f"Detected buffer size: {new_size}")
 
     def _check_for_reset(self, response):
-        """Check if a response indicates GRBL has been reset/restarted."""
+        """Check if a response indicates GRBL has been reset/restarted during operation."""
         if not response:
             return False
+        # Only check for actual reset messages, not welcome messages
+        # Welcome messages are handled separately in _handle_welcome
         reset_keywords = [
-            f.lower()
-            for f in (
-                "Grbl",
-                "grblHAL",
-                "Initializing",
-                "Resetting",
-                "Board restarted",
-                "Welcome",
-            )
+            "Initializing",
+            "Resetting",
+            "Board restarted",
         ]
         resp = response.lower()
-        return any(keyword in resp for keyword in reset_keywords)
+        return any(keyword.lower() in resp for keyword in reset_keywords)
 
     def _handle_reset(self):
         self.debug_print("Controller reset detected. Clearing queue.")
@@ -665,7 +693,7 @@ if __name__ == "__main__":
 
     comport = sys.argv[1] if len(sys.argv) > 1 else "com6"
     try:
-        sender = GrblSender(port=comport, baudrate=115200, debug=False)
+        sender = GrblSender(port=comport, baudrate=115200, debug=True)
         sender.start()
     except Exception as e:
         print("Failed to start GRBL sender:", e)
