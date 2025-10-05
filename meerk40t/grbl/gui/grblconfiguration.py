@@ -100,7 +100,10 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_ws)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
         # end wxGlade
-        if self.context.permit_serial and self.context.interface == "serial":
+        if self.context.permit_serial and self.context.interface in (
+            "serial",
+            "experimental",
+        ):
             self.radio_serial.SetValue(True)
             self.panel_tcp_config.Hide()
             self.panel_ws_config.Hide()

@@ -68,6 +68,7 @@ class GrblSender:
             raise ValueError("Cannot specify both port and existing serial connection")
 
         self.owns_serial = port is not None  # Track if we created the serial connection
+        self.debug = debug  # Set debug flag early for debug_print calls
 
         if port:
             # Validate inputs for port mode
@@ -84,6 +85,19 @@ class GrblSender:
         else:
             # Use existing serial connection
             self.serial = serial_connection
+            # Prepare the existing connection for use
+            if self.serial.is_open:
+                # Ensure proper timeout for readline operations
+                if self.serial.timeout != 0.1:
+                    self.serial.timeout = 0.1
+                    self.debug_print("Adjusted serial timeout to 0.1s")
+                self.serial.reset_input_buffer()  # Clear any buffered input
+                self.serial.reset_output_buffer()  # Clear any buffered output
+                self.debug_print(
+                    "Prepared existing serial connection for GRBL communication"
+                )
+            else:
+                raise ConnectionError("Provided serial connection is not open")
 
         self.command_queue = queue.PriorityQueue()
         self.response_map = {}
@@ -91,7 +105,6 @@ class GrblSender:
         self.buffer_remaining = self.buffer_size
         self.status_interval = status_interval
         self.running = False
-        self.debug = debug
         self.lock = threading.Lock()
         self.response_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
@@ -118,9 +131,9 @@ class GrblSender:
         self.sender_thread.start()
         self.status_thread.start()
         self.debug_print("GRBL sender started.")
-        # Removed automatic soft reset - let controller decide when to reset
+        # Send immediate status request to wake up GRBL and get initial status
+        self.send_realtime("?")
         time.sleep(0.1)  # Give GRBL time to respond
-        self.send_command("$I", priority=5)  # Request version info
 
     def soft_reset(self):
         """Send soft reset command (Ctrl-X) to GRBL controller."""
@@ -335,38 +348,42 @@ class GrblSender:
                 time.sleep(0.1)
 
     def _receive_loop(self):
-        consecutive_errors = 0
-        max_consecutive_errors = 5
+        last_successful_read = time.time()
+        connection_timeout = 2.0  # Consider connection lost after 2 seconds of no data
 
         while self.running:
             try:
                 raw = self.serial.readline()
-                if not raw:  # Empty read, might indicate connection issue
-                    consecutive_errors += 1
-                    if consecutive_errors >= max_consecutive_errors:
-                        self.debug_print(
-                            "Multiple consecutive empty reads, possible connection issue"
-                        )
-                        self.connection_lost = True
-                        time.sleep(1.0)  # Back off to avoid busy waiting
+                if not raw:  # Empty read
+                    current_time = time.time()
+                    if current_time - last_successful_read > connection_timeout:
+                        if not self.connection_lost:
+                            self.debug_print(
+                                f"No data received for {connection_timeout}s, possible connection issue"
+                            )
+                            self.connection_lost = True
+                            time.sleep(1.0)  # Back off to avoid busy waiting
                     continue
 
                 line = raw.decode("utf-8", errors="ignore").strip()
                 if line:
-                    consecutive_errors = 0  # Reset error counter on successful read
+                    last_successful_read = (
+                        time.time()
+                    )  # Reset timeout on successful read
+                    if self.connection_lost:
+                        self.connection_lost = False
+                        self.debug_print("GRBL connection restored")
                     self._handle_response(line)
 
             except serial.SerialException as e:
                 self.debug_print(f"Serial read error: {e}")
                 self.connection_lost = True
-                consecutive_errors += 1
                 time.sleep(0.5)
             except UnicodeDecodeError as e:
                 self.debug_print(f"Unicode decode error: {e}")
-                consecutive_errors += 1
+                time.sleep(0.1)
             except Exception as e:
                 self.debug_print(f"Unexpected receive error: {e}")
-                consecutive_errors += 1
                 time.sleep(0.1)
 
     def _handle_response(self, line):
@@ -474,6 +491,8 @@ class GrblSender:
             return True
 
         return False
+
+    def _handle_status(self, line):
         # Parse complete GRBL status message: <State|MPos:X,Y,Z|FS:F,S|WCO:X,Y,Z|...>
         # Extract state first
         state_match = re.search(r"<([^|]+)", line)
@@ -631,6 +650,7 @@ class GrblSender:
             "Initializing",
             "Resetting",
             "Board restarted",
+            "Reset to continue",  # GRBL reset message
         ]
         resp = response.lower()
         return any(keyword.lower() in resp for keyword in reset_keywords)

@@ -522,7 +522,13 @@ class GrblController:
 
     @signal_listener("update_interface")
     def update_connection(self, origin=None, *args):
-        if self.service.permit_serial and self.service.interface == "serial":
+        print(
+            f"Interface-settings: {self.service.interface} - {self.service.serial_port}"
+        )
+        if self.service.permit_serial and self.service.interface in (
+            "experimental",
+            "serial",
+        ):
             try:
                 from .serial_connection import SerialConnection
 
