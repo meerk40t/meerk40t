@@ -74,7 +74,10 @@ class GrblSender:
 
     def _send_loop(self):
         while self.running:
-            if self.alarm_state:
+            with self.response_lock:
+                alarm_active = self.alarm_state
+
+            if alarm_active:
                 time.sleep(0.5)
                 continue
 
@@ -139,7 +142,8 @@ class GrblSender:
             with self.buffer_lock:
                 self.buffer_remaining = self.buffer_size
         elif "ALARM" in line:
-            self.alarm_state = True
+            with self.response_lock:
+                self.alarm_state = True
         elif "RESET" in line or "Grbl" in line:
             self._handle_reset()
         else:
@@ -203,10 +207,11 @@ class GrblSender:
                     break
         with self.response_lock:
             self.response_map.clear()
+            self.active_cmd_id = None
         with self.buffer_lock:
             self.buffer_remaining = self.buffer_size
-        self.alarm_state = False
-        self.active_cmd_id = None
+        with self.response_lock:
+            self.alarm_state = False
 
     def _status_loop(self):
         while self.running:
