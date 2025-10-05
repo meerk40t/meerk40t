@@ -299,14 +299,22 @@ class GRBLDevice(Service, Status):
                 import serial.tools.list_ports
 
                 ports = serial.tools.list_ports.comports()
-                serial_interface = [x.device for x in ports]
-                serial_interface_display = [str(x) for x in ports]
+                if ports:
+                    serial_interface = [x.device for x in ports]
+                    serial_interface_display = [str(x) for x in ports]
+                else:
+                    serial_interface = ["UNCONFIGURED"]
+                    serial_interface_display = ["No serial ports found"]
 
                 choice_dict["choices"] = serial_interface
                 choice_dict["display"] = serial_interface_display
             except ImportError:
                 choice_dict["choices"] = ["UNCONFIGURED"]
                 choice_dict["display"] = ["pyserial-not-installed"]
+            except Exception as e:
+                # Handle any other errors gracefully
+                choice_dict["choices"] = ["UNCONFIGURED"]
+                choice_dict["display"] = [f"Error: {str(e)}"]
 
         from platform import system
 
@@ -318,7 +326,7 @@ class GRBLDevice(Service, Status):
                 "default": "UNCONFIGURED",
                 "type": str,
                 "style": "combosmall" if is_linux else "option",
-                "label": "",
+                "label": _("Serial Port"),
                 "tip": _("What serial interface does this device connect to?"),
                 # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
