@@ -247,6 +247,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             if needs_dynamic_call:
                 # Calls dynamic function to update this dictionary before production
                 needs_dynamic_call(choice)
+                # print(f"Now we have: {choice}")
         # Set default values for required keys
         for choice in choices:
             choice.setdefault("subsection", "")
@@ -1923,11 +1924,10 @@ class ChoicePropertyPanel(ScrolledPanel):
         obj = choice["object"]
         dtype = choice.get("type", str)
         addsig = self._get_additional_signals(choice)
-        choice_list = choice.get("choices", [])
 
         def handle_combo_option_selection(event):
             try:
-                selected_choice = choice_list[ctrl.GetSelection()]
+                selected_choice = ctrl._choice_list[ctrl.GetSelection()]
                 converted_value = dtype(selected_choice)
                 self._update_property_and_signal(obj, param, converted_value, addsig)
             except (ValueError, TypeError, IndexError):
