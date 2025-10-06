@@ -57,7 +57,7 @@ class GrblSender:
         port=None,
         serial_connection=None,
         baudrate=115200,
-        status_interval=2.0,
+        status_interval=3.0,
         debug=False,
     ):
         # Validate inputs - must have either port or existing serial connection
@@ -75,7 +75,7 @@ class GrblSender:
             # Validate inputs for port mode
             if baudrate not in [9600, 19200, 38400, 57600, 115200, 230400, 250000]:
                 raise ValueError(f"Unsupported baudrate: {baudrate}")
-            if status_interval <= 0:
+            if status_interval < 0:
                 raise ValueError("Status interval must be positive")
 
             try:
@@ -120,7 +120,10 @@ class GrblSender:
 
         self.receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.sender_thread = threading.Thread(target=self._send_loop, daemon=True)
-        self.status_thread = threading.Thread(target=self._status_loop, daemon=True)
+        if self.status_interval > 0:
+            self.status_thread = threading.Thread(target=self._status_loop, daemon=True)
+        else:
+            self.status_thread = None
 
     def debug_print(self, *args, **kwargs):
         """Print debug messages only if debug mode is enabled."""
@@ -131,7 +134,8 @@ class GrblSender:
         self.running = True
         self.receiver_thread.start()
         self.sender_thread.start()
-        self.status_thread.start()
+        if self.status_thread:
+            self.status_thread.start()
         self.debug_print("GRBL sender started.")
         # Send immediate status request to wake up GRBL and get initial status
         self.send_realtime("?")
@@ -151,7 +155,7 @@ class GrblSender:
             self.sender_thread.join(timeout=2.0)
         if self.receiver_thread.is_alive():
             self.receiver_thread.join(timeout=2.0)
-        if self.status_thread.is_alive():
+        if self.status_thread and self.status_thread.is_alive():
             self.status_thread.join(timeout=2.0)  # Clean up serial connection
         if hasattr(self, "serial") and self.owns_serial and self.serial.is_open:
             self.serial.close()

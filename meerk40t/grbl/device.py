@@ -482,6 +482,18 @@ class GRBLDevice(Service, Status):
                 ),
             },
             {
+                "attr": "log_status_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Track status"),
+                "section": "_5_Config",
+                "tip": _(
+                    "Log periodic status updates from GRBL device (state, position, speeds)"
+                ),
+                "conditional": (self, "interface", "experimental"),
+            },
+            {
                 "attr": "use_red_dot",
                 "object": self,
                 "default": False,

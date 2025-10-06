@@ -615,7 +615,6 @@ class GrblController:
 
         @return:
         """
-        print("CLOSE GRBL")
         if not self.connection or not self.connection.connected:
             return
         self.connection.disconnect()
@@ -1228,7 +1227,7 @@ class GrblController:
 
 
 class ExperimentalGrblController(GrblController):
-    def __init__(self, context, poll_interval=0.5, command_timeout=5, max_retries=3):
+    def __init__(self, context, poll_interval=3.0, command_timeout=5.0, max_retries=3):
         super().__init__(context)
         self.running = False
 
@@ -1239,6 +1238,7 @@ class ExperimentalGrblController(GrblController):
         self.poll_interval = poll_interval
         self.command_timeout = command_timeout
         self.max_retries = max_retries
+        self.log_status = getattr(self.service, "log_status_updates", True)
 
         # Use the improved GrblSender for communication
         self.grbl_sender = None
@@ -1272,7 +1272,7 @@ class ExperimentalGrblController(GrblController):
 
             self.grbl_sender = GrblSender(
                 serial_connection=self.ser,
-                status_interval=self.poll_interval,
+                status_interval=self.poll_interval if self.log_status else 0,
                 debug=False,
             )
             self.grbl_sender.start()
@@ -1321,18 +1321,18 @@ class ExperimentalGrblController(GrblController):
         super().open()
         self._validation_stage = 5
 
-    def send_command(self, command, priority=10):
+    def send_command(self, command, priority=10, log_responses=True):
         command = str(command).strip()
         if self.grbl_sender:
             cmd_id = self.grbl_sender.send_command(
-                command, priority=priority, timeout=self.command_timeout
+                command,
+                priority=priority,
+                timeout=self.command_timeout,
+                log_responses=log_responses,
             )
             self.log(
                 f"Queued command: '{command}' with priority {priority} (ID: {cmd_id})",
                 type="event",
-            )
-            print(
-                f"Threads alive: status={self.status_thread.is_alive()} response={self.response_thread.is_alive()} running={self.running}"
             )
             return cmd_id
         else:
@@ -1409,22 +1409,16 @@ class ExperimentalGrblController(GrblController):
                 self.service.signal("grbl:power", status["spindle_speed"])
 
             # Log status periodically (not on every update to avoid spam)
-            current_time = time.time()
-            if (
-                not hasattr(self, "_last_status_log")
-                or current_time - self._last_status_log > 5.0
-            ):
-                self._last_status_log = current_time
-                status_parts = [f"State: {state}"]
-                if status.get("mpos"):
-                    status_parts.append(f"MPos: {status['mpos']}")
-                if status.get("wpos"):
-                    status_parts.append(f"WPos: {status['wpos']}")
-                if status.get("feed_rate") is not None:
-                    status_parts.append(f"Feed: {status['feed_rate']}")
-                if status.get("spindle_speed") is not None:
-                    status_parts.append(f"Spindle: {status['spindle_speed']}")
-                self.log(" | ".join(status_parts), type="event")
+            status_parts = [f"State: {state}"]
+            if status.get("mpos"):
+                status_parts.append(f"MPos: {status['mpos']}")
+            if status.get("wpos"):
+                status_parts.append(f"WPos: {status['wpos']}")
+            if status.get("feed_rate") is not None:
+                status_parts.append(f"Feed: {status['feed_rate']}")
+            if status.get("spindle_speed") is not None:
+                status_parts.append(f"Spindle: {status['spindle_speed']}")
+            self.log(" | ".join(status_parts), type="event")
 
         except Exception as e:
             self.log(f"Failed to update controller from status: {e}", type="error")
@@ -1438,9 +1432,7 @@ class ExperimentalGrblController(GrblController):
         """
         self.start()
         d = data.strip()
-        print("Signalling write")
         self.service.signal("grbl;write", d)
-        print(f"Calling send_command('{d}', priority=10)")
         self.send_command(data, priority=10)
 
     def realtime(self, data):
