@@ -59,11 +59,13 @@ class RuidaController:
         self.events("File Sent.")
 
     def recv(self, reply):
-        e = self.job.unswizzle(reply)
-        if e == ACK:
-            with self._send_lock:
-                self._send_lock.notify()
-        self.events(f"-->: {e}")
+        '''Receive reply from the controller.
+
+        The only reason this will be called is in response to a command
+        which requires reply data from the controller. Forward to the
+        RDJob for parsing.'''
+        _decoded = self.job.decode_reply(reply)
+        self.events(f"-->: {_decoded}")
 
     def start_record(self):
         self.job.get_setting(MEM_CARD_ID, output=self.write)

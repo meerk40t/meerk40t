@@ -411,6 +411,9 @@ class RuidaDevice(Service, Status):
             elif self.interface == "usb":
                 self.active_interface = self.interface_usb
                 self.driver.controller.write = self.interface_usb.write
+            _swizzle = self.driver.controller.job.swizzle
+            _unswizzle = self.driver.controller.job.unswizzle
+            self.active_interface.set_swizzles(_swizzle, _unswizzle)
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(command, channel, _, data=None, **kwargs):
