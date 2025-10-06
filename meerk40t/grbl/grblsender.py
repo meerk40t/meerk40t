@@ -117,6 +117,7 @@ class GrblSender:
         self.last_status_time = 0
         self.command_timeout = 10.0
         self.last_status_query_time = 0
+        self.last_reset_time = 0
 
         self.receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.sender_thread = threading.Thread(target=self._send_loop, daemon=True)
@@ -124,6 +125,9 @@ class GrblSender:
             self.status_thread = threading.Thread(target=self._status_loop, daemon=True)
         else:
             self.status_thread = None
+
+        # Treat initial connection like a reset for timeout purposes
+        self.last_reset_time = time.time()
 
     def debug_print(self, *args, **kwargs):
         """Print debug messages only if debug mode is enabled."""
@@ -144,6 +148,7 @@ class GrblSender:
     def soft_reset(self):
         """Send soft reset command (Ctrl-X) to GRBL controller."""
         self.serial.write(b"\x18")  # Ctrl-X: soft reset
+        self.last_reset_time = time.time()
         time.sleep(0.1)  # Give GRBL time to respond
         self.debug_print("Soft reset sent to GRBL")
 
@@ -174,6 +179,11 @@ class GrblSender:
         self.debug_print("GRBL sender stopped and cleaned up.")
 
     def send_command(self, command: str, priority=10, timeout=10.0, log_responses=True):
+        # Use longer timeout for commands sent shortly after reset
+        current_time = time.time()
+        if current_time - self.last_reset_time < 5.0:  # Within 5 seconds of reset
+            timeout = timeout * 2
+
         cmd_id = None
         if priority != 0:
             with self.response_lock:
@@ -356,16 +366,23 @@ class GrblSender:
         connection_timeout = 2.0  # Consider connection lost after 2 seconds of no data
 
         while self.running:
+            # Use longer connection timeout after reset
+            current_time = time.time()
+            effective_connection_timeout = connection_timeout
+            if current_time - self.last_reset_time < 5.0:  # Within 5 seconds of reset
+                effective_connection_timeout = connection_timeout * 2  # 4 seconds
+
             try:
                 raw = self.serial.readline()
                 if not raw:  # Empty read
                     current_time = time.time()
                     if (
-                        current_time - last_successful_read > connection_timeout
+                        current_time - last_successful_read
+                        > effective_connection_timeout
                         and not self.connection_lost
                     ):
                         self.debug_print(
-                            f"No data received for {connection_timeout}s, possible connection issue"
+                            f"No data received for {effective_connection_timeout}s, possible connection issue"
                         )
                         self.connection_lost = True
                         time.sleep(1.0)
@@ -677,6 +694,7 @@ class GrblSender:
             self.active_cmd_id = None
             self.alarm_state = False
             self.current_status = None
+            self.last_reset_time = time.time()
 
     def _status_loop(self):
         while self.running:
