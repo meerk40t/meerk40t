@@ -189,7 +189,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.context.interface = "mock"
             self.context.signal("update_interface")
         self.Layout()
-        print(f"Interface changed from {last} to {self.context.interface}")
+        # print(f"Interface changed from {last} to {self.context.interface}")
 
 
 class GRBLConfiguration(MWindow):

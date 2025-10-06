@@ -82,7 +82,7 @@ class GrblSender:
                 print(f"Trying to open serial port {port} at {baudrate} baud...")
                 self.serial = serial.Serial(port, baudrate, timeout=0.1)
             except serial.SerialException as e:
-                raise ConnectionError(f"Failed to open serial port {port}: {e}")
+                raise ConnectionError(f"Failed to open serial port {port}: {e}") from e
         else:
             # Use existing serial connection
             self.serial = serial_connection
@@ -246,9 +246,7 @@ class GrblSender:
         start_time = time.time()
         while time.time() - start_time < timeout:
             with self.response_lock:
-                if not any(
-                    not tracker.complete for tracker in self.response_map.values()
-                ):
+                if all(tracker.complete for tracker in self.response_map.values()):
                     return True
             time.sleep(0.1)
         return False
@@ -362,13 +360,15 @@ class GrblSender:
                 raw = self.serial.readline()
                 if not raw:  # Empty read
                     current_time = time.time()
-                    if current_time - last_successful_read > connection_timeout:
-                        if not self.connection_lost:
-                            self.debug_print(
-                                f"No data received for {connection_timeout}s, possible connection issue"
-                            )
-                            self.connection_lost = True
-                            time.sleep(1.0)  # Back off to avoid busy waiting
+                    if (
+                        current_time - last_successful_read > connection_timeout
+                        and not self.connection_lost
+                    ):
+                        self.debug_print(
+                            f"No data received for {connection_timeout}s, possible connection issue"
+                        )
+                        self.connection_lost = True
+                        time.sleep(1.0)
                     continue
 
                 line = raw.decode("utf-8", errors="ignore").strip()
@@ -499,10 +499,7 @@ class GrblSender:
             return True
 
         # Check for software name + version pattern (e.g., "SoftwareName v1.2")
-        if re.search(r"\w+\s+v?\d+\.\d+", line):
-            return True
-
-        return False
+        return bool(re.search(r"\w+\s+v?\d+\.\d+", line))
 
     def _handle_status(self, line):
         # Parse complete GRBL status message: <State|MPos:X,Y,Z|FS:F,S|WCO:X,Y,Z|...>
