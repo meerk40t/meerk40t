@@ -34,7 +34,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.radio_serial = wx.RadioButton(
                 self, wx.ID_ANY, _("Serial"), style=wx.RB_GROUP
             )
-            self.radio_serial.SetValue(1)
             self.radio_serial.SetToolTip(
                 _(
                     "Select this if you have a GRBL device running through a serial connection."
@@ -64,11 +63,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface_radio.Add(self.radio_mock, 1, wx.EXPAND, 0)
 
-        self.radio_experimental = wx.RadioButton(self, wx.ID_ANY, _("Experimental"))
-        self.radio_experimental.SetToolTip(
-            _("Select this for a different serial connection.")
-        )
-        sizer_interface_radio.Add(self.radio_experimental, 1, wx.EXPAND, 0)
+        if self.context.permit_serial:
+            self.radio_experimental = wx.RadioButton(self, wx.ID_ANY, _("Experimental"))
+            self.radio_experimental.SetToolTip(
+                _("Select this for a different serial connection.")
+            )
+            sizer_interface_radio.Add(self.radio_experimental, 1, wx.EXPAND, 0)
 
         self.panel_serial_settings = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="serial"
@@ -100,11 +100,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_ws)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
         # end wxGlade
-        if self.context.permit_serial and self.context.interface in (
-            "serial",
-            "experimental",
-        ):
+        if self.context.permit_serial and self.context.interface == "serial":
             self.radio_serial.SetValue(True)
+            self.panel_tcp_config.Hide()
+            self.panel_ws_config.Hide()
+        elif self.context.permit_serial and self.context.interface == "experimental":
+            self.radio_experimental.SetValue(True)
             self.panel_tcp_config.Hide()
             self.panel_ws_config.Hide()
         elif self.context.permit_tcp and self.context.interface == "tcp":
@@ -139,13 +140,16 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
         last = self.context.interface
         try:
-            if self.radio_serial.GetValue():
+            if hasattr(self, "radio_serial") and self.radio_serial.GetValue():
                 self.context.interface = "serial"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Show()
                 self.panel_tcp_config.Hide()
                 self.panel_ws_config.Hide()
-            if self.radio_experimental.GetValue():
+            if (
+                hasattr(self, "radio_experimental")
+                and self.radio_experimental.GetValue()
+            ):
                 self.context.interface = "experimental"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Show()
@@ -185,6 +189,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.context.interface = "mock"
             self.context.signal("update_interface")
         self.Layout()
+        print(f"Interface changed from {last} to {self.context.interface}")
 
 
 class GRBLConfiguration(MWindow):
