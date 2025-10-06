@@ -1682,6 +1682,34 @@ class TemplatePanel(wx.Panel):
         self.context.setting(str, "template_list1", "")
         self.context.setting(str, "template_list2", "")
 
+        # Balor operation parameter settings for each default operation
+        balor_keys = [
+            "frequency",
+            "rapid_speed",
+            "delay_laser_on",
+            "delay_laser_off",
+            "delay_polygon",
+            "pulse_width",
+            "wobble_enabled",
+            "rapid_enabled",
+            "pulse_width_enabled",
+            "timing_enabled",
+        ]
+        for idx in range(len(self.default_op)):
+            for key in balor_keys:
+                if key.endswith("_enabled"):
+                    self.context.setting(bool, f"template_balor_op{idx}_{key}", False)
+                else:
+                    self.context.setting(float, f"template_balor_op{idx}_{key}", 0.0)
+
+        # Balor operation parameter settings for each secondary operation
+        for idx in range(len(self.secondary_default_op)):
+            for key in balor_keys:
+                if key.endswith("_enabled"):
+                    self.context.setting(bool, f"template_balor_sec{idx}_{key}", False)
+                else:
+                    self.context.setting(float, f"template_balor_sec{idx}_{key}", 0.0)
+
     def _set_settings(self, templatename):
         info_field = (
             self.context.template_show_values,
@@ -1771,6 +1799,67 @@ class TemplatePanel(wx.Panel):
         self.context.template_coldir2 = self.check_color_direction_2.GetValue()
         self.context.template_list1 = "|".join(self.list_options_1.GetCheckedStrings())
         self.context.template_list2 = "|".join(self.list_options_2.GetCheckedStrings())
+
+        # Save balor operation parameters if balor device is active
+        if (
+            hasattr(self.context, "device")
+            and self.context.device
+            and hasattr(self.context.device, "path")
+            and "balor" in self.context.device.path
+        ):
+            # Save settings from default operations that have balor parameters
+            for idx, op in enumerate(self.default_op):
+                if op and hasattr(op, "settings"):
+                    # Save balor-related settings
+                    balor_settings = {}
+                    for key in [
+                        "frequency",
+                        "rapid_speed",
+                        "delay_laser_on",
+                        "delay_laser_off",
+                        "delay_polygon",
+                        "pulse_width",
+                        "wobble_enabled",
+                        "rapid_enabled",
+                        "pulse_width_enabled",
+                        "timing_enabled",
+                    ]:
+                        if key in op.settings:
+                            balor_settings[key] = op.settings[key]
+
+                    if balor_settings:
+                        # Save to context with operation index
+                        for key, value in balor_settings.items():
+                            setattr(
+                                self.context, f"template_balor_op{idx}_{key}", value
+                            )
+
+            # Also save secondary operations if they exist
+            for idx, op in enumerate(self.secondary_default_op):
+                if op and hasattr(op, "settings"):
+                    balor_settings = {}
+                    for key in [
+                        "frequency",
+                        "rapid_speed",
+                        "delay_laser_on",
+                        "delay_laser_off",
+                        "delay_polygon",
+                        "pulse_width",
+                        "wobble_enabled",
+                        "rapid_enabled",
+                        "pulse_width_enabled",
+                        "timing_enabled",
+                    ]:
+                        if key in op.settings:
+                            balor_settings[key] = op.settings[key]
+
+                    if balor_settings:
+                        # Save to context with secondary operation index
+                        for key, value in balor_settings.items():
+                            setattr(
+                                self.context, f"template_balor_sec{idx}_{key}", value
+                            )
+
         if templatename:
             # let's try to restore the settings
             self._set_settings(templatename)
@@ -1815,6 +1904,54 @@ class TemplatePanel(wx.Panel):
             self.list_options_2.SetCheckedStrings(
                 self.context.template_list2.split("|")
             )
+
+            # Restore balor operation parameters if balor device is active
+            if (
+                hasattr(self.context, "device")
+                and self.context.device
+                and hasattr(self.context.device, "path")
+                and "balor" in self.context.device.path
+            ):
+                # Restore settings to default operations
+                for idx, op in enumerate(self.default_op):
+                    if op and hasattr(op, "settings"):
+                        balor_keys = [
+                            "frequency",
+                            "rapid_speed",
+                            "delay_laser_on",
+                            "delay_laser_off",
+                            "delay_polygon",
+                            "pulse_width",
+                            "wobble_enabled",
+                            "rapid_enabled",
+                            "pulse_width_enabled",
+                            "timing_enabled",
+                        ]
+                        for key in balor_keys:
+                            context_attr = f"template_balor_op{idx}_{key}"
+                            if hasattr(self.context, context_attr):
+                                op.settings[key] = getattr(self.context, context_attr)
+
+                # Restore settings to secondary operations
+                for idx, op in enumerate(self.secondary_default_op):
+                    if op and hasattr(op, "settings"):
+                        balor_keys = [
+                            "frequency",
+                            "rapid_speed",
+                            "delay_laser_on",
+                            "delay_laser_off",
+                            "delay_polygon",
+                            "pulse_width",
+                            "wobble_enabled",
+                            "rapid_enabled",
+                            "pulse_width_enabled",
+                            "timing_enabled",
+                        ]
+                        for key in balor_keys:
+                            context_attr = f"template_balor_sec{idx}_{key}"
+                            if hasattr(self.context, context_attr):
+                                op.settings[key] = getattr(self.context, context_attr)
+
         except (AttributeError, ValueError):
             pass
 
@@ -2019,9 +2156,66 @@ class TemplateTool(MWindow):
         del busy
 
     def window_open(self):
-        pass
+        # Restore balor operation parameters if available
+        if (
+            hasattr(self.context, "device")
+            and self.context.device
+            and hasattr(self.context.device, "name")
+            and self.context.device.name == "balor"
+        ):
+            try:
+                saved_params = self.context.kernel.read_persistent(
+                    str, "/", "materialtest_balor_params", None
+                )
+                if saved_params:
+                    import json
+
+                    params_dict = json.loads(saved_params)
+                    # Restore the parameters to the device
+                    for attr, value in params_dict.items():
+                        if hasattr(self.context.device, attr):
+                            setattr(self.context.device, attr, value)
+                    self.context.signal("device;updated")
+            except Exception:
+                # If there's any error restoring, just continue
+                pass
 
     def window_close(self):
+        # Save balor operation parameters
+        if (
+            hasattr(self.context, "device")
+            and self.context.device
+            and hasattr(self.context.device, "name")
+            and self.context.device.name == "balor"
+        ):
+            try:
+                # Collect current balor parameters
+                balor_params = {}
+                balor_attrs = [
+                    "timing_enabled",
+                    "delay_polygon",
+                    "delay_laser_off",
+                    "delay_laser_on",
+                    "pulse_width_enabled",
+                    "default_pulse_width",
+                    "rapid_enabled",
+                    "default_rapid_speed",
+                    "default_frequency",
+                ]
+                for attr in balor_attrs:
+                    if hasattr(self.context.device, attr):
+                        balor_params[attr] = getattr(self.context.device, attr)
+
+                # Save to persistent storage
+                import json
+
+                self.context.kernel.write_persistent(
+                    "/", "materialtest_balor_params", json.dumps(balor_params)
+                )
+            except Exception:
+                # If there's any error saving, just continue
+                pass
+
         for p in self.panel_instances:
             try:
                 p.pane_hide()
