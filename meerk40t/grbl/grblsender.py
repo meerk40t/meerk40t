@@ -7,7 +7,7 @@ import serial
 
 
 class CommandTracker:
-    def __init__(self, cmd_id, command):
+    def __init__(self, cmd_id, command, log_responses=True):
         self.cmd_id = cmd_id
         self.command = command
         self.command_size = len(command) + 1  # +1 for newline
@@ -16,6 +16,7 @@ class CommandTracker:
         self.error = False
         self.timeout = 10.0  # Default timeout in seconds
         self.timestamp = time.time()
+        self.log_responses = log_responses  # Whether to log responses for this command
 
 
 class GrblSender:
@@ -115,6 +116,7 @@ class GrblSender:
         self.connection_lost = False
         self.last_status_time = 0
         self.command_timeout = 10.0
+        self.last_status_query_time = 0
 
         self.receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.sender_thread = threading.Thread(target=self._send_loop, daemon=True)
@@ -167,21 +169,21 @@ class GrblSender:
 
         self.debug_print("GRBL sender stopped and cleaned up.")
 
-    def send_command(self, command: str, priority=10, timeout=10.0):
+    def send_command(self, command: str, priority=10, timeout=10.0, log_responses=True):
         cmd_id = None
         if priority != 0:
             with self.response_lock:
                 cmd_id = self.last_command_id
                 self.last_command_id += 1
-                tracker = CommandTracker(cmd_id, command)
+                tracker = CommandTracker(cmd_id, command, log_responses=log_responses)
                 tracker.timeout = timeout
                 self.response_map[cmd_id] = tracker
 
         self.command_queue.put((priority, cmd_id, command))
         return cmd_id
 
-    def send_realtime(self, command: str):
-        return self.send_command(command, priority=0)
+    def send_realtime(self, command: str, log_responses=True):
+        return self.send_command(command, priority=0, log_responses=log_responses)
 
     def get_response(self, cmd_id):
         with self.response_lock:
@@ -387,7 +389,13 @@ class GrblSender:
                 time.sleep(0.1)
 
     def _handle_response(self, line):
-        self.debug_print("Received:", line)
+        # Don't log status updates from periodic queries to reduce noise
+        current_time = time.time()
+        suppress_status = (
+            line.startswith("<") and (current_time - self.last_status_query_time) < 0.1
+        )
+        if not suppress_status:
+            self.debug_print("Received:", line)
 
         if self._is_welcome_message(line):
             self._handle_welcome(line)
@@ -671,7 +679,8 @@ class GrblSender:
 
     def _status_loop(self):
         while self.running:
-            self.send_realtime("?")
+            self.last_status_query_time = time.time()
+            self.send_realtime("?", log_responses=False)
             time.sleep(self.status_interval)
             # Check connection health
             self._check_connection_health()
