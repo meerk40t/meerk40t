@@ -471,7 +471,7 @@ class GrblController:
         self._paused = False
         self._watchers = []
         self.is_shutdown = False
-        self._last_state = None
+        self._last_state = {"state": "idle"}
 
     @property
     def last_state(self):
@@ -480,9 +480,8 @@ class GrblController:
     @property
     def error_condition(self):
         # Testcase
-        if self._last_state is not None:
-            return self._last_state in ("alarm", "hold", "door", "check")
-        return False
+        state = self._last_state.get("state", "idle")
+        return state in ("alarm", "hold", "door", "check")
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -1005,9 +1004,14 @@ class GrblController:
             return
         message = response[1:-1]
         data = list(message.split("|"))
-        self._last_state = data[0].lower()
+        self._last_state["state"] = data[0].lower()
         # print (f"Data: {data[0]} -> last_state={self._last_state} -> error_condition={self.error_condition}")
         self.service.signal("grbl:state", data[0])
+        speed = None
+        power = None
+        current_x = None
+        current_y = None
+        current_z = None
         for datum in data[1:]:
             # While valid some grbl replies might violate the parsing convention.
             try:
@@ -1015,19 +1019,27 @@ class GrblController:
             except ValueError:
                 continue
             if name == "F":
-                self.service.signal("grbl:speed", float(info))
+                speed = float(info)
+                self.service.signal("grbl:speed", speed)
             elif name == "S":
-                self.service.signal("grbl:power", float(info))
+                power = float(info)
+                self.service.signal("grbl:power", power)
             elif name == "FS":
                 f, s = info.split(",")
-                self.service.signal("grbl:speed", float(f))
-                self.service.signal("grbl:power", float(s))
+                speed = float(f)
+                power = float(s)
+                self.service.signal("grbl:speed", speed)
+                self.service.signal("grbl:power", power)
             elif name == "MPos":
                 coords = info.split(",")
                 try:
                     nx = float(coords[0])
                     ny = float(coords[1])
-
+                    current_x = nx
+                    current_y = ny
+                    if len(coords) >= 3:
+                        current_z = float(coords[2])
+                    # We need to convert the machine position into scene position.
                     if not self.fully_validated():
                         # During validation, we declare positions.
                         self.driver.declare_position(nx, ny)
@@ -1068,6 +1080,11 @@ class GrblController:
             self.log("Connection Confirmed.", type="event")
             self._validation_stage = 5
             self.validate_stop("*")
+        self._last_state["speed"] = speed
+        self._last_state["power"] = power
+        self._last_state["x"] = current_x
+        self._last_state["y"] = current_y
+        self._last_state["z"] = current_z
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
@@ -1361,7 +1378,7 @@ class ExperimentalGrblController(GrblController):
         """Update controller state from GrblSender status information."""
         try:
             state = status.get("state", "Unknown")
-            self._last_state = state.lower()
+            self._last_state["state"] = state.lower()
 
             # Update position information
             if status.get("mpos"):
@@ -1369,6 +1386,10 @@ class ExperimentalGrblController(GrblController):
                 try:
                     nx = float(mpos[0])
                     ny = float(mpos[1])
+                    self.last_state["x"] = nx
+                    self.last_state["y"] = ny
+                    if len(mpos) >= 3:
+                        self.last_state["z"] = float(mpos[2])
 
                     # During validation, we declare positions.
                     self.driver.declare_position(nx, ny)
@@ -1401,7 +1422,8 @@ class ExperimentalGrblController(GrblController):
                         self.driver.wpos_z = str(wpos[2])
                 except (ValueError, IndexError) as e:
                     self.log(f"Failed to parse work position: {e}", type="warning")
-
+            self._last_state["speed"] = status.get("feed_rate")
+            self._last_state["power"] = status.get("spindle_speed")
             # Update feed rate and spindle speed
             if status.get("feed_rate") is not None:
                 self.service.signal("grbl:speed", status["feed_rate"])
