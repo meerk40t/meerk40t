@@ -522,9 +522,6 @@ class GrblController:
 
     @signal_listener("update_interface")
     def update_connection(self, origin=None, *args):
-        print(
-            f"Interface-settings: {self.service.interface} - {self.service.serial_port}"
-        )
         if self.service.permit_serial and self.service.interface in (
             "experimental",
             "serial",
@@ -1236,7 +1233,6 @@ class ExperimentalGrblController(GrblController):
         self.running = False
 
         from .serial_connection import SerialConnection
-        from .grblsender import GrblSender
 
         self.connection = SerialConnection(self.service, self)
         self.ser = None
@@ -1246,7 +1242,6 @@ class ExperimentalGrblController(GrblController):
 
         # Use the improved GrblSender for communication
         self.grbl_sender = None
-        self.status_thread = threading.Thread(target=self._poll_status)
         self.response_thread = threading.Thread(target=self._process_responses)
         self.lock = threading.Lock()
         self.command_durations = {}
@@ -1254,8 +1249,6 @@ class ExperimentalGrblController(GrblController):
         self.log("ExperimentalGrblController initialized with GrblSender", type="event")
 
     def start(self):
-        print(f"Called START while running={self.running}")
-
         if self.running:
             return
 
@@ -1271,7 +1264,6 @@ class ExperimentalGrblController(GrblController):
             self.running = False
             return
 
-        print("Connected")
         self.ser = self.connection.laser
 
         # Initialize GrblSender with the existing serial connection
@@ -1299,14 +1291,12 @@ class ExperimentalGrblController(GrblController):
             self.running = False
             return
 
-        self.status_thread.start()
         self.response_thread.start()
         self.log("ExperimentalGrblController started", type="event")
         # We are validated by default.
         self._validation_stage = 5
 
     def stop(self):
-        print("Called STOP")
         if not self.running:
             return
         self.running = False
@@ -1316,8 +1306,6 @@ class ExperimentalGrblController(GrblController):
             self.grbl_sender.stop()
 
         # Wait for threads
-        if self.status_thread.is_alive():
-            self.status_thread.join(timeout=2.0)
         if self.response_thread.is_alive():
             self.response_thread.join(timeout=2.0)
 
@@ -1330,7 +1318,6 @@ class ExperimentalGrblController(GrblController):
         self.log("ExperimentalGrblController stopped", type="event")
 
     def open(self):
-        print("Called OPEN")
         super().open()
         self._validation_stage = 5
 
@@ -1369,20 +1356,6 @@ class ExperimentalGrblController(GrblController):
             # but we can add controller-specific logic here
 
             time.sleep(0.1)  # Prevent busy waiting
-
-    def _poll_status(self):
-        """Poll for status updates and handle connection monitoring."""
-        while self.running and not self.is_shutdown:
-            if self.grbl_sender and self.grbl_sender.is_connected():
-                # GrblSender handles status polling internally, but we can
-                # add controller-specific status monitoring here
-                pass
-            else:
-                self.log(
-                    "Could not poll status, GrblSender not connected", type="debug"
-                )
-
-            time.sleep(self.poll_interval)
 
     def _update_controller_from_status(self, status):
         """Update controller state from GrblSender status information."""
