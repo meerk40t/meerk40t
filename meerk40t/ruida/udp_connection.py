@@ -210,8 +210,7 @@ class UDPConnection:
                         _reply = self.unswizzle(_data)
                         self.recv(_reply) # Forward to client.
                     except socket.error as e:
-                        if (e.errno == socket.EWOULDBLOCK or
-                            e.errno == socket.EAGAIN):
+                        if e.errno in [socket.EWOULDBLOCK, socket.EAGAIN]:
                             _tries -= 1
                         if _tries:
                             continue
