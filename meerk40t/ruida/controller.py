@@ -22,7 +22,6 @@ class RuidaController:
 
         self.job = RDJob()
         self._send_queue = []
-        self._send_lock = threading.Condition()
         self._send_thread = None
         self.events = service.channel(f"{service.safe_label}/events")
 
@@ -50,10 +49,6 @@ class RuidaController:
         while self._send_queue:
             data = self._send_queue.pop(0)
             self.write(data)
-            with self._send_lock:
-                if not self._send_lock.wait(5):
-                    self.service.signal("warning", "Connection Problem.", "Timeout")
-                    return
         self._send_queue.clear()
         self._send_thread = None
         self.events("File Sent.")

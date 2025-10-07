@@ -41,7 +41,7 @@ class UDPConnection:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # TODO: Want non-blocking. Handling send/rcv using states and blocking
         # on the send queue.
-        self.socket.settimeout(4)
+        self.socket.settimeout(self._to)
         self.socket.bind(("", self.listen_port))
 
         name = self.service.safe_label
@@ -86,10 +86,11 @@ class UDPConnection:
         while _tries:
             try:
                 self.send_q.put(data, timeout=self._to)
-                _tries -= 1
+                break
             except queue.Full:
+                _tries -= 1
                 if _tries == 0:
-                    self.events('Ruida send queue FULL.')
+                    self.service.signal("warning", "Ruida", "Send queue FULL")
                 continue
         self.send(data) # TODO: Where this goes is not known at this time.
 
@@ -164,14 +165,19 @@ class UDPConnection:
                     except (socket.timeout, AttributeError):
                         # Handle a receive timeout. This may be the result of a
                         # loss of sync or the controller is no longer responding.
+                        # Assume loss of comms and require a restart of the
+                        # thread.
                         _tries -= 1
                         if _tries:
                             continue
                         else:
+                            # Comms failure.
+                            self.service.signal("pipe;usb_status", "error")
                             self.events(f'Timeout on message: {self.sends}')
-                            _ack_pending = False
-                            _reply_pending = False
-                            break
+                            self.close()
+                            # A return terminates the thread and needs to be
+                            # restarted with an open.
+                            return
                     if _address is not None:
                         # TODO: Need to understand how the address can be used
                         # further connection sanity checking.
@@ -196,7 +202,7 @@ class UDPConnection:
                 _tries = 4
                 while _reply_pending:
                     try:
-                        _data, _address = self.socket.recvfrom(timeout=self._to)
+                        _data, _address = self.socket.recvfrom(1024)
                         self.recv_address = _address
                         # TODO: Add address sanity check?
                         _reply_pending = False
