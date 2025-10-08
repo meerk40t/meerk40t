@@ -62,6 +62,10 @@ class DefaultOperationWidget(StatusBarWidget):
             + slabel
             + "\n"
             + _("Right click for options")
+            + "\n"
+            + _("Origin: {title}").format(
+                title=self.context.elements.default_operations_title
+            )
         )
 
     def GenerateControls(self, parent, panelidx, identifier, context):
@@ -241,6 +245,8 @@ class DefaultOperationWidget(StatusBarWidget):
                 oplist, opinfo = elements.load_persistent_op_list(stored_mat)
                 if oplist is not None and len(oplist) > 0:
                     elements.default_operations = list(oplist)
+                    mat_title = elements._get_default_list_title(opinfo)
+                    elements.default_operations_title = mat_title
                     self.Signal("default_operations")
 
             stored_mat = matname

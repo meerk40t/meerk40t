@@ -741,6 +741,7 @@ class Elemental(Service):
         self._timing_stack = {}
 
         self.default_operations = []
+        self.default_operations_title = ""
         self.init_default_operations_nodes()
 
     @property
@@ -1650,6 +1651,18 @@ class Elemental(Service):
         self.signal("updateop_tree")
 
     # --------------- Default Operations logic
+
+    def _get_default_list_title(self, opinfo):
+        parts = []
+        if "material" in opinfo and opinfo["material"]:
+            parts.append(opinfo["material"])
+        if "thickness" in opinfo and opinfo["thickness"]:
+            parts.append(opinfo["thickness"])
+        if "title" in opinfo and opinfo["title"]:
+            parts.append(opinfo["title"])
+        mat_title = "-".join(parts)
+        return mat_title
+
     def init_default_operations_nodes(self):
         def next_color(primary, secondary, tertiary, delta=32):
             secondary += delta
@@ -1741,6 +1754,7 @@ class Elemental(Service):
         needs_signal = len(self.default_operations) != 0
         oplist = []
         opinfo = {}
+        _ = self.kernel.translation
         if hasattr(self, "device"):
             std_list = f"_default_{self.device.label}"
             # We need to replace all ' ' by an underscore
@@ -1748,10 +1762,16 @@ class Elemental(Service):
                 std_list = std_list.replace(forbidden, "_")
             # print(f"Try to load '{std_list}'")
             oplist, opinfo = self.load_persistent_op_list(std_list)
+            if not opinfo.get("title", ""):
+                opinfo["title"] = _("Default operations for {dev}").format(
+                    dev=self.device.label
+                )
         if len(oplist) == 0:
             std_list = "_default"
             # print(f"Try to load '{std_list}'")
             oplist, opinfo = self.load_persistent_op_list(std_list)
+            if not opinfo.get("title", ""):
+                opinfo["title"] = _("Default operations")
 
         if len(oplist) == 0:
             # Then let's create something useful
@@ -1770,8 +1790,9 @@ class Elemental(Service):
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
             )
-
+        title = self._get_default_list_title(opinfo)
         self.default_operations = oplist
+        self.default_operations_title = title
         if needs_signal:
             self.signal("default_operations")
 

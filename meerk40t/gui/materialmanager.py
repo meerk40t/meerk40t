@@ -1779,6 +1779,8 @@ class MaterialPanel(ScrolledPanel):
         if len(op_list) == 0:
             return
         self.context.elements.default_operations = list(op_list)
+        mat_title = self.context.elements._get_default_list_title(op_info)
+        self.context.elements.default_operations_title = mat_title
         self.context.signal("default_operations")
 
     def on_apply_tree(self, event):
