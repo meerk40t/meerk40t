@@ -385,12 +385,12 @@ def main() -> None:
         help="Locale codes to process (default: all locales)",
     )
     parser.add_argument(
-        "--force",
+        "-f", "--force",
         action="store_true",
         help="Force recompilation of all .mo files regardless of timestamps",
     )
     parser.add_argument(
-        "--integrate",
+        "-i", "--integrate",
         action="store_true",
         help="Integrate delta_xx.po files into the main .po files",
     )

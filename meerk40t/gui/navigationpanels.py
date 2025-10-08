@@ -1435,12 +1435,14 @@ class Jog(wx.Panel):
     def on_button_navigate_unlock(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.context("unlock\n")
+        if hasattr(self.context.device.driver, "unlock_rail"):
+            self.context("unlock\n")
 
     def on_button_navigate_lock(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.context("lock\n")
+        if hasattr(self.context.device.driver, "lock_rail"):
+            self.context("lock\n")
 
     def set_home_logic(self):
         tip = _("Send laser to home position")
@@ -1456,6 +1458,17 @@ class Jog(wx.Panel):
     def on_update(self, origin, *args):
         self.set_home_logic()
         self.set_z_support()
+        self.set_lockrail()
+
+    def set_lockrail(self):
+        if hasattr(self.context.device.driver, "lock_rail"):
+            self.button_navigate_lock.Enable()
+        else:
+            self.button_navigate_lock.Disable()
+        if hasattr(self.context.device.driver, "unlock_rail"):
+            self.button_navigate_unlock.Enable()
+        else:
+            self.button_navigate_unlock.Disable()
 
     def set_z_support(self):
         show_z = (

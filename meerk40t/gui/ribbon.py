@@ -899,7 +899,7 @@ class RibbonBarPanel(wx.Control):
         self._redraw_job = Job(
             process=self._paint_main_on_buffer,
             job_name=jobname,
-            interval=0.1,
+            interval=0,
             times=1,
             run_main=True,
         )

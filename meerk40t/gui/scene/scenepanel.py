@@ -9,12 +9,12 @@ class ScenePanel(wx.Panel):
     wxPanel that holds the Scene. This serves as the wx.Control object that holds and draws the scene.
     """
 
-    def __init__(self, context, parent, scene_name="Scene", **kwds):
+    def __init__(self, context, parent, scene_name="Scene", with_snap=True, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, parent, **kwds)
         #        self.scene_panel = wx.Panel(self, wx.ID_ANY)
         self.scene_panel = wx.Window(self, wx.ID_ANY)
-        self.scene = context.open_as("module/Scene", scene_name, self, pane=parent)
+        self.scene = context.open_as("module/Scene", scene_name, self, pane=parent, supports_snap=with_snap)
         self.context = context
         self.context.themes.set_window_colors(self)
         self.scene_panel.SetDoubleBuffered(True)
@@ -128,7 +128,7 @@ class ScenePanel(wx.Panel):
             self.last_event = "key_down"
             # print (f"on_key_down: {literal}")
             consumed = self.scene.event(
-                window_pos=self.scene.last_position,
+                window_pos=self.scene.last_window_pos,
                 event_type="key_down",
                 nearest_snap=None,
                 modifiers=literal,
@@ -170,7 +170,7 @@ class ScenePanel(wx.Panel):
         if self.last_event != "key_up":
             # Fine, we deal with it
             consumed = self.scene.event(
-                window_pos=self.scene.last_position,
+                window_pos=self.scene.last_window_pos,
                 event_type="key_up",
                 nearest_snap=None,
                 modifiers=literal,
@@ -193,7 +193,7 @@ class ScenePanel(wx.Panel):
             if literal or self.last_char:
                 # print (f"on_key_up: {literal}")
                 consumed = self.scene.event(
-                    window_pos=self.scene.last_position,
+                    window_pos=self.scene.last_window_pos,
                     event_type="key_up",
                     nearest_snap=None,
                     modifiers=literal,
@@ -308,6 +308,27 @@ class ScenePanel(wx.Panel):
             event.GetPosition(), "middleup", None, self.event_modifiers(event)
         )
 
+    def _compute_snap_point(self, event):
+        """
+        Compute snap point for given mouse event.
+        
+        Returns:
+            tuple: (mouse_pos, space_pos, nearest_snap, modifiers)
+        """
+        mouse_pos = event.GetPosition()
+        space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
+        modifiers = self.event_modifiers(event)
+        
+        # Get snap point from scene
+        snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+        nearest_snap = None
+        if snap_x is not None and snap_y is not None:
+            # Convert back to screen coordinates for the snap info
+            snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
+            nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
+            
+        return mouse_pos, space_pos, nearest_snap, modifiers
+
     def on_left_mouse_down(self, event: wx.MouseEvent):
         """
         Scene Panel left click event for down.
@@ -320,9 +341,9 @@ class ScenePanel(wx.Panel):
 
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
-        self.scene.event(
-            event.GetPosition(), "leftdown", None, self.event_modifiers(event)
-        )
+            
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "leftdown", nearest_snap, modifiers)
 
     def on_left_mouse_up(self, event: wx.MouseEvent):
         """
@@ -334,9 +355,9 @@ class ScenePanel(wx.Panel):
             return
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
-        self.scene.event(
-            event.GetPosition(), "leftup", None, self.event_modifiers(event)
-        )
+            
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "leftup", nearest_snap, modifiers)
 
     def on_mouse_double_click(self, event: wx.MouseEvent):
         """
@@ -355,13 +376,19 @@ class ScenePanel(wx.Panel):
         Scene Panel move event. Calls hover if the mouse has no pressed buttons.
         Calls move if the mouse is currently dragging.
         """
+        # Calculate snap point for the current mouse position
+        mouse_pos = event.GetPosition()
+        modifiers = self.event_modifiers(event)
+        nearest_snap = None
+        # Hover will not snap
+       
         if event.Moving():
             self.scene.event(
-                event.GetPosition(), "hover", None, self.event_modifiers(event)
+                mouse_pos, "hover", nearest_snap, modifiers
             )
         else:
             self.scene.event(
-                event.GetPosition(), "move", None, self.event_modifiers(event)
+                mouse_pos, "move", nearest_snap, modifiers
             )
 
     def on_right_mouse_down(self, event: wx.MouseEvent):
@@ -371,9 +398,8 @@ class ScenePanel(wx.Panel):
         Offers alternative events if Alt or control is currently pressed.
         """
         self.SetFocus()
-        self.scene.event(
-            event.GetPosition(), "rightdown", None, self.event_modifiers(event)
-        )
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "rightdown", nearest_snap, modifiers)
         event.Skip()
 
     def on_right_mouse_up(self, event: wx.MouseEvent):

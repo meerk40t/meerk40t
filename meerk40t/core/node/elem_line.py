@@ -366,3 +366,17 @@ class LineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
                     self.mkparam[5] = self.x2
                     self.mkparam[6] = self.y2
                 self.altered()
+
+    def set_geometry(self, geom):
+        # This is already transformed, so we need to reset our matrix
+        complex_start = geom.first_point
+        complex_end = geom.last_point
+        if complex_start is None or complex_end is None:
+            return
+        self.matrix = Matrix()
+        self.x1 = complex_start.real
+        self.y1 = complex_start.imag
+        self.x2 = complex_end.real
+        self.y2 = complex_end.imag
+        self.altered()
+        return self

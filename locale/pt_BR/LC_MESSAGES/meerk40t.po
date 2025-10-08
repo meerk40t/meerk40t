@@ -596,7 +596,7 @@ msgstr "Limites do elemento: {bounds}"
 msgid "convex hull of the current selected elements"
 msgstr "Casca convexa dos elementos selecionados"
 
-#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542 
+#: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542
 #: meerk40t/balormk/galvo_commands.py:189 meerk40t/core/elements/trace.py:542
 #: meerk40t/core/elements/trace.py:632
 msgid "No elements bounds to trace."
@@ -13261,7 +13261,33 @@ msgstr "Redefinir Cores para Padrão"
 msgid "Reset Colors to brighter defaults"
 msgstr "Redefinir Cores para padrões mais claros"
 
-#: meerk40t/balormk/device.py:92 meerk40t/balormk/device.py:93 meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95 meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97 meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:120 meerk40t/balormk/device.py:136 meerk40t/balormk/device.py:148 meerk40t/balormk/device.py:162 meerk40t/balormk/device.py:274 meerk40t/balormk/device.py:287 meerk40t/balormk/device.py:299 meerk40t/balormk/device.py:311 meerk40t/balormk/device.py:532 meerk40t/balormk/device.py:548 meerk40t/balormk/device.py:562 meerk40t/balormk/device.py:576 meerk40t/balormk/device.py:590 meerk40t/balormk/device.py:603 meerk40t/balormk/device.py:615 meerk40t/core/elements/elements.py:438 meerk40t/core/elements/trace.py:427 meerk40t/device/gui/formatterpanel.py:103 meerk40t/device/gui/formatterpanel.py:118 meerk40t/gui/laserpanel.py:120 meerk40t/gui/plugin.py:112 meerk40t/gui/plugin.py:125 meerk40t/gui/plugin.py:136 meerk40t/gui/plugin.py:149 meerk40t/gui/plugin.py:167 meerk40t/gui/plugin.py:180 meerk40t/gui/plugin.py:191 meerk40t/gui/preferences.py:750 meerk40t/gui/wxmmain.py:1334 meerk40t/gui/wxmmain.py:1347 meerk40t/gui/wxmmain.py:1362 meerk40t/gui/wxmmain.py:1379 meerk40t/gui/wxmmain.py:1396 meerk40t/gui/wxmmain.py:1409 meerk40t/lihuiyu/device.py:156 meerk40t/moshi/device.py:62 meerk40t/moshi/device.py:73 meerk40t/moshi/device.py:86 meerk40t/moshi/device.py:99 meerk40t/newly/device.py:120 meerk40t/newly/device.py:131 meerk40t/newly/device.py:145 meerk40t/newly/device.py:159 meerk40t/newly/device.py:268 meerk40t/newly/device.py:281 meerk40t/ruida/device.py:51
+#: meerk40t/balormk/device.py:92 meerk40t/balormk/device.py:93
+#: meerk40t/balormk/device.py:94 meerk40t/balormk/device.py:95
+#: meerk40t/balormk/device.py:96 meerk40t/balormk/device.py:97
+#: meerk40t/balormk/device.py:98 meerk40t/balormk/device.py:120
+#: meerk40t/balormk/device.py:136 meerk40t/balormk/device.py:148
+#: meerk40t/balormk/device.py:162 meerk40t/balormk/device.py:274
+#: meerk40t/balormk/device.py:287 meerk40t/balormk/device.py:299
+#: meerk40t/balormk/device.py:311 meerk40t/balormk/device.py:532
+#: meerk40t/balormk/device.py:548 meerk40t/balormk/device.py:562
+#: meerk40t/balormk/device.py:576 meerk40t/balormk/device.py:590
+#: meerk40t/balormk/device.py:603 meerk40t/balormk/device.py:615
+#: meerk40t/core/elements/elements.py:438 meerk40t/core/elements/trace.py:427
+#: meerk40t/device/gui/formatterpanel.py:103
+#: meerk40t/device/gui/formatterpanel.py:118 meerk40t/gui/laserpanel.py:120
+#: meerk40t/gui/plugin.py:112 meerk40t/gui/plugin.py:125
+#: meerk40t/gui/plugin.py:136 meerk40t/gui/plugin.py:149
+#: meerk40t/gui/plugin.py:167 meerk40t/gui/plugin.py:180
+#: meerk40t/gui/plugin.py:191 meerk40t/gui/preferences.py:750
+#: meerk40t/gui/wxmmain.py:1334 meerk40t/gui/wxmmain.py:1347
+#: meerk40t/gui/wxmmain.py:1362 meerk40t/gui/wxmmain.py:1379
+#: meerk40t/gui/wxmmain.py:1396 meerk40t/gui/wxmmain.py:1409
+#: meerk40t/lihuiyu/device.py:156 meerk40t/moshi/device.py:62
+#: meerk40t/moshi/device.py:73 meerk40t/moshi/device.py:86
+#: meerk40t/moshi/device.py:99 meerk40t/newly/device.py:120
+#: meerk40t/newly/device.py:131 meerk40t/newly/device.py:145
+#: meerk40t/newly/device.py:159 meerk40t/newly/device.py:268
+#: meerk40t/newly/device.py:281 meerk40t/ruida/device.py:51
 msgid "General"
 msgstr "Geral"
 
@@ -19181,9 +19207,11 @@ msgid "W, H"
 msgstr "L, A"
 
 #: meerk40t/gui/statusbarwidgets/statusbar.py:48
-msgid "Left Click: Move to next panel\n"
+msgid ""
+"Left Click: Move to next panel\n"
 "Right Click: Move to previous panel"
-msgstr "Clique Esquerdo: Mover para o próximo painel\n"
+msgstr ""
+"Clique Esquerdo: Mover para o próximo painel\n"
 "Clique Direito: Mover para o painel anterior"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:46
@@ -23650,8 +23678,14 @@ msgid "Simplify Effects"
 msgstr "Simplificar efeitos"
 
 #: meerk40t/gui/plugin.py:128
-msgid "Limits the complexity of effects applied to elements during design.\nNB1: all values will be honored during burning.\nNB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
-msgstr "Limita a complexidade dos efeitos aplicados aos elementos durante o design.\nNB1: todos os valores serão respeitados durante a gravação.\nNB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
+msgid ""
+"Limits the complexity of effects applied to elements during design.\n"
+"NB1: all values will be honored during burning.\n"
+"NB2: if the CAPS-LOCK-key is active, all effects will be rendered without simplification."
+msgstr ""
+"Limita a complexidade dos efeitos aplicados aos elementos durante o design.\n"
+"NB1: todos os valores serão respeitados durante a gravação.\n"
+"NB2: se a tecla CAPS-LOCK estiver ativa, todos os efeitos serão renderizados sem simplificação."
 
 #: meerk40t/grbl/device.py:1049
 msgid "Export succeeded: {filename}"
@@ -23665,7 +23699,8 @@ msgstr "Cortar/Gravar"
 #: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
 #: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
 msgid "This is global setting that will be overruled by operation settings."
-msgstr "Esta é uma configuração global que será substituída pelas configurações da "
+msgstr ""
+"Esta é uma configuração global que será substituída pelas configurações da "
 "operação."
 
 #: meerk40t/balormk/device.py:475
@@ -23744,7 +23779,6 @@ msgstr "Teste das configurações da operação"
 msgid "Operation settings"
 msgstr "Configurações da operação"
 
-
 #: meerk40t/balormk/device.py:446
 msgid "Cut/Engrave"
 msgstr "Cortar/Gravar"
@@ -23753,7 +23787,9 @@ msgstr "Cortar/Gravar"
 #: meerk40t/newly/device.py:498 meerk40t/newly/device.py:513
 #: meerk40t/newly/device.py:550 meerk40t/newly/device.py:565
 msgid "This is global setting that will be overruled by operation settings."
-msgstr "Esta é uma configuração global que será substituída pelas configurações de operação."
+msgstr ""
+"Esta é uma configuração global que será substituída pelas configurações de "
+"operação."
 
 #: meerk40t/balormk/device.py:475
 msgid "Miscellaneous"
@@ -23776,7 +23812,8 @@ msgstr "Redefinir para os valores padrão do dispositivo"
 msgid ""
 "Will reset power / speed and some other properties to device default values"
 msgstr ""
-"Redefinirá a potência/velocidade e algumas outras propriedades para os valores padrão do dispositivo"
+"Redefinirá a potência/velocidade e algumas outras propriedades para os "
+"valores padrão do dispositivo"
 
 #: meerk40t/core/elements/geometry.py:432
 msgid "Use unidirectional hatch lines"
@@ -23826,7 +23863,8 @@ msgstr "Teste de Configurações de Operação"
 msgid "Operation settings"
 msgstr "Configurações do operação"
 
-#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012 meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
+#: meerk40t/kernel/kernel.py:3003 meerk40t/kernel/kernel.py:3012
+#: meerk40t/kernel/kernel.py:3739 meerk40t/kernel/kernel.py:3819
 msgid "Encountered exception {error}"
 msgstr "Exceção encontrada {error}"
 
@@ -23932,11 +23970,17 @@ msgstr "Tarefas"
 
 #: meerk40t/gui/thread_info.py:30
 msgid "Opens the tasks window with all background task information"
-msgstr "Abre a janela de tarefas com todas as informações de tarefas em segundo plano"
+msgstr ""
+"Abre a janela de tarefas com todas as informações de tarefas em segundo "
+"plano"
 
 #: meerk40t/gui/thread_info.py:46
-msgid "Background Tasks are preparatory jobs issued with the 'threaded' command,\nlike burn preparation and others."
-msgstr "As Tarefas de Fundo são trabalhos preparatórios emitidos com o comando 'encadeado',\ncomo a preparação de gravação e outros."
+msgid ""
+"Background Tasks are preparatory jobs issued with the 'threaded' command,\n"
+"like burn preparation and others."
+msgstr ""
+"As Tarefas de Fundo são trabalhos preparatórios emitidos com o comando 'encadeado',\n"
+"como a preparação de gravação e outros."
 
 #: meerk40t/gui/thread_info.py:56
 msgid "List of background tasks"
@@ -23962,3 +24006,382 @@ msgstr "Abre a janela com todas as informações da tarefa em segundo plano"
 msgid "dead"
 msgstr "morto"
 
+#: meerk40t/balormk/device.py:406
+msgid "Delay for dark movement."
+msgstr "Atraso para movimento escuro."
+
+#: meerk40t/balormk/device.py:417
+msgid "Delay for light movement."
+msgstr "Atraso para movimento de luz."
+
+#: meerk40t/core/planner.py:518
+msgid "plan<?> <command> : issue a command to modify the plan"
+msgstr "plan<?> <comando> : emitir um comando para modificar o plano"
+
+#: meerk40t/core/planner.py:556
+msgid "Plan {plan}: {state}"
+msgstr "Plano {plan}: {state}"
+
+#: meerk40t/core/planner.py:573
+msgid ""
+"plan<?> copy / copy-selected: copy data from all / only from selected "
+"operations"
+msgstr ""
+"plan<?> copy / copy-selected: copiar dados de todas / apenas das operações "
+"selecionadas"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Origin"
+msgstr "Origem"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Relative"
+msgstr "Relativo"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Columns"
+msgstr "Colunas"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Rows"
+msgstr "Linhas"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "X Distance"
+msgstr "Distância X"
+
+#: meerk40t/core/elements/grid.py:125
+msgid "Y Distance"
+msgstr "Distância Y"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Unrotated"
+msgstr "Não rotacionado"
+
+#: meerk40t/core/elements/grid.py:251
+msgid "Repeats"
+msgstr "Repetições"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Deltaangle"
+msgstr "Ângulo Delta"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Startangle"
+msgstr "Ângulo Início"
+
+#: meerk40t/core/elements/grid.py:251 meerk40t/core/elements/grid.py:382
+msgid "Endangle"
+msgstr "Ângulo Final"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "Cópias"
+
+#: translate_check.py:27
+msgid "This is a test string."
+msgstr "Esta é uma string de teste."
+
+#: translate_check.py:28
+msgid ""
+"Another test string with a newline.\n"
+"See?"
+msgstr ""
+"Outra string de teste com uma nova linha.\n"
+"Veja?"
+
+#: translate_check.py:29
+msgid "String with a tab.\tSee?"
+msgstr "String com uma tabulação.\tVeja?"
+
+#: translate_check.py:30
+msgid "String with {curly} braces."
+msgstr "String com {curly} chaves."
+
+#: meerk40t/core/cutplan.py:136
+msgid "Spooling data {count}"
+msgstr "Enviando dados {count}"
+
+#: meerk40t/core/planner.py:703 meerk40t/core/planner.py:762
+msgid "Adding trailing operations"
+msgstr "Adicionando operações finais"
+
+#: meerk40t/core/planner.py:727
+msgid "Copying data {count}"
+msgstr "Copiando dados {count}"
+
+#: meerk40t/core/elements/groups.py:72
+msgid "Reparent grouped elements to the root"
+msgstr "Reparentizar elementos agrupados para a raiz"
+
+#: meerk40t/core/elements/groups.py:75
+msgid "Label of the group"
+msgstr "Rótulo do grupo"
+
+#: meerk40t/core/elements/groups.py:78
+msgid "group selected elements"
+msgstr "agrupar elementos selecionados"
+
+#: meerk40t/core/elements/groups.py:150
+msgid "Nothing to group."
+msgstr "Nada para agrupar."
+
+#: meerk40t/core/elements/groups.py:190
+msgid "Grouped {count} elements."
+msgstr "Agrupados {count} elementos."
+
+#: meerk40t/core/elements/groups.py:196
+msgid "ungroup selected elements"
+msgstr "desagrupar elementos selecionados"
+
+#: meerk40t/core/elements/groups.py:221 meerk40t/core/elements/groups.py:260
+msgid "No group or file selected."
+msgstr "Nenhum grupo ou arquivo selecionado."
+
+#: meerk40t/core/elements/groups.py:304
+msgid "Simplified {count} groups. Removed {removed} unnecessary group levels."
+msgstr ""
+"Simplificados {count} grupos. Removidos {removed} níveis de grupo "
+"desnecessários."
+
+#: meerk40t/device/gui/defaultactions.py:66
+msgid "Goto Origin"
+msgstr "Ir para origem"
+
+#: meerk40t/device/gui/defaultactions.py:72
+msgid "Goto 0,0"
+msgstr "Ir para 0,0"
+
+#: meerk40t/device/gui/defaultactions.py:77
+msgid "Beep"
+msgstr "Bipe"
+
+#: meerk40t/device/gui/defaultactions.py:85
+msgid "Coolant on"
+msgstr "Resfriamento ligado"
+
+#: meerk40t/device/gui/defaultactions.py:86
+msgid "Coolant off"
+msgstr "Resfriamento desligado"
+
+#: meerk40t/device/gui/defaultactions.py:106
+msgid "Hibernation off"
+msgstr "Hibernação desativada"
+
+#: meerk40t/device/gui/defaultactions.py:112
+msgid "Hibernation on"
+msgstr "Hibernação ativada"
+
+#: meerk40t/device/gui/formatterpanel.py:157
+msgid "Grouping + Files"
+msgstr "Agrupamento + Arquivos"
+
+#: meerk40t/device/gui/formatterpanel.py:158
+msgid "Operations (Special)"
+msgstr "Operações (Especial)"
+
+#: meerk40t/device/gui/formatterpanel.py:159
+msgid "Elements (Effects)"
+msgstr "Elementos (Efeitos)"
+
+#: meerk40t/device/gui/formatterpanel.py:160
+msgid "Placements"
+msgstr "Posicionamentos"
+
+#: translate_check.py:31
+msgid "String with a quote: \"See?\""
+msgstr "Texto com aspas: \"Viu?\""
+
+#: meerk40t/core/elements/element_treeops.py:3182
+msgid "Optimisation"
+msgstr "Otimização"
+
+#: meerk40t/core/elements/element_treeops.py:3184
+msgid "Reduce travel moves"
+msgstr "Reduzir movimentos de deslocamento"
+
+#: meerk40t/core/elements/element_treeops.py:3186
+msgid "Rearrange items within operation to reduce travel moves"
+msgstr ""
+"Reorganizar itens dentro da operação para reduzir movimentos de deslocamento"
+
+#: meerk40t/core/elements/element_treeops.py:3190
+msgid "Optimize travel moves"
+msgstr "Otimizar movimentos de deslocamento"
+
+#: meerk40t/core/elements/manual_optimize.py:82
+msgid "Provide detailed debug output"
+msgstr "Fornecer saída de depuração detalhada"
+
+#: meerk40t/core/elements/manual_optimize.py:85
+msgid "Starting X position"
+msgstr "Posição inicial X"
+
+#: meerk40t/core/elements/manual_optimize.py:88
+msgid "Starting Y position"
+msgstr "Posição inicial Y"
+
+#: meerk40t/core/elements/manual_optimize.py:92
+msgid "reorder elements for optimal cutting within an operation"
+msgstr "Reordenar elementos para corte ideal dentro de uma operação"
+
+#: meerk40t/core/elements/manual_optimize.py:115
+msgid "No operations to optimize"
+msgstr "Nenhuma operação para otimizar"
+
+#: meerk40t/core/elements/manual_optimize.py:415
+msgid "Geometric tolerance for containment analysis"
+msgstr "Tolerância geométrica para análise de contenção"
+
+#: meerk40t/core/elements/manual_optimize.py:419
+msgid "Optimize selected operations using containment-aware workflow"
+msgstr ""
+"Otimizar operações selecionadas usando fluxo de trabalho consciente da "
+"contenção"
+
+#: meerk40t/core/elements/manual_optimize.py:431
+msgid "No operations selected for workflow optimization"
+msgstr "Nenhuma operação selecionada para otimização do fluxo de trabalho"
+
+#: meerk40t/core/elements/manual_optimize.py:448
+msgid "Workflow Optimization Results:"
+msgstr "Resultados da otimização do fluxo de trabalho:"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:804
+msgid "Rotate element"
+msgstr "Rotacionar elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1044
+msgid "Size element (with Alt-Key freely, with Ctrl+shift from center)"
+msgstr ""
+"Dimensionar elemento (com Alt livremente, com Ctrl+Shift a partir do centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1277
+msgid "Size element in X-direction (with Ctrl+shift from center)"
+msgstr "Dimensionar elemento na direção X (com Ctrl+Shift a partir do centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1278
+msgid "Size element in Y-direction (with Ctrl+shift from center)"
+msgstr "Dimensionar elemento na direção Y (com Ctrl+Shift a partir do centro)"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1431
+msgid "Skew element in X-direction"
+msgstr "Inclinar elemento na direção X"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1432
+msgid "Skew element in Y-direction"
+msgstr "Inclinar elemento na direção Y"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:1960
+msgid "Move element"
+msgstr "Mover elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2093
+msgid "Move rotation center"
+msgstr "Mover centro de rotação"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2238
+msgid "Toggle reference status of element"
+msgstr "Alternar status de referência do elemento"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2364
+msgid "Remove the 'locked' status of the element"
+msgstr "Remover o status 'bloqueado' do elemento"
+
+#: meerk40t/core/planner.py:62
+msgid ""
+"Notabene: When using both Reduce Travel Time and Burn Inner First, travel "
+"optimization occurs within each hierarchy level (inners before outers)."
+msgstr ""
+"Nota: Ao usar tanto 'Reduzir Tempo de Viagem' quanto 'Queimar Interno "
+"Primeiro', a otimização de viagem ocorre dentro de cada nível de hierarquia "
+"(internos antes dos externos)."
+
+#: meerk40t/core/elements/element_treeops.py:2492
+msgid "Append Physical Home"
+msgstr "Anexar Home Físico"
+
+#: meerk40t/core/elements/element_treeops.py:2662
+msgid "Append Physical Home/Beep/Interrupt"
+msgstr "Anexar Home Físico/Bip/Interrupção"
+
+#: meerk40t/core/elements/element_treeops.py:3303
+msgid "Add Physical Home"
+msgstr "Adicionar Home Físico"
+
+#: meerk40t/core/elements/element_treeops.py:3415
+msgid "Add Physical Home/Beep/Interrupt"
+msgstr "Adicionar Home Físico/Bip/Interrupção"
+
+#: meerk40t/device/gui/defaultactions.py:74
+msgid "Move the laser head to the physicalhome position."
+msgstr "Mover a cabeça do laser para a posição de home físico."
+
+#: meerk40t/gui/hersheymanager.py:547
+msgid "Font missing: {fontname}"
+msgstr "Fonte ausente: {fontname}"
+
+#: meerk40t/gui/laserpanel.py:916
+msgid "Details of Plan '{plan}':"
+msgstr "Detalhes do Plano '{plan}':"
+
+#: meerk40t/gui/laserpanel.py:934
+msgid "Empty"
+msgstr "Vazio"
+
+#: meerk40t/gui/laserpanel.py:937
+msgid "Plan Details"
+msgstr "Detalhes do Plano"
+
+#: meerk40t/gui/simulation.py:1019
+msgid "Plan is still being processed"
+msgstr "O plano ainda está sendo processado"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Auto-Select"
+msgstr "Seleção Automática"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Scanbeam (Default)"
+msgstr "Feixe de Varredura (Padrão)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:130
+msgid "Direct Grid (Fast)"
+msgstr "Grade Direta (Rápida)"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:147
+#: meerk40t/tools/livinghinges.py:360
+msgid "Algorithm:"
+msgstr "Algoritmo:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1969
+msgid "- Diagonal: Starting in one corner traversing the image diagonally"
+msgstr "- Diagonal: Começando em um canto percorrendo a imagem diagonalmente"
+
+#: meerk40t/tools/livinghinges.py:364
+msgid "Choose the generation algorithm"
+msgstr "Escolher o algoritmo de geração"
+
+#: meerk40t/tools/livinghinges.py:740 meerk40t/tools/livinghinges.py:745
+msgid ""
+"Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed "
+"patterns"
+msgstr ""
+"Baseado em Padrão (Complexo): Usa a classe Padrão para formas complexas e "
+"padrões detalhados"
+
+#: meerk40t/tools/livinghinges.py:741 meerk40t/tools/livinghinges.py:746
+msgid ""
+"Direct Grid (Simple): Fast grid-based generation for simple parallel "
+"patterns"
+msgstr ""
+"Grade Direta (Simples): Geração rápida baseada em grade para padrões "
+"paralelos simples"
+
+#: meerk40t/tools/livinghinges.py:742 meerk40t/tools/livinghinges.py:747
+msgid ""
+"Auto-Select: Automatically chooses best algorithm based on pattern "
+"complexity"
+msgstr ""
+"Seleção Automática: Escolhe automaticamente o melhor algoritmo baseado na "
+"complexidade do padrão"

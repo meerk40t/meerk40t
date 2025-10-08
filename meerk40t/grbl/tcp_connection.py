@@ -36,13 +36,16 @@ class TCPOutput:
             self.service.signal("grbl;status", "connection error")
         except (socket.gaierror, OverflowError) as e:
             self.disconnect()
-            self.service.signal("grbl;status", "address resolve error")
+            self.service.signal("grbl;status", f"address resolve error: {str(e)}")
         except socket.herror as e:
             self.disconnect()
             self.service.signal("grbl;status", f"herror: {str(e)}")
         except OSError as e:
             self.disconnect()
             self.service.signal("grbl;status", f"Host down {str(e)}")
+        except Exception as e:
+            self.disconnect()
+            self.service.signal("grbl;status", f"unknown error on connect: {str(e)}")
 
     def disconnect(self):
         self.controller.log("Disconnected", type="connection")
@@ -55,7 +58,12 @@ class TCPOutput:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
         while data:
-            sent = self._stream.send(data)
+            try:
+                sent = self._stream.send(data)
+            except Exception as e:
+                self.disconnect()
+                self.service.signal("grbl;status", f"unknown error on write: {str(e)}")
+                return
             if sent == len(data):
                 return
             data = data[sent:]
@@ -65,7 +73,12 @@ class TCPOutput:
     def read(self):
         f = self.read_buffer.find(b"\n")
         if f == -1:
-            self.read_buffer += self._stream.recv(self._read_buffer_size)
+            try:
+                self.read_buffer += self._stream.recv(self._read_buffer_size)
+            except Exception as e:
+                self.disconnect()
+                self.service.signal("grbl;status", f"unknown error on read: {str(e)}")
+                return
             f = self.read_buffer.find(b"\n")
             if f == -1:
                 return

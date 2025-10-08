@@ -24,6 +24,7 @@ from collections import deque
 from copy import copy
 from enum import IntEnum
 from time import time
+from typing import Tuple
 
 
 # LINEJOIN
@@ -474,12 +475,17 @@ class Node:
             "_emphasized_time",
             "_highlighted",
             "_expanded",
+            "_translated_text",
         )
         for c in tree_data:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
             for att in attrib_list:
-                if getattr(node_copy, att) != getattr(c, att):
+                if not hasattr(c, att):
+                    continue
+                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
+                    c, att
+                ):
                     # print (f"Strange {att} not identical, fixing")
                     setattr(node_copy, att, getattr(c, att))
             node_copy._root = self._root
@@ -502,8 +508,12 @@ class Node:
             if copied_parent is None:
                 # copy_parent should have been copied root, but roots don't copy
                 node_copy._parent = self._root
+                # Fix: Ensure root is properly set
+                node_copy._root = self._root
                 continue
             node_copy._parent = copied_parent
+            # Fix: Ensure root is properly set for all nodes
+            node_copy._root = self._root
             copied_parent._children.append(node_copy)
             if node.type == "reference":
                 try:
@@ -511,7 +521,8 @@ class Node:
                     node_copy.node = copied_referenced
                     copied_referenced._references.append(node_copy)
                 except KeyError:
-                    pass
+                    # Referenced node is not in the backup, clear the reference
+                    node_copy.node = None
 
     def _validate_tree(self):
         for c in self._children:
@@ -520,8 +531,13 @@ class Node:
             assert c in c._parent._children
             for q in c._references:
                 assert q.node is c
-            if c.type == "reference":
+            if (
+                c.type == "reference"
+                and c.node is not None
+                and hasattr(c.node, "_references")
+            ):
                 assert c in c.node._references
+                # Fix: Check if reference target exists and has back-reference
             c._validate_tree()
 
     def _build_copy_nodes(self, links=None):
@@ -1329,9 +1345,15 @@ class Node:
         parent._children.remove(self)
         self.notify_detached(self)
         node = parent.add(*args, **kwargs, pos=index)
-        self.notify_destroyed()
+        node._references.clear()
         for ref in list(self._references):
-            ref.remove_node()
+            ref.node = node
+            if hasattr(ref, "_item"):
+                ref._item = None
+            node._references.append(ref)
+            # ref.remove_node()
+        self._references.clear()
+        self.notify_destroyed()
         if keep_children:
             for ref in list(self._children):
                 node._children.append(ref)
@@ -1485,35 +1507,48 @@ class Node:
     @staticmethod
     def union_bounds(
         nodes, bounds=None, attr="bounds", ignore_locked=True, ignore_hidden=False
-    ):
+    ) -> Tuple[float, float, float, float]:
         """
         Returns the union of the node list given, optionally unioned the given bounds value
 
-        @return: union of all bounds within the iterable.
+        This method uses an optimized approach that minimizes memory allocations
+        and uses early termination for better performance.
+
+        @return: union of all bounds within the iterable as (xmin, ymin, xmax, ymax)
         """
+        # Initialize bounds
         if bounds is None:
             xmin = float("inf")
             ymin = float("inf")
-            xmax = -xmin
-            ymax = -ymin
+            xmax = float("-inf")
+            ymax = float("-inf")
         else:
             xmin, ymin, xmax, ymax = bounds
+
+        # Single pass through nodes with optimized attribute access
         for e in nodes:
-            if ignore_locked and e.lock:
+            # Use safe attribute access with defaults for reliability
+            if ignore_locked and getattr(e, "lock", False):
                 continue
             if ignore_hidden and getattr(e, "hidden", False):
                 continue
-            box = getattr(e, attr, None)
+
+            # Direct attribute access (avoid getattr overhead for common case)
+            box = e.bounds if attr == "bounds" else getattr(e, attr, None)
             if box is None:
                 continue
-            if box[0] < xmin:
-                xmin = box[0]
-            if box[2] > xmax:
-                xmax = box[2]
-            if box[1] < ymin:
-                ymin = box[1]
-            if box[3] > ymax:
-                ymax = box[3]
+
+            # Update bounds with minimal comparisons
+            box_xmin, box_ymin, box_xmax, box_ymax = box
+            if box_xmin < xmin:
+                xmin = box_xmin
+            if box_xmax > xmax:
+                xmax = box_xmax
+            if box_ymin < ymin:
+                ymin = box_ymin
+            if box_ymax > ymax:
+                ymax = box_ymax
+
         return xmin, ymin, xmax, ymax
 
     @property

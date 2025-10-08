@@ -915,8 +915,11 @@ def init_commands(kernel):
             with self.node_lock:
                 for geom in clipper.result_geometry():
                     if geom is not None:
+                        simplified_geom = geom.simplify(tolerance=25)
                         newnode = self.elem_branch.add(
-                            geometry=geom, type="elem path", stroke=firstnode.stroke
+                            geometry=simplified_geom,
+                            type="elem path",
+                            stroke=firstnode.stroke,
                         )
                         newnode.stroke_width = UNITS_PER_PIXEL
                         newnode.linejoin = Linejoin.JOIN_ROUND

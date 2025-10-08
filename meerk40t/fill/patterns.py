@@ -1,9 +1,19 @@
-from copy import copy
 import math
+from copy import copy
+
 from meerk40t.svgelements import Matrix, Path, Polyline
 from meerk40t.tools.geomstr import Geomstr
 
 _FACTOR = 1000
+
+# Shape pattern constants
+DEFAULT_RESOLUTION = 200.0
+SEGMENT_LENGTH_FACTOR = 40.0
+COPY_COUNT_MULTIPLIER = 10
+SEGMENT_COUNT_MULTIPLIER = 10
+REGULAR_SEGMENT_FACTOR = 0.25
+IRREGULAR_SEGMENT_FACTOR = 0.5
+GEOMETRIC_ERROR_TOLERANCE = 1e4
 
 
 class LivingHinges:
@@ -56,7 +66,7 @@ class LivingHinges:
             )
         )
 
-    def _set_dirty(self, source:str):
+    def _set_dirty(self, source: str):
         # print (f"Set_dirty was set by {source}")
         self.path = None
         self.preview_path = None
@@ -74,10 +84,10 @@ class LivingHinges:
 
     def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
         if (
-            self.start_x == hinge_left and
-            self.start_y == hinge_top and
-            self.width == hinge_width and
-            self.height == hinge_height
+            self.start_x == hinge_left
+            and self.start_y == hinge_top
+            and self.width == hinge_width
+            and self.height == hinge_height
         ):
             return
         self.start_x = hinge_left
@@ -95,7 +105,10 @@ class LivingHinges:
         self._set_dirty("set_hinge_area")
 
     def set_cell_values(self, percentage_x, percentage_y):
-        if self.cell_width_percentage == percentage_x and self.cell_height_percentage == percentage_y:
+        if (
+            self.cell_width_percentage == percentage_x
+            and self.cell_height_percentage == percentage_y
+        ):
             return
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
@@ -106,7 +119,10 @@ class LivingHinges:
         self._set_dirty("set_cell_values")
 
     def set_padding_values(self, padding_x, padding_y):
-        if self.cell_padding_h_percentage == padding_x and self.cell_padding_v_percentage == padding_y:
+        if (
+            self.cell_padding_h_percentage == padding_x
+            and self.cell_padding_v_percentage == padding_y
+        ):
             return
 
         self.cell_padding_h_percentage = padding_x
@@ -208,9 +224,8 @@ class LivingHinges:
             bb_after = subject.bbox()
             subject.translate(
                 (bb_before[0] + bb_before[2]) / 2 - (bb_after[0] + bb_after[2]) / 2,
-                (bb_before[1] + bb_before[3]) / 2 - (bb_after[1] + bb_after[3]) / 2
+                (bb_before[1] + bb_before[3]) / 2 - (bb_after[1] + bb_after[3]) / 2,
             )
-
 
         if clip_bounds:
             self.path.append(q.clip(subject))
@@ -363,106 +378,157 @@ def set_brackets(a, b, *args, **kwargs):
     yield "C", 1.0, 1 - p_a, 0.0, 1 - p_b, 0.0, 0.5
 
 
-def set_shape(a, b, *args, outershape=None, **kwargs):
-    # concentric shapes
-    polycache = list()
+def set_shape(a: float, b: float, *args, outershape=None, **kwargs):
+    """
+    Generate concentric shape patterns based on an outer shape.
 
-    if len(polycache) != 0:
-        # We've done our bit already
+    Args:
+        a: Controls the number of concentric copies (0-5 range, scaled by 10)
+        b: Controls the number of segments per copy (0-5 range, scaled by 10)
+        outershape: The outer shape to base the pattern on. If None, uses a default rectangle.
+    """
+    # Create concentric shapes based on the outer shape
+    shape_processor = ShapePatternProcessor(outershape)
+    polycache = shape_processor.process_shape()
+
+    if not polycache:
         return
-    resolution = 200.0
-    if outershape is None:
-        shape = Path(Polyline((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
-    else:
-        shape = outershape.as_path()
-    bb = shape.bbox()
-    wd = bb[2] - bb[0]
-    if wd == 0:
-        wd = 1
-    ht = bb[3] - bb[1]
-    if ht == 0:
-        ht = 1
-    tx = 0
-    ty = 0
-    tc = int(resolution)
-    # minx = miny = 1e18
-    # maxx = maxy = -1e18
-    # Convert to polygon and bring it to 0 / 1
-    if wd == 0:
-        ratiox = 1
-    else:
-        ratiox = 1 / wd
 
-    if ht == 0:
-        ratioy = 1
-    else:
-        ratioy = 1 / ht
-    amount = int(abs(10 * a))  # (1 to 50)
-    segments = int(abs(10 * b))
-    seg_break = int(resolution) / (segments + 1)
-    seg_len = resolution / 40.0
-    for i in range(int(resolution) + 1):
-        pt = shape.point(i / resolution, error=1e4)
-        pt[0] = (pt[0] - bb[0]) * ratiox
-        pt[1] = (pt[1] - bb[1]) * ratioy
-        xx = pt[0]
-        yy = pt[1]
-        tx += xx
-        ty += yy
-        # minx = min(minx, xx)
-        # miny = min(miny, yy)
-        # maxx = max(maxx, xx)
-        # maxy = max(maxy, yy)
-        polycache.append(pt)
-    geometric_center_x = tx / tc
-    geometric_center_y = ty / tc
-    # print(
-    #     f"geometric center master: {geometric_center_x:.1f}, {geometric_center_y:.1f}"
-    # )
-    # print(f"boundaries: {minx:.1f}, {miny:.1f} - {maxx:.1f}, {maxy:.1f}")
-    # dx = 0
-    # dy = 0
-    regular = False
-    ratio = 1.0
-    dx = 1.0 / (amount + 1)
-    for num in range(amount):
-        ratio -= dx
-        regular = not regular
-        current_x = None
-        current_y = None
-        if regular:
-            segcount = int(seg_break * 0.25)
+    # Calculate parameters
+    copy_count = max(1, int(abs(COPY_COUNT_MULTIPLIER * a)))
+    segment_count = max(1, int(abs(SEGMENT_COUNT_MULTIPLIER * b)))
+
+    # Generate concentric patterns
+    pattern_generator = ConcentricPatternGenerator(
+        polycache, copy_count, segment_count, shape_processor.resolution
+    )
+    yield from pattern_generator.generate_patterns()
+
+
+class ShapePatternProcessor:
+    """Processes a shape into normalized polygon points for pattern generation."""
+
+    def __init__(self, outershape):
+        self.outershape = outershape
+        self.resolution = DEFAULT_RESOLUTION
+
+    def process_shape(self):
+        """Convert shape to normalized polygon points."""
+        polycache = []
+
+        # Get the base shape
+        if self.outershape is None:
+            shape = Path(Polyline((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
         else:
-            segcount = int(seg_break * 0.5)
-        # tx = 0
-        # ty = 0
-        # minx = miny = 1e18
-        # maxx = maxy = -1e18
-        for i in range(int(resolution) + 1):
-            xx = (polycache[i][0] - geometric_center_x) * ratio + geometric_center_x
-            yy = (polycache[i][1] - geometric_center_y) * ratio + geometric_center_y
-            # tx += xx
-            # ty += yy
-            # minx = min(minx, xx)
-            # miny = min(miny, yy)
-            # maxx = max(maxx, xx)
-            # maxy = max(maxy, yy)
-            segcount += 1
-            if segcount < seg_break:
+            shape = self.outershape.as_path()
+
+        # Get bounding box and handle edge cases
+        bb = shape.bbox()
+        if bb is None:
+            return polycache
+
+        width = bb[2] - bb[0] if bb[2] > bb[0] else 1.0
+        height = bb[3] - bb[1] if bb[3] > bb[1] else 1.0
+
+        # Normalization ratios
+        ratio_x = 1.0 / width if width > 0 else 1.0
+        ratio_y = 1.0 / height if height > 0 else 1.0
+
+        # Convert shape to normalized points
+        for i in range(int(self.resolution) + 1):
+            point = shape.point(i / self.resolution, error=GEOMETRIC_ERROR_TOLERANCE)
+            if point is None:
+                continue
+
+            # Create a copy to avoid modifying the original
+            normalized_point = [point[0], point[1]]
+
+            # Normalize to 0-1 coordinate system
+            normalized_point[0] = (normalized_point[0] - bb[0]) * ratio_x
+            normalized_point[1] = (normalized_point[1] - bb[1]) * ratio_y
+            polycache.append(normalized_point)
+
+        return polycache
+
+
+class ConcentricPatternGenerator:
+    """Generates concentric patterns from normalized polygon points."""
+
+    def __init__(self, polycache, copy_count, segment_count, resolution):
+        self.polycache = polycache
+        self.copy_count = copy_count
+        self.segment_count = segment_count
+        self.resolution = resolution
+
+        # Calculate geometric center
+        self.center_x, self.center_y = self._calculate_geometric_center()
+
+        # Pre-calculate segment parameters
+        self.segment_break = int(self.resolution) / (self.segment_count + 1)
+        self.segment_length = self.resolution / SEGMENT_LENGTH_FACTOR
+
+    def _calculate_geometric_center(self):
+        """Calculate the geometric center of the polygon."""
+        total_x = sum(point[0] for point in self.polycache)
+        total_y = sum(point[1] for point in self.polycache)
+        point_count = len(self.polycache)
+
+        return total_x / point_count, total_y / point_count
+
+    def generate_patterns(self):
+        """Generate the concentric patterns."""
+        ratio_step = 1.0 / (self.copy_count + 1)
+        current_ratio = 1.0
+
+        for copy_index in range(self.copy_count):
+            current_ratio -= ratio_step
+            is_regular_pattern = copy_index % 2 == 0
+
+            yield from self._generate_single_pattern(current_ratio, is_regular_pattern)
+
+    def _generate_single_pattern(self, ratio, is_regular):
+        """Generate a single concentric pattern at the given ratio."""
+        segment_counter = self._get_initial_segment_count(is_regular)
+        current_x = None
+
+        # Ensure polycache has the expected number of points (resolution + 1)
+        expected_points = int(self.resolution) + 1
+        if len(self.polycache) != expected_points:
+            # Fallback to using actual polycache length if there's a mismatch
+            expected_points = len(self.polycache)
+
+        # Iterate over all points in polycache
+        for i in range(expected_points):
+            # Scale point around geometric center
+            scaled_x = (self.polycache[i][0] - self.center_x) * ratio + self.center_x
+            scaled_y = (self.polycache[i][1] - self.center_y) * ratio + self.center_y
+
+            segment_counter += 1
+
+            if self._should_draw_segment(segment_counter):
                 if current_x is None:
-                    yield "M", xx, yy
+                    yield "M", scaled_x, scaled_y
                 else:
-                    yield "L", xx, yy
-                current_x = xx
-                current_y = yy
-            elif segcount >= seg_break + seg_len:
-                segcount = 0
+                    yield "L", scaled_x, scaled_y
+                current_x = scaled_x
+            elif self._should_reset_segment(segment_counter):
+                segment_counter = 0
                 current_x = None
-                current_y = None
-        # geo_x = tx / tc
-        # geo_y = ty / tc
-        # print(f"geometric center copy: {geo_x:.1f}, {geo_y:.1f}")
-        # print(f"boundaries: {minx:.1f}, {miny:.1f} - {maxx:.1f}, {maxy:.1f}")
+
+    def _get_initial_segment_count(self, is_regular):
+        """Get the initial segment count based on pattern type."""
+        if is_regular:
+            return int(self.segment_break * REGULAR_SEGMENT_FACTOR)
+        else:
+            return int(self.segment_break * IRREGULAR_SEGMENT_FACTOR)
+
+    def _should_draw_segment(self, segment_counter):
+        """Determine if we should draw a segment at the current counter."""
+        return segment_counter < self.segment_break
+
+    def _should_reset_segment(self, segment_counter):
+        """Determine if we should reset the segment drawing."""
+        return segment_counter >= self.segment_break + self.segment_length
 
 
 def plugin(kernel, lifecycle):

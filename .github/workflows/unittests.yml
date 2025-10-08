@@ -2,7 +2,7 @@ name: Unittest
 
 on:
   workflow_dispatch:
-  
+
   push:
     branches: [main, legacy6, legacy7, legacy8]
     paths:
@@ -33,6 +33,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-2022, macos-latest]
         python-version: [3.8, 3.12]
+        include:
+          # Python 3.6 only on Windows
+          - os: windows-2022
+            python-version: 3.6
 
     steps:
 

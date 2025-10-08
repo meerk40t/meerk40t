@@ -1,0 +1,207 @@
+name: Create Linux AppImage
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+
+    - name: Set up Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: '3.9'
+
+    - name: Cache Python packages
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          cmake \
+          libeigen3-dev \
+          libagg-dev \
+          libpotrace-dev \
+          python3-dev \
+          wget \
+          fuse \
+          libfuse2 \
+          desktop-file-utils \
+          imagemagick
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel pyinstaller
+
+        # Install core dependencies from requirements.txt
+        pip install -r requirements.txt
+
+        # Install Linux-specific optional dependencies
+        pip install -r requirements-optional-linux.txt
+
+        # Install additional packages not in requirements files
+        pip install bitarray
+
+        # Install project in development mode
+        pip install -e .
+
+    - name: Build with PyInstaller
+      run: |
+        # Use PyInstaller flags to exclude unwanted modules and include build-specific plugins
+        if [ ! -f ".github/workflows/linux/meerk40t.spec" ]; then
+          pyinstaller --onefile --windowed --name=MeerK40t \
+            --exclude-module=meerk40t.external_plugins \
+            --add-data="meerk40t/external_plugins_build.py:meerk40t/external_plugins.py" \
+            meerk40t.py
+        else
+          pyinstaller .github/workflows/linux/meerk40t.spec
+        fi
+
+    - name: Create AppImage
+      run: |
+        # Download appimagetool (pinned to specific release for security)
+        APPIMAGETOOL_VERSION="13"
+        APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
+        APPIMAGETOOL_SHA256_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage.sha256"
+
+        wget -O appimagetool "${APPIMAGETOOL_URL}"
+        chmod +x appimagetool
+
+        # Fetch official checksum and verify for security
+        wget -O appimagetool.sha256 "${APPIMAGETOOL_SHA256_URL}"
+        sha256sum -c appimagetool.sha256 || exit 1
+
+        # If updating appimagetool version, update APPIMAGETOOL_VERSION and APPIMAGETOOL_SHA256_URL.
+        # The checksum is always fetched from the official release page.
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
+
+        # Copy the executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
+
+        # Copy icon and convert to PNG if needed
+        if [ -f "meerk40t.ico" ]; then
+          # Check if the ICO file is not empty
+          if [ ! -s "meerk40t.ico" ]; then
+            echo "ERROR: meerk40t.ico is empty or malformed. Aborting icon conversion." >&2
+            exit 1
+          fi
+          # Convert ICO to PNG for AppImage with error handling
+          if ! convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+            echo "ERROR: Failed to convert meerk40t.ico to PNG. Is ImageMagick installed and is the ICO valid?" >&2
+            exit 1
+          fi
+        else
+          echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
+        fi
+        
+        # Create desktop file
+        cat > AppDir/usr/share/applications/meerk40t.desktop << EOF
+        [Desktop Entry]
+        Name=MeerK40t
+        Exec=meerk40t
+        Icon=meerk40t
+        Type=Application
+        Categories=Graphics;VectorGraphics;
+        Comment=Laser Cutter Software
+        Terminal=false
+        EOF
+
+        # Create AppStream metainfo
+        cat > AppDir/usr/share/metainfo/meerk40t.appdata.xml << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <component type="desktop-application">
+          <id>meerk40t</id>
+          <name>MeerK40t</name>
+          <summary>Laser Cutter Control Software</summary>
+          <description>
+            <p>MeerK40t is a free and open-source laser cutter control software.</p>
+          </description>
+          <launchable type="desktop-id">meerk40t.desktop</launchable>
+          <categories>
+            <category>Graphics</category>
+            <category>VectorGraphics</category>
+          </categories>
+        </component>
+        EOF
+
+        # Create AppRun script
+        cat > AppDir/AppRun << EOF
+        #!/bin/bash
+        HERE="\$(dirname "\$(readlink -f "\${0}")")"
+        export PATH="\${HERE}/usr/bin:\${PATH}"
+        export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
+        export PYTHONPATH="\${HERE}/usr/lib/python3/dist-packages:\${PYTHONPATH}"
+        exec "\${HERE}/usr/bin/meerk40t" "\$@"
+        EOF
+        chmod +x AppDir/AppRun
+
+        # Build AppImage
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          APPIMAGE_TAG="${{ github.sha }}"
+        fi
+        ./appimagetool AppDir meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+
+    - name: Test AppImage
+      run: |
+        # Make AppImage executable and test basic functionality
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          APPIMAGE_TAG="${{ github.sha }}"
+        fi
+        chmod +x meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+        # Note: Can't run GUI in headless environment, but we can check if it starts
+        timeout 15s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
+        if [ $? -ne 0 ]; then
+          echo "ERROR: AppImage failed to start or did not return version information."
+          exit 1
+        fi
+
+    - name: Check AppImage exists before upload
+      if: github.event_name == 'release'
+      run: |
+        APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        if [ ! -f "meerk40t-${APPIMAGE_TAG}-x86_64.AppImage" ]; then
+          echo "ERROR: AppImage file meerk40t-${APPIMAGE_TAG}-x86_64.AppImage not found. Upload step will fail."
+          exit 1
+        fi
+
+    - name: Upload AppImage to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@e7a8f85e1c67a31e6ed99a94b41bd0b71bbee6b8
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          meerk40t-${{ github.event.release.tag_name }}-x86_64.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload AppImage as Artifact
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: meerk40t-appimage
+        path: meerk40t-${{ github.sha }}-x86_64.AppImage

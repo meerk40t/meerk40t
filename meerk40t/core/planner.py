@@ -57,7 +57,8 @@ def plugin(kernel, lifecycle=None):
         ]
         kernel.register_choices("planner", choices)
         INNER_WARNING = _(
-            "Notabene: Reduce Travel Time and Burn Inner First cannot be used at the same time."
+            "Notabene: When using both Reduce Travel Time and Burn Inner First, "
+            "travel optimization occurs within each hierarchy level (inners before outers)."
         )
         choices = [
             {
@@ -393,8 +394,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register_choices("optimize", choices)
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)
-        context.setting(bool, "opt_reduce_directions", False)
-        context.setting(bool, "opt_remove_overlap", False)
         context.setting(bool, "opt_start_from_position", False)
 
         # context.setting(int, "opt_closed_distance", 15)
@@ -699,6 +698,9 @@ class Planner(Service):
             init_settings()
 
             # Add default start ops
+            if busy.shown:
+                busy.change(msg=_("Adding trailing operations"), keep=1)
+                busy.show()
             add_ops(True)
             # types = (
             #     "op cut",
@@ -716,7 +718,16 @@ class Planner(Service):
             #     "place point"
             #     "blob",
             # )
+            c_count = 0
+            update_interval = 10  # Update busy indicator every 10 commands
             for c in operations:
+                c_count += 1
+                if busy.shown and (c_count % update_interval) == 0:
+                    busy.change(
+                        msg=_("Copying data {count}").format(count=c_count), keep=2
+                    )
+                    busy.show()
+
                 isactive = True
                 try:
                     if not c.output:
@@ -748,6 +759,9 @@ class Planner(Service):
                 data.plan.append(copy_c)
 
             # Add default trailing ops
+            if busy.shown:
+                busy.change(msg=_("Adding trailing operations"), keep=1)
+                busy.show()
             add_ops(False)
             channel(_("Copied Operations."))
             self.update_stage(data.name, STAGE_PLAN_COPY)
@@ -1050,7 +1064,7 @@ class Planner(Service):
                 ):
                     continue
                 # Make sure we take the most recent
-                t = plan.get(STAGE_PLAN_FINISHED, 0)
+                t = self._states[candidate].get(STAGE_PLAN_FINISHED, 0)
                 if t > last_time:
                     last_time = t
                     last = candidate
@@ -1101,3 +1115,14 @@ class Planner(Service):
         ordered = sorted(states.items(), key=lambda kv: kv[1], reverse=True)
         info = ", ".join(self.STAGE_DESCRIPTIONS[s] for s, _ in ordered)
         return states, info
+
+    def is_finished(self, plan_name):
+        """
+        Checks if the specified plan has reached the finished stage.
+        Returns True if the plan exists and has the STAGE_PLAN_FINISHED recorded.
+        """
+        if plan_name not in self._states:
+            return False
+        with self._plan_lock:
+            finished = STAGE_PLAN_FINISHED in self._states[plan_name]
+        return finished

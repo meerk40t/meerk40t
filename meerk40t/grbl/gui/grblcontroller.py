@@ -9,6 +9,7 @@ import wx
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
+    icon_warning,
     icons8_connected,
     icons8_disconnected,
 )
@@ -40,7 +41,6 @@ class GRBLControllerPanel(wx.Panel):
         self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
         )
-
         self.button_device_connect.SetFont(
             wx.Font(
                 12,
@@ -57,7 +57,20 @@ class GRBLControllerPanel(wx.Panel):
         self.button_device_connect.SetBitmap(
             icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
         )
-        sizer_1.Add(self.button_device_connect, 0, wx.EXPAND, 0)
+        self.button_device_in_error = wxButton(self, wx.ID_ANY, "")
+        self.button_device_in_error.Hide()
+        self.button_device_in_error.SetToolTip(_("Device is in error state."))
+        self.button_device_in_error.SetMinSize(dip_size(self, 32, 32))
+        self.button_device_in_error.SetBitmap(
+            icon_warning.GetBitmap(use_theme=False, resize=self.iconsize)
+        )
+        self.label_device_status = wxStaticText(self, wx.ID_ANY, "")
+        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_buttons.Add(self.button_device_connect, 1, wx.EXPAND, 0)
+        sizer_buttons.Add(self.button_device_in_error, 0, wx.EXPAND, 0)
+        sizer_buttons.Add(self.label_device_status, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_1.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
         static_line_2.SetMinSize(dip_size(self, 483, 5))
@@ -249,6 +262,9 @@ class GRBLControllerPanel(wx.Panel):
 
         return handler
 
+    def on_button_device_in_error(self, event):
+        self.service("clear_alarm\n")
+
     def send_macro(self, idx):
         def handler(event):
             macro = self.macros[idx]
@@ -357,6 +373,7 @@ class GRBLControllerPanel(wx.Panel):
             buffer = self._buffer
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
+        self.update_device_buttons()
 
     def set_color_according_to_state(self, stateval, control):
         def color_distance(c1, c2):
@@ -420,6 +437,23 @@ class GRBLControllerPanel(wx.Panel):
                 icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
+        self.update_device_buttons()
+
+    def update_device_buttons(self):
+        def properly_connected():
+            return not (
+                self.state == "uninitialized"
+                or self.state == "disconnected"
+                or self.state is None
+            )
+
+        self.button_device_in_error.Show(
+            self.service.controller.error_condition and properly_connected()
+        )
+        self.label_device_status.SetLabel(
+            f"{self.service.controller.last_state if properly_connected() else ''}"
+        )
+        self.Layout()
 
     def pane_show(self):
         if (
@@ -442,6 +476,7 @@ class GRBLControllerPanel(wx.Panel):
                 icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
+        self.update_device_buttons()
 
     def pane_hide(self):
         return

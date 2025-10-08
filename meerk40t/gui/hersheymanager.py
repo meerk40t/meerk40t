@@ -472,12 +472,16 @@ class LineTextPropertyPanel(wx.Panel):
         sizer_fonts = StaticBoxSizer(
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
         )
-
+        self.warning_label = wxStaticText(self, wx.ID_ANY, "")
+        self.warning_label.Show(False)
+        self.warning_label.SetForegroundColour(wx.Colour(255, 0, 0))
+        self.warning_label.SetBackgroundColour(self.context.themes.get("win_bg"))
         self.list_fonts = wxListBox(self, wx.ID_ANY)
         self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
+        sizer_fonts.Add(self.warning_label, 0, wx.EXPAND, 0)
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
@@ -534,6 +538,18 @@ class LineTextPropertyPanel(wx.Panel):
         if self.node is None or not self.accepts(node):
             self.Hide()
             return
+        font_name = getattr(self.node, "mkfont", None)
+        font_info = self.context.fonts.full_name(font_name)
+        existing_font = font_info is not None
+
+        if not existing_font:
+            self.warning_label.SetLabel(
+                _("Font missing: {fontname}").format(fontname=font_name)
+            )
+            self.warning_label.Show(True)
+        else:
+            self.warning_label.SetLabel("")
+            self.warning_label.Show(False)
         if not hasattr(self.node, "mkfontspacing") or self.node.mkfontspacing is None:
             self.node.mkfontspacing = 1.0
         if not hasattr(self.node, "mklinegap") or self.node.mklinegap is None:

@@ -2418,7 +2418,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         attr = choice["attr"]
 
         def on_update_listener(choice, ctrl, sourceobj):
-            def listen_to_myself(origin, value, target=None):
+            def listen_to_myself(origin, value, target=None, dict_key=None):
                 if self.context.kernel.is_shutdown:
                     return
 
@@ -2497,6 +2497,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 ctrl.SetValue(str(data))
             else:
                 least = None
+                if choicelist is None:
+                    choicelist = []
                 for entry in choicelist:
                     if least is None:
                         least = entry

@@ -138,6 +138,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.context,
             self,
             scene_name="Scene" if index is None else f"Scene{index}",
+            with_snap=True,
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.scene.start_scene()

@@ -16,7 +16,7 @@ class BranchOperationsNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Operations"
+        default_map["element_type"] = "Operations" if self.label is None else self.label
         if self.loop_continuous:
             default_map["loops"] = "∞"
         else:
@@ -40,6 +40,6 @@ class BranchOperationsNode(Node):
                 self.append_child(drag_node)
             return True
         return False
-        
+
     def is_draggable(self):
         return False

@@ -140,6 +140,7 @@ class CameraPanel(wx.Panel, Job):
             self.camera,
             self,
             scene_name=scene_name,
+            with_snap=False,
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.display_camera.scene

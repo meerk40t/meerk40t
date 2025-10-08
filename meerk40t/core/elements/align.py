@@ -134,13 +134,59 @@ Functions:
 """
 
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing alignment operations within the application.
+These commands allow users to align elements based on various criteria, including their position and grouping.
+
+It uses a probably overly complicated system of alignment settings that are pushed and popped on an alignment
+stack. This feature was never really used, so its just a bit too much sophisticated?!
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up alignment commands.
+- init_commands(kernel): Initializes the alignment commands and defines the associated operations.
+- _align_xy(channel, _, mode, bounds, data, align_x=None, align_y=None, asgroup=None, **kwargs): Prepares the data for alignment based on the specified parameters.
+  Args:
+    channel: The communication channel for messages.
+    mode: The alignment mode to apply.
+    bounds: The bounds for alignment.
+    data: The elements to align.
+    align_x: The alignment parameter for the x-axis.
+    align_y: The alignment parameter for the y-axis.
+    asgroup: A flag indicating whether to treat the selection as a group.
+  Returns:
+    None
+- alignmode_push(channel, _, data, **kwargs): Pushes the current alignment mode onto the stack for later retrieval.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the current alignment data.
+- alignmode_pop(channel, _, data, **kwargs): Pops the last alignment mode from the stack and sets it as the current mode.
+  Args:
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_group(command, channel, _, data, **kwargs): Sets the alignment mode to treat the selection as a group.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_individual(command, channel, _, data, **kwargs): Sets the alignment mode to treat the selection as individual elements.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    data: The current alignment data.
+  Returns:
+    A tuple containing the alignment type and the updated alignment data.
+- alignmode_default(channel, _, data, **kwargs): Sets the alignment mode to default, aligning all selected elements equally.
+  Args:
+    channel: The communication channel for messages.
 """
 
 from meerk40t.svgelements import Viewbox
-
-from .element_types import *
-
+from .element_types import elem_nodes
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
