@@ -45,6 +45,215 @@ from meerk40t.svgelements import Color
 _ = wx.GetTranslation
 
 
+class MaterialLibraryBrowserDialog(wx.Dialog):
+    """
+    Modal dialog to browse material library in a wxTreeCtrl.
+    Double-click returns (section, subsection), escape or right-click closes and returns None.
+    """
+
+    def __init__(self, parent, context, categorisation=0):
+        wx.Dialog.__init__(
+            self,
+            parent,
+            title=_("Select Material Entry"),
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+        )
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.op_data = self.context.elements.op_data
+        self.categorisation = categorisation
+        self.selected = None
+        self.tree = wxTreeCtrl(
+            self,
+            style=wx.TR_HAS_BUTTONS
+            | wx.TR_SINGLE
+            | wx.TR_LINES_AT_ROOT
+            | wx.BORDER_SUNKEN,
+        )
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.tree, 1, wx.EXPAND | wx.ALL, 10)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.check_status = wx.CheckBox(self, label=_("Apply to status bar"))
+        hsizer.Add(self.check_status, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.check_tree = wx.CheckBox(self, label=_("Apply to tree view"))
+        hsizer.Add(self.check_tree, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer.Add(hsizer, 0, wx.EXPAND | wx.ALL, 10)
+        self.SetSizer(sizer)
+        check_bar = self.context.setting(bool, "material_status_bar", True)
+        self.check_status.SetValue(check_bar)
+        check_tree = self.context.setting(bool, "material_tree_view", False)
+        self.check_tree.SetValue(check_tree)
+        self._populate_tree()
+        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_double_click)
+        self.tree.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.SetSize((600, 400))
+        self.Centre()
+
+    def _populate_tree(self):
+        root = self.tree.AddRoot(_("Materials"))
+        material_list = {}
+        for section in self.op_data.section_set():
+            if section.startswith("previous"):
+                continue
+            count = 0
+            secname = section
+            secdesc = ""
+            sectitle = ""
+            thick = ""
+            ltype = 0
+            note = ""
+            for subsection in self.op_data.derivable(secname):
+                if subsection.endswith(" info"):
+                    secdesc = self.op_data.read_persistent(
+                        str, subsection, "material", ""
+                    )
+                    sectitle = self.op_data.read_persistent(
+                        str, subsection, "title", ""
+                    )
+                    thick = self.op_data.read_persistent(
+                        str, subsection, "thickness", ""
+                    )
+                    ltype = self.op_data.read_persistent(int, subsection, "laser", 0)
+                    note = self.op_data.read_persistent(str, subsection, "note", "")
+                else:
+                    count += 1
+            if not sectitle:
+                sectitle = secname.replace("_", " ")
+            entry = {
+                "section": secname,
+                "material": secdesc,
+                "title": sectitle,
+                "laser": ltype,
+                "thickness": thick,
+                "note": note,
+                "opcount": count,
+            }
+            material_list[secname] = entry
+        # Sorting logic (same as MaterialPanel)
+        if self.categorisation == 1:
+            sort_key_primary = "laser"
+            sort_key_secondary = "material"
+            sort_key_tertiary = "thickness"
+        elif self.categorisation == 2:
+            sort_key_primary = "thickness"
+            sort_key_secondary = "material"
+            sort_key_tertiary = "laser"
+        else:
+            sort_key_primary = "material"
+            sort_key_secondary = "thickness"
+            sort_key_tertiary = "laser"
+        display = []
+        for key, entry in material_list.items():
+            display.append((entry, key))
+        display.sort(
+            key=lambda e: (
+                e[0][sort_key_primary],
+                e[0][sort_key_secondary],
+                e[0][sort_key_tertiary],
+            )
+        )
+        last_category_primary = None
+        last_category_secondary = None
+        tree_primary = root
+        tree_secondary = root
+        first_item = None
+        visible_count = [0, 0]  # All, subsections
+        for content in display:
+            entry = content[0]
+            key = content[1]
+            ltype = entry["laser"]
+            if ltype is None:
+                ltype = 0
+            laser_desc = _("All lasers")
+            # Laser choices are not available here, so just show 'All lasers' or ltype
+            if sort_key_primary == "laser":
+                this_category_primary = str(laser_desc)
+            else:
+                this_category_primary = entry[sort_key_primary].replace("_", " ")
+            if sort_key_secondary == "laser":
+                this_category_secondary = str(laser_desc)
+            else:
+                this_category_secondary = entry[sort_key_secondary].replace("_", " ")
+            if not this_category_primary:
+                this_category_primary = _("No " + sort_key_primary)
+            visible_count[0] += 1
+            if last_category_primary != this_category_primary:
+                last_category_secondary = ""
+                tree_primary = self.tree.AppendItem(root, this_category_primary)
+                tree_secondary = tree_primary
+                visible_count[1] += 1
+            if last_category_secondary != this_category_secondary:
+                tree_secondary = self.tree.AppendItem(
+                    tree_primary, this_category_secondary
+                )
+            description = f"{entry['title']}, {entry['thickness']} ({laser_desc}, {entry['opcount']} ops)"
+            tree_item = self.tree.AppendItem(tree_secondary, description)
+            self.tree.SetItemData(tree_item, key)
+            if first_item is None:
+                first_item = tree_item
+            last_category_primary = this_category_primary
+            last_category_secondary = this_category_secondary
+        self.tree.Expand(root)
+        # if visible_count[0] <= 10:
+        #     tree.ExpandAllChildren(root)
+        if visible_count[1] == 1:
+            self.tree.ExpandAllChildren(root)
+        elif visible_count[1] <= 10:
+            child, cookie = self.tree.GetFirstChild(root)
+            while child.IsOk():
+                self.tree.Expand(child)
+                child, cookie = self.tree.GetNextChild(root, cookie)
+
+        if visible_count[0] == 1:  # Just one, why don't we select it
+            self.tree.SelectItem(first_item)
+
+    def _process_selection(self, item):
+        if item.IsOk():
+            section = self.tree.GetItemData(item)
+            if section:
+                subsection = None
+                for subsect in self.op_data.derivable(section):
+                    if not subsect.endswith(" info"):
+                        subsection = subsect
+                        break
+                if subsection:
+                    self.context.material_status_bar = self.check_status.GetValue()
+                    self.context.material_tree_view = self.check_tree.GetValue()
+                    self.selected = (
+                        section,
+                        subsection,
+                        self.context.material_status_bar,
+                        self.context.material_tree_view,
+                    )
+                    self.EndModal(wx.ID_OK)
+                    return True
+        return False
+
+    def on_double_click(self, event):
+        event.Skip()
+        item = event.GetItem()
+        if item.IsOk():
+            self._process_selection(item)
+
+    def on_right_click(self, event):
+        self.selected = None
+        self.EndModal(wx.ID_CANCEL)
+
+    def on_key_down(self, event):
+        event.Skip()
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self.selected = None
+            self.EndModal(wx.ID_CANCEL)
+        elif event.GetKeyCode() == wx.WXK_RETURN:
+            item = self.tree.GetSelection()
+            if item.IsOk():
+                self._process_selection(item)
+
+    def get_selection(self):
+        return self.selected
+
+
 class ImportDialog(wx.Dialog):
     def __init__(self, *args, context=None, filename=None, **kwds):
         kwds["style"] = (
