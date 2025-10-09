@@ -14,7 +14,7 @@ class CommandTracker:
         self.responses = []
         self.complete = False
         self.error = False
-        self.timeout = 10.0  # Default timeout in seconds
+        self.timeout = 0.0  # Default timeout in seconds
         self.timestamp = time.time()
         self.log_responses = log_responses  # Whether to log responses for this command
 
@@ -58,6 +58,7 @@ class GrblSender:
         serial_connection=None,
         baudrate=115200,
         status_interval=3.0,
+        callback=None,  # function to call on each response line
         debug=False,
     ):
         # Validate inputs - must have either port or existing serial connection
@@ -111,14 +112,15 @@ class GrblSender:
         self.buffer_lock = threading.Lock()
         self.last_command_id = 0
         self.alarm_state = False
-        self.active_cmd_id = None
+        self.alarm_code = 0
+        self.in_flight_commands = []  # FIFO queue of commands sent but not yet acknowledged
         self.current_status = None
         self.connection_lost = False
         self.last_status_time = 0
         self.command_timeout = 10.0
         self.last_status_query_time = 0
         self.last_reset_time = 0
-
+        self.callback = callback
         self.receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self.sender_thread = threading.Thread(target=self._send_loop, daemon=True)
         if self.status_interval > 0:
@@ -152,6 +154,18 @@ class GrblSender:
         time.sleep(0.1)  # Give GRBL time to respond
         self.debug_print("Soft reset sent to GRBL")
 
+    def clear_alarm(self):
+        """
+        Clear alarm state by sending unlock command ($X).
+        This allows GRBL to resume operation after an alarm.
+        Note: Some alarms (like hard limits) may require homing after unlock.
+        """
+        self.send_command("$X", priority=1)  # High priority unlock command
+        with self.response_lock:
+            self.alarm_state = False
+            self.alarm_code = 0
+        self.debug_print("Alarm cleared with $X unlock command")
+
     def stop(self):
         self.running = False
 
@@ -178,7 +192,12 @@ class GrblSender:
 
         self.debug_print("GRBL sender stopped and cleaned up.")
 
-    def send_command(self, command: str, priority=10, timeout=10.0, log_responses=True):
+    def send_command(self, command: str, priority=10, timeout=0, log_responses=True):
+        # Strip whitespace from commands (except single-char realtime commands)
+        # GRBL spec requires no trailing/leading whitespace in G-code commands
+        if len(command) > 1:
+            command = command.strip()
+
         # Use longer timeout for commands sent shortly after reset
         current_time = time.time()
         if current_time - self.last_reset_time < 5.0:  # Within 5 seconds of reset
@@ -210,6 +229,11 @@ class GrblSender:
         """Get the most recent status information from GRBL."""
         with self.response_lock:
             return self.current_status.copy() if self.current_status else None
+
+    def get_current_alarm(self):
+        """Get the most recent alarm information from GRBL."""
+        with self.response_lock:
+            return bool(self.alarm_state), int(self.alarm_code)
 
     def is_connected(self):
         """Check if the GRBL connection is healthy."""
@@ -321,6 +345,8 @@ class GrblSender:
 
             try:
                 priority, cmd_id, command = self.command_queue.get(timeout=0.1)
+
+                # Command is already stripped in send_command()
                 with self.buffer_lock:
                     can_send = (
                         priority == 0 or len(command) + 1 <= self.buffer_remaining
@@ -334,12 +360,17 @@ class GrblSender:
                             self.serial.write(
                                 (command + "\n").encode()
                             )  # G-code: with newline
-                        self.debug_print(f"Sent: {command}")
 
-                        # For realtime commands, don't track buffer or active command
+                        # For realtime commands, don't track buffer or in-flight queue
                         if priority != 0 and cmd_id is not None:
                             with self.response_lock:
-                                self.active_cmd_id = cmd_id
+                                # Add to in-flight queue for response matching
+                                self.in_flight_commands.append(cmd_id)
+                            self.debug_print(
+                                f"Sent cmd_id={cmd_id}: {command} (in-flight: {len(self.in_flight_commands)})"
+                            )
+                        else:
+                            self.debug_print(f"Sent realtime: {command}")
                             # Decrement buffer space when command is sent
                             with self.buffer_lock:
                                 self.buffer_remaining -= len(command) + 1
@@ -363,7 +394,7 @@ class GrblSender:
 
     def _receive_loop(self):
         last_successful_read = time.time()
-        connection_timeout = 2.0  # Consider connection lost after 2 seconds of no data
+        connection_timeout = 50  # Consider connection lost after 50 seconds of no data
 
         while self.running:
             # Use longer connection timeout after reset
@@ -434,10 +465,21 @@ class GrblSender:
                 error_code = int(error_match.group(1))
                 error_desc = self.get_error_description(error_code)
                 self.debug_print(f"GRBL Error {error_code}: {error_desc}")
+
+                # Error 9 means GRBL is in alarm/locked state
+                if error_code == 9:
+                    with self.response_lock:
+                        self.alarm_state = True
+                        self.alarm_code = 9
+                    self.debug_print(
+                        "GRBL is locked (alarm state detected via error:9)"
+                    )
+
                 # Store error information in the response
                 with self.response_lock:
-                    if self.active_cmd_id is not None:
-                        tracker = self.response_map.get(self.active_cmd_id)
+                    if self.in_flight_commands:
+                        cmd_id = self.in_flight_commands[0]  # Peek at oldest command
+                        tracker = self.response_map.get(cmd_id)
                         if tracker:
                             tracker.responses.append(
                                 f"ERROR {error_code}: {error_desc}"
@@ -447,42 +489,91 @@ class GrblSender:
             self._finalize_response(error=True)
             # Buffer space is incremented in _finalize_response
         elif "ALARM" in line:
+            if line.strip() == "ALARM":
+                code = -1
+            else:
+                alarm_match = re.search(r"ALARM:(\d+)", line)
+                code = int(alarm_match[1]) if alarm_match else 1
             with self.response_lock:
                 self.alarm_state = True
+                self.alarm_code = code
+            # Finalize the command that triggered the alarm to free buffer space
+            # This allows recovery after alarm is cleared
+            self._finalize_response(error=True)
+        elif line.startswith("Alarm|"):
+            alarm_match = re.search(r"Alarm\|(\d+)", line)
+            code = int(alarm_match[1]) if alarm_match else 1
+            with self.response_lock:
+                self.alarm_state = True
+                self.alarm_code = code
+            # Finalize the command that triggered the alarm to free buffer space
+            self._finalize_response(error=True)
         elif self._check_for_reset(line):
             self._handle_reset()
         else:
             self._append_to_response(line)
+        if self.callback:
+            try:
+                self.callback(line)
+            except Exception as e:
+                self.debug_print(f"Callback error: {e}")
 
     def _append_to_response(self, line):
         with self.response_lock:
-            if self.active_cmd_id is None:
-                self.debug_print("No active command to append to.")
+            # Get the oldest in-flight command (FIFO order)
+            if not self.in_flight_commands:
+                self.debug_print(f"No in-flight commands to append response to: {line}")
                 return
-            tracker = self.response_map.get(self.active_cmd_id)
+
+            cmd_id = self.in_flight_commands[0]  # Peek at oldest command
+            tracker = self.response_map.get(cmd_id)
             if tracker and not tracker.complete:
                 tracker.responses.append(line)
-                self.debug_print(f"Appended to cmd_id={self.active_cmd_id}: {line}")
+                self.debug_print(f"Appended to cmd_id={cmd_id}: {line}")
+            else:
+                self.debug_print(
+                    f"Tracker not found or already complete for cmd_id={cmd_id}"
+                )
 
     def _finalize_response(self, error=False):
         with self.response_lock:
-            if self.active_cmd_id is None:
-                self.debug_print("No active command to finalize.")
+            # Get the oldest in-flight command (FIFO order)
+            if not self.in_flight_commands:
+                self.debug_print(
+                    "WARNING: No in-flight commands to finalize (received ok/error without matching command)"
+                )
                 return
-            tracker = self.response_map.get(self.active_cmd_id)
-            if tracker and not tracker.complete:
+
+            # Peek at the oldest command first to check if it's already complete
+            cmd_id = self.in_flight_commands[0]
+            tracker = self.response_map.get(cmd_id)
+
+            # If command is already complete, don't finalize again
+            # This handles the case where error:X and ALARM:X are sent for same command
+            if tracker and tracker.complete:
+                self.debug_print(
+                    f"Command {cmd_id} already finalized, skipping (likely error+alarm for same command)"
+                )
+                return
+
+            # Remove from in-flight queue (FIFO)
+            self.in_flight_commands.pop(0)
+
+            if tracker:
                 tracker.complete = True
                 tracker.error = error
+                remaining_count = len(self.in_flight_commands)
                 self.debug_print(
-                    f"Finalized cmd_id={self.active_cmd_id} with {'error' if error else 'ok'}"
+                    f"Finalized cmd_id={cmd_id} with {'error' if error else 'ok'} ('{tracker.command}') - {remaining_count} still in-flight"
                 )
+                tracker.responses.append("ERROR" if error else "OK")
                 # Increment buffer space when command is acknowledged
                 with self.buffer_lock:
                     self.buffer_remaining += tracker.command_size
                     # Ensure we don't exceed buffer size
                     self.buffer_remaining = min(self.buffer_remaining, self.buffer_size)
-                # Clear active command
-                self.active_cmd_id = None
+            else:
+                self.debug_print(f"WARNING: Tracker not found for cmd_id={cmd_id}")
 
     def _handle_welcome(self, line):
         self.debug_print("Controller welcome:", line)
@@ -691,8 +782,9 @@ class GrblSender:
                     break
         with self.response_lock:
             self.response_map.clear()
-            self.active_cmd_id = None
+            self.in_flight_commands.clear()  # Clear in-flight queue
             self.alarm_state = False
+            self.alarm_code = 0
             self.current_status = None
             self.last_reset_time = time.time()
 
@@ -717,14 +809,17 @@ class GrblSender:
             ]
 
             for cmd_id in to_remove:
+                self.debug_print(
+                    f"Cleaned up completed command {cmd_id} ('{self.response_map[cmd_id].command}')"
+                )
                 del self.response_map[cmd_id]
-                self.debug_print(f"Cleaned up completed command {cmd_id}")
 
             # Also check for timed out commands
             timed_out = [
                 cmd_id
                 for cmd_id, tracker in self.response_map.items()
                 if not tracker.complete
+                and tracker.timeout != 0
                 and (current_time - tracker.timestamp) > tracker.timeout
             ]
 
@@ -768,5 +863,52 @@ if __name__ == "__main__":
             print(
                 f"{t.cmd_id}.{t.command} {'' if t.complete else '(pending)'} -> {t.responses}"
             )
+    # Test error recovery with invalid command
+    print("\n=== Testing Error Recovery ===")
+    commands = ["G90", "G21", "G0 X10 Y10 Z0", "INVALID_COMMAND", "$X", "G0 X10 Y10 Z0"]
+    cmd_ids = []
+
+    print("Sending commands (including an invalid one)...")
+    for cmd in commands:
+        cmd_id = sender.send_command(cmd)
+        cmd_ids.append(cmd_id)
+        print(f"  Sent: {cmd}")
+
+    print("\nWaiting for responses...")
+    for idx, cmd in enumerate(commands):
+        cmd_id = cmd_ids[idx]
+        response = sender.get_response(cmd_id)
+        timeout = 0
+        while response is None and timeout < 100:  # 10 second timeout
+            time.sleep(0.1)
+            timeout += 1
+            response = sender.get_response(cmd_id)
+
+        if response:
+            status = "ERROR" if any("ERROR" in str(r) for r in response) else "OK"
+            print(f"  {cmd}: {status}")
+            if status == "ERROR":
+                print(f"    Details: {response}")
+        else:
+            print(f"  {cmd}: TIMEOUT")
+
+    # Check alarm state
+    alarm_active, alarm_code = sender.get_current_alarm()
+    if alarm_active:
+        print(f"\nAlarm detected (code {alarm_code}). Clearing alarm...")
+        sender.clear_alarm()
+        time.sleep(0.5)
+        alarm_active, alarm_code = sender.get_current_alarm()
+        print(f"Alarm state after clear: {alarm_active}")
+
+    # Verify system recovered by sending another command
+    print("\nVerifying recovery with another command...")
+    test_cmd = sender.send_command("G0 X0.0 Y0.0")
+    time.sleep(1)
+    test_response = sender.get_response(test_cmd)
+    if test_response is not None:
+        print("  Recovery successful! System accepting commands again.")
+    else:
+        print("  Recovery FAILED! System not responding.")
 
     sender.stop()
