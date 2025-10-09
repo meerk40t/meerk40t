@@ -114,7 +114,7 @@ jobs:
         else
           echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
         fi
-        
+
         # Create desktop file
         cat > AppDir/usr/share/applications/meerk40t.desktop << EOF
         [Desktop Entry]
@@ -164,6 +164,19 @@ jobs:
         fi
         ./appimagetool AppDir meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
 
+    - name: Sign AppImage (Optional)
+      run: |
+        # Option 1: Skip signing (default - AppImage works but cannot be verified)
+        echo "Skipping GPG signing - AppImage will work but cannot be cryptographically verified"
+
+        # Option 2: Sign with GPG key (recommended for production)
+        # Uncomment the lines below if you have GPG credentials set up
+        # echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode | gpg --import --batch --yes
+        # echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback --sign-key "${{ secrets.GPG_KEY_ID }}"
+        # gpg --detach-sign --armor --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+        # Create checksum file as additional verification method
+        sha256sum meerk40t-${APPIMAGE_TAG}-x86_64.AppImage > meerk40t-${APPIMAGE_TAG}-x86_64.AppImage.sha256
+
     - name: Test AppImage
       run: |
         # Make AppImage executable and test basic functionality
@@ -196,6 +209,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
           meerk40t-${{ github.event.release.tag_name }}-x86_64.AppImage
+          meerk40t-${{ github.event.release.tag_name }}-x86_64.AppImage.sha256
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -204,4 +218,6 @@ jobs:
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: meerk40t-appimage
-        path: meerk40t-${{ github.sha }}-x86_64.AppImage
+        path: |
+          meerk40t-${{ github.sha }}-x86_64.AppImage
+          meerk40t-${{ github.sha }}-x86_64.AppImage.sha256

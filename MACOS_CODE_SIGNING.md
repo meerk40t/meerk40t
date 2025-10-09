@@ -1,6 +1,7 @@
 # Free macOS Code Signing Options for MeerK40t
 
 > **Note:** Windows code signing options are documented separately in `WINDOWS_CODE_SIGNING.md`
+> **Note:** Linux code signing options are documented separately in `LINUX_CODE_SIGNING.md`
 
 > **Update (October 2025):** SSL.com's free code signing program for open source projects appears to be discontinued or the URL has changed. SignPath.io is now the recommended free alternative.
 

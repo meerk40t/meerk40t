@@ -1,6 +1,7 @@
 # Free Windows Code Signing Options for MeerK40t
 
 > **Update (October 2025):** SSL.com's free code signing program for open source projects appears to be discontinued or the URL has changed. SignPath.io is now the recommended free alternative.
+> **Note:** Linux code signing options are documented separately in `LINUX_CODE_SIGNING.md`
 
 ## Option 1: No Code Signing (Simplest - Default)
 

@@ -111,6 +111,19 @@ jobs:
         # Move to dist directory
         mv MeerK40t-Ubuntu-Latest.AppImage dist/
 
+    - name: Sign AppImage (Optional)
+      run: |
+        # Option 1: Skip signing (default - AppImage works but cannot be verified)
+        echo "Skipping GPG signing - AppImage will work but cannot be cryptographically verified"
+
+        # Option 2: Sign with GPG key (recommended for production)
+        # Uncomment the lines below if you have GPG credentials set up
+        # echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode | gpg --import --batch --yes
+        # echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback --sign-key "${{ secrets.GPG_KEY_ID }}"
+        # gpg --detach-sign --armor --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback dist/MeerK40t-Ubuntu-Latest.AppImage
+        # Create checksum file as additional verification method
+        sha256sum dist/MeerK40t-Ubuntu-Latest.AppImage > dist/MeerK40t-Ubuntu-Latest.AppImage.sha256
+
 # Switched to using softprops/action-gh-release@v1
 # because it supports uploading to existing release based on current tag.
     - name: Upload Release Assets
@@ -121,3 +134,4 @@ jobs:
         files: |
           dist/MeerK40t-Ubuntu-Latest
           dist/MeerK40t-Ubuntu-Latest.AppImage
+          dist/MeerK40t-Ubuntu-Latest.AppImage.sha256
