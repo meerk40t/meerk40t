@@ -13,11 +13,40 @@ _ = wx.GetTranslation
 
 
 class BalorConfiguration(MWindow):
-    """Balor Configuration Panel - Configure Balor laser settings
+    """
+    Balor Configuration Panel - GUI interface for configuring Balor laser device settings.
 
-    **Technical Details:**
-    - Help Section: balorconfig
-    - Signals: corfile, activate;device, balorpin"""
+    **Technical Purpose:**
+    Provides a comprehensive tabbed configuration interface for Balor laser devices,
+    allowing users to modify device-specific parameters through organized property panels.
+    Manages device settings including redlight control, global parameters, timing configurations,
+    extra features, effects, operation defaults, warnings, default actions, and display options.
+    Integrates with the device's choice system to dynamically show/hide configuration sections
+    based on developer mode and device capabilities.
+
+    **Signals:**
+    - **Listens for "balorpin"**: Triggers pin definition updates when Balor pin configurations change
+    - **Listens for "corfile"**: Processes correction file changes, calculates lens size from correction data,
+      and broadcasts lens size updates to other components
+    - **Listens for "activate;device"**: Monitors device activation state and closes configuration
+      window if current device is not a Balor device
+
+    **End-User Description:**
+    The Balor Configuration window provides easy access to all laser settings organized in tabs:
+    - **Balor**: Core laser parameters and pin testing controls
+    - **Redlight**: Red positioning laser configuration
+    - **Global**: Overall device settings
+    - **Timings**: Pulse and timing parameters
+    - **Extras**: Additional device features
+    - **Effects**: Laser effect configurations
+    - **Operation Defaults**: Default cutting/engraving settings
+    - **Warning**: Safety and warning configurations
+    - **Default Actions**: Automatic device behaviors
+    - **Display Options**: How information is shown in the interface
+
+    Use the "Test" button to activate the red positioning dot for alignment purposes.
+    The "Bits" field shows real-time pin status information.
+    """
 
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)

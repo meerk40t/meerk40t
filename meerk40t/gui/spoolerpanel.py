@@ -86,19 +86,34 @@ def register_panel_spooler(window, context):
 
 
 class SpoolerPanel(wx.Panel):
-    """Spooler Panel - Manage and monitor laser job execution queue
+    """Spooler Panel - Manages and monitors laser job execution queue with real-time status updates
 
-    **Technical Details:**
-    - Help Section: spooler
-    - Signals: spooler;completed, spooler;queue, emulator;position, pause, spooler;realtime, pipe;usb_status, activate;device, spooler;idle, driver;position
+    **Technical Purpose:**
+    Provides comprehensive job spooling interface for laser operations, handling multiple device queues,
+    real-time progress monitoring, job prioritization, and execution control. Integrates with device
+    drivers to display job status, elapsed time, estimated completion, and allows interactive job
+    management including pause/resume, stop, and queue manipulation.
+
+    **Signals:**
+    - pause: Updates pause/resume button state when device pause state changes
+    - activate;device: Refreshes device list and updates UI when active device changes
+    - spooler;completed: Triggers history refresh when jobs complete
+    - spooler;queue: Updates spooler list when queue contents change
+    - spooler;idle: Updates spooler list when spooler becomes idle
+    - spooler;realtime: Updates spooler list for real-time status changes
+    - driver;position: Updates job progress and timing information
+    - emulator;position: Updates job progress for emulated devices
+    - pipe;usb_status: Monitors USB connection status for device communication
 
     **User Interface:**
-    - Clear spooler history (right click for more options)
-    - Pause/Resume the laser
-    - Select the device
-    - If checked, the spooler will not emit any sound signals while processing jobs
-    - Stop the laser
-    - List and modify the queued operations"""
+    - Device selector dropdown to filter jobs by specific laser device
+    - Pause/Resume button to control laser execution with visual state indication
+    - Emergency stop button with themed coloring for immediate laser shutdown
+    - Silent mode checkbox to suppress audio feedback during job processing
+    - Job queue list showing real-time status, progress, timing, and job details
+    - Job history panel with completed jobs, editable notes, and filtering options
+    - Context menus for job manipulation (remove, stop, enable/disable, loop control)
+    - History management with CSV export and selective clearing options"""
 
     def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__

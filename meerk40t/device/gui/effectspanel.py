@@ -1,19 +1,41 @@
 import wx
 
-#from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
-#from meerk40t.core.node.image_raster import ImageRasterNode
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.wxutils import dip_size
 from meerk40t.core.units import Angle
 from meerk40t.device.devicechoices import get_effect_choices
+
+# from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
+# from meerk40t.core.node.image_raster import ImageRasterNode
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.gui.wxutils import dip_size
 
 _ = wx.GetTranslation
 
 
 class EffectsPanel(wx.Panel):
     """
-    EffectsPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define default settings for effects for a device
+    EffectsPanel - Device-agnostic interface for configuring default laser effect parameters.
+
+    **Technical Purpose:**
+    Provides a universal configuration panel that works across all laser device types, enabling users
+    to set default parameters for various laser effects (hatching, wobbling, etc.). Dynamically loads
+    effect choices based on device capabilities and integrates with the device's settings system
+    to maintain effect defaults across sessions. Acts as a wrapper around ChoicePropertyPanel to
+    present effect configuration options in a standardized interface.
+
+    **Signals:**
+    - **No signal listeners**: This panel operates as a configuration interface and does not
+      respond to real-time signals, instead providing static effect parameter management
+
+    **End-User Description:**
+    The Effects panel lets you configure default settings for laser effects that will be applied
+    when creating new operations:
+    - **Hatch Effects**: Default spacing and angle for hatch patterns
+    - **Wobble Effects**: Default radius, interval, and speed for wobble patterns
+    - **Other Effects**: Device-specific effect parameters and defaults
+
+    These settings determine the default values used when you create new laser operations with
+    effects. You can still override these defaults on a per-operation basis, but these provide
+    convenient starting points for your most common effect configurations.
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -30,17 +52,20 @@ class EffectsPanel(wx.Panel):
         for choice in get_effect_choices(self.context):
             self.context.setting(choice["type"], choice["attr"], choice["default"])
 
-        #self.context.setting(str, "effect_hatch_default_distance", "1.0mm")
-        #self.context.setting(str, "effect_hatch_default_angle", "0deg")
+        # self.context.setting(str, "effect_hatch_default_distance", "1.0mm")
+        # self.context.setting(str, "effect_hatch_default_angle", "0deg")
 
-        #self.context.setting(str, "effect_wobble_default_radius", "0.5mm")
-        #self.context.setting(str, "effect_wobble_default_interval", "0.05mm")
-        #self.context.setting(str, "effect_wobble_default_speed", "50")
+        # self.context.setting(str, "effect_wobble_default_radius", "0.5mm")
+        # self.context.setting(str, "effect_wobble_default_interval", "0.05mm")
+        # self.context.setting(str, "effect_wobble_default_speed", "50")
 
         testsize = dip_size(self, 20, 20)
         imgsize = testsize[1]
         epanel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=get_effect_choices(self.context)
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices=get_effect_choices(self.context),
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)

@@ -120,6 +120,27 @@ class GrblIoButtons(wx.Panel):
 
 
 class GrblHardwareProperties(ScrolledPanel):
+    """
+    GRBL Hardware Properties Panel - Interactive configuration interface for GRBL device parameters.
+
+    **Technical Purpose:**
+    Provides a comprehensive wxPython-based interface for viewing and modifying GRBL hardware
+    settings ($0-$199 parameters). This scrolled panel displays all available GRBL configuration
+    parameters in an editable table format, allowing real-time hardware configuration management.
+    It integrates with the GRBL controller to read current settings, validate user input against
+    parameter data types, and write changes back to the device EEPROM.
+
+    **Signal Listeners:**
+    - `grbl:hwsettings`: Refreshes the parameter table when hardware settings are updated
+
+    **End-User Description:**
+    View and modify all GRBL hardware parameters in a convenient table format. Each parameter
+    shows its current value, units, and description. Edit values directly in the table, then use
+    the Write button to save changes to your GRBL device. The Refresh button reads current settings
+    from hardware, and Export saves your configuration to a file. Double-click parameter info links
+    for detailed documentation, or use the Explanation button for the official GRBL settings guide.
+    """
+
     def __init__(self, *args, context=None, **kwds):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
@@ -238,10 +259,26 @@ class GrblHardwareProperties(ScrolledPanel):
 
 
 class GRBLHardwareConfig(MWindow):
-    """GRBL Hardware Configuration Panel - Configure GRBL hardware settings
+    """
+    GRBL Hardware Configuration Window - Complete hardware parameter management interface.
 
-    **Technical Details:**
-    - Help Section: grblhwconfig"""
+    **Technical Purpose:**
+    Provides a dedicated wxPython window for comprehensive GRBL device hardware configuration.
+    This MWindow subclass creates and manages the GrblHardwareProperties panel, offering a
+    complete interface for viewing, editing, and managing all GRBL hardware parameters ($0-$199).
+    It integrates with the MeerK40t window management system and provides proper lifecycle
+    handling for hardware configuration operations.
+
+    **Signal Listeners:**
+    - Inherits hardware settings updates through GrblHardwareProperties panel
+
+    **End-User Description:**
+    Open the GRBL Hardware Configuration window to access all device settings and parameters.
+    This comprehensive interface lets you view current GRBL configuration, make changes to
+    hardware parameters, and save them directly to your device. Use this window to fine-tune
+    your laser's performance, adjust stepper motor settings, configure homing behavior, and
+    modify any other GRBL parameter.
+    """
 
     def __init__(self, *args, **kwds):
         super().__init__(1000, 500, *args, **kwds)

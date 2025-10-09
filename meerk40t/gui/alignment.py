@@ -197,14 +197,25 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
-    """Alignment Panel - Align selected design elements relative to reference points (selection bounds, first/last selected, laser bed, or reference objects)
+    """
+    Alignment Panel - Interactive element positioning interface for precise design layout.
 
-    **Technical Details:**
-    - Help Section: alignment
+    **Technical Purpose:**
+    Provides a comprehensive wxPython-based interface for aligning selected design elements
+    relative to reference points including selection bounds, first/last selected elements,
+    laser bed boundaries, or reference objects. This panel enables precise positioning control
+    through X/Y axis alignment options and supports both individual element and group alignment
+    modes, integrating with MeerK40t's element selection and transformation system.
 
-    **User Interface:**
-    - Align object to the top, centered or to the bottom in relation to the target point
-    - Align object at the left side, centered or to the right side in relation to the target point"""
+    **Signal Listeners:**
+    - None (operates through parent window signal handling for emphasis updates)
+
+    **End-User Description:**
+    Align your selected design elements with precision. Choose alignment relative to selection bounds,
+    first or last selected element, laser bed, or reference objects. Control horizontal alignment
+    (left, center, right) and vertical alignment (top, center, bottom) independently. Process elements
+    individually or as a group for consistent positioning across your design.
+    """
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -411,18 +422,26 @@ class AlignmentPanel(wx.Panel):
 
 
 class DistributionPanel(wx.Panel):
-    """Distribution Panel - Distribute selected design elements along various paths and shapes
+    """
+    Distribution Panel - Advanced element distribution system for complex layout patterns.
 
-    **Technical Details:**
-    - Help Section: distribute
+    **Technical Purpose:**
+    Implements sophisticated element distribution algorithms in a wxPython interface, enabling
+    placement of selected design elements along various geometric paths and shapes. Supports
+    distribution along rectangular boundaries, custom shapes, element point sequences, laser bed
+    edges, and reference object boundaries. Includes advanced features like equidistant spacing,
+    rotation parallel to paths, and flexible processing order controls.
 
-    **User Interface:**
-    - Defines the order in which the selection is being processed
-    - Align object at the left side, centered or to the right side in relation to the target point
-    - Rotate elements parallel to the path
-    - Keep the first and last element inside the target area, effectively ignoring the X- and Y-settings
-    - Align object to the top, centered or to the bottom in relation to the target point
-    - Defines the area / the shape on which the selection will be distributed:"""
+    **Signal Listeners:**
+    - None (operates through parent window signal handling for emphasis updates)
+
+    **End-User Description:**
+    Distribute selected elements along complex paths and shapes for advanced layouts. Choose from
+    rectangular boundaries, custom element shapes, point sequences, laser bed edges, or reference
+    objects as distribution paths. Control element positioning, spacing, and rotation. Process
+    elements in selection order, by first selected, or last selected. Keep first/last elements
+    within target areas and rotate elements to follow path contours.
+    """
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -1131,17 +1150,26 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
-    """Arrangement Panel - Arrange selected design elements in customizable grid layouts
+    """
+    Arrangement Panel - Grid-based element layout system for organized design composition.
 
-    **Technical Details:**
-    - Help Section: arrangement
+    **Technical Purpose:**
+    Provides a wxPython-based grid arrangement interface for organizing selected design elements
+    into customizable rectangular layouts. Supports variable column/row dimensions, uniform sizing
+    options, configurable gaps between elements, and flexible alignment controls. Automatically
+    centers the arranged grid on the scene and integrates with MeerK40t's element transformation
+    and scene management systems.
 
-    **User Interface:**
-    - Set if all rows need to have the same size (i.e. maximum height over all row)
-    - Set the distance between columns
-    - Set if all columns need to have the same size (i.e. maximum width over all columns)
-    - Set the distance between rows
-    - Rearrange all selected elements"""
+    **Signal Listeners:**
+    - None (operates through parent window signal handling for emphasis updates)
+
+    **End-User Description:**
+    Arrange selected elements in organized grid layouts. Set the number of columns and rows,
+    choose uniform sizing for consistent appearance, and control gaps between elements. Align
+    elements within each grid cell (left/center/right and top/center/bottom). Process elements
+    in selection order, by first selected, or last selected. The arranged grid is automatically
+    centered on your workspace for perfect composition.
+    """
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)

@@ -257,13 +257,21 @@ class ImportDialog(wx.Dialog):
 
 class MaterialPanel(ScrolledPanel):
     """
-    Panel to modify material library settings.
-    In essence a material library setting is a persistent list of operations.
-    They are stored in the operations.cfg file in the meerk40t working directory
+    MaterialPanel provides comprehensive management of material library entries for laser cutting operations.
 
-    Internal development note:
-    I have tried the dataview TreeListCtrl to self.display_list the different entries:
-    this was crashing consistently, so I stopped following this path
+    Technical Purpose:
+    - Manages persistent material library settings stored in operations.cfg
+    - Handles import/export of material libraries from various formats (EZCAD, LightBurn, MeerK40t)
+    - Provides filtering and categorization of material entries by material type, thickness, and laser type
+    - Supports material parameter conversion (lens size, power levels) during import
+    - Maintains operation lists with power, speed, frequency, and effect settings
+    - Integrates with device-specific configurations (Balor fiber laser support)
+
+    Signal Listeners:
+    - None - This panel operates primarily through direct user interaction
+
+    End-User Description:
+    The Material Library panel allows you to manage collections of laser cutting settings organized by material type and thickness. You can filter entries by material name, thickness, or laser type. Each material entry contains a list of operations (cut, engrave, raster, etc.) with specific power, speed, and frequency settings. Import material libraries from other software, create new entries from current operations, and apply settings to your project. Right-click on entries for additional actions like duplication, deletion, and applying effects.
     """
 
     def __init__(self, *args, context=None, **kwds):

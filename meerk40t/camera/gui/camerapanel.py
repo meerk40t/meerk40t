@@ -67,20 +67,33 @@ def register_panel_camera(window, context):
 
 
 class CameraPanel(wx.Panel, Job):
-    """Camera Panel - Control camera settings and image capture
+    """
+    Camera Panel - Real-time camera control and image capture interface for laser positioning.
 
-    **Technical Details:**
-    - Help Section: camera
-    - Signals: refresh_scene
+    **Technical Purpose:**
+    Provides a comprehensive GUI interface for camera device management, real-time video feed display,
+    and image processing controls. Handles camera connection management, frame rate control, distortion
+    correction (fisheye and perspective), and image capture for laser cutting alignment. Integrates
+    with the scene system for interactive camera calibration and supports multiple camera devices
+    through indexed camera contexts.
 
-    **User Interface:**
-    - Corrects Fisheye lensing, must be trained with checkerboard image.
-    - The four marker locations (in scene when unchecked) are transformed into corners of a regular square shape.
-    - Reconnect Camera
-    - Update Image
-    - Export Snapshot
-    - Detect Distortions/Calibration\n
-    - Set the camera frames per second. A value of 0 means a frame every 5 seconds."""
+    **Signals:**
+    - **Listens for "refresh_scene"**: Triggers scene refresh to update camera display and calibration
+      overlays when the scene needs to be redrawn
+
+    **End-User Description:**
+    The Camera panel provides essential tools for laser cutting alignment and camera setup:
+    - **Update Image**: Capture the current camera frame for alignment reference
+    - **Export Snapshot**: Save the current camera image to the project for permanent reference
+    - **Reconnect Camera**: Restart camera connection if experiencing issues
+    - **Detect Distortions**: Use a checkerboard pattern to automatically calibrate fisheye correction
+    - **Frame Rate Slider**: Adjust camera capture speed (0 = one frame every 5 seconds)
+    - **Fisheye Correction**: Enable automatic lens distortion correction using checkerboard calibration
+    - **Perspective Correction**: Transform camera view to correct for angled camera positions
+
+    Use this panel to ensure accurate laser positioning by calibrating your camera and capturing
+    reference images of your work area.
+    """
 
     def __init__(
         self, *args, context=None, gui=None, index: int = 0, pane=False, **kwds

@@ -14,16 +14,27 @@ _ = wx.GetTranslation
 
 
 class AutoExecPanel(wx.Panel):
-    """Auto Execute Panel - Configure automatic command execution
+    """
+    Auto Execute Panel - File startup command configuration interface.
 
-    **Technical Details:**
-    - Help Section: autoexec
+    **Technical Purpose:**
+    Provides a wxPython-based configuration interface for defining automatic command execution
+    sequences that run when project files are loaded. This panel enables users to create custom
+    startup routines for device configuration, simulation setup, and other automated operations.
+    It includes safety controls to prevent accidental execution of dangerous commands and provides
+    templates for common operations like device activation and simulation startup.
 
-    **User Interface:**
-    - List of commands that will be immediately executed after the file has been loaded
-    - Click to get a list of useful commands
-    - Execute the commands
-    - The autoexec content of this file will be ignored if this option is deactive"""
+    **Signal Listeners:**
+    - `autoexec`: Updates the panel when autoexec content changes from external sources
+
+    **End-User Description:**
+    Configure commands that automatically execute when you load project files. Define startup
+    routines for device setup, simulation initialization, or other automated tasks. Use the
+    template button to quickly add common commands like device activation or simulation startup.
+    Enable or disable auto-execution with the checkbox, and manually test your commands with
+    the Execute button. Remember to use caution - some commands like burn operations can be
+    dangerous if executed unintentionally.
+    """
 
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

@@ -11,7 +11,12 @@ class OpBranchPanel(wx.Panel):
 
     **Technical Details:**
     - Help Section: opbranchproperty
-    - Signals: loop_n, loop_continuous, loop_enabled"""
+    - Signals: loop_n, loop_continuous, loop_enabled
+
+    **User Interface:**
+    - Enable continuous looping of operation jobs
+    - Enable parameter-based looping with configurable count
+    - Set number of times operation job should repeat"""
 
     name = "Loop Properties"
 

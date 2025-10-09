@@ -443,10 +443,17 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
 
 
 class PreferencesMain(wx.Panel):
-    """Preferences Panel - Configure MeerK40t application settings
+    """Preferences Main Panel - General application settings and configuration
 
     **Technical Details:**
-    - Help Section: preferences"""
+    - Help Section: preferences
+    - Contains: units selection, language settings, general preferences, configuration management
+
+    **User Interface:**
+    - Units panel: Set default measurement units (mm, cm, inch, mils)
+    - Language panel: Select interface language (requires restart)
+    - General preferences: Core application settings via property panels
+    - Management panel: Save/export/import configuration, clear settings options"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__
@@ -494,10 +501,15 @@ class PreferencesMain(wx.Panel):
 
 
 class PreferencesInputOutput(wx.Panel):
-    """Preferences Panel - Configure MeerK40t application settings
+    """Preferences Input/Output Panel - File handling and import/export settings
 
     **Technical Details:**
-    - Help Section: preferences"""
+    - Help Section: preferences
+    - Contains: SVG pixel density settings, input/output preferences
+
+    **User Interface:**
+    - SVG PPI panel: Set pixels per inch for SVG files (96/72/90/custom)
+    - Input/Output preferences: File format settings and import/export options"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__

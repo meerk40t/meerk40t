@@ -2,10 +2,10 @@ import wx
 
 from meerk40t.core.elements.element_types import (
     effect_nodes,
+    elem_group_nodes,
     elem_nodes,
-    place_nodes, 
-    elem_group_nodes, 
     op_nodes,
+    place_nodes,
 )
 from meerk40t.core.node.image_raster import ImageRasterNode
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
@@ -40,8 +40,35 @@ _ = wx.GetTranslation
 
 class FormatterPanel(wx.Panel):
     """
-    FormtterPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define default formatting strings per operation
+    FormatterPanel - Device-agnostic interface for customizing display formats for elements and operations.
+
+    **Technical Purpose:**
+    Provides a universal configuration panel that works across all laser device types, enabling users
+    to customize how different element types and operations are displayed in the user interface.
+    Manages display format settings including power units (percentage vs PPI), speed units (mm/min vs mm/s),
+    and custom formatting strings for various node types (elements, operations, effects, etc.).
+    Dynamically generates configuration options based on available node types and integrates with
+    the device's settings system to maintain formatting preferences across sessions.
+
+    **Signals:**
+    - **No signal listeners**: This panel operates as a configuration interface and does not
+      respond to real-time signals, instead providing static display format management
+
+    **End-User Description:**
+    The Formatter panel lets you customize how information is displayed throughout MeerK40t:
+    - **Power Display**: Choose between showing laser power as percentages (0-100%) or PPI values (0-1000)
+    - **Speed Display**: Choose between showing speeds in mm/min or mm/s
+    - **Custom Formatters**: Define bespoke display formats for different types of elements and operations
+
+    **Supported Element Types:**
+    - **Elements**: Rectangles, ellipses, paths, images, text, polylines, points
+    - **Operations**: Engrave, cut, raster, image operations, dots
+    - **Effects**: Hatch patterns, wobble effects, warp effects
+    - **Groups & Files**: Element groups and file references
+    - **Special Operations**: Home, goto, console commands, wait operations
+
+    Custom formatters use placeholder syntax like {speed}, {power}, {passes} to display operation
+    parameters in a format that suits your workflow preferences.
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -151,13 +178,13 @@ class FormatterPanel(wx.Panel):
                 sectname = "_40_Operations"
             else:
                 sectname = ""
-            # Hint for translation 
+            # Hint for translation
             # _("Elements")
             # _("Operations")
-            # _("Grouping + Files") 
+            # _("Grouping + Files")
             # _("Operations (Special)")
-            # _("Elements (Effects)")     
-            # _("Placements")      
+            # _("Elements (Effects)")
+            # _("Placements")
             lbl = node.replace(" ", "_")
             default = self.context.elements.lookup(f"format/{node}")
             if default is None:

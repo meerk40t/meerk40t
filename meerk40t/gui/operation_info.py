@@ -16,14 +16,18 @@ _ = wx.GetTranslation
 
 
 class OpInfoPanel(ScrolledPanel):
-    """Operation Info Panel - Display detailed information about laser operations
+    """Operation Info Panel - Display and manage laser operations with detailed statistics
 
     **Technical Details:**
     - Help Section: operationinfo
-    - Signals: element_property_update, rebuild_tree, element_property_reload, tree_changed
+    - Signals: listens to 'element_property_update', 'rebuild_tree', 'element_property_reload', 'tree_changed'; sends 'tree_changed'
 
     **User Interface:**
-    - Right-Click for more options for ops and unassigned elements"""
+    - List view showing operation number, type, name, item count, and runtime estimates
+    - Icons for different operation types (Cut, Raster, Image, Engrave, Dots)
+    - 'Get Time Estimates' button to calculate operation runtimes
+    - Right-click context menus for operation management and element classification
+    - Shows unassigned elements not belonging to any operation"""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

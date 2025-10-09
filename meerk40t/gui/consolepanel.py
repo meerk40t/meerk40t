@@ -161,11 +161,26 @@ def register_panel_console(window, context):
 
 
 class ConsolePanel(wx.ScrolledWindow):
-    """Notes Panel - Add and manage notes for your laser projects
+    """
+    Console Panel - Interactive command-line interface for MeerK40t operations.
 
-    **Technical Details:**
-    - Help Section: notes
-    - Signals: console_update"""
+    **Technical Purpose:**
+    Provides a comprehensive wxPython-based command-line interface for interacting with
+    MeerK40t's kernel system. This scrolled window displays command output, accepts user
+    input, and supports advanced features like command history, auto-completion, and ANSI
+    color-coded output. It integrates with the kernel's console channel system to provide
+    real-time feedback and supports both rich text (with styling) and plain text display modes.
+
+    **Signal Listeners:**
+    - `console_update`: Triggers console display updates when new output is available
+
+    **End-User Description:**
+    Use the console to interact directly with MeerK40t through text commands. Type commands
+    in the input field at the bottom and press Enter to execute them. Use the up/down arrow
+    keys to navigate through command history. Press Tab for command auto-completion suggestions.
+    The console displays all system output, error messages, and command results. In rich text
+    mode, output includes color coding and clickable URLs for enhanced readability.
+    """
 
     def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__

@@ -11,10 +11,19 @@ _ = wx.GetTranslation
 
 
 class HatchPropertyPanel(ScrolledPanel):
-    """HatchPropertyPanel - User interface panel for hatches functionality
+    """HatchPropertyPanel - Configuration interface for hatch fill effects on vector elements
 
     **Technical Details:**
-    - Help Section: hatches"""
+    - Help Section: hatches
+    - Signals: None (direct property manipulation)
+    - Node Type: effect hatch
+
+    **User Interface:**
+    - Configure hatch pattern loops, distance, angle, and angle delta for fill effects
+    - Select from available hatch algorithms (Auto-Select, Scanbeam, Direct Grid)
+    - Choose unidirectional or bidirectional hatch patterns
+    - Live preview of hatch pattern with outline and travel path visualization
+    - Option to automatically classify elements after color changes"""
 
     name = _("Hatch")
 

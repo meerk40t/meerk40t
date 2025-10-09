@@ -22,8 +22,41 @@ _ = wx.GetTranslation
 
 class WarningPanel(wx.Panel):
     """
-    WarningPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define Min and Max Values for Speed and Power per operation
+    WarningPanel - Device-agnostic interface for configuring safety warning thresholds for laser operations.
+
+    **Technical Purpose:**
+    Provides a universal configuration panel that works across all laser device types, enabling users
+    to set minimum and maximum safety thresholds for power and speed parameters on different operation
+    types (cut, engrave, raster, image, dots, hatch). Displays warning indicators ('❌') on operation
+    nodes when configured parameters exceed safe limits for the machine. Automatically adapts to
+    display unit preferences (percentage vs PPI for power, mm/min vs mm/s for speed) and integrates
+    with the device's settings system to maintain warning configurations across sessions.
+
+    **Signals:**
+    - **Listens for "power_percent"**: Updates warning threshold displays when power unit preferences change
+    - **Listens for "speed_min"**: Updates warning threshold displays when speed unit preferences change
+
+    **End-User Description:**
+    The Warning panel helps prevent machine damage by setting safety thresholds for laser operations:
+    - **Operation Types**: Configure warnings for Cut, Engrave, Raster, Image, Dots, and Hatch operations
+    - **Parameter Thresholds**: Set minimum and maximum limits for both Power and Speed
+    - **Visual Indicators**: Operations exceeding safe limits show a red ❌ warning indicator
+    - **Unit Awareness**: Automatically adjusts to your preferred display units (%, PPI, mm/min, mm/s)
+
+    **How it works:**
+    Meerk40t can warn you if power and speed values seem too ambitious for your machine.
+    When enabled thresholds are exceeded, a warning indicator appears in the operation node label.
+    This helps prevent potential damage to your laser equipment by catching unsafe parameter combinations.
+
+    **Supported Operations:**
+    - **Cut**: Main cutting operations with high power requirements
+    - **Engrave**: Surface engraving with moderate power levels
+    - **Raster**: Image engraving with variable power/speed
+    - **Image**: Image-based operations
+    - **Dots**: Dot pattern operations
+    - **Hatch**: Fill pattern operations
+
+    Set appropriate limits based on your laser's capabilities and material requirements.
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -95,9 +128,7 @@ class WarningPanel(wx.Panel):
             image = wxStaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=bsize))
 
-            label1 = wxStaticText(
-                self, id=wx.ID_ANY, label=_(entry["op"].capitalize())
-            )
+            label1 = wxStaticText(self, id=wx.ID_ANY, label=_(entry["op"].capitalize()))
 
             label2 = wxStaticText(
                 self, id=wx.ID_ANY, label=_(entry["attr"].capitalize())

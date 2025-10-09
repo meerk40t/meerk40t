@@ -37,14 +37,22 @@ def register_panel_thread_info(window, context):
 
 
 class ThreadPanel(wx.Panel):
-    """Thread Info Panel - Display system thread information
+    """Thread Info Panel - Monitors and displays background task execution status
 
-    **Technical Details:**
-    - Help Section: threadinfo
-    - Signals: thread_update
+    **Technical Purpose:**
+    Provides real-time monitoring of background tasks and threads running within MeerK40t,
+    including preparatory jobs like burn preparation and other threaded operations. Displays
+    task status, runtime, and allows filtering between user tasks and system tasks for
+    debugging and performance monitoring.
+
+    **Signals:**
+    - thread_update: Triggers refresh of thread list when background task status changes
 
     **User Interface:**
-    - List of background tasks"""
+    - Background tasks information text explaining threaded command usage
+    - Thread list displaying task number, name, status, and elapsed runtime
+    - Auto-show checkbox to automatically display window when new tasks start
+    - Context menu option to toggle display of system tasks for debugging"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__

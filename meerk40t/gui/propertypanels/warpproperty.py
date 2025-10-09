@@ -15,10 +15,29 @@ _ = wx.GetTranslation
 
 
 class WarpPropertyPanel(ScrolledPanel):
-    """WarpPropertyPanel - User interface panel for warp functionality
+    """
+    Warp effect property panel for interactive shape deformation and manipulation.
+
+    This panel manages warp effects that allow users to interactively deform and manipulate
+    the containing shapes of child elements using finger-based editing tools. It provides
+    visual feedback and control over the warp transformation parameters.
 
     **Technical Details:**
-    - Help Section: warp"""
+    - Manages warp effect nodes that contain deformable child elements
+    - Integrates with finger tool for interactive shape manipulation
+    - Supports stroke color modification with auto-classification
+    - Provides visual instructions and icon-based guidance for users
+
+    **Signal Listeners:**
+    - None directly (relies on callback mechanisms for property updates)
+
+    **User Interface:**
+    - Element ID management and identification
+    - Auto-hide controls for visibility management
+    - Stroke color selection with classification callbacks
+    - Auto-classification toggle for color changes
+    - Visual instructions with finger tool icon for shape manipulation guidance
+    """
 
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)

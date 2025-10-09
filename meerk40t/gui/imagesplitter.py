@@ -151,10 +151,22 @@ class InfoPanel(wx.Panel):
 
 
 class SplitterPanel(wx.Panel):
-    """Image Split Panel - Split images into multiple parts
+    """
+    Image splitting panel for dividing large images into multiple smaller parts for laser processing.
 
     **Technical Details:**
-    - Help Section: imagesplit"""
+    - Purpose: Splits selected image elements into configurable grid patterns (X×Y divisions) with adjustable DPI resolution, enabling large format laser jobs that exceed machine capabilities
+    - Signals: RenderSplit window listens to "reference" and "emphasized" signals to update selection status and enable/disable controls
+    - Help Section: imagesplit
+
+    **User Interface:**
+    - X/Y axis spin controls for setting number of divisions (1-25 each axis)
+    - Processing order radio box (Selection/First Selected/Last Selected) to determine which element properties to use
+    - DPI resolution input with sensible defaults from device view settings
+    - Create split images button with icon, disabled when no valid selection or invalid DPI
+    - Information panel showing selected elements count and preview thumbnails
+    - Settings persistence for split parameters across sessions
+    """
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -308,10 +320,23 @@ class SplitterPanel(wx.Panel):
 
 
 class KeyholePanel(wx.Panel):
-    """Keyhole Panel - Create keyhole shapes and patterns
+    """
+    Keyhole pattern generation panel for creating mask shapes and outline traces from selected elements.
 
     **Technical Details:**
-    - Help Section: keyhole"""
+    - Purpose: Generates keyhole images from selected vector elements, creating masks that can be inverted and/or traced with outlines for laser processing
+    - Signals: RenderSplit window listens to "reference" and "emphasized" signals to update selection status and enable/disable controls
+    - Help Section: keyhole
+
+    **User Interface:**
+    - Object selection radio box (First Selected/Last Selected) to choose which element to use as keyhole source
+    - DPI resolution input with sensible defaults from device view settings
+    - Invert mask checkbox to create negative space keyhole patterns
+    - Trace keyhole checkbox to add outline paths around the keyhole shape
+    - Create keyhole image button with icon, disabled when no valid selection or invalid DPI
+    - Information panel showing selected elements count and preview thumbnails
+    - Settings persistence for keyhole parameters across sessions
+    """
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)

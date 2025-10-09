@@ -14,16 +14,29 @@ _ = wx.GetTranslation
 
 
 class ConfigurationInterfacePanel(ScrolledPanel):
-    """GRBL Configuration Panel - Configure GRBL laser settings
+    """
+    GRBL Configuration Interface Panel - Connection interface selection and configuration for GRBL devices.
 
-    **Technical Details:**
-    - Help Section: grblconfig
+    **Technical Purpose:**
+    Provides interface selection and configuration controls for GRBL device connectivity,
+    allowing users to choose between Serial, TCP, WebSocket, and Mock connection types.
+    Dynamically shows/hides relevant configuration panels based on selected interface type
+    and manages interface-specific settings through integrated property panels.
 
-    **User Interface:**
-    - Select this only for debugging without a physical laser available.
-    - Select this if the GRBL device is contacted via TCP connection
-    - Select this if the GRBL device is contacted via WebSocket connection
-    - Select this if you have a GRBL device running through a serial connection."""
+    **Signals:**
+    - **No signal listeners**: This panel operates as a configuration interface and does not
+      respond to real-time signals, instead providing static interface selection controls
+
+    **End-User Description:**
+    The Interface panel lets you configure how MeerK40t connects to your GRBL device:
+    - **Serial**: Direct connection through USB/serial port (most common for GRBL controllers)
+    - **Networked**: TCP connection for network-attached GRBL devices
+    - **WebSocket**: WebSocket connection for web-based GRBL interfaces
+    - **Mock**: Virtual device for testing and debugging without physical hardware
+
+    Select the appropriate connection type for your GRBL device setup. The corresponding
+    configuration options will appear below the radio buttons.
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
@@ -181,6 +194,40 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
 
 class GRBLConfiguration(MWindow):
+    """
+    GRBL Configuration Window - Comprehensive configuration interface for GRBL laser devices.
+
+    **Technical Purpose:**
+    Provides a complete tabbed configuration interface for GRBL laser devices, integrating multiple
+    specialized panels for device setup, interface configuration, protocol settings, advanced options,
+    effects, operation defaults, safety warnings, default actions, and display formatting. Manages
+    hardware property querying and automatic configuration detection through GRBL $$ commands.
+    Acts as a central hub for all GRBL device configuration needs.
+
+    **Signals:**
+    - **Listens for "grbl;response"**: Processes GRBL command responses, specifically handling $$ status
+      queries to automatically configure device properties like endstops, bed dimensions, and update
+      the viewport accordingly
+    - **Listens for "activate;device"**: Monitors device activation state and closes configuration
+      window if current device is not a GRBL device
+
+    **End-User Description:**
+    The GRBL Configuration window provides complete control over your GRBL laser device settings:
+    - **Device**: Bed dimensions, hardware properties, and auto-configuration buttons
+    - **Interface**: Connection type selection (Serial/TCP/WebSocket/Mock) and connection settings
+    - **Protocol**: GRBL communication protocol configuration
+    - **Advanced**: Advanced GRBL parameters and settings
+    - **Effects**: Laser effect configurations specific to GRBL
+    - **Operation Defaults**: Default cutting/engraving parameters
+    - **Warning**: Safety threshold settings for power and speed
+    - **Default Actions**: Automatic operations before/after jobs
+    - **Display Options**: How information is shown in the interface
+
+    Use the "Query properties" button to automatically detect your laser's capabilities, or the
+    "Hardware properties" button to open detailed hardware configuration. This window adapts
+    to show only relevant options based on your selected connection interface.
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device

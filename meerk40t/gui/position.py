@@ -37,21 +37,20 @@ def register_panel_position(window, context):
 
 
 class PositionPanel(wx.Panel):
-    """Position Panel - Display and set current laser head position
+    """Position Panel - Edit position, dimensions, and reference point of selected elements
 
     **Technical Details:**
     - Help Section: position
-    - Signals: modified_by_tool, refresh_scene
+    - Signals: listens to 'units', 'emphasized', 'modified', 'altered', 'lock_active', 'refresh_scene', 'modified_by_tool'; sends 'refresh_scene', 'lock_active'
 
     **User Interface:**
-    - Apply the changes to all emphasized elements in the scene
-    - New Y-coordinate of left top corner (enter to apply)
-    - If checked then each element will get the new value of the current field, if unchecked then the new values apply to the selection-dimensions
-    - Set the point of reference for the element,\n
-    - New width (enter to apply)
-    - New X-coordinate of left top corner (enter to apply)
-    - If checked then the aspect ratio (width / height) will be maintained
-    - New height (enter to apply)"""
+    - X/Y coordinate inputs for positioning elements (supports multiple units)
+    - Width/height inputs for resizing elements
+    - Reference point selector (9-point grid showing which corner/edge to anchor to)
+    - 'Keep ratio' checkbox to maintain aspect ratio during resizing
+    - 'Individually' checkbox to apply changes to each element vs. selection as a whole
+    - Apply button to execute position/dimension changes
+    - Unit selector (mm, cm, inch, mil, %) for input values"""
 
     def __init__(self, *args, context=None, small=False, **kwds):
         # begin wxGlade: PositionPanel.__init__

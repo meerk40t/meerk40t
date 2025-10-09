@@ -35,18 +35,24 @@ _ = wx.GetTranslation
 
 
 class TipPanel(wx.Panel):
-    """Tips Panel - Display helpful usage tips and hints
+    """Tips Panel - Displays helpful usage tips, tricks, and tutorials for MeerK40t
 
-    **Technical Details:**
-    - Help Section: tips
+    **Technical Purpose:**
+    Provides an interactive tip system that educates users about MeerK40t features and capabilities.
+    Manages tip content loading from local cache and remote sources, handles image caching and display,
+    and provides navigation through tip collections. Supports version-aware tip filtering and
+    automatic updates from GitHub repositories with user consent management.
+
+    **Signals:**
+    - None (direct signal listeners not used; responds to UI events and context settings)
 
     **User Interface:**
-    - Launch an example, please be aware that this might change your design,\n
-    - Show tips at program start.\n
-    - Look for new tips on MeerK40ts website.\n
-    - Jump to the next tip
-    - Jump back to the previously displayed tip
-    - Couldn"""
+    - Tip display area with text content, optional images, and navigation controls
+    - Previous/Next buttons for browsing through available tips with position indicator
+    - Try it out button to execute example commands or open tutorial links
+    - Show tips at startup checkbox to control automatic tip display on application launch
+    - Automatically update checkbox for downloading new tips from MeerK40t website
+    - Image caching system with fallback display for missing or inaccessible images"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

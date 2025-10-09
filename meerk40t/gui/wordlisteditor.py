@@ -53,15 +53,23 @@ def register_panel_wordlist(window, context):
 
 
 class WordlistMiniPanel(wx.Panel):
-    """Word List Panel - Manage word lists for text operations
+    """Wordlist Mini Panel - Provides compact wordlist navigation controls for text variable advancement
 
-    **Technical Details:**
-    - Help Section: wordlist
+    **Technical Purpose:**
+    Offers streamlined controls for navigating through wordlist entries during text operations,
+    supporting both single-step and page-based advancement. Analyzes text elements to determine
+    optimal page sizes based on variable offset patterns, enabling efficient batch processing
+    of text with multiple variable substitutions.
+
+    **Signals:**
+    - None (direct signal listeners not used; triggers wordlist advancement operations)
 
     **User Interface:**
-    - Wordlist: go to previous page (right-click to previous entry)
-    - Manages Wordlist-Entries
-    - Wordlist: go to next page (right-click to next entry)"""
+    - Previous button for single-step backward navigation through wordlist entries
+    - Next button for single-step forward navigation through wordlist entries
+    - Edit button to open full wordlist editor for comprehensive management
+    - Right-click previous/next buttons for page-based navigation (skips multiple entries)
+    - Automatic page size calculation based on variable offset patterns in text elements"""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -168,21 +176,26 @@ class WordlistMiniPanel(wx.Panel):
 
 
 class WordlistPanel(wx.Panel):
-    """Word List Panel - Manage word lists for text operations
+    """Wordlist Panel - Comprehensive editor for managing text variables and wordlist data
 
-    **Technical Details:**
-    - Help Section: wordlist
-    - Signals: wordlist
+    **Technical Purpose:**
+    Provides full-featured wordlist management capabilities for text operations, supporting multiple
+    data types (text, CSV, counters) with advanced editing features. Handles variable creation,
+    content editing, indexing, and persistence with autosave functionality. Integrates with
+    text elements to enable dynamic content substitution during laser operations.
+
+    **Signals:**
+    - wordlist: Triggers autosave and refreshes wordlist display when wordlist data changes
 
     **User Interface:**
-    - Delete the current wordlist entry
-    - Edit the current entry for the active variable
-    - Load wordlist from disk
-    - Add a new entry for the active variable
-    - Delete the current entry for the active variable
-    - All changes to the wordlist will be saved immediately
-    - Save current wordlist to disk
-    - Paste the clipboard as new entries for the active variable, any line as new entry"""
+    - Dual-pane interface with variable list (left) and content editor (right)
+    - Variable management with add/delete/rename operations and type indicators
+    - Content editing with inline editing, clipboard paste, and index-based navigation
+    - CSV import/export functionality with header detection and preview
+    - Autosave toggle for automatic persistence of changes
+    - Backup/restore functionality for wordlist data management
+    - Pattern-based variable creation with text and counter support
+    - Index controls for CSV data navigation and synchronization"""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

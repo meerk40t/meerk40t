@@ -26,15 +26,25 @@ DEFAULT_LEN = "5cm"
 
 
 class LaserToolPanel(wx.Panel):
-    """Templates Panel - Manage and apply design templates
+    """
+    Template-based geometric shape creation tools for laser positioning and design, providing mathematical calculations for circles, rectangles, and squares from laser position points.
 
     **Technical Details:**
+    - Purpose: Interactive template system for creating precise geometric shapes by capturing laser positions and using mathematical algorithms to calculate complete shapes for laser processing
+    - Signals: Listens to "driver;position", "emulator;position", "status;position" signals to track current laser head position for real-time template calculations
     - Help Section: templates
-    - Signals: emulator;position, status;position, driver;position
 
     **User Interface:**
-    - Extension of the square to create
-    - Place the laser over the desired point and click..."""
+    - Tabbed notebook interface with three specialized template tools (circle center finding, rectangle framing, square placement)
+    - Point capture system with "Use position" buttons for recording laser coordinates at specific locations
+    - Real-time coordinate display showing captured positions in user units
+    - Mathematical calculation engines for geometric shape determination from captured points
+    - Visual instruction graphics with detailed tooltips explaining each template's usage steps
+    - Reference creation checkboxes for marking calculated center points or corners
+    - Dimension input controls for specifying square size and other parameters
+    - Comprehensive tooltip system explaining positioning requirements and control functions
+    - Automatic validation enabling/disabling of creation buttons based on captured point completeness
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__

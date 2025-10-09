@@ -38,19 +38,21 @@ def register_panel_magnetoptions(window, context):
 
 
 class MagnetOptionPanel(wx.Panel):
-    """Snap Options Panel - Configure element snapping behavior
+    """
+    Magnet snapping configuration panel for controlling element attraction behavior during design operations.
 
     **Technical Details:**
+    - Purpose: Configures magnetic snapping behavior for design elements, controlling which object edges and centers are attracted to guide lines
+    - Signals: MagnetPanel listens to "emphasized" and "magnet_options" signals for UI state synchronization
     - Help Section: magnet
 
     **User Interface:**
-    - Name to save to / load from the current settings
-    - Load an existing setting configuration
-    - Will a magnet line attract the left/right edges of an object
-    - Will a magnet line attract the top/bottom edges of an object
-    - Define the attraction strength from weak (very close) to enormous (from far away)
-    - Save the current configuration for later reuse
-    - Will a magnet line attract the center of an object"""
+    - Attraction area checkboxes for left/right sides, top/bottom sides, and object centers to control which parts of objects respond to magnets
+    - Attraction strength dropdown with options from "Off" to "Enormous" controlling the effective distance of magnetic attraction
+    - Save/load configuration system allowing users to persist and restore magnet settings with custom names
+    - Real-time configuration updates that affect scene pane magnet behavior immediately
+    - Persistent storage of magnet configurations using kernel settings system
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
@@ -235,20 +237,22 @@ class MagnetOptionPanel(wx.Panel):
 
 
 class MagnetActionPanel(wx.Panel):
-    """Snap Options Panel - Configure element snapping behavior
+    """
+    Magnet line creation and management panel for interactive guide line placement during design operations.
 
     **Technical Details:**
+    - Purpose: Provides interactive controls for creating, toggling, and managing magnetic guide lines that assist with precise element positioning
+    - Signals: MagnetPanel listens to "emphasized" signal to enable/disable selection-based magnet creation when elements are selected
     - Help Section: magnet
 
     **User Interface:**
-    - Clears all magnet lines
-    - Toggle a magnet line at the right edge of the selection
-    - Clears magnet lines on X-axis
-    - Toggle a magnet line at the position on the Y-axis
-    - Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the horizontal extent of the selection
-    - Toggle a magnet line at the top edge of the selection
-    - Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the vertical extent of the selection
-    - Toggle a magnet line at the position on the X-axis"""
+    - Single magnet line placement with coordinate input and X/Y axis toggle buttons for precise positioning
+    - Selection-based magnet creation with buttons for edges (left/right/top/bottom), centers, and fractional divisions (1/3, 1/4, 1/5 spacing)
+    - Horizontal and vertical magnet line controls for comprehensive guide placement around selected elements
+    - Clear functions for individual axes (X/Y) and complete magnet line removal
+    - Dynamic enabling/disabling based on element selection state
+    - Tooltips explaining each magnet placement option and its effect on element positioning
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
@@ -511,11 +515,21 @@ class MagnetActionPanel(wx.Panel):
 
 
 class MagnetPanel(wx.Panel):
-    """Snap Options Panel - Configure element snapping behavior
+    """
+    Main magnet options container panel providing tabbed interface for magnet configuration and actions.
 
     **Technical Details:**
+    - Purpose: Container panel organizing magnet functionality into Actions and Options tabs for comprehensive magnetic snapping control
+    - Signals: Listens to "emphasized" and "magnet_options" signals to coordinate state updates between action and option panels
     - Help Section: magnet
-    - Signals: emphasized, magnet_options"""
+
+    **User Interface:**
+    - Tabbed notebook interface with separate Actions and Options panels
+    - Actions tab for creating and managing magnet guide lines interactively
+    - Options tab for configuring magnet attraction behavior and strength
+    - Coordinated signal handling ensuring both panels stay synchronized
+    - Integrated pane show/hide management for proper lifecycle handling
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

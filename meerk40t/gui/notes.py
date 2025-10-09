@@ -31,13 +31,16 @@ def register_panel(window, context):
 
 
 class NotePanel(wx.Panel):
-    """Notes Panel - Add and manage notes for your laser projects
+    """Notes Panel - Add and manage notes for laser projects
 
     **Technical Details:**
     - Help Section: notes
+    - Signals: listens to 'note'; sends 'note'
 
     **User Interface:**
-    - Automatically open notes if they exist when file is opened."""
+    - Multi-line text editor for project notes and comments
+    - Optional auto-open checkbox (when used as standalone window)
+    - Notes are saved with project files and can be automatically displayed"""
 
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

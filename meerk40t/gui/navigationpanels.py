@@ -2222,21 +2222,19 @@ class PulsePanel(wx.Panel):
 
 
 class Transform(wx.Panel):
-    """Transform - User interface panel for transform functionality
+    """Transform - User interface panel for element transformation operations
 
     **Technical Details:**
     - Help Section: transform
-    - Signals: modified_by_tool, refresh_scene
+    - Signals: listens to 'emphasized', 'modified', 'button-repeat', 'refresh_scene', 'modified_by_tool'; sends 'refresh_scene', 'ext-modified'
 
     **User Interface:**
-    - Translate Up by 1x / 10x Jog-Distance on left / right click
-    - Reset Matrix
-    - Translate Left by 1x / 10x Jog-Distance on left / right click
-    - Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale.
-    - Translate X - moves the element by this amount of mils in the X-direction;
-    - Rotate Counterclockwise by 5° / by 90° on left / right click
-    - Translate Down by 1x / 10x Jog-Distance on left / right click
-    - Scale Down by 5% / 50% on left / right click"""
+    - Scale Up/Down buttons: Scale elements by 5%/50% increments on left/right click
+    - Translate buttons: Move elements up/down/left/right by 1x/10x jog distance on left/right click
+    - Rotate buttons: Rotate elements clockwise/counterclockwise by 5°/90° on left/right click
+    - Reset button: Reset transformation matrix to identity
+    - Matrix input fields: Direct editing of affine transformation matrix values (scale X/Y, skew X/Y, translate X/Y)
+    - All operations apply to currently emphasized/selected elements"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Transform.__init__
@@ -2794,10 +2792,15 @@ class Transform(wx.Panel):
 
 
 class JogDistancePanel(wx.Panel):
-    """Jog Panel - Manually move the laser head around the work area
+    """Jog Distance Panel - Configure distance for manual laser head movement
 
     **Technical Details:**
-    - Help Section: jog"""
+    - Help Section: jog
+    - Signals: sends 'jog_amount' when distance value changes
+
+    **User Interface:**
+    - Single text input field for setting jog distance (supports various units like mm, in, cm)
+    - Distance value used by navigation controls for manual laser positioning"""
 
     def __init__(self, *args, context=None, pane=False, **kwds):
         # begin wxGlade: JogDistancePanel.__init__

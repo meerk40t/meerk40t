@@ -27,7 +27,31 @@ _ = wx.GetTranslation
 
 class PlacementPanel(wx.Panel):
     """
-    Display and Editing of the properties of 'place current', 'place point'
+    Comprehensive placement operation configuration panel for positioning and tiling elements.
+
+    This panel provides extensive controls for placement operations, enabling precise positioning,
+    repetition patterns, rotation, and complex tiling arrangements. It supports both simple point
+    placement and advanced grid-based repetition with alternating displacements and rotations.
+
+    **Technical Details:**
+    - Manages placement operation parameters (position, rotation, repetition counts, gaps)
+    - Implements alternating displacement patterns for honeycomb/triangular layouts
+    - Provides grid helper tools for automatic parameter calculation based on geometric shapes
+    - Supports bidirectional and unidirectional placement orientations
+    - Includes visual grid preview with selection filtering
+
+    **Signal Listeners:**
+    - "element_property_reload": Updates panel when placement operation properties change externally
+
+    **User Interface:**
+    - Position Controls: X/Y coordinate input with length validation
+    - Rotation: Angle input with slider control (0-360 degrees)
+    - Repetition Settings: X/Y direction repeat counts and gap distances
+    - Alternating Patterns: Percentage-based displacement and rotation toggles for complex patterns
+    - Corner/Orientation: Bounding box alignment and placement sequence options
+    - Grid Helper: Automatic parameter generation for quadratic, hexagonal, circular, triangular patterns
+    - Selection Filtering: Start index and count controls for partial grid execution
+    - Visual Preview: ASCII grid display showing active placement positions
     """
 
     def __init__(self, *args, context=None, node=None, **kwds):

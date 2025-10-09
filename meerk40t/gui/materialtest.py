@@ -166,10 +166,24 @@ class SaveLoadPanel(wx.Panel):
 
 class TemplatePanel(wx.Panel):
     """
-    Responsible for the generation of testpatterns and the user interface
-    params:
-    context - the current context
-    storage - an instance of kernel.Settings to store/load parameter sets
+    TemplatePanel provides comprehensive test pattern generation for optimizing laser cutting parameters.
+
+    Technical Purpose:
+    - Generates systematic test grids varying two parameters (X/Y axes) across user-defined ranges
+    - Supports all operation types (cut, engrave, raster, image, hatch, wobble) with device-specific parameters
+    - Creates visual test patterns with color-coded elements for parameter identification
+    - Handles parameter conversion between different units (mm/s, mm/min, %, ppi) based on device settings
+    - Integrates with device-specific configurations (Balor fiber laser parameters)
+    - Manages template saving/loading for parameter optimization workflows
+    - Provides real-time parameter validation and range calculation
+
+    Signal Listeners:
+    - power_percent: Updates power display units when device settings change
+    - speed_min: Updates speed display units when device settings change
+    - service/device/active: Refreshes parameter options when active device changes
+
+    End-User Description:
+    The Parameter Test panel helps you find optimal laser cutting settings by creating systematic test patterns. Select an operation type (cut, engrave, raster, etc.) and choose two parameters to vary, such as speed and power. Define the range and number of test values for each parameter, then generate a grid of test shapes. Each shape in the grid uses different parameter combinations, with optional labels and color coding to identify settings. Use this to determine the best settings for your specific material and laser combination.
     """
 
     DESC_X_AXIS = "Descriptions X-Axis"

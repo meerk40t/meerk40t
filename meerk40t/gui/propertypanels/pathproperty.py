@@ -28,10 +28,33 @@ _ = wx.GetTranslation
 
 
 class PathPropertyPanel(ScrolledPanel):
-    """Path Property Panel - Edit path element properties
+    """
+    Path property panel for editing vector path element properties and attributes.
+
+    This panel provides comprehensive editing capabilities for vector path elements including geometric
+    properties, visual attributes (stroke/fill colors, stroke width), positioning, and path analysis tools.
+    It aggregates multiple specialized sub-panels and provides real-time path statistics calculation.
 
     **Technical Details:**
-    - Help Section: pathproperty"""
+    - Manages collection of attribute panels (IdPanel, ColorPanel, StrokeWidthPanel, etc.)
+    - Supports dynamic plugin-based attribute panels via "path_attributes/.*" lookup
+    - Implements path geometry analysis (segment count, point count, total length, covered area)
+    - Handles color change callbacks with optional auto-classification functionality
+    - Provides raster-based area calculation for complex shapes with stroke consideration
+
+    **Signal Listeners:**
+    - "modified_by_tool": Updates panel widgets when path is modified by external tools
+
+    **User Interface:**
+    - Element ID management and identification
+    - Stroke and fill color selection with color picker
+    - Stroke width and line property controls
+    - Position and size adjustment controls
+    - Rounded rectangle properties for applicable shapes
+    - Path statistics: segment count, vertex points, total length, covered area
+    - Auto-classification toggle for color changes
+    - Lock controls to prevent accidental modifications
+    """
 
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

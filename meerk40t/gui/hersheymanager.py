@@ -986,14 +986,26 @@ class HersheyFontSelector(MWindow):
 
 
 class PanelFontManager(wx.Panel):
-    """Vector Text Panel - Create and edit text as vector graphics
+    """
+    Vector font management panel for importing, organizing, and managing TrueType, Hershey, and Autocad SHX fonts.
 
     **Technical Details:**
+    - Purpose: Provides comprehensive font management interface for vector text creation, supporting multiple font formats (TrueType, Hershey, Autocad SHX) that can be scaled and burned as vector shapes
+    - Signals: HersheyFontSelector listens to "tool_changed" signal to automatically close when switching away from linetext tool
     - Help Section: vectortext
 
     **User Interface:**
-    - Additional directory for userdefined fonts (also used to store some cache files)
-    - Invalid directory! Will not be used, please provide a valid path."""
+    - Font directory management with validation and system font directory integration
+    - Font list with preview functionality and detailed hover tooltips showing font family, subfamily, and file path
+    - Import functionality supporting multiple font formats with progress dialog and error handling
+    - Delete functionality for user-installed fonts (system fonts are protected from deletion)
+    - Refresh capability to reset font cache and reload font directory
+    - Web links to external font resources including Hershey fonts repositories and Autocad SHX font sources
+    - Font type filtering checkboxes to show/hide different font categories
+    - Font preview bitmap display for selected fonts
+    - Directory selection dialog for configuring font storage location
+    - Information panel explaining vector font capabilities and usage
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__

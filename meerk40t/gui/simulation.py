@@ -788,21 +788,21 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
-    """SimulationPanel - User interface panel for simulate functionality
+    """SimulationPanel - Interactive laser job simulation and optimization interface
 
     **Technical Details:**
     - Help Section: simulate
-    - Signals: device;modified, plan, refresh_simulation, refresh_scene
+    - Signals: listens to 'device;modified', 'plan', 'refresh_simulation'; sends 'refresh_scene', 'plan', 'optimize', 'refresh_simulation'
 
     **User Interface:**
-    - Distance Estimate: while Lasering
-    - Start the simulation replay
-    - Show/Hide optimization options for this job.
-    - Time Estimate: Extra Time (i.e. to swing around)
-    - Cut operations Playback-Mode: play will jump from one completed operations to next
-    - Apply the settings and recalculate the cutplan
-    - Send the current cutplan to the laser.
-    - Time Estimate: Total Time"""
+    - Interactive scene view showing laser paths, travel moves, and bed layout
+    - Progress slider for stepping through simulation timeline
+    - Distance/time statistics for laser cutting, travel, and total operations
+    - Playback controls with speed adjustment and mode selection (steps/time-based)
+    - Optimization options panel with preprocessing settings
+    - Cut plan operations viewer with editing capabilities
+    - Cutcode details panel for individual operation inspection
+    - Send-to-laser functionality for job execution"""
 
     def __init__(
         self,

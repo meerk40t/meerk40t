@@ -10,16 +10,32 @@ _ = wx.GetTranslation
 
 
 class WobblePropertyPanel(ScrolledPanel):
-    """WobblePropertyPanel - User interface panel for wobbles functionality
+    """
+    Wobble effect property panel for dynamic path distortion and pattern generation.
+
+    This panel controls wobble effects that apply oscillating distortions along paths,
+    creating dynamic movement patterns. Users can configure wobble radius, interval spacing,
+    rotation speed, and select from various wobble pattern styles.
 
     **Technical Details:**
-    - Help Section: wobbles
+    - Manages wobble effect nodes with configurable distortion parameters
+    - Supports multiple wobble pattern types through plugin system
+    - Implements real-time parameter validation and unit conversion
+    - Provides stroke color modification with auto-classification
+
+    **Signal Listeners:**
+    - None directly (relies on callback mechanisms for property updates)
 
     **User Interface:**
-    - The wobble pattern to be applied
-    - How quickly does the wobble pattern revolve around the path
-    - Segmentation size, the wobble pattern will be applied at every segment
-    - Wobble size, does influence the size of the wobble pattern"""
+    - Element ID management and identification
+    - Auto-hide controls for visibility management
+    - Stroke color selection with classification callbacks
+    - Wobble radius control for distortion amplitude
+    - Wobble interval setting for pattern spacing along path
+    - Wobble speed control for rotation rate around path
+    - Fill style selection from available wobble pattern plugins
+    - Auto-classification toggle for color changes
+    """
 
     name = _("Wobble")
 
