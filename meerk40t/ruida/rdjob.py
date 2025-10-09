@@ -7,6 +7,7 @@ from meerk40t.svgelements import Color
 
 from .exceptions import RuidaCommandError
 
+# Ports 50207 and 40207
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"
 INTERFACE_PLUS_X_UP = b"\xA5\x51\x02"
@@ -42,6 +43,8 @@ INTERFACE_LASER_GATE_DOWN = b"\xA5\x50\x12"
 INTERFACE_LASER_GATE_UP = b"\xA5\x51\x12"
 INTERFACE_ORIGIN_DOWN = b"\xA5\x50\x08"
 INTERFACE_ORIGIN_UP = b"\xA5\x51\x08"
+
+# Ports 50200 and 40200
 AXIS_X_MOVE = b"\x80\x00"  # abscoord(x)
 AXIS_Z_MOVE = b"\x80\x01"  # abscoord(z) TODO: Should be 0x80 0x08?
 MOVE_ABS_XY = b"\x88"  # abscoord(x), abscoord(y)
@@ -527,13 +530,11 @@ class RDJob:
     def __str__(self):
         return f"{self.__class__.__name__}({len(self.buffer)} lines)"
 
-    def __call__(self, *args, output=None, swizzle=True):
+    def __call__(self, *args, output=None):
         e = b"".join(args)
         if output is None:
             self.write_command(e)
         else:
-            if swizzle:
-                e = bytes([self.lut_swizzle[b] for b in e])
             output(e)
 
     @property
@@ -587,10 +588,8 @@ class RDJob:
     def file_sum(self):
         return sum([sum(list(g)) for g in self.buffer])
 
-    def get_contents(self, first=None, last=None, swizzled=True):
+    def get_contents(self, first=None, last=None):
         data = b"".join(self.buffer[first:last])
-        if swizzled:
-            return self.swizzle(data)
         return data
 
     def execute(self, driver=None):
@@ -717,6 +716,9 @@ class RDJob:
         These commands can change the position, settings, speed, color, power, create elements.
         @param array:
         @return:
+
+        TODO: Migrate this to use the Ruida Protocol Analyzer decode state
+        machine (class RdDecoder).
         """
         desc = ""
         if array[0] < 0x80:
@@ -1283,6 +1285,28 @@ class RDJob:
         if self.channel:
             prefix = f"{offset:06x}" if offset is not None else ""
             self.channel(f"{prefix}-**-> {str(bytes(array).hex())}\t({desc})")
+
+    def decode_reply(self, reply):
+        '''Decode a reply which received in response to a command.
+
+        TODO: Migrate this to use the Ruida Protocol Analyzer decode state
+        machine (class RdDecoder).
+        https://github.com/StevenIsaacs/ruida-protocol-analyzer/tree/main
+        '''
+        if reply[0] == 0xDA:
+            if reply[1] == 0x01: # Response to command 0xDA 0x00.
+                if reply[2] == 0x05:
+                    if reply[3] == 0x7E: # CARD ID
+                        _cid_lut = {
+                            0x65106510: 'RDC64425'
+                        }
+                        _cid = decode35(reply[4:9])
+                        if _cid in _cid_lut:
+                            _card = _cid_lut[_cid]
+                        else:
+                            _card = "Unknown card."
+                        return f'CardID: {_cid:08X}: {_card}'
+        return None
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
