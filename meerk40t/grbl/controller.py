@@ -909,10 +909,10 @@ class GrblController:
                     self._assembled_response = []
                     continue
                     # raise ConnectionAbortedError from e
-                self.log(
-                    f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
-                    type="recv",
-                )
+                # self.log(
+                #     f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
+                #     type="recv",
+                # )
                 self.service.signal(
                     "grbl;response", cmd_issued, self._assembled_response
                 )
@@ -1259,11 +1259,9 @@ class ExperimentalGrblController(GrblController):
 
         # Use the improved GrblSender for communication
         self.grbl_sender = None
-        self.response_thread = threading.Thread(target=self._process_responses)
-        self.lock = threading.Lock()
         self.command_durations = {}
 
-        self.log("ExperimentalGrblController initialized with GrblSender", type="event")
+        # self.log("ExperimentalGrblController initialized with GrblSender", type="event")
 
     def start(self):
         if self.running:
@@ -1282,6 +1280,8 @@ class ExperimentalGrblController(GrblController):
             return
 
         self.ser = self.connection.laser
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
 
         # Initialize GrblSender with the existing serial connection
         try:
@@ -1290,7 +1290,8 @@ class ExperimentalGrblController(GrblController):
             self.grbl_sender = GrblSender(
                 serial_connection=self.ser,
                 status_interval=self.poll_interval if self.log_status else 0,
-                debug=False,
+                debug=True,
+                callback=self.receive_data,
             )
             self.grbl_sender.start()
             self.log(
@@ -1308,8 +1309,7 @@ class ExperimentalGrblController(GrblController):
             self.running = False
             return
 
-        self.response_thread.start()
-        self.log("ExperimentalGrblController started", type="event")
+        # self.log("ExperimentalGrblController started", type="event")
         # We are validated by default.
         self._validation_stage = 5
 
@@ -1322,17 +1322,13 @@ class ExperimentalGrblController(GrblController):
         if self.grbl_sender:
             self.grbl_sender.stop()
 
-        # Wait for threads
-        if self.response_thread.is_alive():
-            self.response_thread.join(timeout=2.0)
-
         # self.connection.disconnect()
         self.shutdown()
         try:
             self.remove_watcher(self._channel_log)
         except (AttributeError, ValueError):
             pass
-        self.log("ExperimentalGrblController stopped", type="event")
+        # self.log("ExperimentalGrblController stopped", type="event")
 
     def open(self):
         super().open()
@@ -1347,32 +1343,29 @@ class ExperimentalGrblController(GrblController):
                 timeout=self.command_timeout,
                 log_responses=log_responses,
             )
-            self.log(
-                f"Queued command: '{command}' with priority {priority} (ID: {cmd_id})",
-                type="event",
-            )
+            # self.log(
+            #     f"Queued command: '{command}' with priority {priority} (ID: {cmd_id})",
+            #     type="event",
+            # )
             return cmd_id
         else:
             self.log("GrblSender not available", type="error")
             return None
 
-    def _process_responses(self):
+    def receive_data(self, line):
         """Process responses from GrblSender and integrate with controller logic."""
-        while self.running and not self.is_shutdown:
-            if not self.grbl_sender:
-                time.sleep(0.1)
-                continue
-
-            # Get current status from GrblSender
-            status = self.grbl_sender.get_current_status()
-            if status:
-                self._update_controller_from_status(status)
-
-            # Check for completed commands and process their responses
-            # Note: GrblSender handles most response processing internally,
-            # but we can add controller-specific logic here
-
-            time.sleep(0.1)  # Prevent busy waiting
+        status = self.grbl_sender.get_current_status()
+        if status:
+            self._update_controller_from_status(status)
+        active_alarm, alarm_code = self.grbl_sender.get_current_alarm()
+        if active_alarm:
+            short, long = grbl_alarm_message(alarm_code)
+            alarm_desc = f"#{alarm_code}, {short}\n{long}"
+            self.service.signal("warning", f"GRBL: {alarm_desc}", line, 4)
+            self.log(f"Alarm {alarm_desc}", type="recv")
+        if not line.startswith("<"):
+            self.log(line, type="recv")
+        self.service.signal("grbl;response", line)
 
     def _update_controller_from_status(self, status):
         """Update controller state from GrblSender status information."""
@@ -1440,7 +1433,7 @@ class ExperimentalGrblController(GrblController):
                 status_parts.append(f"Feed: {status['feed_rate']}")
             if status.get("spindle_speed") is not None:
                 status_parts.append(f"Spindle: {status['spindle_speed']}")
-            self.log(" | ".join(status_parts), type="event")
+            # self.log(" | ".join(status_parts), type="event")
 
         except Exception as e:
             self.log(f"Failed to update controller from status: {e}", type="error")

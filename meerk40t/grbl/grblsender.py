@@ -828,7 +828,9 @@ class GrblSender:
                 tracker.complete = True
                 tracker.error = True
                 tracker.responses.append("TIMEOUT")
-                self.debug_print(f"Command {cmd_id} timed out: {tracker.command}")
+                self.debug_print(
+                    f"Command {cmd_id} timed out: {tracker.command} {tracker.timeout:.2f}"
+                )
 
 
 if __name__ == "__main__":
