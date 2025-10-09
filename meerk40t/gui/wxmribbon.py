@@ -855,26 +855,32 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
 
 class RibbonEditor(wx.Panel):
-    """Ribbon Editor Panel - Configuration interface for customizing MeerK40t ribbon layout
+    """
+    RibbonEditor - Dynamic ribbon interface configuration and customization panel.
 
-    **Technical Purpose:**
-    Provides comprehensive ribbon customization capabilities allowing users to reorganize command panels,
-    create custom buttons, and modify the ribbon structure. Supports dynamic panel arrangement, user-defined
-    button creation with custom actions, and persistent configuration storage. Enables fine-grained control
-    over command organization and accessibility.
+    This panel provides a comprehensive visual editor for customizing MeerK40t's ribbon interface,
+    allowing users to modify page layouts, add/remove panels, and create custom user-defined buttons.
+    It supports real-time configuration changes with immediate preview and persistent storage of
+    custom ribbon layouts. The editor enables full customization of the command interface while
+    maintaining system stability and user experience consistency.
 
-    **Signals:**
-    - None (direct signal listeners not used; responds to UI events and configuration changes)
+    Signal Listeners:
+        - None: This panel operates independently for configuration purposes
 
-    **User Interface:**
-    - Ribbon selector dropdown to choose which ribbon to edit
-    - Page management with add/remove/reorder capabilities and label editing
-    - Panel assignment interface for organizing command categories within pages
-    - Available panels list showing all registered button groups for assignment
-    - User-defined buttons editor with custom actions, icons, and enable rules
-    - Label display toggle for ribbon appearance control
-    - Apply/reset functionality for configuration changes
-    - Real-time preview and validation of ribbon modifications"""
+    Signal References:
+        - ribbon_recreate: Emitted when configuration changes require ribbon recreation
+
+    User Interface:
+        - Multi-section layout with ribbon selection, page management, and panel configuration
+        - Ribbon selector dropdown to choose which ribbon bar to customize (primary, tools, etc.)
+        - Page management with add/delete/move controls and label editing capabilities
+        - Panel assignment interface showing available panels and current page composition
+        - User-defined button editor with full customization of actions, icons, and visibility rules
+        - Real-time preview and apply/reset functionality for configuration changes
+        - Label display toggle to control icon label visibility across the ribbon interface
+        - Drag-and-drop style panel assignment with visual feedback and validation
+        - Persistent configuration storage with backup and restore capabilities
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

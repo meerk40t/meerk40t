@@ -13,11 +13,7 @@ _ = wx.GetTranslation
 
 
 class MoshiDriverGui(MWindow):
-    """Moshiboard Configuration Panel - Configure Moshiboard laser settings
-
-    **Technical Details:**
-    - Help Section: moshiconfig
-    - Signals: activate;device"""
+    """MoshiDriverGui - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, **kwds):
         super().__init__(330, 630, *args, **kwds)

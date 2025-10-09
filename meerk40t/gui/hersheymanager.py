@@ -987,24 +987,24 @@ class HersheyFontSelector(MWindow):
 
 class PanelFontManager(wx.Panel):
     """
-    Vector font management panel for importing, organizing, and managing TrueType, Hershey, and Autocad SHX fonts.
+    PanelFontManager - Vector font management interface for text rendering.
 
-    **Technical Details:**
-    - Purpose: Provides comprehensive font management interface for vector text creation, supporting multiple font formats (TrueType, Hershey, Autocad SHX) that can be scaled and burned as vector shapes
-    - Signals: HersheyFontSelector listens to "tool_changed" signal to automatically close when switching away from linetext tool
-    - Help Section: vectortext
+    **Technical Purpose:**
+    Provides a wxPython-based interface for managing vector fonts (Hershey, TrueType, SHX)
+    used in MeerK40t's text rendering system. This panel enables font directory configuration,
+    font import/export operations, font preview generation, and integration with the fonts
+    service for vector text processing. Supports multiple font formats designed for laser
+    cutting with scalable, burnable vector representations.
 
-    **User Interface:**
-    - Font directory management with validation and system font directory integration
-    - Font list with preview functionality and detailed hover tooltips showing font family, subfamily, and file path
-    - Import functionality supporting multiple font formats with progress dialog and error handling
-    - Delete functionality for user-installed fonts (system fonts are protected from deletion)
-    - Refresh capability to reset font cache and reload font directory
-    - Web links to external font resources including Hershey fonts repositories and Autocad SHX font sources
-    - Font type filtering checkboxes to show/hide different font categories
-    - Font preview bitmap display for selected fonts
-    - Directory selection dialog for configuring font storage location
-    - Information panel explaining vector font capabilities and usage
+    **Signal Listeners:**
+    - "tool_changed" - Updates panel state when active tools change
+
+    **End-User Description:**
+    Manage vector fonts for creating laser-cuttable text. Browse available fonts with live
+    previews, import new fonts from files or web sources, and organize them in custom directories.
+    Supports Hershey fonts, TrueType fonts, and AutoCAD SHX fonts that render as clean vectors
+    perfect for laser cutting. Set up font directories, refresh font caches, and access online
+    font resources for expanding your text design capabilities.
     """
 
     def __init__(self, *args, context=None, **kwds):

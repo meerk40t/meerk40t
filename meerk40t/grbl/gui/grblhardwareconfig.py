@@ -259,26 +259,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
 
 class GRBLHardwareConfig(MWindow):
-    """
-    GRBL Hardware Configuration Window - Complete hardware parameter management interface.
-
-    **Technical Purpose:**
-    Provides a dedicated wxPython window for comprehensive GRBL device hardware configuration.
-    This MWindow subclass creates and manages the GrblHardwareProperties panel, offering a
-    complete interface for viewing, editing, and managing all GRBL hardware parameters ($0-$199).
-    It integrates with the MeerK40t window management system and provides proper lifecycle
-    handling for hardware configuration operations.
-
-    **Signal Listeners:**
-    - Inherits hardware settings updates through GrblHardwareProperties panel
-
-    **End-User Description:**
-    Open the GRBL Hardware Configuration window to access all device settings and parameters.
-    This comprehensive interface lets you view current GRBL configuration, make changes to
-    hardware parameters, and save them directly to your device. Use this window to fine-tune
-    your laser's performance, adjust stepper motor settings, configure homing behavior, and
-    modify any other GRBL parameter.
-    """
+    """GRBLHardwareConfig - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, **kwds):
         super().__init__(1000, 500, *args, **kwds)

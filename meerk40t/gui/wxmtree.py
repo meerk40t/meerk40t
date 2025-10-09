@@ -123,18 +123,9 @@ def register_panel_tree(window, context):
 
 
 class TreePanel(wx.Panel):
-    """Element Tree Panel - Navigate and manage design elements hierarchy
+    """TreePanel - User interface panel for laser cutting operations"""
 
-    **Technical Details:**
-    - Help Section: tree
-    - Signals: activate_single_node, activate_selected_nodes, sync_expansion, select_emphasized_tree, updateelem_tree, element_property_reload, reset_formatter, element_property_update, activate;device, rebuild_tree, refresh_tree, update_group_labels, updateop_tree, freeze_tree, warn_state_update
-
-    **User Interface:**
-    - Reactivate disabled operations that prevent elements from being burnt
-    - Classify unassigned elements and use only existing operations
-    - Classify unassigned elements and create operations if necessary"""
-
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
@@ -554,6 +545,8 @@ class TreePanel(wx.Panel):
 
 
 class ElementsTree(MWindow):
+    """ElementsTree - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
@@ -580,12 +573,7 @@ class ElementsTree(MWindow):
 
 
 class ShadowTree:
-    """
-    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the
-    elements tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends
-    any requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.operations' and when those
-    are reflected in the tree, the shadow tree is updated accordingly.
-    """
+    """ShadowTree - User interface panel for laser cutting operations"""
 
     def __init__(self, service, gui, wxtree, context):
         self.elements = service

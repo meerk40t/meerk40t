@@ -39,37 +39,7 @@ _ = wx.GetTranslation
 
 
 class FormatterPanel(wx.Panel):
-    """
-    FormatterPanel - Device-agnostic interface for customizing display formats for elements and operations.
-
-    **Technical Purpose:**
-    Provides a universal configuration panel that works across all laser device types, enabling users
-    to customize how different element types and operations are displayed in the user interface.
-    Manages display format settings including power units (percentage vs PPI), speed units (mm/min vs mm/s),
-    and custom formatting strings for various node types (elements, operations, effects, etc.).
-    Dynamically generates configuration options based on available node types and integrates with
-    the device's settings system to maintain formatting preferences across sessions.
-
-    **Signals:**
-    - **No signal listeners**: This panel operates as a configuration interface and does not
-      respond to real-time signals, instead providing static display format management
-
-    **End-User Description:**
-    The Formatter panel lets you customize how information is displayed throughout MeerK40t:
-    - **Power Display**: Choose between showing laser power as percentages (0-100%) or PPI values (0-1000)
-    - **Speed Display**: Choose between showing speeds in mm/min or mm/s
-    - **Custom Formatters**: Define bespoke display formats for different types of elements and operations
-
-    **Supported Element Types:**
-    - **Elements**: Rectangles, ellipses, paths, images, text, polylines, points
-    - **Operations**: Engrave, cut, raster, image operations, dots
-    - **Effects**: Hatch patterns, wobble effects, warp effects
-    - **Groups & Files**: Element groups and file references
-    - **Special Operations**: Home, goto, console commands, wait operations
-
-    Custom formatters use placeholder syntax like {speed}, {power}, {passes} to display operation
-    parameters in a format that suits your workflow preferences.
-    """
+    """FormatterPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

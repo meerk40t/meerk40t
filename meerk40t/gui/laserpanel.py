@@ -145,7 +145,7 @@ class LaserPanel(wx.Panel):
 
     **Technical Details:**
     - Purpose: Central control panel for laser operations including device selection, job execution, safety arming, parameter adjustment, and optimization controls with real-time device state synchronization
-    - Signals: Multiple listeners including "optimize", "pwm_mode_changed", "device;modified", "device;renamed", "device;connected", "pause", "laser_armed", "laserpane_arm" for comprehensive device and job state management
+    - Signals: Multiple listeners including "optimize", "pwm_mode_changed", "device;modified", "device;renamed", "device;connected", "pause", "laser_armed", "laserpane_arm", "plan" for comprehensive device and job state management
     - Help Section: laserpanel
 
     **User Interface:**

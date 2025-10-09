@@ -27,23 +27,23 @@ DEFAULT_LEN = "5cm"
 
 class LaserToolPanel(wx.Panel):
     """
-    Template-based geometric shape creation tools for laser positioning and design, providing mathematical calculations for circles, rectangles, and squares from laser position points.
+    Interactive template creation and positioning panel for laser cutting operations providing geometric shape generation tools.
 
     **Technical Details:**
-    - Purpose: Interactive template system for creating precise geometric shapes by capturing laser positions and using mathematical algorithms to calculate complete shapes for laser processing
-    - Signals: Listens to "driver;position", "emulator;position", "status;position" signals to track current laser head position for real-time template calculations
+    - Purpose: Template-based shape creation interface for circles, rectangles, and squares using laser positioning for precise geometric construction and reference point establishment
+    - Signals: Listeners for "driver;position", "emulator;position", "status;position" to track real-time laser head positioning for coordinate capture and template placement
     - Help Section: templates
 
     **User Interface:**
-    - Tabbed notebook interface with three specialized template tools (circle center finding, rectangle framing, square placement)
-    - Point capture system with "Use position" buttons for recording laser coordinates at specific locations
-    - Real-time coordinate display showing captured positions in user units
-    - Mathematical calculation engines for geometric shape determination from captured points
-    - Visual instruction graphics with detailed tooltips explaining each template's usage steps
-    - Reference creation checkboxes for marking calculated center points or corners
-    - Dimension input controls for specifying square size and other parameters
-    - Comprehensive tooltip system explaining positioning requirements and control functions
-    - Automatic validation enabling/disabling of creation buttons based on captured point completeness
+    - Three-tabbed notebook interface (Find center, Place frame, Place square) for different geometric template operations
+    - Circle creation tab with three-point positioning system for center calculation and circle generation with optional center marking
+    - Rectangle creation tab with two-corner positioning for frame definition and reference creation
+    - Square creation tab with three-point system for square construction with configurable dimensions and corner marking
+    - Real-time position display with coordinate capture buttons for each geometric operation
+    - Reference creation options for each template type to establish positioning anchors
+    - Visual instruction graphics with detailed tooltips explaining each operation step
+    - Dynamic button enabling based on coordinate completeness and geometric validity
+    - Unit-aware coordinate display and input with automatic length conversion
     """
 
     def __init__(self, *args, context=None, **kwds):

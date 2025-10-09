@@ -14,29 +14,7 @@ _ = wx.GetTranslation
 
 
 class ConfigurationInterfacePanel(ScrolledPanel):
-    """
-    GRBL Configuration Interface Panel - Connection interface selection and configuration for GRBL devices.
-
-    **Technical Purpose:**
-    Provides interface selection and configuration controls for GRBL device connectivity,
-    allowing users to choose between Serial, TCP, WebSocket, and Mock connection types.
-    Dynamically shows/hides relevant configuration panels based on selected interface type
-    and manages interface-specific settings through integrated property panels.
-
-    **Signals:**
-    - **No signal listeners**: This panel operates as a configuration interface and does not
-      respond to real-time signals, instead providing static interface selection controls
-
-    **End-User Description:**
-    The Interface panel lets you configure how MeerK40t connects to your GRBL device:
-    - **Serial**: Direct connection through USB/serial port (most common for GRBL controllers)
-    - **Networked**: TCP connection for network-attached GRBL devices
-    - **WebSocket**: WebSocket connection for web-based GRBL interfaces
-    - **Mock**: Virtual device for testing and debugging without physical hardware
-
-    Select the appropriate connection type for your GRBL device setup. The corresponding
-    configuration options will appear below the radio buttons.
-    """
+    """ConfigurationInterfacePanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__

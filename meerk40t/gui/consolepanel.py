@@ -162,24 +162,24 @@ def register_panel_console(window, context):
 
 class ConsolePanel(wx.ScrolledWindow):
     """
-    Console Panel - Interactive command-line interface for MeerK40t operations.
+    ConsolePanel - Interactive command-line interface for MeerK40t operations.
 
     **Technical Purpose:**
-    Provides a comprehensive wxPython-based command-line interface for interacting with
-    MeerK40t's kernel system. This scrolled window displays command output, accepts user
-    input, and supports advanced features like command history, auto-completion, and ANSI
-    color-coded output. It integrates with the kernel's console channel system to provide
-    real-time feedback and supports both rich text (with styling) and plain text display modes.
+    Provides a wxPython-based console interface for direct command execution and system monitoring
+    in MeerK40t. This panel supports both plain text and rich text display modes with ANSI color
+    code processing, command history navigation, tab completion, and real-time output updates.
+    Integrates with the kernel's console channel for command processing and maintains persistent
+    command history across sessions.
 
     **Signal Listeners:**
-    - `console_update`: Triggers console display updates when new output is available
+    - "console_update" - Triggers console output updates when new text is available
 
     **End-User Description:**
-    Use the console to interact directly with MeerK40t through text commands. Type commands
-    in the input field at the bottom and press Enter to execute them. Use the up/down arrow
-    keys to navigate through command history. Press Tab for command auto-completion suggestions.
-    The console displays all system output, error messages, and command results. In rich text
-    mode, output includes color coding and clickable URLs for enhanced readability.
+    Use this interactive console to enter commands directly and see system output in real-time.
+    Navigate command history with up/down arrows, use tab for autocompletion, and view colored
+    output with ANSI formatting support. Commands are saved to history and can be recalled
+    across sessions. This is the primary interface for advanced users to access all MeerK40t
+    functionality through text commands.
     """
 
     def __init__(self, *args, context=None, **kwargs):

@@ -15,25 +15,24 @@ _ = wx.GetTranslation
 
 class AutoExecPanel(wx.Panel):
     """
-    Auto Execute Panel - File startup command configuration interface.
+    AutoExecPanel - Automatic command execution interface for file loading operations.
 
     **Technical Purpose:**
-    Provides a wxPython-based configuration interface for defining automatic command execution
-    sequences that run when project files are loaded. This panel enables users to create custom
-    startup routines for device configuration, simulation setup, and other automated operations.
-    It includes safety controls to prevent accidental execution of dangerous commands and provides
-    templates for common operations like device activation and simulation startup.
+    Provides a wxPython-based interface for defining and managing automatic command execution
+    upon file loading in MeerK40t. This panel enables users to specify console commands that
+    will be executed immediately after a file is loaded, supporting device activation, simulation
+    startup, and other automated operations. Integrates with the elements service for persistent
+    storage of autoexec commands and active state management.
 
     **Signal Listeners:**
-    - `autoexec`: Updates the panel when autoexec content changes from external sources
+    - "autoexec" - Updates the panel when autoexec commands change externally
 
     **End-User Description:**
-    Configure commands that automatically execute when you load project files. Define startup
-    routines for device setup, simulation initialization, or other automated tasks. Use the
-    template button to quickly add common commands like device activation or simulation startup.
-    Enable or disable auto-execution with the checkbox, and manually test your commands with
-    the Execute button. Remember to use caution - some commands like burn operations can be
-    dangerous if executed unintentionally.
+    Define commands that automatically execute when you load a file. This is useful for setting up
+    your preferred device, starting simulations, or performing other routine operations. Be careful
+    with dangerous commands like burns. You can disable auto-execution for specific files, and
+    deactivate commands by starting lines with '#'. Use the helper button to see useful command
+    examples for device activation and common operations.
     """
 
     def __init__(self, *args, context=None, pane=False, **kwds):

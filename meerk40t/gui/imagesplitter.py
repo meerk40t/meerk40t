@@ -152,20 +152,24 @@ class InfoPanel(wx.Panel):
 
 class SplitterPanel(wx.Panel):
     """
-    Image splitting panel for dividing large images into multiple smaller parts for laser processing.
+    SplitterPanel - Image splitting interface for large-format laser operations.
 
-    **Technical Details:**
-    - Purpose: Splits selected image elements into configurable grid patterns (X×Y divisions) with adjustable DPI resolution, enabling large format laser jobs that exceed machine capabilities
-    - Signals: RenderSplit window listens to "reference" and "emphasized" signals to update selection status and enable/disable controls
-    - Help Section: imagesplit
+    **Technical Purpose:**
+    Provides a wxPython-based interface for dividing large images into smaller, manageable
+    sections for laser cutting operations. This panel enables configurable grid-based splitting
+    with customizable DPI resolution and processing order controls. Integrates with MeerK40t's
+    render system to generate split image outputs that can be processed individually or as
+    a complete job sequence.
 
-    **User Interface:**
-    - X/Y axis spin controls for setting number of divisions (1-25 each axis)
-    - Processing order radio box (Selection/First Selected/Last Selected) to determine which element properties to use
-    - DPI resolution input with sensible defaults from device view settings
-    - Create split images button with icon, disabled when no valid selection or invalid DPI
-    - Information panel showing selected elements count and preview thumbnails
-    - Settings persistence for split parameters across sessions
+    **Signal Listeners:**
+    - None (operates through parent window signal handling for emphasis updates)
+
+    **End-User Description:**
+    Split large images into smaller sections for laser cutting when your design exceeds your
+    machine's working area. Set the number of columns and rows to divide your image, choose
+    the processing order (selection, first selected, or last selected), and specify the DPI
+    resolution for the output. This creates multiple smaller images that can be burned
+    sequentially to recreate your complete design.
     """
 
     def __init__(self, *args, context=None, scene=None, **kwds):
@@ -321,21 +325,24 @@ class SplitterPanel(wx.Panel):
 
 class KeyholePanel(wx.Panel):
     """
-    Keyhole pattern generation panel for creating mask shapes and outline traces from selected elements.
+    KeyholePanel - Keyhole image generation interface for laser operations.
 
-    **Technical Details:**
-    - Purpose: Generates keyhole images from selected vector elements, creating masks that can be inverted and/or traced with outlines for laser processing
-    - Signals: RenderSplit window listens to "reference" and "emphasized" signals to update selection status and enable/disable controls
-    - Help Section: keyhole
+    **Technical Purpose:**
+    Provides a wxPython-based interface for creating keyhole operations from selected design
+    elements. This panel generates specialized images where selected elements become transparent
+    "keyholes" in a solid background, enabling precise alignment and registration marks for
+    multi-pass laser operations. Supports DPI resolution control, mask inversion, and outline
+    tracing options for flexible keyhole generation.
 
-    **User Interface:**
-    - Object selection radio box (First Selected/Last Selected) to choose which element to use as keyhole source
-    - DPI resolution input with sensible defaults from device view settings
-    - Invert mask checkbox to create negative space keyhole patterns
-    - Trace keyhole checkbox to add outline paths around the keyhole shape
-    - Create keyhole image button with icon, disabled when no valid selection or invalid DPI
-    - Information panel showing selected elements count and preview thumbnails
-    - Settings persistence for keyhole parameters across sessions
+    **Signal Listeners:**
+    - None (operates through parent window signal handling for emphasis updates)
+
+    **End-User Description:**
+    Create keyhole images for precise alignment in multi-pass laser operations. Select an element
+    to become the keyhole (transparent area) while the rest forms a solid background. Choose
+    between first or last selected element as the keyhole, set DPI resolution, and optionally
+    invert the mask or trace the keyhole outline. Perfect for creating registration marks,
+    alignment guides, or specialized cutting patterns.
     """
 
     def __init__(self, *args, context=None, scene=None, **kwds):

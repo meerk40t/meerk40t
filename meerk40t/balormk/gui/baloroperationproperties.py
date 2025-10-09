@@ -9,31 +9,7 @@ _ = wx.GetTranslation
 
 
 class BalorOperationPanel(ScrolledPanel):
-    """
-    Balor Operation Panel - Configuration interface for Balor-specific laser operation parameters.
-
-    **Technical Purpose:**
-    Provides a specialized property panel for configuring Balor laser device operation parameters
-    that differ from standard laser operations. Manages device-specific settings including rapid
-    travel speeds, MOPA pulse width controls, and precise timing delays for laser on/off states
-    and polygon point transitions. Integrates with the Parameters validation system to ensure
-    device compatibility and setting integrity.
-
-    **Signals:**
-    - **No signal listeners**: This panel operates as a configuration interface and does not
-      listen to real-time signals, instead providing static configuration controls
-
-    **End-User Description:**
-    The Balor Operation panel allows fine-tuning of laser behavior for specific operations:
-    - **Custom Rapid Speed**: Enable faster travel speeds between cuts for improved efficiency
-    - **Pulse Width Control**: Override global MOPA (Master Oscillator Power Amplifier) pulse
-      width settings for specialized materials or effects
-    - **Custom Timings**: Configure precise delays for laser on/off states and transitions
-      between path points for optimal cutting quality
-
-    Use these settings when standard operation parameters don't provide the required precision
-    or when working with specialized materials that need custom laser timing and power control.
-    """
+    """BalorOperationPanel - User interface panel for laser cutting operations"""
 
     name = "Balor"
 

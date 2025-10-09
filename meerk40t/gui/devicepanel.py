@@ -204,29 +204,27 @@ class SelectDevice(wx.Dialog):
 
 class DevicePanel(wx.Panel):
     """
-    Device Panel - Comprehensive device management interface for laser hardware.
+    DevicePanel - Device management interface for laser hardware configuration.
 
     **Technical Purpose:**
-    Provides a complete wxPython-based interface for managing laser devices within MeerK40t.
-    This panel enables users to create, configure, activate, duplicate, rename, and remove
-    laser devices. It displays real-time device status information and integrates with the
-    MeerK40t device service architecture to provide seamless device management capabilities.
+    Provides a wxPython-based interface for managing laser devices in MeerK40t, enabling
+    device creation, duplication, renaming, activation, and removal. This panel displays
+    device information in a list control with columns for device name, driver type, device
+    family, status, and interface location. Integrates with the kernel's device service
+    registration system and provides real-time status updates through signal communication.
 
     **Signal Listeners:**
-    - `pause`: Updates device status indicators when operations are paused
-    - `pipe;running`: Updates device status when processing pipelines are active
-    - `activate;device`: Refreshes device list when a device is activated
-    - `device;renamed`: Updates device display when device names are changed
-
-    **Lookup Listeners:**
-    - `service/device/available`: Monitors for new or removed device services
+    - "pause" - Updates device status when operations are paused
+    - "pipe;running" - Monitors pipeline execution status
+    - "activate;device" - Refreshes display when device activation changes
+    - "device;renamed" - Updates device list when device names change
 
     **End-User Description:**
-    Manage all your laser devices from this central panel. View device status, type, and connection
-    information in the device list. Create new devices by selecting from available hardware types,
-    duplicate existing configurations, rename devices for clarity, or remove unused devices.
-    Activate the device you want to use for your current project, and access device-specific
-    configuration options. Use the search filter to quickly find devices in large setups.
+    Manage all your laser devices from this central panel. View device status, driver types,
+    and connection information. Create new devices, duplicate existing ones, rename devices,
+    activate different devices, or remove unused ones. Right-click devices for quick actions,
+    and use the Config button to access detailed device settings. The active device is shown
+    in red text for easy identification.
     """
 
     def __init__(self, *args, context=None, pane=False, **kwds):

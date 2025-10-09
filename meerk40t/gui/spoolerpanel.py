@@ -86,34 +86,38 @@ def register_panel_spooler(window, context):
 
 
 class SpoolerPanel(wx.Panel):
-    """Spooler Panel - Manages and monitors laser job execution queue with real-time status updates
+    """
+    SpoolerPanel - Comprehensive job queue management and execution monitoring interface for laser cutting operations.
 
-    **Technical Purpose:**
-    Provides comprehensive job spooling interface for laser operations, handling multiple device queues,
-    real-time progress monitoring, job prioritization, and execution control. Integrates with device
-    drivers to display job status, elapsed time, estimated completion, and allows interactive job
-    management including pause/resume, stop, and queue manipulation.
+    This advanced panel provides real-time monitoring and control of laser job execution across multiple devices,
+    featuring detailed job tracking, queue management, historical logging, and device-specific filtering.
+    It serves as the central hub for managing laser cutting workflows and provides extensive job manipulation capabilities.
 
-    **Signals:**
-    - pause: Updates pause/resume button state when device pause state changes
-    - activate;device: Refreshes device list and updates UI when active device changes
-    - spooler;completed: Triggers history refresh when jobs complete
-    - spooler;queue: Updates spooler list when queue contents change
-    - spooler;idle: Updates spooler list when spooler becomes idle
-    - spooler;realtime: Updates spooler list for real-time status changes
-    - driver;position: Updates job progress and timing information
-    - emulator;position: Updates job progress for emulated devices
-    - pipe;usb_status: Monitors USB connection status for device communication
+    Signal Listeners:
+        - pause: Updates pause/resume button state when laser operation pauses
+        - activate;device: Refreshes device list and selection when devices change
+        - spooler;completed: Triggers history refresh when jobs complete
+        - spooler;queue: Updates job queue display when spooler state changes
+        - spooler;idle: Monitors spooler idle state for UI updates
+        - spooler;realtime: Handles real-time spooler status updates
+        - driver;position: Updates job progress from driver position feedback
+        - emulator;position: Updates job progress from emulator position feedback
+        - pipe;usb_status: Monitors USB connection status for device communication
 
-    **User Interface:**
-    - Device selector dropdown to filter jobs by specific laser device
-    - Pause/Resume button to control laser execution with visual state indication
-    - Emergency stop button with themed coloring for immediate laser shutdown
-    - Silent mode checkbox to suppress audio feedback during job processing
-    - Job queue list showing real-time status, progress, timing, and job details
-    - Job history panel with completed jobs, editable notes, and filtering options
-    - Context menus for job manipulation (remove, stop, enable/disable, loop control)
-    - History management with CSV export and selective clearing options"""
+    Signal References:
+        - Various context signals: Emitted through console commands for job control and device management
+
+    User Interface:
+        - Device selection dropdown with filtering capabilities for multi-device environments
+        - Active job queue display showing device, job name, item count, status, type, progress, passes, priority, runtime, and time estimates
+        - Job history panel with completion tracking, start/end times, duration, and detailed statistics
+        - Pause/Resume and Emergency Stop controls with visual state feedback
+        - Silent mode toggle to suppress audio notifications during job execution
+        - Right-click context menus for job manipulation (remove, stop, enable/disable, loop control)
+        - CSV export functionality for job history analysis
+        - Real-time progress updates with step counts, pass tracking, and time estimates
+        - Splitter-based layout allowing adjustable panel sizing
+    """
 
     def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__

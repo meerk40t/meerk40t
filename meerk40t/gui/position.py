@@ -37,20 +37,29 @@ def register_panel_position(window, context):
 
 
 class PositionPanel(wx.Panel):
-    """Position Panel - Edit position, dimensions, and reference point of selected elements
+    """
+    PositionPanel - Provides comprehensive UI controls for editing object dimensions and positioning in the laser cutting workspace.
 
-    **Technical Details:**
-    - Help Section: position
-    - Signals: listens to 'units', 'emphasized', 'modified', 'altered', 'lock_active', 'refresh_scene', 'modified_by_tool'; sends 'refresh_scene', 'lock_active'
+    This panel manages the coordinate system and transformation operations for selected elements, offering precise control
+    over position (X,Y coordinates), dimensions (width/height), and reference points. It integrates with the elements system
+    to apply transformations to emphasized objects, supporting both individual element modifications and group operations.
 
-    **User Interface:**
-    - X/Y coordinate inputs for positioning elements (supports multiple units)
-    - Width/height inputs for resizing elements
-    - Reference point selector (9-point grid showing which corner/edge to anchor to)
-    - 'Keep ratio' checkbox to maintain aspect ratio during resizing
-    - 'Individually' checkbox to apply changes to each element vs. selection as a whole
-    - Apply button to execute position/dimension changes
-    - Unit selector (mm, cm, inch, mil, %) for input values"""
+    Signal Listeners:
+        - refresh_scene: Updates position display when scene changes occur
+        - modified_by_tool: Refreshes position values when elements are modified by tools
+
+    Signal References:
+        - refresh_scene: Emitted after applying position/dimension changes to trigger scene updates
+        - lock_active: Broadcasts aspect ratio lock state changes
+
+    User Interface:
+        - X/Y coordinate inputs for positioning elements with reference point selection
+        - Width/height controls for resizing with aspect ratio preservation option
+        - Unit selection (mm, cm, inch, mil, %) with automatic conversion
+        - Individual vs. group operation modes for multi-element selections
+        - Reference point selector (9-point grid) for transformation anchor points
+        - Apply button to execute changes on all emphasized elements
+    """
 
     def __init__(self, *args, context=None, small=False, **kwds):
         # begin wxGlade: PositionPanel.__init__

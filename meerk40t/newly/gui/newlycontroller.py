@@ -15,14 +15,7 @@ _ = wx.GetTranslation
 
 
 class NewlyControllerPanel(wx.ScrolledWindow):
-    """Newly Controller Panel - Control Newly laser operations
-
-    **Technical Details:**
-    - Help Section: newlycontroller
-    - Signals: newly_controller_update, pipe;usb_status
-
-    **User Interface:**
-    - Force connection/disconnection from the device."""
+    """NewlyControllerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwargs):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

@@ -182,34 +182,7 @@ class TextVariables(wx.Panel):
 
 
 class TextPropertyPanel(ScrolledPanel):
-    """
-    Comprehensive text element property editor with font styling and formatting controls.
-
-    This panel provides complete text editing capabilities for SVG text elements, including font selection,
-    styling attributes (bold, italic, underline, strikethrough), color management, alignment options,
-    and variable substitution. It features a live preview system and maintains font usage history.
-
-    **Technical Details:**
-    - Manages wxPython font objects and SVG font attribute synchronization
-    - Implements variable substitution system with wordlist integration
-    - Provides font history persistence across sessions
-    - Handles platform-specific font dialog and rendering differences
-    - Supports text alignment (start/middle/end) with visual preview
-
-    **Signal Listeners:**
-    - "textselect": Automatically selects all text and sets focus when text element is selected
-
-    **User Interface:**
-    - Text Content: Multi-line text input with variable translation preview
-    - Font Selection: System font chooser with auto-complete and prompting
-    - Font Styling: Bold, italic, underline, strikethrough toggle buttons
-    - Font Size: Increase/decrease buttons with minimum size constraints
-    - Text Alignment: Left/center/right anchor positioning
-    - Color Controls: Stroke and fill color selection with callbacks
-    - Font History: Quick access to recently used font configurations
-    - Text Variables: Double-click insertion of dynamic variables
-    - Live Preview: Real-time text rendering with current font and colors
-    """
+    """TextPropertyPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

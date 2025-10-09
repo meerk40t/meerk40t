@@ -257,21 +257,23 @@ class ImportDialog(wx.Dialog):
 
 class MaterialPanel(ScrolledPanel):
     """
-    MaterialPanel provides comprehensive management of material library entries for laser cutting operations.
+    Comprehensive material library management interface for laser cutting operations providing material-specific parameter storage and retrieval.
 
-    Technical Purpose:
-    - Manages persistent material library settings stored in operations.cfg
-    - Handles import/export of material libraries from various formats (EZCAD, LightBurn, MeerK40t)
-    - Provides filtering and categorization of material entries by material type, thickness, and laser type
-    - Supports material parameter conversion (lens size, power levels) during import
-    - Maintains operation lists with power, speed, frequency, and effect settings
-    - Integrates with device-specific configurations (Balor fiber laser support)
+    **Technical Details:**
+    - Purpose: Material database interface for storing, retrieving, and managing laser cutting parameters organized by material type, thickness, and laser compatibility with import/export capabilities
+    - Signals: None - operates independently through direct data persistence and UI interactions
+    - Help Section: materialmanager
 
-    Signal Listeners:
-    - None - This panel operates primarily through direct user interaction
-
-    End-User Description:
-    The Material Library panel allows you to manage collections of laser cutting settings organized by material type and thickness. You can filter entries by material name, thickness, or laser type. Each material entry contains a list of operations (cut, engrave, raster, etc.) with specific power, speed, and frequency settings. Import material libraries from other software, create new entries from current operations, and apply settings to your project. Right-click on entries for additional actions like duplication, deletion, and applying effects.
+    **User Interface:**
+    - Hierarchical tree view of material library organized by material/thickness/laser type with filtering capabilities
+    - Material parameter editing interface with title, material name, thickness, laser type, power, and lens size fields
+    - Operation preview list showing cut/engrave/raster operations with power, speed, frequency, passes, and effects
+    - Import functionality for LightBurn (.clb), EZCAD (.lib/.ini), and MeerK40t (.cfg) material libraries
+    - Export and sharing capabilities for community material library contributions
+    - Duplicate, delete, and batch operations for material library management
+    - Real-time filtering by material name, thickness, and laser type with reset functionality
+    - Expandable information display for detailed material notes and conversion tracking
+    - Status bar integration for applying material settings to current operations
     """
 
     def __init__(self, *args, context=None, **kwds):

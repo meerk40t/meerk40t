@@ -7,25 +7,7 @@ _ = wx.GetTranslation
 
 
 class GRBLAdvancedPanel(wx.Panel):
-    """
-    GRBL Advanced Operation Panel - Configuration interface for advanced GRBL operation settings.
-
-    **Technical Purpose:**
-    Provides a wxPython-based configuration panel for advanced GRBL laser operation parameters.
-    This panel allows users to configure Z-axis positioning and custom GRBL command execution
-    for individual operations. It integrates with the MeerK40t operation system to store and
-    retrieve operation-specific settings, enabling fine-grained control over laser behavior
-    during job execution.
-
-    **Signal Listeners:**
-    - None (operates through direct property updates and element signals)
-
-    **End-User Description:**
-    Configure advanced settings for your GRBL laser operations. Enable Z-axis control to set
-    specific heights for operations, and add custom GRBL commands that will execute at the
-    start of each operation. This allows precise control over tool positioning and device
-    behavior for complex laser cutting and engraving jobs.
-    """
+    """GRBLAdvancedPanel - User interface panel for laser cutting operations"""
 
     name = "Advanced"
 

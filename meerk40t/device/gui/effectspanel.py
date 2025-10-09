@@ -12,31 +12,7 @@ _ = wx.GetTranslation
 
 
 class EffectsPanel(wx.Panel):
-    """
-    EffectsPanel - Device-agnostic interface for configuring default laser effect parameters.
-
-    **Technical Purpose:**
-    Provides a universal configuration panel that works across all laser device types, enabling users
-    to set default parameters for various laser effects (hatching, wobbling, etc.). Dynamically loads
-    effect choices based on device capabilities and integrates with the device's settings system
-    to maintain effect defaults across sessions. Acts as a wrapper around ChoicePropertyPanel to
-    present effect configuration options in a standardized interface.
-
-    **Signals:**
-    - **No signal listeners**: This panel operates as a configuration interface and does not
-      respond to real-time signals, instead providing static effect parameter management
-
-    **End-User Description:**
-    The Effects panel lets you configure default settings for laser effects that will be applied
-    when creating new operations:
-    - **Hatch Effects**: Default spacing and angle for hatch patterns
-    - **Wobble Effects**: Default radius, interval, and speed for wobble patterns
-    - **Other Effects**: Device-specific effect parameters and defaults
-
-    These settings determine the default values used when you create new laser operations with
-    effects. You can still override these defaults on a per-operation basis, but these provide
-    convenient starting points for your most common effect configurations.
-    """
+    """EffectsPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

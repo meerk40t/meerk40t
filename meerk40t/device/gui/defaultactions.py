@@ -31,36 +31,7 @@ _ = wx.GetTranslation
 
 
 class DefaultActionPanel(wx.Panel):
-    """
-    DefaultActionPanel - Device-agnostic interface for configuring automatic job start/end operations.
-
-    **Technical Purpose:**
-    Provides a universal configuration panel that works across all laser device types, enabling users
-    to define sequences of operations that automatically execute at the beginning and end of laser jobs.
-    Manages persistent storage of operation sequences, parameter customization, and provides a
-    standardized set of common laser operations (homing, movement, audio feedback, system control).
-    Integrates with the device's settings system to maintain operation sequences across sessions.
-
-    **Signals:**
-    - **No signal listeners**: This panel operates as a configuration interface and does not
-      respond to real-time signals, instead providing static operation sequence management
-
-    **End-User Description:**
-    The Default Actions panel lets you set up automatic operations that run before and after your laser jobs:
-    - **Job Start Actions**: Operations that run automatically when a job begins (like homing the laser head)
-    - **Job End Actions**: Operations that run automatically when a job completes (like returning to origin)
-
-    **Available Operations:**
-    - **Movement**: Home, Physical Home, Goto Origin, Goto 0,0
-    - **Audio**: Beep for audible feedback
-    - **Control**: Interrupt current operations, Console commands
-    - **Cooling**: Turn coolant on/off for water-cooled systems
-    - **System**: Prevent/allow system hibernation during long jobs
-
-    Use the left panel to select operations, modify their parameters if needed, then add them to either
-    the "At job start" or "At job end" lists. Reorder operations using the up/down arrows and remove
-    them with the trash icon.
-    """
+    """DefaultActionPanel - User interface panel for laser cutting operations"""
 
     # Constants for standards list indices
     STD_NAME = 0

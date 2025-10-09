@@ -29,17 +29,33 @@ def register_panel_snapoptions(window, context):
 
 
 class SnapOptionPanel(wx.Panel):
-    """Snap Options Panel - Configure cursor snapping behavior for precise element positioning
+    """
+    SnapOptionPanel - Controls cursor snapping behavior for precise element positioning and alignment.
 
-    **Technical Details:**
-    - Help Section: snap
-    - Signals: listens to 'snap_points', 'snap_grid', 'grid_attract_len', 'action_attract_len', 'show_attract_len'; sends same signals
+    This panel manages snapping settings that affect cursor behavior during element editing operations,
+    providing controls for grid and element point snapping with configurable attraction distances.
+    It integrates with the scene system to provide visual feedback and precise positioning assistance.
 
-    **User Interface:**
-    - Overall visibility slider: Controls screen distance for highlighting snap points
-    - Snap to Element checkbox and distance slider: Enable/disable snapping to element points
-    - Snap to Grid checkbox and distance slider: Enable/disable snapping to grid intersections
-    - All distance settings in pixels, controlling cursor attraction zones"""
+    Signal Listeners:
+        - snap_points: Updates element point snapping state
+        - snap_grid: Updates grid intersection snapping state
+        - grid_attract_len: Updates grid snap distance threshold
+        - action_attract_len: Updates element point snap distance threshold
+        - show_attract_len: Updates snap point visibility distance
+
+    Signal References:
+        - snap_grid: Broadcasts grid snapping enable/disable state
+        - snap_points: Broadcasts element point snapping enable/disable state
+        - show_attract_len: Signals visibility distance changes for snap highlighting
+        - grid_attract_len: Signals grid snap distance threshold changes
+        - action_attract_len: Signals element point snap distance threshold changes
+
+    User Interface:
+        - Overall visibility slider controlling highlight distance for snap points (1-75 pixels)
+        - Element point snapping toggle with distance control for cursor attraction to element vertices
+        - Grid intersection snapping toggle with distance control for cursor attraction to grid lines
+        - Real-time tooltip updates showing current pixel values for all distance settings
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

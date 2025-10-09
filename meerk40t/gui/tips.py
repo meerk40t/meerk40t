@@ -35,24 +35,31 @@ _ = wx.GetTranslation
 
 
 class TipPanel(wx.Panel):
-    """Tips Panel - Displays helpful usage tips, tricks, and tutorials for MeerK40t
+    """
+    TipPanel - Interactive tips and tricks display panel for MeerK40t user guidance.
 
-    **Technical Purpose:**
-    Provides an interactive tip system that educates users about MeerK40t features and capabilities.
-    Manages tip content loading from local cache and remote sources, handles image caching and display,
-    and provides navigation through tip collections. Supports version-aware tip filtering and
-    automatic updates from GitHub repositories with user consent management.
+    This panel provides an educational interface that displays helpful tips, tricks, and tutorials
+    for using MeerK40t effectively. It includes built-in tips and can download additional content
+    from GitHub repositories. Each tip can include descriptive text, associated commands that can
+    be executed via the "Try it out" button, and optional images for visual guidance.
 
-    **Signals:**
-    - None (direct signal listeners not used; responds to UI events and context settings)
+    Signal Listeners:
+        - None: This panel operates independently without signal-based communication
 
-    **User Interface:**
-    - Tip display area with text content, optional images, and navigation controls
-    - Previous/Next buttons for browsing through available tips with position indicator
-    - Try it out button to execute example commands or open tutorial links
-    - Show tips at startup checkbox to control automatic tip display on application launch
-    - Automatically update checkbox for downloading new tips from MeerK40t website
-    - Image caching system with fallback display for missing or inaccessible images"""
+    Signal References:
+        - None: This panel does not emit signals to other components
+
+    User Interface:
+        - Tip display area with text content, optional images, and navigation controls
+        - Previous/Next buttons with icons for browsing through available tips
+        - Tip counter showing current position (e.g., "Tip 3/15")
+        - "Try it out" button to execute associated commands or open URLs
+        - Startup tips toggle to control automatic display on application launch
+        - Automatic update checkbox for downloading new tips from online repositories
+        - Image caching system with consent-based internet access for tip illustrations
+        - Localized tip content supporting multiple languages
+        - Version-aware tip filtering to show only compatible content
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

@@ -13,11 +13,7 @@ _ = wx.GetTranslation
 
 
 class NewlyConfiguration(MWindow):
-    """Newly Configuration Panel - Configure Newly laser settings
-
-    **Technical Details:**
-    - Help Section: newlyconfig
-    - Signals: activate;device"""
+    """NewlyConfiguration - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, **kwds):
         super().__init__(420, 570, *args, **kwds)

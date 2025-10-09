@@ -6,15 +6,7 @@ _ = wx.GetTranslation
 
 
 class LhyAdvancedPanel(wx.Panel):
-    """K40 Operation Panel - Configure K40 laser operations
-
-    **Technical Details:**
-    - Help Section: k40operation
-
-    **User Interface:**
-    - Enables the ability to modify the diagonal ratio.
-    - Enables acceleration override
-    - Enable Dot Length"""
+    """LhyAdvancedPanel - User interface panel for laser cutting operations"""
 
     name = "Advanced"
 

@@ -7,16 +7,7 @@ _ = wx.GetTranslation
 
 
 class OpBranchPanel(wx.Panel):
-    """Operation Branch Property Panel - Edit operation branch settings
-
-    **Technical Details:**
-    - Help Section: opbranchproperty
-    - Signals: loop_n, loop_continuous, loop_enabled
-
-    **User Interface:**
-    - Enable continuous looping of operation jobs
-    - Enable parameter-based looping with configurable count
-    - Set number of times operation job should repeat"""
+    """OpBranchPanel - User interface panel for laser cutting operations"""
 
     name = "Loop Properties"
 

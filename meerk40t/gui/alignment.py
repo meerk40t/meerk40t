@@ -197,25 +197,7 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
-    """
-    Alignment Panel - Interactive element positioning interface for precise design layout.
-
-    **Technical Purpose:**
-    Provides a comprehensive wxPython-based interface for aligning selected design elements
-    relative to reference points including selection bounds, first/last selected elements,
-    laser bed boundaries, or reference objects. This panel enables precise positioning control
-    through X/Y axis alignment options and supports both individual element and group alignment
-    modes, integrating with MeerK40t's element selection and transformation system.
-
-    **Signal Listeners:**
-    - None (operates through parent window signal handling for emphasis updates)
-
-    **End-User Description:**
-    Align your selected design elements with precision. Choose alignment relative to selection bounds,
-    first or last selected element, laser bed, or reference objects. Control horizontal alignment
-    (left, center, right) and vertical alignment (top, center, bottom) independently. Process elements
-    individually or as a group for consistent positioning across your design.
-    """
+    """Alignment Panel - Align and distribute design elements"""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -422,26 +404,7 @@ class AlignmentPanel(wx.Panel):
 
 
 class DistributionPanel(wx.Panel):
-    """
-    Distribution Panel - Advanced element distribution system for complex layout patterns.
-
-    **Technical Purpose:**
-    Implements sophisticated element distribution algorithms in a wxPython interface, enabling
-    placement of selected design elements along various geometric paths and shapes. Supports
-    distribution along rectangular boundaries, custom shapes, element point sequences, laser bed
-    edges, and reference object boundaries. Includes advanced features like equidistant spacing,
-    rotation parallel to paths, and flexible processing order controls.
-
-    **Signal Listeners:**
-    - None (operates through parent window signal handling for emphasis updates)
-
-    **End-User Description:**
-    Distribute selected elements along complex paths and shapes for advanced layouts. Choose from
-    rectangular boundaries, custom element shapes, point sequences, laser bed edges, or reference
-    objects as distribution paths. Control element positioning, spacing, and rotation. Process
-    elements in selection order, by first selected, or last selected. Keep first/last elements
-    within target areas and rotate elements to follow path contours.
-    """
+    """DistributionPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -1150,26 +1113,7 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
-    """
-    Arrangement Panel - Grid-based element layout system for organized design composition.
-
-    **Technical Purpose:**
-    Provides a wxPython-based grid arrangement interface for organizing selected design elements
-    into customizable rectangular layouts. Supports variable column/row dimensions, uniform sizing
-    options, configurable gaps between elements, and flexible alignment controls. Automatically
-    centers the arranged grid on the scene and integrates with MeerK40t's element transformation
-    and scene management systems.
-
-    **Signal Listeners:**
-    - None (operates through parent window signal handling for emphasis updates)
-
-    **End-User Description:**
-    Arrange selected elements in organized grid layouts. Set the number of columns and rows,
-    choose uniform sizing for consistent appearance, and control gaps between elements. Align
-    elements within each grid cell (left/center/right and top/center/bottom). Process elements
-    in selection order, by first selected, or last selected. The arranged grid is automatically
-    centered on your workspace for perfect composition.
-    """
+    """ArrangementPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)

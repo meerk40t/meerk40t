@@ -26,18 +26,7 @@ _default_height = 389
 
 
 class MoshiControllerPanel(wx.Panel):
-    """Moshiboard Controller Panel - Control Moshiboard laser operations
-
-    **Technical Details:**
-    - Help Section: moshicontroller
-    - Signals: moshi_controller_update
-
-    **User Interface:**
-    - Force connection/disconnection from the device.
-    - Optional: Distinguish between different lasers using the match criteria below.\n
-    - Connection status
-    - The meaning of Byte 1
-    - DEBUG. Without a K40 connected continue to process things as if there was one."""
+    """MoshiControllerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

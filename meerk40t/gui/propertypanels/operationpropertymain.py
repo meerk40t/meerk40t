@@ -2045,34 +2045,7 @@ class DwellSettingsPanel(wx.Panel):
 
 
 class ParameterPanel(ScrolledPanel):
-    """
-    Main properties panel for laser operations providing comprehensive control over operation parameters.
-
-    This panel serves as the primary interface for configuring all aspects of laser operations including
-    layer classification, speed/power settings, operation passes, raster parameters, dwell times, and
-    informational displays. It aggregates multiple specialized sub-panels into a unified scrolled interface
-    that dynamically adapts based on the operation type and device capabilities.
-
-    **Technical Details:**
-    - Manages a collection of specialized sub-panels (IdPanel, LayerSettingPanel, SpeedPpiPanel, etc.)
-    - Coordinates property updates across all sub-panels when operation changes occur
-    - Handles device-specific parameter validation and display formatting
-    - Implements dynamic panel visibility based on operation type compatibility
-
-    **Signal Listeners:**
-    - "power_percent": Updates power display format (percentage vs PPI) when device settings change
-    - "speed_min": Refreshes speed validation limits when device constraints are modified
-    - "element_property_reload": Synchronizes all sub-panels when operation properties change externally
-    - "service/device/active" (lookup): Reinitializes device-dependent settings when active device changes
-
-    **User Interface:**
-    - Layer Settings: Color assignment, classification restrictions (stroke/fill/stop), enable/disable controls
-    - Speed & Power: Movement speed, laser power (PPI or percentage), frequency settings with device validation
-    - Operation Passes: Multi-pass execution control, kerf compensation, coolant management
-    - Raster Settings: DPI control, direction selection, bidirectional/unidirectional modes, optimization options
-    - Dwell Settings: Dot operation timing parameters
-    - Information: Element count, estimated burn time, re-classification tools
-    """
+    """ParameterPanel - User interface panel for laser cutting operations"""
 
     name = _("Properties")
     priority = -1

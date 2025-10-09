@@ -24,6 +24,8 @@ _ = wx.GetTranslation
 
 
 class PreferencesUnitsPanel(wx.Panel):
+    """PreferencesUnitsPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesUnitsPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -100,6 +102,8 @@ class PreferencesUnitsPanel(wx.Panel):
 
 
 class PreferencesLanguagePanel(wx.Panel):
+    """PreferencesLanguagePanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesLanguagePanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -143,6 +147,8 @@ class PreferencesLanguagePanel(wx.Panel):
 
 
 class PreferencesSavingPanel(wx.Panel):
+    """PreferencesSavingPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesLanguagePanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -356,6 +362,8 @@ class PreferencesSavingPanel(wx.Panel):
 
 
 class PreferencesPixelsPerInchPanel(wx.Panel):
+    """PreferencesPixelsPerInchPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesPixelsPerInchPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -443,73 +451,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
 
 
 class PreferencesMain(wx.Panel):
-    """Preferences Main Panel - General application settings and configuration
-
-    **Technical Details:**
-    - Help Section: preferences
-    - Contains: units selection, language settings, general preferences, configuration management
-
-    **User Interface:**
-    - Units panel: Set default measurement units (mm, cm, inch, mils)
-    - Language panel: Select interface language (requires restart)
-    - General preferences: Core application settings via property panels
-    - Management panel: Save/export/import configuration, clear settings options"""
-
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: PreferencesMain.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.context.themes.set_window_colors(self)
-        self.SetHelpText("preferences")
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
-
-        self.panel_units = PreferencesUnitsPanel(self, wx.ID_ANY, context=context)
-        sizer_main.Add(self.panel_units, 0, wx.EXPAND, 0)
-
-        self.panel_language = PreferencesLanguagePanel(self, wx.ID_ANY, context=context)
-        sizer_main.Add(self.panel_language, 0, wx.EXPAND, 0)
-
-        self.panel_pref1 = ChoicePropertyPanel(
-            self,
-            id=wx.ID_ANY,
-            context=context,
-            choices="preferences",
-            constraint=(
-                "-Input/Output",
-                "-Classification",
-                "-Gui",
-                "-Scene",
-                "-Operations",
-            ),
-        )
-        sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
-
-        self.panel_management = PreferencesSavingPanel(self, wx.ID_ANY, context=context)
-        sizer_main.Add(self.panel_management, 0, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_main)
-
-        self.Layout()
-        # end wxGlade
-
-    def delegates(self):
-        yield self.panel_language
-        yield self.panel_units
-        yield self.panel_pref1
-        yield self.panel_management
-
-
-class PreferencesInputOutput(wx.Panel):
-    """Preferences Input/Output Panel - File handling and import/export settings
-
-    **Technical Details:**
-    - Help Section: preferences
-    - Contains: SVG pixel density settings, input/output preferences
-
-    **User Interface:**
-    - SVG PPI panel: Set pixels per inch for SVG files (96/72/90/custom)
-    - Input/Output preferences: File format settings and import/export options"""
+    """PreferencesMain - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__
@@ -568,6 +510,33 @@ class PreferencesInputOutput(wx.Panel):
 
 
 class Preferences(MWindow):
+    """
+    Preferences - Centralized configuration window for MeerK40t application settings.
+
+    This MWindow subclass provides a comprehensive tabbed interface for configuring all aspects of MeerK40t behavior,
+    organized into functional categories. It serves as the primary user interface for application-wide settings management,
+    including classification rules, operation defaults, GUI preferences, scene configuration, color schemes, and ribbon customization.
+
+    Signal Listeners:
+        - preferences: Shows and switches to specific preference panels when triggered with panel identifiers
+
+    Signal References:
+        - theme: Emitted when color schemes are reset to trigger UI theme updates
+        - refresh_scene: Emitted when color changes require scene redrawing
+        - Various setting-specific signals: Broadcasts configuration changes for specific properties
+
+    User Interface:
+        - General: Core settings including SVG PPI, input/output preferences
+        - Input/Output: File handling and data exchange configuration
+        - Classification: Automatic/manual element-to-operation assignment rules and presets
+        - Operations: Laser operation defaults and behavior settings
+        - GUI: User interface customization and display preferences
+        - Scene: Workspace and viewport configuration options
+        - Colors: Comprehensive color scheme management with reset capabilities
+        - Ribbon: Customizable toolbar and ribbon interface configuration
+        - Developer Mode: Additional coordinate space settings (when enabled)
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(
             525,

@@ -788,21 +788,36 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
-    """SimulationPanel - Interactive laser job simulation and optimization interface
+    """
+    SimulationPanel - Interactive visual preview and analysis interface for laser cutting operations.
 
-    **Technical Details:**
-    - Help Section: simulate
-    - Signals: listens to 'device;modified', 'plan', 'refresh_simulation'; sends 'refresh_scene', 'plan', 'optimize', 'refresh_simulation'
+    This comprehensive panel provides real-time simulation of laser cutting jobs with detailed progress tracking,
+    time and distance estimation, and interactive controls. It integrates with the cutplan system to visualize
+    laser operations before execution, allowing users to preview, analyze, and optimize their cutting jobs.
 
-    **User Interface:**
-    - Interactive scene view showing laser paths, travel moves, and bed layout
-    - Progress slider for stepping through simulation timeline
-    - Distance/time statistics for laser cutting, travel, and total operations
-    - Playback controls with speed adjustment and mode selection (steps/time-based)
-    - Optimization options panel with preprocessing settings
-    - Cut plan operations viewer with editing capabilities
-    - Cutcode details panel for individual operation inspection
-    - Send-to-laser functionality for job execution"""
+    Signal Listeners:
+        - device;modified: Updates simulation when device settings change
+        - plan: Refreshes simulation data when cutplan is modified
+        - refresh_simulation: Triggers scene refresh for simulation updates
+        - refresh_scene: Handles scene-specific refresh requests
+        - background: Updates background image in simulation scene
+
+    Signal References:
+        - refresh_scene: Emitted to update scene display during simulation playback
+        - plan: Broadcasts cutplan changes and status updates
+        - optimize: Signals optimization state changes
+
+    User Interface:
+        - Interactive scene view with laser path visualization and reticle positioning
+        - Progress slider for stepping through operations or time-based playback
+        - Playback controls with speed adjustment (1%-5000%) and mode selection (steps/time)
+        - Real-time distance and time estimates for travel, cutting, and total operations
+        - Optimization panel with configurable cutplan processing options
+        - Operations panel showing cutplan sequence with editing capabilities
+        - Cutcode panel displaying detailed operation parameters and cut modifications
+        - Display toggles for travel paths, raster images, laser spot width, and grid overlays
+        - Send-to-laser functionality for job execution
+    """
 
     def __init__(
         self,

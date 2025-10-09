@@ -16,18 +16,36 @@ _ = wx.GetTranslation
 
 
 class OpInfoPanel(ScrolledPanel):
-    """Operation Info Panel - Display and manage laser operations with detailed statistics
+    """
+    OpInfoPanel - Operation information and management interface for laser jobs.
+
+    Displays comprehensive information about all operations in the current job,
+    including operation types, names, assigned elements, and time estimates.
+    Provides tools for operation management, element classification, and
+    performance analysis of laser cutting operations.
 
     **Technical Details:**
-    - Help Section: operationinfo
-    - Signals: listens to 'element_property_update', 'rebuild_tree', 'element_property_reload', 'tree_changed'; sends 'tree_changed'
+    - List-based display of all operations with type icons and metadata
+    - Time estimation calculation for operation runtime prediction
+    - Element classification tracking and orphan element detection
+    - Context menu operations for element reassignment and operation management
+    - Real-time updates when operation properties change
+    - Persistent column width settings for user customization
 
-    **User Interface:**
-    - List view showing operation number, type, name, item count, and runtime estimates
-    - Icons for different operation types (Cut, Raster, Image, Engrave, Dots)
-    - 'Get Time Estimates' button to calculate operation runtimes
-    - Right-click context menus for operation management and element classification
-    - Shows unassigned elements not belonging to any operation"""
+    **Signal Listeners:**
+    - "element_property_update": Refreshes when operation properties change
+    - "element_property_reload": Reloads operation data on property updates
+    - "rebuild_tree": Updates display when operation tree structure changes
+    - "tree_changed": Refreshes when tree modifications occur
+
+    **User Experience:**
+    - Visual operation overview with type-specific icons
+    - Time estimation for job planning and optimization
+    - Right-click context menus for operation management
+    - Element classification status and orphan detection
+    - Persistent column sizing for customized layouts
+    - Real-time updates during operation editing
+    """
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

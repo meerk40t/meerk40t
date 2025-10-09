@@ -19,19 +19,7 @@ _ = wx.GetTranslation
 
 
 class TCPController(MWindow):
-    """K40 TCP Panel - Configure K40 network connections
-
-    **Technical Details:**
-    - Help Section: k40tcp
-    - Signals: tcp;buffer, tcp;status, network_update
-
-    **User Interface:**
-    - IP/hostname of the server computer
-    - Force connection/disconnection from the device.
-    - Current number of bytes in the write buffer.
-    - Highest number of bytes in the write buffer.
-    - Port for tcp connection on the server computer
-    - Connection status"""
+    """TCPController - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, **kwds):
         super().__init__(500, 200, *args, **kwds)

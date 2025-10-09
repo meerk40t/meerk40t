@@ -15,31 +15,7 @@ _ = wx.GetTranslation
 
 
 class BalorControllerPanel(wx.ScrolledWindow):
-    """
-    Balor Controller Panel - Real-time control and monitoring interface for Balor laser device connections.
-
-    **Technical Purpose:**
-    Provides a GUI interface for managing Balor laser device connectivity and communication monitoring.
-    Handles USB connection state management, displays real-time communication logs, and allows
-    manual connection/disconnection control. Implements thread-safe buffer management for log updates
-    and integrates with the device's USB communication channels for status monitoring.
-
-    **Signals:**
-    - **Listens for "balor_controller_update"**: Receives text updates from USB communication and
-      appends them to the GUI log display in a thread-safe manner
-    - **Listens for "pipe;usb_status"**: Monitors USB connection pipe status and updates the
-      connection button appearance and label to reflect current connection state
-
-    **End-User Description:**
-    The Balor Controller provides real-time monitoring and control of your laser device connection:
-    - **Connection Button**: Click to connect or disconnect from the Balor device. The button color
-      and icon change to show connection status (green for connected, yellow for disconnected)
-    - **USB Log**: Real-time display of all USB communication between MeerK40t and the laser device
-    - **Status Updates**: Automatic updates when connection state changes or new communication occurs
-
-    Use this panel to troubleshoot connection issues, monitor device communication, and manually
-    control the USB connection to your Balor laser.
-    """
+    """BalorControllerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwargs):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

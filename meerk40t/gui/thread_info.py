@@ -37,22 +37,27 @@ def register_panel_thread_info(window, context):
 
 
 class ThreadPanel(wx.Panel):
-    """Thread Info Panel - Monitors and displays background task execution status
+    """
+    ThreadPanel - Background task monitoring and management interface for laser cutting operations.
 
-    **Technical Purpose:**
-    Provides real-time monitoring of background tasks and threads running within MeerK40t,
-    including preparatory jobs like burn preparation and other threaded operations. Displays
-    task status, runtime, and allows filtering between user tasks and system tasks for
-    debugging and performance monitoring.
+    This panel provides real-time visibility into background tasks and threaded operations within MeerK40t,
+    displaying preparatory jobs issued with the 'threaded' command such as burn preparation, optimization,
+    and other system tasks. It offers detailed status tracking and runtime information for active threads.
 
-    **Signals:**
-    - thread_update: Triggers refresh of thread list when background task status changes
+    Signal Listeners:
+        - thread_update: Triggers refresh of thread list when background task status changes
 
-    **User Interface:**
-    - Background tasks information text explaining threaded command usage
-    - Thread list displaying task number, name, status, and elapsed runtime
-    - Auto-show checkbox to automatically display window when new tasks start
-    - Context menu option to toggle display of system tasks for debugging"""
+    Signal References:
+        - None: This panel primarily consumes signals for display updates
+
+    User Interface:
+        - Background task list showing task number, name, current status, and elapsed runtime
+        - Auto-show toggle to automatically display the panel when new background tasks start
+        - System tasks visibility control to show/hide internal system threads
+        - Right-click context menu for additional display options
+        - Real-time updates with 2-second throttling to prevent excessive UI refreshes
+        - Column-based display with resizable columns and persistent width settings
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__

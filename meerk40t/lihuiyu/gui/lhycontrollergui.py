@@ -30,19 +30,7 @@ _default_height = 570
 
 
 class LihuiyuControllerPanel(ScrolledPanel):
-    """K40 Controller Panel - Control K40 laser operations
-
-    **Technical Details:**
-    - Help Section: k40controller
-    - Signals: pipe;state, pipe;failing, pipe;packet_text, pipe;usb_status, pipe;status, lihuiyu_controller_update, pipe;thread, network_update
-
-    **User Interface:**
-    - Last packet information sent
-    - Force connection/disconnection from the device.
-    - Total number of packets sent
-    - Total number of packets rejected
-    - Connection status
-    - The meaning of Byte 1"""
+    """LihuiyuControllerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
