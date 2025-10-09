@@ -1064,8 +1064,20 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
     geometries = [g for g in geometry_list if g is not None]
     if not geometries:
         return []
+
+    # Separate geometries that should not be stitched (e.g., effect-generated lines)
+    no_stitch_geoms = [g for g in geometries if getattr(g, "no_stitch", False)]
+    stitch_geoms = [g for g in geometries if not getattr(g, "no_stitch", False)]
+
     if tolerance == 0:
         tolerance = 1e-6
+
+    # If nothing to stitch, return all geometries as-is
+    if not stitch_geoms:
+        return geometries
+
+    # Process only the stitchable geometries
+    geometries = stitch_geoms
     # geometries.sort(key=lambda g: g.first_point)
     anystitches = 1
     pass_count = 0
@@ -1166,6 +1178,10 @@ def stitch_geometries(geometry_list: list, tolerance: float = 0.0) -> list:
         for g in stitched_geometries:
             if 0 < abs(g.last_point - g.first_point) <= tolerance:
                 g.line(g.last_point, g.first_point)
+
+    # Add back the geometries that were excluded from stitching
+    if no_stitch_geoms:
+        stitched_geometries.extend(no_stitch_geoms)
 
     return stitched_geometries
 
@@ -2998,16 +3014,21 @@ class Geomstr:
 
     def __init__(self, segments=None):
         self._settings = {}
+        self.no_stitch = (
+            False  # Flag to prevent stitching (for effect-generated geometry)
+        )
         if segments is not None:
             if isinstance(segments, Geomstr):
                 self._settings.update(segments._settings)
                 self.index = segments.index
-                segments = segments.segments
+                self.capacity = segments.capacity
+                self.segments = np.copy(segments.segments)
+                self.no_stitch = segments.no_stitch  # Preserve no_stitch flag
             else:
                 # Given raw segments, index is equal to count
                 self.index = len(segments)
-            self.segments = copy(segments)
-            self.capacity = len(segments)
+                self.capacity = len(segments)
+                self.segments = np.copy(segments)
         else:
             self.index = 0
             self.capacity = 12
@@ -3506,19 +3527,19 @@ class Geomstr:
     def hatch(cls, outer, angle, distance, unidirectional=False):
         """
         Create a hatch geometry from an outer shape using the traditional scanbeam algorithm.
-        
+
         This is the original, well-tested scanbeam-based hatching implementation that provides
         excellent results for all types of geometry, including complex shapes with many curves.
-        
+
         For better performance on simple shapes, consider using hatch_direct_grid() which can
         be 3-6x faster for rectangular/polygonal shapes with reasonable line spacing.
-        
+
         @param outer: Outer shape to hatch (Geomstr object)
         @param angle: Hatch angle in radians (0 = horizontal lines)
         @param distance: Distance between hatch lines in units
         @param unidirectional: If True, all lines go same direction; if False, alternating directions
         @return: Geomstr object containing hatch line geometry
-        
+
         See also:
         - hatch_direct_grid(): High-performance alternative for simple shapes
         - hatch_optimized(): Memory-optimized version with batch processing
@@ -3571,7 +3592,7 @@ class Geomstr:
         2. X-intercept caching to avoid redundant calculations
         3. Capacity pre-allocation based on estimated line count
         4. Early termination with bounds checking
-        
+
         @param outer: Outer shape to hatch
         @param angle: Hatch angle in radians
         @param distance: Distance between hatch lines
@@ -3583,16 +3604,16 @@ class Geomstr:
         path.rotate(angle)
         vm = Scanbeam(path)
         y_min, y_max = vm.event_range()
-        
+
         # Early exit conditions
         if np.isinf(y_max) or distance == 0:
             return cls()
-        
+
         # Estimate total lines for capacity pre-allocation
         estimated_scanlines = int((y_max - y_min) / distance) + 1
         # Rough estimate: assume 2 intersections per scanline on average
         estimated_lines = estimated_scanlines * 2
-        
+
         vm.valid_low = y_min - distance
         vm.valid_high = y_max + distance
         vm.scanline_to(vm.valid_low)
@@ -3601,15 +3622,15 @@ class Geomstr:
         geometry = cls()
         # Pre-allocate capacity to avoid frequent resizing
         geometry._ensure_capacity(estimated_lines * 2)  # lines + ends
-        
+
         # Collect all line pairs for batch processing
         all_line_pairs = []
-        
+
         while vm.current_is_valid_range():
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
             actives = vm.actives()
-            
+
             if len(actives) < 2:
                 # Skip scanlines with insufficient intersections
                 if not unidirectional:
@@ -3618,33 +3639,33 @@ class Geomstr:
 
             # Cache x-intercepts for this scanline to avoid redundant calculations
             x_intercepts = [vm.x_intercept(seg) for seg in actives]
-            
+
             # Determine range based on direction
             if forward:
                 range_indices = range(1, len(actives), 2)
             else:
                 range_indices = range(len(actives) - 1, 0, -2)
-            
+
             # Collect line pairs for this scanline
             scanline_pairs = []
             for i in range_indices:
                 left_x = x_intercepts[i - 1]
                 right_x = x_intercepts[i]
-                
+
                 if forward:
                     scanline_pairs.append((complex(left_x, y), complex(right_x, y)))
                 else:
                     scanline_pairs.append((complex(right_x, y), complex(left_x, y)))
-            
+
             all_line_pairs.extend(scanline_pairs)
-            
+
             if not unidirectional:
                 forward = not forward
-        
+
         # Batch add all lines at once
         if all_line_pairs:
             geometry.append_lines_batch(all_line_pairs)
-        
+
         geometry.rotate(-angle)
         return geometry
 
@@ -3656,7 +3677,7 @@ class Geomstr:
         2. Minimal memory allocations and copying
         3. Early bounds checking and geometric pruning
         4. Optimized scanbeam processing
-        
+
         @param outer: Outer shape to hatch
         @param angle: Hatch angle in radians
         @param distance: Distance between hatch lines
@@ -3666,71 +3687,75 @@ class Geomstr:
         # Early exit conditions
         if distance <= 0:
             return cls()
-            
+
         outlines = outer.segmented()
         path = outlines
         path.rotate(angle)
         vm = Scanbeam(path)
         y_min, y_max = vm.event_range()
-        
+
         if np.isinf(y_max) or y_max <= y_min:
             return cls()
-        
+
         # Calculate exact number of scanlines and pre-allocate everything
         scanline_count = int((y_max - y_min) / distance) + 1
-        
+
         vm.valid_low = y_min - distance
         vm.valid_high = y_max + distance
-        
+
         # Pre-allocate arrays for all line data
         line_starts = []
         line_ends = []
-        
+
         forward = True
         current_scanline = y_min
-        
+
         while current_scanline <= y_max:
             vm.scanline_to(current_scanline)
             actives = vm.actives()
-            
+
             if len(actives) >= 2:
                 # Vectorized x-intercept calculation
                 x_intercepts = np.array([vm.x_intercept(seg) for seg in actives])
-                
+
                 # Generate line pairs based on direction
                 if forward:
                     for i in range(1, len(x_intercepts), 2):
-                        line_starts.append(complex(x_intercepts[i-1], current_scanline))
+                        line_starts.append(
+                            complex(x_intercepts[i - 1], current_scanline)
+                        )
                         line_ends.append(complex(x_intercepts[i], current_scanline))
                 else:
                     for i in range(len(x_intercepts) - 1, 0, -2):
                         line_starts.append(complex(x_intercepts[i], current_scanline))
-                        line_ends.append(complex(x_intercepts[i-1], current_scanline))
-            
+                        line_ends.append(complex(x_intercepts[i - 1], current_scanline))
+
             current_scanline += distance
             if not unidirectional:
                 forward = not forward
-        
+
         # Create geometry with exact capacity and batch operations
         geometry = cls()
         if line_starts:
             line_count = len(line_starts)
             geometry._ensure_capacity(line_count * 2)  # lines + ends
-            
+
             # Batch create all segments at once
             for i, (start, end) in enumerate(zip(line_starts, line_ends)):
                 idx = geometry.index
-                geometry.segments[idx] = (
-                    start, 0, complex(TYPE_LINE, 0), 0, end
-                )
+                geometry.segments[idx] = (start, 0, complex(TYPE_LINE, 0), 0, end)
                 geometry.index += 1
-                
+
                 # Add end segment
                 geometry.segments[geometry.index] = (
-                    np.nan, np.nan, complex(TYPE_END, 0), np.nan, np.nan
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_END, 0),
+                    np.nan,
+                    np.nan,
                 )
                 geometry.index += 1
-        
+
         geometry.rotate(-angle)
         return geometry
 
@@ -3738,19 +3763,19 @@ class Geomstr:
     def hatch_direct_grid(cls, outer, angle, distance, unidirectional=False):
         """
         Direct Grid Fill Algorithm - A simplified, high-performance alternative to scanbeam.
-        
+
         This algorithm offers significant performance improvements over the traditional scanbeam
         approach while maintaining identical output quality. It uses a direct grid-based approach
         with simple ray casting for intersection detection.
-        
+
         Performance characteristics:
         - 3-6x faster than scanbeam approach
         - O(n*m) complexity where n=edges, m=grid lines
         - Lower memory overhead
         - Simpler, more maintainable code
-        
+
         @param outer: Outer shape to hatch
-        @param angle: Hatch angle in radians  
+        @param angle: Hatch angle in radians
         @param distance: Distance between hatch lines
         @param unidirectional: If True, all lines go same direction
         @return: Geomstr with hatch geometry
@@ -3758,86 +3783,86 @@ class Geomstr:
         # Handle empty geometry
         if not outer or outer.index == 0:
             return cls()
-        
+
         # Create working copy and rotate to align with hatch angle
-        working_shape = cls(outer.segments[:outer.index])
+        working_shape = cls(outer.segments[: outer.index])
         working_shape.index = outer.index
         working_shape.rotate(-angle)
-        
+
         # Get bounding box
         bbox = working_shape.bbox()
         if not bbox:
             return cls()
-        
+
         min_x, min_y, max_x, max_y = bbox
-        
+
         # Expand slightly to ensure coverage
         margin = distance * 0.1
         min_x -= margin
         max_x += margin
-        min_y -= margin  
+        min_y -= margin
         max_y += margin
-        
+
         # Generate result geometry
         result = cls()
         y = min_y
         forward = True
-        
+
         while y <= max_y:
             # Find all intersections with this horizontal line
             intersections = []
-            
+
             # Check each edge in the shape
             for i in range(working_shape.index):
                 segment = working_shape.segments[i]
                 seg_type = working_shape._segtype(segment)
-                
+
                 if seg_type == TYPE_LINE:  # TYPE_LINE
                     p1 = segment[0]  # Start point
                     p2 = segment[4]  # End point
-                    
+
                     # Check if horizontal line y intersects this edge
                     y1, y2 = p1.imag, p2.imag
-                    
+
                     # Skip horizontal edges or edges that don't cross y
                     if abs(y2 - y1) < 1e-10:  # Horizontal edge
                         continue
-                        
+
                     if not ((y1 <= y <= y2) or (y2 <= y <= y1)):  # No intersection
                         continue
-                    
+
                     # Calculate x-intersection
                     x1, x2 = p1.real, p2.real
                     t = (y - y1) / (y2 - y1)
                     x_intersect = x1 + t * (x2 - x1)
-                    
+
                     intersections.append(x_intersect)
-            
+
             # Sort intersections and create hatch segments
             if len(intersections) >= 2:
                 intersections.sort()
-                
+
                 # Create hatch lines between pairs of intersections
                 for i in range(0, len(intersections) - 1, 2):
                     if i + 1 < len(intersections):
                         x1 = intersections[i]
                         x2 = intersections[i + 1]
-                        
+
                         # Skip very small segments
                         if abs(x2 - x1) < 1e-6:
                             continue
-                        
+
                         if forward:
                             result.line(complex(x1, y), complex(x2, y))
                         else:
                             result.line(complex(x2, y), complex(x1, y))
                         result.end()
-            
+
             # Move to next line
             y += distance
             if not unidirectional:
                 forward = not forward
-        
+
         # Rotate result back to original orientation
         result.rotate(angle)
         return result
@@ -4280,9 +4305,21 @@ class Geomstr:
         return Geomstr.lines(*self.as_equal_interpolated_points(distance=distance))
 
     def _ensure_capacity(self, capacity):
-        if self.capacity > capacity:
+        if self.capacity >= capacity:
             return
-        self.capacity = max(self.capacity << 1, capacity)
+        # Grow capacity exponentially, but cap at 10 million segments to prevent memory errors
+        MAX_CAPACITY = 10_000_000
+        new_capacity = max(self.capacity << 1, capacity)
+        if new_capacity > MAX_CAPACITY:
+            # If we need more than max, only allocate what's needed
+            new_capacity = min(capacity, MAX_CAPACITY)
+            if capacity > MAX_CAPACITY:
+                raise MemoryError(
+                    f"Attempted to allocate {capacity} segments ({capacity * 5 * 16 / 1024**3:.2f} GiB). "
+                    f"This exceeds the maximum of {MAX_CAPACITY} segments. "
+                    f"Current index: {self.index}, requested capacity: {capacity}"
+                )
+        self.capacity = new_capacity
         new_segments = np.zeros((self.capacity, 5), dtype="complex")
         new_segments[0 : self.index] = self.segments[0 : self.index]
         self.segments = new_segments
@@ -4338,21 +4375,21 @@ class Geomstr:
         self._ensure_capacity(self.index + len(lines))
         self.segments[self.index : self.index + len(lines)] = lines
         self.index += len(lines)
-    
+
     def append_lines_batch(self, line_pairs, settings=0):
         """
         Efficiently add multiple lines from a list of (start, end) pairs.
         This is optimized for batch operations like hatching.
-        
+
         @param line_pairs: List of (start_point, end_point) tuples
         @param settings: Settings level for all lines
         """
         if not line_pairs:
             return
-            
+
         line_count = len(line_pairs)
         self._ensure_capacity(self.index + line_count * 2)  # lines + ends
-        
+
         # Batch create line segments
         for start, end in line_pairs:
             self.segments[self.index] = (
@@ -4363,7 +4400,7 @@ class Geomstr:
                 end,
             )
             self.index += 1
-            
+
             # Add end segment after each line
             self.segments[self.index] = (
                 np.nan,
@@ -4375,9 +4412,12 @@ class Geomstr:
             self.index += 1
 
     def append(self, other, end=True):
-        self._ensure_capacity(self.index + other.index + 1)
         if self.index != 0 and end:
+            # Add END segment first, this will increment self.index
             self.end()
+        # Now ensure we have capacity for the segments we're about to add
+        self._ensure_capacity(self.index + other.index)
+        # Copy segments from other to self
         self.segments[self.index : self.index + other.index] = other.segments[
             : other.index
         ]
@@ -7990,14 +8030,18 @@ class Geomstr:
                 continue
             if segtype == TYPE_END:
                 if len(new_segments) > 0:
-                    yield Geomstr(new_segments)
+                    sub_geom = Geomstr(new_segments)
+                    sub_geom.no_stitch = self.no_stitch  # Preserve no_stitch flag
+                    yield sub_geom
                 new_segments.clear()
             else:
                 if len(new_segments) == 0:
                     new_segments.append(seg)
                 elif seg[0] != new_segments[-1][-1]:
                     # If the start of the current segment is not the end of the last segment
-                    yield Geomstr(new_segments)
+                    sub_geom = Geomstr(new_segments)
+                    sub_geom.no_stitch = self.no_stitch  # Preserve no_stitch flag
+                    yield sub_geom
                     new_segments.clear()
                     new_segments.append(seg)
                 else:
@@ -8005,7 +8049,9 @@ class Geomstr:
                     new_segments.append(seg)
         if len(new_segments) > 0:
             # If there are still segments left, yield them
-            yield Geomstr(new_segments)
+            sub_geom = Geomstr(new_segments)
+            sub_geom.no_stitch = self.no_stitch  # Preserve no_stitch flag
+            yield sub_geom
 
     def ensure_proper_subpaths(self):
         """
@@ -8049,10 +8095,14 @@ class Geomstr:
         last = 0
         for m in q:
             if m != last:
-                yield Geomstr(self.segments[last:m])
+                g = Geomstr(self.segments[last:m])
+                g.no_stitch = self.no_stitch  # Preserve no_stitch flag
+                yield g
             last = m + 1
         if last != self.index:
-            yield Geomstr(self.segments[last : self.index])
+            g = Geomstr(self.segments[last : self.index])
+            g.no_stitch = self.no_stitch  # Preserve no_stitch flag
+            yield g
 
     def render(self, buffer=10, scale=1):
         sb = Scanbeam(self)
@@ -8166,140 +8216,145 @@ class Geomstr:
             """
             if len(points) < 3:
                 return False
-                
+
             # For a closed shape, the last point should be close to the first
             is_closed = False
-            if len(points) >= 4 and np.linalg.norm(points[0] - points[-1]) < epsilon * tolerance_factor:
+            if (
+                len(points) >= 4
+                and np.linalg.norm(points[0] - points[-1]) < epsilon * tolerance_factor
+            ):
                 # Remove the duplicate closing point for analysis
                 points = points[:-1]
                 is_closed = True
-            
+
             num_points = len(points)
-            
+
             # Protect any closed shape with few points (likely intentional geometry)
             if is_closed and num_points <= 8:
                 return True
-                
+
             # Specific shape detection and protection
-            
+
             # 1. Rectangle detection (original logic)
             if num_points == 4:
                 return _is_rectangular_shape_detailed(points)
-            
+
             # 2. Triangle detection
             if num_points == 3:
                 return _is_triangle_shape(points)
-            
+
             # 3. Regular polygon detection (pentagon, hexagon, octagon, etc.)
             if 5 <= num_points <= 12:
                 return _is_regular_polygon(points)
-            
+
             # 4. Ellipse/circle detection (many points in roughly circular pattern)
             if num_points >= 8:
                 return _is_elliptical_shape(points)
-            
+
             # 5. Star pattern detection
             if num_points >= 6:
                 return _is_star_pattern(points)
-                
+
             return False
 
         def _is_rectangular_shape_detailed(points):
             """Enhanced rectangle detection with better tolerance handling."""
             if len(points) != 4:
                 return False
-                
+
             # Calculate vectors for all sides
             sides = []
             for i in range(4):
                 side = points[(i + 1) % 4] - points[i]
                 sides.append(side)
-            
+
             # Check if opposite sides are parallel and equal (within tolerance)
             parallel_tolerance = 0.15  # 15% tolerance for parallelism
-            
+
             # Check sides 0&2, 1&3 for parallelism and equal length
             for i in range(2):
                 side1 = sides[i]
                 side2 = sides[i + 2]
-                
+
                 # Check if parallel (cross product should be near zero)
                 cross = abs(np.cross(side1, side2))
                 side1_len = np.linalg.norm(side1)
                 side2_len = np.linalg.norm(side2)
-                
+
                 if side1_len == 0 or side2_len == 0:
                     return False
-                    
+
                 # Normalize cross product by the product of lengths
                 normalized_cross = cross / (side1_len * side2_len)
-                
+
                 if normalized_cross > parallel_tolerance:
                     return False
-                    
+
                 # Check if lengths are approximately equal
                 length_ratio = abs(side1_len - side2_len) / max(side1_len, side2_len)
                 if length_ratio > parallel_tolerance:
                     return False
-            
+
             # Check if adjacent sides are perpendicular (for rotated rectangles)
             for i in range(4):
                 side1 = sides[i]
                 side2 = sides[(i + 1) % 4]
-                
+
                 side1_len = np.linalg.norm(side1)
                 side2_len = np.linalg.norm(side2)
-                
+
                 if side1_len == 0 or side2_len == 0:
                     return False
-                
+
                 # Calculate dot product for perpendicularity check
                 dot_product = np.dot(side1, side2)
                 normalized_dot = abs(dot_product) / (side1_len * side2_len)
-                
+
                 # Adjacent sides should be perpendicular (dot product near zero)
                 if normalized_dot > parallel_tolerance:
                     return False
-            
+
             return True
 
         def _is_triangle_shape(points):
             """Detect triangular shapes that should be preserved."""
             if len(points) != 3:
                 return False
-                
+
             # Calculate side lengths
             sides = []
             for i in range(3):
                 side_length = np.linalg.norm(points[(i + 1) % 3] - points[i])
                 sides.append(side_length)
-            
+
             # Ensure it's a valid triangle (not degenerate)
             sides.sort()
-            return sides[0] + sides[1] > sides[2] * 1.01  # Small tolerance for numerical errors
+            return (
+                sides[0] + sides[1] > sides[2] * 1.01
+            )  # Small tolerance for numerical errors
 
         def _is_regular_polygon(points):
             """Detect regular polygons (pentagon, hexagon, etc.)."""
             n = len(points)
             if n < 5 or n > 12:
                 return False
-            
+
             # Calculate center point
             center = np.mean(points, axis=0)
-            
+
             # Calculate distances from center to each vertex
             distances = [np.linalg.norm(p - center) for p in points]
-            
+
             # Check if all distances are approximately equal (regular polygon)
             mean_dist = np.mean(distances)
             if mean_dist == 0:
                 return False
-                
+
             # Allow 10% variation in distances
             dist_variation = max(abs(d - mean_dist) / mean_dist for d in distances)
             if dist_variation > 0.1:
                 return False
-            
+
             # Check if angles between consecutive vertices are approximately equal
             angles = []
             for i in range(n):
@@ -8307,20 +8362,20 @@ class Geomstr:
                 v2 = points[(i + 1) % n] - center
                 angle = np.arctan2(np.cross(v1, v2), np.dot(v1, v2))
                 angles.append(angle)
-            
+
             expected_angle = 2 * np.pi / n
             angle_tolerance = 0.2  # Allow 20% variation in angles
-            
+
             for angle in angles:
                 if abs(angle - expected_angle) / expected_angle > angle_tolerance:
                     return False
-                    
+
             return True
 
         def _safe_extract_angle(point, center):
             """Safely extract angle from point relative to center, handling both complex and array types."""
             try:
-                if hasattr(point, 'real') and hasattr(point, 'imag'):
+                if hasattr(point, "real") and hasattr(point, "imag"):
                     # Complex number
                     diff = point - center
                     return float(np.arctan2(diff.imag, diff.real))
@@ -8333,9 +8388,10 @@ class Geomstr:
                         return 0.0
             except (TypeError, AttributeError, IndexError) as e:
                 import warnings
+
                 warnings.warn(
                     f"_safe_extract_angle: Failed to extract angle for point={point}, center={center}. Error: {e}. Returning fallback value 0.0.",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
                 return 0.0
 
@@ -8344,11 +8400,11 @@ class Geomstr:
             n = len(points)
             if n < 8:
                 return False
-            
+
             try:
                 # Calculate center point
                 center = np.mean(points, axis=0)
-                
+
                 # Calculate distances from center
                 distances = []
                 for p in points:
@@ -8357,19 +8413,19 @@ class Geomstr:
                         distances.append(float(dist))
                     except (TypeError, ValueError):
                         return False
-                
+
                 # For a circle, all distances should be equal
                 # For an ellipse, distances should follow a pattern
-                
+
                 min_dist = min(distances)
                 max_dist = max(distances)
-                
+
                 if min_dist == 0:
                     return False
-                
+
                 # Check if this could be an ellipse (ratio of major to minor axis)
                 axis_ratio = max_dist / min_dist
-                
+
                 # If points are very roughly circular or elliptical
                 if axis_ratio <= 3.0:  # Allow up to 3:1 ellipse ratio
                     # Check if distances follow a smooth pattern (not random)
@@ -8378,23 +8434,25 @@ class Geomstr:
                     for p in points:
                         angle = _safe_extract_angle(p, center)
                         angles.append(angle)
-                    
+
                     # Create angle-distance pairs and sort by angle
                     angle_dist_pairs = list(zip(angles, distances))
                     angle_dist_pairs.sort(key=lambda x: x[0])
-                    
+
                     # Check if distances change smoothly with angle
                     sorted_distances = [pair[1] for pair in angle_dist_pairs]
-                    
+
                     # Calculate variation in consecutive distance ratios
                     if len(sorted_distances) >= 4:
                         ratios = []
                         for i in range(len(sorted_distances)):
                             curr_dist = sorted_distances[i]
-                            next_dist = sorted_distances[(i + 1) % len(sorted_distances)]
+                            next_dist = sorted_distances[
+                                (i + 1) % len(sorted_distances)
+                            ]
                             if curr_dist > 0:
                                 ratios.append(next_dist / curr_dist)
-                        
+
                         # If ratios are relatively stable, likely an ellipse
                         if len(ratios) > 0:
                             ratio_mean = np.mean(ratios)
@@ -8404,7 +8462,7 @@ class Geomstr:
             except Exception:
                 # If any error occurs in ellipse detection, don't protect
                 return False
-            
+
             return False
 
         def _is_star_pattern(points):
@@ -8412,11 +8470,11 @@ class Geomstr:
             n = len(points)
             if n < 6:
                 return False
-            
+
             try:
                 # Calculate center point
                 center = np.mean(points, axis=0)
-                
+
                 # Calculate distances from center
                 distances = []
                 for p in points:
@@ -8425,46 +8483,48 @@ class Geomstr:
                         distances.append(float(dist))
                     except (TypeError, ValueError):
                         return False
-                
+
                 # For a star pattern, we expect alternating long and short distances
                 # Sort points by angle to analyze the distance pattern
                 angles = []
                 for p in points:
                     angle = _safe_extract_angle(p, center)
                     angles.append(angle)
-                
+
                 # Create angle-distance pairs and sort by angle
                 angle_dist_pairs = list(zip(angles, distances))
                 angle_dist_pairs.sort(key=lambda x: x[0])
                 sorted_distances = [pair[1] for pair in angle_dist_pairs]
-                
+
                 # Check for alternating pattern (star shape)
                 # Look for peaks and valleys in the distance pattern
                 peaks = 0
                 valleys = 0
-                
+
                 for i in range(len(sorted_distances)):
                     prev_dist = sorted_distances[i - 1]
                     curr_dist = sorted_distances[i]
                     next_dist = sorted_distances[(i + 1) % len(sorted_distances)]
-                    
+
                     if curr_dist > prev_dist and curr_dist > next_dist:
                         peaks += 1
                     elif curr_dist < prev_dist and curr_dist < next_dist:
                         valleys += 1
-                
+
                 # Star pattern should have multiple peaks and valleys
                 # and they should be roughly equal in number
                 if peaks >= 3 and valleys >= 3 and abs(peaks - valleys) <= 2:
                     # Check if the variation in distances is significant
                     min_dist = min(sorted_distances)
                     max_dist = max(sorted_distances)
-                    if min_dist > 0 and max_dist / min_dist > 1.5:  # Significant variation
+                    if (
+                        min_dist > 0 and max_dist / min_dist > 1.5
+                    ):  # Significant variation
                         return True
             except Exception:
                 # If any error occurs in star detection, don't protect
                 return False
-            
+
             return False
 
         def _rdp(points, epsilon: float):
@@ -8478,10 +8538,18 @@ class Geomstr:
                 shape_size = np.linalg.norm(max_pt - min_pt)
                 if shape_size > 0:
                     # Use adaptive tolerance based on shape size
-                    size_factor = min(1.0, 1000.0 / shape_size)  # Smaller factor for larger shapes
-                    protected_epsilon = epsilon * 0.05 * size_factor  # Much more conservative
-                    protected_epsilon = max(protected_epsilon, 0.1)  # Minimum protection
-                    protected_epsilon = min(protected_epsilon, 5.0)   # Maximum protection
+                    size_factor = min(
+                        1.0, 1000.0 / shape_size
+                    )  # Smaller factor for larger shapes
+                    protected_epsilon = (
+                        epsilon * 0.05 * size_factor
+                    )  # Much more conservative
+                    protected_epsilon = max(
+                        protected_epsilon, 0.1
+                    )  # Minimum protection
+                    protected_epsilon = min(
+                        protected_epsilon, 5.0
+                    )  # Maximum protection
                 else:
                     protected_epsilon = min(epsilon * 0.1, 2.0)
                 mask = _mask(points, protected_epsilon)
