@@ -9,6 +9,11 @@ _ = wx.GetTranslation
 
 
 class BalorOperationPanel(ScrolledPanel):
+    """Balor Operation Panel - Configure Balor laser operations
+
+    **Technical Details:**
+    - Help Section: baloroperation"""
+
     name = "Balor"
 
     def __init__(self, *args, context=None, node=None, **kwds):

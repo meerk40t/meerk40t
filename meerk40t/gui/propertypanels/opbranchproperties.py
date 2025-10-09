@@ -7,6 +7,12 @@ _ = wx.GetTranslation
 
 
 class OpBranchPanel(wx.Panel):
+    """Operation Branch Property Panel - Edit operation branch settings
+
+    **Technical Details:**
+    - Help Section: opbranchproperty
+    - Signals: loop_n, loop_continuous, loop_enabled"""
+
     name = "Loop Properties"
 
     def __init__(self, *args, context=None, node=None, **kwds):

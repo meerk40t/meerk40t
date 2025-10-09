@@ -203,6 +203,15 @@ class SelectDevice(wx.Dialog):
 
 
 class DevicePanel(wx.Panel):
+    """Device Panel - Configure and control your laser device settings
+
+    **Technical Details:**
+    - Help Section: devices
+    - Signals: pause, device;renamed, activate;device, pipe;running
+
+    **User Interface:**
+    - Open the configuration window for the active device"""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         # begin wxGlade: DevicesPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -243,7 +252,7 @@ class DevicePanel(wx.Panel):
         sizer_1.Add(sizer_3, 1, wx.EXPAND, 0)
         # All devices
         self.devices = []
-    
+
         self.button_create_device = wxButton(self, wx.ID_ANY, _("Create New Device"))
         sizer_3.Add(self.button_create_device, 0, 0, 0)
 
@@ -308,7 +317,7 @@ class DevicePanel(wx.Panel):
         if self.devices_list.GetSelectedItemCount() > 0:
             return self.devices_list.GetFirstSelected()
         return -1
-    
+
     def pane_show(self, *args):
         self.refresh_device_tree()
         if len(self.devices) > 0:
@@ -615,7 +624,7 @@ class DevicePanel(wx.Panel):
                     self.devices_list.Focus(idx)
 
             return handler
-        
+
         idx = self.current_item
         if idx < 0:
             return
@@ -623,7 +632,7 @@ class DevicePanel(wx.Panel):
         if service is not None:
             service.kernel.activate_service_path("device", service.path)
             self.recolor_device_items()
-            wx.CallLater(750, reselect(idx))    
+            wx.CallLater(750, reselect(idx))
 
     def on_button_config_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         self.context("window toggle Configuration\n")

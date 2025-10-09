@@ -182,6 +182,21 @@ class TextVariables(wx.Panel):
 
 
 class TextPropertyPanel(ScrolledPanel):
+    """Text Property Panel - Edit text element properties and formatting
+
+    **Technical Details:**
+    - Help Section: textproperty
+
+    **User Interface:**
+    - Toggle strikethrough
+    - Toggle italic
+    - Decrease fontsize
+    - If active, preview will translate variables
+    - Toggle bold
+    - Define where to place the origin (i.e. current mouse position)
+    - Choose System-font
+    - Toggle underline"""
+
     def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
@@ -209,10 +224,11 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wxBitmapButton(
-            self, wx.ID_ANY,
+            self,
+            wx.ID_ANY,
             icons8_choose_font.GetBitmap(
                 resize=STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2
-            )
+            ),
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node

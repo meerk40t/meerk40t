@@ -3,7 +3,7 @@ from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
-from .wxutils import wxCheckBox, TextCtrl
+from .wxutils import TextCtrl, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -25,12 +25,20 @@ def register_panel(window, context):
     pane.control = panel
     pane.submenu = "_50_" + _("Tools")
     pane.helptext = _("Edit job notes")
- 
+
     window.on_pane_create(pane)
     context.register("pane/notes", pane)
 
 
 class NotePanel(wx.Panel):
+    """Notes Panel - Add and manage notes for your laser projects
+
+    **Technical Details:**
+    - Help Section: notes
+
+    **User Interface:**
+    - Automatically open notes if they exist when file is opened."""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -140,4 +148,3 @@ class Notes(MWindow):
     @staticmethod
     def helptext():
         return _("Edit job notes")
-    

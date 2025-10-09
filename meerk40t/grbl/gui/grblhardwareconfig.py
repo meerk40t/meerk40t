@@ -114,6 +114,7 @@ class GrblIoButtons(wx.Panel):
 
     def on_url_click(self, event):
         import webbrowser
+
         url = "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md"
         webbrowser.open(url, new=0, autoraise=True)
 
@@ -213,6 +214,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
     def on_double_click(self, event):
         import webbrowser
+
         x, y = event.GetPosition()
         row_id, flags = self.chart.HitTest((x, y))
         if row_id < 0:
@@ -236,6 +238,11 @@ class GrblHardwareProperties(ScrolledPanel):
 
 
 class GRBLHardwareConfig(MWindow):
+    """GRBL Hardware Configuration Panel - Configure GRBL hardware settings
+
+    **Technical Details:**
+    - Help Section: grblhwconfig"""
+
     def __init__(self, *args, **kwds):
         super().__init__(1000, 500, *args, **kwds)
         self.service = self.context.device

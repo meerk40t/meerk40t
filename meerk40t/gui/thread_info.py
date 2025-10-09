@@ -37,6 +37,15 @@ def register_panel_thread_info(window, context):
 
 
 class ThreadPanel(wx.Panel):
+    """Thread Info Panel - Display system thread information
+
+    **Technical Details:**
+    - Help Section: threadinfo
+    - Signals: thread_update
+
+    **User Interface:**
+    - List of background tasks"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

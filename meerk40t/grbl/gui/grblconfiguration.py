@@ -14,6 +14,17 @@ _ = wx.GetTranslation
 
 
 class ConfigurationInterfacePanel(ScrolledPanel):
+    """GRBL Configuration Panel - Configure GRBL laser settings
+
+    **Technical Details:**
+    - Help Section: grblconfig
+
+    **User Interface:**
+    - Select this only for debugging without a physical laser available.
+    - Select this if the GRBL device is contacted via TCP connection
+    - Select this if the GRBL device is contacted via WebSocket connection
+    - Select this if you have a GRBL device running through a serial connection."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
         kwds["style"] = kwds.get("style", 0)

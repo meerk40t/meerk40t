@@ -15,6 +15,15 @@ _ = wx.GetTranslation
 
 
 class NewlyControllerPanel(wx.ScrolledWindow):
+    """Newly Controller Panel - Control Newly laser operations
+
+    **Technical Details:**
+    - Help Section: newlycontroller
+    - Signals: newly_controller_update, pipe;usb_status
+
+    **User Interface:**
+    - Force connection/disconnection from the device."""
+
     def __init__(self, *args, context=None, **kwargs):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
@@ -97,7 +106,9 @@ class NewlyControllerPanel(wx.ScrolledWindow):
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
         self.button_device_connect.SetBitmap(
-            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size(self.context))
+            icons8_connected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size(self.context)
+            )
         )
         self.button_device_connect.Enable()
 

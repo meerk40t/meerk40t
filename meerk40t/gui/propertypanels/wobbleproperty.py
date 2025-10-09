@@ -10,6 +10,17 @@ _ = wx.GetTranslation
 
 
 class WobblePropertyPanel(ScrolledPanel):
+    """WobblePropertyPanel - User interface panel for wobbles functionality
+
+    **Technical Details:**
+    - Help Section: wobbles
+
+    **User Interface:**
+    - The wobble pattern to be applied
+    - How quickly does the wobble pattern revolve around the path
+    - Segmentation size, the wobble pattern will be applied at every segment
+    - Wobble size, does influence the size of the wobble pattern"""
+
     name = _("Wobble")
 
     def __init__(self, *args, context=None, node=None, **kwds):

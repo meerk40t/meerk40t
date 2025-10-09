@@ -37,6 +37,22 @@ def register_panel_position(window, context):
 
 
 class PositionPanel(wx.Panel):
+    """Position Panel - Display and set current laser head position
+
+    **Technical Details:**
+    - Help Section: position
+    - Signals: modified_by_tool, refresh_scene
+
+    **User Interface:**
+    - Apply the changes to all emphasized elements in the scene
+    - New Y-coordinate of left top corner (enter to apply)
+    - If checked then each element will get the new value of the current field, if unchecked then the new values apply to the selection-dimensions
+    - Set the point of reference for the element,\n
+    - New width (enter to apply)
+    - New X-coordinate of left top corner (enter to apply)
+    - If checked then the aspect ratio (width / height) will be maintained
+    - New height (enter to apply)"""
+
     def __init__(self, *args, context=None, small=False, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

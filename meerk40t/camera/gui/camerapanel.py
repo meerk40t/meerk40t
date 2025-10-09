@@ -67,6 +67,21 @@ def register_panel_camera(window, context):
 
 
 class CameraPanel(wx.Panel, Job):
+    """Camera Panel - Control camera settings and image capture
+
+    **Technical Details:**
+    - Help Section: camera
+    - Signals: refresh_scene
+
+    **User Interface:**
+    - Corrects Fisheye lensing, must be trained with checkerboard image.
+    - The four marker locations (in scene when unchecked) are transformed into corners of a regular square shape.
+    - Reconnect Camera
+    - Update Image
+    - Export Snapshot
+    - Detect Distortions/Calibration\n
+    - Set the camera frames per second. A value of 0 means a frame every 5 seconds."""
+
     def __init__(
         self, *args, context=None, gui=None, index: int = 0, pane=False, **kwds
     ):

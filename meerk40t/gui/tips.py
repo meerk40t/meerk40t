@@ -35,9 +35,18 @@ _ = wx.GetTranslation
 
 
 class TipPanel(wx.Panel):
-    """
-    Display MeerK40t usage tips
-    """
+    """Tips Panel - Display helpful usage tips and hints
+
+    **Technical Details:**
+    - Help Section: tips
+
+    **User Interface:**
+    - Launch an example, please be aware that this might change your design,\n
+    - Show tips at program start.\n
+    - Look for new tips on MeerK40ts website.\n
+    - Jump to the next tip
+    - Jump back to the previously displayed tip
+    - Couldn"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

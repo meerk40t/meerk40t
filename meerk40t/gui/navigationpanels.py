@@ -404,6 +404,11 @@ class TimerButtons:
 
 
 class ZMovePanel(wx.Panel):
+    """Z-Move Panel - Control the up/down movement of the laser head
+
+    **Technical Details:**
+    - Help Section: zmove"""
+
     Z_SMALL = 1
     Z_MEDIUM = 10
     Z_LARGE = 100
@@ -567,6 +572,21 @@ class ZMovePanel(wx.Panel):
 
 
 class Drag(wx.Panel):
+    """Drag Panel - Position the laser head and align it with your design
+
+    **Technical Details:**
+    - Help Section: drag
+
+    **User Interface:**
+    - Move the selection and laser position leftwards
+    - Align laser with the first position
+    - Perform a convex hull trace of the selection
+    - Move the selection and laser position rightwards
+    - Move the selection and laser position downwards
+    - Align laser with the upper right corner of the selection
+    - Align laser with the center of the selection
+    - Perform a simple trace of the selection (Right=Circle around)"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Drag.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1095,6 +1115,21 @@ class Drag(wx.Panel):
 
 
 class Jog(wx.Panel):
+    """Jog Panel - Manually move the laser head around the work area
+
+    **Technical Details:**
+    - Help Section: jog
+
+    **User Interface:**
+    - Move laser diagonally in the up and left direction
+    - Move laser diagonally in the up and right direction
+    - Send laser to home position (right click: to physical home)
+    - Move laser in the down direction
+    - Unlock the laser rail
+    - Caution: allow laser movement outside bed size
+    - Move laser in the up direction
+    - Move laser in the left direction"""
+
     def __init__(self, *args, context=None, suppress_z_controls=False, **kwds):
         # begin wxGlade: Jog.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1511,6 +1546,16 @@ class Jog(wx.Panel):
 
 
 class MovePanel(wx.Panel):
+    """Move Panel - Send the laser to specific coordinates or saved positions
+
+    **Technical Details:**
+    - Help Section: move
+
+    **User Interface:**
+    - Set Y value for the Move To
+    - Set X value for the Move To
+    - Current laserhead position. Double-click to use."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1794,6 +1839,17 @@ class MovePanel(wx.Panel):
 
 
 class PulsePanel(wx.Panel):
+    """Pulse Panel - Fire short test laser pulses for alignment and testing
+
+    **Technical Details:**
+    - Help Section: pulse
+
+    **User Interface:**
+    - Set the power of the laser pulse in ppi
+    - Set the duration of the laser pulse
+    - Set the power of the laser pulse in percent
+    - Fire a short laser pulse"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PulsePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -2166,6 +2222,22 @@ class PulsePanel(wx.Panel):
 
 
 class Transform(wx.Panel):
+    """Transform - User interface panel for transform functionality
+
+    **Technical Details:**
+    - Help Section: transform
+    - Signals: modified_by_tool, refresh_scene
+
+    **User Interface:**
+    - Translate Up by 1x / 10x Jog-Distance on left / right click
+    - Reset Matrix
+    - Translate Left by 1x / 10x Jog-Distance on left / right click
+    - Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale.
+    - Translate X - moves the element by this amount of mils in the X-direction;
+    - Rotate Counterclockwise by 5° / by 90° on left / right click
+    - Translate Down by 1x / 10x Jog-Distance on left / right click
+    - Scale Down by 5% / 50% on left / right click"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Transform.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -2722,6 +2794,11 @@ class Transform(wx.Panel):
 
 
 class JogDistancePanel(wx.Panel):
+    """Jog Panel - Manually move the laser head around the work area
+
+    **Technical Details:**
+    - Help Section: jog"""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         # begin wxGlade: JogDistancePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

@@ -986,9 +986,14 @@ class HersheyFontSelector(MWindow):
 
 
 class PanelFontManager(wx.Panel):
-    """
-    Vector Font Manager
-    """
+    """Vector Text Panel - Create and edit text as vector graphics
+
+    **Technical Details:**
+    - Help Section: vectortext
+
+    **User Interface:**
+    - Additional directory for userdefined fonts (also used to store some cache files)
+    - Invalid directory! Will not be used, please provide a valid path."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__

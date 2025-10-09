@@ -438,10 +438,16 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
                 self.combo_svg_ppi.SetSelection(3)
         elements.svg_ppi = svg_ppi
 
+
 # end of class PreferencesPixelsPerInchPanel
 
 
 class PreferencesMain(wx.Panel):
+    """Preferences Panel - Configure MeerK40t application settings
+
+    **Technical Details:**
+    - Help Section: preferences"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -462,7 +468,13 @@ class PreferencesMain(wx.Panel):
             id=wx.ID_ANY,
             context=context,
             choices="preferences",
-            constraint=("-Input/Output", "-Classification", "-Gui", "-Scene", "-Operations"),
+            constraint=(
+                "-Input/Output",
+                "-Classification",
+                "-Gui",
+                "-Scene",
+                "-Operations",
+            ),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -482,6 +494,11 @@ class PreferencesMain(wx.Panel):
 
 
 class PreferencesInputOutput(wx.Panel):
+    """Preferences Panel - Configure MeerK40t application settings
+
+    **Technical Details:**
+    - Help Section: preferences"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -512,6 +529,7 @@ class PreferencesInputOutput(wx.Panel):
     def delegates(self):
         yield self.panel_ppi
         yield self.panel_input_output
+
 
 # end of class PreferencesMain
 
@@ -571,7 +589,9 @@ class Preferences(MWindow):
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
 
-        self.panel_input_output = PreferencesInputOutput(self, wx.ID_ANY, context=self.context)
+        self.panel_input_output = PreferencesInputOutput(
+            self, wx.ID_ANY, context=self.context
+        )
 
         inject_choices = [
             {
@@ -766,7 +786,15 @@ class Preferences(MWindow):
             self.panel_color,
             self.panel_ribbon,
         ]
-        self.panel_ids = ["main", "classification", "ops", "gui", "scene", "color", "ribbon"]
+        self.panel_ids = [
+            "main",
+            "classification",
+            "ops",
+            "gui",
+            "scene",
+            "color",
+            "ribbon",
+        ]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(

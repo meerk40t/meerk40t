@@ -13,6 +13,12 @@ _ = wx.GetTranslation
 
 
 class NewlyConfiguration(MWindow):
+    """Newly Configuration Panel - Configure Newly laser settings
+
+    **Technical Details:**
+    - Help Section: newlyconfig
+    - Signals: activate;device"""
+
     def __init__(self, *args, **kwds):
         super().__init__(420, 570, *args, **kwds)
         self.context = self.context.device

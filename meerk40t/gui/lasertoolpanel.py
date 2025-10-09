@@ -26,6 +26,16 @@ DEFAULT_LEN = "5cm"
 
 
 class LaserToolPanel(wx.Panel):
+    """Templates Panel - Manage and apply design templates
+
+    **Technical Details:**
+    - Help Section: templates
+    - Signals: emulator;position, status;position, driver;position
+
+    **User Interface:**
+    - Extension of the square to create
+    - Place the laser over the desired point and click..."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

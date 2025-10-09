@@ -1853,6 +1853,21 @@ class ImageVectorisationPanel(ScrolledPanel):
 
 
 class ImagePropertyPanel(ScrolledPanel):
+    """Image Property Panel - Edit image element properties
+
+    **Technical Details:**
+    - Help Section: imageproperty
+
+    **User Interface:**
+    - Prevent final crop after all operations
+    - Select dither algorithm to use
+    - Enable Dither
+    - Dots Per Inch
+    - Enabled: Keep size and amend internal resolution
+    - Reset the grayscale modifiers to standard values
+    - Select image enhancement script to apply
+    - Red component amount"""
+
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

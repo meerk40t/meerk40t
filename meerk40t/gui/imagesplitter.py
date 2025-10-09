@@ -151,6 +151,11 @@ class InfoPanel(wx.Panel):
 
 
 class SplitterPanel(wx.Panel):
+    """Image Split Panel - Split images into multiple parts
+
+    **Technical Details:**
+    - Help Section: imagesplit"""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -303,6 +308,11 @@ class SplitterPanel(wx.Panel):
 
 
 class KeyholePanel(wx.Panel):
+    """Keyhole Panel - Create keyhole shapes and patterns
+
+    **Technical Details:**
+    - Help Section: keyhole"""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)

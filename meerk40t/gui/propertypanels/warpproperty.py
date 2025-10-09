@@ -15,9 +15,11 @@ _ = wx.GetTranslation
 
 
 class WarpPropertyPanel(ScrolledPanel):
-    """
-    Minimal property page for warp-effects
-    """
+    """WarpPropertyPanel - User interface panel for warp functionality
+
+    **Technical Details:**
+    - Help Section: warp"""
+
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -65,11 +67,17 @@ class WarpPropertyPanel(ScrolledPanel):
         sizer_instructions = StaticBoxSizer(
             self, wx.ID_ANY, _("Instructions:"), wx.HORIZONTAL
         )
-        content = _("Use the finger tool to modify the containing shape of the warped children")
+        content = _(
+            "Use the finger tool to modify the containing shape of the warped children"
+        )
         label_instructions = wxStaticText(self, wx.ID_ANY, content)
         iconsize = 40
         finger_icon = wxStaticBitmap(self, wx.ID_ANY, size=wx.Size(iconsize, iconsize))
-        finger_icon.SetBitmap(icons8_finger.GetBitmap(resize=iconsize * self.context.root.bitmap_correction_scale))
+        finger_icon.SetBitmap(
+            icons8_finger.GetBitmap(
+                resize=iconsize * self.context.root.bitmap_correction_scale
+            )
+        )
         sizer_instructions.Add(finger_icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_instructions.Add(label_instructions, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(sizer_instructions, 0, wx.EXPAND, 0)

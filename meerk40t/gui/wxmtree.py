@@ -123,6 +123,17 @@ def register_panel_tree(window, context):
 
 
 class TreePanel(wx.Panel):
+    """Element Tree Panel - Navigate and manage design elements hierarchy
+
+    **Technical Details:**
+    - Help Section: tree
+    - Signals: activate_single_node, activate_selected_nodes, sync_expansion, select_emphasized_tree, updateelem_tree, element_property_reload, reset_formatter, element_property_update, activate;device, rebuild_tree, refresh_tree, update_group_labels, updateop_tree, freeze_tree, warn_state_update
+
+    **User Interface:**
+    - Reactivate disabled operations that prevent elements from being burnt
+    - Classify unassigned elements and use only existing operations
+    - Classify unassigned elements and create operations if necessary"""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)

@@ -38,6 +38,20 @@ def register_panel_magnetoptions(window, context):
 
 
 class MagnetOptionPanel(wx.Panel):
+    """Snap Options Panel - Configure element snapping behavior
+
+    **Technical Details:**
+    - Help Section: magnet
+
+    **User Interface:**
+    - Name to save to / load from the current settings
+    - Load an existing setting configuration
+    - Will a magnet line attract the left/right edges of an object
+    - Will a magnet line attract the top/bottom edges of an object
+    - Define the attraction strength from weak (very close) to enormous (from far away)
+    - Save the current configuration for later reuse
+    - Will a magnet line attract the center of an object"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -221,6 +235,21 @@ class MagnetOptionPanel(wx.Panel):
 
 
 class MagnetActionPanel(wx.Panel):
+    """Snap Options Panel - Configure element snapping behavior
+
+    **Technical Details:**
+    - Help Section: magnet
+
+    **User Interface:**
+    - Clears all magnet lines
+    - Toggle a magnet line at the right edge of the selection
+    - Clears magnet lines on X-axis
+    - Toggle a magnet line at the position on the Y-axis
+    - Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the horizontal extent of the selection
+    - Toggle a magnet line at the top edge of the selection
+    - Toggle magnet lines at 1/5, 2/5, 3/5 and 4/5 across the vertical extent of the selection
+    - Toggle a magnet line at the position on the X-axis"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -482,6 +511,12 @@ class MagnetActionPanel(wx.Panel):
 
 
 class MagnetPanel(wx.Panel):
+    """Snap Options Panel - Configure element snapping behavior
+
+    **Technical Details:**
+    - Help Section: magnet
+    - Signals: emphasized, magnet_options"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

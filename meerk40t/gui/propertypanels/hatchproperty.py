@@ -11,6 +11,11 @@ _ = wx.GetTranslation
 
 
 class HatchPropertyPanel(ScrolledPanel):
+    """HatchPropertyPanel - User interface panel for hatches functionality
+
+    **Technical Details:**
+    - Help Section: hatches"""
+
     name = _("Hatch")
 
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -123,25 +128,30 @@ class HatchPropertyPanel(ScrolledPanel):
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.check_directional = wx.CheckBox(self, wx.ID_ANY, _("Unidirectional"))
-        
+
         # Add algorithm selection dropdown
         self.combo_algorithm = wxComboBox(
-            self, wx.ID_ANY, 
-            choices=[_("Auto-Select"), _("Scanbeam (Default)"), _("Direct Grid (Fast)")], 
-            style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self,
+            wx.ID_ANY,
+            choices=[
+                _("Auto-Select"),
+                _("Scanbeam (Default)"),
+                _("Direct Grid (Fast)"),
+            ],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         # Set initial selection based on node property
-        if hasattr(node, 'hatch_algorithm'):
+        if hasattr(node, "hatch_algorithm"):
             algo_map = {"auto": 0, "scanbeam": 1, "direct_grid": 2}
             self.combo_algorithm.SetSelection(algo_map.get(node.hatch_algorithm, 0))
         else:
             self.combo_algorithm.SetSelection(0)  # Default to auto-select
-        
+
         style_sizer = wx.BoxSizer(wx.HORIZONTAL)
         style_sizer.Add(self.combo_fill_style, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         style_sizer.Add(self.check_directional, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_fill.Add(style_sizer, 0, wx.EXPAND, 0)
-        
+
         # Add algorithm selection
         algo_sizer = wx.BoxSizer(wx.HORIZONTAL)
         algo_label = wx.StaticText(self, wx.ID_ANY, _("Algorithm:"))
@@ -429,17 +439,25 @@ class HatchPropertyPanel(ScrolledPanel):
         # print(f"Calculate hatch lines {perf_counter():.3f}")
         w, h = self._Buffer.Size
         hatch_type = self.node.hatch_type
-        
+
         # Check if we should use our optimized Direct Grid algorithm
-        if hasattr(self.node, 'hatch_algorithm') and self.node.hatch_algorithm == 'direct_grid':
+        if (
+            hasattr(self.node, "hatch_algorithm")
+            and self.node.hatch_algorithm == "direct_grid"
+        ):
             # Use Direct Grid algorithm for preview
             self._calculate_hatch_lines_direct_grid(w, h)
             return
-        elif hasattr(self.node, 'hatch_algorithm') and self.node.hatch_algorithm == 'auto' and hasattr(self.node, '_should_use_direct_grid') and self.node._should_use_direct_grid():
+        elif (
+            hasattr(self.node, "hatch_algorithm")
+            and self.node.hatch_algorithm == "auto"
+            and hasattr(self.node, "_should_use_direct_grid")
+            and self.node._should_use_direct_grid()
+        ):
             # Auto-selection chose Direct Grid
             self._calculate_hatch_lines_direct_grid(w, h)
             return
-        
+
         # Use original algorithm system
         hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
         if hatch_algorithm is None:
@@ -503,16 +521,22 @@ class HatchPropertyPanel(ScrolledPanel):
             last_y = y
         self.hatch_lines = h_start, h_end
         self.travel_lines = t_start, t_end
-    
+
     def _calculate_hatch_lines_direct_grid(self, w, h):
         """Calculate hatch lines using Direct Grid algorithm for preview."""
         try:
             # Import Direct Grid algorithm
-            import sys
             import os
-            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+            import sys
+
+            sys.path.insert(
+                0,
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                ),
+            )
             from direct_grid_fill import direct_grid_fill
-            
+
             # Create outline geometry like the original method
             paths = [
                 complex(w * 0.05, h * 0.05),
@@ -521,9 +545,10 @@ class HatchPropertyPanel(ScrolledPanel):
                 complex(w * 0.05, h * 0.95),
                 complex(w * 0.05, h * 0.05),
             ]
-            
+
             # Convert to Geomstr
             from meerk40t.tools.geomstr import Geomstr
+
             outline_geom = Geomstr()
             last = None
             for c in paths:
@@ -531,7 +556,7 @@ class HatchPropertyPanel(ScrolledPanel):
                     outline_geom.line(last, c)
                 last = c
             outline_geom.end()
-            
+
             # Add inner rectangle
             inner_paths = [
                 complex(w * 0.25, h * 0.25),
@@ -540,29 +565,40 @@ class HatchPropertyPanel(ScrolledPanel):
                 complex(w * 0.25, h * 0.75),
                 complex(w * 0.25, h * 0.25),
             ]
-            
+
             last = None
             for c in inner_paths:
                 if last is not None:
                     outline_geom.line(last, c)
                 last = c
             outline_geom.end()
-            
+
             # Apply matrix scaling like original
             from meerk40t.svgelements import Matrix
+
             matrix = Matrix.scale(0.018)
-            
+
             # Get hatch parameters
-            distance = self.node._distance if hasattr(self.node, '_distance') and self.node._distance else 5.0
-            angle = self.node._angle if hasattr(self.node, '_angle') and self.node._angle else 0.0
-            unidirectional = getattr(self.node, 'unidirectional', False)
-            
+            distance = (
+                self.node._distance
+                if hasattr(self.node, "_distance") and self.node._distance
+                else 5.0
+            )
+            angle = (
+                self.node._angle
+                if hasattr(self.node, "_angle") and self.node._angle
+                else 0.0
+            )
+            unidirectional = getattr(self.node, "unidirectional", False)
+
             # Apply matrix scaling to distance
             distance *= 0.018
-            
+
             # Generate hatch using Direct Grid
-            hatch_result = direct_grid_fill(outline_geom, angle, distance, unidirectional)
-            
+            hatch_result = direct_grid_fill(
+                outline_geom, angle, distance, unidirectional
+            )
+
             # Convert result to the format expected by the preview
             hatch = []
             for i in range(hatch_result.index):
@@ -574,7 +610,7 @@ class HatchPropertyPanel(ScrolledPanel):
                     hatch.append((p1.real, p1.imag))
                     hatch.append((p2.real, p2.imag))
                     hatch.append(None)  # End line
-            
+
             # Process like original method
             o_start = []
             o_end = []
@@ -590,7 +626,7 @@ class HatchPropertyPanel(ScrolledPanel):
                 c1, c2 = outer_outline[i], outer_outline[i + 1]
                 o_start.append((c1.real, c1.imag))
                 o_end.append((c2.real, c2.imag))
-                
+
             # Inner rectangle outline
             inner_outline = [
                 complex(w * 0.25, h * 0.25),
@@ -603,9 +639,9 @@ class HatchPropertyPanel(ScrolledPanel):
                 c1, c2 = inner_outline[i], inner_outline[i + 1]
                 o_start.append((c1.real, c1.imag))
                 o_end.append((c2.real, c2.imag))
-                
+
             self.outline_lines = o_start, o_end
-            
+
             h_start = []
             h_end = []
             t_start = []
@@ -632,17 +668,17 @@ class HatchPropertyPanel(ScrolledPanel):
                 travel = False
                 last_x = x
                 last_y = y
-            
+
             self.hatch_lines = h_start, h_end
             self.travel_lines = t_start, t_end
-            
+
         except ImportError:
             # Fallback to original method if Direct Grid not available
             self.calculate_hatch_lines_original(w, h)
         except Exception as e:
             print(f"Error in Direct Grid preview: {e}")
             self.calculate_hatch_lines_original(w, h)
-    
+
     def calculate_hatch_lines_original(self, w, h):
         """Original hatch line calculation method."""
         hatch_type = self.node.hatch_type

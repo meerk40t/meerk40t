@@ -197,6 +197,15 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
+    """Alignment Panel - Align selected design elements relative to reference points (selection bounds, first/last selected, laser bed, or reference objects)
+
+    **Technical Details:**
+    - Help Section: alignment
+
+    **User Interface:**
+    - Align object to the top, centered or to the bottom in relation to the target point
+    - Align object at the left side, centered or to the right side in relation to the target point"""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -402,6 +411,19 @@ class AlignmentPanel(wx.Panel):
 
 
 class DistributionPanel(wx.Panel):
+    """Distribution Panel - Distribute selected design elements along various paths and shapes
+
+    **Technical Details:**
+    - Help Section: distribute
+
+    **User Interface:**
+    - Defines the order in which the selection is being processed
+    - Align object at the left side, centered or to the right side in relation to the target point
+    - Rotate elements parallel to the path
+    - Keep the first and last element inside the target area, effectively ignoring the X- and Y-settings
+    - Align object to the top, centered or to the bottom in relation to the target point
+    - Defines the area / the shape on which the selection will be distributed:"""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -1109,6 +1131,18 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
+    """Arrangement Panel - Arrange selected design elements in customizable grid layouts
+
+    **Technical Details:**
+    - Help Section: arrangement
+
+    **User Interface:**
+    - Set if all rows need to have the same size (i.e. maximum height over all row)
+    - Set the distance between columns
+    - Set if all columns need to have the same size (i.e. maximum width over all columns)
+    - Set the distance between rows
+    - Rearrange all selected elements"""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)

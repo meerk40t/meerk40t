@@ -16,6 +16,15 @@ _ = wx.GetTranslation
 
 
 class OpInfoPanel(ScrolledPanel):
+    """Operation Info Panel - Display detailed information about laser operations
+
+    **Technical Details:**
+    - Help Section: operationinfo
+    - Signals: element_property_update, rebuild_tree, element_property_reload, tree_changed
+
+    **User Interface:**
+    - Right-Click for more options for ops and unassigned elements"""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -27,7 +36,8 @@ class OpInfoPanel(ScrolledPanel):
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
-            context=self.context, list_name="list_operationinfo",
+            context=self.context,
+            list_name="list_operationinfo",
         )
         self.list_operations.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
 

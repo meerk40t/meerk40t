@@ -53,6 +53,16 @@ def register_panel_wordlist(window, context):
 
 
 class WordlistMiniPanel(wx.Panel):
+    """Word List Panel - Manage word lists for text operations
+
+    **Technical Details:**
+    - Help Section: wordlist
+
+    **User Interface:**
+    - Wordlist: go to previous page (right-click to previous entry)
+    - Manages Wordlist-Entries
+    - Wordlist: go to next page (right-click to next entry)"""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -63,13 +73,17 @@ class WordlistMiniPanel(wx.Panel):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wxButton(self, wx.ID_ANY, _("Edit"))
         self.button_edit.SetBitmap(
-            icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
+            icons8_curly_brackets.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
         )
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
         self.button_next = wxButton(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(
-            icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
+            icons8_circled_right.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
         )
         self.button_next.SetToolTip(
             _("Wordlist: go to next page (right-click to next entry)")
@@ -77,7 +91,9 @@ class WordlistMiniPanel(wx.Panel):
 
         self.button_prev = wxButton(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(
-            icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
+            icons8_circled_left.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
         )
         self.button_prev.SetToolTip(
             _("Wordlist: go to previous page (right-click to previous entry)")
@@ -152,6 +168,22 @@ class WordlistMiniPanel(wx.Panel):
 
 
 class WordlistPanel(wx.Panel):
+    """Word List Panel - Manage word lists for text operations
+
+    **Technical Details:**
+    - Help Section: wordlist
+    - Signals: wordlist
+
+    **User Interface:**
+    - Delete the current wordlist entry
+    - Edit the current entry for the active variable
+    - Load wordlist from disk
+    - Add a new entry for the active variable
+    - Delete the current entry for the active variable
+    - All changes to the wordlist will be saved immediately
+    - Save current wordlist to disk
+    - Paste the clipboard as new entries for the active variable, any line as new entry"""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -195,7 +227,7 @@ class WordlistPanel(wx.Panel):
             | wx.LC_SINGLE_SEL
             | wx.LC_EDIT_LABELS,
             context=self.context,
-            list_name="list_wordlist"
+            list_name="list_wordlist",
         )
         sizer_grid_left.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 

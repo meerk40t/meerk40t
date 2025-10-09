@@ -29,6 +29,19 @@ def register_panel_snapoptions(window, context):
 
 
 class SnapOptionPanel(wx.Panel):
+    """Snap Options Panel - Configure element snapping behavior
+
+    **Technical Details:**
+    - Help Section: snap
+    - Signals: show_attract_len, grid_attract_len, snap_grid, snap_points, action_attract_len
+
+    **User Interface:**
+    - Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection
+    - Set the screen distance in pixels inside which the cursor will snap to the nearest element point
+    - Shall the cursor snap to the next grid intersection?
+    - The screen distance in pixels inside which snap points will be highlighted
+    - Shall the cursor snap to the next element point?"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

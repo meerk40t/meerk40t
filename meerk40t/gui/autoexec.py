@@ -2,17 +2,29 @@
 This module offers the opportunity to define a couple of commands that will automatically be executed on a (main) file load
 """
 from platform import system
+
 import wx
 from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_circled_play
 from .mwindow import MWindow
-from .wxutils import wxCheckBox, wxButton, dip_size, TextCtrl
+from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox
 
 _ = wx.GetTranslation
 
 
 class AutoExecPanel(wx.Panel):
+    """Auto Execute Panel - Configure automatic command execution
+
+    **Technical Details:**
+    - Help Section: autoexec
+
+    **User Interface:**
+    - List of commands that will be immediately executed after the file has been loaded
+    - Click to get a list of useful commands
+    - Execute the commands
+    - The autoexec content of this file will be ignored if this option is deactive"""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -43,16 +55,29 @@ class AutoExecPanel(wx.Panel):
         self.context(".file_startup\n")
 
     def on_check(self, event):
-        self.context.elements.last_file_autoexec_active = self.check_auto_startup.GetValue()
+        self.context.elements.last_file_autoexec_active = (
+            self.check_auto_startup.GetValue()
+        )
 
     def __set_properties(self):
         self.text_autoexec.SetToolTip(
-            _("List of commands that will be immediately executed after the file has been loaded") + "\n" +
-            _("While this might be useful to immediately change a device, it can also be dangerous if you e.g. chose to start a burn.") + "\n" +
-            _("Use with care, please!") + "\n" +
-            _("Tip: you can deactivate any command by starting the line with a '#'")
+            _(
+                "List of commands that will be immediately executed after the file has been loaded"
+            )
+            + "\n"
+            + _(
+                "While this might be useful to immediately change a device, it can also be dangerous if you e.g. chose to start a burn."
+            )
+            + "\n"
+            + _("Use with care, please!")
+            + "\n"
+            + _("Tip: you can deactivate any command by starting the line with a '#'")
         )
-        self.check_auto_startup.SetToolTip(_("The autoexec content of this file will be ignored if this option is deactive"))
+        self.check_auto_startup.SetToolTip(
+            _(
+                "The autoexec content of this file will be ignored if this option is deactive"
+            )
+        )
         self.button_execute.SetToolTip(_("Execute the commands"))
         self.button_adding.SetToolTip(_("Click to get a list of useful commands"))
         if system() == "Windows":
@@ -79,7 +104,9 @@ class AutoExecPanel(wx.Panel):
         if text is None:
             text = ""
         self.text_autoexec.SetValue(text)
-        self.check_auto_startup.SetValue(self.context.elements.last_file_autoexec_active)
+        self.check_auto_startup.SetValue(
+            self.context.elements.last_file_autoexec_active
+        )
         self.context.listen("autoexec", self.on_autoexec_listen)
 
     def pane_hide(self):
@@ -93,7 +120,7 @@ class AutoExecPanel(wx.Panel):
             def handler(event):
                 t = self.text_autoexec.GetValue()
                 if t:
-                    t+= "\n"
+                    t += "\n"
                 t += command
                 self.text_autoexec.SetValue(t)
                 self.text_autoexec.SetInsertionPointEnd()
@@ -102,7 +129,10 @@ class AutoExecPanel(wx.Panel):
 
         useful = [
             ("clear", _("Clear console")),
-            ("planz clear copy preprocess validate blob preopt optimize\nwindow open Simulation z", _("Start simulation")),
+            (
+                "planz clear copy preprocess validate blob preopt optimize\nwindow open Simulation z",
+                _("Start simulation"),
+            ),
             ("burn", _("Burn content on current device")),
         ]
         kernel = self.context.kernel
@@ -133,7 +163,9 @@ class AutoExecPanel(wx.Panel):
 
             msg += f" - {type_info} - {family_info}"
 
-            useful.append( (f"device activate {label}", _("Activate {info}").format(info=msg)))
+            useful.append(
+                (f"device activate {label}", _("Activate {info}").format(info=msg))
+            )
 
         menu = wx.Menu()
         item = wx.MenuItem(menu, wx.ID_ANY, _("Clear all"))
@@ -196,4 +228,3 @@ class AutoExec(MWindow):
     @staticmethod
     def helptext():
         return _("Edit commands to be executed on file load")
-    

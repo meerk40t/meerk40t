@@ -27,9 +27,17 @@ _ = wx.GetTranslation
 
 
 class KerfPanel(wx.Panel):
-    """
-    UI for KerfTest, allows setting of parameters
-    """
+    """Kerf Test Panel - Test and compensate for material kerf
+
+    **Technical Details:**
+    - Help Section: kerf
+
+    **User Interface:**
+    - Horizontal gap between patterns
+    - Create a test-pattern with your values
+    - Dimension of the to be created pattern
+    - Minimum value for Kerf
+    - Maximum value for Kerf"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__

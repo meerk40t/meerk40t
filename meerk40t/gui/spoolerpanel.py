@@ -86,6 +86,20 @@ def register_panel_spooler(window, context):
 
 
 class SpoolerPanel(wx.Panel):
+    """Spooler Panel - Manage and monitor laser job execution queue
+
+    **Technical Details:**
+    - Help Section: spooler
+    - Signals: spooler;completed, spooler;queue, emulator;position, pause, spooler;realtime, pipe;usb_status, activate;device, spooler;idle, driver;position
+
+    **User Interface:**
+    - Clear spooler history (right click for more options)
+    - Pause/Resume the laser
+    - Select the device
+    - If checked, the spooler will not emit any sound signals while processing jobs
+    - Stop the laser
+    - List and modify the queued operations"""
+
     def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

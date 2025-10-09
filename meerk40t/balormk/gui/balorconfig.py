@@ -13,6 +13,12 @@ _ = wx.GetTranslation
 
 
 class BalorConfiguration(MWindow):
+    """Balor Configuration Panel - Configure Balor laser settings
+
+    **Technical Details:**
+    - Help Section: balorconfig
+    - Signals: corfile, activate;device, balorpin"""
+
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)
         window_context = self.context

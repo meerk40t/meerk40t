@@ -28,6 +28,19 @@ realtime_commands = (
 
 
 class GRBLControllerPanel(wx.Panel):
+    """GRBLControllerPanel - User interface panel for grblcontoller functionality
+
+    **Technical Details:**
+    - Help Section: grblcontoller
+    - Signals: grbl_controller_update, update_interface
+
+    **User Interface:**
+    - Device is in error state.
+    - Force connection/disconnection from the device.
+    - Enter a Gcode-Command and send it to the laser
+    - Send list of commands to device. Right click to edit.
+    - Clear log window"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SerialControllerPanel.__init__
         self.service = context

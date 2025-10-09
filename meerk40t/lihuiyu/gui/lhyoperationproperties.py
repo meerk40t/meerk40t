@@ -6,6 +6,16 @@ _ = wx.GetTranslation
 
 
 class LhyAdvancedPanel(wx.Panel):
+    """K40 Operation Panel - Configure K40 laser operations
+
+    **Technical Details:**
+    - Help Section: k40operation
+
+    **User Interface:**
+    - Enables the ability to modify the diagonal ratio.
+    - Enables acceleration override
+    - Enable Dot Length"""
+
     name = "Advanced"
 
     def __init__(self, *args, context=None, node=None, **kwds):

@@ -6,8 +6,8 @@ from wx import aui
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
 from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.kernel import signal_listener
 
 try:
     from wx import richtext
@@ -125,11 +125,11 @@ def register_panel_console(window, context):
                     pass
             if cur_font is None:
                 cur_font = wx.Font(
-                10,
-                wx.FONTFAMILY_TELETYPE,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
+                    10,
+                    wx.FONTFAMILY_TELETYPE,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
             data.SetInitialFont(cur_font)
 
             dlg = wx.FontDialog(window, data)
@@ -161,6 +161,12 @@ def register_panel_console(window, context):
 
 
 class ConsolePanel(wx.ScrolledWindow):
+    """Notes Panel - Add and manage notes for your laser projects
+
+    **Technical Details:**
+    - Help Section: notes
+    - Signals: console_update"""
+
     def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

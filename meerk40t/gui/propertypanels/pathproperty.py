@@ -15,13 +15,24 @@ from meerk40t.gui.propertypanels.attributes import (
     RoundedRectPanel,
     StrokeWidthPanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
 
 class PathPropertyPanel(ScrolledPanel):
+    """Path Property Panel - Edit path element properties
+
+    **Technical Details:**
+    - Help Section: pathproperty"""
+
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
