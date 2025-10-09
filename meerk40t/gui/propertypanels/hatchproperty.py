@@ -11,7 +11,37 @@ _ = wx.GetTranslation
 
 
 class HatchPropertyPanel(ScrolledPanel):
-    """HatchPropertyPanel - User interface panel for laser cutting operations"""
+    """
+    HatchPropertyPanel - Advanced hatch pattern configuration and editing interface.
+
+    This panel provides comprehensive control over hatch effect operations including pattern generation,
+    spacing, angle control, and fill style selection. It enables precise configuration of hatch patterns
+    for laser engraving and cutting operations with real-time preview capabilities.
+
+    Technical Purpose:
+    - Manages hatch effect node parameters for pattern generation
+    - Controls hatch distance, angle, and angle delta for pattern variation
+    - Implements loop count controls for multi-pass hatching
+    - Provides algorithm selection (Scanbeam, Direct Grid, Auto-Select)
+    - Supports unidirectional and bidirectional hatch patterns
+    - Handles stroke color configuration with auto-classification
+    - Generates real-time hatch pattern previews
+
+    Signal Listeners:
+    - None directly (relies on callback mechanisms for property updates)
+
+    User Interface:
+    - Element ID: Identification and naming controls
+    - Stroke Color: Color selection with classification callbacks
+    - Loops: Hatch pass count with slider control
+    - Hatch Distance: Spacing between hatch lines with length validation
+    - Angle: Primary hatch angle with slider control
+    - Angle Delta: Secondary angle variation for complex patterns
+    - Fill Style: Algorithm selection (Auto-Select, Scanbeam, Direct Grid)
+    - Unidirectional: Toggle for single-direction hatching
+    - Auto-classify: Immediate classification after color changes
+    - Preview: Real-time hatch pattern visualization
+    """
 
     name = _("Hatch")
 

@@ -2045,7 +2045,38 @@ class DwellSettingsPanel(wx.Panel):
 
 
 class ParameterPanel(ScrolledPanel):
-    """ParameterPanel - User interface panel for laser cutting operations"""
+    """
+    ParameterPanel - Comprehensive property configuration interface for laser cutting operations.
+
+    This panel provides a complete interface for configuring all aspects of laser cutting operations including
+    layer settings, speed/power parameters, raster settings, passes, dwell times, and operation information.
+    It serves as the primary control panel for fine-tuning operation behavior and classification rules.
+
+    Technical Purpose:
+    - Aggregates multiple specialized sub-panels (IdPanel, LayerSettingPanel, SpeedPpiPanel, etc.)
+    - Manages operation property updates through signal-based communication
+    - Handles device-specific parameter validation and unit conversions
+    - Provides comprehensive operation configuration for cut, engrave, raster, and image operations
+    - Implements classification restriction controls for element-to-operation mapping
+    - Supports real-time parameter updates and device synchronization
+
+    Signal Listeners:
+    - power_percent: Updates power percentage display when device settings change
+    - speed_min: Updates minimum speed display when device settings change
+    - element_property_reload: Refreshes all sub-panels when operation properties are reloaded
+
+    Lookup Listeners:
+    - service/device/active: Monitors active device changes for parameter updates
+
+    User Interface:
+    - Layer Settings: Color selection and classification restriction controls (stroke/fill/stop options)
+    - Speed/PPI Panel: Power, speed, and PPI parameter configuration with device-aware units
+    - Passes Panel: Burn count and pass settings for multi-pass operations
+    - Raster Settings: Comprehensive raster direction, preference, and optimization controls
+    - Dwell Settings: Laser dwell time configuration for spot operations
+    - Info Panel: Operation information display and metadata management
+    - Enable/Visible/Default: Operation state controls for job execution and scene display
+    """
 
     name = _("Properties")
     priority = -1
