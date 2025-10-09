@@ -11,6 +11,7 @@ Validation Stages.
         Stage 4, we successfully parsed $G, send ?
         Stage 5, we successfully parsed ?
 """
+
 import ast
 import re
 import threading
@@ -470,7 +471,7 @@ class GrblController:
         self._paused = False
         self._watchers = []
         self.is_shutdown = False
-        self._last_state = None
+        self._last_state = {"state": "idle"}
 
     @property
     def last_state(self):
@@ -479,9 +480,8 @@ class GrblController:
     @property
     def error_condition(self):
         # Testcase
-        if self._last_state is not None:
-            return self._last_state in ("alarm", "hold", "door", "check")
-        return False
+        state = self._last_state.get("state", "idle")
+        return state in ("alarm", "hold", "door", "check")
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -521,7 +521,10 @@ class GrblController:
 
     @signal_listener("update_interface")
     def update_connection(self, origin=None, *args):
-        if self.service.permit_serial and self.service.interface == "serial":
+        if self.service.permit_serial and self.service.interface in (
+            "experimental",
+            "serial",
+        ):
             try:
                 from .serial_connection import SerialConnection
 
@@ -611,7 +614,7 @@ class GrblController:
 
         @return:
         """
-        if not self.connection.connected:
+        if not self.connection or not self.connection.connected:
             return
         self.connection.disconnect()
         self.log("Disconnecting from GRBL...", type="event")
@@ -906,10 +909,10 @@ class GrblController:
                     self._assembled_response = []
                     continue
                     # raise ConnectionAbortedError from e
-                self.log(
-                    f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
-                    type="recv",
-                )
+                # self.log(
+                #     f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
+                #     type="recv",
+                # )
                 self.service.signal(
                     "grbl;response", cmd_issued, self._assembled_response
                 )
@@ -1001,9 +1004,14 @@ class GrblController:
             return
         message = response[1:-1]
         data = list(message.split("|"))
-        self._last_state = data[0].lower()
+        self._last_state["state"] = data[0].lower()
         # print (f"Data: {data[0]} -> last_state={self._last_state} -> error_condition={self.error_condition}")
         self.service.signal("grbl:state", data[0])
+        speed = None
+        power = None
+        current_x = None
+        current_y = None
+        current_z = None
         for datum in data[1:]:
             # While valid some grbl replies might violate the parsing convention.
             try:
@@ -1011,19 +1019,27 @@ class GrblController:
             except ValueError:
                 continue
             if name == "F":
-                self.service.signal("grbl:speed", float(info))
+                speed = float(info)
+                self.service.signal("grbl:speed", speed)
             elif name == "S":
-                self.service.signal("grbl:power", float(info))
+                power = float(info)
+                self.service.signal("grbl:power", power)
             elif name == "FS":
                 f, s = info.split(",")
-                self.service.signal("grbl:speed", float(f))
-                self.service.signal("grbl:power", float(s))
+                speed = float(f)
+                power = float(s)
+                self.service.signal("grbl:speed", speed)
+                self.service.signal("grbl:power", power)
             elif name == "MPos":
                 coords = info.split(",")
                 try:
                     nx = float(coords[0])
                     ny = float(coords[1])
-
+                    current_x = nx
+                    current_y = ny
+                    if len(coords) >= 3:
+                        current_z = float(coords[2])
+                    # We need to convert the machine position into scene position.
                     if not self.fully_validated():
                         # During validation, we declare positions.
                         self.driver.declare_position(nx, ny)
@@ -1064,6 +1080,11 @@ class GrblController:
             self.log("Connection Confirmed.", type="event")
             self._validation_stage = 5
             self.validate_stop("*")
+        self._last_state["speed"] = speed
+        self._last_state["power"] = power
+        self._last_state["x"] = current_x
+        self._last_state["y"] = current_y
+        self._last_state["z"] = current_z
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
@@ -1220,3 +1241,226 @@ class GrblController:
                 self.service.signal("grbl:hwsettings", key, value)
             except ValueError:
                 pass
+
+
+class ExperimentalGrblController(GrblController):
+    def __init__(self, context, poll_interval=3.0, command_timeout=5.0, max_retries=3):
+        super().__init__(context)
+        self.running = False
+
+        from .serial_connection import SerialConnection
+
+        self.connection = SerialConnection(self.service, self)
+        self.ser = None
+        self.poll_interval = poll_interval
+        self.command_timeout = command_timeout
+        self.max_retries = max_retries
+        self.log_status = getattr(self.service, "log_status_updates", True)
+
+        # Use the improved GrblSender for communication
+        self.grbl_sender = None
+        self.command_durations = {}
+
+        # self.log("ExperimentalGrblController initialized with GrblSender", type="event")
+
+    def start(self):
+        if self.running:
+            return
+
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
+        self.running = True
+        self.is_shutdown = False
+
+        # Connect first to get serial port info
+        self.connection.connect()
+        if not self.connection.connected:
+            self.log("Could not connect.", type="event")
+            self.running = False
+            return
+
+        self.ser = self.connection.laser
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
+
+        # Initialize GrblSender with the existing serial connection
+        try:
+            from .grblsender import GrblSender
+
+            self.grbl_sender = GrblSender(
+                serial_connection=self.ser,
+                status_interval=self.poll_interval if self.log_status else 0,
+                debug=True,
+                callback=self.receive_data,
+            )
+            self.grbl_sender.start()
+            self.log(
+                "GrblSender initialized and started with shared serial connection",
+                type="event",
+            )
+
+            # Send soft reset if configured
+            if self.service.reset_on_connect:
+                self.grbl_sender.soft_reset()
+                self.log("Soft reset sent to GRBL device", type="event")
+
+        except Exception as e:
+            self.log(f"Failed to initialize GrblSender: {e}", type="error")
+            self.running = False
+            return
+
+        # self.log("ExperimentalGrblController started", type="event")
+        # We are validated by default.
+        self._validation_stage = 5
+
+    def stop(self):
+        if not self.running:
+            return
+        self.running = False
+
+        # Stop GrblSender
+        if self.grbl_sender:
+            self.grbl_sender.stop()
+
+        # self.connection.disconnect()
+        self.shutdown()
+        try:
+            self.remove_watcher(self._channel_log)
+        except (AttributeError, ValueError):
+            pass
+        # self.log("ExperimentalGrblController stopped", type="event")
+
+    def open(self):
+        super().open()
+        self._validation_stage = 5
+
+    def send_command(self, command, priority=10, log_responses=True):
+        command = str(command).strip()
+        if self.grbl_sender:
+            cmd_id = self.grbl_sender.send_command(
+                command,
+                priority=priority,
+                timeout=self.command_timeout,
+                log_responses=log_responses,
+            )
+            # self.log(
+            #     f"Queued command: '{command}' with priority {priority} (ID: {cmd_id})",
+            #     type="event",
+            # )
+            return cmd_id
+        else:
+            self.log("GrblSender not available", type="error")
+            return None
+
+    def receive_data(self, line):
+        """Process responses from GrblSender and integrate with controller logic."""
+        status = self.grbl_sender.get_current_status()
+        if status:
+            self._update_controller_from_status(status)
+        active_alarm, alarm_code = self.grbl_sender.get_current_alarm()
+        if active_alarm:
+            short, long = grbl_alarm_message(alarm_code)
+            alarm_desc = f"#{alarm_code}, {short}\n{long}"
+            self.service.signal("warning", f"GRBL: {alarm_desc}", line, 4)
+            self.log(f"Alarm {alarm_desc}", type="recv")
+        if not line.startswith("<"):
+            self.log(line, type="recv")
+        self.service.signal("grbl;response", line)
+
+    def _update_controller_from_status(self, status):
+        """Update controller state from GrblSender status information."""
+        try:
+            state = status.get("state", "Unknown")
+            self._last_state["state"] = state.lower()
+
+            # Update position information
+            if status.get("mpos"):
+                mpos = status["mpos"]
+                try:
+                    nx = float(mpos[0])
+                    ny = float(mpos[1])
+                    self.last_state["x"] = nx
+                    self.last_state["y"] = ny
+                    if len(mpos) >= 3:
+                        self.last_state["z"] = float(mpos[2])
+
+                    # During validation, we declare positions.
+                    self.driver.declare_position(nx, ny)
+                    ox = self.driver.mpos_x
+                    oy = self.driver.mpos_y
+
+                    x, y = self.service.view_mm.position(f"{nx}mm", f"{ny}mm")
+
+                    (
+                        self.driver.mpos_x,
+                        self.driver.mpos_y,
+                    ) = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
+
+                    if len(mpos) >= 3:
+                        self.driver.mpos_z = float(mpos[2])
+                    self.service.signal(
+                        "status;position",
+                        (ox, oy, self.driver.mpos_x, self.driver.mpos_y),
+                    )
+                except (ValueError, IndexError) as e:
+                    self.log(f"Failed to parse machine position: {e}", type="warning")
+
+            # Update work position
+            if status.get("wpos"):
+                wpos = status["wpos"]
+                try:
+                    self.driver.wpos_x = str(wpos[0])
+                    self.driver.wpos_y = str(wpos[1])
+                    if len(wpos) >= 3:
+                        self.driver.wpos_z = str(wpos[2])
+                except (ValueError, IndexError) as e:
+                    self.log(f"Failed to parse work position: {e}", type="warning")
+            self._last_state["speed"] = status.get("feed_rate")
+            self._last_state["power"] = status.get("spindle_speed")
+            # Update feed rate and spindle speed
+            if status.get("feed_rate") is not None:
+                self.service.signal("grbl:speed", status["feed_rate"])
+            if status.get("spindle_speed") is not None:
+                self.service.signal("grbl:power", status["spindle_speed"])
+
+            # Log status periodically (not on every update to avoid spam)
+            status_parts = [f"State: {state}"]
+            if status.get("mpos"):
+                status_parts.append(f"MPos: {status['mpos']}")
+            if status.get("wpos"):
+                status_parts.append(f"WPos: {status['wpos']}")
+            if status.get("feed_rate") is not None:
+                status_parts.append(f"Feed: {status['feed_rate']}")
+            if status.get("spindle_speed") is not None:
+                status_parts.append(f"Spindle: {status['spindle_speed']}")
+            # self.log(" | ".join(status_parts), type="event")
+
+        except Exception as e:
+            self.log(f"Failed to update controller from status: {e}", type="error")
+
+    def write(self, data):
+        """
+        Write data to the sending queue.
+
+        @param data:
+        @return:
+        """
+        self.start()
+        d = data.strip()
+        self.service.signal("grbl;write", d)
+        self.send_command(data, priority=10)
+
+    def realtime(self, data):
+        """
+        Write data to the realtime queue.
+
+        The realtime queue should preemt the regular dataqueue.
+
+        @param data:
+        @return:
+        """
+        self.start()
+        d = data.strip()
+        self.service.signal("grbl;write", d)
+        # print(f"Calling send_command('{d}', priority=1)")
+        self.send_command(data, priority=1)

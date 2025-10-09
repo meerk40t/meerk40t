@@ -15,7 +15,7 @@ from ..core.spoolers import Spooler
 from ..core.units import MM_PER_INCH, Length
 from ..core.view import View
 from ..device.mixins import Status
-from .controller import GrblController
+from .controller import ExperimentalGrblController, GrblController
 from .driver import GRBLDriver
 
 
@@ -299,14 +299,22 @@ class GRBLDevice(Service, Status):
                 import serial.tools.list_ports
 
                 ports = serial.tools.list_ports.comports()
-                serial_interface = [x.device for x in ports]
-                serial_interface_display = [str(x) for x in ports]
+                if ports:
+                    serial_interface = [x.device for x in ports]
+                    serial_interface_display = [str(x) for x in ports]
+                else:
+                    serial_interface = ["UNCONFIGURED"]
+                    serial_interface_display = ["No serial ports found"]
 
                 choice_dict["choices"] = serial_interface
                 choice_dict["display"] = serial_interface_display
             except ImportError:
                 choice_dict["choices"] = ["UNCONFIGURED"]
                 choice_dict["display"] = ["pyserial-not-installed"]
+            except Exception as e:
+                # Handle any other errors gracefully
+                choice_dict["choices"] = ["UNCONFIGURED"]
+                choice_dict["display"] = [f"Error: {str(e)}"]
 
         from platform import system
 
@@ -318,7 +326,7 @@ class GRBLDevice(Service, Status):
                 "default": "UNCONFIGURED",
                 "type": str,
                 "style": "combosmall" if is_linux else "option",
-                "label": "",
+                "label": _("Serial Port"),
                 "tip": _("What serial interface does this device connect to?"),
                 # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
@@ -411,6 +419,9 @@ class GRBLDevice(Service, Status):
             list_display.append(_("WebSocket-Network"))
         list_interfaces.append("mock")
         list_display.append(_("Mock"))
+        if self.permit_serial:
+            list_interfaces.append("experimental")
+            list_display.append(_("Simple serial"))
         choices = [
             {
                 "attr": "interface",
@@ -469,6 +480,18 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
                 ),
+            },
+            {
+                "attr": "log_status_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Track status"),
+                "section": "_5_Config",
+                "tip": _(
+                    "Log periodic status updates from GRBL device (state, position, speeds)"
+                ),
+                "conditional": (self, "interface", "experimental"),
             },
             {
                 "attr": "use_red_dot",
@@ -716,7 +739,10 @@ class GRBLDevice(Service, Status):
         self.register_choices("protocol", choices)
 
         self.driver = GRBLDriver(self)
-        self.controller = GrblController(self)
+        if self.interface == "experimental":
+            self.controller = ExperimentalGrblController(self)
+        else:
+            self.controller = GrblController(self)
         self.driver.out_pipe = self.controller.write
         self.driver.out_real = self.controller.realtime
 
@@ -803,7 +829,7 @@ class GRBLDevice(Service, Status):
         def gcode_realtime(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.driver(remainder + self.driver.line_end, real=True)
+                self.driver(remainder, real=True)
 
         @self.console_command(
             "grbl_validate",
