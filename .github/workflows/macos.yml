@@ -97,8 +97,8 @@ jobs:
         # security import certificate.p12 -k ~/Library/Keychains/login.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
         # codesign -s "$MACOS_CERTIFICATE_NAME" --force --deep dist/MeerK40t-macOS-Latest/MeerK40t.app
 
-        # Option 4: Use SSL.com free code signing certificate (recommended for open source)
-        # Apply at: https://www.ssl.com/code-signing/sslcom-free-code-signing
+        # Option 4: Use SSL.com code signing certificate (if available)
+        # Check https://www.ssl.com/code-signing for current offerings
         # Once approved, add certificate to GitHub secrets and uncomment these lines:
         # echo "$MACOS_CERTIFICATE_P12" | base64 --decode > certificate.p12
         # security import certificate.p12 -k ~/Library/Keychains/login.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign

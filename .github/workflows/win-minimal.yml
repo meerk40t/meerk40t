@@ -85,6 +85,24 @@ jobs:
         move dist/MeerK40t.exe dist/Meerk40t-minimal.exe
 
 
+    - name: Code Sign Executable (Optional)
+      run: |
+        # Option 1: Skip code signing (free, but exe shows as untrusted)
+        echo "Skipping code signing - exe will show as 'unknown publisher' but can still run"
+
+        # Option 2: Self-signed certificate (uncomment to use)
+        # echo "Creating self-signed certificate..."
+        # New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=MeerK40t Self-Signed" -KeyUsage DigitalSignature -FriendlyName "MeerK40t Self-Signed" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+        # $cert = Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.FriendlyName -eq "MeerK40t Self-Signed" }
+        # & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x86\signtool.exe" sign /fd SHA256 /t http://timestamp.digicert.com /n "MeerK40t Self-Signed" dist/Meerk40t-minimal.exe
+
+        # Option 3: Use SSL.com code signing certificate (if available)
+        # Check https://www.ssl.com/code-signing for current offerings
+        # Once approved, add certificate to GitHub secrets and uncomment these lines:
+        # echo "$env:WINDOWS_CERTIFICATE_P12" | base64 --decode > certificate.p12
+        # certutil -importPFX -p "$env:WINDOWS_CERTIFICATE_PASSWORD" certificate.p12
+        # & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x86\signtool.exe" sign /fd SHA256 /t http://timestamp.digicert.com /n "$env:WINDOWS_CERTIFICATE_NAME" dist/Meerk40t-minimal.exe
+
     - name: Upload Release Assets
       id: release
       uses: softprops/action-gh-release@v2
