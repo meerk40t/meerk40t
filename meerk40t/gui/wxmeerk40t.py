@@ -267,7 +267,9 @@ class GoPanel(ActionPanel):
             f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
         )
         if prefer_threaded:
-            self.context(f"window open JobSpooler\nwindow open ThreadInfo\n")
+            self.context("window open JobSpooler\n")
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
         else:
             busy.end()
             self.context(f"window open JobSpooler\n")

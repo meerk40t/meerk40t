@@ -716,8 +716,10 @@ class LaserPanel(wx.Panel):
         elif self.checkbox_optimize.GetValue():
             new_plan = self.context.planner.get_free_plan()
             self.context(
-                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
+                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
             )
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
         else:
             new_plan = self.context.planner.get_free_plan()
             self.context(
@@ -957,7 +959,9 @@ class JobPanel(wx.Panel):
         else:
             cmd = f"plan{plan_name} clear copy preprocess validate blob finish\n"
         if background:
-            self.context(f"threaded {cmd}window open ThreadInfo\n")
+            self.context(f"threaded {cmd}")
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
         else:
             self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
             self.context(cmd)
