@@ -1,0 +1,145 @@
+# This workflow builds PyInstaller single-file executables
+# of Meerk40t for macOS (latest)
+
+name: Meerk40t (macOS)
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install macOS dependencies
+      run: |
+        # Install system dependencies
+        brew install libusb cmake eigen
+
+        # Install Python dependencies
+        python3 -m ensurepip --upgrade
+        python3 -m pip install --upgrade pip
+        pip cache purge
+        pip install setuptools wheel pyinstaller
+        pip install numpy==1.26.4
+        pip install pyusb
+        pip install wheel
+
+        # Install wxPython for macOS
+        pip install -U -f https://extras.wxpython.org/wxPython4/extras/mac/wxPython wxPython
+
+        # Install other dependencies
+        pip install potracer
+        pip install pypotrace
+        pip install pillow==9.5.0
+        pip install ezdxf
+        pip install pyserial
+        pip install bitarray
+        pip install numba
+        pip install --no-cache-dir opencv-python-headless==4.5.3.56
+
+        # Install optional requirements
+        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+
+        # Install the project itself
+        pip install .
+
+        # Install additional packages
+        pip install meerk40t-barcodes
+
+    - name: pip list
+      run: |
+        pip list
+
+    - name: Build meerk40t
+      run: |
+        # Prepare build files
+        mv meerk40t.py mk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
+        mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+
+        # Build with PyInstaller
+        pyinstaller .github/workflows/mac/meerk40t-macos.spec
+
+        # Rename output directory
+        mv dist/MeerK40t dist/MeerK40t-macOS-Latest
+
+        # Restore original files
+        mv mk40t.py meerk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
+        mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
+
+    - name: Code Sign App (Optional)
+      run: |
+        # Option 1: Skip code signing (free, but app shows as untrusted)
+        echo "Skipping code signing - app will show as 'untrusted' but can still run"
+
+        # Option 2: Self-signed certificate (uncomment to use)
+        # echo "Creating self-signed certificate..."
+        # openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=meerk40t.local"
+        # security import cert.pem -k ~/Library/Keychains/login.keychain
+        # codesign -s "meerk40t.local" --force --deep dist/MeerK40t-macOS-Latest/MeerK40t.app
+
+        # Option 3: Use Apple free developer account (requires manual setup)
+        # If you have a free Apple Developer account, you can create a certificate
+        # and store it as a secret, then uncomment and modify these lines:
+        # echo "$MACOS_CERTIFICATE_P12" | base64 --decode > certificate.p12
+        # security import certificate.p12 -k ~/Library/Keychains/login.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        # codesign -s "$MACOS_CERTIFICATE_NAME" --force --deep dist/MeerK40t-macOS-Latest/MeerK40t.app
+
+        # Option 4: Use SSL.com free code signing certificate (recommended for open source)
+        # Apply at: https://www.ssl.com/code-signing/sslcom-free-code-signing
+        # Once approved, add certificate to GitHub secrets and uncomment these lines:
+        # echo "$MACOS_CERTIFICATE_P12" | base64 --decode > certificate.p12
+        # security import certificate.p12 -k ~/Library/Keychains/login.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        # codesign -s "$MACOS_CERTIFICATE_NAME" --force --deep dist/MeerK40t-macOS-Latest/MeerK40t.app
+
+    - name: Code Sign with SignPath (Optional)
+      if: env.SIGNPATH_API_TOKEN != ''
+      uses: signpath/github-action-submit-signing-request@v1
+      with:
+        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+        organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
+        project-slug: 'meerk40t'
+        signing-policy-slug: 'macos-signing'
+        artifact: 'dist/MeerK40t-macOS-Latest/MeerK40t.app'
+        output-artifact-directory: 'signed'
+      env:
+        SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+
+    - name: Create DMG
+      run: |
+        # Install create-dmg if not available
+        if ! command -v create-dmg &> /dev/null; then
+          brew install create-dmg
+        fi
+
+        # Create DMG
+        create-dmg \
+          --volname "MeerK40t macOS" \
+          --volicon "meerk40t.icns" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --icon "MeerK40t.app" 200 190 \
+          --hide-extension "MeerK40t.app" \
+          --app-drop-link 600 185 \
+          "MeerK40t-macOS-Latest.dmg" \
+          "dist/MeerK40t-macOS-Latest/"
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          MeerK40t-macOS-Latest.dmg
