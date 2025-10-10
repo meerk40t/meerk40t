@@ -33,10 +33,12 @@ _ = wx.GetTranslation
 
 class SaveLoadPanel(wx.Panel):
     """SaveLoadPanel - Template management interface for test pattern configurations
+
     **Technical Purpose:**
-    Provides persistent storage and retrieval of test pattern parameter sets. Manages template naming, validation, and file I/O operations for saving/loading complete test configurations. Integrates with Settings framework for configuration persistence.
+    Provides persistent storage and retrieval of test pattern parameter sets. Manages template naming, validation, and file I/O operations for saving/loading complete test configurations. Integrates with Settings framework for configuration persistence and provides callback-based communication with parent panels.
+
     **End-User Perspective:**
-    This panel lets you save and reuse your test pattern setups. Save commonly used parameter combinations as named templates, then quickly reload them for future testing sessions."""
+    This panel lets you save and reuse your test pattern setups. Save commonly used parameter combinations as named templates, then quickly reload them for future testing sessions. Templates store all your test pattern settings including operation type, parameter ranges, colors, and layout options."""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -201,10 +203,12 @@ class SaveLoadPanel(wx.Panel):
 
 class TemplatePanel(wx.Panel):
     """TemplatePanel - Test pattern generator for optimizing laser cutting parameters
+
     **Technical Purpose:**
-    Provides comprehensive test pattern generation for laser parameter optimization. Creates systematic grids varying two parameters simultaneously (e.g., speed vs power) across different operation types. Features parameter range configuration, color-coded visualization, and template saving/loading. Integrates with device-specific parameter defaults and supports multiple shape types.
+    Provides comprehensive test pattern generation for laser parameter optimization. Creates systematic grids varying two parameters simultaneously (e.g., speed vs power) across different operation types. Features parameter range configuration, color-coded visualization, template saving/loading, and device-specific parameter defaults integration. Supports multiple shape types and advanced parameter combinations including Balor-specific settings.
+
     **End-User Perspective:**
-    This panel helps you find the best laser settings for your materials by creating test grids that vary two parameters at once. Use it to systematically test combinations of speed, power, passes, and other settings to optimize your cutting/engraving results."""
+    This panel helps you find the best laser settings for your materials by creating test grids that vary two parameters at once. Use it to systematically test combinations of speed, power, passes, and other settings to optimize your cutting/engraving results. Save your favorite parameter combinations as templates for reuse."""
 
     DESC_X_AXIS = "Descriptions X-Axis"
     DESC_Y_AXIS = "Descriptions Y-Axis"

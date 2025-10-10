@@ -1132,11 +1132,18 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
-    """ArrangementPanel - User interface panel for laser cutting operations
+    """ArrangementPanel - Grid-based element arrangement controls for design layout
+
     **Technical Purpose:**
-    Provides user interface controls for arrangement functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, emphasized for enhanced functionality.
+    Provides comprehensive grid-based arrangement controls for positioning design elements in structured rows and columns.
+    Supports variable column/row sizing modes (uniform vs individual), element ordering options (selection/first/last),
+    gap spacing controls (adjacent vs fixed distances), and alignment within grid cells (left/center/right, top/center/bottom).
+    Features automatic scene centering, element movement validation, settings persistence, and arrangement operation validation.
+
     **End-User Perspective:**
-    This panel provides controls for arrangement functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
+    This panel helps you arrange selected design elements in neat, organized grids. Specify how many rows and columns you want,
+    control whether elements should be evenly spaced or have gaps between them, and choose how elements align within each grid cell.
+    Perfect for creating professional layouts, button arrays, or any situation where you need elements positioned in a regular pattern."""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
