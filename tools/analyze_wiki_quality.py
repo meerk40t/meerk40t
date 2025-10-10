@@ -28,7 +28,7 @@ def analyze_wiki_pages(wiki_dir):
     results = {"insufficient": [], "minimal": [], "adequate": [], "good": []}
 
     # Skip index files
-    skip_files = {"Home.md", "README.md"}
+    skip_files = {"OnlineHelp.md", "README.md"}
 
     for file_path in Path(wiki_dir).glob("*.md"):
         if file_path.name in skip_files:

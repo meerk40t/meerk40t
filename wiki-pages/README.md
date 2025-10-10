@@ -5,7 +5,7 @@ This directory contains automatically generated template pages for the MeerK40t 
 ## What This Contains
 
 - **61 help page templates** - One for each unique help section found in the MeerK40t codebase
-- **Home.md** - An index page that organizes help topics by category
+- **OnlineHelp.md** - An index page that organizes help topics by category
 - **generate_help_wiki.py** - The script that generated these pages
 
 ## How MeerK40t Help Works
