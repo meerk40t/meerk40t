@@ -167,7 +167,7 @@ class SaveLoadPanel(wx.Panel):
 class TemplatePanel(wx.Panel):
     """TemplatePanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for template functionality. Features label, button controls for user interaction. Integrates with speed_min, service/device/active for enhanced functionality.
+    Provides user interface controls for template functionality. Features label, button controls for user interaction. Integrates with refresh_scene, rebuild_tree for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for template functionality. Key controls include "Template-Name" (label), "Save" (button), "Load" (button)."""
 

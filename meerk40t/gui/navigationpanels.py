@@ -281,7 +281,7 @@ def get_movement(context, dx, dy):
 class TimerButtons:
     """TimerButtons - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for timerbuttons functionality. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides user interface controls for timerbuttons functionality. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for timerbuttons functionality. Key controls include "ms" (label), "Width:" (label), "Height:" (label)."""
 
@@ -388,7 +388,7 @@ class TimerButtons:
 class ZMovePanel(wx.Panel):
     """Move Panel - Send the laser to specific coordinates or saved positions
     **Technical Purpose:**
-    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel lets you send the laser to specific coordinates or saved positions. Enter coordinates directly or select from saved locations."""
 
@@ -557,7 +557,7 @@ class ZMovePanel(wx.Panel):
 class Drag(wx.Panel):
     """Drag Panel - Position the laser head and align it with your design
     **Technical Purpose:**
-    Provides interactive controls for positioning the laser head and aligning it with design elements. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides interactive controls for positioning the laser head and aligning it with design elements. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel helps you position the laser head precisely. Use it to align the laser with specific points in your design or move to exact coordinates."""
 
@@ -1091,7 +1091,7 @@ class Drag(wx.Panel):
 class Jog(wx.Panel):
     """Jog Panel - Manually move the laser head around the work area
     **Technical Purpose:**
-    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel gives you manual control over laser movement. Use the directional buttons to move the laser head around the work area for setup and testing."""
 
@@ -1513,7 +1513,7 @@ class Jog(wx.Panel):
 class MovePanel(wx.Panel):
     """Move Panel - Send the laser to specific coordinates or saved positions
     **Technical Purpose:**
-    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel lets you send the laser to specific coordinates or saved positions. Enter coordinates directly or select from saved locations."""
 
@@ -1802,7 +1802,7 @@ class MovePanel(wx.Panel):
 class PulsePanel(wx.Panel):
     """Pulse Panel - Fire short test laser pulses for alignment and testing
     **Technical Purpose:**
-    Provides pulse firing controls for laser alignment and testing operations. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides pulse firing controls for laser alignment and testing operations. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel lets you fire short test pulses from the laser. Use it to test laser power, alignment, and focus before running full jobs."""
 
@@ -2180,7 +2180,7 @@ class PulsePanel(wx.Panel):
 class Transform(wx.Panel):
     """Transform Panel - Scale, rotate, and move your design elements
     **Technical Purpose:**
-    Provides transformation controls for scaling, rotating, and positioning design elements. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides transformation controls for scaling, rotating, and positioning design elements. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel lets you scale, rotate, and reposition your design elements. Use the controls to adjust size, orientation, and position before cutting."""
 
@@ -2742,7 +2742,7 @@ class Transform(wx.Panel):
 class JogDistancePanel(wx.Panel):
     """Jog Panel - Manually move the laser head around the work area
     **Technical Purpose:**
-    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel gives you manual control over laser movement. Use the directional buttons to move the laser head around the work area for setup and testing."""
 
@@ -2798,7 +2798,7 @@ class JogDistancePanel(wx.Panel):
 class NavigationPanel(wx.Panel):
     """Navigation Panel - Control laser movement and positioning
     **Technical Purpose:**
-    Provides navigation and positioning controls for laser movement. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides navigation and positioning controls for laser movement. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for moving the laser around your work area. Use it for setup, testing, and precise positioning."""
 
@@ -2881,7 +2881,7 @@ class NavigationPanel(wx.Panel):
 class Navigation(MWindow):
     """Navigation Panel - Control laser movement and positioning
     **Technical Purpose:**
-    Provides navigation and positioning controls for laser movement. Features label controls for user interaction. Integrates with wxpane/Navigation, jog_amount for enhanced functionality.
+    Provides navigation and positioning controls for laser movement. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for moving the laser around your work area. Use it for setup, testing, and precise positioning."""
 

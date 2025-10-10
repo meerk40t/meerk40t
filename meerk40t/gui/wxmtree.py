@@ -125,7 +125,7 @@ def register_panel_tree(window, context):
 class TreePanel(wx.Panel):
     """TreePanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for tree functionality. Integrates with reset_formatter, activate_selected_nodes for enhanced functionality.
+    Provides user interface controls for tree functionality. Integrates with activate_single_node, update_group_labels for enhanced functionality.
     **End-User Perspective:**
     This panel provides user interface controls for tree functionality in MeerK40t."""
 
@@ -551,7 +551,7 @@ class TreePanel(wx.Panel):
 class ElementsTree(MWindow):
     """ElementsTree - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for elementstree functionality. Integrates with reset_formatter, activate_selected_nodes for enhanced functionality.
+    Provides user interface controls for elementstree functionality. Integrates with activate_single_node, update_group_labels for enhanced functionality.
     **End-User Perspective:**
     This panel provides user interface controls for elementstree functionality in MeerK40t."""
 

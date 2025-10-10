@@ -31,7 +31,7 @@ def register_panel_snapoptions(window, context):
 class SnapOptionPanel(wx.Panel):
     """SnapOptionPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for snapoption functionality. Features checkbox, label controls for user interaction. Integrates with show_attract_len, grid_attract_len for enhanced functionality.
+    Provides user interface controls for snapoption functionality. Features checkbox, label controls for user interaction. Integrates with action_attract_len, snap_points for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for snapoption functionality. Key controls include "Snap to Element" (checkbox), "Snap to Grid" (checkbox), "Overall visibility" (label)."""
 

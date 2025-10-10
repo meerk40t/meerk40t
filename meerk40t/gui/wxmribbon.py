@@ -857,7 +857,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
 class RibbonEditor(wx.Panel):
     """RibbonEditor - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for ribboneditor functionality. Features checkbox, button controls for user interaction. Integrates with button/config, button/extended_tools for enhanced functionality.
+    Provides user interface controls for ribboneditor functionality. Features checkbox, button controls for user interaction. Integrates with button/modify, page for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for ribboneditor functionality. Key controls include "Show the Ribbon Labels" (checkbox), "Add to page" (button), "Apply" (button)."""
 

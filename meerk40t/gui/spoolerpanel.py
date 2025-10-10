@@ -88,7 +88,7 @@ def register_panel_spooler(window, context):
 class SpoolerPanel(wx.Panel):
     """SpoolerPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for spooler functionality. Features button, label controls for user interaction. Integrates with driver;position, emulator;position for enhanced functionality.
+    Provides user interface controls for spooler functionality. Features button, label controls for user interaction. Integrates with spooler;realtime, spooler;queue for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for spooler functionality. Key controls include "Pause" (button), "Completed jobs:" (label)."""
 

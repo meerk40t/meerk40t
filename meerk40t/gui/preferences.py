@@ -26,7 +26,7 @@ _ = wx.GetTranslation
 class PreferencesUnitsPanel(wx.Panel):
     """PreferencesUnitsPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferencesunits functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferencesunits functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferencesunits functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 
@@ -108,7 +108,7 @@ class PreferencesUnitsPanel(wx.Panel):
 class PreferencesLanguagePanel(wx.Panel):
     """PreferencesLanguagePanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferenceslanguage functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferenceslanguage functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferenceslanguage functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 
@@ -157,7 +157,7 @@ class PreferencesLanguagePanel(wx.Panel):
 class PreferencesSavingPanel(wx.Panel):
     """PreferencesSavingPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferencessaving functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferencessaving functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferencessaving functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 
@@ -376,7 +376,7 @@ class PreferencesSavingPanel(wx.Panel):
 class PreferencesPixelsPerInchPanel(wx.Panel):
     """PreferencesPixelsPerInchPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferencespixelsperinch functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferencespixelsperinch functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferencespixelsperinch functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 
@@ -469,7 +469,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
 class PreferencesMain(wx.Panel):
     """PreferencesMain - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferencesmain functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferencesmain functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferencesmain functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 
@@ -521,7 +521,7 @@ class PreferencesMain(wx.Panel):
 class PreferencesInputOutput(wx.Panel):
     """PreferencesInputOutput - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferencesinputoutput functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferencesinputoutput functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferencesinputoutput functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 
@@ -584,7 +584,7 @@ class PreferencesInputOutput(wx.Panel):
 class Preferences(MWindow):
     """Preferences - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for preferences functionality. Features button controls for user interaction. Integrates with restart, preferences for enhanced functionality.
+    Provides user interface controls for preferences functionality. Features button controls for user interaction. Integrates with theme, preferences for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for preferences functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
 

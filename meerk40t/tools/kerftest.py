@@ -29,7 +29,7 @@ _ = wx.GetTranslation
 class KerfPanel(wx.Panel):
     """KerfPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for kerf functionality. Features button, label controls for user interaction. Integrates with speed_min, service/device/active for enhanced functionality.
+    Provides user interface controls for kerf functionality. Features button, label controls for user interaction. Integrates with refresh_scene, rebuild_tree for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for kerf functionality. Key controls include "Create Pattern" (button), "Count:" (label), "Minimum:" (label)."""
 

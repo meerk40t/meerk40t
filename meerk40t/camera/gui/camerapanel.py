@@ -69,7 +69,7 @@ def register_panel_camera(window, context):
 class CameraPanel(wx.Panel, Job):
     """CameraPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for camera functionality. Features checkbox, button controls for user interaction. Integrates with camera_uri_changed, window/CameraURI for enhanced functionality.
+    Provides user interface controls for camera functionality. Features checkbox, button controls for user interaction. Integrates with refresh_scene, window/CameraURI for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for camera functionality. Key controls include "Correct Fisheye" (checkbox), "Add URI" (button)."""
 

@@ -790,7 +790,7 @@ class CutcodePanel(wx.Panel):
 class SimulationPanel(wx.Panel, Job):
     """Simulation Panel - Preview your laser job before running it
     **Technical Purpose:**
-    Provides job simulation and preview functionality before laser execution. Features checkbox, button, radio button controls for user interaction. Integrates with refresh_simulation, device;modified for enhanced functionality.
+    Provides job simulation and preview functionality before laser execution. Features checkbox, button, radio button controls for user interaction. Integrates with device;modified, refresh_scene for enhanced functionality.
     **End-User Perspective:**
     This panel shows you exactly what will happen when you run your laser job. Preview the cutting path, timing, and results before starting."""
 

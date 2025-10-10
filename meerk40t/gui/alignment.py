@@ -199,7 +199,7 @@ class InfoPanel(wx.Panel):
 class AlignmentPanel(wx.Panel):
     """Alignment Panel - Align and distribute design elements
     **Technical Purpose:**
-    Provides alignment and distribution controls for design elements. Features checkbox controls for user interaction. Integrates with reference, emphasized for enhanced functionality.
+    Provides alignment and distribution controls for design elements. Features checkbox controls for user interaction. Integrates with refresh_scene, emphasized for enhanced functionality.
     **End-User Perspective:**
     This panel helps you align and distribute design elements. Use it to create evenly spaced objects or align them to specific positions."""
 
@@ -410,7 +410,7 @@ class AlignmentPanel(wx.Panel):
 class DistributionPanel(wx.Panel):
     """DistributionPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for distribution functionality. Features checkbox controls for user interaction. Integrates with reference, emphasized for enhanced functionality.
+    Provides user interface controls for distribution functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, emphasized for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for distribution functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
 
@@ -1123,7 +1123,7 @@ class DistributionPanel(wx.Panel):
 class ArrangementPanel(wx.Panel):
     """ArrangementPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for arrangement functionality. Features checkbox controls for user interaction. Integrates with reference, emphasized for enhanced functionality.
+    Provides user interface controls for arrangement functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, emphasized for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for arrangement functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
 

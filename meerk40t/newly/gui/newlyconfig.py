@@ -13,11 +13,18 @@ _ = wx.GetTranslation
 
 
 class NewlyConfiguration(MWindow):
-    """NewlyConfiguration - User interface panel for laser cutting operations
+    """NewlyConfiguration - Newly Laser Device Configuration Panel
+
     **Technical Purpose:**
-    Provides user interface controls for newlyconfiguration functionality. Integrates with activate;device for enhanced functionality.
+    Provides comprehensive configuration interface for Newly laser devices. Manages device-specific
+    settings, global parameters, raster speed charts, effects processing, operation defaults, and display
+    options. Integrates with MeerK40t's device activation system for automatic panel management.
+
     **End-User Perspective:**
-    This panel provides user interface controls for newlyconfiguration functionality in MeerK40t."""
+    This configuration panel allows you to set up and optimize your Newly laser system for different
+    materials and applications. Configure device-specific parameters, adjust global settings, create
+    custom raster speed charts for optimal engraving quality, set up effects and processing options,
+    and define default operation parameters for consistent results."""
 
     """NewlyConfiguration - User interface panel for laser cutting operations"""
 
