@@ -32,14 +32,51 @@ _ = wx.GetTranslation
 
 
 class SaveLoadPanel(wx.Panel):
-    """
-    Provides the scaffold for saving and loading of parameter sets.
-    Does not know a lot about the underlying structure of data as it
-    blindly interacts with the parent via the callback routine
-    (could hence work as a generic way to save / load data)
-    """
+    """SaveLoadPanel - Template management interface for test pattern configurations
+
+    **Technical Purpose:**
+    Provides persistent storage and retrieval of test pattern parameter sets. Manages template naming, validation, and file I/O operations for saving/loading complete test configurations. Integrates with Settings framework for configuration persistence and provides callback-based communication with parent panels.
+
+    **End-User Perspective:**
+    This panel lets you save and reuse your test pattern setups. Save commonly used parameter combinations as named templates, then quickly reload them for future testing sessions. Templates store all your test pattern settings including operation type, parameter ranges, colors, and layout options."""
 
     def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.callback = None
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer_main)
+        sizer_name = wx.BoxSizer(wx.HORIZONTAL)
+        lbl_info = wxStaticText(self, wx.ID_ANY, _("Template-Name"))
+        self.txt_name = TextCtrl(self, wx.ID_ANY, "")
+        self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
+        self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
+        self.btn_load.Enable(False)
+        self.btn_save.Enable(False)
+        self.btn_delete.Enable(False)
+        sizer_name.Add(lbl_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_name.Add(self.txt_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_name.Add(self.btn_save, 0, wx.EXPAND, 0)
+        sizer_name.Add(self.btn_load, 0, wx.EXPAND, 0)
+        sizer_name.Add(self.btn_delete, 0, wx.EXPAND, 0)
+
+        self.choices = []
+        self.list_slots = wxListBox(
+            self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE
+        )
+        self.list_slots.SetToolTip(_("Select an entry to reload"))
+        sizer_main.Add(sizer_name, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.list_slots, 1, wx.EXPAND, 0)
+        self.Layout()
+        self.Bind(wx.EVT_TEXT, self.on_text_change, self.txt_name)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_load, self.btn_load)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_save, self.btn_save)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
+        self.list_slots.Bind(wx.EVT_LISTBOX, self.on_listbox_click)
+        self.list_slots.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_double_click)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
@@ -165,12 +202,11 @@ class SaveLoadPanel(wx.Panel):
 
 
 class TemplatePanel(wx.Panel):
-    """
-    Responsible for the generation of testpatterns and the user interface
-    params:
-    context - the current context
-    storage - an instance of kernel.Settings to store/load parameter sets
-    """
+    """TemplatePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for template functionality. Features label, button controls for user interaction. Integrates with service/device/active, speed_min for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for template functionality. Key controls include "Template-Name" (label), "Save" (button), "Load" (button)."""
 
     DESC_X_AXIS = "Descriptions X-Axis"
     DESC_Y_AXIS = "Descriptions Y-Axis"

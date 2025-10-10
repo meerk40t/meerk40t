@@ -8,6 +8,7 @@ from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.cutcode import CutCode
+from ..core.cutcode.cutgroup import CutGroup
 from ..core.cutcode.dwellcut import DwellCut
 from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
@@ -18,7 +19,6 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..core.cutcode.cutgroup import CutGroup
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
@@ -788,6 +788,12 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
+    """Simulation Panel - Preview your laser job before running it
+    **Technical Purpose:**
+    Provides job simulation and preview functionality before laser execution. Features checkbox, button, radio button controls for user interaction. Integrates with background, device;modified for enhanced functionality.
+    **End-User Perspective:**
+    This panel shows you exactly what will happen when you run your laser job. Preview the cutting path, timing, and results before starting."""
+
     def __init__(
         self,
         *args,
@@ -978,9 +984,15 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_total = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
 
         # Step fields
-        self.text_distance_laser_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_distance_travel_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_distance_total_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_distance_laser_step = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_distance_travel_step = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_distance_total_step = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
         self.text_time_laser_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_extra_step = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -994,7 +1006,9 @@ class SimulationPanel(wx.Panel, Job):
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
 
-        self.text_playback_speed = TextCtrl(self, wx.ID_ANY, "100%", style=wx.TE_READONLY)
+        self.text_playback_speed = TextCtrl(
+            self, wx.ID_ANY, "100%", style=wx.TE_READONLY
+        )
 
         # Radio buttons for playback mode
         self.radio_cut = wx.RadioButton(self, wx.ID_ANY, _("Steps"))
@@ -1002,7 +1016,9 @@ class SimulationPanel(wx.Panel, Job):
         self.radio_time_minutes = wx.RadioButton(self, wx.ID_ANY, _("Time (min)"))
 
         self.radio_cut.SetToolTip(
-            _("Cut operations Playback-Mode: play will jump from one completed operations to next")
+            _(
+                "Cut operations Playback-Mode: play will jump from one completed operations to next"
+            )
         )
         self.radio_time_seconds.SetToolTip(
             _("Timed Playback-Mode: play will jump from one second to next")
@@ -1014,10 +1030,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_spool = wxButton(self, wx.ID_ANY, _("Send to Laser"))
         self.button_spool.SetToolTip(_("Send the current cutplan to the laser."))
         self.wait_info = wxStaticText(
-            self, 
-            wx.ID_ANY, 
-            _("Plan is still being processed"), 
-            style=wx.ALIGN_CENTER
+            self, wx.ID_ANY, _("Plan is still being processed"), style=wx.ALIGN_CENTER
         )
         self.wait_info.Hide()
 
@@ -1034,8 +1047,12 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_cut)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_seconds)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes)
+        self.Bind(
+            wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_seconds
+        )
+        self.Bind(
+            wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
+        )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
 
         # end wxGlade
@@ -1647,11 +1664,14 @@ class SimulationPanel(wx.Panel, Job):
             self.cutplan = self.context.planner.get_or_make_plan(self.plan_name)
         else:
             self.cutplan = self.context.planner.default_plan
-        
+
         try:
             self.show_wait(True)
             counter = 0
-            while not (self.IsBeingDeleted() or self.context.planner.is_finished(self.plan_name)): 
+            while not (
+                self.IsBeingDeleted()
+                or self.context.planner.is_finished(self.plan_name)
+            ):
                 counter += 1
                 # print (f"Waiting for plan to be ready {counter} ")
                 sleep(0.5)
@@ -1661,7 +1681,7 @@ class SimulationPanel(wx.Panel, Job):
             # Was already deleted
             return
         if self.IsBeingDeleted():
-            return 
+            return
         self.plan_name = self.cutplan.name
         self.operations = self.cutplan.plan
         self.subpanel_cutcode.set_cutcode_entry(None, self.plan_name)

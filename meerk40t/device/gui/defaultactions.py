@@ -31,10 +31,11 @@ _ = wx.GetTranslation
 
 
 class DefaultActionPanel(wx.Panel):
-    """
-    DefaultActions is a panel that should work for all devices (hence in its own directory)
-    It allows to define operations that should be executed at the beginning and the end of a job
-    """
+    """DefaultActionPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for defaultaction functionality. Features button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for defaultaction functionality. Key controls include "Add to Job Start" (button), "Add to Job End" (button)."""
 
     # Constants for standards list indices
     STD_NAME = 0

@@ -123,6 +123,12 @@ def register_panel_tree(window, context):
 
 
 class TreePanel(wx.Panel):
+    """TreePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for tree functionality. Integrates with freeze_tree, refresh_tree for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for tree functionality in MeerK40t."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -543,6 +549,12 @@ class TreePanel(wx.Panel):
 
 
 class ElementsTree(MWindow):
+    """ElementsTree - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for elementstree functionality. Integrates with freeze_tree, refresh_tree for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for elementstree functionality in MeerK40t."""
+
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
@@ -569,12 +581,11 @@ class ElementsTree(MWindow):
 
 
 class ShadowTree:
-    """
-    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the
-    elements tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends
-    any requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.operations' and when those
-    are reflected in the tree, the shadow tree is updated accordingly.
-    """
+    """ShadowTree - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for shadowtree functionality. Integrates with activate_selected_nodes, select_emphasized_tree for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for shadowtree functionality in MeerK40t."""
 
     def __init__(self, service, gui, wxtree, context):
         self.elements = service

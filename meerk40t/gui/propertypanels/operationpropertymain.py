@@ -2045,6 +2045,14 @@ class DwellSettingsPanel(wx.Panel):
 
 
 class ParameterPanel(ScrolledPanel):
+    """ParameterPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for parameter functionality. Features checkbox controls for user interaction. Integrates with tree_changed, activate_single_node for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for parameter functionality. Key controls include "Stroke" (checkbox), "Fill" (checkbox), "Stop" (checkbox)."""
+
+    """ParameterPanel - User interface panel for laser cutting operations"""
+
     name = _("Properties")
     priority = -1
 

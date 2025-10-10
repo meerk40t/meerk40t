@@ -28,6 +28,27 @@ realtime_commands = (
 
 
 class GRBLControllerPanel(wx.Panel):
+    """
+    GRBL Controller Panel - Real-time communication interface for GRBL laser devices.
+
+    **Technical Purpose:**
+    Provides a comprehensive wxPython-based control interface for GRBL-compatible laser devices,
+    enabling real-time communication, command execution, and device monitoring. This panel serves
+    as the primary user interface for device interaction, handling connection management, G-code
+    command transmission, macro execution, and communication logging. It integrates with the
+    MeerK40t kernel's signal system to maintain synchronized device state and user interface updates.
+
+    **Signal Listeners:**
+    - `update_interface`: Updates GUI button states and connection status indicators
+    - `grbl_controller_update`: Refreshes the communication log display with new data
+
+    **End-User Description:**
+    Control and monitor your GRBL laser device in real-time. Connect or disconnect from the device,
+    send individual G-code commands or execute stored macros, and view all communication in the log window.
+    Use predefined buttons for common operations like homing, status queries, and alarm clearing.
+    Right-click macro buttons to customize them with your frequently used command sequences.
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SerialControllerPanel.__init__
         self.service = context

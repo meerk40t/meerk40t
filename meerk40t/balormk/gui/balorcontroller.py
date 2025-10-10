@@ -15,6 +15,12 @@ _ = wx.GetTranslation
 
 
 class BalorControllerPanel(wx.ScrolledWindow):
+    """BalorControllerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for balorcontroller functionality. Features button controls for user interaction. Integrates with pipe;usb_status, balor_controller_update for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for balorcontroller functionality. Key controls include "Connection" (button)."""
+
     def __init__(self, *args, context=None, **kwargs):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
@@ -97,7 +103,9 @@ class BalorControllerPanel(wx.ScrolledWindow):
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
         self.button_device_connect.SetBitmap(
-            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size(self.context))
+            icons8_connected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size(self.context)
+            )
         )
         self.button_device_connect.Enable()
 

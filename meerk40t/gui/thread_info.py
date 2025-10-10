@@ -37,6 +37,14 @@ def register_panel_thread_info(window, context):
 
 
 class ThreadPanel(wx.Panel):
+    """ThreadPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for thread functionality. Features checkbox controls for user interaction. Integrates with thread_update, wxpane/ThreadInfo for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for thread functionality. Key controls include "Auto-show on new task" (checkbox)."""
+
+    """ThreadPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

@@ -2,10 +2,10 @@ import wx
 
 from meerk40t.core.elements.element_types import (
     effect_nodes,
+    elem_group_nodes,
     elem_nodes,
-    place_nodes, 
-    elem_group_nodes, 
     op_nodes,
+    place_nodes,
 )
 from meerk40t.core.node.image_raster import ImageRasterNode
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
@@ -39,10 +39,11 @@ _ = wx.GetTranslation
 
 
 class FormatterPanel(wx.Panel):
-    """
-    FormtterPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define default formatting strings per operation
-    """
+    """FormatterPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for formatter functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for formatter functionality in MeerK40t."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
@@ -151,13 +152,13 @@ class FormatterPanel(wx.Panel):
                 sectname = "_40_Operations"
             else:
                 sectname = ""
-            # Hint for translation 
+            # Hint for translation
             # _("Elements")
             # _("Operations")
-            # _("Grouping + Files") 
+            # _("Grouping + Files")
             # _("Operations (Special)")
-            # _("Elements (Effects)")     
-            # _("Placements")      
+            # _("Elements (Effects)")
+            # _("Placements")
             lbl = node.replace(" ", "_")
             default = self.context.elements.lookup(f"format/{node}")
             if default is None:

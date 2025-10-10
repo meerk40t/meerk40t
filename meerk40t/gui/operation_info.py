@@ -16,6 +16,14 @@ _ = wx.GetTranslation
 
 
 class OpInfoPanel(ScrolledPanel):
+    """OpInfoPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for opinfo functionality. Features button controls for user interaction. Integrates with tree_changed, rebuild_tree for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for opinfo functionality. Key controls include "Get Time Estimates" (button)."""
+
+    """OpInfoPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -27,7 +35,8 @@ class OpInfoPanel(ScrolledPanel):
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
-            context=self.context, list_name="list_operationinfo",
+            context=self.context,
+            list_name="list_operationinfo",
         )
         self.list_operations.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
 

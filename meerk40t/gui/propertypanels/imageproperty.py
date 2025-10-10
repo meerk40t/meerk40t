@@ -1853,6 +1853,14 @@ class ImageVectorisationPanel(ScrolledPanel):
 
 
 class ImagePropertyPanel(ScrolledPanel):
+    """ImagePropertyPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for imageproperty functionality. Features checkbox, button controls for user interaction. Integrates with nodetype, element_property_force for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for imageproperty functionality. Key controls include "Enable" (checkbox), "Reset" (button), "Invert" (checkbox)."""
+
+    """ImagePropertyPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

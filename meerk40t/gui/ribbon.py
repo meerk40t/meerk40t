@@ -58,11 +58,11 @@ COLOR_MODE_DARK = 2
 
 
 class DropDown:
-    """
-    Dropdowns are the triangle click addons that expand the button list to having other functions.
-
-    This primarily stores the position of the given dropdown.
-    """
+    """DropDown - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for dropdown functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for dropdown functionality in MeerK40t."""
 
     def __init__(self):
         self.position = None
@@ -84,11 +84,11 @@ class DropDown:
 
 
 class Button:
-    """
-    Buttons store most of the relevant data as to how to display the current aspect of the given button. This
-    includes things like tool-tip, the drop-down if needed, whether its in the overflow, the pressed and unpressed
-    aspects of the buttons and enable/disable rules.
-    """
+    """Button - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for button functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for button functionality in MeerK40t."""
 
     def __init__(self, context, parent, button_id, kind, description):
         self.context = context
@@ -671,9 +671,11 @@ class Button:
 
 
 class RibbonPanel:
-    """
-    Ribbon Panel is a panel of buttons within the page.
-    """
+    """RibbonPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribbon functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for ribbon functionality in MeerK40t."""
 
     def __init__(self, context, parent, id, label, icon):
         self.context = context
@@ -837,9 +839,11 @@ class RibbonPanel:
 
 
 class RibbonPage:
-    """
-    Ribbon Page is a page of buttons this is the series of ribbon panels as triggered by the different tags.
-    """
+    """RibbonPage - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribbonpage functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for ribbonpage functionality in MeerK40t."""
 
     def __init__(self, context, parent, id, label, icon, reference):
         self.context = context
@@ -889,6 +893,12 @@ class RibbonPage:
 
 
 class RibbonBarPanel(wx.Control):
+    """RibbonBarPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribbonbar functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for ribbonbar functionality in MeerK40t."""
+
     def __init__(self, parent, id, context=None, pane=None, **kwds):
         super().__init__(parent, id, **kwds)
         self.context = context
@@ -1399,6 +1409,12 @@ class RibbonBarPanel(wx.Control):
 
 
 class Art:
+    """Art - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for art functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for art functionality in MeerK40t."""
+
     def __init__(self, parent):
         self.RIBBON_ORIENTATION_AUTO = 0
         self.RIBBON_ORIENTATION_HORIZONTAL = 1

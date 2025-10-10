@@ -37,6 +37,14 @@ def register_panel_position(window, context):
 
 
 class PositionPanel(wx.Panel):
+    """PositionPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for position functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, modified_by_tool for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for position functionality. Key controls include "Individ." (checkbox), "Keep ratio" (checkbox)."""
+
+    """PositionPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, small=False, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

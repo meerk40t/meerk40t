@@ -21,10 +21,11 @@ _ = wx.GetTranslation
 
 
 class WarningPanel(wx.Panel):
-    """
-    WarningPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define Min and Max Values for Speed and Power per operation
-    """
+    """WarningPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for warning functionality. Integrates with speed_min, power_percent for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for warning functionality in MeerK40t."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
@@ -95,9 +96,7 @@ class WarningPanel(wx.Panel):
             image = wxStaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=bsize))
 
-            label1 = wxStaticText(
-                self, id=wx.ID_ANY, label=_(entry["op"].capitalize())
-            )
+            label1 = wxStaticText(self, id=wx.ID_ANY, label=_(entry["op"].capitalize()))
 
             label2 = wxStaticText(
                 self, id=wx.ID_ANY, label=_(entry["attr"].capitalize())
