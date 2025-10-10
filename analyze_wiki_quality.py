@@ -173,12 +173,26 @@ def print_analysis(results):
     amount = (
         f"{len(results['insufficient']) // 10 * 10}+"
         if len(results["insufficient"]) > 10
-        else len(results["insufficient"])
+        else f"{len(results["insufficient"])}"
+    )
+    total_pages = (
+        len(results["insufficient"])
+        + len(results["minimal"])
+        + len(results["adequate"])
+        + len(results["good"])
+    )
+    missing_screenshot_pages = total_pages - sum(
+        1 for item in results["insufficient"] if item["has_screenshots"]
+    )
+    screenshot_amount = (
+        f"{missing_screenshot_pages // 10 * 10}+"
+        if missing_screenshot_pages > 10
+        else f"{missing_screenshot_pages}"
     )
     print("- PRIORITY RECOMMENDATIONS:")
     print(f"   1. Focus on the {amount} pages with 3+ placeholders first")
     print("   2. Add detailed descriptions and usage steps")
-    print("   3. Include screenshots for visual features")
+    print(f"   3. Include screenshots for visual features ({screenshot_amount} pages)")
     print("   4. Remove placeholder text and replace with actual content")
     print("   5. Test documentation by having new users follow the guides")
 
