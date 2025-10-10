@@ -18,10 +18,10 @@ def analyze_wiki_pages(wiki_dir):
         r"\*Step 3\*",
         r"\*Add technical information.*?\*",
         r"\*Add screenshots.*?\*",
-        r"\*Link to related help topics:\*",
+        # Removed '*Link to related help topics:*' as it's a legitimate section header with content
         r"TODO",
         r"FIXME",
-        r"placeholder",
+        # Removed overly broad 'placeholder' pattern that matches legitimate technical content
         # Removed 'template' as it's too broad and matches legitimate content in templates.md
     ]
 
@@ -55,7 +55,9 @@ def analyze_wiki_pages(wiki_dir):
         has_description = bool(
             re.search(r"## Description\s*\n.*?(?=\n##|\n---|\Z)", content, re.DOTALL)
         )
-        has_screenshots = "![grafik]" in content or "screenshots" in content.lower()
+        # Improved screenshot detection: look for actual image markdown syntax ![alt](url)
+        # This correctly identifies pages with embedded images vs. pages that just have "## Screenshots" headers
+        has_screenshots = bool(re.search(r"!\[.*?\]\(.*?\)", content))
         has_detailed_steps = (
             len([line for line in content_lines if len(line.strip()) > 50]) > 5
         )
