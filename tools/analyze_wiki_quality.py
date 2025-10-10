@@ -178,7 +178,15 @@ def print_analysis(results):
         if priority_amount > 10
         else f"{priority_amount}"
     )
-
+    priority_name = "critical"
+    if priority_amount == 0:
+        priority_amount = len(results["minimal"])
+        priority_pages = (
+            f"{priority_amount // 10 * 10}+"
+            if priority_amount > 10
+            else f"{priority_amount}"
+        )
+        priority_name = "minimal"
     total_pages = (
         len(results["insufficient"])
         + len(results["minimal"])
@@ -194,8 +202,10 @@ def print_analysis(results):
         else f"{missing_screenshot_pages}"
     )
     print("- PRIORITY RECOMMENDATIONS:")
+    if len(results["insufficient"]) == 0:
+        print("   Good job! No pages with critical documentation issues.")
     print(
-        f"   1. Focus on the {priority_pages} {'pages' if priority_amount > 1 else 'page'} with 3+ placeholders first"
+        f"   1. Focus on the {priority_pages} {priority_name} {'pages' if priority_amount > 1 else 'page'} with 3+ placeholders first"
     )
     print("   2. Add detailed descriptions and usage steps")
     print(
