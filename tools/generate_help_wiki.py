@@ -11,7 +11,7 @@ Usage:
 Options:
     --upload    Automatically upload generated pages to GitHub wiki repository
 
-This will create markdown files in a 'wiki-pages' directory that can be uploaded
+This will create markdown files in a '../wiki-pages' directory that can be uploaded
 to the GitHub wiki repository.
 """
 
@@ -26,7 +26,7 @@ from collections import defaultdict
 def check_existing_wiki_page(section):
     """Check if an existing wiki page exists and return its content."""
     # First check local wiki-pages directory
-    local_wiki_dir = "wiki-pages"
+    local_wiki_dir = "../wiki-pages"
     local_filename = f"Online-Help-{section}.md"
     local_filepath = os.path.join(local_wiki_dir, local_filename)
 
@@ -100,12 +100,13 @@ def extract_help_sections():
     help_context = defaultdict(list)  # section -> list of files using it
 
     # Walk through all Python files
-    for root, dirs, files in os.walk("."):
+    for root, dirs, files in os.walk(".."):
         # Skip certain directories
         dirs[:] = [
             d
             for d in dirs
-            if not d.startswith(".") and d not in ["__pycache__", "build", "dist"]
+            if not d.startswith(".")
+            and d not in ["__pycache__", "build", "dist", "tools", "test", "testgui"]
         ]
 
         for file in files:
@@ -1271,7 +1272,7 @@ def update_class_docstring(filepath, class_name, new_docstring):
         return False
 
 
-def upload_to_wiki(wiki_dir="wiki-pages", repo_url=None, commit_message=None):
+def upload_to_wiki(wiki_dir="../wiki-pages", repo_url=None, commit_message=None):
     """
     Upload generated wiki pages to GitHub wiki repository.
 
@@ -1487,7 +1488,7 @@ def main():
     print(f"Found {len(help_sections)} unique help sections")
 
     # Create output directory
-    output_dir = "wiki-pages"
+    output_dir = "../wiki-pages"
     os.makedirs(output_dir, exist_ok=True)
 
     # Generate wiki pages
@@ -1646,7 +1647,7 @@ def main():
 
     print("\nNext steps:")
     if not args.upload:
-        print("1. Review and edit the generated pages in the 'wiki-pages' directory")
+        print("1. Review and edit the generated pages in the '../wiki-pages' directory")
         print("2. Upload these files to your GitHub wiki repository")
         print("3. Or copy/paste the content to create wiki pages manually")
         print("4. Or run with --upload to automatically upload to wiki")

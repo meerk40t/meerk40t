@@ -206,7 +206,7 @@ def print_analysis(results):
 
 
 if __name__ == "__main__":
-    wiki_dir = "wiki-pages"
+    wiki_dir = "../wiki-pages"
     if not os.path.exists(wiki_dir):
         print(f"Error: {wiki_dir} directory not found!")
         exit(1)
