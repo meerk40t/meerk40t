@@ -94,16 +94,18 @@ The panel integrates with the ChoicePropertyPanel system for consistent UI behav
 
 ## Related Topics
 
-*Link to related help topics:*
-
-- [[Online Help: Tree]] - Understanding the tree view structure
-- [[Online Help: Defaultactions]] - Other display and behavior settings
-- [[Online Help: Effects]] - Effect-related formatting options
-- [[Online Help: Operationproperty]] - Operation parameter configuration
+- [[Online Help: Tree]] - Understanding the tree view structure and navigation
+- [[Online Help: Defaultactions]] - Other display and behavior customization settings
+- [[Online Help: Effects]] - Effect-related formatting options and parameters
+- [[Online Help: Operationproperty]] - Operation parameter configuration and properties
+- [[Online Help: Devices]] - Device-specific configuration panels
 
 ## Screenshots
 
-*Add screenshots showing the Formatter panel with custom format strings and the resulting tree view display.*
+*Screenshots would show:*
+- *The Formatter panel with various node types and their custom format strings*
+- *The resulting tree view display showing customized element and operation labels*
+- *Examples of different format strings and their visual output*
 
 ---
 
