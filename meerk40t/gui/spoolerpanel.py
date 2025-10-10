@@ -773,7 +773,10 @@ class SpoolerPanel(wx.Panel):
                             spool_obj.calc_steps()
                         info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                         if hasattr(spooler, "driver"):
-                            if hasattr(spooler.driver, "get_internal_queue_status"):
+                            if (
+                                hasattr(spooler.driver, "get_internal_queue_status")
+                                and spool_obj.status == "Running"
+                            ):
                                 (
                                     internal_current,
                                     internal_total,
@@ -1129,7 +1132,10 @@ class SpoolerPanel(wx.Panel):
                     spool_obj.calc_steps()
                 info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                 if hasattr(spooler, "driver"):
-                    if hasattr(spooler.driver, "get_internal_queue_status"):
+                    if (
+                        hasattr(spooler.driver, "get_internal_queue_status")
+                        and spool_obj.status == "Running"
+                    ):
                         (
                             internal_current,
                             internal_total,
