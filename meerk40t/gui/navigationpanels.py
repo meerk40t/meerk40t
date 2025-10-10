@@ -1089,11 +1089,19 @@ class Drag(wx.Panel):
 
 
 class Jog(wx.Panel):
-    """Jog Panel - Manually move the laser head around the work area
+    """Jog Panel - Manual Laser Positioning and Movement Control
+
     **Technical Purpose:**
-    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
+    Provides comprehensive manual control interface for laser head positioning and movement.
+    Implements directional movement controls, home positioning, rail locking, bed confinement,
+    and Z-axis controls for supported devices. Integrates with device drivers for real-time
+    position feedback and movement execution.
+
     **End-User Perspective:**
-    This panel gives you manual control over laser movement. Use the directional buttons to move the laser head around the work area for setup and testing."""
+    This control panel gives you precise manual control over your laser's position. Use the
+    directional buttons to move the laser head around your work area for setup, testing,
+    alignment, and positioning. The panel includes safety features like bed confinement
+    and supports advanced features like Z-axis control for compatible devices."""
 
     def __init__(self, *args, context=None, suppress_z_controls=False, **kwds):
         # begin wxGlade: Jog.__init__
@@ -1511,11 +1519,17 @@ class Jog(wx.Panel):
 
 
 class MovePanel(wx.Panel):
-    """Move Panel - Send the laser to specific coordinates or saved positions
+    """MovePanel - Coordinate-Based Laser Positioning Interface
+
     **Technical Purpose:**
-    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with refresh_scene, jog_amount for enhanced functionality.
+    Provides precise coordinate-based movement controls for laser positioning with preset storage
+    and real-time position feedback. Implements absolute positioning commands with bed boundary
+    checking and persistent position memory across sessions.
+
     **End-User Perspective:**
-    This panel lets you send the laser to specific coordinates or saved positions. Enter coordinates directly or select from saved locations."""
+    This interface allows you to send your laser to exact coordinates or recall saved positions.
+    Perfect for precise alignment, repetitive positioning tasks, and creating reference points
+    for your laser cutting workflow."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
