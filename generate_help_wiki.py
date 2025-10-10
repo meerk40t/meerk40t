@@ -25,6 +25,21 @@ from collections import defaultdict
 
 def check_existing_wiki_page(section):
     """Check if an existing wiki page exists and return its content."""
+    # First check local wiki-pages directory
+    local_wiki_dir = "wiki-pages"
+    local_filename = f"Online-Help-{section}.md"
+    local_filepath = os.path.join(local_wiki_dir, local_filename)
+
+    if os.path.exists(local_filepath):
+        try:
+            with open(local_filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+                if content and len(content.strip()) > 200:  # Substantial content check
+                    return content
+        except Exception:
+            pass
+
+    # Then check wiki repository if it exists
     wiki_filename = f"Online-Help:-{section.upper()}.md"
     wiki_repo_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "meerk40t.wiki"
@@ -32,9 +47,6 @@ def check_existing_wiki_page(section):
 
     # Check if wiki repo exists
     if not os.path.exists(wiki_repo_path):
-        print(
-            f"Warning: Wiki repository not found at {wiki_repo_path}. Skipping existing content check."
-        )
         return None
 
     try:
@@ -124,9 +136,19 @@ def extract_help_sections():
                                         arg = node.args[0]
 
                                         # Handle SetHelpText("string")
-                                        if isinstance(arg, ast.Str) and arg.s.strip():
-                                            help_sections.add(arg.s)
-                                            help_context[arg.s].append(filepath)
+                                        arg_value = None
+                                        if isinstance(arg, ast.Constant) and isinstance(
+                                            arg.value, str
+                                        ):
+                                            arg_value = arg.value
+
+                                        if (
+                                            arg_value
+                                            and isinstance(arg_value, str)
+                                            and arg_value.strip()
+                                        ):
+                                            help_sections.add(arg_value)
+                                            help_context[arg_value].append(filepath)
 
                                         # Handle SetHelpText(_("string"))
                                         elif (
@@ -134,15 +156,23 @@ def extract_help_sections():
                                             and isinstance(arg.func, ast.Name)
                                             and arg.func.id == "_"
                                         ):
-                                            if (
-                                                arg.args
-                                                and isinstance(arg.args[0], ast.Str)
-                                                and arg.args[0].s.strip()
-                                            ):
-                                                help_sections.add(arg.args[0].s)
-                                                help_context[arg.args[0].s].append(
-                                                    filepath
-                                                )
+                                            if arg.args and len(arg.args) > 0:
+                                                inner_arg = arg.args[0]
+                                                inner_value = None
+                                                if isinstance(
+                                                    inner_arg, ast.Constant
+                                                ) and isinstance(inner_arg.value, str):
+                                                    inner_value = inner_arg.value
+
+                                                if (
+                                                    inner_value
+                                                    and isinstance(inner_value, str)
+                                                    and inner_value.strip()
+                                                ):
+                                                    help_sections.add(inner_value)
+                                                    help_context[inner_value].append(
+                                                        filepath
+                                                    )
 
                                         # Handle SetHelpText(variable) - try to resolve if it's a simple string constant
                                         elif isinstance(arg, ast.Name):
@@ -161,13 +191,15 @@ def extract_help_sections():
                                                             if (
                                                                 isinstance(
                                                                     scope_node.value,
-                                                                    ast.Str,
+                                                                    ast.Constant,
                                                                 )
-                                                                and scope_node.value.s.strip()
+                                                                and isinstance(
+                                                                    scope_node.value.value,
+                                                                    str,
+                                                                )
+                                                                and scope_node.value.value.strip()
                                                             ):
-                                                                var_value = (
-                                                                    scope_node.value.s
-                                                                )
+                                                                var_value = scope_node.value.value
                                                                 break
                                                     if var_value:
                                                         break
@@ -184,8 +216,10 @@ def extract_help_sections():
                                             # For simple f-strings like f"prefix{suffix}", try to extract
                                             parts = []
                                             for value in arg.values:
-                                                if isinstance(value, ast.Str):
-                                                    parts.append(value.s)
+                                                if isinstance(
+                                                    value, ast.Constant
+                                                ) and isinstance(value.value, str):
+                                                    parts.append(value.value)
                                                 elif isinstance(
                                                     value, ast.FormattedValue
                                                 ):
@@ -675,9 +709,13 @@ def generate_wiki_page(section, files, all_sections, help_context):
     elif class_descriptions:
         description += "\n\n" + class_descriptions[0]  # Use the first class docstring
 
-    # If we have existing content, add it to the description
-    if existing_description:
-        description += "\n\n" + existing_description
+    # If we have existing content, use it instead of generated content
+    if existing_description and existing_description.strip():
+        description = existing_description.strip()
+    else:
+        # If we have existing content, add it to the description
+        if existing_description:
+            description += "\n\n" + existing_description
 
     # Generate usage information based on UI elements
     usage_info = ""
@@ -717,7 +755,47 @@ def generate_wiki_page(section, files, all_sections, help_context):
             related_title = related_section.replace("_", " ").title()
             related_links += f"- [[Online Help: {related_title}]]\n"
 
-    template = f"""# Online Help: {title}
+    # Check if we have substantial existing content to determine template style
+    has_existing_content = (
+        existing_description and len(existing_description.strip()) > 100
+    )
+
+    if has_existing_content:
+        # Use a simpler template that preserves existing content
+        template = f"""# Online Help: {title}
+
+## Overview
+
+{description}
+
+## Location in MeerK40t
+
+This help section is accessed from:
+{file_list}
+
+## Category
+
+**{category}**
+
+## Technical Details
+
+{technical_details}
+## Related Topics
+
+*Link to related help topics:*
+
+{related_links}
+## Screenshots
+
+*Add screenshots showing the feature in action.*
+
+---
+
+*This help page was automatically updated. Please review and enhance with additional information about the {section} feature.*
+"""
+    else:
+        # Use the full template with placeholders for new content
+        template = f"""# Online Help: {title}
 
 ## Overview
 
@@ -1166,8 +1244,18 @@ def update_class_docstring(filepath, class_name, new_docstring):
         class_line = lines[class_start]
         class_indent = class_line[: len(class_line) - len(class_line.lstrip())]
 
-    # Format the new docstring
-    indented_docstring = f'{class_indent}    """{new_docstring}"""'
+    # For class docstrings, use the same indentation as the class
+    # For method docstrings, add 4 more spaces
+    if current_docstring:
+        # Existing docstring - preserve its indentation level
+        docstring_line = lines[docstring_start]
+        docstring_indent = docstring_line[
+            : len(docstring_line) - len(docstring_line.lstrip())
+        ]
+        indented_docstring = f'{docstring_indent}"""{new_docstring}"""'
+    else:
+        # New docstring - use class indentation
+        indented_docstring = f'{class_indent}    """{new_docstring}"""'
 
     # Replace the content
     new_lines = lines[:docstring_start] + [indented_docstring] + lines[docstring_end:]
@@ -1375,6 +1463,11 @@ def main():
         help="Automatically upload generated pages to GitHub wiki repository",
     )
     parser.add_argument(
+        "--recreate",
+        action="store_true",
+        help="Recreate all wiki pages, even if they already exist with content",
+    )
+    parser.add_argument(
         "--repo-url",
         type=str,
         help="GitHub repository URL (auto-detected if not specified)",
@@ -1393,64 +1486,6 @@ def main():
 
     print(f"Found {len(help_sections)} unique help sections")
 
-    # Assess and update docstrings for classes with SetHelpText calls
-    print("\nAssessing docstring quality and updating as needed...")
-    updated_classes = 0
-
-    for section, files in help_context.items():
-        for filepath in files:
-            analysis = analyze_module_for_help_section(filepath, section)
-
-            for class_info in analysis.get("class_info", []):
-                class_name = class_info.get("name")
-                current_docstring = class_info.get("docstring")
-                methods = class_info.get("methods", [])
-                ui_elements = analysis.get("ui_elements", [])
-                functionality_hints = analysis.get("functionality", [])
-                comments = analysis.get("comments", [])
-
-                # Assess docstring quality
-                assessment = assess_docstring_quality(
-                    current_docstring, class_name, methods, ui_elements
-                )
-
-                # Check if docstring contains non-helpful sections that should be removed
-                needs_simplification = False
-                if current_docstring:
-                    sections_to_remove = [
-                        "Integration Points:",
-                        "Main Methods:",
-                        "Usage Notes:",
-                        "Controls:",
-                        "How to Use:",
-                        "When to Use:",
-                    ]
-                    for section in sections_to_remove:
-                        if section in current_docstring:
-                            needs_simplification = True
-                            break
-
-                if assessment["needs_improvement"] or needs_simplification:
-                    print(f"Improving docstring for {class_name} in {filepath}")
-                    print(
-                        f"  Current quality: {assessment['quality']} (score: {assessment['score']})"
-                    )
-
-                    # Generate new docstring
-                    new_docstring = generate_docstring_for_class(
-                        class_name, methods, ui_elements, functionality_hints, comments
-                    )
-
-                    # Update the class docstring
-                    if update_class_docstring(filepath, class_name, new_docstring):
-                        updated_classes += 1
-                        print(f"  ✓ Updated docstring for {class_name}")
-                    else:
-                        print(f"  ✗ Failed to update docstring for {class_name}")
-
-    if updated_classes > 0:
-        print(f"\nUpdated docstrings for {updated_classes} classes")
-
     # Create output directory
     output_dir = "wiki-pages"
     os.makedirs(output_dir, exist_ok=True)
@@ -1458,17 +1493,31 @@ def main():
     # Generate wiki pages
     generated_pages = []
     reused_content_count = 0
+    skipped_pages_count = 0
 
     for section in sorted(help_sections):
         filename = f"Online-Help-{section}.md"
         filepath = os.path.join(output_dir, filename)
+
+        # Check if page already exists and has substantial content
+        existing_content = check_existing_wiki_page(section)
+        existing_description = (
+            extract_existing_content(existing_content) if existing_content else ""
+        )
+
+        # Skip generation if page exists with content and --recreate not used
+        if existing_content and existing_description and not args.recreate:
+            skipped_pages_count += 1
+            print(
+                f"Skipped: {filename} (already exists with content, use --recreate to overwrite)"
+            )
+            continue
 
         content = generate_wiki_page(
             section, help_context[section], help_sections, help_context
         )
 
         # Check if we reused existing content
-        existing_content = check_existing_wiki_page(section)
         if existing_content and extract_existing_content(existing_content):
             reused_content_count += 1
             print(f"Generated: {filename} (reused existing content)")
@@ -1480,86 +1529,111 @@ def main():
 
         generated_pages.append(filename)
 
-    # Create an index page
-    index_content = "# MeerK40t Online Help Index\n\n"
-    index_content += f"This wiki contains help pages for {len(help_sections)} different features in MeerK40t.\n\n"
-    index_content += "## Help Pages by Category\n\n"
+    # Create an index page (only if it doesn't exist with substantial content)
+    home_filepath = os.path.join(output_dir, "Home.md")
+    home_exists = os.path.exists(home_filepath)
 
-    # Group by category
-    categories = defaultdict(list)
-    for section in help_sections:
-        # Infer category from context
-        category = "General"
-        files = help_context[section]
-        if any("balor" in f.lower() for f in files):
-            category = "Balor"
-        elif any("moshi" in f.lower() for f in files):
-            category = "Moshi"
-        elif any("newly" in f.lower() for f in files):
-            category = "Newly"
-        elif any("grbl" in f.lower() for f in files):
-            category = "GRBL"
-        elif any("lihuiyu" in f.lower() for f in files):
-            category = "Lihuiyu/K40"
-        elif any("tools" in f.lower() for f in files):
-            category = "Tools"
-        elif any("navigation" in f.lower() for f in files):
-            category = "Navigation"
-        elif "element" in section.lower() and (
-            "property" in section.lower() or "modify" in section.lower()
+    if home_exists:
+        try:
+            with open(home_filepath, "r", encoding="utf-8") as f:
+                existing_home = f.read()
+                # Check if it has substantial content (more than just a basic index)
+                if len(existing_home.strip()) > 500:  # Substantial content threshold
+                    print("Skipped: Home.md (already exists with substantial content)")
+                    total_pages = len(generated_pages)
+                else:
+                    home_exists = False  # Regenerate if it's just a basic index
+        except Exception:
+            home_exists = False
+
+    if not home_exists:
+        index_content = "# MeerK40t Online Help Index\n\n"
+        index_content += f"This wiki contains help pages for {len(help_sections)} different features in MeerK40t.\n\n"
+        index_content += "## Help Pages by Category\n\n"
+
+        # Group by category
+        categories = defaultdict(list)
+        for section in help_sections:
+            # Infer category from context
+            category = "General"
+            files = help_context[section]
+            if any("balor" in f.lower() for f in files):
+                category = "Balor"
+            elif any("moshi" in f.lower() for f in files):
+                category = "Moshi"
+            elif any("newly" in f.lower() for f in files):
+                category = "Newly"
+            elif any("grbl" in f.lower() for f in files):
+                category = "GRBL"
+            elif any("lihuiyu" in f.lower() for f in files):
+                category = "Lihuiyu/K40"
+            elif any("tools" in f.lower() for f in files):
+                category = "Tools"
+            elif any("navigation" in f.lower() for f in files):
+                category = "Navigation"
+            elif "element" in section.lower() and (
+                "property" in section.lower() or "modify" in section.lower()
+            ):
+                category = "Element Properties"
+            elif "operation" in section.lower() and "property" in section.lower():
+                category = "Operation Properties"
+            elif "element" in section.lower() and (
+                "transform" in section.lower()
+                or "align" in section.lower()
+                or "modify" in section.lower()
+            ):
+                category = "Element Modification"
+            elif any("gui" in f.lower() for f in files):
+                category = "GUI"
+
+            categories[category].append(section)
+
+        # Define category order (device categories first, then functional, then general)
+        category_order = {
+            "GRBL": 1,
+            "Lihuiyu/K40": 2,
+            "Balor": 3,
+            "Moshi": 4,
+            "Newly": 5,
+            "Tools": 6,
+            "Navigation": 7,
+            "Element Properties": 8,
+            "Operation Properties": 9,
+            "Element Modification": 10,
+            "GUI": 11,
+            "General": 12,
+        }
+
+        for category, sections in sorted(
+            categories.items(), key=lambda x: category_order.get(x[0], 99)
         ):
-            category = "Element Properties"
-        elif "operation" in section.lower() and "property" in section.lower():
-            category = "Operation Properties"
-        elif "element" in section.lower() and (
-            "transform" in section.lower()
-            or "align" in section.lower()
-            or "modify" in section.lower()
-        ):
-            category = "Element Modification"
-        elif any("gui" in f.lower() for f in files):
-            category = "GUI"
+            index_content += f"### {category}\n\n"
+            for section in sorted(sections):
+                index_content += (
+                    f"- [[Online Help: {section.replace('_', ' ').title()}]]\n"
+                )
+            index_content += "\n"
 
-        categories[category].append(section)
+        index_content += "\n---\n\n"
+        index_content += (
+            "*This index is automatically generated. Last updated: "
+            + __import__("datetime").datetime.now().strftime("%Y-%m-%d")
+            + "*"
+        )
 
-    # Define category order (device categories first, then functional, then general)
-    category_order = {
-        "GRBL": 1,
-        "Lihuiyu/K40": 2,
-        "Balor": 3,
-        "Moshi": 4,
-        "Newly": 5,
-        "Tools": 6,
-        "Navigation": 7,
-        "Element Properties": 8,
-        "Operation Properties": 9,
-        "Element Modification": 10,
-        "GUI": 11,
-        "General": 12,
-    }
+        with open(home_filepath, "w", encoding="utf-8") as f:
+            f.write(index_content)
 
-    for category, sections in sorted(
-        categories.items(), key=lambda x: category_order.get(x[0], 99)
-    ):
-        index_content += f"### {category}\n\n"
-        for section in sorted(sections):
-            index_content += f"- [[Online Help: {section.replace('_', ' ').title()}]]\n"
-        index_content += "\n"
+        print("\nGenerated index page: Home.md")
+        total_pages = len(generated_pages) + 1
+    else:
+        total_pages = len(generated_pages)
 
-    index_content += "\n---\n\n"
-    index_content += (
-        "*This index is automatically generated. Last updated: "
-        + __import__("datetime").datetime.now().strftime("%Y-%m-%d")
-        + "*"
-    )
-
-    with open(os.path.join(output_dir, "Home.md"), "w", encoding="utf-8") as f:
-        f.write(index_content)
-
-    print("\nGenerated index page: Home.md")
-    print(f"\nTotal pages generated: {len(generated_pages) + 1}")
+    print(f"\nTotal pages generated: {total_pages}")
     if reused_content_count > 0:
         print(f"Pages with reused existing content: {reused_content_count}")
+    if skipped_pages_count > 0:
+        print(f"Pages skipped (already exist with content): {skipped_pages_count}")
 
     # Upload to wiki if requested
     if args.upload:
