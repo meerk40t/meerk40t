@@ -748,10 +748,6 @@ This help section is accessed from:
 
 {technical_details}*Add technical information about how this feature works internally.*
 
-## Common Issues
-
-*List common problems users might encounter and their solutions.*
-
 ## Related Topics
 
 *Link to related help topics:*
