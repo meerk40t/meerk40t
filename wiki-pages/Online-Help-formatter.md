@@ -102,11 +102,13 @@ The panel integrates with the ChoicePropertyPanel system for consistent UI behav
 
 ## Screenshots
 
-*Screenshots would show:*
-- *The Formatter panel with various node types and their custom format strings*
-- *The resulting tree view display showing customized element and operation labels*
-- *Examples of different format strings and their visual output*
+The Formatter panel interface includes:
 
----
+1. **General Settings**: Shows the power and speed display toggles at the top
+2. **Element Formatters**: Checkboxes and text fields for customizing how basic shapes (rectangles, ellipses, paths, text) are displayed
+3. **Operation Formatters**: Controls for laser operations (cut, engrave, raster, image) with custom format strings
+4. **Special Operations**: Formatters for utility operations (wait, home, goto, console commands)
+5. **Effects and Grouping**: Controls for effects (hatch, wobble, warp) and file/group nodes
+6. **Tree View Results**: Shows how the formatted labels appear in the actual tree view interface
 
-*This help page is automatically generated. Please update with specific information about the formatter feature.*
+The panel uses icons next to each node type to make identification easier, and format fields only appear when their corresponding checkbox is enabled.

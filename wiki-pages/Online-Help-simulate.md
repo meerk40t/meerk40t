@@ -22,7 +22,7 @@ Optimisations: If you click on the button with the Arrow left indicator (<img sr
 - You can zoom in and move around the scene preview by using the mouse scrollwheel as you can do in the main scene.
 
 ### Expert Tips:
-(I hope you know what you are doing ;-) )
+(I hope you know what you are doing :smirk: )
 - Right click on the scene to get a context menu.
 ![grafik](https://github.com/meerk40t/meerk40t/assets/2670784/e5070d2c-9bbf-4574-8619-8df0f306c348)
 You can intentionally drop all lasercommands before / after the currently displayed execution step - this is helpful if you need to restart a job and don't want to do all the things until the point you needed to interrupt (intentionally stopped) again. Go to this point (or as close as you can get) and delete the cuts before.
@@ -42,7 +42,16 @@ This help section is accessed from:
 
 ## Description
 
-*Add a detailed description of what this feature does and when users would use it.*
+The Simulate panel provides a comprehensive job preview and optimization environment that allows users to visualize exactly what will happen during laser execution before sending the job to the laser. This critical feature helps prevent costly mistakes by showing the cutting path sequence, timing estimates, and expected burn results.
+
+Users would use this feature when:
+- Previewing complex jobs before execution to verify cut order and timing
+- Testing optimization settings to improve job efficiency
+- Debugging job issues by examining individual cutcode segments
+- Estimating job duration and resource requirements
+- Validating that operations will execute as intended
+
+The simulation integrates with MeerK40t's cutcode engine to provide accurate representations of laser movements, power settings, speed changes, and timing. It supports both step-by-step analysis and time-based playback, making it invaluable for both novice users learning laser operations and experts fine-tuning complex jobs.
 
 ## How to Use
 
@@ -65,27 +74,59 @@ This help section is accessed from:
 
 ### Basic Usage
 
-1. *Step 1*
-2. *Step 2*
-3. *Step 3*
+1. **Open the Simulation Panel**: Access the simulation from the main MeerK40t interface to preview your current job
+2. **Review Job Preview**: Examine the visual representation of your laser job in the scene preview area
+3. **Adjust Playback Mode**: Choose between Step mode (jumps between draw primitives) or Time mode (shows progress over time intervals)
+4. **Test Optimizations**: Click the optimization arrow button to access optimization settings and test different parameters
+5. **Playback Control**: Use the playback controls to step through or continuously play the simulation
+6. **Analyze Results**: Review timing estimates, operation sequence, and potential issues
+7. **Send to Laser**: When satisfied with the preview, send the optimized cutcode directly to your laser device
 
 ## Technical Details
 
-Provides job simulation and preview functionality before laser execution. Features checkbox, button, radio button controls for user interaction. Integrates with background, device;modified for enhanced functionality.
+The simulation system works by processing the elements tree and operations through MeerK40t's cutcode generation engine. The cutcode represents the complete translation of design elements and laser operations into machine-executable commands.
 
-*Add technical information about how this feature works internally.*
+**Core Components:**
+
+- **Operations Panel**: Displays all cutcode groups created from the elements tree
+- **Cutcode Panel**: Shows detailed laser instructions for selected operations
+- **Scene Preview**: Real-time visualization of laser head movement and burn patterns
+- **Statistics Engine**: Calculates job duration, travel distances, and optimization metrics
+
+**Integration Points:**
+
+- Connects to the `background` service for asynchronous processing
+- Listens to `device;modified` signals for real-time updates
+- Responds to `refresh_simulation` signals to update the preview
+- Uses the cutplan optimization algorithms for travel path improvements
+
+**Advanced Features:**
+
+- Cutcode editing allows direct manipulation of laser commands
+- Optimization testing provides before/after performance comparisons
+- Context menu operations enable job interruption and restart capabilities
+- Multi-mode playback supports both primitive-level and time-based analysis
 
 ## Related Topics
 
-*Link to related help topics:*
-
-- [[Online Help: Alignment]]
-- [[Online Help: Distribute]]
-- [[Online Help: Arrangement]]
+- [[Online Help: Operations]] - Creating and managing laser operations
+- [[Online Help: OPTIMISATION]] - Detailed optimization options and algorithms
+- [[Online Help: Spooler]] - Job execution and laser communication
+- [[Online Help: Tree]] - Elements tree structure and management
+- [[Online Help: Device Configuration]] - Laser device setup and configuration
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+The simulation panel includes several key visual elements:
+
+1. **Main Simulation View**: Shows the job preview with laser head movement visualization
+2. **Operations Panel**: Lists all cutcode groups and allows adding special instructions
+3. **Cutcode Panel**: Displays detailed laser commands for selected operations
+4. **Optimization Panel**: Provides access to travel optimization settings
+5. **Playback Controls**: Step-by-step or time-based simulation playback
+6. **Context Menu**: Right-click options for job interruption and cutcode manipulation
+
+See the images included in the Overview section above for visual examples of the simulation interface.
 
 ---
 

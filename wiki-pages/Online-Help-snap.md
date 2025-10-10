@@ -27,48 +27,84 @@ This help section is accessed from:
 
 ## Description
 
-*Add a detailed description of what this feature does and when users would use it.*
+The Snap panel provides precise cursor positioning controls that help users align elements accurately during design and editing operations. This feature enhances workflow efficiency by automatically guiding the cursor to key points and grid intersections, eliminating the need for manual precision work.
+
+Users would use this feature when:
+- Creating precise geometric designs that require exact alignment
+- Positioning elements relative to existing design features
+- Working with grid-based layouts for consistent spacing
+- Performing detailed editing operations that require pixel-perfect accuracy
+- Designing complex patterns where element relationships are critical
+
+The snap system works by detecting nearby points of interest (element vertices, grid intersections) and highlighting them when the cursor is within a configurable distance. When snap is active, the cursor will automatically "jump" to these points, ensuring precise placement without manual measurement.
 
 ## How to Use
 
 ### Available Controls
 
-- **Snap to Element** (Checkbox)
-- **Snap to Grid** (Checkbox)
-- **Overall visibility** (Label)
-- **Distance** (Label)
-- **Distance** (Label)
-- **Distance** (Label)
+- **Overall visibility slider**: Controls the screen distance (in pixels) within which snap points will be highlighted and visible
+- **Snap to Element checkbox**: Enables/disables snapping to element points (vertices, endpoints, control points)
+- **Element Distance slider**: Sets the snap distance for element points when "Snap to Element" is enabled
+- **Snap to Grid checkbox**: Enables/disables snapping to grid intersection points
+- **Grid Distance slider**: Sets the snap distance for grid intersections when "Snap to Grid" is enabled
 
 ### Key Features
 
-- Integrates with: `action_attract_len`
-- Integrates with: `snap_grid`
-- Integrates with: `show_attract_len`
+- **Visual Feedback**: Nearby snap points are highlighted as you move the cursor
+- **Override Control**: Hold Shift key to temporarily disable snapping for free-form movement
+- **Configurable Distances**: Separate sensitivity settings for elements vs grid snapping
+- **Real-time Updates**: Settings changes take effect immediately without restart
 
 ### Basic Usage
 
-1. *Step 1*
-2. *Step 2*
-3. *Step 3*
+1. **Enable Snapping**: Check "Snap to Element" and/or "Snap to Grid" checkboxes to activate desired snap modes
+2. **Adjust Sensitivity**: Use the distance sliders to set how close the cursor must be to trigger snapping (higher values = easier snapping)
+3. **Set Visibility**: Adjust the "Overall visibility" slider to control how far ahead snap points are highlighted
+4. **Override When Needed**: Hold the Shift key while moving to temporarily bypass snapping for free positioning
+5. **Verify Settings**: Move your cursor near design elements or grid lines to see snap points highlight and test the behavior
 
 ## Technical Details
 
-Provides user interface controls for snapoption functionality. Features checkbox, label controls for user interaction. Integrates with action_attract_len, snap_grid for enhanced functionality.
+The snap system operates through several integrated components working together to provide precise cursor positioning:
 
-*Add technical information about how this feature works internally.*
+**Core Settings:**
+- `snap_grid` (boolean): Controls grid intersection snapping
+- `snap_points` (boolean): Controls element point snapping
+- `show_attract_len` (int): Pixel radius for highlighting snap points (default: 45px)
+- `action_attract_len` (int): Pixel radius for element point snapping (default: 20px)
+- `grid_attract_len` (int): Pixel radius for grid intersection snapping (default: 15px)
+
+**Integration Points:**
+- Scene rendering system calculates and displays snap point highlights
+- Mouse event handlers check cursor proximity to snap targets
+- Signal system broadcasts setting changes to all interested components
+- Widget system provides visual feedback through highlighted snap indicators
+
+**Performance Considerations:**
+- Snap point calculation occurs during mouse movement events
+- Visual highlighting uses efficient rendering to avoid UI lag
+- Distance calculations use pixel-based Euclidean measurements
+- Settings are cached and updated through the signal system for real-time response
 
 ## Related Topics
 
-*Link to related help topics:*
-
-- [[Online Help: Alignment]]
-- [[Online Help: Distribute]]
-- [[Online Help: Arrangement]]
+- [[Online Help: Alignment]] - Additional alignment and positioning tools
+- [[Online Help: Grid]] - Working with grid systems and spacing
+- [[Online Help: Position]] - Element positioning and transformation controls
+- [[Online Help: Transform]] - Advanced transformation operations
+- [[Online Help: Preferences]] - General UI and behavior configuration
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+The Snap panel interface includes:
+
+1. **Control Panel**: Shows the three main slider controls for visibility and snap distances
+2. **Snap Point Highlighting**: Visual indicators appear around nearby snap points when the cursor is close
+3. **Grid Intersection Display**: Shows highlighted grid points when grid snapping is active
+4. **Element Point Indicators**: Highlights vertices and control points of design elements
+5. **Override Behavior**: Demonstrates how Shift key bypasses snapping for free movement
+
+See the images included in the Overview section above for visual examples of snap point highlighting and the control interface.
 
 ---
 
