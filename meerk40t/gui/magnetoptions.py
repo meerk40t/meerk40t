@@ -39,20 +39,234 @@ def register_panel_magnetoptions(window, context):
 
 class MagnetOptionPanel(wx.Panel):
     """
-    Magnet line creation and management panel for interactive guide line placement during design operations.
+    MagnetOptionPanel - Magnet snapping configuration interface.
 
-    **Technical Details:**
-    - Purpose: Provides interactive controls for creating, toggling, and managing magnetic guide lines that assist with precise element positioning
-    - Signals: Listens to "emphasized" signal to enable/disable selection-based magnet creation when elements are selected
-    - Help Section: magnet
+    Technical Purpose:
+    Provides configuration controls for magnet snapping behavior in the MeerK40t scene.
+    Manages attraction strength settings, target area selection (left/right, top/bottom, center),
+    and persistence of magnet configurations. Integrates with the scene pane's magnet system
+    to control object snapping during editing operations.
 
-    **User Interface:**
-    - Single magnet line placement with coordinate input and X/Y axis toggle buttons for precise positioning
-    - Selection-based magnet creation with buttons for edges (left/right/top/bottom), centers, and fractional divisions (1/3, 1/4, 1/5 spacing)
-    - Horizontal and vertical magnet line controls for comprehensive guide placement around selected elements
-    - Clear functions for individual axes (X/Y) and complete magnet line removal
-    - Dynamic enabling/disabling based on element selection state
-    - Tooltips explaining each magnet placement option and its effect on element positioning
+    Signal Listeners:
+    - magnet_options: Updates UI when magnet options change externally
+
+    Signal Emissions:
+    - refresh_scene: Emitted when magnet settings change to update scene display
+
+    End-User Perspective:
+    This panel lets you customize how objects snap to guide lines in the scene. You can choose
+    which parts of objects get attracted to magnet lines (edges or centers), set how strong the
+    attraction is (from weak to enormous), and save/load different magnet configurations for
+    different types of work. The "Left/Right Side" option makes object edges snap to vertical
+    lines, "Top/Bottom Side" makes edges snap to horizontal lines, and "Center" makes object
+    centers snap to any magnet line.
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.SetHelpText("magnet")
+        self.scene = getattr(self.context.root, "mainscene", None)
+
+        # Main Sizer
+        sizer_magnet = wx.BoxSizer(wx.VERTICAL)
+        sizer_affection = StaticBoxSizer(
+            self, wx.ID_ANY, _("Attraction areas..."), wx.HORIZONTAL
+        )
+        self.check_x = wxCheckBox(self, wx.ID_ANY, _("Left/Right Side"))
+        self.check_x.SetToolTip(
+            _("Will a magnet line attract the left/right edges of an object")
+        )
+        self.check_y = wxCheckBox(self, wx.ID_ANY, _("Top/Bottom Side"))
+        self.check_y.SetToolTip(
+            _("Will a magnet line attract the top/bottom edges of an object")
+        )
+        self.check_c = wxCheckBox(self, wx.ID_ANY, _("Center"))
+        self.check_c.SetToolTip(_("Will a magnet line attract the center of an object"))
+        sizer_affection.Add(self.check_x, 1, wx.EXPAND, 0)
+        sizer_affection.Add(self.check_y, 1, wx.EXPAND, 0)
+        sizer_affection.Add(self.check_c, 1, wx.EXPAND, 0)
+
+        sizer_strength = StaticBoxSizer(
+            self, wx.ID_ANY, _("Attraction strength..."), wx.HORIZONTAL
+        )
+        choices = [
+            _("Off"),
+            _("Weak"),
+            _("Normal"),
+            _("Strong"),
+            _("Very Strong"),
+            _("Enormous"),
+        ]
+        self.cbo_strength = wxComboBox(
+            self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.cbo_strength.SetToolTip(
+            _(
+                "Define the attraction strength from weak (very close) to enormous (from far away)"
+            )
+        )
+        sizer_strength.Add(self.cbo_strength, 1, wx.EXPAND, 0)
+
+        sizer_template = StaticBoxSizer(
+            self, wx.ID_ANY, _("Save/Load settings"), wx.HORIZONTAL
+        )
+        choices = list(self.context.kernel.keylist("magnet_config"))
+        self.cbo_template = wxComboBox(
+            self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN
+        )
+        self.cbo_template.SetToolTip(
+            _("Name to save to / load from the current settings")
+        )
+        self.btn_load = wx.Button(self, wx.ID_ANY, _("Load"))
+        self.btn_load.SetToolTip(_("Load an existing setting configuration"))
+        self.btn_save = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.btn_load.SetToolTip(_("Save the current configuration for later reuse"))
+        sizer_template.Add(self.cbo_template, 1, wx.EXPAND, 0)
+        sizer_template.Add(self.btn_load, 0, wx.EXPAND, 0)
+        sizer_template.Add(self.btn_save, 0, wx.EXPAND, 0)
+
+        sizer_magnet.Add(sizer_affection, 0, wx.EXPAND, 0)
+        sizer_strength_template = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_strength_template.Add(sizer_strength, 0, wx.EXPAND, 0)
+        sizer_strength_template.Add(sizer_template, 1, wx.EXPAND, 0)
+
+        sizer_magnet.Add(sizer_strength_template, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_magnet)
+        self.Layout()
+
+        self.Bind(wx.EVT_COMBOBOX, self.on_cbo_strength, self.cbo_strength)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_x, self.check_x)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_y, self.check_y)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_c, self.check_c)
+
+        self.Bind(wx.EVT_TEXT, self.on_set_buttons, self.cbo_template)
+        self.Bind(wx.EVT_BUTTON, self.on_save_options, self.btn_save)
+        self.Bind(wx.EVT_BUTTON, self.on_set_options, self.btn_load)
+
+    def on_set_buttons(self, event):
+        flag_load = False
+        flag_save = False
+        o_name = self.cbo_template.GetValue()
+        if o_name:
+            flag_save = True
+            choices = list(self.context.kernel.keylist("magnet_config"))
+            flag_load = o_name in choices
+
+        self.btn_load.Enable(flag_load)
+        self.btn_save.Enable(flag_save)
+
+    def on_check_x(self, event):
+        flag = self.check_x.GetValue()
+        self.scene.pane.magnet_attract_x = flag
+
+    def on_check_y(self, event):
+        flag = self.check_y.GetValue()
+        self.scene.pane.magnet_attract_y = flag
+
+    def on_check_c(self, event):
+        flag = self.check_c.GetValue()
+        self.scene.pane.magnet_attract_c = flag
+
+    def on_cbo_strength(self, event):
+        idx = self.cbo_strength.GetSelection()
+        if idx < 0:
+            return
+        self.scene.pane.magnet_attraction = idx
+
+    def get_option_string(self):
+        p = self.scene.pane
+        return f"{'1' if p.magnet_attract_x else '0'}{'1' if p.magnet_attract_y else '0'}{'1' if p.magnet_attract_c else '0'}{p.magnet_attraction}"
+
+    def update_values(self):
+        idx = self.scene.pane.magnet_attraction
+        if 0 <= idx < len(self.cbo_strength.GetItems()):
+            self.cbo_strength.SetSelection(idx)
+        self.check_x.SetValue(self.scene.pane.magnet_attract_x)
+        self.check_y.SetValue(self.scene.pane.magnet_attract_y)
+        self.check_c.SetValue(self.scene.pane.magnet_attract_c)
+        choices = list(self.context.kernel.keylist("magnet_config"))
+        self.cbo_template.SetItems(choices)
+        current = self.get_option_string()
+        for key in choices:
+            value = self.context.kernel.read_persistent(
+                t=str, section="magnet_config", key=key, default=""
+            )
+            if value == current:
+                self.cbo_template.SetValue(key)
+                break
+
+        self.on_set_buttons(None)
+
+    def on_save_options(self, event):
+        o_name = self.cbo_template.GetValue()
+        if o_name is None or o_name == "":
+            return
+        options = self.get_option_string()
+        self.context.kernel.write_persistent(
+            section="magnet_config", key=o_name, value=options
+        )
+        self.update_values()
+
+    def on_set_options(self, event):
+        o_name = self.cbo_template.GetValue()
+        if o_name is None or o_name == "":
+            return
+        options = self.context.kernel.read_persistent(
+            t=str, section="magnet_config", key=o_name, default=""
+        )
+        if len(options) != 4:
+            return
+        p = self.scene.pane
+        p.magnet_attract_x = options[0] == "1"
+        p.magnet_attract_y = options[1] == "1"
+        p.magnet_attract_c = options[2] == "1"
+        try:
+            idx = int(options[3])
+            idx = min(5, idx)  # Not higher than enormous
+            idx = max(0, idx)  # Not lower than off
+        except ValueError:
+            idx = 2
+        p.magnet_attraction = idx
+        self.update_values()
+
+    def signal(self, signal_name):
+        if signal_name == "magnet_options":
+            self.update_values()
+
+    def pane_show(self, *args):
+        self.update_values()
+
+    def pane_hide(self, *args):
+        pass
+
+
+class MagnetActionPanel(wx.Panel):
+    """
+    MagnetActionPanel - Interactive magnet line creation and management interface.
+
+    Technical Purpose:
+    Provides interactive controls for creating, managing, and manipulating magnet lines
+    in the MeerK40t scene. Handles manual positioning of magnet lines, automatic generation
+    around selected objects, and clearing operations. Communicates with the scene pane's
+    magnet system to maintain guide lines for object snapping during editing.
+
+    Signal Listeners:
+    - emphasized: Updates UI when object selection changes to enable/disable selection-based actions
+
+    Signal Emissions:
+    - refresh_scene: Emitted when magnet lines are added/removed to update scene display
+
+    End-User Perspective:
+    This panel gives you direct control over magnet guide lines in your design. You can manually
+    set horizontal and vertical guide lines by entering coordinates and clicking X/Y buttons.
+    For selected objects, you can automatically create guide lines at edges, centers, or divide
+    the selection into equal parts (like thirds, quarters, or fifths). Use the clear buttons to
+    remove all guides, just horizontal ones, or just vertical ones. These guides help you align
+    and position objects precisely during editing.
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -316,21 +530,11 @@ class MagnetOptionPanel(wx.Panel):
 
 
 class MagnetPanel(wx.Panel):
-    """
-    Main magnet options container panel providing tabbed interface for magnet configuration and actions.
-
-    **Technical Details:**
-    - Purpose: Container panel organizing magnet functionality into Actions and Options tabs for comprehensive magnetic snapping control
-    - Signals: Listens to "emphasized" and "magnet_options" signals to coordinate state updates between action and option panels
-    - Help Section: magnet
-
-    **User Interface:**
-    - Tabbed notebook interface with separate Actions and Options panels
-    - Actions tab for creating and managing magnet guide lines interactively
-    - Options tab for configuring magnet attraction behavior and strength
-    - Coordinated signal handling ensuring both panels stay synchronized
-    - Integrated pane show/hide management for proper lifecycle handling
-    """
+    """MagnetPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides magnet snapping configuration controls for object alignment. Features checkbox controls for user interaction. Integrates with refresh_scene, magnet_options for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you customize how objects snap to guide lines. Set attraction strength and choose which object parts get attracted to magnets."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

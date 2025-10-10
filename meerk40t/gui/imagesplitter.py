@@ -151,27 +151,6 @@ class InfoPanel(wx.Panel):
 
 
 class SplitterPanel(wx.Panel):
-    """
-    SplitterPanel - Image splitting interface for large-format laser operations.
-
-    **Technical Purpose:**
-    Provides a wxPython-based interface for dividing large images into smaller, manageable
-    sections for laser cutting operations. This panel enables configurable grid-based splitting
-    with customizable DPI resolution and processing order controls. Integrates with MeerK40t's
-    render system to generate split image outputs that can be processed individually or as
-    a complete job sequence.
-
-    **Signal Listeners:**
-    - None (operates through parent window signal handling for emphasis updates)
-
-    **End-User Description:**
-    Split large images into smaller sections for laser cutting when your design exceeds your
-    machine's working area. Set the number of columns and rows to divide your image, choose
-    the processing order (selection, first selected, or last selected), and specify the DPI
-    resolution for the output. This creates multiple smaller images that can be burned
-    sequentially to recreate your complete design.
-    """
-
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -324,27 +303,6 @@ class SplitterPanel(wx.Panel):
 
 
 class KeyholePanel(wx.Panel):
-    """
-    KeyholePanel - Keyhole image generation interface for laser operations.
-
-    **Technical Purpose:**
-    Provides a wxPython-based interface for creating keyhole operations from selected design
-    elements. This panel generates specialized images where selected elements become transparent
-    "keyholes" in a solid background, enabling precise alignment and registration marks for
-    multi-pass laser operations. Supports DPI resolution control, mask inversion, and outline
-    tracing options for flexible keyhole generation.
-
-    **Signal Listeners:**
-    - None (operates through parent window signal handling for emphasis updates)
-
-    **End-User Description:**
-    Create keyhole images for precise alignment in multi-pass laser operations. Select an element
-    to become the keyhole (transparent area) while the rest forms a solid background. Choose
-    between first or last selected element as the keyhole, set DPI resolution, and optionally
-    invert the mask or trace the keyhole outline. Perfect for creating registration marks,
-    alignment guides, or specialized cutting patterns.
-    """
-
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)

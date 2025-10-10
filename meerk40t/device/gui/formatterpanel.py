@@ -39,7 +39,11 @@ _ = wx.GetTranslation
 
 
 class FormatterPanel(wx.Panel):
-    """FormatterPanel - User interface panel for laser cutting operations"""
+    """FormatterPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for formatter functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for formatter functionality in MeerK40t."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

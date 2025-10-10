@@ -42,30 +42,7 @@ _FACTOR = 1000
 
 class HingePanel(wx.Panel):
     """
-    HingePanel - Living hinge pattern generation and customization tool.
-
-    This panel provides comprehensive living hinge creation capabilities for laser cutting operations,
-    enabling users to generate flexible connection patterns between material parts. It supports multiple
-    hinge patterns and algorithms, with real-time preview and optimization features for creating
-    functional hinges that allow parts to bend without breaking.
-
-    Signal Listeners:
-        - emphasized: Updates panel visibility and hinge area when element selection changes
-
-    Signal References:
-        - None: This panel primarily consumes signals for UI updates
-
-    User Interface:
-        - Hinge area definition with X/Y origin coordinates and width/height dimensions
-        - Pattern style selector offering various hinge design options (grid, diagonal, etc.)
-        - Algorithm selection between pattern-based (complex) and direct grid (simple) generation
-        - Rotation control with slider for adjusting hinge pattern orientation (0-359 degrees)
-        - Real-time preview canvas showing generated hinge pattern before creation
-        - Preview shape toggle to show/hide the hinge boundary outline
-        - Generate button to create the hinge pattern as vector elements
-        - Default values button to reset all parameters to sensible defaults
-        - Comprehensive parameter validation with visual feedback
-        - Performance optimization with dual algorithm strategy for large patterns
+    UI for LivingHinges, allows setting of parameters including preview of the expected result
     """
 
     def __init__(self, *args, context=None, **kwds):

@@ -203,29 +203,13 @@ class SelectDevice(wx.Dialog):
 
 
 class DevicePanel(wx.Panel):
-    """
-    DevicePanel - Device management interface for laser hardware configuration.
-
+    """Device Panel - Configure and control your laser device settings
     **Technical Purpose:**
-    Provides a wxPython-based interface for managing laser devices in MeerK40t, enabling
-    device creation, duplication, renaming, activation, and removal. This panel displays
-    device information in a list control with columns for device name, driver type, device
-    family, status, and interface location. Integrates with the kernel's device service
-    registration system and provides real-time status updates through signal communication.
+    Provides device configuration and control interfaces for laser hardware. Features label, button controls for user interaction. Integrates with activate;device, device;modified for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you configure and control your laser device. Set up connection parameters, adjust settings, and monitor device status."""
 
-    **Signal Listeners:**
-    - "pause" - Updates device status when operations are paused
-    - "pipe;running" - Monitors pipeline execution status
-    - "activate;device" - Refreshes display when device activation changes
-    - "device;renamed" - Updates device list when device names change
-
-    **End-User Description:**
-    Manage all your laser devices from this central panel. View device status, driver types,
-    and connection information. Create new devices, duplicate existing ones, rename devices,
-    activate different devices, or remove unused ones. Right-click devices for quick actions,
-    and use the Config button to access detailed device settings. The active device is shown
-    in red text for easy identification.
-    """
+    """Device Panel - Configure and control your laser device settings"""
 
     def __init__(self, *args, context=None, pane=False, **kwds):
         # begin wxGlade: DevicesPanel.__init__

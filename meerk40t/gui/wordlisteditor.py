@@ -53,33 +53,111 @@ def register_panel_wordlist(window, context):
 
 
 class WordlistMiniPanel(wx.Panel):
-    """
-    WordlistMiniPanel - Variable and wordlist management interface for dynamic text operations.
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.SetHelpText("wordlist")
 
-    This panel provides comprehensive management of wordlists and text variables used in laser cutting
-    operations. It enables users to create, edit, and organize collections of text values that can be
-    dynamically substituted into designs, supporting batch processing and variable text operations.
-    The interface includes grid-based editing, CSV import/export capabilities, and backup/restore functionality.
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.button_edit = wxButton(self, wx.ID_ANY, _("Edit"))
+        self.button_edit.SetBitmap(
+            icons8_curly_brackets.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
+        )
+        self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
-    Signal Listeners:
-        - wordlist: Triggers autosave and refreshes the wordlist grid when wordlist data changes
+        self.button_next = wxButton(self, wx.ID_ANY, _("Next"))
+        self.button_next.SetBitmap(
+            icons8_circled_right.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
+        )
+        self.button_next.SetToolTip(
+            _("Wordlist: go to next page (right-click to next entry)")
+        )
 
-    Signal References:
-        - None: This panel primarily consumes signals for data synchronization
+        self.button_prev = wxButton(self, wx.ID_ANY, _("Prev"))
+        self.button_prev.SetBitmap(
+            icons8_circled_left.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
+        )
+        self.button_prev.SetToolTip(
+            _("Wordlist: go to previous page (right-click to previous entry)")
+        )
 
-    User Interface:
-        - Dual-grid layout showing variables (left) and their values (right) for organized editing
-        - Variable management controls for adding, editing, and deleting variable names
-        - Entry management controls for adding, editing, and deleting values within variables
-        - CSV import functionality with header detection and preview capabilities
-        - Backup and restore buttons for saving/loading wordlist data to/from disk files
-        - Autosave toggle to automatically persist changes without manual intervention
-        - Start index controls for CSV-based data to handle different column arrangements
-        - Pattern-based entry addition for quick variable creation and population
-        - Real-time grid updates with column resizing and label editing capabilities
-        - Message display area for operation feedback and status information
-    """
+        main_sizer.Add(self.button_prev, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.button_edit, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.button_next, 1, wx.EXPAND, 0)
 
+        self.button_next.Bind(wx.EVT_BUTTON, self.on_button_next_page)
+        self.button_prev.Bind(wx.EVT_BUTTON, self.on_button_prev_page)
+        self.button_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_next)
+        self.button_prev.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
+        self.button_edit.Bind(wx.EVT_BUTTON, self.on_button_edit)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def establish_max_delta(self):
+        # try to establish the needed delta to satisfy all variables...
+        deltamin = 0
+        deltamax = 0
+        for node in self.context.elements.elems():
+            sample = ""
+            if node.type == "elem text":
+                if node.text is not None:
+                    sample = str(node.text)
+            elif node.type == "elem path" and hasattr(node, "mktext"):
+                if node.mktext is not None:
+                    sample = str(node.mktext)
+            if sample == "":
+                continue
+            # we can be rather agnostic on the individual variable,
+            # we are interested in the highest {variable#+offset} pattern
+            brackets = re.compile(r"\{[^}]+\}")
+            for bracketed_key in brackets.findall(sample):
+                #            print(f"Key found: {bracketed_key}")
+                key = bracketed_key[1:-1].lower().strip()
+                relative = 0
+                pos = key.find("#")
+                if pos > 0:  # Needs to be after first character
+                    # Process offset modification.
+                    index_string = key[pos + 1 :]
+                    key = key[:pos].strip()
+                    if index_string.startswith("+") or index_string.startswith("-"):
+                        try:
+                            # This covers +x, -x, x
+                            relative = int(index_string)
+                        except ValueError:
+                            relative = 0
+                deltamin = min(relative, deltamin)
+                deltamax = max(relative, deltamax)
+
+        return deltamax
+
+    def on_button_edit(self, event):
+        self.context("window toggle Wordlist\n")
+
+    def on_button_prev(self, event):
+        self.context.elements.wordlist_advance(-1)
+
+    def on_button_prev_page(self, event):
+        delta = self.establish_max_delta()
+        self.context.elements.wordlist_advance(-1 - delta)
+
+    def on_button_next(self, event):
+        self.context.elements.wordlist_advance(+1)
+
+    def on_button_next_page(self, event):
+        delta = self.establish_max_delta()
+        self.context.elements.wordlist_advance(+1 + delta)
+
+
+class WordlistPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -661,8 +739,6 @@ class WordlistMiniPanel(wx.Panel):
 
 
 class ImportPanel(wx.Panel):
-    """ImportPanel - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -798,8 +874,6 @@ class ImportPanel(wx.Panel):
 
 
 class AboutPanel(wx.Panel):
-    """AboutPanel - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -830,8 +904,6 @@ class AboutPanel(wx.Panel):
 
 
 class WordlistEditor(MWindow):
-    """WordlistEditor - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, **kwds):
         super().__init__(500, 530, *args, **kwds)
 

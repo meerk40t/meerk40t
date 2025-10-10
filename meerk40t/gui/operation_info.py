@@ -16,36 +16,13 @@ _ = wx.GetTranslation
 
 
 class OpInfoPanel(ScrolledPanel):
-    """
-    OpInfoPanel - Operation information and management interface for laser jobs.
+    """OpInfoPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for opinfo functionality. Features button controls for user interaction. Integrates with rebuild_tree, element_property_reload for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for opinfo functionality. Key controls include "Get Time Estimates" (button)."""
 
-    Displays comprehensive information about all operations in the current job,
-    including operation types, names, assigned elements, and time estimates.
-    Provides tools for operation management, element classification, and
-    performance analysis of laser cutting operations.
-
-    **Technical Details:**
-    - List-based display of all operations with type icons and metadata
-    - Time estimation calculation for operation runtime prediction
-    - Element classification tracking and orphan element detection
-    - Context menu operations for element reassignment and operation management
-    - Real-time updates when operation properties change
-    - Persistent column width settings for user customization
-
-    **Signal Listeners:**
-    - "element_property_update": Refreshes when operation properties change
-    - "element_property_reload": Reloads operation data on property updates
-    - "rebuild_tree": Updates display when operation tree structure changes
-    - "tree_changed": Refreshes when tree modifications occur
-
-    **User Experience:**
-    - Visual operation overview with type-specific icons
-    - Time estimation for job planning and optimization
-    - Right-click context menus for operation management
-    - Element classification status and orphan detection
-    - Persistent column sizing for customized layouts
-    - Real-time updates during operation editing
-    """
+    """OpInfoPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

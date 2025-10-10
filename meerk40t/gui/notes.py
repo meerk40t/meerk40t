@@ -31,31 +31,6 @@ def register_panel(window, context):
 
 
 class NotePanel(wx.Panel):
-    """
-    NotePanel - Job notes and documentation interface for laser operations.
-
-    Provides a rich text editor for creating and editing job-specific notes and
-    documentation. Supports automatic opening of notes when files are loaded,
-    and maintains synchronization between multiple note panel instances.
-
-    **Technical Details:**
-    - Rich text editing with word wrap and multiline support
-    - Automatic notes opening based on file content
-    - Real-time synchronization across multiple panel instances
-    - Persistent storage of notes with job files
-    - Signal-based communication for note updates
-
-    **Signal Listeners:**
-    - "note": Updates text content when notes change externally
-
-    **User Experience:**
-    - Rich text editing with formatting support
-    - Auto-open notes when files contain documentation
-    - Real-time synchronization between note panels
-    - Persistent notes storage with job files
-    - Focus management for quick note editing
-    """
-
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -138,8 +113,6 @@ class NotePanel(wx.Panel):
 
 
 class Notes(MWindow):
-    """Notes - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, **kwds):
         super().__init__(450, 350, *args, **kwds)
 

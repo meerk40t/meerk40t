@@ -86,38 +86,13 @@ def register_panel_spooler(window, context):
 
 
 class SpoolerPanel(wx.Panel):
-    """
-    SpoolerPanel - Comprehensive job queue management and execution monitoring interface for laser cutting operations.
+    """SpoolerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for spooler functionality. Features button, label controls for user interaction. Integrates with pipe;usb_status, activate;device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for spooler functionality. Key controls include "Pause" (button), "Completed jobs:" (label)."""
 
-    This advanced panel provides real-time monitoring and control of laser job execution across multiple devices,
-    featuring detailed job tracking, queue management, historical logging, and device-specific filtering.
-    It serves as the central hub for managing laser cutting workflows and provides extensive job manipulation capabilities.
-
-    Signal Listeners:
-        - pause: Updates pause/resume button state when laser operation pauses
-        - activate;device: Refreshes device list and selection when devices change
-        - spooler;completed: Triggers history refresh when jobs complete
-        - spooler;queue: Updates job queue display when spooler state changes
-        - spooler;idle: Monitors spooler idle state for UI updates
-        - spooler;realtime: Handles real-time spooler status updates
-        - driver;position: Updates job progress from driver position feedback
-        - emulator;position: Updates job progress from emulator position feedback
-        - pipe;usb_status: Monitors USB connection status for device communication
-
-    Signal References:
-        - Various context signals: Emitted through console commands for job control and device management
-
-    User Interface:
-        - Device selection dropdown with filtering capabilities for multi-device environments
-        - Active job queue display showing device, job name, item count, status, type, progress, passes, priority, runtime, and time estimates
-        - Job history panel with completion tracking, start/end times, duration, and detailed statistics
-        - Pause/Resume and Emergency Stop controls with visual state feedback
-        - Silent mode toggle to suppress audio notifications during job execution
-        - Right-click context menus for job manipulation (remove, stop, enable/disable, loop control)
-        - CSV export functionality for job history analysis
-        - Real-time progress updates with step counts, pass tracking, and time estimates
-        - Splitter-based layout allowing adjustable panel sizing
-    """
+    """SpoolerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__

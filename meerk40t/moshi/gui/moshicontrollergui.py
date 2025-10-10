@@ -26,6 +26,12 @@ _default_height = 389
 
 
 class MoshiControllerPanel(wx.Panel):
+    """MoshiControllerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for moshicontroller functionality. Features button, checkbox, label controls for user interaction. Integrates with moshi_controller_update for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for moshicontroller functionality. Key controls include "Connection" (button), "Show USB Log" (checkbox), "Byte 0" (label)."""
+
     """MoshiControllerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):

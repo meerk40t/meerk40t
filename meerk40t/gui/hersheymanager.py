@@ -987,24 +987,7 @@ class HersheyFontSelector(MWindow):
 
 class PanelFontManager(wx.Panel):
     """
-    PanelFontManager - Vector font management interface for text rendering.
-
-    **Technical Purpose:**
-    Provides a wxPython-based interface for managing vector fonts (Hershey, TrueType, SHX)
-    used in MeerK40t's text rendering system. This panel enables font directory configuration,
-    font import/export operations, font preview generation, and integration with the fonts
-    service for vector text processing. Supports multiple font formats designed for laser
-    cutting with scalable, burnable vector representations.
-
-    **Signal Listeners:**
-    - "tool_changed" - Updates panel state when active tools change
-
-    **End-User Description:**
-    Manage vector fonts for creating laser-cuttable text. Browse available fonts with live
-    previews, import new fonts from files or web sources, and organize them in custom directories.
-    Supports Hershey fonts, TrueType fonts, and AutoCAD SHX fonts that render as clean vectors
-    perfect for laser cutting. Set up font directories, refresh font caches, and access online
-    font resources for expanding your text design capabilities.
+    Vector Font Manager
     """
 
     def __init__(self, *args, context=None, **kwds):

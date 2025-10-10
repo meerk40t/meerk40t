@@ -13,6 +13,12 @@ _ = wx.GetTranslation
 
 
 class MoshiDriverGui(MWindow):
+    """MoshiDriverGui - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for moshidrivergui functionality. Integrates with activate;device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for moshidrivergui functionality in MeerK40t."""
+
     """MoshiDriverGui - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, **kwds):

@@ -7,6 +7,12 @@ _ = wx.GetTranslation
 
 
 class GRBLAdvancedPanel(wx.Panel):
+    """GRBLAdvancedPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for grbladvanced functionality. Features checkbox controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for grbladvanced functionality. Key controls include "Set Z-Axis value" (checkbox)."""
+
     """GRBLAdvancedPanel - User interface panel for laser cutting operations"""
 
     name = "Advanced"

@@ -97,18 +97,111 @@ def extract_help_sections():
         ]
 
         for file in files:
+            filepath = os.path.join(root, file)
             if file.endswith(".py"):
-                filepath = os.path.join(root, file)
                 try:
                     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                         content = f.read()
-                        # Find all SetHelpText calls
-                        matches = re.findall(
-                            r'SetHelpText\(\s*["\']([^"\']+)["\']', content
-                        )
-                        for match in matches:
-                            help_sections.add(match)
-                            help_context[match].append(filepath)
+                        # Use AST parsing to find SetHelpText calls
+                        try:
+                            tree = ast.parse(content, filepath)
+                            for node in ast.walk(tree):
+                                if isinstance(node, ast.Call):
+                                    # Handle both SetHelpText("string") and self.SetHelpText("string")
+                                    func_name = None
+                                    if (
+                                        isinstance(node.func, ast.Name)
+                                        and node.func.id == "SetHelpText"
+                                    ):
+                                        func_name = "SetHelpText"
+                                    elif (
+                                        isinstance(node.func, ast.Attribute)
+                                        and node.func.attr == "SetHelpText"
+                                    ):
+                                        func_name = "SetHelpText"
+
+                                    if func_name == "SetHelpText" and node.args:
+                                        arg = node.args[0]
+
+                                        # Handle SetHelpText("string")
+                                        if isinstance(arg, ast.Str) and arg.s.strip():
+                                            help_sections.add(arg.s)
+                                            help_context[arg.s].append(filepath)
+
+                                        # Handle SetHelpText(_("string"))
+                                        elif (
+                                            isinstance(arg, ast.Call)
+                                            and isinstance(arg.func, ast.Name)
+                                            and arg.func.id == "_"
+                                        ):
+                                            if (
+                                                arg.args
+                                                and isinstance(arg.args[0], ast.Str)
+                                                and arg.args[0].s.strip()
+                                            ):
+                                                help_sections.add(arg.args[0].s)
+                                                help_context[arg.args[0].s].append(
+                                                    filepath
+                                                )
+
+                                        # Handle SetHelpText(variable) - try to resolve if it's a simple string constant
+                                        elif isinstance(arg, ast.Name):
+                                            # Try to find the variable assignment in the same scope
+                                            var_name = arg.id
+                                            var_value = None
+
+                                            # Look for assignment in the same function/class
+                                            for scope_node in ast.walk(tree):
+                                                if isinstance(scope_node, ast.Assign):
+                                                    for target in scope_node.targets:
+                                                        if (
+                                                            isinstance(target, ast.Name)
+                                                            and target.id == var_name
+                                                        ):
+                                                            if (
+                                                                isinstance(
+                                                                    scope_node.value,
+                                                                    ast.Str,
+                                                                )
+                                                                and scope_node.value.s.strip()
+                                                            ):
+                                                                var_value = (
+                                                                    scope_node.value.s
+                                                                )
+                                                                break
+                                                    if var_value:
+                                                        break
+
+                                            if var_value:
+                                                help_sections.add(var_value)
+                                                help_context[var_value].append(filepath)
+
+                                        # Handle f-strings (simple cases)
+                                        elif (
+                                            isinstance(arg, ast.JoinedStr)
+                                            and arg.values
+                                        ):
+                                            # For simple f-strings like f"prefix{suffix}", try to extract
+                                            parts = []
+                                            for value in arg.values:
+                                                if isinstance(value, ast.Str):
+                                                    parts.append(value.s)
+                                                elif isinstance(
+                                                    value, ast.FormattedValue
+                                                ):
+                                                    # For now, skip complex f-strings
+                                                    parts = None
+                                                    break
+
+                                            if parts and "".join(parts).strip():
+                                                fstring_value = "".join(parts)
+                                                help_sections.add(fstring_value)
+                                                help_context[fstring_value].append(
+                                                    filepath
+                                                )
+                        except SyntaxError:
+                            # Skip files with syntax errors - don't use regex fallback to avoid matching code
+                            pass
                 except Exception as e:
                     print(f"Error reading {filepath}: {e}")
 
@@ -288,7 +381,205 @@ def analyze_module_for_help_section(filepath, help_section):
     return analysis
 
 
-def generate_wiki_page(section, files):
+def parse_docstring_sections(docstring):
+    """
+    Parse docstring to extract structured sections.
+
+    Args:
+        docstring (str): The docstring to parse
+
+    Returns:
+        dict: Dictionary with extracted sections
+    """
+    sections = {
+        "technical_purpose": "",
+        "signal_listeners": [],
+        "end_user_perspective": "",
+        "other_content": "",
+    }
+
+    if not docstring:
+        return sections
+
+    lines = docstring.split("\n")
+    current_section = "other_content"
+    current_content = []
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("**Technical Purpose:**") or stripped.startswith(
+            "**Technical Details:**"
+        ):
+            # Save previous section
+            if current_content:
+                if current_section == "other_content":
+                    sections[current_section] = "\n".join(current_content).strip()
+                elif current_section == "signal_listeners":
+                    sections[current_section] = current_content
+                else:
+                    sections[current_section] = "\n".join(current_content).strip()
+                current_content = []
+
+            current_section = "technical_purpose"
+        elif stripped.startswith("**Signal Listeners:**") or stripped.startswith(
+            "**Signals:**"
+        ):
+            # Save previous section
+            if current_content:
+                if current_section == "other_content":
+                    sections[current_section] = "\n".join(current_content).strip()
+                elif current_section == "signal_listeners":
+                    sections[current_section] = current_content
+                else:
+                    sections[current_section] = "\n".join(current_content).strip()
+                current_content = []
+
+            current_section = "signal_listeners"
+        elif (
+            stripped.startswith("**End-User Perspective:**")
+            or stripped.startswith("**User Experience:**")
+            or stripped.startswith("**User Interface:**")
+        ):
+            # Save previous section
+            if current_content:
+                if current_section == "other_content":
+                    sections[current_section] = "\n".join(current_content).strip()
+                elif current_section == "signal_listeners":
+                    sections[current_section] = current_content
+                else:
+                    sections[current_section] = "\n".join(current_content).strip()
+                current_content = []
+
+            current_section = "end_user_perspective"
+        else:
+            if current_section == "signal_listeners":
+                if stripped.startswith("- ") or stripped.startswith("* "):
+                    current_content.append(stripped[2:].strip())
+                elif stripped and not stripped.startswith("**"):
+                    current_content.append(stripped)
+            else:
+                current_content.append(line)
+
+    # Save final section
+    if current_content:
+        if current_section == "other_content":
+            sections[current_section] = "\n".join(current_content).strip()
+        elif current_section == "signal_listeners":
+            sections[current_section] = current_content
+        else:
+            sections[current_section] = "\n".join(current_content).strip()
+
+    return sections
+
+
+def find_related_help_sections(current_section, all_sections, help_context):
+    """
+    Find related help sections based on various criteria.
+
+    Args:
+        current_section (str): Current help section
+        all_sections (set): All available help sections
+        help_context (dict): Mapping of sections to their files
+
+    Returns:
+        list: List of related section names
+    """
+    related = []
+    current_files = help_context.get(current_section, [])
+    current_category = None
+
+    # Determine category of current section
+    for file_path in current_files:
+        if "grbl" in file_path.lower():
+            current_category = "GRBL"
+            break
+        elif "lihuiyu" in file_path.lower() or "k40" in file_path.lower():
+            current_category = "Lihuiyu/K40"
+            break
+        elif "balor" in file_path.lower():
+            current_category = "Balor"
+            break
+        elif "moshi" in file_path.lower():
+            current_category = "Moshi"
+            break
+        elif "newly" in file_path.lower():
+            current_category = "Newly"
+            break
+        elif "tools" in file_path.lower():
+            current_category = "Tools"
+            break
+        elif "navigation" in file_path.lower():
+            current_category = "Navigation"
+            break
+
+    # Find sections from same module
+    current_module = None
+    for file_path in current_files:
+        # Extract module path (e.g., meerk40t/grbl/gui/ -> grbl)
+        parts = file_path.replace("\\", "/").split("/")
+        if "meerk40t" in parts:
+            idx = parts.index("meerk40t")
+            if idx + 1 < len(parts):
+                current_module = parts[idx + 1]
+                break
+
+    if current_module:
+        for section, files in help_context.items():
+            if section != current_section:
+                for file_path in files:
+                    parts = file_path.replace("\\", "/").split("/")
+                    if "meerk40t" in parts:
+                        idx = parts.index("meerk40t")
+                        if idx + 1 < len(parts) and parts[idx + 1] == current_module:
+                            related.append(section)
+                            break
+
+    # Find sections in same category
+    if current_category:
+        for section, files in help_context.items():
+            if section != current_section and section not in related:
+                section_category = None
+                for file_path in files:
+                    if "grbl" in file_path.lower():
+                        section_category = "GRBL"
+                        break
+                    elif "lihuiyu" in file_path.lower():
+                        section_category = "Lihuiyu/K40"
+                        break
+                    elif "balor" in file_path.lower():
+                        section_category = "Balor"
+                        break
+                    elif "moshi" in file_path.lower():
+                        section_category = "Moshi"
+                        break
+                    elif "newly" in file_path.lower():
+                        section_category = "Newly"
+                        break
+                    elif "tools" in file_path.lower():
+                        section_category = "Tools"
+                        break
+                    elif "navigation" in file_path.lower():
+                        section_category = "Navigation"
+                        break
+
+                if section_category == current_category:
+                    related.append(section)
+
+    # Find sections with similar keywords
+    current_words = set(current_section.lower().replace("_", " ").split())
+    for section in all_sections:
+        if section != current_section and section not in related:
+            section_words = set(section.lower().replace("_", " ").split())
+            # Check for common words
+            if current_words & section_words:
+                related.append(section)
+                if len(related) >= 3:  # Limit to 3 related sections
+                    break
+
+    return related[:3]  # Return max 3 related sections
+
+
+def generate_wiki_page(section, files, all_sections, help_context):
     """Generate a wiki page template for a help section with enhanced analysis."""
 
     # Check for existing wiki content
@@ -305,14 +596,30 @@ def generate_wiki_page(section, files):
     for file_path in files:
         if "grbl" in file_path.lower():
             categories.append("GRBL")
-        elif "lihuiyu" in file_path.lower() or "k40" in file_path.lower():
+        elif "lihuiyu" in file_path.lower():
             categories.append("Lihuiyu/K40")
+        elif "balor" in file_path.lower():
+            categories.append("Balor")
         elif "moshi" in file_path.lower():
             categories.append("Moshi")
         elif "newly" in file_path.lower():
             categories.append("Newly")
         elif "tools" in file_path.lower():
             categories.append("Tools")
+        elif "navigation" in file_path.lower():
+            categories.append("Navigation")
+        elif "element" in section.lower() and (
+            "property" in section.lower() or "modify" in section.lower()
+        ):
+            categories.append("Element Properties")
+        elif "operation" in section.lower() and "property" in section.lower():
+            categories.append("Operation Properties")
+        elif "element" in section.lower() and (
+            "transform" in section.lower()
+            or "align" in section.lower()
+            or "modify" in section.lower()
+        ):
+            categories.append("Element Modification")
         elif "gui" in file_path.lower():
             categories.append("GUI")
 
@@ -332,11 +639,20 @@ def generate_wiki_page(section, files):
     ui_elements = []
     functionality_hints = []
     relevant_comments = []
+    docstring_sections = None
 
     for analysis in module_analyses:
-        # Get class docstrings
+        # Get class docstrings and parse them
         for class_info in analysis.get("class_info", []):
             if class_info.get("docstring"):
+                parsed_sections = parse_docstring_sections(class_info["docstring"])
+                if (
+                    parsed_sections["technical_purpose"]
+                    or parsed_sections["signal_listeners"]
+                    or parsed_sections["end_user_perspective"]
+                ):
+                    docstring_sections = parsed_sections
+                    break
                 class_descriptions.append(class_info["docstring"])
 
         # Get UI elements
@@ -353,7 +669,10 @@ def generate_wiki_page(section, files):
     # Generate description based on extracted information
     description = f"This help page covers the **{title}** functionality in MeerK40t."
 
-    if class_descriptions:
+    # Use end-user perspective if available
+    if docstring_sections and docstring_sections["end_user_perspective"]:
+        description += "\n\n" + docstring_sections["end_user_perspective"]
+    elif class_descriptions:
         description += "\n\n" + class_descriptions[0]  # Use the first class docstring
 
     # If we have existing content, add it to the description
@@ -364,7 +683,7 @@ def generate_wiki_page(section, files):
     usage_info = ""
     if ui_elements:
         usage_info += "### Available Controls\n\n"
-        for element in ui_elements[:5]:  # Limit to first 5 elements
+        for element in ui_elements[:8]:  # Limit to first 8 elements
             usage_info += f"- **{element['label']}** ({element['type']})\n"
         usage_info += "\n"
 
@@ -375,6 +694,28 @@ def generate_wiki_page(section, files):
         for hint in unique_hints:
             usage_info += f"- Integrates with: `{hint}`\n"
         usage_info += "\n"
+
+    # Generate technical details section
+    technical_details = ""
+    if docstring_sections:
+        if docstring_sections["technical_purpose"]:
+            technical_details += docstring_sections["technical_purpose"] + "\n\n"
+
+        if docstring_sections["signal_listeners"]:
+            technical_details += "**Signal Integration:**\n"
+            for signal in docstring_sections["signal_listeners"][
+                :5
+            ]:  # Limit to 5 signals
+                technical_details += f"- {signal}\n"
+            technical_details += "\n"
+
+    # Find related topics
+    related_sections = find_related_help_sections(section, all_sections, help_context)
+    related_links = ""
+    if related_sections:
+        for related_section in related_sections:
+            related_title = related_section.replace("_", " ").title()
+            related_links += f"- [[Online Help: {related_title}]]\n"
 
     template = f"""# Online Help: {title}
 
@@ -403,9 +744,9 @@ This help section is accessed from:
 2. *Step 2*
 3. *Step 3*
 
-### Advanced Options
+## Technical Details
 
-*Describe any advanced configuration options or settings.*
+{technical_details}*Add technical information about how this feature works internally.*
 
 ## Common Issues
 
@@ -415,9 +756,7 @@ This help section is accessed from:
 
 *Link to related help topics:*
 
-- [[Online Help: Related Topic 1]]
-- [[Online Help: Related Topic 2]]
-
+{related_links}
 ## Screenshots
 
 *Add screenshots showing the feature in action.*
@@ -531,7 +870,7 @@ def generate_docstring_for_class(
     class_name, methods, ui_elements, functionality_hints, comments
 ):
     """
-    Generate a user-friendly docstring for a class based on its analysis.
+    Generate a structured docstring for a class based on its analysis.
 
     Args:
         class_name (str): Name of the class
@@ -541,14 +880,190 @@ def generate_docstring_for_class(
         comments (list): List of relevant comments
 
     Returns:
-        str: Generated user-friendly docstring
+        str: Generated structured docstring
     """
-    # Determine what this panel does based on class name and UI elements
+    # Get basic panel description
     panel_description = get_panel_description(class_name, ui_elements)
 
-    docstring = f"{panel_description}"
+    # Extract signal-related information from methods
+    signal_listeners = []
+    signal_emissions = []
 
-    return docstring.strip()
+    for method in methods:
+        method_code = method.get("code", "")
+
+        # Look for signal listeners
+        if "@signal_listener(" in method_code:
+            # Extract signal name from decorator
+            lines = method_code.split("\n")
+            for line in lines:
+                if "@signal_listener(" in line:
+                    start = line.find("@signal_listener(")
+                    if start != -1:
+                        signal_part = line[start + 16 :]  # Skip "@signal_listener("
+                        end = signal_part.find(")")
+                        if end != -1:
+                            signal_name = (
+                                signal_part[:end].strip().strip('"').strip("'")
+                            )
+                            signal_listeners.append(signal_name)
+                            break
+
+        # Look for signal emissions in method body
+        if "signal(" in method_code or "self.context.signal(" in method_code:
+            # Try to extract signal names from method calls
+            import re
+
+            signal_matches = re.findall(r'signal\(\s*["\']([^"\']+)["\']', method_code)
+            for signal in signal_matches:
+                if signal not in signal_emissions:
+                    signal_emissions.append(signal)
+
+    # Generate technical purpose based on UI elements and functionality
+    technical_purpose = generate_technical_purpose(
+        class_name, ui_elements, functionality_hints
+    )
+
+    # Generate end-user perspective
+    end_user_perspective = generate_end_user_perspective(class_name, ui_elements)
+
+    # Build structured docstring
+    docstring_parts = [f"{panel_description}"]
+
+    if technical_purpose:
+        docstring_parts.append(f"\n**Technical Purpose:**\n{technical_purpose}")
+
+    if signal_listeners:
+        docstring_parts.append(
+            "\n**Signal Listeners:**\n"
+            + "\n".join(
+                f"- {signal}: Updates UI when {signal.replace('_', ' ')} changes externally"
+                for signal in signal_listeners[:3]
+            )
+        )
+
+    if signal_emissions:
+        docstring_parts.append(
+            "\n**Signal Emissions:**\n"
+            + "\n".join(
+                f"- {signal}: Emitted when {signal.replace('_', ' ')} changes to update display"
+                for signal in signal_emissions[:3]
+            )
+        )
+
+    if end_user_perspective:
+        docstring_parts.append(f"\n**End-User Perspective:**\n{end_user_perspective}")
+
+    return "".join(docstring_parts).strip()
+
+
+def generate_technical_purpose(class_name, ui_elements, functionality_hints):
+    """Generate technical purpose description."""
+    class_lower = class_name.lower()
+
+    # Base descriptions for different panel types
+    if "transform" in class_lower:
+        purpose = "Provides transformation controls for scaling, rotating, and positioning design elements. "
+    elif "drag" in class_lower:
+        purpose = "Provides interactive controls for positioning the laser head and aligning it with design elements. "
+    elif "jog" in class_lower:
+        purpose = "Provides manual movement controls for the laser head around the work area. "
+    elif "move" in class_lower:
+        purpose = "Provides coordinate-based movement controls for sending the laser to specific positions. "
+    elif "pulse" in class_lower:
+        purpose = "Provides pulse firing controls for laser alignment and testing operations. "
+    elif "zmove" in class_lower or "z_move" in class_lower:
+        purpose = "Provides Z-axis movement controls for adjusting laser head height. "
+    elif "align" in class_lower:
+        purpose = "Provides alignment and distribution controls for design elements. "
+    elif "device" in class_lower:
+        purpose = (
+            "Provides device configuration and control interfaces for laser hardware. "
+        )
+    elif "material" in class_lower:
+        purpose = "Provides material-specific settings and optimization controls. "
+    elif "simulation" in class_lower:
+        purpose = (
+            "Provides job simulation and preview functionality before laser execution. "
+        )
+    elif "navigation" in class_lower:
+        purpose = "Provides navigation and positioning controls for laser movement. "
+    elif "magnet" in class_lower:
+        purpose = (
+            "Provides magnet snapping configuration controls for object alignment. "
+        )
+    else:
+        purpose = f"Provides user interface controls for {class_name.lower().replace('panel', '').strip()} functionality. "
+
+    # Add UI element details
+    if ui_elements:
+        ui_types = []
+        for elem in ui_elements[:3]:  # Limit to first 3 elements
+            elem_type = elem.get("type", "").lower()
+            if elem_type and elem_type not in ui_types:
+                ui_types.append(elem_type)
+
+        if ui_types:
+            purpose += f"Features {', '.join(ui_types)} controls for user interaction. "
+
+    # Add functionality hints
+    if functionality_hints:
+        unique_hints = list(set(functionality_hints))[:2]  # Limit to 2 unique hints
+        if unique_hints:
+            purpose += (
+                f"Integrates with {', '.join(unique_hints)} for enhanced functionality."
+            )
+
+    return purpose.strip()
+
+
+def generate_end_user_perspective(class_name, ui_elements):
+    """Generate end-user perspective description."""
+    class_lower = class_name.lower()
+
+    # User-focused descriptions
+    if "transform" in class_lower:
+        perspective = "This panel lets you scale, rotate, and reposition your design elements. Use the controls to adjust size, orientation, and position before cutting."
+    elif "drag" in class_lower:
+        perspective = "This panel helps you position the laser head precisely. Use it to align the laser with specific points in your design or move to exact coordinates."
+    elif "jog" in class_lower:
+        perspective = "This panel gives you manual control over laser movement. Use the directional buttons to move the laser head around the work area for setup and testing."
+    elif "move" in class_lower:
+        perspective = "This panel lets you send the laser to specific coordinates or saved positions. Enter coordinates directly or select from saved locations."
+    elif "pulse" in class_lower:
+        perspective = "This panel lets you fire short test pulses from the laser. Use it to test laser power, alignment, and focus before running full jobs."
+    elif "zmove" in class_lower or "z_move" in class_lower:
+        perspective = "This panel controls the up and down movement of the laser head. Use it to adjust focus height and material clearance."
+    elif "align" in class_lower:
+        perspective = "This panel helps you align and distribute design elements. Use it to create evenly spaced objects or align them to specific positions."
+    elif "device" in class_lower:
+        perspective = "This panel lets you configure and control your laser device. Set up connection parameters, adjust settings, and monitor device status."
+    elif "material" in class_lower:
+        perspective = "This panel helps you set up material-specific settings. Choose your material type and adjust cutting parameters for optimal results."
+    elif "simulation" in class_lower:
+        perspective = "This panel shows you exactly what will happen when you run your laser job. Preview the cutting path, timing, and results before starting."
+    elif "navigation" in class_lower:
+        perspective = "This panel provides controls for moving the laser around your work area. Use it for setup, testing, and precise positioning."
+    elif "magnet" in class_lower:
+        perspective = "This panel lets you customize how objects snap to guide lines. Set attraction strength and choose which object parts get attracted to magnets."
+    else:
+        # Generic description based on UI elements
+        if ui_elements:
+            ui_descriptions = []
+            for elem in ui_elements[:3]:
+                label = elem.get("label", "").strip()
+                elem_type = elem.get("type", "").lower()
+                if label and elem_type:
+                    ui_descriptions.append(f'"{label}" ({elem_type})')
+
+            if ui_descriptions:
+                perspective = f"This panel provides controls for {class_name.lower().replace('panel', '').strip()} functionality. Key controls include {', '.join(ui_descriptions)}."
+            else:
+                perspective = f"This panel provides user interface controls for {class_name.lower().replace('panel', '').strip()} functionality in MeerK40t."
+        else:
+            perspective = f"This panel provides user interface controls for {class_name.lower().replace('panel', '').strip()} functionality in MeerK40t."
+
+    return perspective
 
 
 def get_panel_description(class_name, ui_elements):
@@ -952,7 +1467,9 @@ def main():
         filename = f"Online-Help-{section}.md"
         filepath = os.path.join(output_dir, filename)
 
-        content = generate_wiki_page(section, help_context[section])
+        content = generate_wiki_page(
+            section, help_context[section], help_sections, help_context
+        )
 
         # Check if we reused existing content
         existing_content = check_existing_wiki_page(section)
@@ -978,22 +1495,56 @@ def main():
         # Infer category from context
         category = "General"
         files = help_context[section]
-        if any("grbl" in f.lower() for f in files):
-            category = "GRBL"
-        elif any("lihuiyu" in f.lower() or "k40" in f.lower() for f in files):
-            category = "Lihuiyu/K40"
+        if any("balor" in f.lower() for f in files):
+            category = "Balor"
         elif any("moshi" in f.lower() for f in files):
             category = "Moshi"
         elif any("newly" in f.lower() for f in files):
             category = "Newly"
+        elif any("grbl" in f.lower() for f in files):
+            category = "GRBL"
+        elif any("lihuiyu" in f.lower() for f in files):
+            category = "Lihuiyu/K40"
         elif any("tools" in f.lower() for f in files):
             category = "Tools"
+        elif any("navigation" in f.lower() for f in files):
+            category = "Navigation"
+        elif "element" in section.lower() and (
+            "property" in section.lower() or "modify" in section.lower()
+        ):
+            category = "Element Properties"
+        elif "operation" in section.lower() and "property" in section.lower():
+            category = "Operation Properties"
+        elif "element" in section.lower() and (
+            "transform" in section.lower()
+            or "align" in section.lower()
+            or "modify" in section.lower()
+        ):
+            category = "Element Modification"
         elif any("gui" in f.lower() for f in files):
             category = "GUI"
 
         categories[category].append(section)
 
-    for category, sections in sorted(categories.items()):
+    # Define category order (device categories first, then functional, then general)
+    category_order = {
+        "GRBL": 1,
+        "Lihuiyu/K40": 2,
+        "Balor": 3,
+        "Moshi": 4,
+        "Newly": 5,
+        "Tools": 6,
+        "Navigation": 7,
+        "Element Properties": 8,
+        "Operation Properties": 9,
+        "Element Modification": 10,
+        "GUI": 11,
+        "General": 12,
+    }
+
+    for category, sections in sorted(
+        categories.items(), key=lambda x: category_order.get(x[0], 99)
+    ):
         index_content += f"### {category}\n\n"
         for section in sorted(sections):
             index_content += f"- [[Online Help: {section.replace('_', ' ').title()}]]\n"

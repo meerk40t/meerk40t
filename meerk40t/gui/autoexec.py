@@ -14,26 +14,13 @@ _ = wx.GetTranslation
 
 
 class AutoExecPanel(wx.Panel):
-    """
-    AutoExecPanel - Automatic command execution interface for file loading operations.
-
+    """AutoExecPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides a wxPython-based interface for defining and managing automatic command execution
-    upon file loading in MeerK40t. This panel enables users to specify console commands that
-    will be executed immediately after a file is loaded, supporting device activation, simulation
-    startup, and other automated operations. Integrates with the elements service for persistent
-    storage of autoexec commands and active state management.
+    Provides user interface controls for autoexec functionality. Features checkbox, button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for autoexec functionality. Key controls include "Execute on load" (checkbox), "Execute commands" (button)."""
 
-    **Signal Listeners:**
-    - "autoexec" - Updates the panel when autoexec commands change externally
-
-    **End-User Description:**
-    Define commands that automatically execute when you load a file. This is useful for setting up
-    your preferred device, starting simulations, or performing other routine operations. Be careful
-    with dangerous commands like burns. You can disable auto-execution for specific files, and
-    deactivate commands by starting lines with '#'. Use the helper button to see useful command
-    examples for device activation and common operations.
-    """
+    """AutoExecPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

@@ -855,32 +855,13 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
 
 class RibbonEditor(wx.Panel):
-    """
-    RibbonEditor - Dynamic ribbon interface configuration and customization panel.
+    """RibbonEditor - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribboneditor functionality. Features checkbox, button controls for user interaction. Integrates with button/basicediting, button/jobstart for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for ribboneditor functionality. Key controls include "Show the Ribbon Labels" (checkbox), "Add to page" (button), "Apply" (button)."""
 
-    This panel provides a comprehensive visual editor for customizing MeerK40t's ribbon interface,
-    allowing users to modify page layouts, add/remove panels, and create custom user-defined buttons.
-    It supports real-time configuration changes with immediate preview and persistent storage of
-    custom ribbon layouts. The editor enables full customization of the command interface while
-    maintaining system stability and user experience consistency.
-
-    Signal Listeners:
-        - None: This panel operates independently for configuration purposes
-
-    Signal References:
-        - ribbon_recreate: Emitted when configuration changes require ribbon recreation
-
-    User Interface:
-        - Multi-section layout with ribbon selection, page management, and panel configuration
-        - Ribbon selector dropdown to choose which ribbon bar to customize (primary, tools, etc.)
-        - Page management with add/delete/move controls and label editing capabilities
-        - Panel assignment interface showing available panels and current page composition
-        - User-defined button editor with full customization of actions, icons, and visibility rules
-        - Real-time preview and apply/reset functionality for configuration changes
-        - Label display toggle to control icon label visibility across the ribbon interface
-        - Drag-and-drop style panel assignment with visual feedback and validation
-        - Persistent configuration storage with backup and restore capabilities
-    """
+    """RibbonEditor - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

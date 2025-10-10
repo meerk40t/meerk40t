@@ -28,31 +28,7 @@ _ = wx.GetTranslation
 
 class KerfPanel(wx.Panel):
     """
-    KerfPanel - Laser kerf width calibration and test pattern generation tool.
-
-    This panel provides comprehensive kerf testing capabilities for laser cutting operations,
-    enabling users to determine the precise cutting width (kerf) of their laser system. It generates
-    systematic test patterns with varying kerf values across different power and speed settings,
-    supporting rectangular box joints, circular inlays, and slider patterns for accurate calibration.
-
-    Signal Listeners:
-        - power_percent: Updates power display units when device power settings change
-        - speed_min: Updates speed display units when device speed settings change
-
-    Signal References:
-        - rebuild_tree: Emitted after pattern creation to refresh the operations tree
-        - refresh_scene: Emitted after pattern creation to update the scene display
-
-    User Interface:
-        - Pattern type selector with rectangular (box joints), circular (inlays), and slider options
-        - Kerf range controls specifying minimum and maximum kerf values for testing
-        - Pattern dimension settings for controlling the size of generated test patterns
-        - Gap/delta controls for spacing between individual test elements
-        - Count selector determining the number of kerf variations in the test pattern
-        - Power and speed controls with device-aware unit display (percent/PPI or absolute values)
-        - Create pattern button with confirmation dialog to prevent accidental data loss
-        - Real-time validation of input values with visual feedback
-        - Comprehensive tooltips explaining each parameter's purpose and effect
+    UI for KerfTest, allows setting of parameters
     """
 
     def __init__(self, *args, context=None, **kwds):

@@ -9,7 +9,11 @@ _ = wx.GetTranslation
 
 
 class BalorOperationPanel(ScrolledPanel):
-    """BalorOperationPanel - User interface panel for laser cutting operations"""
+    """BalorOperationPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for baloroperation functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for baloroperation functionality in MeerK40t."""
 
     name = "Balor"
 

@@ -28,37 +28,13 @@ _ = wx.GetTranslation
 
 
 class PathPropertyPanel(ScrolledPanel):
-    """
-    PathPropertyPanel - Comprehensive vector path element configuration and editing interface.
+    """PathPropertyPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for pathproperty functionality. Features button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for pathproperty functionality. Key controls include "Retrieve" (button)."""
 
-    This panel provides complete control over vector path elements including stroke/fill colors,
-    stroke width, line properties, positioning, and geometric information. It aggregates multiple
-    specialized sub-panels for different aspects of path manipulation and display.
-
-    Technical Purpose:
-    - Manages vector path element properties through aggregated sub-panels
-    - Provides stroke and fill color configuration with auto-classification
-    - Implements stroke width and line property controls
-    - Handles path positioning and sizing through coordinate management
-    - Displays geometric information (segments, points, length, area calculations)
-    - Supports path attribute extensions through plugin system
-    - Integrates rounded rectangle and lock controls for path modification
-
-    Signal Listeners:
-    - None directly (relies on callback mechanisms from sub-panels)
-
-    User Interface:
-    - Element ID: Identification and naming controls
-    - Rounded Rectangle: Corner radius and shape modification controls
-    - Path Attributes: Extensible plugin-based attribute panels
-    - Stroke/Fill Colors: Color selection with classification callbacks
-    - Stroke Width: Line thickness configuration
-    - Line Properties: Dash patterns, caps, and joins
-    - Position/Size: X,Y coordinates and dimensions
-    - Lock Controls: Prevent accidental modifications
-    - Geometric Info: Segment count, point count, path length, area calculations
-    - Auto-classify: Immediate classification after color changes
-    """
+    """PathPropertyPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

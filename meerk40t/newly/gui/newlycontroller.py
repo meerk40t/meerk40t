@@ -15,6 +15,12 @@ _ = wx.GetTranslation
 
 
 class NewlyControllerPanel(wx.ScrolledWindow):
+    """NewlyControllerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for newlycontroller functionality. Features button controls for user interaction. Integrates with pipe;usb_status, newly_controller_update for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for newlycontroller functionality. Key controls include "Connection" (button)."""
+
     """NewlyControllerPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwargs):

@@ -14,8 +14,6 @@ _ = wx.GetTranslation
 
 
 class ConfigurationInterfacePanel(ScrolledPanel):
-    """ConfigurationInterfacePanel - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -172,40 +170,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
 
 class GRBLConfiguration(MWindow):
-    """
-    GRBL Configuration Window - Comprehensive configuration interface for GRBL laser devices.
-
-    **Technical Purpose:**
-    Provides a complete tabbed configuration interface for GRBL laser devices, integrating multiple
-    specialized panels for device setup, interface configuration, protocol settings, advanced options,
-    effects, operation defaults, safety warnings, default actions, and display formatting. Manages
-    hardware property querying and automatic configuration detection through GRBL $$ commands.
-    Acts as a central hub for all GRBL device configuration needs.
-
-    **Signals:**
-    - **Listens for "grbl;response"**: Processes GRBL command responses, specifically handling $$ status
-      queries to automatically configure device properties like endstops, bed dimensions, and update
-      the viewport accordingly
-    - **Listens for "activate;device"**: Monitors device activation state and closes configuration
-      window if current device is not a GRBL device
-
-    **End-User Description:**
-    The GRBL Configuration window provides complete control over your GRBL laser device settings:
-    - **Device**: Bed dimensions, hardware properties, and auto-configuration buttons
-    - **Interface**: Connection type selection (Serial/TCP/WebSocket/Mock) and connection settings
-    - **Protocol**: GRBL communication protocol configuration
-    - **Advanced**: Advanced GRBL parameters and settings
-    - **Effects**: Laser effect configurations specific to GRBL
-    - **Operation Defaults**: Default cutting/engraving parameters
-    - **Warning**: Safety threshold settings for power and speed
-    - **Default Actions**: Automatic operations before/after jobs
-    - **Display Options**: How information is shown in the interface
-
-    Use the "Query properties" button to automatically detect your laser's capabilities, or the
-    "Hardware properties" button to open detailed hardware configuration. This window adapts
-    to show only relevant options based on your selected connection interface.
-    """
-
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device

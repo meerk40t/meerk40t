@@ -36,29 +36,7 @@ _ = wx.GetTranslation
 
 class TipPanel(wx.Panel):
     """
-    TipPanel - Interactive tips and tricks display panel for MeerK40t user guidance.
-
-    This panel provides an educational interface that displays helpful tips, tricks, and tutorials
-    for using MeerK40t effectively. It includes built-in tips and can download additional content
-    from GitHub repositories. Each tip can include descriptive text, associated commands that can
-    be executed via the "Try it out" button, and optional images for visual guidance.
-
-    Signal Listeners:
-        - None: This panel operates independently without signal-based communication
-
-    Signal References:
-        - None: This panel does not emit signals to other components
-
-    User Interface:
-        - Tip display area with text content, optional images, and navigation controls
-        - Previous/Next buttons with icons for browsing through available tips
-        - Tip counter showing current position (e.g., "Tip 3/15")
-        - "Try it out" button to execute associated commands or open URLs
-        - Startup tips toggle to control automatic display on application launch
-        - Automatic update checkbox for downloading new tips from online repositories
-        - Image caching system with consent-based internet access for tip illustrations
-        - Localized tip content supporting multiple languages
-        - Version-aware tip filtering to show only compatible content
+    Display MeerK40t usage tips
     """
 
     def __init__(self, *args, context=None, **kwds):

@@ -19,6 +19,12 @@ _ = wx.GetTranslation
 
 
 class TCPController(MWindow):
+    """TCPController - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for tcpcontroller functionality. Features button, label controls for user interaction. Integrates with tcp;status, network_update for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for tcpcontroller functionality. Key controls include "Connection" (button), "Address" (label), "Port" (label)."""
+
     """TCPController - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, **kwds):

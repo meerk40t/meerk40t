@@ -12,7 +12,11 @@ _ = wx.GetTranslation
 
 
 class EffectsPanel(wx.Panel):
-    """EffectsPanel - User interface panel for laser cutting operations"""
+    """EffectsPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for effects functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for effects functionality in MeerK40t."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

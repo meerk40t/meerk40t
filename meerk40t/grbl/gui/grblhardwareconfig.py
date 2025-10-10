@@ -259,7 +259,11 @@ class GrblHardwareProperties(ScrolledPanel):
 
 
 class GRBLHardwareConfig(MWindow):
-    """GRBLHardwareConfig - User interface panel for laser cutting operations"""
+    """GRBLHardwareConfig - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for grblhardwareconfig functionality. Features button controls for user interaction. Integrates with grbl:hwsettings for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for grblhardwareconfig functionality. Key controls include "Refresh" (button), "Write" (button), "Export" (button)."""
 
     def __init__(self, *args, **kwds):
         super().__init__(1000, 500, *args, **kwds)

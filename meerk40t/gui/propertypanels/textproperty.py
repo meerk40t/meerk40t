@@ -182,36 +182,13 @@ class TextVariables(wx.Panel):
 
 
 class TextPropertyPanel(ScrolledPanel):
-    """
-    TextPropertyPanel - Comprehensive text element configuration and editing interface.
-
-    This panel provides complete control over text elements in laser cutting projects, allowing users to
-    edit text content, modify font properties, adjust colors, positioning, and apply various text effects.
-    It serves as the primary interface for text manipulation and formatting in the MeerK40t application.
-
+    """TextPropertyPanel - User interface panel for laser cutting operations
     Technical Purpose:
-    - Manages text element properties including content, fonts, colors, and positioning
-    - Provides real-time text preview with variable translation capabilities
-    - Implements font selection, sizing, and styling controls (bold, italic, underline, strikethrough)
-    - Handles text alignment and anchoring options
-    - Integrates with wordlist system for variable substitution
-    - Maintains font history for quick access to recently used fonts
-    - Supports text measurement and bounds calculation for accurate rendering
+    Provides user interface controls for textproperty functionality. Features checkbox controls for user interaction. Integrates with refresh_scene for enhanced functionality.
+    End-User Perspective:
+    This panel provides controls for textproperty functionality. Key controls include "Translate Variables" (checkbox)."""
 
-    Signal Listeners:
-    - textselect: Handles text selection events for focus management
-
-    User Interface:
-    - Text Content: Multi-line text input with variable translation preview
-    - Font Selection: System font chooser with prompting combo box and font history
-    - Font Attributes: Size controls (larger/smaller), style toggles (bold, italic, underline, strikethrough)
-    - Text Alignment: Left, center, right alignment options with anchor positioning
-    - Color Controls: Stroke and fill color selection with auto-classification
-    - Position/Size: X,Y coordinates and dimensions management
-    - Text Variables: Wordlist integration for dynamic text substitution
-    - Font History: Quick access to recently used font configurations
-    - Variable Translation: Toggle for previewing variable substitutions in text
-    """
+    """TextPropertyPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

@@ -788,37 +788,6 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
-    """
-    SimulationPanel - Interactive visual preview and analysis interface for laser cutting operations.
-
-    This comprehensive panel provides real-time simulation of laser cutting jobs with detailed progress tracking,
-    time and distance estimation, and interactive controls. It integrates with the cutplan system to visualize
-    laser operations before execution, allowing users to preview, analyze, and optimize their cutting jobs.
-
-    Signal Listeners:
-        - device;modified: Updates simulation when device settings change
-        - plan: Refreshes simulation data when cutplan is modified
-        - refresh_simulation: Triggers scene refresh for simulation updates
-        - refresh_scene: Handles scene-specific refresh requests
-        - background: Updates background image in simulation scene
-
-    Signal References:
-        - refresh_scene: Emitted to update scene display during simulation playback
-        - plan: Broadcasts cutplan changes and status updates
-        - optimize: Signals optimization state changes
-
-    User Interface:
-        - Interactive scene view with laser path visualization and reticle positioning
-        - Progress slider for stepping through operations or time-based playback
-        - Playback controls with speed adjustment (1%-5000%) and mode selection (steps/time)
-        - Real-time distance and time estimates for travel, cutting, and total operations
-        - Optimization panel with configurable cutplan processing options
-        - Operations panel showing cutplan sequence with editing capabilities
-        - Cutcode panel displaying detailed operation parameters and cut modifications
-        - Display toggles for travel paths, raster images, laser spot width, and grid overlays
-        - Send-to-laser functionality for job execution
-    """
-
     def __init__(
         self,
         *args,

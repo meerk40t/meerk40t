@@ -161,27 +161,6 @@ def register_panel_console(window, context):
 
 
 class ConsolePanel(wx.ScrolledWindow):
-    """
-    ConsolePanel - Interactive command-line interface for MeerK40t operations.
-
-    **Technical Purpose:**
-    Provides a wxPython-based console interface for direct command execution and system monitoring
-    in MeerK40t. This panel supports both plain text and rich text display modes with ANSI color
-    code processing, command history navigation, tab completion, and real-time output updates.
-    Integrates with the kernel's console channel for command processing and maintains persistent
-    command history across sessions.
-
-    **Signal Listeners:**
-    - "console_update" - Triggers console output updates when new text is available
-
-    **End-User Description:**
-    Use this interactive console to enter commands directly and see system output in real-time.
-    Navigate command history with up/down arrows, use tab for autocompletion, and view colored
-    output with ANSI formatting support. Commands are saved to history and can be recalled
-    across sessions. This is the primary interface for advanced users to access all MeerK40t
-    functionality through text commands.
-    """
-
     def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

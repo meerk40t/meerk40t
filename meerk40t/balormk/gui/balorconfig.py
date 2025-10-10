@@ -13,7 +13,11 @@ _ = wx.GetTranslation
 
 
 class BalorConfiguration(MWindow):
-    """BalorConfiguration - User interface panel for laser cutting operations"""
+    """BalorConfiguration - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for balorconfiguration functionality. Integrates with lens_size, activate;device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for balorconfiguration functionality in MeerK40t."""
 
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)

@@ -257,23 +257,13 @@ class ImportDialog(wx.Dialog):
 
 class MaterialPanel(ScrolledPanel):
     """
-    Comprehensive material library management interface for laser cutting operations providing material-specific parameter storage and retrieval.
+    Panel to modify material library settings.
+    In essence a material library setting is a persistent list of operations.
+    They are stored in the operations.cfg file in the meerk40t working directory
 
-    **Technical Details:**
-    - Purpose: Material database interface for storing, retrieving, and managing laser cutting parameters organized by material type, thickness, and laser compatibility with import/export capabilities
-    - Signals: None - operates independently through direct data persistence and UI interactions
-    - Help Section: materialmanager
-
-    **User Interface:**
-    - Hierarchical tree view of material library organized by material/thickness/laser type with filtering capabilities
-    - Material parameter editing interface with title, material name, thickness, laser type, power, and lens size fields
-    - Operation preview list showing cut/engrave/raster operations with power, speed, frequency, passes, and effects
-    - Import functionality for LightBurn (.clb), EZCAD (.lib/.ini), and MeerK40t (.cfg) material libraries
-    - Export and sharing capabilities for community material library contributions
-    - Duplicate, delete, and batch operations for material library management
-    - Real-time filtering by material name, thickness, and laser type with reset functionality
-    - Expandable information display for detailed material notes and conversion tracking
-    - Status bar integration for applying material settings to current operations
+    Internal development note:
+    I have tried the dataview TreeListCtrl to self.display_list the different entries:
+    this was crashing consistently, so I stopped following this path
     """
 
     def __init__(self, *args, context=None, **kwds):

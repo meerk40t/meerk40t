@@ -123,52 +123,7 @@ def register_panel_tree(window, context):
 
 
 class TreePanel(wx.Panel):
-    """
-    TreePanel - Hierarchical tree view interface for managing laser cutting elements, operations, and project structure.
-
-    This panel provides a comprehensive tree-based interface for organizing and manipulating laser cutting project components.
-    It displays elements, operations, and regmarks in a hierarchical structure, allowing users to navigate, select, and modify
-    project components through an intuitive tree control interface.
-
-    Technical Purpose:
-    - Provides wxTreeCtrl-based hierarchical display of project structure (elements, operations, regmarks)
-    - Manages ShadowTree instance for tree state and node registration/unregistration
-    - Handles complex signal-based communication for tree updates and user interactions
-    - Implements warning system for unassigned/unburnt elements with automatic fix buttons
-    - Supports drag-and-drop operations for reordering project components
-    - Integrates key binding system for keyboard navigation and commands
-    - Maintains tree expansion state and visual decorations (icons, colors, states)
-
-    Signal Listeners:
-    - updateop_tree: Updates operation tree labels and decorations
-    - warn_state_update: Refreshes warning panel state for unassigned/unburnt elements
-    - update_group_labels: Updates group node labels in tree display
-    - select_emphasized_tree: Selects emphasized nodes in tree view
-    - activate_selected_nodes: Activates currently selected tree nodes
-    - activate_single_node: Activates a specific single node in tree
-    - element_property_update: Updates element properties and refreshes tree decorations
-    - element_property_reload: Forces reload of element properties and tree refresh
-    - activate;device: Handles device activation and formatter cache reset
-    - reset_formatter: Resets tree node formatter cache
-    - sync_expansion: Synchronizes tree node expansion state
-    - rebuild_tree: Rebuilds entire tree structure or specific branches
-    - refresh_tree: Refreshes tree display with updated node information
-    - freeze_tree: Freezes/unfreezes tree updates during bulk operations
-    - updateelem_tree: Updates element tree branch labels
-
-    User Interface:
-    - Tree Control: Hierarchical wxTreeCtrl displaying project structure with icons and colors
-    - Warning Panel: Dynamic panel showing unassigned elements and disabled operations with fix buttons
-    - Assign (+new): Classifies unassigned elements and creates new operations if necessary
-    - Assign: Classifies unassigned elements using only existing operations
-    - Enable: Reactivates disabled operations that prevent elements from being burned
-    - Keyboard Navigation: Supports arrow keys, delete operations, and custom key bindings
-    - Drag & Drop: Allows reordering of elements and operations within valid type families
-    - Context Menus: Right-click menus for node-specific operations
-    - Visual States: Lock icons, reference object indicators, ghosted hidden items, warning states
-    """
-
-    def __init__(self, *args, context=None, node=None, **kwds):
+    def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
@@ -588,8 +543,6 @@ class TreePanel(wx.Panel):
 
 
 class ElementsTree(MWindow):
-    """ElementsTree - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
@@ -616,7 +569,12 @@ class ElementsTree(MWindow):
 
 
 class ShadowTree:
-    """ShadowTree - User interface panel for laser cutting operations"""
+    """
+    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the
+    elements tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends
+    any requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.operations' and when those
+    are reflected in the tree, the shadow tree is updated accordingly.
+    """
 
     def __init__(self, service, gui, wxtree, context):
         self.elements = service

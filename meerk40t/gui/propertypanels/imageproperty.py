@@ -1853,37 +1853,13 @@ class ImageVectorisationPanel(ScrolledPanel):
 
 
 class ImagePropertyPanel(ScrolledPanel):
-    """
-    ImagePropertyPanel - Comprehensive raster image element configuration and processing interface.
+    """ImagePropertyPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for imageproperty functionality. Features checkbox, button controls for user interaction. Integrates with nodetype, selected for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for imageproperty functionality. Key controls include "Enable" (checkbox), "Reset" (button), "Invert" (checkbox)."""
 
-    This panel provides complete control over raster image elements including DPI settings, dithering,
-    depth mapping, grayscale manipulation, cropping, and positioning. It serves as the primary interface
-    for image processing and laser engraving parameter configuration.
-
-    Technical Purpose:
-    - Manages raster image element properties and processing parameters
-    - Provides DPI control with size preservation options
-    - Implements dithering algorithms for grayscale-to-binary conversion
-    - Supports depth mapping for 3D engraving effects
-    - Handles grayscale channel manipulation (RGB + lightness)
-    - Integrates cropping and positioning controls
-    - Manages keyhole operations for image processing
-
-    Signal Listeners:
-    - None directly (relies on callback mechanisms from sub-panels)
-
-    User Interface:
-    - Element ID: Identification and naming controls
-    - DPI Settings: Resolution control with size preservation toggle
-    - Auto-Crop: Final crop prevention option
-    - Dithering: Algorithm selection for halftone processing
-    - 3D Treatment: Depth mapping with resolution selection
-    - Grayscale Controls: RGB channel and lightness manipulation with inversion
-    - Crop Panel: Image cropping and boundary management
-    - Keyhole Panel: Specialized image processing operations
-    - Position/Size: X,Y coordinates and dimensions
-    - Lock Controls: Prevent accidental modifications
-    """
+    """ImagePropertyPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__

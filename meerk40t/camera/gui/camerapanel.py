@@ -67,8 +67,6 @@ def register_panel_camera(window, context):
 
 
 class CameraPanel(wx.Panel, Job):
-    """CameraPanel - User interface panel for laser cutting operations"""
-
     def __init__(
         self, *args, context=None, gui=None, index: int = 0, pane=False, **kwds
     ):

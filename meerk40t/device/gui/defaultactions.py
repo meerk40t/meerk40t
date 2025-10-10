@@ -31,7 +31,11 @@ _ = wx.GetTranslation
 
 
 class DefaultActionPanel(wx.Panel):
-    """DefaultActionPanel - User interface panel for laser cutting operations"""
+    """DefaultActionPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for defaultaction functionality. Features button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for defaultaction functionality. Key controls include "Add to Job Start" (button), "Add to Job End" (button)."""
 
     # Constants for standards list indices
     STD_NAME = 0

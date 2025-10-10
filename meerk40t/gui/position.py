@@ -37,29 +37,13 @@ def register_panel_position(window, context):
 
 
 class PositionPanel(wx.Panel):
-    """
-    PositionPanel - Provides comprehensive UI controls for editing object dimensions and positioning in the laser cutting workspace.
+    """PositionPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for position functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, modified_by_tool for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for position functionality. Key controls include "Individ." (checkbox), "Keep ratio" (checkbox)."""
 
-    This panel manages the coordinate system and transformation operations for selected elements, offering precise control
-    over position (X,Y coordinates), dimensions (width/height), and reference points. It integrates with the elements system
-    to apply transformations to emphasized objects, supporting both individual element modifications and group operations.
-
-    Signal Listeners:
-        - refresh_scene: Updates position display when scene changes occur
-        - modified_by_tool: Refreshes position values when elements are modified by tools
-
-    Signal References:
-        - refresh_scene: Emitted after applying position/dimension changes to trigger scene updates
-        - lock_active: Broadcasts aspect ratio lock state changes
-
-    User Interface:
-        - X/Y coordinate inputs for positioning elements with reference point selection
-        - Width/height controls for resizing with aspect ratio preservation option
-        - Unit selection (mm, cm, inch, mil, %) with automatic conversion
-        - Individual vs. group operation modes for multi-element selections
-        - Reference point selector (9-point grid) for transformation anchor points
-        - Apply button to execute changes on all emphasized elements
-    """
+    """PositionPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, small=False, **kwds):
         # begin wxGlade: PositionPanel.__init__

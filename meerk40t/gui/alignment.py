@@ -197,29 +197,6 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
-    """
-    AlignmentPanel - Advanced element alignment and positioning interface.
-
-    This panel provides comprehensive alignment capabilities for laser cutting design elements,
-    enabling precise positioning relative to selection boundaries, reference objects, or laser bed.
-    Supports both individual element alignment and group alignment with persistent settings.
-
-    Signal Listeners:
-        - None: This panel operates independently for alignment operations
-
-    Signal References:
-        - None: This panel does not emit signals to other components
-
-    User Interface:
-        - X/Y axis alignment controls with left/center/right and top/center/bottom positioning options
-        - Reference target selection (selection bounds, first/last selected, laser bed, reference object)
-        - Individual vs group treatment modes for different alignment behaviors
-        - Real-time preview and validation with element count display
-        - Persistent settings storage for alignment preferences
-        - Visual feedback showing selected elements and alignment boundaries
-        - Automatic enable/disable based on selection state and reference availability
-    """
-
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -404,6 +381,7 @@ class AlignmentPanel(wx.Panel):
 
     def restore_setting(self):
         try:
+            self.rbox_treatment.SetSelection(self.context.align_treatment)
             self.rbox_align_x.SetSelection(self.context.align_x)
             self.rbox_align_y.SetSelection(self.context.align_y)
             self.rbox_relation.SetSelection(self.context.align_relation)
@@ -424,33 +402,8 @@ class AlignmentPanel(wx.Panel):
 
 
 class DistributionPanel(wx.Panel):
-    """
-    DistributionPanel - Advanced element distribution and spacing interface.
-
-    This panel provides sophisticated distribution capabilities for laser cutting design elements,
-    enabling precise spacing and positioning along various geometric paths including selection boundaries,
-    element shapes, point collections, laser bed, and reference objects. Supports complex algorithms
-    for equidistant and element-sized spacing with rotation options.
-
-    Signal Listeners:
-        - None: This panel operates independently for distribution operations
-
-    Signal References:
-        - None: This panel does not emit signals to other components
-
-    User Interface:
-        - X/Y axis distribution controls with position-based and spacing-based options
-        - Work sequence selection (position, first selected, last selected) for processing order
-        - Treatment modes (position, shape, points, laser bed, reference object) for distribution paths
-        - First/last element positioning controls with inside boundary preservation
-        - Rotation toggle for parallel alignment to distribution paths
-        - Real-time validation with element count and boundary requirement checking
-        - Persistent settings storage for distribution preferences
-        - Visual feedback showing distribution boundaries and element positioning
-        - Automatic enable/disable based on selection state and reference availability
-    """
-
     def __init__(self, *args, context=None, scene=None, **kwds):
+        kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
@@ -1156,33 +1109,6 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
-    """
-    ArrangementPanel - Advanced grid-based element arrangement interface.
-
-    This panel provides sophisticated grid arrangement capabilities for laser cutting design elements,
-    enabling precise positioning in configurable grid layouts with customizable column/row dimensions,
-    alignment options, and spacing controls. Supports both adjacent and distance-based arrangements
-    with automatic centering on the laser bed.
-
-    Signal Listeners:
-        - None: This panel operates independently for arrangement operations
-
-    Signal References:
-        - None: This panel does not emit signals to other components
-
-    User Interface:
-        - Grid dimension controls (columns and rows) with spin controls and same-size checkboxes
-        - X/Y axis alignment options (left/center/right, top/center/bottom) for element positioning within grid cells
-        - Arrangement mode selection (adjacent placement vs. custom distance gaps)
-        - Processing order controls (selection order, first selected, last selected) for element sequencing
-        - Custom gap distance inputs for X and Y axes with length validation
-        - Real-time validation with element count and grid capacity checking
-        - Persistent settings storage for arrangement preferences
-        - Automatic scene centering of arranged grid layouts
-        - Visual feedback showing grid boundaries and element positioning
-        - Enable/disable controls based on selection state and validation results
-    """
-
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)

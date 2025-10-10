@@ -30,8 +30,6 @@ _default_height = 570
 
 
 class LihuiyuControllerPanel(ScrolledPanel):
-    """LihuiyuControllerPanel - User interface panel for laser cutting operations"""
-
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)

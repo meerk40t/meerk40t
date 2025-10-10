@@ -6,6 +6,12 @@ _ = wx.GetTranslation
 
 
 class LhyAdvancedPanel(wx.Panel):
+    """LhyAdvancedPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for lhyadvanced functionality. Features checkbox controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for lhyadvanced functionality. Key controls include "Custom D-Ratio" (checkbox), "Acceleration" (checkbox), "Dot Length" (checkbox)."""
+
     """LhyAdvancedPanel - User interface panel for laser cutting operations"""
 
     name = "Advanced"

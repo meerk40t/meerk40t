@@ -37,27 +37,13 @@ def register_panel_thread_info(window, context):
 
 
 class ThreadPanel(wx.Panel):
-    """
-    ThreadPanel - Background task monitoring and management interface for laser cutting operations.
+    """ThreadPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for thread functionality. Features checkbox controls for user interaction. Integrates with thread_update, wxpane/ThreadInfo for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for thread functionality. Key controls include "Auto-show on new task" (checkbox)."""
 
-    This panel provides real-time visibility into background tasks and threaded operations within MeerK40t,
-    displaying preparatory jobs issued with the 'threaded' command such as burn preparation, optimization,
-    and other system tasks. It offers detailed status tracking and runtime information for active threads.
-
-    Signal Listeners:
-        - thread_update: Triggers refresh of thread list when background task status changes
-
-    Signal References:
-        - None: This panel primarily consumes signals for display updates
-
-    User Interface:
-        - Background task list showing task number, name, current status, and elapsed runtime
-        - Auto-show toggle to automatically display the panel when new background tasks start
-        - System tasks visibility control to show/hide internal system threads
-        - Right-click context menu for additional display options
-        - Real-time updates with 2-second throttling to prevent excessive UI refreshes
-        - Column-based display with resizable columns and persistent width settings
-    """
+    """ThreadPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
