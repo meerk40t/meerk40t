@@ -149,4 +149,27 @@ magnet split y <count>  # Create <count> horizontal lines across selection
 
 ## Screenshots
 
-*Add screenshots showing the magnet panels and magnet lines in action.*
+### Magnet Actions Tab
+The Actions tab displays the main magnet line creation controls:
+- **Manual Creation**: Position input field with X and Y buttons for creating individual guide lines
+- **Selection-Based Guides**: Left/Center/Right buttons for vertical lines, Top/Center/Bottom buttons for horizontal lines
+- **Division Controls**: Numbered buttons (3, 4, 5) for creating evenly spaced divisions across the selection
+- **Clear Options**: Clear All, Clear X, and Clear Y buttons for removing magnet lines
+
+### Magnet Options Tab
+The Options tab shows configuration settings:
+- **Attraction Areas**: Checkboxes for Left/Right Side, Top/Bottom Side, and Center snapping options
+- **Attraction Strength**: Radio button selection from Off to Enormous strength levels
+- **Configuration Management**: Template dropdown with Load and Save buttons for storing magnet setups
+
+### Magnet Lines in Scene View
+The main scene view displays active magnet lines as visual guides:
+- **Vertical Lines**: Blue vertical lines at specified X positions
+- **Horizontal Lines**: Blue horizontal lines at specified Y positions
+- **Object Snapping**: Shows objects automatically aligning to nearby magnet lines during movement
+- **Selection Highlighting**: Selected objects with visible snap points (corners, centers, edges)
+
+### Advanced Magnet Configurations
+- **Precision Layout**: Shows numbered division lines (3rds, 4ths, 5ths) across a selected area
+- **Template Application**: Demonstrates loading a saved magnet configuration for consistent layouts
+- **Multi-Object Alignment**: Illustrates how multiple objects snap to the same guide lines simultaneously

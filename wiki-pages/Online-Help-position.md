@@ -225,7 +225,62 @@ The PositionPanel class provides sophisticated geometric transformation capabili
 
 ## Screenshots
 
-*Add screenshots showing the position panel with different reference points and unit selections.*
+### Position Panel - Basic Coordinate Entry
+The main position panel displaying coordinate and dimension controls:
+- **X/Y Inputs**: Coordinate fields for positioning the selection
+- **Reference Point Button**: 9-point grid selector for anchor position
+- **Width/Height Fields**: Dimension controls for scaling
+- **Keep Ratio Checkbox**: Aspect ratio lock for proportional scaling
+- **Unit Dropdown**: Measurement system selection (mm, cm, inch, mil, %)
+
+### Reference Point Selection Grid
+The reference point selector showing the 9-point positioning system:
+- **9-Point Grid**: Visual grid with Top-Left, Center, Bottom-Right positions highlighted
+- **Selected Point**: Currently chosen reference point (e.g., center highlighted)
+- **Position Preview**: Shows which part of the selection will be positioned at coordinates
+- **Grid Layout**: 3x3 arrangement of positioning options
+
+### Center Reference Point Positioning
+The panel configured with center reference point selected:
+- **Reference Point: Center**: Selected in the grid (middle position)
+- **Coordinate Behavior**: X/Y coordinates position the center of the selection
+- **Visual Indicator**: Center point highlighted in the reference grid
+- **Use Case**: Centering elements on specific coordinates
+
+### Corner Reference Point Examples
+Different corner reference points for alignment positioning:
+- **Top-Left Reference**: Positions the top-left corner of selection at coordinates
+- **Bottom-Right Reference**: Positions the bottom-right corner at coordinates
+- **Edge References**: Middle-Left, Top-Center, etc. for edge alignment
+- **Alignment Preview**: Shows how selection aligns to coordinate points
+
+### Dimension Scaling Controls
+The panel showing width and height modification:
+- **Width Input**: Horizontal dimension field with current value
+- **Height Input**: Vertical dimension field with current value
+- **Keep Ratio Enabled**: Linked scaling maintains proportions
+- **Independent Scaling**: When ratio lock is disabled for free-form scaling
+
+### Unit System Selection
+The panel displaying different measurement units:
+- **Millimeters (mm)**: Default metric unit selection
+- **Inches**: Imperial unit system for compatibility
+- **Percentage (%)**: Relative positioning based on scene size
+- **Mil**: Thousandths of an inch for precision work
+
+### Individual vs Group Editing Mode
+The panel showing editing mode controls:
+- **Individually Checkbox**: When checked, applies dimensions to each element separately
+- **Group Mode**: When unchecked, treats selection as unified group
+- **Mode Indicators**: Visual feedback showing current editing mode
+- **Element Count**: Shows number of selected elements
+
+### Real-time Position Preview
+The interface showing live preview of position changes:
+- **Coordinate Input**: Values being entered in X/Y fields
+- **Visual Feedback**: Selection showing new position before applying
+- **Reference Point Display**: Current anchor point highlighted
+- **Non-destructive Editing**: Changes previewed but not applied until executed
 
 ---
 

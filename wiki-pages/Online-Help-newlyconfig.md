@@ -266,7 +266,68 @@ Additional hidden settings become available when developer mode is enabled in Me
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+### Newly Tab - Basic Device Configuration
+The Newly tab displays fundamental device settings:
+- **Device Label**: Text field for custom device naming
+- **Dimensions Panel**: Width, Height, and Laserspot input fields with mm units
+- **Parameters Section**: X-Margin, Y-Margin, Home Position dropdown, and axis correction checkboxes
+- **General Settings**: Mock USB backend checkbox and Machine Index selection
+- **Output Settings**: File index dropdown (0-9) and auto-start checkbox
+- **Screen Updates**: Device position indicator toggle
+
+### Device Tab - Hardware Parameters
+The Device tab shows hardware-specific controls:
+- **Axis DPI Settings**: Horizontal and Vertical DPI input fields (default 1000)
+- **Backlash Compensation**: Horizontal and Vertical backlash correction in mm
+- **Power Settings**: Max Power, Max Pulse Power, PWM Power checkbox, and PWM Frequency slider
+- **Current Control**: Cut DC and Move DC current level settings
+- **Raster Settings**: Maximum Raster Jog distance input field
+
+### Global Tab - Default Operation Parameters
+The Global tab contains default operational settings:
+- **Cut Settings**: Cut Speed and Cut Power default values
+- **Timing Controls**: On Delay and Off Delay in milliseconds
+- **Raster Settings**: Raster Speed and Raster Power defaults
+- **Movement Settings**: Moving Speed, Corner Speed, and Acceleration Distance
+- **Framing Settings**: Rect Speed and Rect Power for frame operations
+
+### Raster Chart Tab - Speed Optimization
+The Raster Chart tab displays the acceleration optimization table:
+- **Chart Table**: Columns for Speed ≤, Acceleration Length, Backlash, and Corner Speed
+- **Default Entries**: Five speed ranges (≤100, ≤200, ≤300, ≤400, ≤500) with preset values
+- **Add/Remove Buttons**: Controls for modifying chart entries
+- **Auto-sort**: Table automatically sorts by speed threshold
+
+### Effects Tab - Hatch and Wobble Configuration
+The Effects tab shows laser effect parameters:
+- **Hatch Patterns**: Various fill pattern options for area engraving
+- **Wobble Settings**: Oscillation type, amplitude, frequency, and pattern controls
+- **Effect Parameters**: Material-specific effect customization options
+
+### Operation Defaults Tab - Type-Specific Settings
+The Operation Defaults tab contains per-operation configurations:
+- **Operation Categories**: Separate sections for Cut, Engrave, Raster, Image operations
+- **Parameter Sets**: Speed and power defaults for each operation type
+- **Material Presets**: Pre-configured settings for common materials
+
+### Warning Tab - Safety Thresholds
+The Warning tab displays safety configuration:
+- **Danger Level Settings**: Enable/disable toggles for each operation type
+- **Parameter Thresholds**: Speed and power limit settings for safe operation
+- **Warning Indicators**: Visual alerts for operations exceeding safe parameters
+
+### Default Actions Tab - Pre-configured Workflows
+The Default Actions tab shows automated sequences:
+- **Action Categories**: Job execution, safety checks, calibration, and maintenance
+- **Workflow Selection**: Dropdown or list of available pre-configured actions
+- **Execution Controls**: Run, edit, or customize default action sequences
+
+### Display Options Tab - Interface Customization
+The Display Options tab controls UI appearance:
+- **Information Display**: Toggle options for status information visibility
+- **Status Indicators**: Configuration for progress and state displays
+- **Panel Layout**: Customization options for the device panel arrangement
+- **Theme Integration**: Settings for visual theme compatibility
 
 ---
 

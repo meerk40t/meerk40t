@@ -9,7 +9,8 @@ The Distribute panel provides advanced controls for evenly spacing and positioni
 ## Location in MeerK40t
 
 This help section is accessed from:
-- `meerk40t\gui\alignment.py`
+
+- `meerk40t/gui/alignment.py`
 
 ## Category
 
@@ -20,6 +21,7 @@ This help section is accessed from:
 The Distribute feature allows you to automatically position selected elements along different types of paths or within defined boundaries. Unlike simple alignment, distribution creates evenly spaced arrangements where elements follow geometric patterns or shapes.
 
 **When to use Distribute:**
+
 - Creating evenly spaced elements along a curved path
 - Distributing objects around the perimeter of another shape
 - Placing elements at specific points on a complex path
@@ -63,12 +65,14 @@ The Distribute feature allows you to automatically position selected elements al
 The distribution system uses sophisticated geometric algorithms to calculate element positions:
 
 **Distribution Algorithms:**
+
 - **Position Mode:** Creates evenly spaced points along the bounding rectangle of selected elements
 - **Shape Mode:** Converts the first selected element to a path and distributes remaining elements along its outline
 - **Points Mode:** Uses individual points from the first element's path as distribution targets
 - **Laserbed/Ref-Object Mode:** Distributes elements along rectangular boundaries
 
 **Spacing Calculations:**
+
 - **Equidistant:** Creates equal distances between element centers
 - **Space Mode:** Distributes elements with equal gaps between their edges
 - **Boundary Respect:** "Keep first + last inside" ensures edge elements stay within target boundaries
@@ -81,14 +85,25 @@ The system preserves element aspect ratios and handles complex path types includ
 
 *Link to related help topics:*
 
-- [[Online Help: Alignment]]
-- [[Online Help: Arrangement]]
-- [[Online Help: Autoexec]]
+- [[Online Help: Alignment]] - Basic element positioning and alignment tools
+- [[Online Help: Arrangement]] - Advanced element arrangement and layout options
+- [[Online Help: Placement]] - Position markers and placement point management
+- [[Online Help: Position]] - Coordinate-based positioning controls
+- [[Online Help: Transform]] - Element transformation and manipulation tools
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+The Distribute panel interface includes:
+
+1. **Distribution Controls**: Shows the main panel with Treatment options (Position, Shape, Points, Laserbed, Ref-Object) and positioning controls
+2. **X/Y Axis Settings**: Displays the dropdown menus for horizontal and vertical element positioning (Left/Center/Right/Top/Center/Bottom)
+3. **Option Toggles**: Shows the "Keep first + last inside" and "Rotate" checkboxes with their effects
+4. **Before/After Examples**: Demonstrates how elements are repositioned using different distribution methods
+5. **Shape Distribution**: Shows elements distributed along curved paths with rotation enabled
+6. **Boundary Distribution**: Illustrates distribution along laser bed boundaries or reference object outlines
+
+The panel uses visual indicators to show the distribution area and provides real-time preview of element positioning before applying changes.
 
 ---
 
-*This help page is automatically generated. Please update with specific information about the distribute feature.*
+*This help page provides comprehensive documentation for the distribution system in MeerK40t.*

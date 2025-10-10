@@ -153,4 +153,39 @@ Hatch and wobble defaults are used when creating new effects without explicit pa
 
 ## Screenshots
 
-*Add screenshots showing the Moshi configuration window with different tabs and settings.*
+### Configuration Tab - Basic Device Settings
+The Configuration tab displays fundamental device parameters:
+- **Bed Dimensions**: Width and Height input fields for defining the laser working area
+- **Coolant Support**: Enable/disable checkbox and control method selection for devices with cooling systems
+- **Device Status**: Shows current device connection and configuration state
+
+### Effects Tab - Hatch and Wobble Defaults
+The Effects tab shows default parameters for laser effects:
+- **Hatch Settings**: Distance, Angle, and Angle Delta input fields with unit labels
+- **Wobble Settings**: Type dropdown (Circle, Square, etc.), Speed slider, Radius input, and Interval spacing control
+- **Preview Area**: Visual representation of the selected wobble pattern
+
+### Operation Defaults Tab - Power and Speed Settings
+The Operation Defaults tab contains power and speed controls for each operation type:
+- **Cut Operations**: Power (0-1000) and Speed (mm/s) default settings
+- **Engrave Operations**: Separate power and speed defaults for engraving
+- **Raster Operations**: Image/raster specific power and speed parameters
+- **Image Operations**: Specialized settings for image processing operations
+
+### Warning Tab - Safety and Alert Configuration
+The Warning tab displays safety threshold configuration:
+- **Danger Level Thresholds**: Speed and power limit settings for each operation type
+- **Warning Display Options**: Visual indicators, alert message customization, and override permissions
+- **Safety Status**: Current safety check results and recommendations
+
+### Default Actions Tab - Automatic Behaviors
+The Default Actions tab shows automatic device behaviors:
+- **Startup Actions**: Auto-connect, default mode, and safety check options
+- **Operation Actions**: Auto-focus, home position return, and power management settings
+- **Automation Status**: Shows which automatic behaviors are currently enabled
+
+### Display Options Tab - Formatting and Visualization
+The Display Options tab controls how operations are presented:
+- **Operation Display**: Color coding checkboxes, label format options, and icon display toggles
+- **Status Display**: Progress indicators, parameter display modes (absolute vs percentage), and unit preferences
+- **Visualization Settings**: How operations appear in the interface and tree view

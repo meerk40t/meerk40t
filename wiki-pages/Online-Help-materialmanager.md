@@ -259,4 +259,37 @@ The Material Manager integrates with several system signals:
 
 ## Screenshots
 
-*Add screenshots showing the material manager interface, library tree, operation preview, and import dialog.*
+### Material Manager Main Interface
+The main Material Manager window displays three primary sections:
+- **Library Tree (Left)**: Hierarchical view of material profiles organized by category
+- **Operation Preview (Center)**: Detailed table showing all operations in the selected material
+- **Material Details (Right)**: Editable properties panel for the selected material profile
+- **Filter Controls (Top)**: Material, Thickness, and Laser Type filters with Reset button
+
+### Library Tree View
+The library tree shows material organization options:
+- **Categorization Dropdown**: Options to group by Material, Laser, or Thickness
+- **Hierarchical Structure**: Top-level categories, subcategories, and individual material entries
+- **Material Counts**: Shows number of operations in each material profile
+- **Right-Click Menu**: Context menu with Add new, Duplicate, Delete, and other management options
+
+### Operation Preview Table
+The operations table displays detailed laser parameters:
+- **Column Headers**: #, Operation, Id, Label, Power [ppi], Speed [mm/s], Frequency [kHz], Passes, Effects
+- **Operation Types**: Color-coded rows for Cut, Engrave, Raster, and Image operations
+- **Inline Editing**: Clickable cells for direct parameter modification
+- **Right-Click Menu**: Options to Add operations, Duplicate, Delete, and apply effects
+
+### Material Details Panel
+The details panel shows comprehensive material information:
+- **Basic Properties**: Title, Material type, Thickness, Laser compatibility
+- **Technical Specs**: Power rating and Lens Size specifications
+- **Notes Section**: Additional usage notes and import conversion details
+- **Action Buttons**: Get current, Set, Share, and other material management controls
+
+### Import Dialog
+The import dialog handles external material library files:
+- **File Selection**: Browse button for selecting .clb, .lib, .ini, or .cfg files
+- **Compensation Options**: Checkboxes for Lens-Size and Power-Level compensation
+- **Consolidation Setting**: Option to group materials of same thickness
+- **Progress Display**: Shows import processing status and results

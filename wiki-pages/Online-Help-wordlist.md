@@ -146,7 +146,61 @@ Text elements containing `{variable}` patterns are processed through the `transl
 
 ## Screenshots
 
-*Add screenshots showing the wordlist editor interface and example text templates.*
+### Wordlist Editor Main Interface
+The Wordlist Editor window displaying variable management controls:
+- **Variable List**: Table showing all defined variables with their types and current values
+- **Add Buttons**: "Add Text" and "Add Counter" buttons for creating new variables
+- **Navigation Controls**: Next/Prev buttons for cycling through variable combinations
+- **Index Dropdowns**: Individual index selectors for each variable
+
+### Variable Configuration Panel
+The variable editing section showing detailed configuration:
+- **Variable Name Field**: Input for naming the variable
+- **Type Selection**: Dropdown for Static Text, CSV Data, or Counter types
+- **Value List**: Multi-line text area for entering variable values
+- **Current Index Display**: Shows which value is currently active
+
+### CSV Import Interface
+The CSV import dialog for bulk data loading:
+- **File Selection**: Browse button for selecting CSV files
+- **Encoding Options**: Character encoding selection for different file formats
+- **Header Detection**: Automatic column header identification
+- **Variable Creation**: Preview of variables that will be created from CSV columns
+
+### Text Template Example
+Demonstration of text elements using wordlist variables:
+- **Template Text**: "Serial: {counter} - Name: {name} - Date: {date@%Y-%m-%d}"
+- **Variable Substitution**: Shows how {variable} patterns are replaced with actual values
+- **Dynamic Updates**: Text changes as variables are cycled through different values
+- **Formatting Options**: Date/time formatting with custom patterns
+
+### Counter Variable Configuration
+The counter variable setup showing auto-increment functionality:
+- **Counter Type**: Selected variable type for numeric sequencing
+- **Start Value**: Initial number for the counter sequence
+- **Increment Step**: How much to add with each advancement
+- **Current Value Display**: Shows the present counter value
+
+### Batch Processing Controls
+The batch processing interface for systematic variable advancement:
+- **Advance Button**: Moves all variables to their next combination
+- **Transaction Support**: Atomic operations with rollback capability
+- **Progress Tracking**: Shows current position in the variable matrix
+- **Completion Status**: Indicates when all combinations have been processed
+
+### Complex Template with Offsets
+Example showing advanced templating with relative offsets:
+- **Offset Syntax**: Using {variable#+1} and {variable#-1} for relative values
+- **Preview Display**: Shows current, next, and previous values simultaneously
+- **Multi-variable Integration**: Combining counters, text variables, and dates
+- **Layout Examples**: How offsets create sequential numbering or preview systems
+
+### Wordlist Mini Panel
+The compact mini panel for quick wordlist access:
+- **Edit Button**: Opens the full Wordlist Editor
+- **Quick Navigation**: Simplified Next/Prev controls
+- **Current Values**: Display of active variable values
+- **Status Indicators**: Shows wordlist state and variable counts
 
 ---
 

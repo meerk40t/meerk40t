@@ -147,11 +147,21 @@ The panel uses wxPython sliders and text controls with validation to ensure prop
 - [[Online Help: Crop]] - Image cropping functionality
 - [[Online Help: Dither]] - Dithering algorithm details
 - [[Online Help: Raster]] - Raster engraving operations
+- [[Online Help: Path Property]] - Vector path editing and manipulation
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+The Image Property Panel interface includes:
+
+1. **Generic Properties Tab**: Shows DPI controls, keep size option, and basic image settings
+2. **Modification Tab**: Displays grayscale controls with RGB sliders and lightness adjustment
+3. **Vectorization Tab**: Shows dithering options, 3D treatment controls, and processing algorithms
+4. **DPI Resolution Examples**: Illustrates how DPI changes affect internal image representation
+5. **Dithering Comparisons**: Shows different dithering algorithms and their visual results
+6. **Depth Mapping**: Demonstrates 3D treatment with grayscale-to-depth conversion
+
+The panel includes embedded screenshots throughout the documentation showing the actual interface and various processing options.
 
 ---
 
-*This help page is automatically generated. Please update with specific information about the imageproperty feature.*
+*This help page provides comprehensive documentation for the image property and processing system in MeerK40t.*

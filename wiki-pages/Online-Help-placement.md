@@ -268,7 +268,61 @@ The PlacementPanel class manages two distinct placement operation types with com
 
 ## Screenshots
 
-*Add screenshots showing placement creation, grid configuration, and pattern generation.*
+### Placement Creation on Scene
+The scene view showing placement creation process:
+- **Placement Tool Selected**: Toolbar showing placement icon active
+- **Click to Place**: Cursor positioned to create new placement point
+- **Existing Placements**: Visual placement markers on the scene
+- **Grid Preview**: Shows where the design will be placed during execution
+
+### Placement Properties Panel - Basic Configuration
+The properties panel displaying core placement controls:
+- **Enable Checkbox**: Control to include/exclude placement from job execution
+- **Position Controls**: X and Y coordinate inputs for placement origin
+- **Rotation Input**: Angular rotation applied to the entire placement
+- **Loops Setting**: Number of times to repeat the placement execution
+
+### Grid Configuration Controls
+The panel showing grid-based array placement settings:
+- **X-Direction Repeats**: Number of horizontal placements and gap spacing
+- **Y-Direction Repeats**: Number of vertical placements and gap spacing
+- **Alternating Displacements**: X and Y percentage offsets for alternating positions
+- **Rotate Alternating**: Option to rotate elements in alternating grid positions
+
+### Advanced Positioning Options
+The panel displaying advanced placement controls:
+- **Corner Dropdown**: Reference point selection (Top-Left, Center, etc.)
+- **Orientation Options**: L2R unidirectional, L2R bidirectional, T2B bidirectional
+- **Subset Selection**: Start-index and count controls for partial grid execution
+- **Visual Grid Preview**: X marks for active positions, - marks for inactive
+
+### Grid Helper - Pattern Generation
+The Grid Helper section for automatic tiling patterns:
+- **Shape Selection**: Dropdown with Quadratic, Hexagon, Circular, Triangular options
+- **Dimension Input**: Size parameter for the selected pattern type
+- **Define Button**: Generates placement parameters for the chosen pattern
+- **Create Template Checkbox**: Option to create visual template element
+
+### Hexagonal Pattern Configuration
+The panel configured for hexagonal tiling pattern:
+- **Shape: Hexagon**: Selected in the dropdown
+- **Dimension Setting**: Size parameter for hexagon spacing
+- **Generated Parameters**: Automatically calculated repeats and gaps
+- **Preview Grid**: Shows hexagonal placement pattern with proper spacing
+
+### Circular Packing Pattern
+The panel set up for circular arrangement:
+- **Shape: Circular**: Selected for circular packing
+- **Dimension Control**: Radius or spacing parameter for circular pattern
+- **Calculated Grid**: Automatically determined placement positions
+- **Density Optimization**: Efficient use of available workspace
+
+### Complex Grid with Alternating Displacements
+Advanced grid configuration with displacement effects:
+- **Alternating X/Y**: Percentage-based offsets for irregular patterns
+- **Rotation Alternating**: Elements rotated in alternating positions
+- **Complex Preview**: Visual representation of the irregular grid layout
+- **Parameter Validation**: Real-time checking of displacement values
 
 ---
 

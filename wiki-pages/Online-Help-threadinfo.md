@@ -115,7 +115,54 @@ The panel calculates runtime by comparing current time against the thread's star
 
 ## Screenshots
 
-*Add screenshots showing the ThreadInfo panel with active background tasks.*
+### ThreadInfo Panel - Active Tasks View
+The main ThreadInfo panel displaying current background operations:
+- **Task List Table**: Columns showing # (sequential number), Task description, Status, and Runtime
+- **Active Tasks**: Currently running background operations with their descriptions
+- **Status Indicators**: Current state of each task (Running, Completed, etc.)
+- **Runtime Display**: Elapsed time in HH:MM:SS format for each task
+
+### Auto-Show Configuration
+The panel with auto-show settings enabled:
+- **Auto-show Checkbox**: Checked to automatically display panel when new tasks start
+- **New Task Notification**: Panel appearing automatically when background work begins
+- **Task Details**: Information about newly started background operations
+- **User Notification**: Visual cue when the panel opens due to new activity
+
+### System Tasks Monitoring
+The panel showing internal system threads:
+- **Right-Click Menu**: Context menu with "Show System Tasks" option selected
+- **System Threads**: Internal MeerK40t threads (normally hidden) now visible
+- **Thread Details**: Technical information about system-level operations
+- **Advanced Monitoring**: Complete view of all active threads in the system
+
+### Task Completion Status
+The panel showing completed and running tasks:
+- **Mixed Status**: Combination of Running and Completed task states
+- **Completion Times**: Final runtime for finished operations
+- **Active Operations**: Currently executing tasks with ongoing time counters
+- **Progress Tracking**: Visual indication of task lifecycle stages
+
+### Performance Monitoring View
+The panel during intensive operations:
+- **Multiple Concurrent Tasks**: Several background operations running simultaneously
+- **Resource Usage**: Runtime information for performance analysis
+- **Task Identification**: Clear task names for identifying bottlenecks
+- **System Load**: Overview of computational workload distribution
+
+### Empty State Display
+The panel when no background tasks are active:
+- **No Tasks Message**: Clear indication when no background operations are running
+- **Ready State**: Panel prepared to display new tasks as they start
+- **Auto-show Ready**: Checkbox visible and ready for configuration
+- **Clean Interface**: Minimal display when system is idle
+
+### Long-Running Task Monitoring
+The panel tracking extended background operations:
+- **Extended Runtime**: Tasks running for significant periods (minutes/hours)
+- **Status Persistence**: Continuous monitoring of long-duration operations
+- **Progress Indication**: Ongoing status updates for lengthy processes
+- **Resource Tracking**: Time-based analysis of system resource utilization
 
 ---
 

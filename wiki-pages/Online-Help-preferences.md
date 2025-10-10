@@ -295,7 +295,68 @@ The Preferences system uses a modular architecture with specialized panels for d
 
 ## Screenshots
 
-*Add screenshots showing different preference tabs and configuration options.*
+### General Tab - Basic Settings
+The General tab displaying fundamental application settings:
+- **Units Dropdown**: Measurement system selection (mm, cm, inch, mil)
+- **Language Dropdown**: User interface language selection
+- **General Preferences**: Various application-wide behavior settings
+- **Settings Management**: Save, Export, and Import buttons for configuration backup
+
+### Input/Output Tab - File Processing
+The Input/Output tab showing file handling configuration:
+- **SVG Pixel Settings**: PPI selection (96/Inkscape, 72/Illustrator, 90/Old Inkscape, Custom)
+- **File Processing Options**: SVG viewport, image DPI scaling, file-node creation
+- **CAD File Support**: DXF centering, Inkscape path, unsupported element handling
+- **Conversion Options**: Ask at load time vs automatic conversion
+
+### Classification Tab - Element Assignment
+The Classification tab displaying automatic operation assignment settings:
+- **Preset Buttons**: Automatic and Manual classification preset options
+- **Classification Rules**: Color-based assignment, fuzzy matching, black as raster
+- **New Element Handling**: Auto-classify newly added elements
+- **Default Operations**: Fallback assignment rules for unclassified elements
+
+### GUI Tab - Interface Appearance
+The GUI tab showing user interface customization options:
+- **Icon Size Control**: Toolbar and menu icon size adjustment
+- **Tree Display Options**: Mini icons, color entries in tree, ribbon labels
+- **General GUI Options**: Window behavior and layout preferences
+- **Zoom and Navigation**: Mouse wheel sensitivity and pan/scroll settings
+
+### Colors Tab - Color Scheme Customization
+The Colors tab displaying comprehensive color management:
+- **Color Categories**: Organized sections for Scene, Operations, GUI elements
+- **Color Pickers**: Individual color selection for each interface element
+- **Real-time Preview**: Live preview of color changes
+- **Reset Options**: Reset to defaults or brighter defaults for dark themes
+
+### Scene Tab - Canvas Display Options
+The Scene tab showing canvas and display configuration:
+- **Grid and Guide Settings**: Grid visibility, snap behavior, guide lines
+- **Background Options**: Canvas background color and pattern selection
+- **Element Rendering**: How elements are displayed on the scene
+- **Boundary Settings**: Scene margins and boundary display options
+
+### Operations Tab - Laser Operation Defaults
+The Operations tab displaying operation-specific parameter configuration:
+- **Operation Categories**: Separate sections for Cut, Engrave, Raster, Image operations
+- **Parameter Controls**: Speed, power, frequency settings for each type
+- **Safety Thresholds**: Warning levels and danger limits
+- **Device-Specific Options**: Hardware-dependent parameter ranges
+
+### Ribbon Tab - Toolbar Customization
+The Ribbon tab showing interactive toolbar configuration:
+- **Ribbon Editor Interface**: Drag-and-drop toolbar button arrangement
+- **Button Management**: Add, remove, and rearrange toolbar elements
+- **Custom Groups**: Create user-defined tool sections and categories
+- **Configuration Save/Load**: Save and restore custom ribbon layouts
+
+### Developer Mode Tab - Advanced Options
+The Developer Mode tab displaying advanced configuration options:
+- **Coordinate Space Settings**: Advanced coordinate system debugging
+- **Extended Preferences**: Additional configuration categories
+- **Debug Options**: Development and troubleshooting features
+- **API Access**: Advanced configuration system integration
 
 ---
 

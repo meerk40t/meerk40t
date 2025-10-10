@@ -231,7 +231,40 @@ The Notes feature integrates seamlessly with MeerK40t's pane system:
 
 ## Screenshots
 
-*Add screenshots showing the notes panel with sample project documentation and checklists.*
+### Notes Panel Main Interface
+The Notes panel displays a rich text editing environment:
+- **Text Editor Area**: Large scrollable text area with word wrapping enabled
+- **Auto-Open Checkbox**: Setting to automatically open notes when loading files with existing notes
+- **Rich Text Support**: Multi-line editing with formatting capabilities
+- **Auto-Save Integration**: Notes automatically save with the project file
+
+### Project Documentation Example
+The panel showing comprehensive project notes:
+- **Design Intent Section**: Documenting the purpose and goals of the laser cutting project
+- **Material Specifications**: Listing recommended materials, thicknesses, and preparation instructions
+- **Technical Details**: Recording power settings, speed parameters, and special considerations
+- **Safety Notes**: Important safety reminders and equipment requirements
+
+### Production Checklist View
+The notes panel displaying a manufacturing checklist:
+- **Setup Checklist**: Step-by-step preparation instructions with checkboxes
+- **Quality Control Points**: Inspection criteria and tolerance specifications
+- **Process Steps**: Sequential manufacturing instructions with timing estimates
+- **Completion Verification**: Final checks before project completion
+
+### Workflow Management Display
+Notes showing project workflow and collaboration information:
+- **Process Documentation**: Detailed step-by-step manufacturing procedures
+- **Team Communication**: Contact information and coordination notes
+- **Revision History**: Change log with dates and modification details
+- **Client Requirements**: Special instructions and approval criteria
+
+### Long Notes with Scrolling
+The interface handling extensive project documentation:
+- **Scrollable Content**: Vertical scrollbar for long notes that exceed panel height
+- **Word Wrap**: Text automatically wraps to prevent horizontal scrolling
+- **Content Organization**: Structured format with headings, bullet points, and sections
+- **Real-time Saving**: Visual indicators showing auto-save status
 
 ---
 

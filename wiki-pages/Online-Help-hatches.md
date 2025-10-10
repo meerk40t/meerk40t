@@ -101,15 +101,25 @@ The preview system uses wxPython graphics context to render hatch lines, travel 
 
 *Link to related help topics:*
 
-- [[Online Help: Wobbles]] - Alternative fill pattern effects
-- [[Online Help: Effects]] - Default effect configuration
-- [[Online Help: Operationproperty]] - Operation parameter settings
-- [[Online Help: Tree]] - Understanding the element tree structure
+- [[Online Help: Wobbles]] - Alternative fill pattern effects with oscillating distortions
+- [[Online Help: Effects]] - Default effect configuration and global settings
+- [[Online Help: Operation Property]] - Operation parameter settings and laser controls
+- [[Online Help: Tree]] - Understanding the element tree structure and navigation
+- [[Online Help: Path Property]] - Path manipulation and editing tools
 
 ## Screenshots
 
-*Add screenshots showing the Hatch Property Panel with different pattern previews and parameter controls.*
+The Hatch Property Panel interface includes:
+
+1. **Main Parameter Controls**: Shows the hatch distance, angle, loops, and angle delta controls with sliders and input fields
+2. **Algorithm Selection**: Displays the hatch algorithm dropdown (Auto-Select, Scanbeam, Direct Grid) and fill style options
+3. **Preview Panel**: Real-time visualization showing the hatch pattern applied to a sample shape
+4. **Color and Classification**: Stroke color picker and auto-classify checkbox for operation assignment
+5. **Advanced Options**: Unidirectional toggle and additional hatch configuration options
+6. **Pattern Variations**: Examples showing different hatch angles, densities, and multi-pass patterns
+
+The preview panel updates in real-time as parameters are adjusted, allowing users to see exactly how their hatch pattern will appear before processing.
 
 ---
 
-*This help page is automatically generated. Please update with specific information about the hatches feature.*
+*This help page provides comprehensive documentation for the hatch fill system in MeerK40t.*

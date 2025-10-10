@@ -102,13 +102,65 @@ The panel integrates with the ChoicePropertyPanel system for consistent UI behav
 
 ## Screenshots
 
-The Formatter panel interface includes:
+### Formatter Panel - General Settings
+The top section of the Formatter panel showing global display options:
+- **Show power as % Checkbox**: Toggle between percentage (100%) and PPI (1000) power display modes
+- **Show speed in mm/min Checkbox**: Toggle between mm/min and mm/s speed display formats
+- **Unit Configuration**: Controls how numeric values are presented throughout the interface
+- **Global Settings**: Options that affect all formatter displays
 
-1. **General Settings**: Shows the power and speed display toggles at the top
-2. **Element Formatters**: Checkboxes and text fields for customizing how basic shapes (rectangles, ellipses, paths, text) are displayed
-3. **Operation Formatters**: Controls for laser operations (cut, engrave, raster, image) with custom format strings
-4. **Special Operations**: Formatters for utility operations (wait, home, goto, console commands)
-5. **Effects and Grouping**: Controls for effects (hatch, wobble, warp) and file/group nodes
-6. **Tree View Results**: Shows how the formatted labels appear in the actual tree view interface
+### Element Formatters Section
+The Elements category showing basic shape formatting controls:
+- **Element Type Checkboxes**: Individual toggles for rectangles, ellipses, paths, images, and text elements
+- **Format String Fields**: Text input areas for custom display formats (only visible when enabled)
+- **Node Type Icons**: Visual indicators next to each element type for easy identification
+- **Conditional Display**: Format fields appear/disappear based on checkbox state
 
-The panel uses icons next to each node type to make identification easier, and format fields only appear when their corresponding checkbox is enabled.
+### Operation Formatters Section
+The Operations category for laser operation display customization:
+- **Operation Type Checkboxes**: Toggles for cut, engrave, raster, image, and dots operations
+- **Parameter Placeholders**: Access to {speed}, {power}, {passes} and other operation-specific variables
+- **Custom Format Strings**: Text fields for creating personalized operation labels
+- **Real-time Preview**: Immediate updates to tree view when formats are changed
+
+### Special Operations Formatters
+The Operations (Special) category for utility operation formatting:
+- **Special Operation Types**: Checkboxes for wait, home, goto, and console command operations
+- **Utility Formatting**: Custom display options for non-laser operations
+- **Command Parameters**: Access to operation-specific variables and settings
+- **Workflow Integration**: Consistent formatting for all operation types
+
+### Effects and Grouping Formatters
+The Elements (Effects) and Grouping + Files categories:
+- **Effect Types**: Checkboxes for hatch, wobble, and warp effect formatting
+- **Grouping Options**: Format controls for file nodes and group containers
+- **Effect Parameters**: Access to effect-specific variables like radius, speed, angle
+- **Hierarchical Display**: Custom formatting for nested element structures
+
+### Placements Formatters
+The Placements category for position marker customization:
+- **Placement Types**: Checkboxes for different placement operation variants
+- **Position Variables**: Access to X/Y coordinates, rotation, and loop parameters
+- **Grid Parameters**: Variables for repeats, gaps, and spacing in placement arrays
+- **Location Formatting**: Custom display of placement positioning information
+
+### Tree View with Custom Formatting
+The MeerK40t tree view showing formatted node labels:
+- **Custom Operation Labels**: Operations displaying with user-defined format strings
+- **Element Information**: Shapes and graphics showing custom parameter displays
+- **Visual Hierarchy**: Formatted labels maintaining clear tree structure
+- **Parameter Visibility**: Important settings prominently displayed in node labels
+
+### Format String Editor
+Close-up of a format string input field with placeholder hints:
+- **Tooltip Display**: Hover information showing available placeholders for the node type
+- **Syntax Highlighting**: Visual cues for valid placeholder usage
+- **Validation Feedback**: Real-time checking of format string syntax
+- **Example Templates**: Suggested format strings for common use cases
+
+### Before/After Formatting Comparison
+Side-by-side comparison showing standard vs custom formatting:
+- **Default Labels**: Standard MeerK40t node labels with basic information
+- **Custom Labels**: User-formatted labels showing specific parameters and details
+- **Information Density**: Comparison of how much information is displayed
+- **Workflow Efficiency**: How custom formatting improves user productivity

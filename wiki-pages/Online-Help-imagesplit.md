@@ -97,7 +97,27 @@ The tool integrates with MeerK40t's element selection system and maintains setti
 
 ## Screenshots
 
-*Add screenshots showing the Image Split dialog with grid configuration and keyhole operation examples.*
+### Image Split Dialog - Render + Split Tab
+The main dialog shows the "Render + Split" tab with grid configuration controls:
+- **Grid Controls**: X-Axis and Y-Axis spin controls (1-25) for setting the number of tiles
+- **Processing Order**: Radio button selection between "Selection", "First Selected", and "Last Selected"
+- **Resolution**: DPI text field for output image resolution
+- **Action Button**: "Create split images" button (enabled when images are selected)
+- **Status Display**: Shows current selection count and operation readiness
+
+### Image Split Dialog - Keyhole Operation Tab
+The "Keyhole operation" tab displays advanced compositing options:
+- **Keyhole Controls**: "Create keyhole image" button for mask-based operations
+- **Mask Options**: "Invert Mask" checkbox to reverse the keyhole masking effect
+- **Outline Feature**: "Trace Keyhole" checkbox to add outline tracing to the keyhole
+- **Same Order Controls**: Processing order radio buttons (Selection/First Selected/Last Selected)
+- **Resolution Field**: DPI setting for keyhole output resolution
+
+### Before/After Examples
+- **Original Large Image**: Shows an oversized image that exceeds laser working area
+- **Split Result**: Displays the grid of smaller tiled images created by the split operation
+- **Keyhole Composition**: Illustrates a keyhole operation with one image acting as a mask for another
+- **Registration Marks**: Shows how split images include alignment features for reassembly
 
 ---
 

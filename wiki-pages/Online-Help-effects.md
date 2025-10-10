@@ -75,15 +75,24 @@ When users create new hatch or wobble effects through other panels (like the Hat
 
 *Link to related help topics:*
 
-- [[Online Help: Hatches]] - Detailed hatch pattern configuration
-- [[Online Help: Wobbles]] - Detailed wobble effect configuration
-- [[Online Help: Defaultactions]] - Other default operation settings
-- [[Online Help: Formatter]] - Output formatting options
+- [[Online Help: Hatches]] - Detailed hatch pattern configuration and usage
+- [[Online Help: Wobbles]] - Detailed wobble effect configuration and usage
+- [[Online Help: Defaultactions]] - Other default operation and behavior settings
+- [[Online Help: Formatter]] - Output formatting and display customization
+- [[Online Help: Operation Property]] - Individual operation parameter configuration
 
 ## Screenshots
 
-*Add screenshots showing the Effects panel with hatch and wobble default settings.*
+The Effects panel interface includes:
+
+1. **Hatch Settings Section**: Shows the hatch distance, angle, and angle delta controls with unit inputs
+2. **Wobble Settings Section**: Displays the wobble type dropdown, speed, radius, and interval controls
+3. **Default Values Display**: Shows how the configured defaults appear when creating new effects
+4. **Integration Example**: Demonstrates how these defaults are applied in hatch and wobble property panels
+5. **Settings Persistence**: Illustrates how settings are saved and restored across sessions
+
+The panel provides immediate visual feedback as settings are changed, and includes tooltips explaining the purpose of each control.
 
 ---
 
-*This help page is automatically generated. Please update with specific information about the effects feature.*
+*This help page provides comprehensive documentation for the effects configuration system in MeerK40t.*

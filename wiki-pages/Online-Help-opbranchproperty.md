@@ -258,7 +258,40 @@ The OpBranchPanel class extends wx.Panel and provides a ChoicePropertyPanel-base
 
 ## Screenshots
 
-*Add screenshots showing the loop properties panel with different loop configurations.*
+### Loop Properties Panel - Basic View
+The Operation Branch Properties panel displays loop configuration options:
+- **Loop Continuously Checkbox**: Option to enable indefinite repetition of the operation
+- **Loop Parameter Checkbox**: Option to enable finite repetition with specified count
+- **Loops Field**: Input field for specifying the number of repetitions (only visible when Loop Parameter is checked)
+- **Property Panel Layout**: Integrated within the main property panels area
+
+### Continuous Loop Configuration
+The panel showing continuous loop settings:
+- **Loop Continuously**: Checkbox checked to enable indefinite looping
+- **Loop Parameter**: Unchecked, hiding the finite loop controls
+- **Warning Context**: Visual indication of continuous operation mode
+- **Operation Context**: Shows which operation the loop settings apply to
+
+### Finite Loop Configuration
+The panel configured for a specific number of repetitions:
+- **Loop Parameter**: Checkbox checked to enable finite looping
+- **Loops Field**: Visible input field showing "2" for two repetitions
+- **Loop Continuously**: Unchecked to disable indefinite looping
+- **Validation**: Input field accepts positive integer values
+
+### Multi-Pass Cutting Setup
+The panel showing configuration for multi-pass operations:
+- **Loop Parameter**: Enabled for controlled repetition
+- **Loops Field**: Set to "3" for three-pass cutting technique
+- **Operation Details**: Shows the operation type and current settings
+- **Integration**: Panel appears alongside other operation property panels
+
+### Testing Configuration
+The panel set up for parameter testing scenarios:
+- **Loop Continuously**: Enabled for extended testing runs
+- **Status Display**: Shows the operation is configured for continuous execution
+- **Safety Context**: Visual indicators for monitoring requirements
+- **Control Layout**: Clear separation between loop options and other settings
 
 ---
 

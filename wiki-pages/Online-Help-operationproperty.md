@@ -304,7 +304,56 @@ The ParameterPanel class extends ScrolledPanel and orchestrates multiple special
 
 ## Screenshots
 
-*Add screenshots showing the operation properties panel with different operation types and configuration options.*
+### Operation Properties - Cut Operation
+The properties panel for a Cut operation showing all relevant controls:
+- **Layer Settings**: Color classification, stroke/fill options, enable/visible/default toggles
+- **Speed/PPI Panel**: Speed in mm/min, power in PPI, frequency settings
+- **Passes Panel**: Number of passes, kerf compensation in mm, coolant control
+- **Info Panel**: Element count, estimated time, re-classify button
+
+### Operation Properties - Raster Operation
+The properties panel configured for a Raster operation:
+- **Layer Settings**: Color and classification controls
+- **Speed/PPI Panel**: Movement speed and laser power parameters
+- **Passes Panel**: Repetition settings without kerf compensation
+- **Raster Settings**: DPI override, raster direction dropdown (Top to Bottom, etc.), bidirectional checkbox
+- **Info Panel**: Operation statistics and controls
+
+### Raster Settings Detail View
+Close-up of the Raster Settings panel for image operations:
+- **Resolution Controls**: DPI override input field and laser dot consideration
+- **Direction Options**: Dropdown showing scanning patterns (T2B, B2T, Crosshatch, Greedy)
+- **Movement Settings**: Bidirectional scanning toggle and overscan controls
+- **Optimization Options**: Start preference and pattern selection
+
+### Operation Properties - Dots Operation
+The properties panel for a Dots operation with dwell time controls:
+- **Layer Settings**: Standard classification and visibility options
+- **Speed/PPI Panel**: Speed and power settings for dot placement
+- **Passes Panel**: Multi-pass capabilities for dots
+- **Dwell Settings**: Dwell time in milliseconds for precise exposure control
+- **Info Panel**: Element count and time estimation
+
+### Layer Settings Panel Detail
+The Layer Settings panel showing color classification options:
+- **Color Picker**: Visual color selection for operation identification
+- **Classification Checkboxes**: Stroke classification, fill classification, stop classification
+- **Operation Controls**: Enable, visible, and default assignment toggles
+- **Color Preview**: Shows the selected classification color
+
+### Speed and Power Configuration
+The Speed/PPI panel displaying parameter controls:
+- **Speed Input**: Movement speed with units (mm/s or mm/min)
+- **Power Setting**: Laser power in PPI or percentage mode
+- **Frequency Control**: Pulse frequency in kHz (when available)
+- **Safety Indicators**: Warning icons for parameters outside safe ranges
+
+### Passes and Kerf Settings
+The Passes panel for cut operations with kerf compensation:
+- **Passes Input**: Number of operation repetitions
+- **Kerf Compensation**: Positive/negative offset in mm for beam width
+- **Coolant Control**: Enable/disable coolant system during operation
+- **Validation**: Input field validation for kerf values
 
 ---
 

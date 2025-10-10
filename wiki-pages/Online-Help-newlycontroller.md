@@ -195,7 +195,47 @@ The controller provides live monitoring capabilities:
 
 ## Screenshots
 
-*Add screenshots showing the controller panel with connection status and communication logs.*
+### Newly Controller Main Interface
+The main controller panel displays connection management and monitoring:
+- **Connection Button**: Large colored button showing current state (Yellow=disconnected, Green=connected)
+- **Status Label**: Text below button indicating current USB connection status
+- **Device Information**: Shows connected device details and identification
+- **Connection Controls**: Primary interface for establishing and breaking USB connections
+
+### Disconnected State View
+The disconnected state shows the initial connection interface:
+- **Yellow Button Background**: Indicates device is not connected
+- **Disconnected Icon**: Visual indicator of connection state
+- **Status Message**: Shows "Disconnected" or current USB status information
+- **Ready to Connect**: Button is clickable to initiate connection process
+
+### Connected State View
+The connected state displays active communication:
+- **Green Button Background**: Confirms successful device connection
+- **Connected Icon**: Visual confirmation of active USB link
+- **Status Message**: Shows "Connected" with device identification details
+- **Active Monitoring**: Button ready for disconnection if needed
+
+### USB Communication Log Display
+The communication log panel shows real-time device interaction:
+- **Log Text Area**: Large scrollable area displaying USB communication history
+- **Real-time Updates**: New messages appear automatically as they occur
+- **Technical Formatting**: Monospaced font for easy reading of technical data
+- **Message Types**: Shows connection attempts, commands, responses, and error messages
+
+### Connection Process Monitoring
+During connection establishment:
+- **Connecting Status**: Button shows intermediate state during connection attempts
+- **Progress Messages**: Log displays step-by-step connection process
+- **Device Detection**: Shows USB device identification and validation
+- **Success/Failure**: Clear indication of connection outcome with detailed messages
+
+### Active Operation Monitoring
+During laser operations:
+- **Command Transmission**: Shows commands being sent to the device
+- **Device Responses**: Displays device acknowledgments and status updates
+- **Error Detection**: Highlights any communication issues or device errors
+- **Performance Monitoring**: Tracks command timing and response patterns
 
 ---
 

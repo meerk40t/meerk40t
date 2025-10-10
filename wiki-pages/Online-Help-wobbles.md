@@ -135,7 +135,61 @@ The wobble effect works by sampling points along the original path at regular in
 
 ## Screenshots
 
-*Add screenshots showing the wobble property panel and example effects.*
+### Wobble Property Panel - Basic Configuration
+The Wobble property panel displaying effect configuration controls:
+- **Element ID Field**: Unique identifier for the wobble effect element
+- **Auto-hide Checkbox**: Toggle for controlling panel visibility
+- **Stroke Color Picker**: Color selection for the wobble path with classification
+- **Auto-classify Checkbox**: Automatic operation assignment based on color
+
+### Wobble Parameters Section
+The parameter controls for customizing the wobble effect:
+- **Wobble Radius Input**: Amplitude control for distortion intensity (e.g., "1.5mm")
+- **Wobble Interval Input**: Spacing control for pattern repetition (e.g., "0.1mm")
+- **Wobble Speed Input**: Rotation rate control for circular patterns (default: 50)
+- **Fill Style Dropdown**: Selection from 12 available wobble patterns
+
+### Pattern Type Selection
+The Fill Style dropdown showing available wobble patterns:
+- **Circle Patterns**: circle, circle_left, circle_right for smooth oscillations
+- **Wave Patterns**: sinewave, sawtooth for different wave characteristics
+- **Mechanical Patterns**: gear, jigsaw for technical effects
+- **Complex Patterns**: meander_1/2/3, slowtooth for intricate designs
+
+### Circle Wobble Effect Example
+Visual demonstration of circular wobble pattern:
+- **Original Path**: Straight line before wobble application
+- **Wobbled Result**: Smooth circular oscillations along the path
+- **Radius Visualization**: Shows the amplitude of the circular displacement
+- **Interval Spacing**: Demonstrates pattern repetition frequency
+
+### Sine Wave Wobble Effect
+Example showing sinusoidal wobble distortion:
+- **Smooth Waves**: Continuous sine wave pattern along the path
+- **Amplitude Control**: Radius setting determining wave height
+- **Frequency Control**: Interval setting controlling wave density
+- **Natural Flow**: Organic, flowing appearance
+
+### Sawtooth Wobble Effect
+Demonstration of sharp angular wobble pattern:
+- **Sharp Transitions**: Abrupt changes between displacement states
+- **Angular Character**: Creates zigzag or gear-tooth appearance
+- **Technical Look**: Mechanical, engineered aesthetic
+- **Edge Definition**: Crisp transitions between pattern elements
+
+### Complex Meander Pattern
+Example of intricate multi-frequency wobble effect:
+- **Layered Complexity**: Multiple oscillation frequencies combined
+- **Organic Movement**: Natural, wandering path appearance
+- **Detailed Texture**: Fine-grained distortion patterns
+- **Artistic Quality**: Hand-drawn or natural movement simulation
+
+### Before/After Effect Comparison
+Side-by-side comparison showing wobble transformation:
+- **Original Design**: Clean, geometric vector paths
+- **Wobbled Version**: Dynamic, oscillating distortion applied
+- **Parameter Influence**: How radius, interval, and speed affect the result
+- **Pattern Variety**: Different fill styles creating distinct visual effects
 
 ---
 

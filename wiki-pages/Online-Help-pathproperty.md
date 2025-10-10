@@ -269,7 +269,61 @@ The PathPropertyPanel class extends ScrolledPanel and orchestrates multiple spec
 
 ## Screenshots
 
-*Add screenshots showing the path properties panel with different element types and property configurations.*
+### Path Properties - Basic Path Element
+The properties panel for a standard path element showing core controls:
+- **ID Panel**: Element identifier and naming controls
+- **Stroke and Fill Panels**: Color pickers for outline and interior colors
+- **Stroke Width Panel**: Line thickness control in selected units
+- **Position Size Panel**: X/Y coordinates, width/height, rotation, and scale controls
+
+### Rounded Rectangle Properties
+The panel displaying rounded rectangle specific controls:
+- **Rounded Rectangle Panel**: RX and RY radius inputs for corner curvature
+- **Real-time Preview**: Shows how corner radius affects the rectangle shape
+- **Independent Control**: Separate horizontal and vertical radius settings
+- **Validation**: Input field constraints for valid radius values
+
+### Path Information and Statistics
+The panel showing path analysis capabilities:
+- **Retrieve Button**: Control to calculate path statistics
+- **Statistics Display**: Segments count, points count, length in mm, area calculation
+- **Analysis Results**: Detailed breakdown of path complexity and dimensions
+- **Material Estimation**: Area calculations for material usage planning
+
+### Line Properties Configuration
+The Line Properties panel for advanced stroke styling:
+- **Line Cap Dropdown**: Options for butt, round, and square end caps
+- **Line Join Dropdown**: Miter, round, and bevel corner join styles
+- **Miter Limit Input**: Maximum miter length for sharp corners
+- **Dash Pattern Controls**: Custom dash and gap sequence definitions
+
+### Stroke and Fill Color Management
+The color management panels with classification integration:
+- **Stroke Color Picker**: Visual color selection for path outlines
+- **Fill Color Picker**: Interior fill color selection with transparency
+- **Color Swatches**: Quick access to frequently used colors
+- **Auto-Classify Checkbox**: Automatic operation assignment based on colors
+
+### Position and Size Controls
+The geometric positioning panel:
+- **Coordinate Inputs**: X and Y position fields with unit selection
+- **Dimension Controls**: Width and height inputs for resizing
+- **Rotation Control**: Angular orientation with degree input
+- **Scale Controls**: Proportional scaling with percentage inputs
+
+### Prevent Change Protection
+The element protection panel:
+- **Lock Element Checkbox**: Prevent accidental modifications
+- **Property Protection**: Selective locking of individual properties
+- **Change Prevention**: Safeguard critical design elements from editing
+- **Status Indicators**: Visual feedback showing protection state
+
+### Complex Path Analysis
+The panel displaying statistics for a complex curved path:
+- **Segment Breakdown**: Number of line segments, curves, and moves
+- **Point Count**: Total control points in the path geometry
+- **Length Calculation**: Precise path length measurement
+- **Area Computation**: Surface area with and without stroke width consideration
 
 ---
 

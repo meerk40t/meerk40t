@@ -292,7 +292,47 @@ The OpInfoPanel class extends ScrolledPanel and provides a wxListCtrl-based inte
 
 ## Screenshots
 
-*Add screenshots showing the operation information panel with sample operations and time estimates.*
+### Operation Information Panel - Main View
+The main panel displays a comprehensive operations overview:
+- **Operations List**: Table with columns for #, Type, Name, Items, and Runtime
+- **Get Time Estimates Button**: Control to calculate execution times for all operations
+- **Operation Icons**: Visual indicators for Cut, Raster, Image, Engrave, and Dots operations
+- **Scroll Bars**: Vertical scrolling for projects with many operations
+
+### Operations List with Time Estimates
+The panel showing calculated runtime information:
+- **Runtime Column**: Displays estimated execution times (e.g., "2m 34s", "45s")
+- **Operation Details**: Shows operation names, assigned element counts, and types
+- **Time Breakdown**: Individual operation times contributing to total job duration
+- **Status Indicators**: Visual feedback showing calculation completion
+
+### Unassigned Elements Display
+The panel highlighting elements not assigned to operations:
+- **Warning Indicator**: "!" symbol in the index column for unassigned elements
+- **Element Types**: Lists unassigned elements by type (paths, images, text)
+- **Count Information**: Shows number of unassigned elements per type
+- **Action Required**: Visual cues indicating elements need classification
+
+### Right-Click Context Menu
+The panel showing context menu options for operations:
+- **Remove All Items**: Option to clear all elements from a selected operation
+- **Re-Classify**: Option to re-evaluate element assignments based on current rules
+- **Operation Selection**: Highlighted operation row showing menu context
+- **Menu Integration**: Context-sensitive options based on operation state
+
+### Complex Project Overview
+The panel displaying a full project with multiple operation types:
+- **Mixed Operations**: Combination of Cut, Raster, Engrave, and Image operations
+- **Element Distribution**: Shows how many elements are assigned to each operation
+- **Time Summary**: Total estimated job time and individual operation contributions
+- **Project Structure**: Complete overview of the laser cutting/engraving workflow
+
+### Before/After Time Estimation
+Comparison showing the panel before and after time calculation:
+- **Before Calculation**: Runtime column showing "---" placeholders
+- **After Calculation**: Runtime column populated with actual time estimates
+- **Progress Indication**: Visual feedback during the estimation process
+- **Accuracy Notes**: Estimated vs actual time considerations displayed
 
 ---
 

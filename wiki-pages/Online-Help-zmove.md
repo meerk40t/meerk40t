@@ -77,7 +77,54 @@ The panel dynamically shows/hides based on the `supports_z_axis` attribute of th
 
 ## Screenshots
 
-*Add screenshots showing the Zmove panel with Z-axis controls and device integration.*
+### Zmove Panel - Main Controls
+The Zmove panel displaying Z-axis movement controls:
+- **Up Arrows**: Three upward movement buttons (0.1mm, 1.0mm, 10.0mm increments)
+- **Home Button**: Center button for returning to Z-home position
+- **Down Arrows**: Three downward movement buttons (0.1mm, 1.0mm, 10.0mm increments)
+- **Device Integration**: Panel only visible for devices supporting Z-axis movement
+
+### Fine Movement Controls
+Close-up of the small increment movement buttons:
+- **0.1mm Buttons**: Up and down arrows for precise focusing adjustments
+- **High Precision**: Suitable for fine-tuning laser focus and material compensation
+- **Button States**: Visual feedback showing button press and hold functionality
+- **Repeat Behavior**: Continuous movement when buttons are held down
+
+### Medium Movement Controls
+The 1.0mm increment buttons for standard adjustments:
+- **1.0mm Steps**: Balanced movement speed for general Z-axis positioning
+- **Material Thickness**: Appropriate for compensating different material heights
+- **Workflow Speed**: Faster than fine adjustments but still precise
+- **Visual Indicators**: Clear labeling of movement distances
+
+### Coarse Movement Controls
+The 10.0mm increment buttons for rapid positioning:
+- **10.0mm Steps**: Large movements for significant Z-axis repositioning
+- **Quick Traversal**: Fast repositioning between work areas
+- **Safety Consideration**: Large steps require care to avoid collisions
+- **Efficiency**: Minimizes button presses for large position changes
+
+### Home Position Button
+The center home button with autofocus functionality:
+- **Home Symbol**: Central button with home icon for Z-home positioning
+- **Right-Click Menu**: Autofocus option available on supported devices
+- **Default Position**: Returns to device-defined Z-home coordinate
+- **Calibration**: Ensures consistent starting position for operations
+
+### Device-Specific Visibility
+The panel showing device-dependent display:
+- **Supported Device**: Panel visible when connected device has Z-axis capability
+- **Unsupported Device**: Panel hidden for devices without vertical movement
+- **Dynamic Updates**: Panel appears/disappears when switching devices
+- **Capability Detection**: Automatic detection of `supports_z_axis` attribute
+
+### Continuous Movement Demonstration
+Showing button hold functionality for continuous movement:
+- **Held Button**: Visual feedback when movement button is pressed and held
+- **Repeat Rate**: Continuous movement at configured button repeat speed
+- **Acceleration**: Smooth movement with configurable acceleration settings
+- **Safety**: Ability to release button to stop movement immediately
 
 ---
 

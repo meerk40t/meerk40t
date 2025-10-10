@@ -162,7 +162,62 @@ The system uses persistent storage to maintain customizations across sessions. B
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+### Ribbon Editor Main Interface
+The main Ribbon Editor window displaying customization controls:
+- **Ribbon Dropdown**: Selection between Primary, Tools, and Edit Tools ribbons
+- **Show Labels Checkbox**: Toggle for displaying text labels beneath ribbon icons
+- **Pages List**: Hierarchical view of ribbon pages and their panels
+- **Available Panels List**: Panels that can be added to the selected page
+
+### Page Management Controls
+The page management section showing page organization:
+- **Pages List**: Current pages in the selected ribbon with expand/collapse
+- **Page Label Field**: Text input for editing the selected page name
+- **Add Page Button**: Plus icon for creating new ribbon pages
+- **Delete/Move Buttons**: Trash icon and up/down arrows for page management
+
+### Panel Customization Interface
+The panel management area for organizing page contents:
+- **Panels in Page List**: Current panels within the selected page
+- **Add to Page Button**: Adds selected available panel to the current page
+- **Delete Panel Button**: Trash icon for removing panels from pages
+- **Move Panel Buttons**: Up/down arrows for reordering panels within pages
+
+### User-Defined Buttons Section
+The custom buttons management area:
+- **User Buttons List**: Custom buttons created by the user
+- **Add Button**: Plus icon for creating new custom buttons
+- **Edit Button**: Pencil icon for modifying button properties
+- **Delete/Move Buttons**: Trash and arrow icons for button management
+
+### Button Configuration Dialog
+The custom button properties dialog:
+- **Label Field**: Display name for the custom button
+- **Tooltip Field**: Help text shown on hover
+- **Action Fields**: Left-click and right-click command inputs
+- **Enable/Visible Rules**: Dropdowns for when button is active/visible
+- **Icon Selection**: Dropdown for choosing button icon
+
+### Ribbon Layout Preview
+The interface showing a customized ribbon layout:
+- **Modified Pages List**: Shows added/removed/reordered pages
+- **Panel Organization**: Custom arrangement of panels within pages
+- **User Buttons Integration**: Custom buttons appearing in appropriate panels
+- **Apply Pending**: Visual indication of unsaved changes
+
+### Before/After Customization Comparison
+Side-by-side view showing ribbon changes:
+- **Original Layout**: Default ribbon configuration
+- **Customized Layout**: User-modified page and panel arrangement
+- **Added Elements**: New pages or panels visible in the customized version
+- **Removed Elements**: Missing pages or panels from the original layout
+
+### Reset to Default Confirmation
+The reset functionality interface:
+- **Reset Button**: "Reset to Default" button for restoring original layout
+- **Confirmation Dialog**: Warning about losing customizations
+- **Factory Configuration**: Preview of the default ribbon structure
+- **Apply Reset**: Confirmation to proceed with the reset operation
 
 ---
 

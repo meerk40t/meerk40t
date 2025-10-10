@@ -173,4 +173,34 @@ Maintains separate buffers for:
 
 ## Screenshots
 
-*Add screenshots showing the Moshi controller window with connection status, USB log, and device monitoring.*
+### Moshi Controller Main Interface
+The main controller window displays connection and monitoring controls:
+- **Connection Button**: Large colored button showing connection state (Green=connected, Yellow=connecting, Red=failed)
+- **Connection Status**: Text display showing current state ("STATE_USB_CONNECTED", etc.)
+- **Device Settings**: USB matching criteria (Device Index, Address, Bus, Chip Version) with dropdown selections
+- **Mock USB Checkbox**: Debug option for simulating connections without physical hardware
+
+### Device Status Monitoring Section
+The status monitoring area shows real-time device information:
+- **Byte Data Display**: Six status bytes (Byte 0-5) showing raw device data
+- **Byte 1 Description**: Text interpretation of the primary status byte
+- **Packet Info**: Current packet being processed by the device
+- **Status Indicators**: Visual representation of device operation mode and state
+
+### USB Communication Logging
+The logging section provides communication monitoring:
+- **Show USB Log Checkbox**: Toggle for enabling/disabling the communication log display
+- **USB Log Panel**: Scrollable text area showing real-time USB traffic (commands sent/received)
+- **Log Buffer**: Maintains 500 lines of recent communication history
+- **Thread-safe Updates**: Background communication logging without UI freezing
+
+### Menu System
+The controller includes several menu options:
+- **Tools Menu**: Reset USB and Release USB commands for connection management
+- **Commands Menu**: Stop and Free Motor commands for device control
+- **Views Menu**: BufferView option for inspecting command queues and buffers
+
+### Diagnostic Views
+- **BufferView Window**: Separate window showing command buffer contents and queue status
+- **Connection Troubleshooting**: USB log showing connection attempts, errors, and device responses
+- **Status Monitoring**: Real-time updates of device state during laser operations
