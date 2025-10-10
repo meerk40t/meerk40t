@@ -132,15 +132,34 @@ The Testpattern system implements systematic parameter variation using a grid-ba
 
 ## Related Topics
 
-*Link to related help topics:*
-
-- [[Online Help: Alignment]]
-- [[Online Help: Distribute]]
-- [[Online Help: Arrangement]]
+- [[Online Help: Operations]] - Understanding laser operation types and parameters
+- [[Online Help: Cut]] - Optimizing cutting operations and parameters
+- [[Online Help: Engrave]] - Optimizing engraving operations and parameters
+- [[Online Help: Raster]] - Optimizing raster operations and parameters
+- [[Online Help: Image]] - Working with image-based operations
+- [[Online Help: Effects]] - Using hatch and wobble effects
+- [[Online Help: Device Configuration]] - Setting up laser device parameters
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+The Testpattern interface consists of two main tabs:
+
+1. **Generator Tab**: Main parameter configuration interface with operation selection, dual parameter controls, layout settings, and display options
+2. **Templates Tab**: Template management interface for saving and loading parameter configurations
+
+**Generator Tab Sections:**
+- **Operation Selection**: Dropdown for choosing laser operation type and image selection when applicable
+- **X-Axis Parameters**: Complete parameter configuration for the first test variable including range, count, and color coding
+- **Y-Axis Parameters**: Complete parameter configuration for the second test variable
+- **Display Controls**: Checkboxes for labels, values, and boundary shape creation
+- **Information Panel**: Detailed explanation of the testing methodology and parameter optimization approach
+
+**Templates Tab Sections:**
+- **Template Name Input**: Text field for naming saved configurations
+- **Action Buttons**: Save, Load, and Delete buttons for template management
+- **Template List**: Selection list showing all saved parameter configurations
+
+The interface uses a comprehensive layout with grouped controls, clear labeling, and extensive tooltips to guide users through the complex parameter optimization process.
 
 ---
 
