@@ -1531,7 +1531,7 @@ def main():
         generated_pages.append(filename)
 
     # Create an index page (only if it doesn't exist with substantial content)
-    home_filepath = os.path.join(output_dir, "Home.md")
+    home_filepath = os.path.join(output_dir, "OnlineHelp.md")
     home_exists = os.path.exists(home_filepath)
 
     if home_exists:
@@ -1540,7 +1540,9 @@ def main():
                 existing_home = f.read()
                 # Check if it has substantial content (more than just a basic index)
                 if len(existing_home.strip()) > 500:  # Substantial content threshold
-                    print("Skipped: Home.md (already exists with substantial content)")
+                    print(
+                        "Skipped: OnlineHelp.md (already exists with substantial content)"
+                    )
                     total_pages = len(generated_pages)
                 else:
                     home_exists = False  # Regenerate if it's just a basic index
@@ -1625,7 +1627,7 @@ def main():
         with open(home_filepath, "w", encoding="utf-8") as f:
             f.write(index_content)
 
-        print("\nGenerated index page: Home.md")
+        print("\nGenerated index page: OnlineHelp.md")
         total_pages = len(generated_pages) + 1
     else:
         total_pages = len(generated_pages)
