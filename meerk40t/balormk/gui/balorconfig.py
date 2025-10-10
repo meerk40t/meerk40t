@@ -13,20 +13,11 @@ _ = wx.GetTranslation
 
 
 class BalorConfiguration(MWindow):
-    """BalorConfiguration - EZCAD Protocol Laser Configuration Panel
-
+    """BalorConfiguration - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides comprehensive configuration interface for EZCAD-compatible laser devices (Balor series).
-    Manages device-specific settings including timing parameters, global configurations, red light positioning,
-    correction file calibration, and operation defaults. Handles real-time pin monitoring and correction
-    file processing for lens calibration.
-
+    Provides user interface controls for balorconfiguration functionality. Integrates with lens_size, balorpin for enhanced functionality.
     **End-User Perspective:**
-    This configuration panel allows you to set up and fine-tune your EZCAD-based laser system.
-    Configure timing settings for optimal performance, set global parameters, calibrate the red positioning
-    light, load correction files for accurate lens calibration, and define default operation settings.
-    The panel provides real-time feedback on device pin status and automatically updates lens size
-    when correction files are loaded."""
+    This panel provides user interface controls for balorconfiguration functionality in MeerK40t."""
 
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)

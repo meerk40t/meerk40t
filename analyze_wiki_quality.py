@@ -106,7 +106,7 @@ def print_analysis(results):
 
     print("=== MeerK40t Wiki Documentation Analysis ===\n")
 
-    print("📊 SUMMARY:")
+    print("- SUMMARY:")
     print(f"   Insufficient documentation: {len(results['insufficient'])} pages")
     print(f"   Minimal documentation: {len(results['minimal'])} pages")
     print(f"   Adequate documentation: {len(results['adequate'])} pages")
@@ -114,7 +114,7 @@ def print_analysis(results):
     print()
 
     if results["insufficient"]:
-        print("🚨 CRITICAL: Pages with INSUFFICIENT documentation (3+ placeholders):")
+        print("- CRITICAL: Pages with INSUFFICIENT documentation (3+ placeholders):")
         for item in sorted(
             results["insufficient"], key=lambda x: x["placeholders"], reverse=True
         ):
@@ -130,7 +130,7 @@ def print_analysis(results):
         print()
 
     if results["minimal"]:
-        print("⚠️  WARNING: Pages with MINIMAL documentation (1-2 placeholders):")
+        print("-  WARNING: Pages with MINIMAL documentation (1-2 placeholders):")
         for item in sorted(
             results["minimal"], key=lambda x: x["placeholders"], reverse=True
         ):
@@ -146,7 +146,7 @@ def print_analysis(results):
         print()
 
     if results["adequate"]:
-        print("✅ ADEQUATE: Pages with acceptable documentation:")
+        print("- ADEQUATE: Pages with acceptable documentation:")
         for item in results["adequate"]:
             status = []
             if item["has_description"]:
@@ -158,7 +158,7 @@ def print_analysis(results):
         print()
 
     if results["good"]:
-        print("🎯 EXCELLENT: Pages with comprehensive documentation:")
+        print("- EXCELLENT: Pages with comprehensive documentation:")
         for item in results["good"]:
             status = []
             if item["has_description"]:
@@ -170,7 +170,7 @@ def print_analysis(results):
         print()
 
     # Priority recommendations
-    print("🎯 PRIORITY RECOMMENDATIONS:")
+    print("- PRIORITY RECOMMENDATIONS:")
     print(
         f"   1. Focus on the {len(results['insufficient']) // 10 * 10}+ pages with 3+ placeholders first"
     )

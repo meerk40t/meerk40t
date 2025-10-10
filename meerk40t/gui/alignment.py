@@ -197,22 +197,11 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
-    """Alignment Panel - Precise positioning controls for design elements
-
+    """Alignment Panel - Align and distribute design elements
     **Technical Purpose:**
-    Provides comprehensive alignment controls for positioning design elements relative to various reference points.
-    Supports X/Y axis alignment modes (left/center/right, top/center/bottom) with multiple reference options
-    (selection bounds, first/last selected element, laserbed boundaries, reference object). Handles individual
-    vs group treatment modes, integrates with scene reference objects and element emphasis system, persists
-    user settings, and validates alignment operations before execution.
-
+    Provides alignment and distribution controls for design elements. Features checkbox controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
     **End-User Perspective:**
-    This panel helps you precisely align selected design elements to specific positions on your laser bed.
-    Choose how elements should be aligned (left, center, or right for horizontal; top, center, or bottom for vertical)
-    and select what to align them relative to (the overall selection, first/last selected element, entire laserbed,
-    or a reference object you've set). You can align elements individually or treat them as a group. The panel
-    shows you information about your current selection and validates that alignment is possible before enabling
-    the Align button."""
+    This panel helps you align and distribute design elements. Use it to create evenly spaced objects or align them to specific positions."""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -421,7 +410,7 @@ class AlignmentPanel(wx.Panel):
 class DistributionPanel(wx.Panel):
     """DistributionPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for distribution functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, emphasized for enhanced functionality.
+    Provides user interface controls for distribution functionality. Features checkbox controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for distribution functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
 
@@ -1132,18 +1121,11 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
-    """ArrangementPanel - Grid-based element arrangement controls for design layout
-
+    """ArrangementPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides comprehensive grid-based arrangement controls for positioning design elements in structured rows and columns.
-    Supports variable column/row sizing modes (uniform vs individual), element ordering options (selection/first/last),
-    gap spacing controls (adjacent vs fixed distances), and alignment within grid cells (left/center/right, top/center/bottom).
-    Features automatic scene centering, element movement validation, settings persistence, and arrangement operation validation.
-
+    Provides user interface controls for arrangement functionality. Features checkbox controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
     **End-User Perspective:**
-    This panel helps you arrange selected design elements in neat, organized grids. Specify how many rows and columns you want,
-    control whether elements should be evenly spaced or have gaps between them, and choose how elements align within each grid cell.
-    Perfect for creating professional layouts, button arrays, or any situation where you need elements positioned in a regular pattern."""
+    This panel provides controls for arrangement functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)

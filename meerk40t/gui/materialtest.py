@@ -202,13 +202,11 @@ class SaveLoadPanel(wx.Panel):
 
 
 class TemplatePanel(wx.Panel):
-    """TemplatePanel - Test pattern generator for optimizing laser cutting parameters
-
+    """TemplatePanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides comprehensive test pattern generation for laser parameter optimization. Creates systematic grids varying two parameters simultaneously (e.g., speed vs power) across different operation types. Features parameter range configuration, color-coded visualization, template saving/loading, and device-specific parameter defaults integration. Supports multiple shape types and advanced parameter combinations including Balor-specific settings.
-
+    Provides user interface controls for template functionality. Features label, button controls for user interaction. Integrates with service/device/active, speed_min for enhanced functionality.
     **End-User Perspective:**
-    This panel helps you find the best laser settings for your materials by creating test grids that vary two parameters at once. Use it to systematically test combinations of speed, power, passes, and other settings to optimize your cutting/engraving results. Save your favorite parameter combinations as templates for reuse."""
+    This panel provides controls for template functionality. Key controls include "Template-Name" (label), "Save" (button), "Load" (button)."""
 
     DESC_X_AXIS = "Descriptions X-Axis"
     DESC_Y_AXIS = "Descriptions Y-Axis"

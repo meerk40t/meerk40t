@@ -205,7 +205,7 @@ class SelectDevice(wx.Dialog):
 class DevicePanel(wx.Panel):
     """Device Panel - Configure and control your laser device settings
     **Technical Purpose:**
-    Provides device configuration and control interfaces for laser hardware. Features label, button controls for user interaction. Integrates with label, device;modified for enhanced functionality.
+    Provides device configuration and control interfaces for laser hardware. Features label, button controls for user interaction. Integrates with pipe;running, pause for enhanced functionality.
     **End-User Perspective:**
     This panel lets you configure and control your laser device. Set up connection parameters, adjust settings, and monitor device status."""
 

@@ -30,11 +30,11 @@ _default_height = 570
 
 
 class LihuiyuControllerPanel(ScrolledPanel):
-    """LihuiyuControllerPanel - K40 laser controller interface and diagnostics
+    """LihuiyuControllerPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for Lihuiyu (K40) laser controller communication monitoring and diagnostics. Features connection management, packet statistics, USB logging, and real-time status monitoring. Integrates with pipe;status, pipe;usb_status for enhanced functionality.
+    Provides user interface controls for lihuiyucontroller functionality. Features button, checkbox controls for user interaction. Integrates with pipe;status, pipe;packet_text for enhanced functionality.
     **End-User Perspective:**
-    This panel provides detailed monitoring and control of your K40 laser controller communication. Use it to establish connections, monitor packet traffic, view USB logs, and troubleshoot communication issues with your laser hardware."""
+    This panel provides controls for lihuiyucontroller functionality. Key controls include "Connection" (button), "Show USB Log" (checkbox), "Reset\nstatistics" (button)."""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

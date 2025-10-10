@@ -17,7 +17,7 @@ _ = wx.GetTranslation
 class BalorControllerPanel(wx.ScrolledWindow):
     """BalorControllerPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for balorcontroller functionality. Features button controls for user interaction. Integrates with balor_controller_update, pipe;usb_status for enhanced functionality.
+    Provides user interface controls for balorcontroller functionality. Features button controls for user interaction. Integrates with pipe;usb_status, balor_controller_update for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for balorcontroller functionality. Key controls include "Connection" (button)."""
 

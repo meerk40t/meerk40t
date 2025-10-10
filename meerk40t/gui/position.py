@@ -39,7 +39,7 @@ def register_panel_position(window, context):
 class PositionPanel(wx.Panel):
     """PositionPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for position functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, lock_active for enhanced functionality.
+    Provides user interface controls for position functionality. Features checkbox controls for user interaction. Integrates with refresh_scene, modified_by_tool for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for position functionality. Key controls include "Individ." (checkbox), "Keep ratio" (checkbox)."""
 

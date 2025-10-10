@@ -258,7 +258,7 @@ class ImportDialog(wx.Dialog):
 class MaterialPanel(ScrolledPanel):
     """Material Panel - Set up material settings for better cutting results
     **Technical Purpose:**
-    Provides material-specific settings and optimization controls. Features checkbox, button controls for user interaction. Integrates with default_operations, rebuild_tree for enhanced functionality.
+    Provides material-specific settings and optimization controls. Features checkbox, button controls for user interaction. Integrates with rebuild_tree, default_operations for enhanced functionality.
     **End-User Perspective:**
     This panel helps you set up material-specific settings. Choose your material type and adjust cutting parameters for optimal results."""
 

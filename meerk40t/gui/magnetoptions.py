@@ -532,7 +532,7 @@ class MagnetActionPanel(wx.Panel):
 class MagnetPanel(wx.Panel):
     """MagnetPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides magnet snapping configuration controls for object alignment. Features checkbox controls for user interaction. Integrates with refresh_scene, magnet_options for enhanced functionality.
+    Provides magnet snapping configuration controls for object alignment. Features checkbox controls for user interaction. Integrates with emphasized, refresh_scene for enhanced functionality.
     **End-User Perspective:**
     This panel lets you customize how objects snap to guide lines. Set attraction strength and choose which object parts get attracted to magnets."""
 

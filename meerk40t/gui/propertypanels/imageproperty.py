@@ -1855,7 +1855,7 @@ class ImageVectorisationPanel(ScrolledPanel):
 class ImagePropertyPanel(ScrolledPanel):
     """ImagePropertyPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for imageproperty functionality. Features checkbox, button controls for user interaction. Integrates with nodetype, element_property_update for enhanced functionality.
+    Provides user interface controls for imageproperty functionality. Features checkbox, button controls for user interaction. Integrates with nodetype, element_property_force for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for imageproperty functionality. Key controls include "Enable" (checkbox), "Reset" (button), "Invert" (checkbox)."""
 

@@ -13,18 +13,11 @@ _ = wx.GetTranslation
 
 
 class MoshiDriverGui(MWindow):
-    """MoshiDriverGui - Moshiboard Laser Configuration Panel
-
+    """MoshiDriverGui - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides configuration interface for Moshiboard laser devices. Manages device-specific settings
-    including bed dimensions, coolant control, effects processing, operation defaults, and display options.
-    Integrates with MeerK40t's device activation system for automatic panel management.
-
+    Provides user interface controls for moshidrivergui functionality. Integrates with activate;device for enhanced functionality.
     **End-User Perspective:**
-    This configuration panel allows you to set up and customize your Moshiboard laser system.
-    Configure bed dimensions for accurate job sizing, set up coolant control for cooling systems,
-    adjust effects and processing options, define default operation parameters, and customize
-    display settings for optimal workflow."""
+    This panel provides user interface controls for moshidrivergui functionality in MeerK40t."""
 
     """MoshiDriverGui - User interface panel for laser cutting operations"""
 
