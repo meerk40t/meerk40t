@@ -170,10 +170,13 @@ def print_analysis(results):
         print()
 
     # Priority recommendations
-    print("- PRIORITY RECOMMENDATIONS:")
-    print(
-        f"   1. Focus on the {len(results['insufficient']) // 10 * 10}+ pages with 3+ placeholders first"
+    amount = (
+        f"{len(results['insufficient']) // 10 * 10}+"
+        if len(results["insufficient"]) > 10
+        else len(results["insufficient"])
     )
+    print("- PRIORITY RECOMMENDATIONS:")
+    print(f"   1. Focus on the {amount} pages with 3+ placeholders first")
     print("   2. Add detailed descriptions and usage steps")
     print("   3. Include screenshots for visual features")
     print("   4. Remove placeholder text and replace with actual content")
