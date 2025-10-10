@@ -190,7 +190,40 @@ The controller integrates with the device kernel for command execution and statu
 
 ## Screenshots
 
-*Add screenshots showing the controller panel in different states and with USB logging enabled.*
+### K40 Controller Main Interface
+The main controller panel displaying connection management and monitoring:
+- **Connection Button**: Large colored button showing current USB connection state (Green=connected, Yellow=connecting, Red=failed)
+- **Status Display**: Text field showing detailed connection status and device information
+- **Device Controls**: Emergency stop and other device control buttons
+- **Connection Status**: Real-time indicators for USB communication state
+
+### USB Communication Logging
+The controller with USB logging enabled showing device communication:
+- **USB Log Panel**: Scrollable text area displaying real-time USB traffic between MeerK40t and the K40 device
+- **Communication Details**: Command transmissions, device responses, and error messages
+- **Log Buffer**: Maintains history of recent USB communication for troubleshooting
+- **Thread-safe Updates**: Background logging without interfering with UI responsiveness
+
+### Connection Troubleshooting View
+The panel during connection attempts showing diagnostic information:
+- **Connection Process**: Step-by-step connection establishment with status updates
+- **Error Messages**: Clear indication of connection failures and possible causes
+- **Device Detection**: USB device identification and compatibility checking
+- **Recovery Options**: Reset and reconnection controls for troubleshooting
+
+### Active Operation Monitoring
+The controller during laser operations showing real-time device interaction:
+- **Command Transmission**: Live display of commands being sent to the K40 device
+- **Device Responses**: Immediate feedback from the laser controller
+- **Status Updates**: Current operation state and progress indicators
+- **Performance Monitoring**: Real-time tracking of device communication reliability
+
+### Emergency Controls
+The panel highlighting safety and emergency control features:
+- **Emergency Stop Button**: Prominent stop control for immediate operation termination
+- **Safety Indicators**: Visual cues for device state and potential issues
+- **Manual Controls**: Direct device command interface for advanced users
+- **Status Validation**: Confirmation of command execution and device response
 
 ---
 
