@@ -165,12 +165,11 @@ class SaveLoadPanel(wx.Panel):
 
 
 class TemplatePanel(wx.Panel):
-    """
-    Responsible for the generation of testpatterns and the user interface
-    params:
-    context - the current context
-    storage - an instance of kernel.Settings to store/load parameter sets
-    """
+    """TemplatePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for template functionality. Features label, button controls for user interaction. Integrates with speed_min, service/device/active for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for template functionality. Key controls include "Template-Name" (label), "Save" (button), "Load" (button)."""
 
     DESC_X_AXIS = "Descriptions X-Axis"
     DESC_Y_AXIS = "Descriptions Y-Axis"

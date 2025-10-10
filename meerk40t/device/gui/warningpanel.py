@@ -23,7 +23,7 @@ _ = wx.GetTranslation
 class WarningPanel(wx.Panel):
     """WarningPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for warning functionality. Integrates with power_percent, updateop_tree for enhanced functionality.
+    Provides user interface controls for warning functionality. Integrates with speed_min, power_percent for enhanced functionality.
     **End-User Perspective:**
     This panel provides user interface controls for warning functionality in MeerK40t."""
 

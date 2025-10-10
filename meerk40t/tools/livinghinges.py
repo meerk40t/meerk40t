@@ -41,9 +41,11 @@ _FACTOR = 1000
 
 
 class HingePanel(wx.Panel):
-    """
-    UI for LivingHinges, allows setting of parameters including preview of the expected result
-    """
+    """HingePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for hinge functionality. Features button, checkbox controls for user interaction. Integrates with classify_new, emphasized for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for hinge functionality. Key controls include "Generate" (button), "Close" (button), "Preview Shape" (checkbox)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__

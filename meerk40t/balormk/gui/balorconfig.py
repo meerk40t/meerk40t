@@ -15,7 +15,7 @@ _ = wx.GetTranslation
 class BalorConfiguration(MWindow):
     """BalorConfiguration - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for balorconfiguration functionality. Integrates with lens_size, activate;device for enhanced functionality.
+    Provides user interface controls for balorconfiguration functionality. Integrates with lens_size, corfile for enhanced functionality.
     **End-User Perspective:**
     This panel provides user interface controls for balorconfiguration functionality in MeerK40t."""
 

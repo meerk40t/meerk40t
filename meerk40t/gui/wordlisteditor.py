@@ -53,6 +53,12 @@ def register_panel_wordlist(window, context):
 
 
 class WordlistMiniPanel(wx.Panel):
+    """WordlistMiniPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for wordlistmini functionality. Features button controls for user interaction. Integrates with wordlist, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for wordlistmini functionality. Key controls include "Edit" (button), "Next" (button), "Prev" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -158,6 +164,12 @@ class WordlistMiniPanel(wx.Panel):
 
 
 class WordlistPanel(wx.Panel):
+    """WordlistPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for wordlist functionality. Features button controls for user interaction. Integrates with wordlist, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for wordlist functionality. Key controls include "Edit" (button), "Next" (button), "Prev" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -739,6 +751,12 @@ class WordlistPanel(wx.Panel):
 
 
 class ImportPanel(wx.Panel):
+    """ImportPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for import functionality. Features button controls for user interaction. Integrates with wordlist, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for import functionality. Key controls include "Edit" (button), "Next" (button), "Prev" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -874,6 +892,12 @@ class ImportPanel(wx.Panel):
 
 
 class AboutPanel(wx.Panel):
+    """AboutPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for about functionality. Features button controls for user interaction. Integrates with wordlist, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for about functionality. Key controls include "Edit" (button), "Next" (button), "Prev" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -904,6 +928,12 @@ class AboutPanel(wx.Panel):
 
 
 class WordlistEditor(MWindow):
+    """WordlistEditor - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for wordlisteditor functionality. Features button controls for user interaction. Integrates with wordlist, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for wordlisteditor functionality. Key controls include "Edit" (button), "Next" (button), "Prev" (button)."""
+
     def __init__(self, *args, **kwds):
         super().__init__(500, 530, *args, **kwds)
 

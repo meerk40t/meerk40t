@@ -30,6 +30,12 @@ _default_height = 570
 
 
 class LihuiyuControllerPanel(ScrolledPanel):
+    """LihuiyuControllerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for lihuiyucontroller functionality. Features button, checkbox controls for user interaction. Integrates with pipe;failing, pipe;packet_text for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for lihuiyucontroller functionality. Key controls include "Connection" (button), "Show USB Log" (checkbox), "Reset\nstatistics" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)

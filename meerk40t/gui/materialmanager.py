@@ -256,15 +256,11 @@ class ImportDialog(wx.Dialog):
 
 
 class MaterialPanel(ScrolledPanel):
-    """
-    Panel to modify material library settings.
-    In essence a material library setting is a persistent list of operations.
-    They are stored in the operations.cfg file in the meerk40t working directory
-
-    Internal development note:
-    I have tried the dataview TreeListCtrl to self.display_list the different entries:
-    this was crashing consistently, so I stopped following this path
-    """
+    """Material Panel - Set up material settings for better cutting results
+    **Technical Purpose:**
+    Provides material-specific settings and optimization controls. Features checkbox, button controls for user interaction. Integrates with default_operations, rebuild_tree for enhanced functionality.
+    **End-User Perspective:**
+    This panel helps you set up material-specific settings. Choose your material type and adjust cutting parameters for optimal results."""
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

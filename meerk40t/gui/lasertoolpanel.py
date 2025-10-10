@@ -26,6 +26,12 @@ DEFAULT_LEN = "5cm"
 
 
 class LaserToolPanel(wx.Panel):
+    """LaserToolPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for lasertool functionality. Features label, button controls for user interaction. Integrates with emulator;position, status;position for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for lasertool functionality. Key controls include "A" (label), "Use position" (button), "<empty>" (label)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

@@ -18,7 +18,7 @@ _ = wx.GetTranslation
 class OpInfoPanel(ScrolledPanel):
     """OpInfoPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for opinfo functionality. Features button controls for user interaction. Integrates with rebuild_tree, element_property_reload for enhanced functionality.
+    Provides user interface controls for opinfo functionality. Features button controls for user interaction. Integrates with rebuild_tree, element_property_update for enhanced functionality.
     **End-User Perspective:**
     This panel provides controls for opinfo functionality. Key controls include "Get Time Estimates" (button)."""
 

@@ -35,9 +35,11 @@ _ = wx.GetTranslation
 
 
 class TipPanel(wx.Panel):
-    """
-    Display MeerK40t usage tips
-    """
+    """TipPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for tip functionality. Features text control, button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for tip functionality. Key controls include "Image missing!" (text control), "Previous tip" (button), "Next tip" (button)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__

@@ -161,6 +161,12 @@ def register_panel_console(window, context):
 
 
 class ConsolePanel(wx.ScrolledWindow):
+    """ConsolePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for console functionality. Integrates with wxpane/Console, console_update for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for console functionality in MeerK40t."""
+
     def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
