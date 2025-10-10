@@ -197,11 +197,22 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
-    """Alignment Panel - Align and distribute design elements
+    """Alignment Panel - Precise positioning controls for design elements
+
     **Technical Purpose:**
-    Provides alignment and distribution controls for design elements. Features checkbox controls for user interaction. Integrates with refresh_scene, emphasized for enhanced functionality.
+    Provides comprehensive alignment controls for positioning design elements relative to various reference points.
+    Supports X/Y axis alignment modes (left/center/right, top/center/bottom) with multiple reference options
+    (selection bounds, first/last selected element, laserbed boundaries, reference object). Handles individual
+    vs group treatment modes, integrates with scene reference objects and element emphasis system, persists
+    user settings, and validates alignment operations before execution.
+
     **End-User Perspective:**
-    This panel helps you align and distribute design elements. Use it to create evenly spaced objects or align them to specific positions."""
+    This panel helps you precisely align selected design elements to specific positions on your laser bed.
+    Choose how elements should be aligned (left, center, or right for horizontal; top, center, or bottom for vertical)
+    and select what to align them relative to (the overall selection, first/last selected element, entire laserbed,
+    or a reference object you've set). You can align elements individually or treat them as a group. The panel
+    shows you information about your current selection and validates that alignment is possible before enabling
+    the Align button."""
 
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
