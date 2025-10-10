@@ -4,35 +4,7 @@
 
 This help page covers the **Hatches** functionality in MeerK40t.
 
-HatchPropertyPanel - Advanced hatch pattern configuration and editing interface.
-
-This panel provides comprehensive control over hatch effect operations including pattern generation,
-spacing, angle control, and fill style selection. It enables precise configuration of hatch patterns
-for laser engraving and cutting operations with real-time preview capabilities.
-
-Technical Purpose:
-- Manages hatch effect node parameters for pattern generation
-- Controls hatch distance, angle, and angle delta for pattern variation
-- Implements loop count controls for multi-pass hatching
-- Provides algorithm selection (Scanbeam, Direct Grid, Auto-Select)
-- Supports unidirectional and bidirectional hatch patterns
-- Handles stroke color configuration with auto-classification
-- Generates real-time hatch pattern previews
-
-Signal Listeners:
-- None directly (relies on callback mechanisms for property updates)
-
-User Interface:
-- Element ID: Identification and naming controls
-- Stroke Color: Color selection with classification callbacks
-- Loops: Hatch pass count with slider control
-- Hatch Distance: Spacing between hatch lines with length validation
-- Angle: Primary hatch angle with slider control
-- Angle Delta: Secondary angle variation for complex patterns
-- Fill Style: Algorithm selection (Auto-Select, Scanbeam, Direct Grid)
-- Unidirectional: Toggle for single-direction hatching
-- Auto-classify: Immediate classification after color changes
-- Preview: Real-time hatch pattern visualization
+The Hatch Property Panel provides advanced configuration and editing capabilities for hatch effects in laser engraving and cutting operations. Hatch effects create fill patterns by generating parallel lines across shapes, enabling detailed engraving fills and decorative patterns.
 
 ## Location in MeerK40t
 
@@ -45,36 +17,98 @@ This help section is accessed from:
 
 ## Description
 
-*Add a detailed description of what this feature does and when users would use it.*
+Hatch effects are essential for creating filled areas in laser engraving. Unlike solid fills, hatches use parallel line patterns that allow for:
+
+- **Variable Density**: Control spacing between hatch lines for different fill intensities
+- **Directional Control**: Set hatch angles for aesthetic or functional purposes
+- **Multi-Pass Enhancement**: Apply multiple hatch passes at different angles for complex patterns
+- **Performance Optimization**: Choose between different algorithms based on complexity and speed requirements
+
+The Hatch Property Panel appears when a hatch effect node is selected, providing comprehensive control over all hatch parameters with real-time preview capabilities.
+
+### When to Use Hatches
+
+Users should use hatch effects when they need:
+- Filled engraving areas with controllable density
+- Decorative patterns with specific line orientations
+- Multi-pass fills for enhanced depth or coverage
+- Optimized performance for complex shapes
+- Preview visualization before committing to cuts
 
 ## How to Use
 
 ### Available Controls
 
-- **Unidirectional** (Checkbox)
-- **Algorithm:** (Label)
+- **Element ID**: Identification and naming controls for the hatch effect
+- **Stroke Color**: Color selection that affects classification and processing
+- **Loops**: Number of hatch passes (1-100) with slider control
+- **Hatch Distance**: Spacing between hatch lines (accepts length units like mm, inches)
+- **Angle**: Primary hatch line angle (0-360 degrees) with slider control
+- **Angle Delta**: Secondary angle variation for multi-angle patterns
+- **Fill Style**: Hatch pattern type selection from available algorithms
+- **Unidirectional**: Toggle for single-direction vs. bidirectional hatching
+- **Algorithm**: Processing method selection (Auto-Select, Scanbeam, Direct Grid)
+- **Preview Panel**: Real-time visualization of hatch pattern
+- **Auto-classify**: Immediate classification after color changes
+
+### Key Features
+
+- **Real-time Preview**: Visual representation of hatch patterns before processing
+- **Multiple Algorithms**: Choice between Scanbeam (quality), Direct Grid (speed), or Auto-select
+- **Angle Control**: Primary and delta angles for complex cross-hatch patterns
+- **Loop Control**: Multi-pass hatching for enhanced coverage
+- **Color Integration**: Automatic classification based on stroke color
 
 ### Basic Usage
 
-1. *Step 1*
-2. *Step 2*
-3. *Step 3*
+1. **Select Hatch Effect**: Choose a hatch effect node in the tree or create a new one
+2. **Configure Basic Parameters**: Set hatch distance and primary angle
+3. **Choose Algorithm**: Select appropriate processing method based on needs
+4. **Adjust Loops**: Set number of passes for desired coverage
+5. **Add Angle Variation**: Use angle delta for cross-hatch patterns
+6. **Preview Pattern**: Review the real-time preview before processing
+7. **Apply Changes**: The hatch pattern will be used during laser operations
+
+### Advanced Techniques
+
+- **Cross-Hatching**: Use angle delta to create overlapping patterns at different angles
+- **Performance Tuning**: Choose Direct Grid for simple shapes, Scanbeam for complex geometry
+- **Density Control**: Adjust hatch distance for different engraving intensities
+- **Color-Based Classification**: Enable auto-classify for automatic operation assignment
 
 ## Technical Details
 
-*Add technical information about how this feature works internally.*
+The Hatch Property Panel manages hatch effect nodes with the following core parameters:
+
+- **hatch_distance**: Spacing between parallel hatch lines (stored in mm)
+- **hatch_angle**: Primary angle for hatch line orientation (stored in degrees)
+- **hatch_angle_delta**: Secondary angle for multi-pass variations
+- **loops**: Number of hatch passes (integer 1-100)
+- **hatch_type**: Pattern algorithm selection
+- **hatch_algorithm**: Processing method (auto/scanbeam/direct_grid)
+- **unidirectional**: Boolean flag for single-direction hatching
+
+The panel integrates with MeerK40t's hatch algorithm system, supporting multiple fill styles through the plugin architecture. Real-time preview is generated by applying hatch algorithms to a sample geometric shape and rendering the results.
+
+**Algorithm Options:**
+- **Auto-Select**: Automatically chooses the best algorithm based on geometry complexity
+- **Scanbeam**: High-quality algorithm suitable for complex shapes
+- **Direct Grid**: Fast algorithm optimized for simple rectangular areas
+
+The preview system uses wxPython graphics context to render hatch lines, travel paths, and outline geometry, providing immediate visual feedback for parameter changes.
 
 ## Related Topics
 
 *Link to related help topics:*
 
-- [[Online Help: Alignment]]
-- [[Online Help: Distribute]]
-- [[Online Help: Arrangement]]
+- [[Online Help: Wobbles]] - Alternative fill pattern effects
+- [[Online Help: Effects]] - Default effect configuration
+- [[Online Help: Operationproperty]] - Operation parameter settings
+- [[Online Help: Tree]] - Understanding the element tree structure
 
 ## Screenshots
 
-*Add screenshots showing the feature in action.*
+*Add screenshots showing the Hatch Property Panel with different pattern previews and parameter controls.*
 
 ---
 

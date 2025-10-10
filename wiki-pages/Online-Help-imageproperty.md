@@ -57,46 +57,96 @@ This help section is accessed from:
 
 ## Description
 
-*Add a detailed description of what this feature does and when users would use it.*
+The Image Property Panel is the central control interface for image processing in MeerK40t. It provides advanced tools for preparing raster images for laser engraving, including resolution control, color manipulation, dithering algorithms, and special processing modes like depth mapping.
+
+This panel appears when an image element is selected and offers controls for:
+
+- **Resolution Management**: DPI settings and size preservation options
+- **Color Processing**: Grayscale conversion with individual color channel control
+- **Dithering**: Multiple algorithms for converting grayscale to black-and-white patterns
+- **Depth Mapping**: Treating images as 3D depth maps for multi-pass engraving
+- **Cropping Control**: Options for automatic cropping behavior
+- **Image Enhancement**: Contrast, brightness, and inversion controls
+
+Users would access this panel when they need to optimize raster images for laser engraving, adjust image properties for better engraving results, or apply special processing techniques like dithering or depth mapping.
 
 ## How to Use
 
 ### Available Controls
 
-- **Enable** (Checkbox)
-- **Reset** (Button)
-- **Invert** (Checkbox)
-- **Original picture** (Checkbox)
-- **Ignore inner** (Checkbox)
-- **Automatic update** (Checkbox)
-- **Update** (Button)
-- **Generate contours** (Button)
+- **DPI**: Text field for setting image resolution (dots per inch)
+- **Keep size on change**: Checkbox to maintain image dimensions when changing DPI
+- **No final crop**: Checkbox to prevent automatic cropping after processing
+- **Dither**: Checkbox to enable dithering with algorithm selection dropdown
+- **3D-Treatment**: Checkbox for depth map processing with resolution selection
+- **Grayscale Controls**: Sliders and values for Red, Green, Blue, and Lightness components
+- **Invert**: Checkbox to invert grayscale values
+- **Reset**: Button to restore default grayscale settings
 
 ### Key Features
 
-- Integrates with: `nodetype`
-- Integrates with: `element_property_force`
-- Integrates with: `element_property_update`
+- **Resolution Control**: Precise DPI management with size preservation options
+- **Advanced Dithering**: Multiple algorithms (Floyd-Steinberg, Atkinson, Jarvis, etc.)
+- **Depth Mapping**: Convert grayscale to engraving depth with configurable resolution
+- **Color Channel Control**: Individual adjustment of RGB components and lightness
+- **Real-time Preview**: Changes apply immediately to the image display
+- **Integration**: Works with crop panels, position controls, and other image tools
 
 ### Basic Usage
 
-1. *Step 1*
-2. *Step 2*
-3. *Step 3*
+1. **Select Image Element**: Choose an image in the tree view to access the property panel
+2. **Adjust Resolution**: Set appropriate DPI value for your laser device and material
+3. **Configure Processing**: Enable dithering or depth mapping as needed for your engraving style
+4. **Fine-tune Colors**: Adjust grayscale components for optimal contrast and engraving results
+5. **Apply Special Effects**: Use inversion or other modifications for creative effects
+6. **Preview Results**: Check the image preview to ensure desired engraving appearance
+
+### Advanced Techniques
+
+- **DPI Optimization**: Higher DPI for fine detail, lower DPI for faster engraving
+- **Dithering Selection**: Choose algorithms based on pattern preference (Floyd-Steinberg for quality, Atkinson for speed)
+- **Depth Mapping**: Use for 3D-like effects where grayscale intensity controls engraving depth
+- **Color Separation**: Adjust individual RGB channels for specialized engraving requirements
+- **Size Preservation**: Control whether resolution changes affect physical image dimensions
 
 ## Technical Details
 
-Provides user interface controls for imageproperty functionality. Features checkbox, button controls for user interaction. Integrates with nodetype, element_property_force for enhanced functionality.
+The Image Property Panel manages image processing through several key mechanisms:
 
-*Add technical information about how this feature works internally.*
+- **DPI Management**: Controls image scaling and internal resolution representation
+- **Grayscale Processing**: Applies color transformations using PIL (Python Imaging Library)
+- **Dithering Algorithms**: Implements various error-diffusion algorithms for black-and-white conversion
+- **Depth Mapping**: Converts grayscale values to engraving pass counts for 3D-like effects
+- **Real-time Updates**: Signals the element system to refresh image processing and display
+
+The panel integrates with multiple sub-panels including:
+- **IdPanel**: Element identification controls
+- **CropPanel**: Image cropping functionality
+- **PositionSizePanel**: Dimension and positioning controls
+- **KeyholePanel**: Special engraving pattern controls
+
+**Dithering Algorithms Available:**
+- Floyd-Steinberg (default, high quality)
+- Legacy-Floyd-Steinberg
+- Atkinson
+- Jarvis-Judice-Ninke
+- Stucki, Burkes, Sierra variants
+- Bayer matrix dithering
+
+**Depth Mapping Resolutions:**
+- 256 levels (full grayscale resolution)
+- 128, 64, 32, 16, 8, 4 levels (coarser quantization)
+
+The panel uses wxPython sliders and text controls with validation to ensure proper value ranges and provides immediate visual feedback through the MeerK40t display system.
 
 ## Related Topics
 
 *Link to related help topics:*
 
-- [[Online Help: Alignment]]
-- [[Online Help: Distribute]]
-- [[Online Help: Arrangement]]
+- [[Online Help: Imagesplit]] - Image splitting and tiling operations
+- [[Online Help: Crop]] - Image cropping functionality
+- [[Online Help: Dither]] - Dithering algorithm details
+- [[Online Help: Raster]] - Raster engraving operations
 
 ## Screenshots
 
