@@ -4673,8 +4673,8 @@ class MeerK40t(MWindow):
                         win = win.GetParent()
             if section is None or section == "":
                 section = "GUI"
-            section = section.upper()
-            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
+            section = section.lower()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help-{section}"
             import webbrowser
 
             webbrowser.open(url, new=0, autoraise=True)
