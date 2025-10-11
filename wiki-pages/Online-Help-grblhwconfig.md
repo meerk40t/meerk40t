@@ -132,10 +132,10 @@ The GRBL Hardware Configuration integrates deeply with GRBL's parameter system:
 
 ## Related Topics
 
-- [[Online Help: Grblconfig]] - General GRBL device configuration
-- [[Online Help: Grblcontoller]] - Real-time GRBL device control
-- [[Online Help: Grbloperation]] - GRBL device operation and job execution
-- [[Online Help: Devices]] - General device management
+- [Online Help: Grblconfig](Online-Help-grblconfig) - General GRBL device configuration
+- [Online Help: Grblcontoller](Online-Help-grblcontoller) - Real-time GRBL device control
+- [Online Help: Grbloperation](Online-Help-grbloperation) - GRBL device operation and job execution
+- [Online Help: Devices](Online-Help-devices) - General device management
 
 ## Screenshots
 

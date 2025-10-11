@@ -154,10 +154,10 @@ The GRBL Configuration system integrates with MeerK40t's device service architec
 
 ## Related Topics
 
-- [[Online Help: Grblcontoller]] - GRBL controller operations and status
-- [[Online Help: Grblhwconfig]] - Hardware-specific GRBL configuration
-- [[Online Help: Grbloperation]] - GRBL device operation and job execution
-- [[Online Help: Devices]] - General device management
+- [Online Help: Grblcontoller](Online-Help-grblcontoller) - GRBL controller operations and status
+- [Online Help: Grblhwconfig](Online-Help-grblhwconfig) - Hardware-specific GRBL configuration
+- [Online Help: Grbloperation](Online-Help-grbloperation) - GRBL device operation and job execution
+- [Online Help: Devices](Online-Help-devices) - General device management
 
 ## Screenshots
 

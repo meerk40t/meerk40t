@@ -208,11 +208,11 @@ The tool includes input validation:
 
 ## Related Topics
 
-- [[Online Help: Hinges]] - Related precision cutting tools
-- [[Online Help: K40Controller]] - Laser controller configuration
-- [[Online Help: K40Operation]] - Operation-specific settings
-- [[Online Help: Operationproperty]] - Operation parameter configuration
-- [[Online Help: Speed and Power]] - Basic speed and power settings
+- [Online Help: Hinges](Online-Help-hinges) - Related precision cutting tools
+- [Online Help: K40Controller](Online-Help-k40controller) - Laser controller configuration
+- [Online Help: K40Operation](Online-Help-k40operation) - Operation-specific settings
+- [Online Help: Operationproperty](Online-Help-operationproperty) - Operation parameter configuration
+- [Online Help: Speed and Power](Online-Help-speedandpower) - Basic speed and power settings
 
 ## Screenshots
 

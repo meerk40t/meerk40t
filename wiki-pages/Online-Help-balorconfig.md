@@ -144,11 +144,11 @@ This ensures accurate positioning and prevents distortion in laser output.
 
 ## Related Topics
 
-- [[Online Help: Balorcontroller]] - Device control and communication
-- [[Online Help: Baloroperation]] - Operation-specific settings
-- [[Online Help: K40Controller]] - Comparison with K40 laser control
-- [[Online Help: Devices]] - General device management
-- [[Online Help: Correction Files]] - Working with correction files
+- [Online Help: Balorcontroller](Online-Help-balorcontroller) - Device control and communication
+- [Online Help: Baloroperation](Online-Help-baloroperation) - Operation-specific settings
+- [Online Help: K40Controller](Online-Help-k40controller) - Comparison with K40 laser control
+- [Online Help: Devices](Online-Help-devices) - General device management
+- [Online Help: Correction Files](Online-Help-correctionfiles) - Working with correction files
 
 ## Troubleshooting
 

@@ -101,11 +101,11 @@ The preview system uses wxPython graphics context to render hatch lines, travel 
 
 *Link to related help topics:*
 
-- [[Online Help: Wobbles]] - Alternative fill pattern effects with oscillating distortions
-- [[Online Help: Effects]] - Default effect configuration and global settings
-- [[Online Help: Operation Property]] - Operation parameter settings and laser controls
-- [[Online Help: Tree]] - Understanding the element tree structure and navigation
-- [[Online Help: Path Property]] - Path manipulation and editing tools
+- [Online Help: Wobbles](Online-Help-wobbles) - Alternative fill pattern effects with oscillating distortions
+- [Online Help: Effects](Online-Help-effects) - Default effect configuration and global settings
+- [Online Help: Operation Property](Online-Help-operationproperty) - Operation parameter settings and laser controls
+- [Online Help: Tree](Online-Help-tree) - Understanding the element tree structure and navigation
+- [Online Help: Path Property](Online-Help-pathproperty) - Path manipulation and editing tools
 
 ## Screenshots
 

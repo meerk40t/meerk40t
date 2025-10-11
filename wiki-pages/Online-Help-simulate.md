@@ -13,7 +13,7 @@ It allows to fiddle with optimisation parameters and get an insight if and to wh
 
 If you are happy with what you are seeing then can you send the cutcode (the translation of elements and operations into laser commands) directly to the laser.
 
-Optimisations: If you click on the button with the Arrow left indicator (<img src="https://github.com/meerk40t/meerk40t/assets/2670784/7da3759d-a85e-4d0d-8b3f-d62c27a24fa6" width="25">), then a panel with optimisation options appear. You can change them and click "Recalculate" to assess the impact these will have. You will find details about the optimisation options here: [Optimisation options](https://github.com/meerk40t/meerk40t/wiki/Online-Help:-OPTIMISATION)
+Optimisations: If you click on the button with the Arrow left indicator (<img src="https://github.com/meerk40t/meerk40t/assets/2670784/7da3759d-a85e-4d0d-8b3f-d62c27a24fa6" width="25">), then a panel with optimisation options appear. You can change them and click "Recalculate" to assess the impact these will have. You will find details about the optimisation options here: [Optimisation options](Online-Help-optimisation)
 
 ### Tips:
 - Change the Mode-Option at the bottom of the screen to change between
@@ -28,7 +28,7 @@ Optimisations: If you click on the button with the Arrow left indicator (<img sr
 You can intentionally drop all lasercommands before / after the currently displayed execution step - this is helpful if you need to restart a job and don't want to do all the things until the point you needed to interrupt (intentionally stopped) again. Go to this point (or as close as you can get) and delete the cuts before.
 - If you fold out the optimisation menu at the right hand side you have two more tabs, that could be interesting:
    - Operations: This a list of all the cutcode groups that MeerK40t creates under the hood. You can add additional instructions like a command to interrupt the burn and wait for a user command, and many more.
-NB: Normally you would want to add special operations in the operation part of the tree (see [Operations](https://github.com/meerk40t/meerk40t/wiki/Online-Help:-OPERATIONS)), but this is an expert tool to change behaviour at a core level. <img src="https://github.com/meerk40t/meerk40t/assets/2670784/c17848e6-e6cb-4da9-be16-127fc6780d52" width="150">
+NB: Normally you would want to add special operations in the operation part of the tree (see [Operations](Online-Help-operations)), but this is an expert tool to change behaviour at a core level. <img src="https://github.com/meerk40t/meerk40t/assets/2670784/c17848e6-e6cb-4da9-be16-127fc6780d52" width="150">
    - Cutcode: if you select an operation in the previous tab, you can then see (and influence) the detailed laserinstructions. Again you can delete single segments, or split the laserjob at this point... <img src="https://github.com/meerk40t/meerk40t/assets/2670784/396f8312-2c34-4379-a529-027dcbfae750" width="150">
 
 ## Location in MeerK40t
@@ -109,11 +109,11 @@ The simulation system works by processing the elements tree and operations throu
 
 ## Related Topics
 
-- [[Online Help: Operations]] - Creating and managing laser operations
-- [[Online Help: OPTIMISATION]] - Detailed optimization options and algorithms
-- [[Online Help: Spooler]] - Job execution and laser communication
-- [[Online Help: Tree]] - Elements tree structure and management
-- [[Online Help: Device Configuration]] - Laser device setup and configuration
+- [Online Help: Operations](Online-Help-operations) - Creating and managing laser operations
+- [Online Help: OPTIMISATION](Online-Help-optimisation) - Detailed optimization options and algorithms
+- [Online Help: Spooler](Online-Help-spooler) - Job execution and laser communication
+- [Online Help: Tree](Online-Help-tree) - Elements tree structure and management
+- [Online Help: Device Configuration](Online-Help-deviceconfiguration) - Laser device setup and configuration
 
 ## Screenshots
 

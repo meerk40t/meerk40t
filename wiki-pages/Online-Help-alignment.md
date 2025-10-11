@@ -170,10 +170,10 @@ The Alignment system uses sophisticated geometric algorithms:
 
 ## Related Topics
 
-- [[Online Help: Distribute]]
-- [[Online Help: Arrangement]]
-- [[Online Help: Transform]]
-- [[Online Help: Selection]]
+- [Online Help: Distribute](Online-Help-distribute)
+- [Online Help: Arrangement](Online-Help-arrangement)
+- [Online Help: Transform](Online-Help-transform)
+- [Online Help: Selection](Online-Help-selection)
 
 ## Screenshots
 

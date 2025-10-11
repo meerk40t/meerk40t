@@ -150,10 +150,10 @@ The GRBL Controller integrates deeply with MeerK40t's device communication syste
 
 ## Related Topics
 
-- [[Online Help: Grblconfig]] - GRBL device configuration and setup
-- [[Online Help: Grblhwconfig]] - Hardware-specific GRBL configuration
-- [[Online Help: Grbloperation]] - GRBL device operation and job execution
-- [[Online Help: Devices]] - General device management
+- [Online Help: Grblconfig](Online-Help-grblconfig) - GRBL device configuration and setup
+- [Online Help: Grblhwconfig](Online-Help-grblhwconfig) - Hardware-specific GRBL configuration
+- [Online Help: Grbloperation](Online-Help-grbloperation) - GRBL device operation and job execution
+- [Online Help: Devices](Online-Help-devices) - General device management
 
 ## Screenshots
 

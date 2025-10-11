@@ -151,10 +151,10 @@ The Arrangement system uses sophisticated grid calculation algorithms:
 
 ## Related Topics
 
-- [[Online Help: Alignment]]
-- [[Online Help: Distribute]]
-- [[Online Help: Transform]]
-- [[Online Help: Selection]]
+- [Online Help: Alignment](Online-Help-alignment)
+- [Online Help: Distribute](Online-Help-distribute)
+- [Online Help: Transform](Online-Help-transform)
+- [Online Help: Selection](Online-Help-selection)
 
 ## Screenshots
 

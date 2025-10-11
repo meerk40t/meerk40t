@@ -65,7 +65,7 @@ The Preferences dialog provides comprehensive control over MeerK40t's behavior, 
 ![image](https://github.com/meerk40t/meerk40t/assets/2670784/741b4d31-2169-4dc7-93cc-818ed55e3eba)
 
 ## Classification
-See: [Classification](https://github.com/meerk40t/meerk40t/wiki/Online-Help:-CLASSIFICATION)
+See: [Classification](Online-Help-classification)
 
 ### Classification Presets
 - **Automatic**: Optimized settings for automatic element-to-operation assignment
@@ -288,10 +288,10 @@ The Preferences system uses a modular architecture with specialized panels for d
 
 *Link to related help topics:*
 
-- [[Online Help: Classification]]
-- [[Online Help: Devices]]
-- [[Online Help: Operations]]
-- [[Online Help: GUI]]
+- [Online Help: Classification](Online-Help-classification)
+- [Online Help: Devices](Online-Help-devices)
+- [Online Help: Operations](Online-Help-operations)
+- [Online Help: GUI](Online-Help-gui)
 
 ## Screenshots
 

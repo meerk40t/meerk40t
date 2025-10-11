@@ -105,10 +105,10 @@ The GRBL Operation Configuration integrates with MeerK40t's operation property s
 
 ## Related Topics
 
-- [[Online Help: Grblconfig]] - General GRBL device configuration
-- [[Online Help: Grblcontoller]] - Real-time GRBL device control
-- [[Online Help: Grblhwconfig]] - GRBL hardware parameter configuration
-- [[Online Help: Operationproperty]] - General operation properties
+- [Online Help: Grblconfig](Online-Help-grblconfig) - General GRBL device configuration
+- [Online Help: Grblcontoller](Online-Help-grblcontoller) - Real-time GRBL device control
+- [Online Help: Grblhwconfig](Online-Help-grblhwconfig) - GRBL hardware parameter configuration
+- [Online Help: Operationproperty](Online-Help-operationproperty) - General operation properties
 
 ## Screenshots
 

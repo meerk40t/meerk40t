@@ -119,10 +119,10 @@ The camera system is built around OpenCV for camera access and image processing.
 
 ## Related Topics
 
-- [[Online Help: Devices]] - Managing laser cutting devices
-- [[Online Help: K40Controller]] - K40 laser controller operations
-- [[Online Help: K40Operation]] - Basic laser cutting operations
-- [[Online Help: K40Tcp]] - Network-based laser control
+- [Online Help: Devices](Online-Help-devices) - Managing laser cutting devices
+- [Online Help: K40Controller](Online-Help-k40controller) - K40 laser controller operations
+- [Online Help: K40Operation](Online-Help-k40operation) - Basic laser cutting operations
+- [Online Help: K40Tcp](Online-Help-k40tcp) - Network-based laser control
 
 ## Screenshots
 

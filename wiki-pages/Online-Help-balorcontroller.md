@@ -138,11 +138,11 @@ The panel responds to these key signals:
 
 ## Related Topics
 
-- [[Online Help: Balorconfig]] - Device configuration and parameter settings
-- [[Online Help: Baloroperation]] - Operation-specific settings for Balor devices
-- [[Online Help: Devices]] - General device management and selection
-- [[Online Help: Device-Control]] - Other device control panels
-- [[Online Help: USB Connection Issues]] - Troubleshooting USB connectivity
+- [Online Help: Balorconfig](Online-Help-balorconfig) - Device configuration and parameter settings
+- [Online Help: Baloroperation](Online-Help-baloroperation) - Operation-specific settings for Balor devices
+- [Online Help: Devices](Online-Help-devices) - General device management and selection
+- [Online Help: Device-Control](Online-Help-devicecontrol) - Other device control panels
+- [Online Help: USB Connection Issues](Online-Help-usbconnectionissues) - Troubleshooting USB connectivity
 
 ## Advanced Usage
 

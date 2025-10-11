@@ -754,7 +754,7 @@ def generate_wiki_page(section, files, all_sections, help_context):
     if related_sections:
         for related_section in related_sections:
             related_title = related_section.replace("_", " ").title()
-            related_links += f"- [[Online Help: {related_title}]]\n"
+            related_links += f"- [Online Help: {related_title}](Online-Help-{related_section.lower()})\n"
 
     # Check if we have substantial existing content to determine template style
     has_existing_content = (
@@ -1612,8 +1612,9 @@ def main():
         ):
             index_content += f"### {category}\n\n"
             for section in sorted(sections):
+                secname = section.replace('_', ' ').title()
                 index_content += (
-                    f"- [[Online Help: {section.replace('_', ' ').title()}]]\n"
+                    f"- [Online Help: {secname}](Online-Help-{secname.lower()})\n"
                 )
             index_content += "\n"
 

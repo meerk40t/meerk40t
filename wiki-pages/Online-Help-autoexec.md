@@ -209,10 +209,10 @@ Autoexec commands are stored as file metadata:
 
 ## Related Topics
 
-- [[Online Help: Console]]
-- [[Online Help: File Operations]]
-- [[Online Help: Device Management]]
-- [[Online Help: Simulation]]
+- [Online Help: Console](Online-Help-console)
+- [Online Help: File Operations](Online-Help-fileoperations)
+- [Online Help: Device Management](Online-Help-devicemanagement)
+- [Online Help: Simulation](Online-Help-simulation)
 
 ## Screenshots
 

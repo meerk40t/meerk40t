@@ -4,7 +4,12 @@
 
 This help page covers the **Defaultactions** functionality in MeerK40t.
 
-The Default Actions panel provides comprehensive control over automatic operations that execute before and after laser cutting jobs. This feature allows users to create standardized workflows by defining sequences of actions that run automatically at job start and job end, ensuring consistent behavior across all laser operations.
+T## Related Topics
+
+- [Online Help: Effects](Online-Help-effects) - Laser operation effects and modifications
+- [Online Help: Formatter](Online-Help-formatter) - Output formatting and processing
+- [Online Help: Warning](Online-Help-warning) - Warning and safety systems
+- [Online Help: Grblconfig](Online-Help-grblconfig) - GRBL device configurationault Actions panel provides comprehensive control over automatic operations that execute before and after laser cutting jobs. This feature allows users to create standardized workflows by defining sequences of actions that run automatically at job start and job end, ensuring consistent behavior across all laser operations.
 
 The default actions configuration is accessed through **Device Settings → GRBL-Configuration → Default Actions** tab, or similar device configuration panels.
 

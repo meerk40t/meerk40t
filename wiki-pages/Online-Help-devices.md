@@ -167,12 +167,12 @@ Each device type provides its own configuration panel with settings for:
 
 ## Related Topics
 
-- [[Online Help: Balorconfig]] - Balor device configuration
-- [[Online Help: GRBL Configuration]] - GRBL device setup
-- [[Online Help: K40 Controller]] - K40 laser control
-- [[Online Help: Device Configuration]] - General device settings
-- [[Online Help: Operations]] - Working with laser operations
-- [[Online Help: Spooler]] - Job queue management
+- [Online Help: Balorconfig](Online-Help-balorconfig) - Balor device configuration
+- [Online Help: GRBL Configuration](Online-Help-grblconfiguration) - GRBL device setup
+- [Online Help: K40 Controller](Online-Help-k40controller) - K40 laser control
+- [Online Help: Device Configuration](Online-Help-deviceconfiguration) - General device settings
+- [Online Help: Operations](Online-Help-operations) - Working with laser operations
+- [Online Help: Spooler](Online-Help-spooler) - Job queue management
 
 ## Advanced Usage
 

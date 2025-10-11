@@ -1,140 +1,137 @@
 # MeerK40t Online Help Documentation
 
-Welcome to the comprehensive MeerK40t documentation! This wiki provides detailed help and guidance for all 61 features in MeerK40t, the advanced laser cutting software.
+Welcome to the MeerK40t documentation! This wiki provides detailed help and guidance for features in MeerK40t, the advanced laser cutting software.
 
 ## 📊 Documentation Overview
 
 - **Total Help Pages**: 61
-- **Documentation Status**: ✅ Complete (0 placeholder pages)
-- **Pages with Screenshots**: 8
-- **Pages with Detailed Descriptions**: 61
 - **Last Updated**: October 10, 2025
 
 ## 🎯 Quick Start
 
 ### New to MeerK40t?
 Start with these essential topics:
-- [[Online Help: Devices]] - Setting up your laser device
-- [[Online Help: Tree]] - Understanding the main interface
-- [[Online Help: Operationproperty]] - Creating laser operations
-- [[Online Help: Simulate]] - Previewing your cuts
+- [Devices](Online-Help-devices) - Setting up your laser device
+- [Tree](Online-Help-tree) - Understanding the main interface
+- [Operations](Online-Help-operationproperty) - Creating laser operations
+- [Simulate](Online-Help-simulate) - Previewing your cuts
 
 ### Most Visual Guides
 These pages include actual screenshots:
-- [[Online Help: Camera]] - Camera integration and setup
-- [[Online Help: Imageproperty]] - Image processing options
-- [[Online Help: Position]] - Precise positioning tools
-- [[Online Help: Preferences]] - Configuration settings
-- [[Online Help: Ribboneditor]] - Interface customization
-- [[Online Help: Simulate]] - Cut simulation and preview
-- [[Online Help: Snap]] - Snapping and alignment features
-- [[Online Help: Tree]] - Main interface navigation
+- [Camera](Online-Help-camera) - Camera integration and setup
+- [Images](Online-Help-imageproperty) - Image processing options
+- [Position](Online-Help-position) - Precise positioning tools
+- [Preferences](Online-Help-preferences) - Configuration settings
+- [Ribbon editor](Online-Help-ribboneditor) - Interface customization
+- [Simulate](Online-Help-simulate) - Cut simulation and preview
+- [Snap](Online-Help-snap) - Snapping and alignment features
+- [Tree](Online-Help-tree) - Main interface navigation
 
 ## 📂 Help Pages by Category
 
 ### 🔧 Device Drivers
 
 #### GRBL Lasers
-- [[Online Help: Grblconfig]] - GRBL device configuration
-- [[Online Help: Grblcontoller]] - GRBL controller interface
-- [[Online Help: Grblhwconfig]] - GRBL hardware settings
-- [[Online Help: Grbloperation]] - GRBL operation modes
+- [Grblconfig](Online-Help-grblconfig) - GRBL device configuration
+- [Grblcontoller](Online-Help-grblcontoller) - GRBL controller interface
+- [Grblhwconfig](Online-Help-grblhwconfig) - GRBL hardware settings
+- [Grbloperation](Online-Help-grbloperation) - GRBL operation modes
 
 #### Lihuiyu/K40 Lasers
-- [[Online Help: K40Controller]] - K40 controller monitoring
-- [[Online Help: K40Operation]] - K40 operation settings
-- [[Online Help: K40Tcp]] - K40 network connectivity
+- [K40Controller](Online-Help-k40controller) - K40 controller monitoring
+- [K40Operation](Online-Help-k40operation) - K40 operation settings
+- [K40Tcp](Online-Help-k40tcp) - K40 network connectivity
 
 #### Galvo Lasers (Balor)
-- [[Online Help: Balorconfig]] - Balor device setup
-- [[Online Help: Balorcontroller]] - Balor controller interface
-- [[Online Help: Baloroperation]] - Balor operation modes
+- [Balorconfig](Online-Help-balorconfig) - Balor device setup
+- [Balorcontroller](Online-Help-balorcontroller) - Balor controller interface
+- [Baloroperation](Online-Help-baloroperation) - Balor operation modes
 
 #### Other Lasers
-- [[Online Help: Moshiconfig]] - Moshi device configuration
-- [[Online Help: Moshicontroller]] - Moshi controller interface
-- [[Online Help: Newlyconfig]] - Newly device setup
-- [[Online Help: Newlycontroller]] - Newly controller interface
+- [Moshiconfig](Online-Help-moshiconfig) - Moshi device configuration
+- [Moshicontroller](Online-Help-moshicontroller) - Moshi controller interface
+- [Newlyconfig](Online-Help-newlyconfig) - Newly device setup
+- [Newlycontroller](Online-Help-newlycontroller) - Newly controller interface
 
 ### 🛠️ Design Tools
 
 #### Basic Tools
-- [[Online Help: Alignment]] - Object alignment options
-- [[Online Help: Arrangement]] - Layout and spacing
-- [[Online Help: Distribute]] - Distribution controls
-- [[Online Help: Placement]] - Position placement tools
-- [[Online Help: Position]] - Precise positioning
-- [[Online Help: Transform]] - Object transformation
+- [Alignment](Online-Help-alignment) - Object alignment options
+- [Arrangement](Online-Help-arrangement) - Layout and spacing
+- [Distribute](Online-Help-distribute) - Distribution controls
+- [Placement](Online-Help-placement) - Position placement tools
+- [Position](Online-Help-position) - Precise positioning
+- [Transform](Online-Help-transform) - Object transformation
 
 #### Advanced Tools
-- [[Online Help: Effects]] - Visual effects and filters
-- [[Online Help: Hatches]] - Hatch pattern creation
-- [[Online Help: Keyhole]] - Keyhole cutting patterns
-- [[Online Help: Wobbles]] - Wobble effect patterns
-- [[Online Help: Warp]] - Object warping tools
+- [Effects](Online-Help-effects) - Visual effects and filters
+- [Hatches](Online-Help-hatches) - Hatch pattern creation
+- [Keyhole](Online-Help-keyhole) - Keyhole cutting patterns
+- [Wobbles](Online-Help-wobbles) - Wobble effect patterns
+- [Warp](Online-Help-warp) - Object warping tools
 
 #### Text & Images
-- [[Online Help: Textproperty]] - Text formatting options
-- [[Online Help: Vectortext]] - Vector text creation
-- [[Online Help: Imageproperty]] - Image processing settings
-- [[Online Help: Imagesplit]] - Image splitting tools
+- [Textproperty](Online-Help-textproperty) - Text formatting options
+- [Vectortext](Online-Help-vectortext) - Vector text creation
+- [Imageproperty](Online-Help-imageproperty) - Image processing settings
+- [Imagesplit](Online-Help-imagesplit) - Image splitting tools
 
 ### 🎮 Interface & Navigation
 
 #### Main Interface
-- [[Online Help: Tree]] - Main project tree navigation
-- [[Online Help: Laserpanel]] - Main laser control panel
-- [[Online Help: Ribboneditor]] - Interface customization
-- [[Online Help: Spooler]] - Job queue management
+- [Tree](Online-Help-tree) - Main project tree navigation
+- [Laserpanel](Online-Help-laserpanel) - Main laser control panel
+- [Ribboneditor](Online-Help-ribboneditor) - Interface customization
+- [Spooler](Online-Help-spooler) - Job queue management
 
 #### Navigation Tools
-- [[Online Help: Drag]] - Drag and drop operations
-- [[Online Help: Jog]] - Manual movement controls
-- [[Online Help: Move]] - Object movement tools
-- [[Online Help: Pulse]] - Pulse control features
-- [[Online Help: Snap]] - Snapping functionality
-- [[Online Help: Zmove]] - Z-axis movement
+- [Drag](Online-Help-drag) - Drag and drop operations
+- [Jog](Online-Help-jog) - Manual movement controls
+- [Move](Online-Help-move) - Object movement tools
+- [Pulse](Online-Help-pulse) - Pulse control features
+- [Snap](Online-Help-snap) - Snapping functionality
+- [Zmove](Online-Help-zmove) - Z-axis movement
 
 #### Views & Display
-- [[Online Help: Camera]] - Camera integration
-- [[Online Help: Simulate]] - Cut simulation
-- [[Online Help: Formatter]] - Display formatting options
+- [Camera](Online-Help-camera) - Camera integration
+- [Simulate](Online-Help-simulate) - Cut simulation
+- [Formatter](Online-Help-formatter) - Display formatting options
 
 ### ⚙️ Operations & Properties
 
 #### Operation Settings
-- [[Online Help: Operationproperty]] - Operation configuration
-- [[Online Help: Opbranchproperty]] - Branch operation settings
-- [[Online Help: Operationinfo]] - Operation information display
-- [[Online Help: Pathproperty]] - Path property settings
+- [Operationproperty](Online-Help-operationproperty) - Operation configuration
+- [Opbranchproperty](Online-Help-opbranchproperty) - Branch operation settings
+- [Operationinfo](Online-Help-operationinfo) - Operation information display
+- [Pathproperty](Online-Help-pathproperty) - Path property settings
 
 #### Materials & Settings
-- [[Online Help: Materialmanager]] - Material library management
-- [[Online Help: Preferences]] - Application preferences
-- [[Online Help: Defaultactions]] - Default action settings
+- [Materialmanager](Online-Help-materialmanager) - Material library management
+- [Preferences](Online-Help-preferences) - Application preferences
+- [Defaultactions](Online-Help-defaultactions) - Default action settings
 
 ### 🔧 Advanced Features
 
 #### Automation
-- [[Online Help: Autoexec]] - Automatic execution settings
-- [[Online Help: Templates]] - Template management
-- [[Online Help: Wordlist]] - Word list processing
+- [Autoexec](Online-Help-autoexec) - Automatic execution settings
+- [Templates](Online-Help-templates) - Template management
+- [Wordlist](Online-Help-wordlist) - Word list processing
 
 #### Analysis & Testing
-- [[Online Help: Testpattern]] - Test pattern generation
-- [[Online Help: Threadinfo]] - Thread information display
-- [[Online Help: Warning]] - Warning system
+- [Testpattern](Online-Help-testpattern) - Test pattern generation
+- [Threadinfo](Online-Help-threadinfo) - Thread information display
+- [Warning](Online-Help-warning) - Warning system
 
 #### Special Tools
-- [[Online Help: Hinges]] - Hinge creation tools
-- [[Online Help: Kerf]] - Kerf compensation
-- [[Online Help: Magnet]] - Magnetic snapping
-- [[Online Help: Notes]] - Note-taking features
-- [[Online Help: Tips]] - User tips and hints
+- [Hinges](Online-Help-hinges) - Hinge creation tools
+- [Kerf](Online-Help-kerf) - Kerf compensation
+- [Magnet](Online-Help-magnet) - Magnetic snapping
+- [Notes](Online-Help-notes) - Note-taking features
+- [Tips](Online-Help-tips) - User tips and hints
 
 ## 📖 Additional Resources
 
-- **Getting Started Guide**: Begin with [[Online Help: Devices]] and [[Online Help: Tree]]
+- **Getting Started Guide**: Begin with [Devices](Online-Help-devices) and [Tree](Online-Help-tree)
 - **Troubleshooting**: Check device-specific controller pages for connection issues
 - **Advanced Usage**: Explore operation properties and material management
 - **Customization**: Use formatter and ribbon editor for personalized workflows

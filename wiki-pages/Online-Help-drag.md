@@ -127,10 +127,10 @@ The panel calculates alignment positions based on element bounding boxes:
 
 ## Related Topics
 
-- [[Online Help: Jog]] - Manual laser positioning controls
-- [[Online Help: Move]] - Coordinate-based positioning
-- [[Online Help: Transform]] - Element transformation operations
-- [[Online Help: Navigation]] - Complete navigation control suite
+- [Online Help: Jog](Online-Help-jog) - Manual laser positioning controls
+- [Online Help: Move](Online-Help-move) - Coordinate-based positioning
+- [Online Help: Transform](Online-Help-transform) - Element transformation operations
+- [Online Help: Navigation](Online-Help-navigation) - Complete navigation control suite
 
 ## Screenshots
 

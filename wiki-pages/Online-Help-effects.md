@@ -75,11 +75,11 @@ When users create new hatch or wobble effects through other panels (like the Hat
 
 *Link to related help topics:*
 
-- [[Online Help: Hatches]] - Detailed hatch pattern configuration and usage
-- [[Online Help: Wobbles]] - Detailed wobble effect configuration and usage
-- [[Online Help: Defaultactions]] - Other default operation and behavior settings
-- [[Online Help: Formatter]] - Output formatting and display customization
-- [[Online Help: Operation Property]] - Individual operation parameter configuration
+- [Online Help: Hatches](Online-Help-hatches) - Detailed hatch pattern configuration and usage
+- [Online Help: Wobbles](Online-Help-wobbles) - Detailed wobble effect configuration and usage
+- [Online Help: Defaultactions](Online-Help-defaultactions) - Other default operation and behavior settings
+- [Online Help: Formatter](Online-Help-formatter) - Output formatting and display customization
+- [Online Help: Operation Property](Online-Help-operationproperty) - Individual operation parameter configuration
 
 ## Screenshots
 

@@ -85,11 +85,11 @@ The system preserves element aspect ratios and handles complex path types includ
 
 *Link to related help topics:*
 
-- [[Online Help: Alignment]] - Basic element positioning and alignment tools
-- [[Online Help: Arrangement]] - Advanced element arrangement and layout options
-- [[Online Help: Placement]] - Position markers and placement point management
-- [[Online Help: Position]] - Coordinate-based positioning controls
-- [[Online Help: Transform]] - Element transformation and manipulation tools
+- [Online Help: Alignment](Online-Help-alignment) - Basic element positioning and alignment tools
+- [Online Help: Arrangement](Online-Help-arrangement) - Advanced element arrangement and layout options
+- [Online Help: Placement](Online-Help-placement) - Position markers and placement point management
+- [Online Help: Position](Online-Help-position) - Coordinate-based positioning controls
+- [Online Help: Transform](Online-Help-transform) - Element transformation and manipulation tools
 
 ## Screenshots
 

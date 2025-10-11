@@ -107,11 +107,11 @@ The Parameters class automatically validates and converts settings:
 
 ## Related Topics
 
-- [[Online Help: Balorconfig]] - Global device configuration settings
-- [[Online Help: Balorcontroller]] - Device connection and control
-- [[Online Help: Operations]] - Working with laser operations
-- [[Online Help: Cut Planning]] - How operations are processed
-- [[Online Help: Laser Parameters]] - Understanding laser settings
+- [Online Help: Balorconfig](Online-Help-balorconfig) - Global device configuration settings
+- [Online Help: Balorcontroller](Online-Help-balorcontroller) - Device connection and control
+- [Online Help: Operations](Online-Help-operations) - Working with laser operations
+- [Online Help: Cut Planning](Online-Help-cutplanning) - How operations are processed
+- [Online Help: Laser Parameters](Online-Help-laserparameters) - Understanding laser settings
 
 ## Advanced Usage
 
