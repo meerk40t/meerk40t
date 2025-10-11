@@ -21,13 +21,14 @@ import os
 import re
 import subprocess
 from collections import defaultdict
+import sys
 
 
 def check_existing_wiki_page(section):
     """Check if an existing wiki page exists and return its content."""
     # First check local wiki-pages directory
     local_wiki_dir = "../wiki-pages"
-    local_filename = f"Online-Help-{section}.md"
+    local_filename = f"Online-Help-{section.lower()}.md"
     local_filepath = os.path.join(local_wiki_dir, local_filename)
 
     if os.path.exists(local_filepath):
@@ -40,7 +41,7 @@ def check_existing_wiki_page(section):
             pass
 
     # Then check wiki repository if it exists
-    wiki_filename = f"Online-Help:-{section.upper()}.md"
+    wiki_filename = f"Online-Help-{section.lower()}.md"
     wiki_repo_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "meerk40t.wiki"
     )
@@ -1461,7 +1462,7 @@ def main():
     parser.add_argument(
         "--upload",
         action="store_true",
-        help="Automatically upload generated pages to GitHub wiki repository",
+        help="Automatically upload generated pages to GitHub wiki repository (inactive on Windows)",
     )
     parser.add_argument(
         "--recreate",
@@ -1480,6 +1481,12 @@ def main():
     )
 
     args = parser.parse_args()
+    this_is_windows = sys.platform.startswith("win")
+    # Suppress upload under Windows
+    if this_is_windows:
+        if args.upload:
+            print("WARNING: The --upload option is disabled under Windows to prevent accidental deletion of wiki pages due to filename issues.")
+        args.upload = False
 
     print("Extracting help sections from MeerK40t codebase...")
 
@@ -1497,7 +1504,8 @@ def main():
     skipped_pages_count = 0
 
     for section in sorted(help_sections):
-        filename = f"Online-Help-{section}.md"
+        secname = section.lower().replace(" ", "-")
+        filename = f"Online-Help-{secname}.md"
         filepath = os.path.join(output_dir, filename)
 
         # Check if page already exists and has substantial content
@@ -1612,9 +1620,9 @@ def main():
         ):
             index_content += f"### {category}\n\n"
             for section in sorted(sections):
-                secname = section.replace('_', ' ').title()
+                secname = section.replace('_', ' ').title().lower()
                 index_content += (
-                    f"- [Online Help: {secname}](Online-Help-{secname.lower()})\n"
+                    f"- [Online Help: {secname}](Online-Help-{section.lower()})\n"
                 )
             index_content += "\n"
 
@@ -1640,7 +1648,7 @@ def main():
         print(f"Pages skipped (already exist with content): {skipped_pages_count}")
 
     # Upload to wiki if requested
-    if args.upload:
+    if args.upload and not this_is_windows:
         print("\nUploading to GitHub wiki...")
         if upload_to_wiki(output_dir, args.repo_url, args.commit_message):
             print("✓ Wiki upload completed successfully")
@@ -1653,7 +1661,8 @@ def main():
         print("1. Review and edit the generated pages in the '../wiki-pages' directory")
         print("2. Upload these files to your GitHub wiki repository")
         print("3. Or copy/paste the content to create wiki pages manually")
-        print("4. Or run with --upload to automatically upload to wiki")
+        if not this_is_windows:
+            print("4. Or run with --upload to automatically upload to wiki")
     else:
         print("1. Check your GitHub wiki repository for the updated pages")
         print("2. Review and edit pages as needed directly in the wiki")
