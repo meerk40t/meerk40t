@@ -2315,7 +2315,7 @@ def init_tree(kernel):
             if len(op_list) == 0:
                 return
             self.default_operations = list(op_list)
-            self.default_operations_title = self._default_list_name(op_info)
+            self.default_operations_title = self._get_default_list_title(op_info)
             self.default_operation_info = dict(op_info)
             self.signal("default_operations")
 
