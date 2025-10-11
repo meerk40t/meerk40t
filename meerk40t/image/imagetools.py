@@ -17,6 +17,11 @@ from meerk40t.tools.geomstr import Geomstr
 
 from .dither import dither
 
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
 
 def img_to_polygons(
     node_image,  # The image
@@ -461,21 +466,35 @@ def img_to_rectangles(
     return geom_list
 
 
-def split_image_into_subimages(image):
+def split_image_into_subimages(image, threshold=254, adaptive=False, min_area=20, max_components=1000, channel=None, morphology=True, recombine=False, recombine_gap=2, recombine_align=3):
     """
-    Split a PIL image into multiple rectangular subimages containing individual connected non-white regions.
+    Split a PIL image into multiple rectangular subimages containing individual regions.
 
     Args:
         image: PIL Image object
+        threshold: Threshold value for binary conversion (0-255). Default 254.
+        adaptive: Whether to use adaptive thresholding instead of fixed threshold. Default False.
+        min_area: Minimum area in pixels for a component to be considered (connected method only). Default 20.
+        max_components: Maximum number of components before warning. Default 1000.
+        morphology: Whether to apply morphological operations to separate touching shapes (connected method only). Default True.
+        recombine: Whether to recombine nearby rectangles that are nearly parallel. Default False.
+        recombine_gap: Maximum gap in pixels for recombination (horizontal/vertical). Default 2.
+        recombine_align: Maximum alignment difference in pixels for recombination. Default 3.
 
     Returns:
         List of tuples: (subimage, offset_x, offset_y) where offsets are relative to original image
     """
-    try:
-        import cv2
-        import numpy as np
-    except ImportError:
+    if cv2 is None or np is None:
         raise ImportError("OpenCV and NumPy are required for image splitting")
+
+    # Handle alpha channels explicitly
+    if image.mode == 'RGBA':
+        # For RGBA images, convert to RGB first, then to grayscale
+        # This preserves the visual appearance while discarding transparency
+        image = image.convert('RGB')
+    elif image.mode == 'LA':
+        # For LA images, convert to L (luminance only)
+        image = image.convert('L')
 
     # Convert to grayscale for processing
     if image.mode not in ('L', 'P'):
@@ -483,14 +502,173 @@ def split_image_into_subimages(image):
     else:
         gray = image
 
+    return _split_image_connected(image, gray, threshold, adaptive, min_area, max_components, morphology, recombine, recombine_gap, recombine_align, channel)
+
+
+def _recombine_rectangles(subimages, recombine_gap=2, recombine_align=3, channel=None):
+    """
+    Recombine nearby rectangles that are nearly parallel and close together.
+
+    Args:
+        subimages: List of tuples (image, x, y) where x,y are offsets
+        recombine_gap: Maximum gap in pixels for recombination (horizontal/vertical). Default 2.
+        recombine_align: Maximum alignment difference in pixels for recombination. Default 3.
+        channel: Optional channel for logging
+
+    Returns:
+        List of tuples (image, x, y) with merged rectangles
+    """
+    if len(subimages) <= 1:
+        return subimages
+
+    # Extract bounding boxes and areas
+    rectangles = []
+    for img, x, y in subimages:
+        w, h = img.size
+        area = w * h
+        rectangles.append({
+            'x': x, 'y': y, 'w': w, 'h': h, 'area': area,
+            'x2': x + w, 'y2': y + h, 'aspect': w / h if h > 0 else 0,
+            'img': img
+        })
+
+    # Find rectangles to merge
+    merged = []
+    used = set()
+
+    for i, rect1 in enumerate(rectangles):
+        if i in used:
+            continue
+
+        current_group = [rect1]
+        used.add(i)
+
+        # Check all other rectangles for merging
+        for j, rect2 in enumerate(rectangles):
+            if j in used or j == i:
+                continue
+
+            # Check proximity and alignment
+            can_merge = False
+
+            # Horizontal adjacency (rect2 to the right of rect1)
+            if rect1['x2'] <= rect2['x'] and rect2['x'] - rect1['x2'] <= recombine_gap:
+                # Check upper and lower edge alignment
+                upper_align = abs(rect1['y'] - rect2['y']) <= recombine_align
+                lower_align = abs(rect1['y2'] - rect2['y2']) <= recombine_align
+                if upper_align and lower_align:
+                    can_merge = True
+
+            # Horizontal adjacency (rect2 to the left of rect1)
+            elif rect2['x2'] <= rect1['x'] and rect1['x'] - rect2['x2'] <= recombine_gap:
+                # Check upper and lower edge alignment
+                upper_align = abs(rect1['y'] - rect2['y']) <= recombine_align
+                lower_align = abs(rect1['y2'] - rect2['y2']) <= recombine_align
+                if upper_align and lower_align:
+                    can_merge = True
+
+            # Vertical adjacency (rect2 below rect1)
+            elif rect1['y2'] <= rect2['y'] and rect2['y'] - rect1['y2'] <= recombine_gap:
+                # Check left and right edge alignment
+                left_align = abs(rect1['x'] - rect2['x']) <= recombine_align
+                right_align = abs(rect1['x2'] - rect2['x2']) <= recombine_align
+                if left_align and right_align:
+                    can_merge = True
+
+            # Vertical adjacency (rect2 above rect1)
+            elif rect2['y2'] <= rect1['y'] and rect1['y'] - rect2['y2'] <= recombine_gap:
+                # Check left and right edge alignment
+                left_align = abs(rect1['x'] - rect2['x']) <= recombine_align
+                right_align = abs(rect1['x2'] - rect2['x2']) <= recombine_align
+                if left_align and right_align:
+                    can_merge = True
+
+            if can_merge:
+                # Check size similarity (optional - avoid merging very different sizes)
+                size_ratio = min(rect1['area'], rect2['area']) / max(rect1['area'], rect2['area'])
+                if size_ratio < 0.1:  # One is much smaller than the other
+                    continue
+
+                # Merge these rectangles
+                current_group.append(rect2)
+                used.add(j)
+
+        # Create merged rectangle for the group
+        if len(current_group) == 1:
+            # Single rectangle, no merge needed
+            merged.append((rect1['img'], rect1['x'], rect1['y']))
+        else:
+            # Merge multiple rectangles
+            min_x = min(r['x'] for r in current_group)
+            min_y = min(r['y'] for r in current_group)
+            max_x = max(r['x2'] for r in current_group)
+            max_y = max(r['y2'] for r in current_group)
+
+            # Find the original image that contains all these rectangles
+            # We'll use the first image as reference and expand it
+            merged_width = max_x - min_x
+            merged_height = max_y - min_y
+
+            # Create a new image large enough for all rectangles
+            from PIL import Image
+            if current_group[0]['img'].mode == 'L':
+                merged_img = Image.new(current_group[0]['img'].mode, (merged_width, merged_height), 255)
+            else:
+                merged_img = Image.new(current_group[0]['img'].mode, (merged_width, merged_height), (255, 255, 255))
+
+            # Paste all rectangles into the merged image
+            for rect in current_group:
+                # Calculate position in merged image
+                paste_x = rect['x'] - min_x
+                paste_y = rect['y'] - min_y
+                merged_img.paste(rect['img'], (paste_x, paste_y))
+
+            merged.append((merged_img, min_x, min_y))
+
+            if channel:
+                channel(f"Merged {len(current_group)} rectangles into one")
+
+    return merged
+
+
+def _split_image_connected(image, gray, threshold, adaptive, min_area, max_components, morphology, recombine, recombine_gap, recombine_align, channel):
+    """Split image using connected components analysis."""
     # Convert to numpy array for OpenCV
     img_array = np.array(gray)
 
-    # Threshold to get binary image (white = 255, non-white = 0)
-    _, binary = cv2.threshold(img_array, 254, 255, cv2.THRESH_BINARY_INV)
+    # Apply thresholding
+    if adaptive:
+        # Use adaptive thresholding for better accuracy with varying backgrounds
+        binary = cv2.adaptiveThreshold(
+            img_array,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            11,  # blockSize
+            2    # C
+        )
+    else:
+        # Threshold to get binary image (white = 255, non-white = 0)
+        _, binary = cv2.threshold(img_array, threshold, 255, cv2.THRESH_BINARY_INV)
+
+    # Apply morphological operations to clean up the binary image
+    if morphology:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
+        # Skip closing to avoid connecting shapes that should remain separate
+        # binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
 
     # Find connected components
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=4)
+
+    # Check for excessive components
+    if num_labels > max_components:
+        if channel:
+            channel(
+                f"Detected {num_labels} connected components.\n" +
+                "This may cause performance issues. Consider preprocessing the image or adjusting the threshold.\n" +
+                f"Current settings: threshold={threshold}, adaptive={adaptive}, min_area={min_area}, max_components={max_components}"
+            )
 
     subimages = []
 
@@ -498,15 +676,24 @@ def split_image_into_subimages(image):
         # Get bounding box for this component
         x, y, w, h, area = stats[i]
 
-        if area == 0:  # Skip empty components
+        # Filter out small/noisy components
+        if area < min_area:
             continue
 
         # Crop the original image to this bounding box
         # PIL crop expects (left, upper, right, lower)
         cropped = image.crop((x, y, x + w, y + h))
 
+        # Preserve image metadata
+        if hasattr(image, 'info') and image.info:
+            cropped.info = image.info.copy()
+
         # Store the subimage with its offset from the original image
         subimages.append((cropped, x, y))
+
+    # Recombine nearby rectangles if requested
+    if recombine and len(subimages) > 1:
+        subimages = _recombine_rectangles(subimages, recombine_gap, recombine_align, channel)
 
     return subimages
 
@@ -1706,83 +1893,134 @@ def plugin(kernel, lifecycle=None):
 
         return "image", data
 
+    @context.console_option(
+        "threshold",
+        "t",
+        type=int,
+        help=_("Threshold value for binary conversion (0-255)"),
+        default=254,
+    )
+    @context.console_option(
+        "adaptive",
+        "a",
+        type=bool,
+        help=_("Use adaptive thresholding instead of fixed threshold"),
+        action="store_true",
+    )
+    @context.console_option(
+        "min_area",
+        "m",
+        type=int,
+        help=_("Minimum area in pixels for a component to be considered"),
+        default=20,
+    )
+    @context.console_option(
+        "morphology",
+        "o",
+        type=bool,
+        help=_("Apply morphological operations to separate touching shapes"),
+        action="store_true",
+        default=False,
+    )
+    @context.console_option(
+        "recombine",
+        "r",
+        type=bool,
+        help=_("Recombine nearby rectangles that are nearly parallel"),
+        action="store_true",
+    )
+    @context.console_option(
+        "recombine_gap",
+        "g",
+        type=int,
+        help=_("Maximum gap in pixels for recombination (horizontal/vertical)"),
+        default=2,
+    )
+    @context.console_option(
+        "recombine_align",
+        "h",
+        type=int,
+        help=_("Maximum alignment difference in pixels for recombination"),
+        default=3,
+    )
     @context.console_command(
         "split_subimages",
-        help=_("Split image into rectangular subimages of connected non-white regions"),
+        help=_("Split image into rectangular subimages of connected non-white regions (not lossless)"),
         input_type=(None, "image"),
         output_type="image",
     )
-    def image_split_subimages(command, channel, _, data=None, **kwargs):
+    def image_split_subimages(command, channel, _, data=None, threshold=254, adaptive=False, min_area=20, morphology=False, recombine=False, recombine_gap=2, recombine_align=3, **kwargs):
+        if cv2 is None or np is None:
+            channel(_("OpenCV and NumPy are required for image splitting"))
+            return
+
+        # Collect nodes
         if data is None:
-            all_elements = list(context.elements.flat())
-            channel(f"Found {len(all_elements)} total elements")
-            for i, e in enumerate(all_elements):
-                channel(f"Element {i}: type={e.type}, label={getattr(e, 'label', 'no label')}")
-            data = list(
-                e for e in all_elements if e.type == "elem image"
-            )
-        if data is None or len(data) == 0:
+            data = [
+                e for e in context.elements.flat()
+                if e.type == "elem image"
+            ]
+        if not data:
             channel(_("No images found"))
             return
+        channel(f"Parameters: threshold={threshold}, adaptive={adaptive}, min_area={min_area}, morphology={morphology}, recombine={recombine}, recombine_gap={recombine_gap}, recombine_align={recombine_align}")
         elements = context.elements
         data_out = []
-        # Translation hint _("Split images")
+
+        # Helper functions
+        def _validate_image_node(node):
+            if node.lock:
+                return False, _("Can't modify a locked image: {name}").format(name=str(node))
+            if not hasattr(node, "image"):
+                return False, _("Node is not an image: {name}").format(name=node.type)
+            return True, None
+
+        def _create_subnodes(parent, inode, subimages):
+            new_nodes = []
+            for img, ox, oy in subimages:
+                # Create a new matrix with translation for the subimage position
+                new_matrix = Matrix(inode.matrix)
+                # print (f"Translating subimage by ({ox}, {oy})")
+                new_matrix.pre_translate(ox, oy)
+
+                # Add the subimage as a new node
+                sub_node = parent.add(
+                    image=img,
+                    matrix=new_matrix,
+                    type="elem image"
+                )
+                new_nodes.append(sub_node)
+            return new_nodes
+        # Translation hint: _("Split images")
         with elements.undoscope("Split images"):
             for inode in data:
-                if not hasattr(inode, "image"):
-                    channel(
-                        _("Node is not an image: {name}").format(name=f"{inode.type}")
-                    )
-                    continue
-                if inode.lock:
-                    channel(
-                        _("Can't modify a locked image: {name}").format(name=str(inode))
-                    )
+                ok, msg = _validate_image_node(inode)
+                if not ok:
+                    channel(msg)
                     continue
 
                 try:
-                    # Split the image into subimages
-                    subimages = split_image_into_subimages(inode.image)
-
-                    if not subimages:
-                        channel(_("No non-white regions found in image: {name}").format(name=str(inode)))
-                        continue
-
-                    channel(_("Splitting {name} into {count} subimages").format(
-                        name=str(inode), count=len(subimages)
-                    ))
-
-                    parent = inode.parent
-
-                    # Remove the original image
-                    inode.remove_node()
-
-                    # Create new image nodes for each subimage
-                    for subimage, offset_x, offset_y in subimages:
-                        # Create a new matrix with translation for the subimage position
-                        new_matrix = Matrix(inode.matrix)
-                        new_matrix.pre_translate(offset_x, offset_y)
-
-                        # Add the subimage as a new node
-                        sub_node = parent.add(
-                            image=subimage,
-                            matrix=new_matrix,
-                            type="elem image"
-                        )
-                        data_out.append(sub_node)
-
-                    # Classify the new nodes
-                    if elements.classify_new and data_out:
-                        elements.classify(data_out)
-
-                except ImportError as e:
-                    channel(_("Error: {error}. OpenCV and NumPy are required.").format(error=str(e)))
-                    continue
+                    subimgs = split_image_into_subimages(inode.image, threshold=threshold, adaptive=adaptive, min_area=min_area, morphology=morphology, recombine=recombine, recombine_gap=recombine_gap, recombine_align=recombine_align, channel=channel)
                 except Exception as e:
                     channel(_("Error splitting image {name}: {error}").format(
                         name=str(inode), error=str(e)
                     ))
                     continue
+
+                if not subimgs:
+                    channel(_("No non-white regions found in {name}").format(name=str(inode)))
+                    continue
+
+                channel(_("Splitting {name} into {count} subimages").format(
+                    name=str(inode), count=len(subimgs)
+                ))
+
+                parent = inode.parent
+                inode.remove_node()
+                data_out.extend(_create_subnodes(parent, inode, subimgs))
+
+            if elements.classify_new and data_out:
+                elements.classify(data_out)
 
         context.signal("refresh_scene", "Scene")
         return "image", data_out

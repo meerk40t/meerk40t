@@ -4829,12 +4829,12 @@ def init_tree(kernel):
     @tree_operation(
         _("Split image into subimages"),
         node_type="elem image",
-        help=_("Split image into rectangular subimages of connected non-white regions"),
+        help=_("Split image into rectangular subimages of connected non-white regions (not lossless)"),
         grouping="70_ELEM_IMAGES",
     )
     def image_split_subimages(node, **kwargs):
         # Language hint "Split image"
-        self("split_subimages\n")
+        self("split_subimages --morphology\n")
 
     @tree_submenu(_("Image"))
     ## @tree_separator_before()
