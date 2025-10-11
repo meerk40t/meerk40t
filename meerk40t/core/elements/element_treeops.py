@@ -4824,6 +4824,18 @@ def init_tree(kernel):
         with self.undoscope("Split image"):
             self("image innerwhite -w -o -m 2\n")
 
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Image"))
+    @tree_operation(
+        _("Split image into subimages"),
+        node_type="elem image",
+        help=_("Split image into rectangular subimages of connected non-white regions"),
+        grouping="70_ELEM_IMAGES",
+    )
+    def image_split_subimages(node, **kwargs):
+        # Language hint "Split image"
+        self("split_subimages\n")
+
     @tree_submenu(_("Image"))
     ## @tree_separator_before()
     @tree_operation(

@@ -461,6 +461,56 @@ def img_to_rectangles(
     return geom_list
 
 
+def split_image_into_subimages(image):
+    """
+    Split a PIL image into multiple rectangular subimages containing individual connected non-white regions.
+
+    Args:
+        image: PIL Image object
+
+    Returns:
+        List of tuples: (subimage, offset_x, offset_y) where offsets are relative to original image
+    """
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:
+        raise ImportError("OpenCV and NumPy are required for image splitting")
+
+    # Convert to grayscale for processing
+    if image.mode not in ('L', 'P'):
+        gray = image.convert('L')
+    else:
+        gray = image
+
+    # Convert to numpy array for OpenCV
+    img_array = np.array(gray)
+
+    # Threshold to get binary image (white = 255, non-white = 0)
+    _, binary = cv2.threshold(img_array, 254, 255, cv2.THRESH_BINARY_INV)
+
+    # Find connected components
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
+
+    subimages = []
+
+    for i in range(1, num_labels):  # Skip label 0 (background)
+        # Get bounding box for this component
+        x, y, w, h, area = stats[i]
+
+        if area == 0:  # Skip empty components
+            continue
+
+        # Crop the original image to this bounding box
+        # PIL crop expects (left, upper, right, lower)
+        cropped = image.crop((x, y, x + w, y + h))
+
+        # Store the subimage with its offset from the original image
+        subimages.append((cropped, x, y))
+
+    return subimages
+
+
 def plugin(kernel, lifecycle=None):
     """
     ImageTools mostly provides the image functionality to the console. It should be loaded in the root context.
@@ -1655,6 +1705,87 @@ def plugin(kernel, lifecycle=None):
             return "image", [node1, node2]
 
         return "image", data
+
+    @context.console_command(
+        "split_subimages",
+        help=_("Split image into rectangular subimages of connected non-white regions"),
+        input_type=(None, "image"),
+        output_type="image",
+    )
+    def image_split_subimages(command, channel, _, data=None, **kwargs):
+        if data is None:
+            all_elements = list(context.elements.flat())
+            channel(f"Found {len(all_elements)} total elements")
+            for i, e in enumerate(all_elements):
+                channel(f"Element {i}: type={e.type}, label={getattr(e, 'label', 'no label')}")
+            data = list(
+                e for e in all_elements if e.type == "elem image"
+            )
+        if data is None or len(data) == 0:
+            channel(_("No images found"))
+            return
+        elements = context.elements
+        data_out = []
+        # Translation hint _("Split images")
+        with elements.undoscope("Split images"):
+            for inode in data:
+                if not hasattr(inode, "image"):
+                    channel(
+                        _("Node is not an image: {name}").format(name=f"{inode.type}")
+                    )
+                    continue
+                if inode.lock:
+                    channel(
+                        _("Can't modify a locked image: {name}").format(name=str(inode))
+                    )
+                    continue
+
+                try:
+                    # Split the image into subimages
+                    subimages = split_image_into_subimages(inode.image)
+
+                    if not subimages:
+                        channel(_("No non-white regions found in image: {name}").format(name=str(inode)))
+                        continue
+
+                    channel(_("Splitting {name} into {count} subimages").format(
+                        name=str(inode), count=len(subimages)
+                    ))
+
+                    parent = inode.parent
+
+                    # Remove the original image
+                    inode.remove_node()
+
+                    # Create new image nodes for each subimage
+                    for subimage, offset_x, offset_y in subimages:
+                        # Create a new matrix with translation for the subimage position
+                        new_matrix = Matrix(inode.matrix)
+                        new_matrix.pre_translate(offset_x, offset_y)
+
+                        # Add the subimage as a new node
+                        sub_node = parent.add(
+                            image=subimage,
+                            matrix=new_matrix,
+                            type="elem image"
+                        )
+                        data_out.append(sub_node)
+
+                    # Classify the new nodes
+                    if elements.classify_new and data_out:
+                        elements.classify(data_out)
+
+                except ImportError as e:
+                    channel(_("Error: {error}. OpenCV and NumPy are required.").format(error=str(e)))
+                    continue
+                except Exception as e:
+                    channel(_("Error splitting image {name}: {error}").format(
+                        name=str(inode), error=str(e)
+                    ))
+                    continue
+
+        context.signal("refresh_scene", "Scene")
+        return "image", data_out
 
     @context.console_option(
         "remain",
