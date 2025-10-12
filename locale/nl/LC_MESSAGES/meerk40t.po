@@ -24252,3 +24252,110 @@ msgid ""
 msgstr ""
 "Auto-Selecteren: Selecteert automatisch het beste algoritme gebaseerd op "
 "patroon complexiteit"
+
+#: meerk40t/core/cutplan.py:838 meerk40t/core/cutplan.py:845
+msgid "Basic cutcode sequencing"
+msgstr "Basis snijcode volgorde"
+
+#: meerk40t/core/elements/elements.py:1766
+msgid "Default operations for {dev}"
+msgstr "Standaard bewerkingen voor {dev}"
+
+#: meerk40t/core/elements/elements.py:1774
+msgid "Default operations"
+msgstr "Standaard bewerkingen"
+
+#: meerk40t/core/elements/element_treeops.py:4830
+msgid "Split image into subimages"
+msgstr "Afbeelding splitsen in subafbeeldingen"
+
+#: meerk40t/core/elements/element_treeops.py:4832
+#: meerk40t/image/imagetools.py:1948
+msgid ""
+"Split image into rectangular subimages of connected non-white regions (not "
+"lossless)"
+msgstr ""
+"Afbeelding splitsen in rechthoekige subafbeeldingen van verbonden niet-witte"
+" gebieden (niet verliesvrij)"
+
+#: meerk40t/grbl/gui/grblcontroller.py:44
+msgid "Title:"
+msgstr "Titel:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:51
+msgid "Content:"
+msgstr "Inhoud:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:146
+msgid "Device is in error state."
+msgstr "Apparaat is in fouttoestand."
+
+#: meerk40t/grbl/gui/grblcontroller.py:373
+msgid "Edit Macro {index}"
+msgstr "Macro {index} bewerken"
+
+#: meerk40t/gui/thread_info.py:81
+msgid "Auto-show on new task"
+msgstr "Automatisch tonen bij nieuwe taak"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:66
+msgid "Origin: {title}"
+msgstr "Oorsprong: {title}"
+
+#: meerk40t/image/imagetools.py:1900
+msgid "Threshold value for binary conversion (0-255)"
+msgstr "Drempelwaarde voor binaire conversie (0-255)"
+
+#: meerk40t/image/imagetools.py:1907
+msgid "Use adaptive thresholding instead of fixed threshold"
+msgstr "Gebruik adaptieve drempelwaarde in plaats van vaste drempelwaarde"
+
+#: meerk40t/image/imagetools.py:1914
+msgid "Minimum area in pixels for a component to be considered"
+msgstr ""
+"Minimale oppervlakte in pixels voor een component om te worden overwogen"
+
+#: meerk40t/image/imagetools.py:1921
+msgid "Apply morphological operations to separate touching shapes"
+msgstr ""
+"Morfologische bewerkingen toepassen om aangrenzende vormen te scheiden"
+
+#: meerk40t/image/imagetools.py:1929
+msgid "Recombine nearby rectangles that are nearly parallel"
+msgstr "Hergegroepeer nabijgelegen rechthoeken die bijna parallel zijn"
+
+#: meerk40t/image/imagetools.py:1936
+msgid "Maximum gap in pixels for recombination (horizontal/vertical)"
+msgstr "Maximale afstand in pixels voor hergroepering (horizontaal/verticaal)"
+
+#: meerk40t/image/imagetools.py:1943
+msgid "Maximum alignment difference in pixels for recombination"
+msgstr "Maximale uitlijningsverschil in pixels voor hergroepering"
+
+#: meerk40t/image/imagetools.py:1954
+msgid "OpenCV and NumPy are required for image splitting"
+msgstr "OpenCV en NumPy zijn vereist voor het splitsen van afbeeldingen"
+
+#: meerk40t/image/imagetools.py:1964
+msgid "No images found"
+msgstr "Geen afbeeldingen gevonden"
+
+#: meerk40t/image/imagetools.py:1975
+msgid "Node is not an image: {name}"
+msgstr "Knooppunt is geen afbeelding: {name}"
+
+#: meerk40t/image/imagetools.py:1994
+msgid "Split images"
+msgstr "Afbeeldingen splitsen"
+
+#: meerk40t/image/imagetools.py:2005
+msgid "Error splitting image {name}: {error}"
+msgstr "Fout bij splitsen afbeelding {name}: {error}"
+
+#: meerk40t/image/imagetools.py:2011
+msgid "No non-white regions found in {name}"
+msgstr "Geen niet-witte gebieden gevonden in {name}"
+
+#: meerk40t/image/imagetools.py:2014
+msgid "Splitting {name} into {count} subimages"
+msgstr "{name} splitsen in {count} subafbeeldingen"

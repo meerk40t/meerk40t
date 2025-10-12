@@ -23438,3 +23438,106 @@ msgid ""
 "Auto-Select: Automatically chooses best algorithm based on pattern "
 "complexity"
 msgstr "自動選択: パターンの複雑さに基づいて最適なアルゴリズムを自動的に選択"
+
+#: meerk40t/core/cutplan.py:838 meerk40t/core/cutplan.py:845
+msgid "Basic cutcode sequencing"
+msgstr "基本的なカットコードのシーケンシング"
+
+#: meerk40t/core/elements/elements.py:1766
+msgid "Default operations for {dev}"
+msgstr "{dev} のデフォルト操作"
+
+#: meerk40t/core/elements/elements.py:1774
+msgid "Default operations"
+msgstr "デフォルト操作"
+
+#: meerk40t/core/elements/element_treeops.py:4830
+msgid "Split image into subimages"
+msgstr "画像をサブイメージに分割"
+
+#: meerk40t/core/elements/element_treeops.py:4832
+#: meerk40t/image/imagetools.py:1948
+msgid ""
+"Split image into rectangular subimages of connected non-white regions (not "
+"lossless)"
+msgstr "接続された非白色領域の長方形サブイメージに画像を分割（非可逆）"
+
+#: meerk40t/grbl/gui/grblcontroller.py:44
+msgid "Title:"
+msgstr "タイトル:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:51
+msgid "Content:"
+msgstr "内容:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:146
+msgid "Device is in error state."
+msgstr "デバイスはエラー状態です。"
+
+#: meerk40t/grbl/gui/grblcontroller.py:373
+msgid "Edit Macro {index}"
+msgstr "マクロ {index} を編集"
+
+#: meerk40t/gui/thread_info.py:81
+msgid "Auto-show on new task"
+msgstr "新しいタスクで自動表示"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:66
+msgid "Origin: {title}"
+msgstr "原点: {title}"
+
+#: meerk40t/image/imagetools.py:1900
+msgid "Threshold value for binary conversion (0-255)"
+msgstr "バイナリ変換のしきい値 (0-255)"
+
+#: meerk40t/image/imagetools.py:1907
+msgid "Use adaptive thresholding instead of fixed threshold"
+msgstr "固定しきい値の代わりに適応しきい値を使用"
+
+#: meerk40t/image/imagetools.py:1914
+msgid "Minimum area in pixels for a component to be considered"
+msgstr "考慮されるコンポーネントの最小面積（ピクセル単位）"
+
+#: meerk40t/image/imagetools.py:1921
+msgid "Apply morphological operations to separate touching shapes"
+msgstr "接触する形状を分離するための形態学的操作を適用"
+
+#: meerk40t/image/imagetools.py:1929
+msgid "Recombine nearby rectangles that are nearly parallel"
+msgstr "ほぼ平行な近くの長方形を再結合"
+
+#: meerk40t/image/imagetools.py:1936
+msgid "Maximum gap in pixels for recombination (horizontal/vertical)"
+msgstr "再結合のための最大ギャップ（ピクセル単位）（水平/垂直）"
+
+#: meerk40t/image/imagetools.py:1943
+msgid "Maximum alignment difference in pixels for recombination"
+msgstr "再結合のための最大整列差（ピクセル単位）"
+
+#: meerk40t/image/imagetools.py:1954
+msgid "OpenCV and NumPy are required for image splitting"
+msgstr "画像分割には OpenCV と NumPy が必要です"
+
+#: meerk40t/image/imagetools.py:1964
+msgid "No images found"
+msgstr "画像が見つかりません"
+
+#: meerk40t/image/imagetools.py:1975
+msgid "Node is not an image: {name}"
+msgstr "ノードは画像ではありません: {name}"
+
+#: meerk40t/image/imagetools.py:1994
+msgid "Split images"
+msgstr "画像を分割"
+
+#: meerk40t/image/imagetools.py:2005
+msgid "Error splitting image {name}: {error}"
+msgstr "画像 {name} の分割エラー: {error}"
+
+#: meerk40t/image/imagetools.py:2011
+msgid "No non-white regions found in {name}"
+msgstr "{name} に非白色領域が見つかりません"
+
+#: meerk40t/image/imagetools.py:2014
+msgid "Splitting {name} into {count} subimages"
+msgstr "{name} を {count} 個のサブイメージに分割"

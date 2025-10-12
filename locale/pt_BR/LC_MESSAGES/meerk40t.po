@@ -24385,3 +24385,108 @@ msgid ""
 msgstr ""
 "Seleção Automática: Escolhe automaticamente o melhor algoritmo baseado na "
 "complexidade do padrão"
+
+#: meerk40t/core/cutplan.py:838 meerk40t/core/cutplan.py:845
+msgid "Basic cutcode sequencing"
+msgstr "Sequenciamento básico de código de corte"
+
+#: meerk40t/core/elements/elements.py:1766
+msgid "Default operations for {dev}"
+msgstr "Operações padrão para {dev}"
+
+#: meerk40t/core/elements/elements.py:1774
+msgid "Default operations"
+msgstr "Operações padrão"
+
+#: meerk40t/core/elements/element_treeops.py:4830
+msgid "Split image into subimages"
+msgstr "Dividir imagem em subimagens"
+
+#: meerk40t/core/elements/element_treeops.py:4832
+#: meerk40t/image/imagetools.py:1948
+msgid ""
+"Split image into rectangular subimages of connected non-white regions (not "
+"lossless)"
+msgstr ""
+"Dividir imagem em subimagens retangulares de regiões conectadas não brancas "
+"(não sem perdas)"
+
+#: meerk40t/grbl/gui/grblcontroller.py:44
+msgid "Title:"
+msgstr "Título:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:51
+msgid "Content:"
+msgstr "Conteúdo:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:146
+msgid "Device is in error state."
+msgstr "O dispositivo está em estado de erro."
+
+#: meerk40t/grbl/gui/grblcontroller.py:373
+msgid "Edit Macro {index}"
+msgstr "Editar Macro {index}"
+
+#: meerk40t/gui/thread_info.py:81
+msgid "Auto-show on new task"
+msgstr "Mostrar automaticamente em nova tarefa"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:66
+msgid "Origin: {title}"
+msgstr "Origem: {title}"
+
+#: meerk40t/image/imagetools.py:1900
+msgid "Threshold value for binary conversion (0-255)"
+msgstr "Valor de limiar para conversão binária (0-255)"
+
+#: meerk40t/image/imagetools.py:1907
+msgid "Use adaptive thresholding instead of fixed threshold"
+msgstr "Usar limiar adaptativo em vez de limiar fixo"
+
+#: meerk40t/image/imagetools.py:1914
+msgid "Minimum area in pixels for a component to be considered"
+msgstr "Área mínima em pixels para um componente ser considerado"
+
+#: meerk40t/image/imagetools.py:1921
+msgid "Apply morphological operations to separate touching shapes"
+msgstr "Aplicar operações morfológicas para separar formas tocantes"
+
+#: meerk40t/image/imagetools.py:1929
+msgid "Recombine nearby rectangles that are nearly parallel"
+msgstr "Recombinação de retângulos próximos que são quase paralelos"
+
+#: meerk40t/image/imagetools.py:1936
+msgid "Maximum gap in pixels for recombination (horizontal/vertical)"
+msgstr "Lacuna máxima em pixels para recombinação (horizontal/vertical)"
+
+#: meerk40t/image/imagetools.py:1943
+msgid "Maximum alignment difference in pixels for recombination"
+msgstr "Diferença máxima de alinhamento em pixels para recombinação"
+
+#: meerk40t/image/imagetools.py:1954
+msgid "OpenCV and NumPy are required for image splitting"
+msgstr "OpenCV e NumPy são necessários para divisão de imagem"
+
+#: meerk40t/image/imagetools.py:1964
+msgid "No images found"
+msgstr "Nenhuma imagem encontrada"
+
+#: meerk40t/image/imagetools.py:1975
+msgid "Node is not an image: {name}"
+msgstr "O nó não é uma imagem: {name}"
+
+#: meerk40t/image/imagetools.py:1994
+msgid "Split images"
+msgstr "Dividir imagens"
+
+#: meerk40t/image/imagetools.py:2005
+msgid "Error splitting image {name}: {error}"
+msgstr "Erro ao dividir imagem {name}: {error}"
+
+#: meerk40t/image/imagetools.py:2011
+msgid "No non-white regions found in {name}"
+msgstr "Nenhuma região não branca encontrada em {name}"
+
+#: meerk40t/image/imagetools.py:2014
+msgid "Splitting {name} into {count} subimages"
+msgstr "Dividindo {name} em {count} subimagens"

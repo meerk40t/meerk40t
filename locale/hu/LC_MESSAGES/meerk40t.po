@@ -24365,3 +24365,109 @@ msgid ""
 msgstr ""
 "Automatikus Kiválasztás: Automatikusan választja ki a legjobb algoritmust a "
 "minta összetettsége alapján"
+
+#: meerk40t/core/cutplan.py:838 meerk40t/core/cutplan.py:845
+msgid "Basic cutcode sequencing"
+msgstr "Alapvető vágókód sorrendezés"
+
+#: meerk40t/core/elements/elements.py:1766
+msgid "Default operations for {dev}"
+msgstr "Alapértelmezett műveletek a {dev} számára"
+
+#: meerk40t/core/elements/elements.py:1774
+msgid "Default operations"
+msgstr "Alapértelmezett műveletek"
+
+#: meerk40t/core/elements/element_treeops.py:4830
+msgid "Split image into subimages"
+msgstr "Kép felosztása alképekre"
+
+#: meerk40t/core/elements/element_treeops.py:4832
+#: meerk40t/image/imagetools.py:1948
+msgid ""
+"Split image into rectangular subimages of connected non-white regions (not "
+"lossless)"
+msgstr ""
+"Kép felosztása téglalap alakú alképekre a csatlakoztatott nem fehér "
+"régiókból (nem veszteségmentes)"
+
+#: meerk40t/grbl/gui/grblcontroller.py:44
+msgid "Title:"
+msgstr "Cím:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:51
+msgid "Content:"
+msgstr "Tartalom:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:146
+msgid "Device is in error state."
+msgstr "Az eszköz hibás állapotban van."
+
+#: meerk40t/grbl/gui/grblcontroller.py:373
+msgid "Edit Macro {index}"
+msgstr "Makró szerkesztése {index}"
+
+#: meerk40t/gui/thread_info.py:81
+msgid "Auto-show on new task"
+msgstr "Automatikus megjelenítés új feladatnál"
+
+#: meerk40t/gui/statusbarwidgets/defaultoperations.py:66
+msgid "Origin: {title}"
+msgstr "Eredet: {title}"
+
+#: meerk40t/image/imagetools.py:1900
+msgid "Threshold value for binary conversion (0-255)"
+msgstr "Küszöbérték bináris konverzióhoz (0-255)"
+
+#: meerk40t/image/imagetools.py:1907
+msgid "Use adaptive thresholding instead of fixed threshold"
+msgstr "Adaptív küszöbölés használata fix küszöb helyett"
+
+#: meerk40t/image/imagetools.py:1914
+msgid "Minimum area in pixels for a component to be considered"
+msgstr "Minimális terület pixelben egy komponens figyelembevételéhez"
+
+#: meerk40t/image/imagetools.py:1921
+msgid "Apply morphological operations to separate touching shapes"
+msgstr ""
+"Morfológiai műveletek alkalmazása az érintkező alakzatok elválasztására"
+
+#: meerk40t/image/imagetools.py:1929
+msgid "Recombine nearby rectangles that are nearly parallel"
+msgstr "Közeli téglalapok újrakombinálása, amelyek majdnem párhuzamosak"
+
+#: meerk40t/image/imagetools.py:1936
+msgid "Maximum gap in pixels for recombination (horizontal/vertical)"
+msgstr "Maximális rés pixelben a rekombinációhoz (vízszintes/függőleges)"
+
+#: meerk40t/image/imagetools.py:1943
+msgid "Maximum alignment difference in pixels for recombination"
+msgstr "Maximális igazítási különbség pixelben a rekombinációhoz"
+
+#: meerk40t/image/imagetools.py:1954
+msgid "OpenCV and NumPy are required for image splitting"
+msgstr "OpenCV és NumPy szükséges a képfelosztáshoz"
+
+#: meerk40t/image/imagetools.py:1964
+msgid "No images found"
+msgstr "Nem találhatók képek"
+
+#: meerk40t/image/imagetools.py:1975
+msgid "Node is not an image: {name}"
+msgstr "A csomópont nem kép: {name}"
+
+#: meerk40t/image/imagetools.py:1994
+msgid "Split images"
+msgstr "Képek felosztása"
+
+#: meerk40t/image/imagetools.py:2005
+msgid "Error splitting image {name}: {error}"
+msgstr "Hiba a kép felosztásakor {name}: {error}"
+
+#: meerk40t/image/imagetools.py:2011
+msgid "No non-white regions found in {name}"
+msgstr "Nem fehér régiók nem találhatók a {name} fájlban"
+
+#: meerk40t/image/imagetools.py:2014
+msgid "Splitting {name} into {count} subimages"
+msgstr "{name} felosztása {count} alképre"

@@ -24349,3 +24349,84 @@ msgstr "Bei neuem Hintergrundtask zeigen"
 #: meerk40t/gui/statusbarwidgets/defaultoperations.py:66
 msgid "Origin: {title}"
 msgstr "Herkunft: {title}"
+
+#: meerk40t/core/elements/element_treeops.py:4830
+msgid "Split image into subimages"
+msgstr "Bild in Unterbilder aufteilen"
+
+#: meerk40t/core/elements/element_treeops.py:4832
+#: meerk40t/image/imagetools.py:1948
+msgid ""
+"Split image into rectangular subimages of connected non-white regions (not "
+"lossless)"
+msgstr ""
+"Bild in rechteckige Unterbilder verbundener nicht-weißer Regionen aufteilen "
+"(nicht verlustfrei)"
+
+#: meerk40t/grbl/gui/grblcontroller.py:44
+msgid "Title:"
+msgstr "Titel:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:51
+msgid "Content:"
+msgstr "Inhalt:"
+
+#: meerk40t/grbl/gui/grblcontroller.py:373
+msgid "Edit Macro {index}"
+msgstr "Makro {index} bearbeiten"
+
+#: meerk40t/image/imagetools.py:1900
+msgid "Threshold value for binary conversion (0-255)"
+msgstr "Schwellenwert für binäre Konvertierung (0-255)"
+
+#: meerk40t/image/imagetools.py:1907
+msgid "Use adaptive thresholding instead of fixed threshold"
+msgstr "Adaptiven Schwellenwert anstelle von festem Schwellenwert verwenden"
+
+#: meerk40t/image/imagetools.py:1914
+msgid "Minimum area in pixels for a component to be considered"
+msgstr "Mindestfläche in Pixeln für eine zu berücksichtigende Komponente"
+
+#: meerk40t/image/imagetools.py:1921
+msgid "Apply morphological operations to separate touching shapes"
+msgstr "Morphologische Operationen anwenden, um berührende Formen zu trennen"
+
+#: meerk40t/image/imagetools.py:1929
+msgid "Recombine nearby rectangles that are nearly parallel"
+msgstr "Nahe gelegene Rechtecke, die nahezu parallel sind, neu kombinieren"
+
+#: meerk40t/image/imagetools.py:1936
+msgid "Maximum gap in pixels for recombination (horizontal/vertical)"
+msgstr "Maximale Lücke in Pixeln für Rekombination (horizontal/vertikal)"
+
+#: meerk40t/image/imagetools.py:1943
+msgid "Maximum alignment difference in pixels for recombination"
+msgstr "Maximale Ausrichtungsdifferenz in Pixeln für Rekombination"
+
+#: meerk40t/image/imagetools.py:1954
+msgid "OpenCV and NumPy are required for image splitting"
+msgstr "OpenCV und NumPy sind für die Bildaufteilung erforderlich"
+
+#: meerk40t/image/imagetools.py:1964
+msgid "No images found"
+msgstr "Keine Bilder gefunden"
+
+#: meerk40t/image/imagetools.py:1975
+msgid "Node is not an image: {name}"
+msgstr "Knoten ist kein Bild: {name}"
+
+#: meerk40t/image/imagetools.py:1994
+msgid "Split images"
+msgstr "Bilder aufteilen"
+
+#: meerk40t/image/imagetools.py:2005
+msgid "Error splitting image {name}: {error}"
+msgstr "Fehler beim Aufteilen des Bildes {name}: {error}"
+
+#: meerk40t/image/imagetools.py:2011
+msgid "No non-white regions found in {name}"
+msgstr "Keine nicht-weißen Regionen in {name} gefunden"
+
+#: meerk40t/image/imagetools.py:2014
+msgid "Splitting {name} into {count} subimages"
+msgstr "{name} wird in {count} Unterbilder aufgeteilt"
