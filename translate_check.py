@@ -22,7 +22,7 @@ Arguments:
 
 Supported locales:
     de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
-    
+
 Some testcases:
  _("This is a test string.")
  _("Another test string with a newline.\nSee?")
@@ -36,14 +36,27 @@ import os
 from contextlib import suppress
 
 import polib
+
 try:
-    import googletrans
     import re
+
+    import googletrans
+
     GOOGLETRANS = True
 except ImportError:
     GOOGLETRANS = False
 
-IGNORED_DIRS = [".git", ".github", "venv", ".venv"]
+IGNORED_DIRS = [
+    ".git",
+    ".github",
+    "venv",
+    ".venv",
+    "tools",
+    "build",
+    "dist",
+    "__pycache__",
+    "docs",
+]
 LOCALE_LONG_NAMES = {
     "de": "German",
     "es": "Spanish",
@@ -79,11 +92,13 @@ def lf_coded(s: str) -> str:
     """
     if not s:
         return ""
-    return (s.replace("\\", "\\\\")  # Escape backslashes
-            .replace('"', '\\"')  # Escape double quotes
-            .replace("\t", "\\t")  # Escape tab
-            .replace("\n", "\\n")  # Escape newlines
-            .replace("\r", "\\r"))  # Escape newlines
+    return (
+        s.replace("\\", "\\\\")  # Escape backslashes
+        .replace('"', '\\"')  # Escape double quotes
+        .replace("\t", "\\t")  # Escape tab
+        .replace("\n", "\\n")  # Escape newlines
+        .replace("\r", "\\r")
+    )  # Escape newlines
 
 
 def unescape_string(s: str) -> str:
@@ -93,11 +108,13 @@ def unescape_string(s: str) -> str:
     """
     if not s:
         return ""
-    return (s.replace("\\\\", "\\")  # Unescape backslashes
-            .replace('\\"', '"')  # Unescape double quotes  
-            .replace("\\t", "\t")  # Unescape tab
-            .replace("\\n", "\n")  # Unescape newlines
-            .replace("\\r", "\r"))  # Unescape carriage returns
+    return (
+        s.replace("\\\\", "\\")  # Unescape backslashes
+        .replace('\\"', '"')  # Unescape double quotes
+        .replace("\\t", "\t")  # Unescape tab
+        .replace("\\n", "\n")  # Unescape newlines
+        .replace("\\r", "\r")
+    )  # Unescape carriage returns
 
 
 def read_source() -> tuple[list[str], list[str]]:
@@ -486,7 +503,7 @@ def detect_encoding(file_path: str) -> str:
 
         result = chardet.detect(open(file_path, "rb").read())
         return result["encoding"] if result and result.get("encoding") else "unknown"
-    
+
     try:
         with open(file_path, "rb") as f:
             raw_data = f.read()
@@ -496,6 +513,7 @@ def detect_encoding(file_path: str) -> str:
     except UnicodeDecodeError:
         # If it fails, return 'unknown' or another encoding if needed
         return "unknown"
+
 
 def fix_result_string(translated: str, original: str) -> str:
     """
@@ -519,8 +537,9 @@ def fix_result_string(translated: str, original: str) -> str:
         ):
             translated = translated.replace(translated_brace, original_brace)
     # There might be erroneous double escapes added, we remove them
-    translated = translated.replace('\\\\', '\\')
+    translated = translated.replace("\\\\", "\\")
     return translated
+
 
 def main():
     """
@@ -544,7 +563,10 @@ def main():
         "-c", "--check", action="store_true", help="Check encoding of .po files"
     )
     parser.add_argument(
-        "-a", "--auto", action="store_true", help="Try translation with Google Translate API (horrible results!)"
+        "-a",
+        "--auto",
+        action="store_true",
+        help="Try translation with Google Translate API (horrible results!)",
     )
     args = parser.parse_args()
 
@@ -616,9 +638,12 @@ def main():
                             entry.msgstr = fix_result_string(translated.text, id_string)
                             # print (f"{translated.src} -> {translated.dest}: '{translated.origin}' -> '{translated.text}' -> '{entry.msgstr}'")
                     polib_file.save(delta_po_file)
-                    print(f"Automatic translation for locale {loc} completed. PLEASE CHECK, PROBABLY INCORRECT!")
+                    print(
+                        f"Automatic translation for locale {loc} completed. PLEASE CHECK, PROBABLY INCORRECT!"
+                    )
                 except Exception as e:
                     print(f"Error during automatic translation for locale {loc}: {e}")
+
 
 if __name__ == "__main__":
     main()
