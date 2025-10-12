@@ -902,6 +902,11 @@ class Kernel(Settings):
                     channel(f"kernel-premain: {str(k)}")
                 if hasattr(k, "premain"):
                     k.premain()
+                    if self._shutdown:
+                        # Quit the program if shutdown was requested during premain
+                        # print (f"Shutdown requested during premain of {str(k)}: start was {KERNEL_LIFECYCLE_NAMES[start]}, end={KERNEL_LIFECYCLE_NAMES[end]}.")
+                        start = LIFECYCLE_KERNEL_PRESHUTDOWN
+                        end = LIFECYCLE_KERNEL_SHUTDOWN
         if start < LIFECYCLE_KERNEL_PREMAIN <= end:
             if channel:
                 channel("(plugin) kernel-premain")
@@ -1290,7 +1295,8 @@ class Kernel(Settings):
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
                     if line in ("quit", "shutdown", "exit", "restart"):
-                        self._quit = True
+                        print (f"Will shut down due to '{line}' command.")
+                        self._shutdown = True
                         if line == "restart":
                             self._restart = True
                         break
@@ -1299,7 +1305,6 @@ class Kernel(Settings):
                         break
 
             import asyncio
-
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
