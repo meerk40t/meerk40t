@@ -46,7 +46,7 @@ jobs:
     - name: Identify precise Python version
       id: full-python-version
       shell: bash
-      run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+      run: echo "version=$(python -c 'import sys; print("-".join(str(v) for v in sys.version_info))')" >> "$GITHUB_OUTPUT"
 
     - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
       uses: actions/cache@v4
@@ -118,9 +118,8 @@ jobs:
         name: Artifacts
         path: artifacts/
 
-    - name: "Set status"
-      run: |
-        if ${{ steps.pylint.outcome != 'success' || steps.flake8.outcome != 'success' || steps.black.outcome != 'success' || steps.isort.outcome != 'success' }}; then
-         exit 0
-         exit 1
-        fi
+#    - name: "Set status"
+#      run: |
+#        if ${{ steps.pylint.outcome != 'success' || steps.flake8.outcome != 'success' || steps.black.outcome != 'success' || steps.isort.outcome != 'success' }}; then
+#         exit 1
+#        fi
