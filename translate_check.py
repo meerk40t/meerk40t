@@ -34,6 +34,7 @@ Some testcases:
 import argparse
 import os
 from contextlib import suppress
+from typing import List, Tuple
 
 import polib
 
@@ -153,7 +154,7 @@ def unescape_string(s: str) -> str:
     )  # Unescape carriage returns
 
 
-def read_source() -> tuple[list[str], list[str]]:
+def read_source() -> Tuple[List[str], List[str]]:
     """
     Scans the source directory for translatable strings (_ ("...") ).
     Also reads additional strings from 'additional_strings.txt' if present.
@@ -307,7 +308,7 @@ def read_source() -> tuple[list[str], list[str]]:
     return id_strings_source, id_usage
 
 
-def read_po(locale: str) -> tuple[list[str], list[tuple[str, str]]]:
+def read_po(locale: str) -> Tuple[List[str], List[Tuple[str, str]]]:
     """
     Reads all .po files for the given locale and extracts msgid/msgstr pairs.
     Returns:
@@ -341,10 +342,10 @@ def read_po(locale: str) -> tuple[list[str], list[tuple[str, str]]]:
 
 def compare(
     locale: str,
-    id_strings: list[str],
-    id_strings_source: list[str],
-    id_usage: list[str],
-) -> tuple[str, str]:
+    id_strings: List[str],
+    id_strings_source: List[str],
+    id_usage: List[str],
+) -> Tuple[str, str]:
     """
     Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
     Preserves existing translations from previous delta files.
@@ -418,10 +419,10 @@ def compare(
 
 def validate_po(
     locale: str,
-    id_strings_source: list[str],
-    id_usage: list[str],
-    id_pairs: list[tuple[str, str]],
-) -> tuple[str, int, int, int, int]:
+    id_strings_source: List[str],
+    id_usage: List[str],
+    id_pairs: List[Tuple[str, str]],
+) -> Tuple[str, int, int, int, int]:
     """
     Validates .po files and returns (status, written, empty, duplicate, unused) tuple for table display.
     """
@@ -477,7 +478,7 @@ def validate_po(
     return "Validated", written, ignored_empty, ignored_duplicate, ignored_unused
 
 
-def check_encoding(locales: list[str]) -> list[tuple[str, str, str]]:
+def check_encoding(locales: List[str]) -> List[Tuple[str, str, str]]:
     """
     Checks all .po files for the given locales for invalid encoding.
     Returns a list of (locale, status, details) tuples for table display.
