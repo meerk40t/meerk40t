@@ -24647,3 +24647,7 @@ msgstr "No se encontraron regiones no blancas en {name}"
 #: meerk40t/image/imagetools.py:2014
 msgid "Splitting {name} into {count} subimages"
 msgstr "Dividiendo {name} en {count} subimágenes"
+
+#: meerk40t/core/elements/grid.py:382
+msgid "Copies"
+msgstr "Copias"

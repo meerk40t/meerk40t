@@ -23467,3 +23467,27 @@ msgstr "在 {name} 中未找到非白色区域"
 #: meerk40t/image/imagetools.py:2014
 msgid "Splitting {name} into {count} subimages"
 msgstr "将 {name} 分割为 {count} 个子图像"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1943
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1952
+msgid "  this will choose the nearest to be drawn segment,"
+msgstr "  这将选择最近要绘制的线段，"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1945
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1954
+msgid "  lasering these segments with vertical lines."
+msgstr "  用垂直线激光切割这些线段。"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1947
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1956
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1965
+msgid "  Usually much faster on an image with a lot of white pixels."
+msgstr "  在具有大量白色像素的图像上通常快得多。"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1961
+msgid "  with a majority of black pixels and then drawing the columns"
+msgstr "  具有大部分黑色像素，然后绘制列"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1963
+msgid "  where we have a majority."
+msgstr "  我们拥有多数的地方。"
