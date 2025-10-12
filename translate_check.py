@@ -37,6 +37,42 @@ from contextlib import suppress
 
 import polib
 
+# ANSI color codes for terminal output
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+BOLD = "\033[1m"
+ENDC = "\033[0m"
+
+
+def print_header(text: str) -> None:
+    """Print a formatted header."""
+    print(f"{BOLD}{'=' * 60}{ENDC}")
+    print(f"{BOLD}{text.center(60)}{ENDC}")
+    print(f"{BOLD}{'=' * 60}{ENDC}")
+
+
+def print_info(text: str) -> None:
+    """Print an info message."""
+    print(f"{BLUE}ℹ{ENDC} {text}")
+
+
+def print_success(text: str) -> None:
+    """Print a success message."""
+    print(f"{GREEN}✓{ENDC} {text}")
+
+
+def print_warning(text: str) -> None:
+    """Print a warning message."""
+    print(f"{YELLOW}⚠{ENDC} {text}")
+
+
+def print_error(text: str) -> None:
+    """Print an error message."""
+    print(f"{RED}✗{ENDC} {text}")
+
+
 try:
     import re
 
@@ -308,10 +344,11 @@ def compare(
     id_strings: list[str],
     id_strings_source: list[str],
     id_usage: list[str],
-) -> None:
+) -> tuple[str, str]:
     """
     Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
     Preserves existing translations from previous delta files.
+    Returns (status, details) tuple for table display.
     """
     counts = [0, 0, 0]
 
@@ -361,20 +398,22 @@ def compare(
                     outp.write('msgstr ""\n\n')
 
     if counts[2] == 0:
-        print(f"No changes for {locale}, no file created.")
+        print_info(f"No changes for {locale}, no file created.")
         if os.path.exists(delta_file):
             os.remove(delta_file)
+        return "No Changes", f"{counts[0]} strings checked"
     else:
         preserved_count = len(existing_translations)
         if preserved_count > 0:
-            print(
-                f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}. "
-                f"Preserved {preserved_count} existing translations."
+            print_success(
+                f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}. Preserved {preserved_count} existing translations."
             )
+            return "Delta Created", f"{counts[2]} new, {preserved_count} preserved"
         else:
-            print(
+            print_success(
                 f"Found {counts[0]} total, {counts[1]} existing, {counts[2]} new for {locale}."
             )
+            return "Delta Created", f"{counts[2]} new strings"
 
 
 def validate_po(
@@ -382,7 +421,10 @@ def validate_po(
     id_strings_source: list[str],
     id_usage: list[str],
     id_pairs: list[tuple[str, str]],
-) -> None:
+) -> tuple[str, int, int, int, int]:
+    """
+    Validates .po files and returns (status, written, empty, duplicate, unused) tuple for table display.
+    """
     po = polib.POFile()
     # create header
     po.metadata = {
@@ -429,28 +471,38 @@ def validate_po(
         seen.add(msgid)
         written += 1
     po.save(f"./fixed_{locale}_meerk40t.po")
-    print(
-        f"Validation for {locale} done: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
+    print_success(
+        f"Validation for {locale} completed: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
     )
+    return "Validated", written, ignored_empty, ignored_duplicate, ignored_unused
 
 
-def check_encoding(locales: list[str]) -> None:
+def check_encoding(locales: list[str]) -> list[tuple[str, str, str]]:
     """
     Checks all .po files for the given locales for invalid encoding.
+    Returns a list of (locale, status, details) tuples for table display.
     """
+    results = []
     for locale in locales:
+        print_info(f"Processing locale: {locale}")
         po_dir = f"./locale/{locale}/LC_MESSAGES/"
         if not os.path.isdir(po_dir):
-            print(f"Locale directory {po_dir} does not exist or is empty.")
+            print_warning(f"Locale directory {po_dir} does not exist or is empty.")
+            results.append((locale, "Error", "Directory not found"))
             continue
         try:
             po_files = [
                 f for f in next(os.walk(po_dir))[2] if os.path.splitext(f)[1] == ".po"
             ]
         except StopIteration:
-            print(f"Locale directory {po_dir} does not exist or is empty.")
+            print_warning(f"Locale directory {po_dir} does not exist or is empty.")
+            results.append((locale, "Error", "Directory empty"))
             continue
+
+        locale_status = "OK"
+        locale_details = []
         for po_file in po_files:
+            print_info(f"Checking encoding: {po_file}")
             source_encoding = detect_encoding(po_dir + po_file)
             if source_encoding not in ("utf-8", "utf8"):
                 # Create a fixed file with utf-8 encoding
@@ -466,31 +518,48 @@ def check_encoding(locales: list[str]) -> None:
                     with open(temp_file, "w", encoding="utf-8") as f:
                         f.write(content)
                 except Exception as e:
-                    print(
+                    print_error(
                         f"{po_dir + po_file}: Error writing temporary file, please check: {e}"
                     )
+                    locale_status = "Error"
+                    locale_details.append(f"{po_file}: Write error")
                     continue
                 source_encoding = detect_encoding(temp_file)
                 if source_encoding not in ("utf-8", "utf8"):
-                    print(
+                    print_warning(
                         f"{po_dir + po_file}: Warning: has non-utf8 encoding ({source_encoding}), cannot fix."
                     )
+                    locale_status = "Warning"
+                    locale_details.append(f"{po_file}: Non-UTF8 ({source_encoding})")
                     os.remove(temp_file)
                 else:
                     # Rename the temporary file to the original file name
                     try:
                         os.remove(po_dir + po_file)  # Remove the original file
                         os.rename(temp_file, po_dir + po_file)
-                        print(
+                        print_success(
                             f"{po_dir + po_file}: Fixed encoding for {source_encoding} to utf-8."
                         )
+                        locale_details.append(
+                            f"{po_file}: Fixed {source_encoding}→UTF-8"
+                        )
                     except Exception as e:
-                        print(
+                        print_error(
                             f"{po_dir + po_file}: Error renaming fixed file, please check: {e}"
                         )
+                        locale_status = "Error"
+                        locale_details.append(f"{po_file}: Rename error")
             else:
-                print(f"{po_dir + po_file}: OK.")
+                print_success(f"{po_dir + po_file}: OK.")
+                locale_details.append(f"{po_file}: OK")
                 continue
+
+        if locale_status == "OK" and not locale_details:
+            results.append((locale, "OK", "No .po files found"))
+        else:
+            results.append((locale, locale_status, ", ".join(locale_details)))
+
+    return results
 
 
 def detect_encoding(file_path: str) -> str:
@@ -597,35 +666,64 @@ def main():
             if "de" not in locales:
                 locales.add("de")
 
-    print(f"Will examine: {' ' .join(locales)}")
+    print_header("Meerk40t Translation Check Tool")
+    print_info(f"Processing locales: {', '.join(sorted(locales))}")
+    print()
 
     if args.check:
-        print("Checking for invalid encoding in po-files...")
-        check_encoding(list(locales))
+        print_header("Checking Encoding")
+        encoding_results = check_encoding(list(locales))
+
+        # Display results in table format
+        if encoding_results:
+            print(f"{'Locale':<8} {'Status':<10} {'Details'}")
+            print("-" * 70)
+            for locale, status, details in encoding_results:
+                status_color = (
+                    GREEN if status == "OK" else YELLOW if status == "Warning" else RED
+                )
+                print(f"{locale:<8} {status_color}{status:<10}{ENDC} {details}")
+        print()
         return
+
     do_translate = args.auto and GOOGLETRANS
     if args.auto and not GOOGLETRANS:
         print("googletrans module not found, cannot do automatic translation.")
+
     print("Reading sources...")
     id_strings_source, id_usage = read_source()
+
+    check_results = []
+    is_validation = args.validate
     for loc in locales:
+        print_info(
+            f"Processing locale: {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})"
+        )
         try:
             id_strings, pairs = read_po(loc)
         except Exception as e:
-            print(f"Error reading locale {loc}: {e}")
+            print_error(f"Error reading locale {loc}: {e}")
+            if is_validation:
+                check_results.append(
+                    (loc, "Error", 0, 0, 0, 0)
+                )  # locale, status, written, empty, duplicate, unused
+            else:
+                check_results.append((loc, "Error", f"Read failed: {str(e)[:50]}"))
             continue
+
         if args.validate:
-            print(
-                f"Validating locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
+            print_info(f"Validating locale {loc}...")
+            status, written, empty, duplicate, unused = validate_po(
+                loc, id_strings_source, id_usage, pairs
             )
-            validate_po(loc, id_strings_source, id_usage, pairs)
+            check_results.append((loc, status, written, empty, duplicate, unused))
         else:
-            print(
-                f"Checking for new translation strings for locale {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})..."
-            )
-            compare(loc, id_strings, id_strings_source, id_usage)
+            print_info(f"Checking for new translation strings for locale {loc}...")
+            status, details = compare(loc, id_strings, id_strings_source, id_usage)
+            check_results.append((loc, status, details))
+
             if do_translate and loc != "en":
-                print(f"Trying automatic translation for locale {loc}...")
+                print_info(f"Trying automatic translation for locale {loc}...")
                 try:
                     translator = googletrans.Translator()
                     delta_po_file = f"./delta_{loc}.po"
@@ -638,11 +736,55 @@ def main():
                             entry.msgstr = fix_result_string(translated.text, id_string)
                             # print (f"{translated.src} -> {translated.dest}: '{translated.origin}' -> '{translated.text}' -> '{entry.msgstr}'")
                     polib_file.save(delta_po_file)
-                    print(
+                    print_success(
                         f"Automatic translation for locale {loc} completed. PLEASE CHECK, PROBABLY INCORRECT!"
                     )
                 except Exception as e:
-                    print(f"Error during automatic translation for locale {loc}: {e}")
+                    print_error(
+                        f"Error during automatic translation for locale {loc}: {e}"
+                    )
+
+    # Display results in table format
+    if check_results:
+        print()
+        print_header("Summary")
+        if is_validation:
+            print(f"{'Locale':<8} {'Written':<8} {'Empty':<6} {'Dup':<4} {'Unused':<7}")
+            print("-" * 50)
+            for result in check_results:
+                if (
+                    len(result) == 6
+                ):  # validation result: (locale, status, written, empty, duplicate, unused)
+                    locale, status, written, empty, duplicate, unused = result
+                    status_color = GREEN if status == "Validated" else RED
+                    print(
+                        f"{locale:<8} {status_color}{written:<8}{ENDC} {empty:<6} {duplicate:<4} {unused:<7}"
+                    )
+                elif (
+                    len(result) == 5
+                ):  # error result: (locale, status, written, empty, duplicate) - missing unused
+                    locale, status, written, empty, duplicate = result
+                    print(
+                        f"{locale:<8} {RED}{status:<8}{ENDC} {written:<6} {empty:<4} {duplicate:<7}"
+                    )
+                else:  # other error result
+                    locale, status, error_msg = result
+                    print(f"{locale:<8} {RED}{status:<8}{ENDC} {error_msg}")
+        else:
+            print(f"{'Locale':<8} {'Status':<14} {'Details'}")
+            print("-" * 70)
+            for result in check_results:
+                if len(result) == 3:  # normal result
+                    locale, status, details = result
+                    status_color = (
+                        GREEN
+                        if status in ("No Changes", "Validated", "Delta Created")
+                        else YELLOW
+                        if status == "Warning"
+                        else RED
+                    )
+                    print(f"{locale:<8} {status_color}{status:<14}{ENDC} {details}")
+        print()
 
 
 if __name__ == "__main__":
