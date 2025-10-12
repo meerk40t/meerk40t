@@ -216,6 +216,7 @@ def create_mo_files(force: bool, locales: set) -> list:
         "ignored": 0,
         "errors": 0,
     }
+    erroneous = []
     for d_local, d in zip(po_locales, po_dirs):
         if locales and d_local not in locales:
             print(f"Skip locale {d_local}")
@@ -278,14 +279,20 @@ def create_mo_files(force: bool, locales: set) -> list:
                 print(
                     f"{action} {d}{po_file} (input encoded={source_encoding}, output encoded={target_encoding}){empt_str}{dup_str}"
                 )
+                if empty_entries > 0 or duplicate_entries > 0:
+                    erroneous.append(d_local)
                 mo_files.append(d + mo_file)
                 counts["translated"] += 1
             else:
                 counts["ignored"] += 1
         data_files.append((d, mo_files))
     print(
-        f"Total: {counts['translated'] + counts['ignored']}, Translated: {counts['translated']}, Ignored: {counts['ignored']}, Errors: {counts['errors']}"
+        f"Total: {counts['translated'] + counts['ignored']}, Translated: {counts['translated']}, Ignored: {counts['ignored']}, Errors: {counts['errors']}, Warnings: {len(erroneous)}"
     )
+    if erroneous:
+        print(
+            f"Consider running: python translate_check.py --validate {' '.join(erroneous)}"
+        )
     return data_files
 
 
@@ -385,12 +392,14 @@ def main() -> None:
         help="Locale codes to process (default: all locales)",
     )
     parser.add_argument(
-        "-f", "--force",
+        "-f",
+        "--force",
         action="store_true",
         help="Force recompilation of all .mo files regardless of timestamps",
     )
     parser.add_argument(
-        "-i", "--integrate",
+        "-i",
+        "--integrate",
         action="store_true",
         help="Integrate delta_xx.po files into the main .po files",
     )
