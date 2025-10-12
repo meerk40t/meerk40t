@@ -1,0 +1,287 @@
+name: Weekly Binary Builds
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.10
+        architecture: x86
+
+    - name: Install dependencies
+      run: |
+        pip install opencv-python-headless<=4.8.1.78
+        pip install -r requirements.txt
+        pip install -r requirements-optional-win.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Build PyInstaller bootloaders
+      env:
+        PYTHONHASHSEED: 12506
+      run: |
+        git clone --depth=1 https://github.com/pyinstaller/pyinstaller
+        cd pyinstaller/bootloader
+        python3 ./waf distclean all --target-arch=32bit
+        cd ..
+        pip3 install .
+        cd ..
+
+    - name: Build MeerK40t Windows binary
+      run: |
+        cd meerk40t
+        move external_plugins.py external_plugins.unused
+        move external_plugins_build.py external_plugins.py
+        cd ..
+
+        move meerk40t.py mk40t.py
+        pyinstaller .github/workflows/win/meerk40t.spec
+        move mk40t.py meerk40t.py
+
+        cd dist
+        move MeerK40t.exe "MeerK40t-windows-${{ github.run_number }}.exe"
+
+    - name: Upload Windows binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-windows
+        path: dist/MeerK40t-windows-${{ github.run_number }}.exe
+        retention-days: 60
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        pip install opencv-python-headless<=4.8.1.78
+        pip install -r requirements.txt
+        pip install -r requirements-optional-linux.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Build MeerK40t macOS binary
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        mv meerk40t.py mk40t.py
+        pyinstaller --hidden-import wx._adv --hidden-import wx._xml --hidden-import meerk40t --windowed --noconfirm -i .github/workflows/mac/meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
+        mv mk40t.py meerk40t.py
+
+        cd dist
+        mv MeerK40t.app "MeerK40t-macos-${{ github.run_number }}.app"
+
+    - name: Upload macOS binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-macos
+        path: dist/MeerK40t-macos-${{ github.run_number }}.app
+        retention-days: 60
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libusb-1.0-0-dev portaudio19-dev
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          cmake \
+          libeigen3-dev \
+          libagg-dev \
+          libpotrace-dev \
+          python3-dev \
+          wget \
+          fuse \
+          libfuse2 \
+          desktop-file-utils \
+          imagemagick
+        pip install opencv-python-headless<=4.8.1.78
+        pip install -r requirements.txt
+        pip install -r requirements-optional-linux.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Build MeerK40t Linux binary
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        mv meerk40t.py mk40t.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+
+    - name: Create AppImage
+      run: |
+        # Download appimagetool (pinned to specific release for security)
+        APPIMAGETOOL_VERSION="13"
+        APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
+        APPIMAGETOOL_SHA256_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage.sha256"
+
+        wget -O appimagetool "${APPIMAGETOOL_URL}"
+        chmod +x appimagetool
+
+        # Fetch official checksum and verify for security
+        wget -O appimagetool.sha256 "${APPIMAGETOOL_SHA256_URL}"
+        sha256sum -c appimagetool.sha256 || exit 1
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
+
+        # Copy the executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
+
+        # Copy icon and convert to PNG if needed
+        if [ -f "meerk40t.ico" ]; then
+          # Check if the ICO file is not empty
+          if [ ! -s "meerk40t.ico" ]; then
+            echo "ERROR: meerk40t.ico is empty or malformed. Aborting icon conversion." >&2
+            exit 1
+          fi
+          # Convert ICO to PNG for AppImage with error handling
+          if ! convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+            echo "ERROR: Failed to convert meerk40t.ico to PNG. Is ImageMagick installed and is the ICO valid?" >&2
+            exit 1
+          fi
+        else
+          echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
+        fi
+
+        # Create desktop file
+        cat > AppDir/usr/share/applications/meerk40t.desktop << EOF
+        [Desktop Entry]
+        Name=MeerK40t
+        Exec=meerk40t
+        Icon=meerk40t
+        Type=Application
+        Categories=Graphics;VectorGraphics;
+        Comment=Laser Cutter Software
+        Terminal=false
+        EOF
+
+        # Create AppStream metainfo
+        cat > AppDir/usr/share/metainfo/meerk40t.appdata.xml << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <component type="desktop-application">
+          <id>meerk40t</id>
+          <name>MeerK40t</name>
+          <summary>Laser Cutter Control Software</summary>
+          <description>
+            <p>MeerK40t is a free and open-source laser cutter control software.</p>
+          </description>
+          <launchable type="desktop-id">meerk40t.desktop</launchable>
+          <categories>
+            <category>Graphics</category>
+            <category>VectorGraphics</category>
+          </categories>
+        </component>
+        EOF
+
+        # Create AppRun script
+        cat > AppDir/AppRun << EOF
+        #!/bin/bash
+        HERE="\$(dirname "\$(readlink -f "\${0}")")"
+        export PATH="\${HERE}/usr/bin:\${PATH}"
+        export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
+        export PYTHONPATH="\${HERE}/usr/lib/python3/dist-packages:\${PYTHONPATH}"
+        exec "\${HERE}/usr/bin/meerk40t" "\$@"
+        EOF
+        chmod +x AppDir/AppRun
+
+        # Build AppImage
+        ./appimagetool AppDir "MeerK40t-linux-${{ github.run_number }}.AppImage"
+
+    - name: Test AppImage
+      run: |
+        # Make AppImage executable and test basic functionality
+        chmod +x "MeerK40t-linux-${{ github.run_number }}.AppImage"
+        # Note: Can't run GUI in headless environment, but we can check if it starts
+        timeout 15s ./"MeerK40t-linux-${{ github.run_number }}.AppImage" --version
+        if [ $? -ne 0 ]; then
+          echo "ERROR: AppImage failed to start or did not return version information."
+          exit 1
+        fi
+
+    - name: Upload Linux AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-linux
+        path: MeerK40t-linux-${{ github.run_number }}.AppImage
+        retention-days: 60
+
+  create-release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all binaries
+      uses: actions/download-artifact@v4
+      with:
+        path: binaries/
+
+    - name: Prepare macOS app for release
+      run: |
+        cd binaries/meerk40t-macos
+        zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
+        cd ../..
+
+    - name: Create weekly release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: weekly-${{ github.run_number }}
+        name: Weekly Build ${{ github.run_number }}
+        body: |
+          Automated weekly binary build of MeerK40t.
+
+          **Build Information:**
+          - Commit: ${{ github.sha }}
+          - Build: ${{ github.run_number }}
+          - Date: ${{ github.event.repository.updated_at }}
+
+          **Binaries:**
+          - Windows (32-bit): MeerK40t-windows-${{ github.run_number }}.exe
+          - macOS: MeerK40t-macos-${{ github.run_number }}.app (zipped)
+          - Linux: MeerK40t-linux-${{ github.run_number }}.AppImage
+        files: |
+          binaries/meerk40t-windows/MeerK40t-windows-${{ github.run_number }}.exe
+          MeerK40t-macos-${{ github.run_number }}.zip
+          binaries/meerk40t-linux/MeerK40t-linux-${{ github.run_number }}.AppImage
+        prerelease: true

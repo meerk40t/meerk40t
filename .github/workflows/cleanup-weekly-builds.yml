@@ -1,0 +1,59 @@
+name: Cleanup Old Weekly Builds
+
+on:
+  schedule:
+    # Run daily at 3 AM UTC to clean up old builds
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Clean up old weekly releases
+      run: |
+        # Calculate cutoff date (60 days ago)
+        CUTOFF_DATE=$(date -d '60 days ago' +%Y-%m-%dT%H:%M:%SZ)
+        echo "Cleaning up releases older than: $CUTOFF_DATE"
+
+        # Get all weekly releases
+        RELEASES=$(gh api repos/${{ github.repository }}/releases --jq '[.[] | select(.tag_name | startswith("weekly-")) | {id: .id, tag_name: .tag_name, created_at: .created_at, html_url: .html_url}]')
+
+        if [ "$(echo "$RELEASES" | jq length)" -eq 0 ]; then
+          echo "No weekly releases found to clean up"
+          exit 0
+        fi
+
+        echo "Found $(echo "$RELEASES" | jq length) weekly releases:"
+        echo "$RELEASES" | jq -r '.[] | "\(.tag_name) (\(.created_at)) - \(.html_url)"'
+
+        # Count releases to delete
+        TO_DELETE=$(echo "$RELEASES" | jq --arg cutoff "$CUTOFF_DATE" '[.[] | select(.created_at < $cutoff)]')
+        DELETE_COUNT=$(echo "$TO_DELETE" | jq length)
+
+        if [ "$DELETE_COUNT" -eq 0 ]; then
+          echo "No releases older than 60 days found"
+          exit 0
+        fi
+
+        echo "Will delete $DELETE_COUNT release(s) older than 60 days"
+
+        # Delete old releases
+        echo "$TO_DELETE" | jq -r '.[].id' | while read -r release_id; do
+          RELEASE_TAG=$(echo "$TO_DELETE" | jq -r --arg id "$release_id" '.[] | select(.id == ($id | tonumber)) | .tag_name')
+          echo "Deleting release: $RELEASE_TAG (ID: $release_id)"
+          if gh api -X DELETE repos/${{ github.repository }}/releases/$release_id; then
+            echo "✓ Successfully deleted $RELEASE_TAG"
+          else
+            echo "✗ Failed to delete $RELEASE_TAG"
+          fi
+        done
+
+        echo "Cleanup completed. Deleted $DELETE_COUNT old weekly releases."
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
