@@ -95,12 +95,15 @@ jobs:
 
         cd dist
         mv MeerK40t.app "MeerK40t-macos-${{ github.run_number }}.app"
+        zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
+        cd ..
+        mv "MeerK40t-macos-${{ github.run_number }}.zip" dist/
 
     - name: Upload macOS binary
       uses: actions/upload-artifact@v4
       with:
         name: meerk40t-macos
-        path: dist/MeerK40t-macos-${{ github.run_number }}.app
+        path: dist/MeerK40t-macos-${{ github.run_number }}.zip
         retention-days: 60
 
   build-linux:
@@ -403,22 +406,6 @@ jobs:
       with:
         name: meerk40t-linux
         path: binaries/
-
-    - name: Prepare macOS app for release
-      if: needs.build-macos.result == 'success'
-      run: |
-        cd binaries
-        ls -la
-        echo "Looking for macOS app file..."
-        find . -name "*macos*" -type f
-        if [ -f "MeerK40t-macos-${{ github.run_number }}.app" ]; then
-          echo "Found macOS app, creating zip..."
-          zip -r "MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
-        else
-          echo "ERROR: macOS app file not found!"
-          ls -la MeerK40t-macos-*
-          exit 1
-        fi
 
     - name: Create weekly release
       id: create_release
