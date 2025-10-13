@@ -125,40 +125,43 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.11
+    - name: Set up Python 3.9
       uses: actions/setup-python@v5
       with:
-        python-version: 3.11
+        python-version: 3.9
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libusb-1.0-0-dev portaudio19-dev
-        sudo apt-get install -y \
-          libgtk-3-dev \
-          cmake \
-          libeigen3-dev \
-          libagg-dev \
-          libpotrace-dev \
-          libpython3-dev \
-          libwebkit2gtk-4.0-dev \
-          libsdl2-dev \
-          libsm-dev \
-          libx11-dev \
-          wget \
-          fuse \
-          libfuse2 \
-          desktop-file-utils \
-          imagemagick
-        pip install "opencv-python-headless<=4.8.1.78"
+        sudo apt install libgtk-3-dev cmake libeigen3-dev
+        sudo apt install libagg-dev libpotrace-dev
+        sudo apt install python3.9-dev
+        sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
+        sudo apt install libsdl2-dev libsm-dev libx11-dev
+        python3 -m ensurepip --upgrade
+        python3 -m pip install --upgrade pip
+        pip cache purge
+        pip install setuptools
+        pip install pyinstaller wheel
+        pip install numpy==1.26.4
+        pip install pyusb
+        pip install wheel
         # pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
-        pip install -r requirements.txt
-        # Install pyclipr with PEP 517 to avoid deprecation warning
-        pip install --use-pep517 pyclipr
-        pip install -r requirements-optional-linux.txt
+        pip install potracer
+        pip install pypotrace
+        pip install pillow==9.5.0
+        pip install ezdxf
+        pip install pyserial
+        pip install bitarray
+        # pip install scipy
+        pip install numba
+        pip install --no-cache-dir opencv-python-headless==4.5.3.56
+        # pip install meerk40t-camera
+        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
         pip install .
         pip install meerk40t-barcodes
-
+        
     - name: Install PyInstaller
       run: |
         pip install pyinstaller
