@@ -105,7 +105,7 @@ jobs:
         cd ..
 
         mv meerk40t.py mk40t.py
-        pyinstaller --hidden-import wx._adv --hidden-import wx._xml --hidden-import meerk40t --windowed --noconfirm -i .github/workflows/mac/meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
+        pyinstaller --target universal2 --hidden-import wx._adv --hidden-import wx._xml --hidden-import meerk40t --windowed --noconfirm -i .github/workflows/mac/meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
         mv mk40t.py meerk40t.py
 
         cd dist
