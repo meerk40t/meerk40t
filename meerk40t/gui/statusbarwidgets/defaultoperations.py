@@ -28,6 +28,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.page_size = 0
         self.first_to_show = 0
         self.is_sync_mode = False
+        self.tree_name = _("Tree")
 
     def node_label(self, node):
         percent = ""
@@ -65,7 +66,7 @@ class DefaultOperationWidget(StatusBarWidget):
             + _("Right click for options")
             + "\n"
             + _("Origin: {title}").format(
-                title="Tree" if self.is_sync_mode else self.context.elements.default_operations_title
+                title=self.tree_name if self.is_sync_mode else self.context.elements.default_operations_title
             )
         )
 
@@ -117,7 +118,8 @@ class DefaultOperationWidget(StatusBarWidget):
         op_order = ("op cut", "op engrave", "op raster", "op image", "op dots")
         oplist = []
         self.is_sync_mode = self.context.elements.setting(bool, "default_ops_sync", False)
-        for op in self.source_ops():
+        source_ops = self.source_ops()
+        for op in source_ops:
             if hasattr(op, "type") and op.type in op_order:
                 oplist.append(op)
         # Validate that we have ids across the board
@@ -129,7 +131,7 @@ class DefaultOperationWidget(StatusBarWidget):
                     if other.id is not None and other.type == op.type:
                         seen_ids.add(other.id)
                 newid = 1
-                optype_prefix = op.type[3].upper() # They all start with "op "
+                optype_prefix = "OP" if len(op.type) < 4 else op.type[3].upper() # They all start with "op "
                 while f"{optype_prefix}{newid}" in seen_ids:
                     newid += 1
                 op.id = f"{optype_prefix}{newid}"
@@ -236,6 +238,7 @@ class DefaultOperationWidget(StatusBarWidget):
                     mat_title = elements._get_default_list_title(opinfo)
                     elements.default_operations_title = mat_title
                     if self.is_sync_mode:
+                        self.tree_name = mat_title
                         # We load the operations into the tree as well
                         # First remove all existing operations
                         # Translation hint _("Load operations from material")
@@ -498,8 +501,9 @@ class DefaultOperationWidget(StatusBarWidget):
         self.parent.Reposition(self.panelidx)
 
     def reset_tooltips(self):
-        # Desync?
-        if len(self.source_ops()) != len(self.assign_buttons):
+        # Desync ! Could be new default operations - so valid reason to rebuild
+        source_ops = self.source_ops()
+        if len(source_ops) != len(self.assign_buttons):
             # New default operations!
             self.GenerateControls(
                 self.parent, self.panelidx, self.identifier, self.context
@@ -507,7 +511,9 @@ class DefaultOperationWidget(StatusBarWidget):
             # Repaint
             self.show_stuff(True)
         # First reset all tooltips
-        for idx, node in enumerate(self.source_ops()):
+        # We may have reloaded operations
+        source_ops = self.source_ops()
+        for idx, node in enumerate(source_ops):
             slabel = self.node_label(node)
             if slabel and idx < len(self.assign_buttons):
                 self.assign_buttons[idx].SetToolTip(slabel)
@@ -519,7 +525,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 continue
             opid = node.id
             if opid:
-                for op in self.source_ops():
+                for op in source_ops:
                     if opid == op.id:
                         slabel = self.node_label(node)
                         if slabel:
@@ -531,7 +537,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def Signal(self, signal, *args):
         if len(self.source_ops()) != len(self.assign_buttons):
-            # desync !
+            # Desync ! Could be new default operations - so valid reason to rebuild
             signal = "default_operations"
         if signal in ("rebuild_tree",):
             self.reset_tooltips()
