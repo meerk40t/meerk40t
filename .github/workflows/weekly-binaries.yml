@@ -38,6 +38,10 @@ jobs:
         pip3 install .
         cd ..
 
+    - name: Install ImageMagick
+      run: |
+        choco install imagemagick
+
     - name: Build MeerK40t Windows binary
       run: |
         cd meerk40t
