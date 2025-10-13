@@ -106,7 +106,7 @@ jobs:
 
         mv meerk40t.py mk40t.py
         pyinstaller \
-          --osx-universal2 \
+          --target-architecture universal2 \
           --hidden-import wx._adv \
           --hidden-import wx._xml \
           --hidden-import meerk40t \
@@ -179,7 +179,7 @@ jobs:
         pip install numpy==1.26.4
         pip install pyusb
         pip install wheel
-        # pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        pip install wxPython
         pip install potracer
         pip install pypotrace
         pip install pillow==9.5.0
