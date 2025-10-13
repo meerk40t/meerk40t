@@ -501,7 +501,9 @@ jobs:
           1. Download `MeerK40t-macos-${{ github.run_number }}.app.zip`
           2. Extract the zip file
           3. Move `MeerK40t.app` to your Applications folder
-          4. Run MeerK40t from Applications
+          4. **First time only**: Right-click (or Control-click) on MeerK40t in Applications and select "Open"
+          5. Click "Open" in the security dialog to bypass Gatekeeper for this unsigned application
+          6. Run MeerK40t from Applications (subsequent launches will work normally)
 
           #### Linux
           1. Download `MeerK40t-linux-${{ github.run_number }}.AppImage`
