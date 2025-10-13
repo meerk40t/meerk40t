@@ -125,8 +125,6 @@ jobs:
           libagg-dev \
           libpotrace-dev \
           python3.11-dev \
-          libgstreamer1.0-dev \
-          libgstreamer-plugins-base1.0-dev \
           libwebkit2gtk-4.0-dev \
           libsdl2-dev \
           libsm-dev \
