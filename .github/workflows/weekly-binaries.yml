@@ -322,48 +322,56 @@ jobs:
           console.log('Latest any release date:', latestAnyReleaseDate.toISOString());
           
           // Get PRs since latest stable release
-          const prsSinceStable = prs.data
+          const allPrsSinceStable = prs.data
             .filter(pr => pr.merged_at !== null)
             .filter(pr => {
               const prDate = new Date(pr.merged_at);
               return prDate > latestStableReleaseDate;
-            })
-            .slice(0, 15); // Limit to 15 most recent
+            });
+          
+          const prsSinceStable = allPrsSinceStable.slice(0, 15); // Limit to 15 most recent
           
           // Get PRs since latest release (any type)
-          const prsSinceAny = prs.data
+          const allPrsSinceAny = prs.data
             .filter(pr => pr.merged_at !== null)
             .filter(pr => {
               const prDate = new Date(pr.merged_at);
               return prDate > latestAnyReleaseDate;
-            })
-            .slice(0, 10); // Limit to 10 most recent
+            });
           
-          console.log('Found', prsSinceStable.length, 'PRs since latest stable release');
-          console.log('Found', prsSinceAny.length, 'PRs since latest release (any type)');
+          const prsSinceAny = allPrsSinceAny.slice(0, 10); // Limit to 10 most recent
+          
+          console.log('Found', prsSinceStable.length, 'PRs since latest stable release (showing up to 15)');
+          console.log('Found', prsSinceAny.length, 'PRs since latest release (any type) (showing up to 10)');
           
           let changes = '';
           
-          // Section 1: Changes since latest stable release
-          if (prsSinceStable.length > 0) {
-            changes += '### 🔄 Changes Since Latest Stable Release\n\n';
-            prsSinceStable.forEach(pr => {
-              changes += `- ${pr.title} ([#${pr.number}](${pr.html_url})) by @${pr.user.login}\n`;
-            });
-            changes += '\n';
-          } else {
-            changes += '### 🔄 Changes Since Latest Stable Release\n\nNo changes since the latest stable release.\n\n';
-          }
-          
-          // Section 2: Changes since latest release (any type)
+          // Section 1: Changes since latest release (any type) - now first
           if (prsSinceAny.length > 0) {
             changes += '### 🔄 Changes Since Last Release\n\n';
             prsSinceAny.forEach(pr => {
               changes += `- ${pr.title} ([#${pr.number}](${pr.html_url})) by @${pr.user.login}\n`;
             });
+            if (allPrsSinceAny.length > 10) {
+              changes += `\n*...and ${allPrsSinceAny.length - 10} more changes*\n`;
+            }
             changes += '\n';
           } else {
             changes += '### 🔄 Changes Since Last Release\n\nNo changes since the last release.\n\n';
+          }
+          
+          // Section 2: Changes since latest stable release - now second
+          if (prsSinceStable.length > 0) {
+            changes += '### 🔄 Changes Since Latest Stable Release\n\n';
+            prsSinceStable.forEach(pr => {
+              changes += `- ${pr.title} ([#${pr.number}](${pr.html_url})) by @${pr.user.login}\n`;
+            });
+            if (allPrsSinceStable.length > 15) {
+              changes += `\n*...and ${allPrsSinceStable.length - 15} more changes*\n`;
+            }
+            changes += '\n';
+          } else {
+            changes += '### 🔄 Changes Since Latest Stable Release\n\nNo changes since the latest stable release.\n\n';
           }
           
           core.setOutput('changes', changes);
@@ -406,9 +414,8 @@ jobs:
     - name: Prepare macOS app for release
       if: needs.build-macos.result == 'success'
       run: |
-        cd binaries/meerk40t-macos
-        zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
-        cd ../..
+        cd binaries
+        zip -r "MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
 
     - name: Create weekly release
       id: create_release
