@@ -341,22 +341,26 @@ jobs:
           
           const prsSinceStable = allPrsSinceStable.slice(0, 15); // Limit to 15 most recent
           
-          // Get PRs since latest release (any type)
-          const allPrsSinceAny = prs.data
-            .filter(pr => pr.merged_at !== null)
-            .filter(pr => {
-              const prDate = new Date(pr.merged_at);
-              return prDate > latestAnyReleaseDate;
-            });
+          // Get PRs since latest release (any type) - but only if it's newer than stable
+          let prsSinceAny = [];
+          let allPrsSinceAny = [];
           
-          const prsSinceAny = allPrsSinceAny.slice(0, 10); // Limit to 10 most recent
+          if (latestAnyReleaseDate > latestStableReleaseDate) {
+            allPrsSinceAny = prs.data
+              .filter(pr => pr.merged_at !== null)
+              .filter(pr => {
+                const prDate = new Date(pr.merged_at);
+                return prDate > latestAnyReleaseDate;
+              });
+            prsSinceAny = allPrsSinceAny.slice(0, 10); // Limit to 10 most recent
+          }
           
           console.log('Found', prsSinceStable.length, 'PRs since latest stable release (showing up to 15)');
           console.log('Found', prsSinceAny.length, 'PRs since latest release (any type) (showing up to 10)');
           
           let changes = '';
           
-          // Section 1: Changes since latest release (any type) - now first
+          // Section 1: Changes since latest release (any type) - only show if different from stable
           if (prsSinceAny.length > 0) {
             changes += '### 🔄 Changes Since Last Release\n\n';
             prsSinceAny.forEach(pr => {
@@ -366,11 +370,9 @@ jobs:
               changes += `\n*...and ${allPrsSinceAny.length - 10} more changes*\n`;
             }
             changes += '\n';
-          } else {
-            changes += '### 🔄 Changes Since Last Release\n\nNo changes since the last release.\n\n';
           }
           
-          // Section 2: Changes since latest stable release - now second
+          // Section 2: Changes since latest stable release - always show
           if (prsSinceStable.length > 0) {
             changes += '### 🔄 Changes Since Latest Stable Release\n\n';
             prsSinceStable.forEach(pr => {
