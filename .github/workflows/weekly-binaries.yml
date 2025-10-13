@@ -166,8 +166,11 @@ jobs:
     - name: Generate icons
       run: |
         # Generate icons using the build script
+        echo "Running icon generation script..."
         chmod +x tools/build_icon.sh
         tools/build_icon.sh "w${{ github.run_number }}"
+        echo "Icon generation completed. Checking results..."
+        ls -la meerk40t.ico 2>/dev/null || echo "meerk40t.ico was not created"
 
     - name: Build MeerK40t Linux binary
       run: |
@@ -198,18 +201,25 @@ jobs:
         chmod +x AppDir/usr/bin/meerk40t
 
         # Copy icon and convert to PNG if needed
+        echo "Checking for icon file..."
+        ls -la meerk40t.ico 2>/dev/null || echo "meerk40t.ico not found"
+        
         if [ -f "meerk40t.ico" ]; then
           # Check if the ICO file is not empty
           if [ ! -s "meerk40t.ico" ]; then
             echo "WARNING: meerk40t.ico is empty or malformed. Skipping icon conversion." >&2
           else
+            echo "Found meerk40t.ico, attempting conversion..."
             # Convert ICO to PNG for AppImage (non-fatal)
             if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+              echo "Icon conversion successful, copying to AppDir root..."
               # Also copy to AppDir root for desktop file to find it
               cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
-              echo "Icon conversion successful"
+              echo "Icon conversion and copy completed successfully"
             else
               echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
+              echo "Checking if convert command is available..."
+              which convert || echo "convert command not found"
             fi
           fi
         else

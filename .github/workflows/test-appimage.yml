@@ -1,0 +1,200 @@
+name: Test AppImage Creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: 'Enable extra debugging output'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+jobs:
+  test-appimage:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libusb-1.0-0-dev portaudio19-dev
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          cmake \
+          libeigen3-dev \
+          libagg-dev \
+          libpotrace-dev \
+          python3.11-dev \
+          libwebkit2gtk-4.0-dev \
+          libsdl2-dev \
+          libsm-dev \
+          libx11-dev \
+          wget \
+          fuse \
+          libfuse2 \
+          desktop-file-utils \
+          imagemagick
+        pip install "opencv-python-headless<=4.8.1.78"
+        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        pip install -r requirements.txt
+        # Install pyclipr with PEP 517 to avoid deprecation warning
+        pip install --use-pep517 pyclipr
+        pip install -r requirements-optional-linux.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Install PyInstaller
+      run: |
+        pip install pyinstaller
+
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        echo "Running icon generation script..."
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "test-${{ github.run_number }}"
+        echo "Icon generation completed. Checking results..."
+        ls -la meerk40t.ico 2>/dev/null || echo "meerk40t.ico was not created"
+        if [ -f "meerk40t.ico" ]; then
+          file meerk40t.ico || echo "file command not available"
+          ls -lh meerk40t.ico
+        fi
+
+    - name: Build MeerK40t Linux binary
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        mv meerk40t.py mk40t.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+
+    - name: Test icon conversion
+      run: |
+        echo "=== Testing icon conversion ==="
+        echo "Checking ImageMagick installation..."
+        convert -version | head -3 || echo "convert command failed"
+
+        echo "Checking for icon file..."
+        ls -la meerk40t.ico 2>/dev/null || echo "meerk40t.ico not found"
+
+        if [ -f "meerk40t.ico" ]; then
+          echo "Testing convert command directly..."
+          mkdir -p test_output
+          if convert meerk40t.ico test_output/test.png; then
+            echo "Direct convert succeeded"
+            ls -la test_output/
+          else
+            echo "Direct convert failed with exit code $?"
+            echo "Trying alternative convert syntax..."
+            if convert meerk40t.ico[0] test_output/test.png; then
+              echo "Alternative convert succeeded"
+              ls -la test_output/
+            else
+              echo "Alternative convert also failed"
+            fi
+          fi
+        fi
+
+    - name: Create AppImage
+      run: |
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        chmod +x appimagetool
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
+
+        # Copy the executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
+
+        # Copy icon and convert to PNG if needed
+        echo "Checking for icon file..."
+        ls -la meerk40t.ico 2>/dev/null || echo "meerk40t.ico not found"
+
+        if [ -f "meerk40t.ico" ]; then
+          # Check if the ICO file is not empty
+          if [ ! -s "meerk40t.ico" ]; then
+            echo "WARNING: meerk40t.ico is empty or malformed. Skipping icon conversion." >&2
+          else
+            echo "Found meerk40t.ico, attempting conversion..."
+            # Convert ICO to PNG for AppImage (non-fatal)
+            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+              echo "Icon conversion successful, copying to AppDir root..."
+              # Also copy to AppDir root for desktop file to find it
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+              echo "Icon conversion and copy completed successfully"
+              ls -la AppDir/meerk40t.png
+            else
+              echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
+              echo "Checking if convert command is available..."
+              which convert || echo "convert command not found"
+              convert -version 2>&1 | head -5 || echo "convert -version failed"
+            fi
+          fi
+        else
+          echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
+        fi
+
+        # Copy desktop file
+        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
+        cp .github/workflows/linux/meerk40t.desktop AppDir/
+        chmod +x AppDir/meerk40t.desktop
+
+        # Debug: Check if desktop file exists
+        ls -la AppDir/
+        ls -la AppDir/usr/share/applications/
+
+        # Copy AppStream metainfo
+        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
+
+        # Copy AppRun script
+        cp .github/workflows/linux/AppRun AppDir/
+        chmod +x AppDir/AppRun
+
+        # Build AppImage
+        echo "Building AppImage..."
+        ./appimagetool AppDir "MeerK40t-test-${{ github.run_number }}.AppImage"
+
+    - name: Verify AppImage
+      run: |
+        echo "=== AppImage Verification ==="
+        ls -la "MeerK40t-test-${{ github.run_number }}.AppImage" 2>/dev/null || echo "AppImage not found!"
+
+        if [ -f "MeerK40t-test-${{ github.run_number }}.AppImage" ]; then
+          echo "AppImage created successfully!"
+          ls -lh "MeerK40t-test-${{ github.run_number }}.AppImage"
+
+          # Make executable and test
+          chmod +x "MeerK40t-test-${{ github.run_number }}.AppImage"
+          echo "Testing AppImage execution..."
+          timeout 10s ./"MeerK40t-test-${{ github.run_number }}.AppImage" --version || echo "AppImage test failed"
+        else
+          echo "ERROR: AppImage was not created"
+          exit 1
+        fi
+
+    - name: Upload test AppImage
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-appimage
+        path: MeerK40t-test-${{ github.run_number }}.AppImage
+        retention-days: 1
