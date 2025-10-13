@@ -135,18 +135,42 @@ jobs:
             echo "WARNING: meerk40t.ico is empty or malformed. Skipping icon conversion." >&2
           else
             echo "Found meerk40t.ico, attempting conversion..."
-            # Convert ICO to PNG for AppImage (non-fatal)
-            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
-              echo "Icon conversion successful, copying to AppDir root..."
-              # Also copy to AppDir root for desktop file to find it
-              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
-              echo "Icon conversion and copy completed successfully"
-              ls -la AppDir/meerk40t.png
+            echo "Target directory exists:"
+            ls -la AppDir/usr/share/icons/hicolor/256x256/apps/
+
+            # Convert ICO to PNG for AppImage - be more verbose
+            echo "Running convert command..."
+            if convert -verbose meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png 2>&1; then
+              echo "Convert command returned success"
+              if [ -f "AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png" ]; then
+                echo "PNG file was created successfully"
+                ls -la AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+                # Also copy to AppDir root for desktop file to find it
+                cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+                echo "Icon conversion and copy completed successfully"
+                ls -la AppDir/meerk40t.png
+              else
+                echo "ERROR: Convert command succeeded but PNG file was not created!"
+                echo "Checking directory permissions:"
+                ls -ld AppDir/usr/share/icons/hicolor/256x256/apps/
+                exit 1
+              fi
             else
-              echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
-              echo "Checking if convert command is available..."
-              which convert || echo "convert command not found"
-              convert -version 2>&1 | head -5 || echo "convert -version failed"
+              echo "ERROR: Convert command failed with exit code $?"
+              echo "Checking ImageMagick installation:"
+              convert -version 2>&1 | head -3 || echo "convert -version failed"
+              echo "Trying alternative conversion methods..."
+
+              # Try with explicit format specification
+              if convert -verbose "ico:meerk40t.ico" "png:AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png" 2>&1; then
+                echo "Alternative conversion succeeded"
+                ls -la AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+              else
+                echo "Alternative conversion also failed"
+                # Try using identify to check the ICO file
+                echo "Checking ICO file with identify:"
+                identify meerk40t.ico 2>&1 || echo "identify command failed"
+              fi
             fi
           fi
         else
