@@ -109,8 +109,11 @@ jobs:
         mv mk40t.py meerk40t.py
 
         # Set version information in the app bundle
+        APPNAME=$(python3 -c "from meerk40t.main import APPLICATION_NAME; print(APPLICATION_NAME)")
         MKVERSION=$(python3 -c "from meerk40t.main import APPLICATION_VERSION; print(APPLICATION_VERSION.split()[1] if ' ' in APPLICATION_VERSION else APPLICATION_VERSION)")
+        echo "Setting app name to: $APPNAME"
         echo "Setting app version to: $MKVERSION"
+        plutil -replace CFBundleName -string $APPNAME dist/MeerK40t.app/Contents/Info.plist
         plutil -replace CFBundleShortVersionString -string $MKVERSION dist/MeerK40t.app/Contents/Info.plist
         plutil -replace CFBundleVersion -string $MKVERSION dist/MeerK40t.app/Contents/Info.plist
         plutil -replace CFBundleIdentifier -string org.tatarize.MeerK40t dist/MeerK40t.app/Contents/Info.plist
