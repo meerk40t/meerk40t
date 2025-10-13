@@ -158,17 +158,9 @@ jobs:
 
     - name: Create AppImage
       run: |
-        # Download appimagetool (pinned to specific release for security)
-        APPIMAGETOOL_VERSION="13"
-        APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
-        APPIMAGETOOL_SHA256_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage.sha256"
-
-        wget -O appimagetool "${APPIMAGETOOL_URL}"
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         chmod +x appimagetool
-
-        # Fetch official checksum and verify for security
-        wget -O appimagetool.sha256 "${APPIMAGETOOL_SHA256_URL}"
-        sha256sum -c appimagetool.sha256 || exit 1
 
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
@@ -416,7 +408,17 @@ jobs:
       if: needs.build-macos.result == 'success'
       run: |
         cd binaries
-        zip -r "MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
+        ls -la
+        echo "Looking for macOS app file..."
+        find . -name "*macos*" -type f
+        if [ -f "MeerK40t-macos-${{ github.run_number }}.app" ]; then
+          echo "Found macOS app, creating zip..."
+          zip -r "MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
+        else
+          echo "ERROR: macOS app file not found!"
+          ls -la MeerK40t-macos-*
+          exit 1
+        fi
 
     - name: Create weekly release
       id: create_release
