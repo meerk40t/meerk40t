@@ -24,6 +24,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
         self.assign_buttons = []
         self.assign_operations = []
+        self.assign_labels = []
         self.positions = []
         self.page_size = 0
         self.first_to_show = 0
@@ -81,13 +82,14 @@ class DefaultOperationWidget(StatusBarWidget):
             ctrl.SetMinSize(wx.Size(dimen_x, dimen_y))
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
+        
         super().GenerateControls(parent, panelidx, identifier, context)
+        display_mode = self.context.elements.setting(int, "default_ops_display_mode", 1)
         size = dip_size(self.parent, 32, 32)
         self.iconsize = size[0]
 
         # How should we display the data?
         isize = int(self.iconsize * self.context.root.bitmap_correction_scale)
-        display_mode = self.context.elements.setting(int, "default_ops_display_mode", 0)
 
         self.buttonsize_x = self.iconsize
         self.buttonsize_y = min(self.iconsize, self.height)
@@ -115,6 +117,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
         self.assign_buttons.clear()
         self.assign_operations.clear()
+        self.assign_labels.clear()
         op_order = ("op cut", "op engrave", "op raster", "op image", "op dots")
         oplist = []
         self.is_sync_mode = self.context.elements.setting(bool, "default_ops_sync", False)
@@ -168,6 +171,7 @@ class DefaultOperationWidget(StatusBarWidget):
             size_it(btn, self.buttonsize_x, self.buttonsize_y)
             self.assign_buttons.append(btn)
             self.assign_operations.append(op)
+            self.assign_labels.append(opid)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_left)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_right)
             self.Add(btn, 0, wx.EXPAND, 0)
@@ -503,6 +507,7 @@ class DefaultOperationWidget(StatusBarWidget):
     def reset_tooltips(self):
         # Desync ! Could be new default operations - so valid reason to rebuild
         source_ops = self.source_ops()
+        # We need to sort them the same way as in GenerateControls
         if len(source_ops) != len(self.assign_buttons):
             # New default operations!
             self.GenerateControls(
@@ -513,7 +518,35 @@ class DefaultOperationWidget(StatusBarWidget):
         # First reset all tooltips
         # We may have reloaded operations
         source_ops = self.source_ops()
+        display_mode = self.context.elements.setting(int, "default_ops_display_mode", 1)    
+        if display_mode == 1:
+            # Group according to type CC EE RR - then sort alphabetically within type
+            source_ops.sort(key=lambda o: (("op cut", "op engrave", "op raster", "op image", "op dots").index(o.type) if hasattr(o, "type") and o.type in ("op cut", "op engrave", "op raster", "op image", "op dots") else 99, o.id if hasattr(o, "id") and o.id is not None else "")) 
         for idx, node in enumerate(source_ops):
+            opid = node.id
+            if opid is None:
+                opid = ""
+            if opid != self.assign_labels[idx]:
+                # Label has changed recreate icon
+                fontsize = 10
+                if len(opid) > 2:
+                    fontsize = 8
+                elif len(opid) > 3:
+                    fontsize = 7
+                elif len(opid) > 4:
+                    fontsize = 6
+                # How should we display the data?
+                isize = int(self.iconsize * self.context.root.bitmap_correction_scale)
+
+                self.assign_labels[idx] = opid
+                # use_theme=False is needed as otherwise colors will get reversed
+                icon = EmptyIcon(
+                    size=(isize, min(isize, self.height)),
+                    color=wx.Colour(swizzlecolor(node.color)),
+                    msg=opid,
+                    ptsize=fontsize,
+                ).GetBitmap(noadjustment=True, use_theme=False)
+                self.assign_buttons[idx].SetBitmap(icon)
             slabel = self.node_label(node)
             if slabel and idx < len(self.assign_buttons):
                 self.assign_buttons[idx].SetToolTip(slabel)
@@ -539,9 +572,10 @@ class DefaultOperationWidget(StatusBarWidget):
         if len(self.source_ops()) != len(self.assign_buttons):
             # Desync ! Could be new default operations - so valid reason to rebuild
             signal = "default_operations"
-        if signal in ("rebuild_tree",):
+        if signal == "rebuild_tree":
             self.reset_tooltips()
         elif signal == "element_property_update":
+            # Something changed - could be color or id
             if len(args):
                 self.reset_tooltips()
         elif (signal == "default_operations") or (signal == "updateop_tree" and self.is_sync_mode):
@@ -551,6 +585,3 @@ class DefaultOperationWidget(StatusBarWidget):
             )
             # Repaint
             self.show_stuff(True)
-        elif signal == "emphasized":
-            pass
-            # self.Enable(self.context.elements.has_emphasis())
