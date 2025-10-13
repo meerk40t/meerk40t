@@ -461,7 +461,7 @@ jobs:
 
           ### 📋 Build Information
           - **Commit**: [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-          - **Build**: #${{ github.run_number }}
+          - **Build**: # ${{ github.run_number }}
           - **Date**: ${{ github.event.repository.updated_at }}
           - **Branch**: `${{ github.ref_name }}`
 
