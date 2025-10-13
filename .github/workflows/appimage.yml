@@ -73,6 +73,12 @@ jobs:
           pyinstaller .github/workflows/linux/meerk40t.spec
         fi
 
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
+
     - name: Create AppImage
       run: |
         # Download appimagetool
@@ -94,57 +100,29 @@ jobs:
         if [ -f "meerk40t.ico" ]; then
           # Check if the ICO file is not empty
           if [ ! -s "meerk40t.ico" ]; then
-            echo "ERROR: meerk40t.ico is empty or malformed. Aborting icon conversion." >&2
-            exit 1
-          fi
-          # Convert ICO to PNG for AppImage with error handling
-          if ! convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
-            echo "ERROR: Failed to convert meerk40t.ico to PNG. Is ImageMagick installed and is the ICO valid?" >&2
-            exit 1
+            echo "WARNING: meerk40t.ico is empty or malformed. Skipping icon conversion." >&2
+          else
+            # Convert ICO to PNG for AppImage (non-fatal)
+            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+              echo "Icon conversion successful"
+            else
+              echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
+            fi
           fi
         else
           echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
         fi
 
-        # Create desktop file
-        cat > AppDir/usr/share/applications/meerk40t.desktop << EOF
-        [Desktop Entry]
-        Name=MeerK40t
-        Exec=meerk40t
-        Icon=meerk40t
-        Type=Application
-        Categories=Graphics;VectorGraphics;
-        Comment=Laser Cutter Software
-        Terminal=false
-        EOF
+        # Copy desktop file
+        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
+        cp .github/workflows/linux/meerk40t.desktop AppDir/
+        chmod +x AppDir/meerk40t.desktop
 
-        # Create AppStream metainfo
-        cat > AppDir/usr/share/metainfo/meerk40t.appdata.xml << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <component type="desktop-application">
-          <id>meerk40t</id>
-          <name>MeerK40t</name>
-          <summary>Laser Cutter Control Software</summary>
-          <description>
-            <p>MeerK40t is a free and open-source laser cutter control software.</p>
-          </description>
-          <launchable type="desktop-id">meerk40t.desktop</launchable>
-          <categories>
-            <category>Graphics</category>
-            <category>VectorGraphics</category>
-          </categories>
-        </component>
-        EOF
+        # Copy AppStream metainfo
+        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
 
-        # Create AppRun script
-        cat > AppDir/AppRun << EOF
-        #!/bin/bash
-        HERE="\$(dirname "\$(readlink -f "\${0}")")"
-        export PATH="\${HERE}/usr/bin:\${PATH}"
-        export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
-        export PYTHONPATH="\${HERE}/usr/lib/python3/dist-packages:\${PYTHONPATH}"
-        exec "\${HERE}/usr/bin/meerk40t" "\$@"
-        EOF
+        # Copy AppRun script
+        cp .github/workflows/linux/AppRun AppDir/
         chmod +x AppDir/AppRun
 
         # Build AppImage
