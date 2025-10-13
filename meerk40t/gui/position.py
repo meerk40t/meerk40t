@@ -479,6 +479,8 @@ class PositionPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
+                org_scale_x = bb[0] + (bb[2] - bb[0]) * self.offset_x
+                org_scale_y = bb[1] + (bb[3] - bb[1]) * self.offset_y
                 new_w = float(
                     Length(f"{round(self.position_w, 6)}{self.position_units}")
                 )
@@ -509,9 +511,8 @@ class PositionPanel(wx.Panel):
                     bb[2] = bb[0] + (bb[2] - bb[0]) * scalex
                 if scaley != 0:
                     bb[3] = bb[1] + (bb[3] - bb[1]) * scaley
-
-                elem.matrix.post_scale(scalex, scaley, bb[0], bb[1])
-                elem.scaled(sx=scalex, sy=scaley, ox=bb[0], oy=bb[1])
+                elem.matrix.post_scale(scalex, scaley, org_scale_x, org_scale_y)
+                elem.scaled(sx=scalex, sy=scaley, ox=org_scale_x, oy=org_scale_y)
                 # elem._bounds = bb
         else:
             u = self.position_units
@@ -536,11 +537,20 @@ class PositionPanel(wx.Panel):
                 else:
                     sy = 1
                 if sx != 1.0 or sy != 1.0:
-                    cmd2 = f"scale {sx} {sy}\n"
+                    cmd2 = f"scale {sx} {sy}"
             # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
             # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
-            cmd = cmd1 + cmd2
-            self.context(cmd)
+            if cmd1 == "" and cmd2 == "":
+                return
+            if cmd1:
+                self.context(f"{cmd1}\n")
+            if cmd2:
+                bb = self.context.elements.selected_area()
+                if bb is not None:
+                    cx = bb[0] + (bb[2] - bb[0]) * self.offset_x
+                    cy = bb[1] + (bb[3] - bb[1]) * self.offset_y
+                    cmd2 += f" -x {cx} -y {cy}"
+                    self.context(f"{cmd2}\n")
         if refresh_after:
             self.update_position(True)
 
