@@ -105,8 +105,8 @@ jobs:
         cd ..
 
         mv meerk40t.py mk40t.py
+        # --target-architecture universal2   - does not work!
         pyinstaller \
-          --target-architecture universal2 \
           --hidden-import wx._adv \
           --hidden-import wx._xml \
           --hidden-import meerk40t \
