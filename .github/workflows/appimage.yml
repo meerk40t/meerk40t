@@ -52,6 +52,9 @@ jobs:
         # Install core dependencies from requirements.txt
         pip install -r requirements.txt
 
+        # Install pyclipr with PEP 517 to avoid deprecation warning
+        pip install --use-pep517 pyclipr
+
         # Install Linux-specific optional dependencies
         pip install -r requirements-optional-linux.txt
 
@@ -104,6 +107,8 @@ jobs:
           else
             # Convert ICO to PNG for AppImage (non-fatal)
             if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+              # Also copy to AppDir root for desktop file to find it
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
               echo "Icon conversion successful"
             else
               echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2

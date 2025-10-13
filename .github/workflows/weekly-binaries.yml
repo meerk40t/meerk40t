@@ -153,6 +153,8 @@ jobs:
         pip install "opencv-python-headless<=4.8.1.78"
         pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install -r requirements.txt
+        # Install pyclipr with PEP 517 to avoid deprecation warning
+        pip install --use-pep517 pyclipr
         pip install -r requirements-optional-linux.txt
         pip install .
         pip install meerk40t-barcodes
@@ -165,7 +167,7 @@ jobs:
       run: |
         # Generate icons using the build script
         chmod +x tools/build_icon.sh
-        tools/build_icon.sh "${{ github.run_number }}"
+        tools/build_icon.sh "w${{ github.run_number }}"
 
     - name: Build MeerK40t Linux binary
       run: |
@@ -203,6 +205,8 @@ jobs:
           else
             # Convert ICO to PNG for AppImage (non-fatal)
             if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+              # Also copy to AppDir root for desktop file to find it
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
               echo "Icon conversion successful"
             else
               echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
