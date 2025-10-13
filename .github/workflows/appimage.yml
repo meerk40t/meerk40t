@@ -61,6 +61,12 @@ jobs:
         # Install project in development mode
         pip install -e .
 
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
+
     - name: Build with PyInstaller
       run: |
         # Use PyInstaller flags to exclude unwanted modules and include build-specific plugins
@@ -72,12 +78,6 @@ jobs:
         else
           pyinstaller .github/workflows/linux/meerk40t.spec
         fi
-
-    - name: Generate icons
-      run: |
-        # Generate icons using the build script
-        chmod +x tools/build_icon.sh
-        tools/build_icon.sh "w${{ github.run_number }}"
 
     - name: Create AppImage
       run: |
