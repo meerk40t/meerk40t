@@ -422,7 +422,7 @@ jobs:
         name: meerk40t-linux
         path: binaries/
 
-    - name: Debug: List downloaded binaries
+    - name: Debug List downloaded binaries
       run: |
         echo "Contents of binaries directory:"
         ls -la binaries/
