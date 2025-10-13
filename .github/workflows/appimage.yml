@@ -72,15 +72,12 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        # Use PyInstaller flags to exclude unwanted modules and include build-specific plugins
-        if [ ! -f ".github/workflows/linux/meerk40t.spec" ]; then
-          pyinstaller --onefile --windowed --name=MeerK40t \
-            --exclude-module=meerk40t.external_plugins \
-            --add-data="meerk40t/external_plugins_build.py:meerk40t/external_plugins.py" \
-            meerk40t.py
-        else
-          pyinstaller .github/workflows/linux/meerk40t.spec
-        fi
+        cd meerk40t
+        move external_plugins.py external_plugins.unused
+        move external_plugins_build.py external_plugins.py
+        cd ..
+
+        pyinstaller .github/workflows/linux/meerk40t_build.spec
 
     - name: Create AppImage
       run: |
