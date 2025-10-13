@@ -99,23 +99,30 @@ jobs:
         cp dist/MeerK40t AppDir/usr/bin/meerk40t
         chmod +x AppDir/usr/bin/meerk40t
 
-        # Copy icon and convert to PNG if needed
-        if [ -f "meerk40t.ico" ]; then
-          # Check if the ICO file is not empty
-          if [ ! -s "meerk40t.ico" ]; then
-            echo "WARNING: meerk40t.ico is empty or malformed. Skipping icon conversion." >&2
-          else
-            # Convert ICO to PNG for AppImage (non-fatal)
-            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
-              # Also copy to AppDir root for desktop file to find it
-              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
-              echo "Icon conversion successful"
-            else
-              echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
-            fi
-          fi
+        # Copy icon - should already be in PNG format from build_icon.sh
+        echo "Checking for icon files..."
+        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files not found"
+
+        if [ -f "meerk40t.png" ]; then
+          echo "Found meerk40t.png, copying to AppDir locations..."
+          # Copy to proper freedesktop.org location
+          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          # Also copy to AppDir root for desktop file to find it
+          cp meerk40t.png AppDir/meerk40t.png
+          echo "Icon copy completed successfully"
         else
-          echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
+          echo "WARNING: meerk40t.png not found. Checking if we can convert from ICO..."
+          if [ -f "meerk40t.ico" ]; then
+            echo "Attempting fallback conversion from ICO to PNG..."
+            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png 2>&1; then
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+              echo "Fallback conversion succeeded"
+            else
+              echo "WARNING: Fallback conversion failed. AppImage will not have a custom icon."
+            fi
+          else
+            echo "WARNING: Neither meerk40t.png nor meerk40t.ico found. AppImage will not have a custom icon."
+          fi
         fi
 
         # Copy desktop file

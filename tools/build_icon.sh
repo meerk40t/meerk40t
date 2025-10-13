@@ -36,5 +36,8 @@ convert mk_big.png \
 \( -clone 0 -fill red -gravity SouthEast -pointsize 96 -annotate 0 $VER -resize 256x256 -extent 256x256 -background transparent \) \
 -delete 0 meerk40t.ico
 
+# Also create the 256x256 PNG version for AppImage
+convert mk_big.png -fill red -gravity SouthEast -pointsize 96 -annotate 0 $VER -resize 256x256 -extent 256x256 -background transparent meerk40t.png
+
 rm mk_big.png
 rm mk_small.png
