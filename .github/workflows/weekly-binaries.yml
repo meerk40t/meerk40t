@@ -38,9 +38,11 @@ jobs:
         pip3 install .
         cd ..
 
-    - name: Install ImageMagick
+    - name: Generate icons
       run: |
         choco install imagemagick
+        # Generate icons using the build script
+        tools\build_icon.cmd "w${{ github.run_number }}"
 
     - name: Build MeerK40t Windows binary
       run: |
@@ -55,11 +57,6 @@ jobs:
 
         cd dist
         move MeerK40t.exe "MeerK40t-windows-${{ github.run_number }}.exe"
-
-    - name: Generate icons
-      run: |
-        # Generate icons using the build script
-        tools\build_icon.cmd "w${{ github.run_number }}"
 
     - name: Upload Windows binary
       uses: actions/upload-artifact@v4
@@ -91,9 +88,12 @@ jobs:
       run: |
         pip install pyinstaller
 
-    - name: Install ImageMagick
+    - name: Generate icons
       run: |
         brew install imagemagick
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
 
     - name: Build MeerK40t macOS binary
       run: |
@@ -111,12 +111,6 @@ jobs:
         zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
         cd ..
         mv "MeerK40t-macos-${{ github.run_number }}.zip" dist/
-
-    - name: Generate icons
-      run: |
-        # Generate icons using the build script
-        chmod +x tools/build_icon.sh
-        tools/build_icon.sh "w${{ github.run_number }}"
 
     - name: Upload macOS binary
       uses: actions/upload-artifact@v4
@@ -167,6 +161,12 @@ jobs:
       run: |
         pip install pyinstaller
 
+        - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "${{ github.run_number }}"
+
     - name: Build MeerK40t Linux binary
       run: |
         cd meerk40t
@@ -177,12 +177,6 @@ jobs:
         mv meerk40t.py mk40t.py
         pyinstaller .github/workflows/linux/meerk40t.spec
         mv mk40t.py meerk40t.py
-
-    - name: Generate icons
-      run: |
-        # Generate icons using the build script
-        chmod +x tools/build_icon.sh
-        tools/build_icon.sh "${{ github.run_number }}"
 
     - name: Create AppImage
       run: |
