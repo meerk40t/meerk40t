@@ -229,7 +229,7 @@ jobs:
         # Build AppImage
         ./appimagetool AppDir "MeerK40t-linux-${{ github.run_number }}.AppImage"
 
-    - name: Debug: Check AppImage creation
+    - name: Debug Check AppImage creation
       run: |
         echo "Current directory contents:"
         ls -la
