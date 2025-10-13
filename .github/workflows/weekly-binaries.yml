@@ -140,7 +140,7 @@ jobs:
           libeigen3-dev \
           libagg-dev \
           libpotrace-dev \
-          python3.11-dev \
+          libpython3-dev \
           libwebkit2gtk-4.0-dev \
           libsdl2-dev \
           libsm-dev \
@@ -151,7 +151,7 @@ jobs:
           desktop-file-utils \
           imagemagick
         pip install "opencv-python-headless<=4.8.1.78"
-        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        # pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install -r requirements.txt
         # Install pyclipr with PEP 517 to avoid deprecation warning
         pip install --use-pep517 pyclipr
