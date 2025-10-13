@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install opencv-python-headless<=4.8.1.78
+        pip install "opencv-python-headless<=4.8.1.78"
         pip install -r requirements.txt
         pip install -r requirements-optional-win.txt
         pip install .
@@ -72,7 +72,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install opencv-python-headless<=4.8.1.78
+        pip install "opencv-python-headless<=4.8.1.78"
         pip install -r requirements.txt
         pip install -r requirements-optional-linux.txt
         pip install .
@@ -126,7 +126,7 @@ jobs:
           libfuse2 \
           desktop-file-utils \
           imagemagick
-        pip install opencv-python-headless<=4.8.1.78
+        pip install "opencv-python-headless<=4.8.1.78"
         pip install -r requirements.txt
         pip install -r requirements-optional-linux.txt
         pip install .
