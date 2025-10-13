@@ -1,7 +1,46 @@
-"""
-GUI to manage material library entries.
-In essence a material library setting is a persistent list of operations.
-They are stored in the operations.cfg file in the meerk40t working directory
+"""meerk40t.gui.materialmanager
+--------------------------------
+
+GUI for the Material Manager panel used by MeerK40t.
+
+This module provides the MaterialPanel and supporting dialogs which allow
+users to create, inspect and manage material library entries. A material
+library entry is a small collection of operation presets (for example:
+Image/Raster/Engrave/Cut operations and effects) associated with a
+material name and thickness.
+
+Persistence and ordering
+------------------------
+Entries are persisted using the application's Settings system. Each
+operation is stored in a dedicated settings subsection whose name is built
+from the material identifier and a zero-padded numeric suffix (for
+example: "Plywood 000001"). The UI shows operations in lexicographic
+order of these subsection names which (thanks to zero-padding) matches the
+intended numeric order.
+
+Reordering operations
+----------------------
+The Material Manager provides menu-driven reordering (Move up/down/top/
+bottom) and a bulk "Sort All by Type" operation (Image -> Raster ->
+Engrave -> Cut). Reordering is implemented by reading all operation
+subsections into a list (sorted lexicographically), mutating the list in
+memory, deleting the old subsections and writing them back with new
+sequential zero-padded suffixes. This renaming ensures the new order is
+persisted and will be reflected by subsequent UI listing iterations.
+
+Notes and edge-cases
+--------------------
+- The Settings API yields key lists as generators in some places; the
+    code materializes those into lists before deleting entries to avoid
+    "dictionary changed size during iteration" errors.
+- Menu items for move actions are enabled/disabled according to the
+    selected operation index (for example, "Move Up" is disabled for the
+    first item).
+- Sorting uses a deterministic secondary key (operation id) within the
+    same type so the result is repeatable.
+
+See the class `MaterialPanel` for details on public methods and the
+right-click menu handlers.
 """
 
 import os
@@ -256,11 +295,42 @@ class ImportDialog(wx.Dialog):
 
 
 class MaterialPanel(ScrolledPanel):
-    """Material Panel - Set up material settings for better cutting results
-    **Technical Purpose:**
-    Provides material-specific settings and optimization controls. Features checkbox, button controls for user interaction. Integrates with rebuild_tree, default_operations for enhanced functionality.
-    **End-User Perspective:**
-    This panel helps you set up material-specific settings. Choose your material type and adjust cutting parameters for optimal results."""
+    """
+    MaterialPanel
+
+    UI panel that exposes material-specific operation presets and lets the
+    user manage the list of operations associated with a material and
+    thickness. Each operation is persisted in the application's Settings
+    subsystem under a subsection named with the material identifier and a
+    zero-padded numeric suffix (for example: "Plywood 000001"). The list
+    displayed in the UI is the lexicographic iteration of these
+    subsections which, due to zero-padding, preserves numeric ordering.
+
+    Responsibilities
+    - Display the set of operations for the currently selected material.
+    - Allow CRUD operations on entries (import/export, duplicate,
+        delete, edit settings).
+    - Provide reordering: move up/down/top/bottom and a bulk "Sort All by
+        Type" (Image -> Raster -> Engrave -> Cut). Reordering is persisted
+        by renaming subsections with sequential zero-padded suffixes.
+
+    Important implementation notes
+    - When deleting keys in a subsection, the settings key lists are
+        materialized into Python lists first to avoid "dictionary changed
+        size during iteration" exceptions.
+    - Menu actions that change order read all operation subsections into a
+        list, sort it deterministically, mutate it, remove the old
+        subsections and write back new ones with updated suffixes.
+    - Menu items for reordering are enabled/disabled based on the
+        selected operation index (e.g. "Move Up" is disabled for the
+        first/only item).
+
+    Future/UX notes
+    - Drag-and-drop reordering is a natural follow-up (not implemented in
+        this change) and should map visually to the same persistence
+        strategy so manual moves are saved the same way as menu-driven
+        moves.
+    """
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1777,6 +1847,19 @@ class MaterialPanel(ScrolledPanel):
         self.context.elements.default_operations = list(op_list)
         mat_title = self.context.elements._get_default_list_title(op_info)
         self.context.elements.default_operations_title = mat_title
+        if self.context.elements.setting(bool, "default_ops_sync", False):
+            # Translation hint: _("Load operations from material")
+            with self.context.elements.undoscope("Load operations from material"):
+                oldlist = list(self.context.elements.ops())
+                self.context.elements.remove_elements(oldlist)
+                opbranch = self.context.elements.op_branch
+                for op in op_list:
+                    newop = self.context.elements.create_usable_copy(op)
+                    opbranch.add_node(newop)
+                    if self.context.elements.classify_new:
+                        data = list(self.context.elements.elems())
+                        self.context.elements.classify(data)
+
         self.context.signal("default_operations")
 
     def on_apply_tree(self, event):
@@ -2641,17 +2724,19 @@ class MaterialPanel(ScrolledPanel):
                     op_type = op_data.get("type", "")
                     op_data_list.append((op_type, op_data))
                 
-                # Sort operations by type order, then by ID
+                # Sort operations by type order, then by ID, then by original index for stability
+                op_data_list_with_index = list(enumerate(op_data_list))
                 def get_sort_key(item):
-                    op_type, op_data = item
+                    original_index, (op_type, op_data) = item
                     # Get the sort order, default to 999 for unknown types
                     type_priority = type_order.get(op_type, 999)
                     # Get the ID for secondary sorting (default to empty string)
                     op_id = op_data.get("id", "")
-                    # Return tuple: primary sort by type, secondary sort by ID
-                    return (type_priority, op_id)
+                    # Return tuple: primary sort by type, secondary sort by ID, then original index
+                    return (type_priority, op_id, original_index)
                 
-                op_data_list.sort(key=get_sort_key)
+                op_data_list_with_index.sort(key=get_sort_key)
+                op_data_list = [item[1] for item in op_data_list_with_index]
                 # print (f"New operation order: {[op[1].get('id', '') + '.' + op[0] for op in op_data_list]}")
                 
                 # Delete all old operation sections
@@ -2730,7 +2815,7 @@ class MaterialPanel(ScrolledPanel):
             return apply_to_tree_handler
 
         def on_menu_popup_apply_to_statusbar(op_section):
-            def apply_to_tree_handler(*args):
+            def apply_to_statusbar_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
                 op_attr = dict()
@@ -2762,7 +2847,7 @@ class MaterialPanel(ScrolledPanel):
                 self.context.signal("default_operations")
 
             sect = op_section
-            return apply_to_tree_handler
+            return apply_to_statusbar_handler
 
         def on_menu_popup_missing(*args):
             if self.active_material is None:
@@ -2934,7 +3019,8 @@ class MaterialPanel(ScrolledPanel):
             item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by logical burn order"), "", wx.ITEM_NORMAL)
             item_sort.Enable(total_ops > 1)
             self.Bind(wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=True), item_sort)
-            item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by CCEERRII"), "", wx.ITEM_NORMAL)
+            item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by Cut/Engrave/Raster/Image order"), "", wx.ITEM_NORMAL)
+
             item_sort.Enable(total_ops > 1)
             self.Bind(wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=False), item_sort)
             
