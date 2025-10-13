@@ -52,6 +52,11 @@ jobs:
         cd dist
         move MeerK40t.exe "MeerK40t-windows-${{ github.run_number }}.exe"
 
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        tools\build_icon.cmd ${{ github.run_number }}
+
     - name: Upload Windows binary
       uses: actions/upload-artifact@v4
       with:
@@ -98,6 +103,12 @@ jobs:
         zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
         cd ..
         mv "MeerK40t-macos-${{ github.run_number }}.zip" dist/
+
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "${{ github.run_number }}"
 
     - name: Upload macOS binary
       uses: actions/upload-artifact@v4
@@ -159,6 +170,12 @@ jobs:
         pyinstaller .github/workflows/linux/meerk40t.spec
         mv mk40t.py meerk40t.py
 
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "${{ github.run_number }}"
+
     - name: Create AppImage
       run: |
         # Download appimagetool
@@ -180,13 +197,14 @@ jobs:
         if [ -f "meerk40t.ico" ]; then
           # Check if the ICO file is not empty
           if [ ! -s "meerk40t.ico" ]; then
-            echo "ERROR: meerk40t.ico is empty or malformed. Aborting icon conversion." >&2
-            exit 1
-          fi
-          # Convert ICO to PNG for AppImage with error handling
-          if ! convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
-            echo "ERROR: Failed to convert meerk40t.ico to PNG. Is ImageMagick installed and is the ICO valid?" >&2
-            exit 1
+            echo "WARNING: meerk40t.ico is empty or malformed. Skipping icon conversion." >&2
+          else
+            # Convert ICO to PNG for AppImage (non-fatal)
+            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png; then
+              echo "Icon conversion successful"
+            else
+              echo "WARNING: Failed to convert meerk40t.ico to PNG. AppImage will not have a custom icon." >&2
+            fi
           fi
         else
           echo "WARNING: meerk40t.ico not found. AppImage will not have a custom icon." >&2
@@ -203,6 +221,14 @@ jobs:
         Comment=Laser Cutter Software
         Terminal=false
         EOF
+
+        # Copy desktop file to AppDir root (required by appimagetool)
+        cp AppDir/usr/share/applications/meerk40t.desktop AppDir/
+        chmod +x AppDir/meerk40t.desktop
+
+        # Debug: Check if desktop file exists
+        ls -la AppDir/
+        ls -la AppDir/usr/share/applications/
 
         # Create AppStream metainfo
         cat > AppDir/usr/share/metainfo/meerk40t.appdata.xml << EOF
@@ -236,6 +262,13 @@ jobs:
         # Build AppImage
         ./appimagetool AppDir "MeerK40t-linux-${{ github.run_number }}.AppImage"
 
+    - name: Debug: Check AppImage creation
+      run: |
+        echo "Current directory contents:"
+        ls -la
+        echo "Checking if AppImage exists:"
+        ls -la "MeerK40t-linux-${{ github.run_number }}.AppImage" 2>/dev/null || echo "AppImage not found!"
+
     - name: Test AppImage
       run: |
         # Make AppImage executable and test basic functionality
@@ -244,6 +277,18 @@ jobs:
         timeout 15s ./"MeerK40t-linux-${{ github.run_number }}.AppImage" --version
         if [ $? -ne 0 ]; then
           echo "ERROR: AppImage failed to start or did not return version information."
+          exit 1
+        fi
+
+    - name: Verify AppImage before upload
+      run: |
+        # Verify AppImage exists before upload
+        if [ -f "MeerK40t-linux-${{ github.run_number }}.AppImage" ]; then
+          echo "AppImage found, proceeding with upload"
+          ls -la "MeerK40t-linux-${{ github.run_number }}.AppImage"
+        else
+          echo "ERROR: AppImage not found!"
+          ls -la
           exit 1
         fi
 
@@ -374,6 +419,9 @@ jobs:
 
     - name: Download all binaries
       run: |
+        # Create binaries directory
+        mkdir -p binaries
+        
         # Download artifacts conditionally based on build success
         if [ "${{ needs.build-windows.result }}" = "success" ]; then
           echo "Windows build succeeded - downloading artifact"
@@ -406,6 +454,13 @@ jobs:
       with:
         name: meerk40t-linux
         path: binaries/
+
+    - name: Debug: List downloaded binaries
+      run: |
+        echo "Contents of binaries directory:"
+        ls -la binaries/
+        echo "Available artifacts:"
+        ls -la
 
     - name: Create weekly release
       id: create_release
