@@ -27,6 +27,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.positions = []
         self.page_size = 0
         self.first_to_show = 0
+        self.is_sync_mode = False
 
     def node_label(self, node):
         percent = ""
@@ -64,10 +65,16 @@ class DefaultOperationWidget(StatusBarWidget):
             + _("Right click for options")
             + "\n"
             + _("Origin: {title}").format(
-                title=self.context.elements.default_operations_title
+                title="Tree" if self.is_sync_mode else self.context.elements.default_operations_title
             )
         )
 
+    def source_ops(self):
+        if self.is_sync_mode:
+            return list(self.context.elements.ops())
+        else:
+            return list(self.context.elements.default_operations)
+        
     def GenerateControls(self, parent, panelidx, identifier, context):
         def size_it(ctrl, dimen_x, dimen_y):
             ctrl.SetMinSize(wx.Size(dimen_x, dimen_y))
@@ -109,45 +116,26 @@ class DefaultOperationWidget(StatusBarWidget):
         self.assign_operations.clear()
         op_order = ("op cut", "op engrave", "op raster", "op image", "op dots")
         oplist = []
-        for op in self.context.elements.default_operations:
+        self.is_sync_mode = self.context.elements.setting(bool, "default_ops_sync", False)
+        for op in self.source_ops():
             if hasattr(op, "type") and op.type in op_order:
                 oplist.append(op)
-        if display_mode == 0:
-            # As in tree, so nothing to do...
-            pass
-        elif display_mode == 1:
-            # Group according to type CC EE RR
-            oplist = []
-            for ntype in op_order:
-                for op in self.context.elements.default_operations:
-                    if op.type == ntype:
-                        oplist.append(op)
-        elif display_mode == 2:
-            oplist = []
-            mylist = []
-            for ntype in op_order:
-                for op in self.context.elements.default_operations:
-                    if op.type == ntype:
-                        mylist.append(op)
-            for idx, op in enumerate(mylist):
-                if op is None:
-                    # Already dealt with
-                    continue
-                oplist.append(op)
-                type_index_1 = op_order.index(op.type)
-                for idx2 in range(idx + 1, len(mylist)):
-                    op2 = mylist[idx2]
-                    if op2 is None:
-                        continue
-                    type_index_2 = op_order.index(op2.type)
-                    if type_index_2 <= type_index_1:
-                        continue
-                    oplist.append(op2)
-                    mylist[idx2] = None
-                    # Next one
-                    type_index_1 = type_index_2
-
-                mylist[idx] = None
+        # Validate that we have ids across the board
+        for op in oplist:
+            if op.id is None:
+                op.id = ""
+                seen_ids = set()
+                for other in oplist:
+                    if other.id is not None and other.type == op.type:
+                        seen_ids.add(other.id)
+                newid = 1
+                optype_prefix = op.type[3].upper() # They all start with "op "
+                while f"{optype_prefix}{newid}" in seen_ids:
+                    newid += 1
+                op.id = f"{optype_prefix}{newid}"
+        if display_mode == 1:
+            # Group according to type CC EE RR - then sort alphabetically within type
+            oplist.sort(key=lambda o: (op_order.index(o.type) if hasattr(o, "type") and o.type in op_order else 99, o.id if hasattr(o, "id") and o.id is not None else ""))
 
         for op in oplist:
             btn = wxStaticBitmap(
@@ -247,11 +235,38 @@ class DefaultOperationWidget(StatusBarWidget):
                     elements.default_operations = list(oplist)
                     mat_title = elements._get_default_list_title(opinfo)
                     elements.default_operations_title = mat_title
+                    if self.is_sync_mode:
+                        # We load the operations into the tree as well
+                        # First remove all existing operations
+                        # Translation hint _("Load operations from material")
+                        with elements.undoscope("Load operations from material"):
+                            oldlist = list(elements.ops())
+                            elements.remove_elements(oldlist)
+                            opbranch = elements.op_branch
+                            for op in oplist:
+                                newop = elements.create_usable_copy(op)
+                                opbranch.add_node(newop)
+                            if elements.classify_new:
+                                data = list(elements.elems())
+                                elements.classify(data)
+                        self.context.signal("rebuild_tree", "all")
                     self.Signal("default_operations")
 
             stored_mat = matname
             return handler
 
+        def on_sync_mode(event):
+            self.is_sync_mode = not self.is_sync_mode
+            self.context.elements.default_ops_sync = self.is_sync_mode
+            self.Signal("default_operations")
+        
+        def on_order_mode(mode):
+            def handler(event):
+                self.context.elements.default_ops_display_mode = mode
+                self.Signal("default_operations")
+            
+            return handler
+            
         # def on_update_button_from_tree(idx, operation):
         #     def handler(*args):
         #         self.assign_operations[stored_idx] = self.context.elements.create_usable_copy(stored_op)
@@ -355,6 +370,19 @@ class DefaultOperationWidget(StatusBarWidget):
                     on_menu_material(material),
                     menu_secondary.Append(wx.ID_ANY, mat[2], ""),
                 )
+        
+        menu.AppendSeparator()
+        item = menu.AppendCheckItem(wx.ID_ANY, _("Sync to tree operations"))
+        item.Check(self.is_sync_mode)
+        self.parent.Bind(wx.EVT_MENU, on_sync_mode, item)
+        menu.AppendSeparator()
+        display_mode = self.context.elements.default_ops_display_mode
+        item = menu.AppendRadioItem(wx.ID_ANY, _("Keep order (as in tree)"))
+        item.Check(display_mode == 0)
+        self.parent.Bind(wx.EVT_MENU, on_order_mode(0), item)
+        item = menu.AppendRadioItem(wx.ID_ANY, _("Group by type (CCEERRII)"))
+        item.Check(display_mode == 1)   
+        self.parent.Bind(wx.EVT_MENU, on_order_mode(1), item)
 
         self.parent.PopupMenu(menu)
 
@@ -471,15 +499,15 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def reset_tooltips(self):
         # Desync?
-        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+        if len(self.source_ops()) != len(self.assign_buttons):
             # New default operations!
             self.GenerateControls(
                 self.parent, self.panelidx, self.identifier, self.context
             )
             # Repaint
             self.show_stuff(True)
-        # First reset all
-        for idx, node in enumerate(self.context.elements.default_operations):
+        # First reset all tooltips
+        for idx, node in enumerate(self.source_ops()):
             slabel = self.node_label(node)
             if slabel and idx < len(self.assign_buttons):
                 self.assign_buttons[idx].SetToolTip(slabel)
@@ -491,7 +519,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 continue
             opid = node.id
             if opid:
-                for op in self.context.elements.default_operations:
+                for op in self.source_ops():
                     if opid == op.id:
                         slabel = self.node_label(node)
                         if slabel:
@@ -502,7 +530,7 @@ class DefaultOperationWidget(StatusBarWidget):
                         break
 
     def Signal(self, signal, *args):
-        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+        if len(self.source_ops()) != len(self.assign_buttons):
             # desync !
             signal = "default_operations"
         if signal in ("rebuild_tree",):
@@ -510,7 +538,7 @@ class DefaultOperationWidget(StatusBarWidget):
         elif signal == "element_property_update":
             if len(args):
                 self.reset_tooltips()
-        elif signal == "default_operations":
+        elif (signal == "default_operations") or (signal == "updateop_tree" and self.is_sync_mode):
             # New default operations!
             self.GenerateControls(
                 self.parent, self.panelidx, self.identifier, self.context
