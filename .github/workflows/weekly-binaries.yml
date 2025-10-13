@@ -87,6 +87,10 @@ jobs:
       run: |
         pip install pyinstaller
 
+    - name: Install ImageMagick
+      run: |
+        brew install imagemagick
+
     - name: Build MeerK40t macOS binary
       run: |
         cd meerk40t
