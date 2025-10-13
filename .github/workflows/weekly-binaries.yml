@@ -175,16 +175,14 @@ jobs:
         echo "Icon generation completed. Checking results..."
         ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files were not created"
 
-    - name: Build MeerK40t Linux binary
+    - name: Build with PyInstaller
       run: |
         cd meerk40t
         mv external_plugins.py external_plugins.unused
         mv external_plugins_build.py external_plugins.py
         cd ..
 
-        mv meerk40t.py mk40t.py
-        pyinstaller .github/workflows/linux/meerk40t.spec
-        mv mk40t.py meerk40t.py
+        pyinstaller .github/workflows/linux/meerk40t_build.spec
 
     - name: Create AppImage
       run: |
@@ -233,10 +231,6 @@ jobs:
         cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
         cp .github/workflows/linux/meerk40t.desktop AppDir/
         chmod +x AppDir/meerk40t.desktop
-
-        # Debug: Check if desktop file exists
-        ls -la AppDir/
-        ls -la AppDir/usr/share/applications/
 
         # Copy AppStream metainfo
         cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
