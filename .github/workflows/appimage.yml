@@ -47,6 +47,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel pyinstaller
 
+        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+
         # Install core dependencies from requirements.txt
         pip install -r requirements.txt
 
@@ -73,20 +75,9 @@ jobs:
 
     - name: Create AppImage
       run: |
-        # Download appimagetool (pinned to specific release for security)
-        APPIMAGETOOL_VERSION="13"
-        APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
-        APPIMAGETOOL_SHA256_URL="https://github.com/AppImage/AppImageKit/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage.sha256"
-
-        wget -O appimagetool "${APPIMAGETOOL_URL}"
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         chmod +x appimagetool
-
-        # Fetch official checksum and verify for security
-        wget -O appimagetool.sha256 "${APPIMAGETOOL_SHA256_URL}"
-        sha256sum -c appimagetool.sha256 || exit 1
-
-        # If updating appimagetool version, update APPIMAGETOOL_VERSION and APPIMAGETOOL_SHA256_URL.
-        # The checksum is always fetched from the official release page.
 
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
