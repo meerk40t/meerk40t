@@ -1570,7 +1570,9 @@ class Elemental(Service):
         settings = self.op_data if use_settings is None else use_settings
         op_tree = {}
         op_info = {}
-        for section in list(settings.derivable(name)):
+        seclist = list(settings.derivable(name))
+        seclist.sort() # Make sure we load in the right order
+        for section in seclist:
             if section.endswith("info"):
                 for key in settings.keylist(section):
                     content = settings.read_persistent(str, section, key)

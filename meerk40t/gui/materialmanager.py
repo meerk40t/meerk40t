@@ -1,7 +1,46 @@
-"""
-GUI to manage material library entries.
-In essence a material library setting is a persistent list of operations.
-They are stored in the operations.cfg file in the meerk40t working directory
+"""meerk40t.gui.materialmanager
+--------------------------------
+
+GUI for the Material Manager panel used by MeerK40t.
+
+This module provides the MaterialPanel and supporting dialogs which allow
+users to create, inspect and manage material library entries. A material
+library entry is a small collection of operation presets (for example:
+Image/Raster/Engrave/Cut operations and effects) associated with a
+material name and thickness.
+
+Persistence and ordering
+------------------------
+Entries are persisted using the application's Settings system. Each
+operation is stored in a dedicated settings subsection whose name is built
+from the material identifier and a zero-padded numeric suffix (for
+example: "Plywood 000001"). The UI shows operations in lexicographic
+order of these subsection names which (thanks to zero-padding) matches the
+intended numeric order.
+
+Reordering operations
+----------------------
+The Material Manager provides menu-driven reordering (Move up/down/top/
+bottom) and a bulk "Sort All by Type" operation (Image -> Raster ->
+Engrave -> Cut). Reordering is implemented by reading all operation
+subsections into a list (sorted lexicographically), mutating the list in
+memory, deleting the old subsections and writing them back with new
+sequential zero-padded suffixes. This renaming ensures the new order is
+persisted and will be reflected by subsequent UI listing iterations.
+
+Notes and edge-cases
+--------------------
+- The Settings API yields key lists as generators in some places; the
+    code materializes those into lists before deleting entries to avoid
+    "dictionary changed size during iteration" errors.
+- Menu items for move actions are enabled/disabled according to the
+    selected operation index (for example, "Move Up" is disabled for the
+    first item).
+- Sorting uses a deterministic secondary key (operation id) within the
+    same type so the result is repeatable.
+
+See the class `MaterialPanel` for details on public methods and the
+right-click menu handlers.
 """
 
 import os
@@ -256,11 +295,42 @@ class ImportDialog(wx.Dialog):
 
 
 class MaterialPanel(ScrolledPanel):
-    """Material Panel - Set up material settings for better cutting results
-    **Technical Purpose:**
-    Provides material-specific settings and optimization controls. Features checkbox, button controls for user interaction. Integrates with rebuild_tree, default_operations for enhanced functionality.
-    **End-User Perspective:**
-    This panel helps you set up material-specific settings. Choose your material type and adjust cutting parameters for optimal results."""
+    """
+    MaterialPanel
+
+    UI panel that exposes material-specific operation presets and lets the
+    user manage the list of operations associated with a material and
+    thickness. Each operation is persisted in the application's Settings
+    subsystem under a subsection named with the material identifier and a
+    zero-padded numeric suffix (for example: "Plywood 000001"). The list
+    displayed in the UI is the lexicographic iteration of these
+    subsections which, due to zero-padding, preserves numeric ordering.
+
+    Responsibilities
+    - Display the set of operations for the currently selected material.
+    - Allow CRUD operations on entries (import/export, duplicate,
+        delete, edit settings).
+    - Provide reordering: move up/down/top/bottom and a bulk "Sort All by
+        Type" (Image -> Raster -> Engrave -> Cut). Reordering is persisted
+        by renaming subsections with sequential zero-padded suffixes.
+
+    Important implementation notes
+    - When deleting keys in a subsection, the settings key lists are
+        materialized into Python lists first to avoid "dictionary changed
+        size during iteration" exceptions.
+    - Menu actions that change order read all operation subsections into a
+        list, sort it deterministically, mutate it, remove the old
+        subsections and write back new ones with updated suffixes.
+    - Menu items for reordering are enabled/disabled based on the
+        selected operation index (e.g. "Move Up" is disabled for the
+        first/only item).
+
+    Future/UX notes
+    - Drag-and-drop reordering is a natural follow-up (not implemented in
+        this change) and should map visually to the same persistence
+        strategy so manual moves are saved the same way as menu-driven
+        moves.
+    """
 
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1777,6 +1847,19 @@ class MaterialPanel(ScrolledPanel):
         self.context.elements.default_operations = list(op_list)
         mat_title = self.context.elements._get_default_list_title(op_info)
         self.context.elements.default_operations_title = mat_title
+        if self.context.elements.setting(bool, "default_ops_sync", False):
+            # Translation hint: _("Load operations from material")
+            with self.context.elements.undoscope("Load operations from material"):
+                oldlist = list(self.context.elements.ops())
+                self.context.elements.remove_elements(oldlist)
+                opbranch = self.context.elements.op_branch
+                for op in op_list:
+                    newop = self.context.elements.create_usable_copy(op)
+                    opbranch.add_node(newop)
+                    if self.context.elements.classify_new:
+                        data = list(self.context.elements.elems())
+                        self.context.elements.classify(data)
+
         self.context.signal("default_operations")
 
     def on_apply_tree(self, event):
@@ -2088,7 +2171,9 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is not None:
             secdesc = ""
             idx = 0
-            for subsection in self.op_data.derivable(self.active_material):
+            content = list(self.op_data.derivable(self.active_material))
+            content.sort()
+            for subsection in content:
                 if subsection.endswith(" info"):
                     info_title = self.op_data.read_persistent(
                         str, subsection, "title", ""
@@ -2505,6 +2590,172 @@ class MaterialPanel(ScrolledPanel):
             sect = op_section
             return dup_handler
 
+        def on_menu_popup_move(op_section, direction):
+            """
+            Move an operation entry up, down, to top, or to bottom.
+            direction: 'up', 'down', 'top', 'bottom'
+            """
+            def move_handler(*args):
+                settings = self.op_data
+                # Get all operation sections (excluding info sections)
+                op_sections = []
+                for subsection in settings.derivable(self.active_material):
+                    if subsection.endswith(" info"):
+                        continue
+                    op_sections.append(subsection)
+                
+                # Sort sections to match display order (alphabetical by section name)
+                op_sections.sort()
+                
+                if len(op_sections) <= 1:
+                    # Nothing to move
+                    return
+                
+                # Find the index of the current section
+                try:
+                    current_idx = op_sections.index(sect)
+                except ValueError:
+                    # Section not found
+                    return
+                
+                # Determine target index based on direction
+                target_idx = current_idx
+                if direction == 'up' and current_idx > 0:
+                    target_idx = current_idx - 1
+                elif direction == 'down' and current_idx < len(op_sections) - 1:
+                    target_idx = current_idx + 1
+                elif direction == 'top':
+                    target_idx = 0
+                elif direction == 'bottom':
+                    target_idx = len(op_sections) - 1
+                
+                if target_idx == current_idx:
+                    # No movement needed
+                    return
+                
+                # Store all operation data
+                op_data_list = []
+                for subsection in op_sections:
+                    op_data = {}
+                    for key in list(settings.keylist(subsection)):
+                        op_data[key] = settings.read_persistent(str, subsection, key, "")
+                    op_data_list.append(op_data)
+                
+                # Move the operation in the list
+                moved_op = op_data_list.pop(current_idx)
+                op_data_list.insert(target_idx, moved_op)
+                # print(f"Moved operation from index {current_idx} to {target_idx}")
+                # print(f"New operation order: {[op.get('id', '') for op in op_data_list]}")
+                
+                # Delete all old operation sections (but preserve info section)
+                for subsection in op_sections:
+                    # Create a list of keys as we cannot modify while iterating
+                    keys_to_delete = list(settings.keylist(subsection))
+                    for key in keys_to_delete:
+                        settings.delete_persistent(subsection, key)
+                
+                # Write back all operations with new numbering
+                for idx, op_data in enumerate(op_data_list):
+                    section_name = f"{self.active_material} {idx + 1:0>6}"
+                    for key, value in op_data.items():
+                        settings.write_persistent(section_name, key, value)
+                
+                settings.write_configuration()
+                self.fill_preview()
+            
+            sect = op_section
+            return move_handler
+
+        def on_menu_popup_sort_by_type(by_burn_order):
+            """
+            Sort all operations by their logical type order: Image -> Raster -> Engrave -> Cut
+            """
+            def sort_handler(*args):
+                settings = self.op_data
+                # Get all operation sections (excluding info sections)
+                op_sections = []
+                for subsection in settings.derivable(self.active_material):
+                    if subsection.endswith(" info"):
+                        continue
+                    op_sections.append(subsection)
+                # Sort sections to match display order (alphabetical by section name)
+                op_sections.sort()
+                
+                # op_data_list = []
+                # for subsection in op_sections:
+                #     op_data = {}
+                #     # First, collect all the data
+                #     for key in list(settings.keylist(subsection)):
+                #         value = settings.read_persistent(str, subsection, key, "")
+                #         op_data[key] = value
+                #     op_data_list.append(op_data)    
+                # print(op_sections)
+                # print (f"Current operation order: {[op.get('id', '')+'.'+op.get('type', '') for op in op_data_list]}")
+                
+                if len(op_sections) <= 1:
+                    # Nothing to sort
+                    return
+                
+                # Define the sort order
+                if by_burn_order:
+                    type_order = {
+                        "op image": 0,
+                        "op raster": 1,
+                        "op engrave": 2,
+                        "op cut": 3,
+                    }   
+                else:
+                    type_order = {
+                        "op cut": 0,
+                        "op engrave": 1,
+                        "op raster": 2,
+                        "op image": 3,
+                    }
+                
+                # Store all operation data with their types
+                op_data_list = []
+                for subsection in op_sections:
+                    op_data = {}
+                    # First, collect all the data
+                    for key in list(settings.keylist(subsection)):
+                        value = settings.read_persistent(str, subsection, key, "")
+                        op_data[key] = value
+                    # Get the type from the collected data
+                    op_type = op_data.get("type", "")
+                    op_data_list.append((op_type, op_data))
+                
+                # Sort operations by type order, then by ID, then by original index for stability
+                op_data_list_with_index = list(enumerate(op_data_list))
+                def get_sort_key(item):
+                    original_index, (op_type, op_data) = item
+                    # Get the sort order, default to 999 for unknown types
+                    type_priority = type_order.get(op_type, 999)
+                    # Get the ID for secondary sorting (default to empty string)
+                    op_id = op_data.get("id", "")
+                    # Return tuple: primary sort by type, secondary sort by ID, then original index
+                    return (type_priority, op_id, original_index)
+                
+                op_data_list_with_index.sort(key=get_sort_key)
+                op_data_list = [item[1] for item in op_data_list_with_index]
+                # print (f"New operation order: {[op[1].get('id', '') + '.' + op[0] for op in op_data_list]}")
+                
+                # Delete all old operation sections
+                for subsection in op_sections:
+                    keys_to_delete = list(settings.keylist(subsection))
+                    for key in keys_to_delete:
+                        settings.delete_persistent(subsection, key)
+                
+                # Write back all operations with new numbering
+                for idx, (op_type, op_data) in enumerate(op_data_list):
+                    section_name = f"{self.active_material} {idx + 1:0>6}"
+                    for key, value in op_data.items():
+                        settings.write_persistent(section_name, key, value)
+                
+                settings.write_configuration()
+                self.fill_preview()
+            return sort_handler
+
+
         def on_menu_popup_newop(op_dict):
             def add_handler(*args):
                 settings = self.op_data
@@ -2564,7 +2815,7 @@ class MaterialPanel(ScrolledPanel):
             return apply_to_tree_handler
 
         def on_menu_popup_apply_to_statusbar(op_section):
-            def apply_to_tree_handler(*args):
+            def apply_to_statusbar_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
                 op_attr = dict()
@@ -2596,7 +2847,7 @@ class MaterialPanel(ScrolledPanel):
                 self.context.signal("default_operations")
 
             sect = op_section
-            return apply_to_tree_handler
+            return apply_to_statusbar_handler
 
         def on_menu_popup_missing(*args):
             if self.active_material is None:
@@ -2723,6 +2974,57 @@ class MaterialPanel(ScrolledPanel):
             self.Bind(wx.EVT_MENU, on_menu_popup_duplicate(key), item)
             item = menu.Append(wx.ID_ANY, _("Delete"), "", wx.ITEM_NORMAL)
             self.Bind(wx.EVT_MENU, on_menu_popup_delete(key), item)
+
+            menu.AppendSeparator()
+            
+            # Move operations submenu - determine position to enable/disable items
+            settings = self.op_data
+            op_sections = []
+            for subsection in settings.derivable(self.active_material):
+                if subsection.endswith(" info"):
+                    continue
+                op_sections.append(subsection)
+            op_sections.sort()
+            
+            current_idx = -1
+            try:
+                current_idx = op_sections.index(key)
+            except ValueError:
+                pass
+            
+            total_ops = len(op_sections)
+            is_first = current_idx == 0
+            is_last = current_idx == total_ops - 1
+            can_move = total_ops > 1 and current_idx >= 0
+            
+            submenu_move = wx.Menu()
+            item_top = submenu_move.Append(wx.ID_ANY, _("Move to Top"), "", wx.ITEM_NORMAL)
+            item_top.Enable(can_move and not is_first)
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'top'), item_top)
+            
+            item_up = submenu_move.Append(wx.ID_ANY, _("Move Up"), "", wx.ITEM_NORMAL)
+            item_up.Enable(can_move and not is_first)
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'up'), item_up)
+            
+            item_down = submenu_move.Append(wx.ID_ANY, _("Move Down"), "", wx.ITEM_NORMAL)
+            item_down.Enable(can_move and not is_last)
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'down'), item_down)
+            
+            item_bottom = submenu_move.Append(wx.ID_ANY, _("Move to Bottom"), "", wx.ITEM_NORMAL)
+            item_bottom.Enable(can_move and not is_last)
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'bottom'), item_bottom)
+            
+            # Add separator and sort option
+            submenu_move.AppendSeparator()
+            item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by logical burn order"), "", wx.ITEM_NORMAL)
+            item_sort.Enable(total_ops > 1)
+            self.Bind(wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=True), item_sort)
+            item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by Cut/Engrave/Raster/Image order"), "", wx.ITEM_NORMAL)
+
+            item_sort.Enable(total_ops > 1)
+            self.Bind(wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=False), item_sort)
+            
+            menu.AppendSubMenu(submenu_move, _("Move"))
 
             menu.AppendSeparator()
 
