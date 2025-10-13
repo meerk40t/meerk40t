@@ -94,6 +94,8 @@ jobs:
         # Generate icons using the build script
         chmod +x tools/build_icon.sh
         tools/build_icon.sh "w${{ github.run_number }}"
+        # Copy the generated .icns file to the expected location
+        cp meerk40t.icns .github/workflows/mac/meerk40t.icns
 
     - name: Build MeerK40t macOS binary
       run: |
@@ -138,6 +140,7 @@ jobs:
         sudo apt install libpython3-dev
         sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
         sudo apt install libsdl2-dev libsm-dev libx11-dev
+        sudo apt install fuse libfuse2 fuse3  # FUSE for AppImage support
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
