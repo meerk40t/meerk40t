@@ -24,6 +24,20 @@ class TCPOutput:
         try:
             self.controller.log("Attempting to Connect...", type="connection")
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Enable TCP keep-alive to prevent connection timeouts
+            self._stream.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            # Set keep-alive parameters (platform-dependent)
+            try:
+                # TCP_KEEPIDLE: Time before sending keep-alive probes
+                self._stream.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+                # TCP_KEEPINTVL: Interval between keep-alive probes
+                self._stream.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
+                # TCP_KEEPCNT: Number of failed probes before connection is closed
+                self._stream.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3)
+            except (AttributeError, OSError):
+                # TCP keep-alive parameters may not be available on all platforms
+                # Basic SO_KEEPALIVE should still work
+                pass
             # Make sure port is in a valid range...
             port = min(65535, max(0, self.service.port))
             self._stream.connect((self.service.address, port))
