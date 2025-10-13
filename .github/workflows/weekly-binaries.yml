@@ -269,7 +269,12 @@ jobs:
         tag_name: weekly-${{ github.run_number }}
         name: Weekly Build ${{ github.run_number }}
         body: |
-          Automated weekly binary build of MeerK40t.
+          ### ⚠️ Important Notes
+
+          - This is a **weekly development build** - use at your own risk - it may contain bugs or incomplete features.
+          - These builds are not officially supported and are provided for testing and development purposes only.
+          - For stable releases, see: [Release Versions](${{ github.server_url }}/${{ github.repository }}/releases)
+          - Latest stable: [0.9.x series](${{ github.server_url }}/${{ github.repository }}/releases/latest)
 
           **Build Information:**
           - Commit: ${{ github.sha }}
