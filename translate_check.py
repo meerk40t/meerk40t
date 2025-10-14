@@ -478,6 +478,14 @@ def validate_po(
 
         msgid_curly = extract_curly(msgid)
         msgstr_curly = extract_curly(msgstr)
+        # Check for missing placeholders in msgstr that are present in msgid
+        missing_placeholders = [ph for ph in msgid_curly if ph not in msgstr_curly]
+        if missing_placeholders:
+            print_warning(f"Missing placeholder(s) in msgstr for msgid: {msgid}\n  Missing: {', '.join(missing_placeholders)}\n  msgstr: {msgstr}")
+            # Fix: Insert missing placeholders into msgstr at the end
+            for ph in missing_placeholders:
+                entry.msgstr += f" {{{ph}}}"  # Add with space for clarity
+            faulty_curly += 1
         # Only replace if both have the same number of curly bracketed texts
         if msgid_curly and msgstr_curly:
             # Replace only curly bracketed texts in msgstr whose spelling cannot be found in any curly identifier in msgid
