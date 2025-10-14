@@ -457,7 +457,12 @@ def validate_po(
             else:
                 ignored_duplicate += 1
             continue
-        entry = polib.POEntry(msgid=msgid, msgstr=msgstr)
+        baremsg = unescape_string(msgid)
+        entry = polib.POEntry(msgid=msgid, msgstr=baremsg)
+        # if msgid.startswith("String with"):
+        #     print (f"Found string with placeholders: {msgid}")
+        #     print (f"msgstr from routine: '{msgstr}'")
+        #     print (f"msgstr from po: '{entry.msgstr}'")
         idx = id_strings_source.index(t_msgid)
         usage = id_usage[idx]
         if usage.startswith("#: "):
