@@ -279,11 +279,11 @@ def create_mo_files(force: bool, locales: set) -> list:
     print_header("Compiling .po to .mo Files")
 
     for d_local, d in zip(po_locales, po_dirs):
-        print_info(f"Processing locale: {d_local}")
         if locales and d_local not in locales:
             print_info(f"Skipping locale {d_local}")
             file_results.append((d_local, "Skipped", "Not in selected locales"))
             continue
+        print_info(f"Processing locale: {d_local}")
         mo_files = []
         po_files = [f for f in next(os.walk(d))[2] if os.path.splitext(f)[1] == ".po"]
         for po_file in po_files:
