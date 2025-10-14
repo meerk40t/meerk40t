@@ -133,7 +133,7 @@ def plugin(kernel, lifecycle):
                         src = True
                     elif "src" in ending:
                         src = True
-
+            
                     result = list(map(int, version.split(".")))
                     if len(result) > 3:
                         result = result[0:2]
@@ -150,7 +150,11 @@ def plugin(kernel, lifecycle):
             def extract_from_json(response):
                 # print (response)
                 tag = response["tag_name"]
-                version = comparable_version(tag)
+                try:
+                    version = comparable_version(tag)
+                except Exception as e:
+                    print(f"Error parsing version from tag '{tag}': {e}")
+                    return None, None, None, None, None, None
                 if response["prerelease"]:
                     version[3] = True
                 url = response["html_url"]
@@ -339,6 +343,9 @@ def plugin(kernel, lifecycle):
                         for resp in response:
                             if resp["draft"]:
                                 continue
+                            if resp["tag_name"].lower().startswith("weekly"):
+                                # print(f"Found weekly build: {resp['tag_name']}")
+                                continue
                             (
                                 tag,
                                 version,
@@ -347,6 +354,9 @@ def plugin(kernel, lifecycle):
                                 assets,
                                 rel_info,
                             ) = extract_from_json(resp)
+                            if tag is None:
+                                continue
+
                             # What is the newest beta
                             if resp["prerelease"]:
                                 if newer_version(
