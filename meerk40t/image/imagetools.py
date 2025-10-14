@@ -793,7 +793,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_command(
         "image",
-        help=_("image <operation>*"),
+        help="image <operation>* : " + _("perform image operations"),
         input_type=(None, "image-array", "inkscape"),
         output_type="image",
     )
@@ -962,7 +962,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_argument("threshold_max", type=float)
     @context.console_argument("threshold_min", type=float)
     @context.console_command(
-        "threshold", help="", input_type="image", output_type="image"
+        "threshold", help=_("Apply cutoff threshold to image"), input_type="image", output_type="image"
     )
     def image_threshold(
         command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs

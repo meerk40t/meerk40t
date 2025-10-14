@@ -737,7 +737,7 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @context.console_command(
             "grid",
-            help=_("grid <target> <rows> <x_distance> <y_distance> <origin>"),
+            help="grid <target> <rows> <x_distance> <y_distance> <origin> : " + _("Shows a grid overlay on the scene"),
             input_type="scene",
         )
         def show_grid(
@@ -884,7 +884,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_argument("pos", type=str, help=_("Position for magnetline"))
         @context.console_command(
             "magnet",
-            help=_("magnet <action> <axis> <position>"),
+            help="magnet <action> <axis> <position> : " + _("Sets/clears a magnet line on the scene"),
             input_type=("scene", None),
         )
         def magnet_set(

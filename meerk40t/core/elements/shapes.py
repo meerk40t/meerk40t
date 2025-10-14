@@ -90,7 +90,7 @@ def init_commands(kernel):
     @self.console_argument("r_pos", type=str, help=_("Radius of the circle"))
     @self.console_command(
         "circle",
-        help=_("circle <x> <y> <r>"),
+        help="circle <x> <y> <r> : " + _("create a circle element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -135,7 +135,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "ellipse",
-        help=_("ellipse <cx> <cy> <rx> <ry>"),
+        help="ellipse <cx> <cy> <rx> <ry> : " + _("create an ellipse element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -192,7 +192,7 @@ def init_commands(kernel):
     @self.console_option("rotation", "r", type=Angle, help=_("Rotation of arc"))
     @self.console_command(
         "arc",
-        help=_("arc <cx> <cy> <rx> <ry> <start> <end>"),
+        help="arc <cx> <cy> <rx> <ry> <start> <end> : " + _("create an arc element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -274,7 +274,7 @@ def init_commands(kernel):
     @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
     @self.console_command(
         "rect",
-        help=_("adds rectangle to scene"),
+        help="rect <x> <y> <width> <height> : " + _("adds rectangle to scene"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -335,7 +335,7 @@ def init_commands(kernel):
     @self.console_argument("y1", type=str, help=_("end y position"))
     @self.console_command(
         "line",
-        help=_("adds line to scene"),
+        help="line <x0> <y0> <x1> <y1> : " + _("adds line to scene"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -580,7 +580,7 @@ def init_commands(kernel):
     @self.console_argument("text", type=str, help=_("quoted string of text"))
     @self.console_command(
         "text",
-        help=_("text <text>"),
+        help="text <text> : " + _("create a (bitmap) text element"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -1327,7 +1327,7 @@ def init_commands(kernel):
     @self.console_argument("mlist", type=str, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
-        help=_("poly(gon|line) (Length Length)*"),
+        help="poly(gon|line) (Length Length)* : " + _("create a polygon or polyline element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -1389,7 +1389,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "path",
-        help=_("path <svg path>"),
+        help="path <svg path> : " + _("create a path element from svg path syntax"),
         output_type="elements",
     )
     def element_path(path_d, data, post=None, **kwargs):
@@ -1422,7 +1422,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "stroke-width",
-        help=_("stroke-width <length>"),
+        help="stroke-width <length> : " + _("set the stroke width of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1560,7 +1560,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "linecap",
-        help=_("linecap <cap>"),
+        help="linecap <cap> : " + _("set the line cap style of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1637,7 +1637,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "linejoin",
-        help=_("linejoin <join>"),
+        help="linejoin <join> : " + _("set the line join style of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1722,7 +1722,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "fillrule",
-        help=_("fillrule <rule>"),
+        help="fillrule <rule> : " + _("set the fill rule of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1794,7 +1794,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "stroke",
-        help=_("stroke <svg color>"),
+        help="stroke <svg color> : " + _("set the stroke color of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1901,7 +1901,7 @@ def init_commands(kernel):
     @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
     @self.console_command(
         "fill",
-        help=_("fill <svg color>"),
+        help="fill <svg color> : " + _("set the fill color of selected elements"),
         input_type=(
             None,
             "elements",
@@ -2084,7 +2084,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "rotate",
-        help=_("rotate <angle>"),
+        help="rotate <angle> : " + _("rotate selected elements"),
         input_type=(
             None,
             "elements",
@@ -2182,7 +2182,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "scale",
-        help=_("scale <scale> [<scale-y>]?"),
+        help="scale <scale> [<scale-y>]? : " + _("scale selected elements (optionally different in y, and optionally from a point (default center of selection))"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -2380,7 +2380,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "translate",
-        help=_("translate <tx> <ty>"),
+        help="translate <tx> <ty> : " + _("translate selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -2451,7 +2451,7 @@ def init_commands(kernel):
     @self.console_argument("ty", type=str, help=_("New y value"))
     @self.console_command(
         "position",
-        help=_("position <tx> <ty>"),
+        help="position <tx> <ty> : " + _("set the position of selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -2613,7 +2613,7 @@ def init_commands(kernel):
     @self.console_argument("ty", type=str, help=_("translate_y value"))
     @self.console_command(
         "matrix",
-        help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
+        help="matrix <sx> <kx> <ky> <sy> <tx> <ty> : " + _("set the transformation matrix of selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )

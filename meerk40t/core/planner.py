@@ -514,7 +514,7 @@ class Planner(Service):
 
         @self.console_command(
             "plan",
-            help=_("plan<?> <command> : issue a command to modify the plan"),
+            help="plan<?> <command> : " + _("issue a command to modify the plan"),
             regex=True,
             input_type=(None, "ops"),
             output_type="plan",
@@ -773,7 +773,7 @@ class Planner(Service):
         @self.console_argument("console", type=str, help=_("console command to append"))
         @self.console_command(
             "console",
-            help=_("plan<?> command"),
+            help="plan<?> command : " + _("inject a console command into the plan"),
             input_type="plan",
             output_type="plan",
             all_arguments_required=True,
@@ -808,7 +808,7 @@ class Planner(Service):
 
         @self.console_command(
             "preprocess",
-            help=_("plan<?> preprocess"),
+            help="plan<?> preprocess : " + _("prepare the plan for execution"),
             input_type="plan",
             output_type="plan",
         )
@@ -825,7 +825,7 @@ class Planner(Service):
 
         @self.console_command(
             "validate",
-            help=_("plan<?> validate"),
+            help="plan<?> validate : " + _("validate the plan for execution"),
             input_type="plan",
             output_type="plan",
         )
@@ -847,7 +847,7 @@ class Planner(Service):
 
         @self.console_command(
             "geometry",
-            help=_("plan<?> geometry"),
+            help="plan<?> geometry : " + _("extract the geometry from the plan"),
             input_type="plan",
             output_type="plan",
         )
@@ -864,7 +864,7 @@ class Planner(Service):
 
         @self.console_command(
             "blob",
-            help=_("plan<?> blob"),
+            help="plan<?> blob : " + _("create the device specific format to send to the laser"),
             input_type="plan",
             output_type="plan",
         )
@@ -881,7 +881,7 @@ class Planner(Service):
 
         @self.console_command(
             "preopt",
-            help=_("plan<?> preopt"),
+            help="plan<?> preopt : " + _("prepare the plan for optimisation"),
             input_type="plan",
             output_type="plan",
         )
@@ -898,7 +898,7 @@ class Planner(Service):
 
         @self.console_command(
             "optimize",
-            help=_("plan<?> optimize"),
+            help="plan<?> optimize : " + _("optimize the plan for execution, eg travel reduction"),
             input_type="plan",
             output_type="plan",
         )
@@ -915,7 +915,7 @@ class Planner(Service):
 
         @self.console_command(
             "clear",
-            help=_("plan<?> clear"),
+            help="plan<?> clear : " + _("clear the plan"),
             input_type="plan",
             output_type="plan",
         )
@@ -932,7 +932,7 @@ class Planner(Service):
 
         @self.console_command(
             "finish",
-            help=_("plan<?> finish"),
+            help="plan<?> finish : " + _("deem the plan to be finished"),
             input_type="plan",
             output_type="plan",
         )
@@ -943,7 +943,7 @@ class Planner(Service):
 
         @self.console_command(
             "return",
-            help=_("plan<?> return"),
+            help="plan<?> return : " + _("extract the operations from the plan back to the tree"),
             input_type="plan",
             output_type="plan",
         )
@@ -978,7 +978,7 @@ class Planner(Service):
         )
         @self.console_command(
             "sublist",
-            help=_("plan<?> sublist"),
+            help="plan<?> sublist : " + _("extract a sublist from the plan"),
             input_type="plan",
             output_type="plan",
         )

@@ -697,7 +697,7 @@ class LihuiyuDevice(Service, Status):
         @self.console_argument("dy", type=Length, help=_("change in y"))
         @self.console_command(
             "move_at_speed",
-            help=_("move_at_speed <speed> <dx> <dy>"),
+            help="move_at_speed <speed> <dx> <dy> : " + _("move the laser at a specific speed and distance"),
             all_arguments_required=True,
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
