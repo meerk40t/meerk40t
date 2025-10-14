@@ -24,6 +24,15 @@ class TCPOutput:
     def connect(self):
         try:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Enable TCP keep-alive to prevent connection timeouts
+            self._stream.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            # Set keep-alive parameters (platform-dependent)
+            try:
+                self._stream.setsockopt(socket.IPPROTO_TCP, getattr(socket, "TCP_KEEPIDLE", 60), 60)
+                self._stream.setsockopt(socket.IPPROTO_TCP, getattr(socket, "TCP_KEEPINTVL", 30), 30)
+                self._stream.setsockopt(socket.IPPROTO_TCP, getattr(socket, "TCP_KEEPCNT", 3), 3)
+            except (AttributeError, OSError):
+                pass  # Not all platforms support these options
             # Make sure port is in a valid range...
             port = min(65535, max(0, self.service.port))
             self._stream.connect((self.service.address, port))
