@@ -457,7 +457,7 @@ def validate_po(
             else:
                 ignored_duplicate += 1
             continue
-        baremsg = unescape_string(msgid)
+        baremsg = unescape_string(msgstr)
         entry = polib.POEntry(msgid=msgid, msgstr=baremsg)
         # if msgid.startswith("String with"):
         #     print (f"Found string with placeholders: {msgid}")
