@@ -7,6 +7,7 @@ from meerk40t.svgelements import Color
 
 from .exceptions import RuidaCommandError
 
+# Ports 50207 and 40207
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"
 INTERFACE_PLUS_X_UP = b"\xA5\x51\x02"
@@ -42,11 +43,13 @@ INTERFACE_LASER_GATE_DOWN = b"\xA5\x50\x12"
 INTERFACE_LASER_GATE_UP = b"\xA5\x51\x12"
 INTERFACE_ORIGIN_DOWN = b"\xA5\x50\x08"
 INTERFACE_ORIGIN_UP = b"\xA5\x51\x08"
+
+# Ports 50200 and 40200
 AXIS_X_MOVE = b"\x80\x00"  # abscoord(x)
-AXIS_Z_MOVE = b"\x80\x01"  # abscoord(z),
+AXIS_Z_MOVE = b"\x80\x01"  # abscoord(z) TODO: Should be 0x80 0x08?
 MOVE_ABS_XY = b"\x88"  # abscoord(x), abscoord(y)
 MOVE_REL_XY = b"\x89"  # relcoord(dx), relcoord(dy)
-AXIS_A_MOVE = b"\xA0\x00"  # abscoord(a)
+AXIS_A_MOVE = b"\xA0\x00"  # abscoord(a) TODO: Should be AXIS_Y_MOVE?
 AXIS_U_MOVE = b"\xA0\x08"  # abscoord(u)
 MOVE_REL_X = b"\x8A"  # relcoord(dx)
 MOVE_REL_Y = b"\x8B"  # relcoord(dy)
@@ -182,7 +185,8 @@ ARRAY_MAX_POINT = b"\xE7\x17"  # abscoord(5), abscoord(5)
 ARRAY_ADD = b"\xE7\x23"  # abscoord(5), abscoord(5)
 ARRAY_MIRROR = b"\xE7\x24"  # mirror(1)
 BLOCK_X_SIZE = b"\xE7\x35"  # abscoord(5), abscoord(5)
-BY_TEST = b"\xE7\x35"  # 0x11227766
+BY_TEST = b"\xE7\x35"  # 0x11227766 TODO: Unclear why?
+# TODO: SET_FILE_EMPTY = b"\xE7\x36 # value(1)
 ARRAY_EVEN_DISTANCE = b"\xE7\x37"
 SET_FEED_AUTO_PAUSE = b"\xE7\x38"
 UNION_BLOCK_PROPERTY = b"\xE7\x3A"
@@ -213,6 +217,9 @@ ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
 MEM_CARD_ID = 0x02FE
 
+def encode_switch(state):
+    assert state == 0 or state == 1
+    return bytes([state])
 
 def encode_part(part):
     assert 0 <= part <= 255
@@ -486,6 +493,7 @@ class RDJob:
         self.time_submitted = time.time()
         self.time_started = None
         self.runtime = 0
+        self.label = f"RuidaJob-{self.time_submitted:.2f}"
 
         self._stopped = True
         self.enabled = True
@@ -522,13 +530,11 @@ class RDJob:
     def __str__(self):
         return f"{self.__class__.__name__}({len(self.buffer)} lines)"
 
-    def __call__(self, *args, output=None, swizzle=True):
+    def __call__(self, *args, output=None):
         e = b"".join(args)
         if output is None:
             self.write_command(e)
         else:
-            if swizzle:
-                e = bytes([self.lut_swizzle[b] for b in e])
             output(e)
 
     @property
@@ -582,10 +588,8 @@ class RDJob:
     def file_sum(self):
         return sum([sum(list(g)) for g in self.buffer])
 
-    def get_contents(self, first=None, last=None, swizzled=True):
+    def get_contents(self, first=None, last=None):
         data = b"".join(self.buffer[first:last])
-        if swizzled:
-            return self.swizzle(data)
         return data
 
     def execute(self, driver=None):
@@ -712,6 +716,9 @@ class RDJob:
         These commands can change the position, settings, speed, color, power, create elements.
         @param array:
         @return:
+
+        TODO: Migrate this to use the Ruida Protocol Analyzer decode state
+        machine (class RdDecoder).
         """
         desc = ""
         if array[0] < 0x80:
@@ -1279,6 +1286,28 @@ class RDJob:
             prefix = f"{offset:06x}" if offset is not None else ""
             self.channel(f"{prefix}-**-> {str(bytes(array).hex())}\t({desc})")
 
+    def decode_reply(self, reply):
+        '''Decode a reply which received in response to a command.
+
+        TODO: Migrate this to use the Ruida Protocol Analyzer decode state
+        machine (class RdDecoder).
+        https://github.com/StevenIsaacs/ruida-protocol-analyzer/tree/main
+        '''
+        if reply[0] == 0xDA:
+            if reply[1] == 0x01: # Response to command 0xDA 0x00.
+                if reply[2] == 0x05:
+                    if reply[3] == 0x7E: # CARD ID
+                        _cid_lut = {
+                            0x65106510: 'RDC64425'
+                        }
+                        _cid = decode35(reply[4:9])
+                        if _cid in _cid_lut:
+                            _card = _cid_lut[_cid]
+                        else:
+                            _card = "Unknown card."
+                        return f'CardID: {_cid:08X}: {_card}'
+        return None
+
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
 
@@ -1431,7 +1460,7 @@ class RDJob:
         self.max_power_1(power)
         self.min_power_2(power)
         self.max_power_2(power)
-        self.en_laser_tube_start()
+        self.en_laser_tube_start(1)
         self.en_ex_io(0)
 
     def write_tail(self):
@@ -1439,7 +1468,7 @@ class RDJob:
         self.array_end()
         self.block_end()
         # self.encoder.set_setting(0x320, 142, 142)
-        self.set_file_sum(self.file_sum())
+        self.set_file_sum(self.file_sum() + 0xD7) # Account for the EOF.
         self.end_of_file()
 
     def jump(self, x, y, dx, dy):
@@ -1700,8 +1729,8 @@ class RDJob:
     def layer_number_part(self, part, output=None):
         self(LAYER_NUMBER_PART, encode_part(part), output=output)
 
-    def en_laser_tube_start(self, output=None):
-        self(EN_LASER_TUBE_START, output=output)
+    def en_laser_tube_start(self, switch, output=None):
+        self(EN_LASER_TUBE_START, encode_switch(switch),output=output)
 
     def x_sign_map(self, value, output=None):
         self(X_SIGN_MAP, encode_index(value), output=output)

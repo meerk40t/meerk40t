@@ -402,7 +402,10 @@ class ContourPanel(wx.Panel):
             self.refresh_preview()
 
     def on_creation(self, event):
-        for idx, (geom, area) in enumerate(self.contours):
+        for idx, cont in enumerate(self.contours):
+            if cont is None or not isinstance(cont, (list, tuple)):
+                continue
+            (geom, area) = cont
             node = PathNode(
                 geometry=geom,
                 stroke=Color("blue"),
@@ -461,7 +464,11 @@ class ContourPanel(wx.Panel):
         method = self.combo_placement.GetSelection()
         if method < 0:
             return
-        for idx, (geom, area) in enumerate(self.contours):
+        for idx, cont in enumerate(self.contours):
+            if cont is None or not isinstance(cont, (list, tuple)):
+                continue
+            (geom, area) = cont
+
             ref_x, ref_y, rotation_angle, place_corner = get_place_parameters(
                 geom, method
             )
@@ -609,7 +616,10 @@ class ContourPanel(wx.Panel):
         if len(self.contours) == 0 or len(self.contours[0]) != 2:
             self.label_info.SetLabel(_("No contours found."))
             return
-        for idx, (geom, area) in enumerate(self.contours):
+        for idx, cont in enumerate(self.contours):
+            if cont is None or not isinstance(cont, (list, tuple)):
+                continue
+            (geom, area) = cont
             if method == 0:
                 simple = self.parameters["cnt_simplify"]
                 # We are on pixel level
@@ -684,7 +694,10 @@ class ContourPanel(wx.Panel):
 
     def populate_list(self):
         self.list_contours.DeleteAllItems()
-        for idx, (geom, area) in enumerate(self.contours):
+        for idx, cont in enumerate(self.contours):
+            if cont is None or not isinstance(cont, (list, tuple)):
+                continue
+            (geom, area) = cont
             list_id = self.list_contours.InsertItem(
                 self.list_contours.GetItemCount(), f"#{idx + 1}"
             )
@@ -700,7 +713,10 @@ class ContourPanel(wx.Panel):
             image=self.image, matrix=self.matrix, dither=False, prevent_crop=True
         )
         data = [copynode]
-        for idx, (geom, area) in enumerate(self.contours):
+        for idx, cont in enumerate(self.contours):
+            if cont is None or not isinstance(cont, (list, tuple)):
+                continue
+            (geom, area) = cont
             node = PathNode(
                 geometry=geom,
                 stroke=Color("red") if highlight_index == idx else Color("blue"),
@@ -1837,6 +1853,14 @@ class ImageVectorisationPanel(ScrolledPanel):
 
 
 class ImagePropertyPanel(ScrolledPanel):
+    """ImagePropertyPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for imageproperty functionality. Features checkbox, button controls for user interaction. Integrates with nodetype, element_property_force for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for imageproperty functionality. Key controls include "Enable" (checkbox), "Reset" (button), "Invert" (checkbox)."""
+
+    """ImagePropertyPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL

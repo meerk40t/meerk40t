@@ -98,7 +98,7 @@ class Segment:
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
         denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
-        if denom == 0:
+        if abs(denom) < 1e-10:
             return None  # Parallel.
         ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom
         ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom
@@ -416,9 +416,7 @@ class GraphWalker:
             if segment is None:
                 points.append(None)
             else:
-                point.value = (
-                    segment.value
-                )  # This doesn't work, nodes are repeated, so they can't store unique values.
+                point.value = segment.value  # This doesn't work, nodes are repeated, so they can't store unique values.
             points.append(point)
 
     def remove_loop(self, from_pos, to_pos):

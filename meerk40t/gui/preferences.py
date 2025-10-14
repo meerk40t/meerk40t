@@ -24,6 +24,12 @@ _ = wx.GetTranslation
 
 
 class PreferencesUnitsPanel(wx.Panel):
+    """PreferencesUnitsPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferencesunits functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferencesunits functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesUnitsPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -100,6 +106,12 @@ class PreferencesUnitsPanel(wx.Panel):
 
 
 class PreferencesLanguagePanel(wx.Panel):
+    """PreferencesLanguagePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferenceslanguage functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferenceslanguage functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesLanguagePanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -143,6 +155,12 @@ class PreferencesLanguagePanel(wx.Panel):
 
 
 class PreferencesSavingPanel(wx.Panel):
+    """PreferencesSavingPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferencessaving functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferencessaving functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesLanguagePanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -356,6 +374,12 @@ class PreferencesSavingPanel(wx.Panel):
 
 
 class PreferencesPixelsPerInchPanel(wx.Panel):
+    """PreferencesPixelsPerInchPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferencespixelsperinch functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferencespixelsperinch functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesPixelsPerInchPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -438,10 +462,17 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
                 self.combo_svg_ppi.SetSelection(3)
         elements.svg_ppi = svg_ppi
 
+
 # end of class PreferencesPixelsPerInchPanel
 
 
 class PreferencesMain(wx.Panel):
+    """PreferencesMain - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferencesmain functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferencesmain functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -462,7 +493,13 @@ class PreferencesMain(wx.Panel):
             id=wx.ID_ANY,
             context=context,
             choices="preferences",
-            constraint=("-Input/Output", "-Classification", "-Gui", "-Scene", "-Operations"),
+            constraint=(
+                "-Input/Output",
+                "-Classification",
+                "-Gui",
+                "-Scene",
+                "-Operations",
+            ),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -482,6 +519,12 @@ class PreferencesMain(wx.Panel):
 
 
 class PreferencesInputOutput(wx.Panel):
+    """PreferencesInputOutput - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferencesinputoutput functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferencesinputoutput functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PreferencesMain.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -513,6 +556,7 @@ class PreferencesInputOutput(wx.Panel):
         yield self.panel_ppi
         yield self.panel_input_output
 
+
 # end of class PreferencesMain
 
 #
@@ -538,6 +582,12 @@ class PreferencesInputOutput(wx.Panel):
 
 
 class Preferences(MWindow):
+    """Preferences - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for preferences functionality. Features button controls for user interaction. Integrates with restart, theme for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for preferences functionality. Key controls include "Save" (button), "Export" (button), "Import" (button)."""
+
     def __init__(self, *args, **kwds):
         super().__init__(
             525,
@@ -571,7 +621,9 @@ class Preferences(MWindow):
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
 
-        self.panel_input_output = PreferencesInputOutput(self, wx.ID_ANY, context=self.context)
+        self.panel_input_output = PreferencesInputOutput(
+            self, wx.ID_ANY, context=self.context
+        )
 
         inject_choices = [
             {
@@ -766,7 +818,15 @@ class Preferences(MWindow):
             self.panel_color,
             self.panel_ribbon,
         ]
-        self.panel_ids = ["main", "classification", "ops", "gui", "scene", "color", "ribbon"]
+        self.panel_ids = [
+            "main",
+            "classification",
+            "ops",
+            "gui",
+            "scene",
+            "color",
+            "ribbon",
+        ]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(

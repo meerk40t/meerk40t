@@ -138,6 +138,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.context,
             self,
             scene_name="Scene" if index is None else f"Scene{index}",
+            with_snap=True,
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.scene.start_scene()
@@ -1093,6 +1094,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def save_magnets(self):
         try:
+            self.context.signal("guide")  # The guide widget will draw the magnets
             with open(self._magnet_file, "w") as f:
                 f.write(f"a={self.magnet_attraction}\n")
                 for x in self.magnet_x:

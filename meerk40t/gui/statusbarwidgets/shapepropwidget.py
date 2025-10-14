@@ -458,7 +458,10 @@ class PositionWidget(StatusBarWidget):
             self.unit_index = 0
         if self.unit_index < 0:
             self.unit_index = len(self.units) - 1
-        self.unit_lbl.SetLabel(self.units[self.unit_index])
+        new_unit = self.units[self.unit_index]
+        self.unit_lbl.SetLabel(new_unit)
+        self.context._display_unit = new_unit
+        self.context.signal("refresh_scene", "Scene")
         self.update_position(True)
 
     def on_click_units_l(self, event):
@@ -599,11 +602,18 @@ class PositionWidget(StatusBarWidget):
             else:
                 sy = 1
             if sx != 1.0 or sy != 1.0:
-                cmd2 = f"scale {sx} {sy}\n"
+                cmd2 = f"scale {sx} {sy}"
         # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
         # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
-        cmd = cmd1 + cmd2
-        self.context(cmd)
+        if cmd1:
+            self.context(f"{cmd1}\n")
+        if cmd2:
+            bb = self.context.elements.selected_area()
+            if bb is not None:
+                cx = bb[0] + (bb[2] - bb[0]) * self.offset_x
+                cy = bb[1] + (bb[3] - bb[1]) * self.offset_y
+                cmd2 += f" -x {cx} -y {cy}"
+                self.context(f"{cmd2}\n")
         if refresh_after:
             self.update_position(True)
 

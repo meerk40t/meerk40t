@@ -4,6 +4,7 @@ from math import tau
 import wx
 from wx import aui
 
+from meerk40t.core.elements.element_types import op_parent_nodes
 from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.effect_wobble import WobbleEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
@@ -24,21 +25,58 @@ from meerk40t.gui.wxutils import (
     wxListBox,
     wxStaticText,
 )
-from meerk40t.kernel import Settings, lookup_listener, signal_listener
+from meerk40t.kernel import Settings, lookup_listener, settings, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
 
 class SaveLoadPanel(wx.Panel):
-    """
-    Provides the scaffold for saving and loading of parameter sets.
-    Does not know a lot about the underlying structure of data as it
-    blindly interacts with the parent via the callback routine
-    (could hence work as a generic way to save / load data)
-    """
+    """SaveLoadPanel - Template management interface for test pattern configurations
+
+    **Technical Purpose:**
+    Provides persistent storage and retrieval of test pattern parameter sets. Manages template naming, validation, and file I/O operations for saving/loading complete test configurations. Integrates with Settings framework for configuration persistence and provides callback-based communication with parent panels.
+
+    **End-User Perspective:**
+    This panel lets you save and reuse your test pattern setups. Save commonly used parameter combinations as named templates, then quickly reload them for future testing sessions. Templates store all your test pattern settings including operation type, parameter ranges, colors, and layout options."""
 
     def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+        self.callback = None
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer_main)
+        sizer_name = wx.BoxSizer(wx.HORIZONTAL)
+        lbl_info = wxStaticText(self, wx.ID_ANY, _("Template-Name"))
+        self.txt_name = TextCtrl(self, wx.ID_ANY, "")
+        self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
+        self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
+        self.btn_load.Enable(False)
+        self.btn_save.Enable(False)
+        self.btn_delete.Enable(False)
+        sizer_name.Add(lbl_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_name.Add(self.txt_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_name.Add(self.btn_save, 0, wx.EXPAND, 0)
+        sizer_name.Add(self.btn_load, 0, wx.EXPAND, 0)
+        sizer_name.Add(self.btn_delete, 0, wx.EXPAND, 0)
+
+        self.choices = []
+        self.list_slots = wxListBox(
+            self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE
+        )
+        self.list_slots.SetToolTip(_("Select an entry to reload"))
+        sizer_main.Add(sizer_name, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.list_slots, 1, wx.EXPAND, 0)
+        self.Layout()
+        self.Bind(wx.EVT_TEXT, self.on_text_change, self.txt_name)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_load, self.btn_load)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_save, self.btn_save)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
+        self.list_slots.Bind(wx.EVT_LISTBOX, self.on_listbox_click)
+        self.list_slots.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_double_click)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
@@ -164,12 +202,14 @@ class SaveLoadPanel(wx.Panel):
 
 
 class TemplatePanel(wx.Panel):
-    """
-    Responsible for the generation of testpatterns and the user interface
-    params:
-    context - the current context
-    storage - an instance of kernel.Settings to store/load parameter sets
-    """
+    """TemplatePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for template functionality. Features label, button controls for user interaction. Integrates with service/device/active, speed_min for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for template functionality. Key controls include "Template-Name" (label), "Save" (button), "Load" (button)."""
+
+    DESC_X_AXIS = "Descriptions X-Axis"
+    DESC_Y_AXIS = "Descriptions Y-Axis"
 
     def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
@@ -182,6 +222,12 @@ class TemplatePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
+        self.context.setting(float, "material_description_speed", 250)
+        self.context.setting(float, "material_description_power", 1000)
+        self.context.setting(float, "material_operation_speed", None)
+        self.context.setting(float, "material_operation_power", None)
+        self.check_raster_description_parameters()
+        # Lets have a look whether we still have an operation open that fits the bill...
         self.SetHelpText("testpattern")
         self.storage = storage
         self.callback = None
@@ -194,6 +240,8 @@ class TemplatePanel(wx.Panel):
             _("Hatch"),
             _("Wobble"),
         ]
+        # Allow the shape to be added a second time for effects, but outside the secondary operation
+
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
         self.secondary_default_op = []
@@ -235,6 +283,7 @@ class TemplatePanel(wx.Panel):
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
 
+        self.prefill_defaults()
         LABEL_WIDTH = 115
 
         self.combo_ops = wxComboBox(
@@ -322,6 +371,10 @@ class TemplatePanel(wx.Panel):
         )
         self.check_color_direction_2 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
+        self.check_duplicate_shapes = wxCheckBox(
+            self, wx.ID_ANY, _("Create boundary shape")
+        )
+
         self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
@@ -340,6 +393,7 @@ class TemplatePanel(wx.Panel):
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
         self.sizer_param_op.Add(h1, 0, wx.EXPAND, 0)
         self.sizer_param_op.Add(self.combo_images, 0, wx.EXPAND, 0)
+        self.sizer_param_op.Add(self.check_duplicate_shapes, 0, wx.EXPAND, 0)
 
         sizer_param_check = StaticBoxSizer(
             self, wx.ID_ANY, _("Show Labels / Values"), wx.HORIZONTAL
@@ -580,6 +634,10 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.SetToolTip(_("Horizontal gap between patterns"))
         self.text_delta_2.SetToolTip(_("Vertical gap between patterns"))
 
+        self.check_duplicate_shapes.SetToolTip(
+            _("Add the shape a second time around the effect")
+        )
+
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
@@ -595,6 +653,7 @@ class TemplatePanel(wx.Panel):
         self.combo_images.Bind(wx.EVT_COMBOBOX, self.on_combo_image)
         self.spin_count_1.Bind(wx.EVT_SPINCTRL, self.validate_input)
         self.spin_count_2.Bind(wx.EVT_SPINCTRL, self.validate_input)
+
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_1)
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_2)
 
@@ -604,6 +663,35 @@ class TemplatePanel(wx.Panel):
         self.combo_ops.SetSelection(0)
         self.restore_settings()
         self.sync_fields()
+
+    def prefill_defaults(self):
+        def prefill_op(op):
+            if op is None:
+                return
+            fields = {}
+            if op.type.startswith("effect "):
+                if hasattr(self.context.device, "get_effect_defaults"):
+                    fields.update(self.context.device.get_effect_defaults(op.type))
+            else:
+                if hasattr(self.context.device, "get_operation_defaults"):
+                    fields.update(self.context.device.get_operation_defaults(op.type))
+            for source, value in fields.items():
+                if hasattr(op, "settings"):
+                    op.settings[source] = value
+                elif hasattr(op, source):
+                    setattr(op, source, value)
+            if op.type in op_parent_nodes:
+                p = self.context.material_operation_power
+                if p is not None:
+                    op.settings["power"] = p
+                s = self.context.material_operation_speed
+                if s is not None:
+                    op.settings["speed"] = s
+
+        for op in self.default_op:
+            prefill_op(op)
+        for op in self.secondary_default_op:
+            prefill_op(op)
 
     def shortened(self, value, digits):
         result = str(round(value, digits))
@@ -633,6 +721,15 @@ class TemplatePanel(wx.Panel):
 
     def on_selection_list(self, event):
         return
+
+    def check_raster_description_parameters(self):
+        for op in self.context.elements.ops():
+            if op.type == "op raster" and op.label == self.DESC_X_AXIS:
+                self.context.material_description_power = op.power
+                self.context.material_description_speed = op.speed
+                break
+        self.description_speed = float(self.context.material_description_speed)
+        self.description_power = float(self.context.material_description_power)
 
     def set_callback(self, routine):
         self.callback = routine
@@ -688,10 +785,12 @@ class TemplatePanel(wx.Panel):
             # to copy the device defaults
             if node is None or "balor" not in self.context.device.path:
                 return
-            if not node.settings["timing_enabled"]:
-                node.settings["timing_enabled"] = True
+            node.settings["timing_enabled"] = True
+            if node.settings.get("delay_laser_on", None) is None:
                 node.settings["delay_laser_on"] = self.context.device.delay_laser_on
+            if node.settings.get("delay_laser_off", None) is None:
                 node.settings["delay_laser_off"] = self.context.device.delay_laser_off
+            if node.settings.get("delay_polygon", None) is None:
                 node.settings["delay_polygon"] = self.context.device.delay_polygon
 
         opidx = self.combo_ops.GetSelection()
@@ -715,6 +814,11 @@ class TemplatePanel(wx.Panel):
             self.combo_images.Show(self.use_image[opidx])
             self.text_dim_1.Enable(not self.use_image[opidx])
             self.text_dim_2.Enable(not self.use_image[opidx])
+        # print (f"Master vs Secondary: {type(opnode).__name__} vs {type(secondary_node).__name__}")
+        shape_option = secondary_node is not None and type(opnode) is not type(
+            secondary_node
+        )
+        self.check_duplicate_shapes.Show(shape_option)
 
         self.sizer_param_op.Layout()
         if self.callback is not None:
@@ -1164,34 +1268,17 @@ class TemplatePanel(wx.Panel):
 
         def create_operations(range1, range2):
             # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
-            count_1 = len(range1)
-            count_2 = len(range2)
-            try:
-                dimension_1 = float(self.text_dim_1.GetValue())
-            except ValueError:
-                dimension_1 = -1
-            try:
-                dimension_2 = float(self.text_dim_2.GetValue())
-            except ValueError:
-                dimension_2 = -1
-            if dimension_1 <= 0:
-                dimension_1 = 5
-            if dimension_2 <= 0:
-                dimension_2 = 5
+            def get_float(ctrl, default):
+                try:
+                    return float(ctrl.GetValue())
+                except ValueError:
+                    return default
 
-            try:
-                gap_1 = float(self.text_delta_1.GetValue())
-            except ValueError:
-                gap_1 = -1
-            try:
-                gap_2 = float(self.text_delta_2.GetValue())
-            except ValueError:
-                gap_2 = -1
-
-            if gap_1 < 0:
-                gap_1 = 0
-            if gap_2 < 0:
-                gap_2 = 5
+            count_1, count_2 = len(range1), len(range2)
+            dimension_1 = max(get_float(self.text_dim_1, -1), 5)
+            dimension_2 = max(get_float(self.text_dim_2, -1), 5)
+            gap_1 = max(get_float(self.text_delta_1, -1), 0)
+            gap_2 = max(get_float(self.text_delta_2, -1), 0)
 
             # print (f"Creating operations for {len(range1)} x {len(range2)}")
             display_labels = self.check_labels.GetValue()
@@ -1201,10 +1288,8 @@ class TemplatePanel(wx.Panel):
             color_growing_1 = self.check_color_direction_1.GetValue()
             color_growing_2 = self.check_color_direction_2.GetValue()
 
-            if optype == 3:
-                shapetype = "image"
-            else:
-                shapetype = "rect"
+            shapetype = "image" if optype == 3 else "rect"
+
             size_x = float(Length(f"{dimension_1}mm"))
             size_y = float(Length(f"{dimension_2}mm"))
             gap_x = float(Length(f"{gap_1}mm"))
@@ -1223,47 +1308,59 @@ class TemplatePanel(wx.Panel):
 
             text_scale_x = min(1.0, size_y / float(Length("20mm")))
             text_scale_y = min(1.0, size_x / float(Length("20mm")))
-
             # Make one op for text
             if display_labels or display_values:
-                text_op_x = RasterOpNode()
-                text_op_x.color = Color("black")
-                text_op_x.label = "Descriptions X-Axis"
-                text_op_y = RasterOpNode()
-                text_op_y.color = Color("black")
-                text_op_y.label = "Descriptions Y-Axis"
-                operation_branch.add_node(text_op_x)
-                operation_branch.add_node(text_op_y)
-            if display_labels:
-                text_x = start_x + expected_width / 2
-                text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
-                unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
-                node = element_branch.add(
-                    text=f"{param_name_1}{unit_str}",
-                    matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
-                    ),
-                    anchor="middle",
-                    fill=Color("black"),
-                    type="elem text",
-                )
-                text_op_x.add_reference(node, 0)
+                for axis, label in zip(
+                    ("X", "Y"), (self.DESC_X_AXIS, self.DESC_Y_AXIS)
+                ):
+                    op = RasterOpNode()
+                    op.color = Color("black")
+                    op.label = label
+                    op.speed = self.description_speed
+                    op.power = self.description_power
+                    operation_branch.add_node(op)
+                text_op_x, text_op_y = operation_branch.children[-2:]
 
-                text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
+            if display_labels:
+
+                def add_axis_label(text, x, y, scale, op):
+                    node = element_branch.add(
+                        text=text,
+                        matrix=Matrix(f"translate({x}, {y}) scale({scale})"),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    op.add_reference(node, 0)
+                    return node
+
+                text_x = start_x + expected_width / 2
+                # maintext gap label gap shape
+                text_y = start_y - 2 * max(text_scale_x, text_scale_y) * float(
+                    Length("10mm")
+                )
+                unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
+                add_axis_label(
+                    f"{param_name_1}{unit_str}",
+                    text_x,
+                    text_y,
+                    2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
+                    text_op_x,
+                )
+                text_x = start_x - 2 * max(text_scale_x, text_scale_y) * float(
+                    Length("10mm")
+                )
                 text_y = start_y + expected_height / 2
                 unit_str = f" [{param_unit_2}]" if param_unit_2 else ""
-                node = element_branch.add(
-                    text=f"{param_name_2}{unit_str}",
-                    matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
-                    ),
-                    anchor="middle",
-                    fill=Color("black"),
-                    type="elem text",
+                node = add_axis_label(
+                    f"{param_name_2}{unit_str}",
+                    text_x,
+                    text_y,
+                    2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
+                    text_op_y,
                 )
                 node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                 node.modified()
-                text_op_y.add_reference(node, 0)
 
             xx = start_x
             for idx1, _p_value_1 in enumerate(range1):
@@ -1285,7 +1382,9 @@ class TemplatePanel(wx.Panel):
                 if display_values:
                     # Add a text above for each column
                     text_x = xx + 0.5 * size_x
-                    text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
+                    text_y = yy - 1.25 * max(text_scale_x, text_scale_y) * float(
+                        Length("5mm")
+                    )
                     node = element_branch.add(
                         text=f"{pval1}",
                         matrix=Matrix(
@@ -1315,7 +1414,9 @@ class TemplatePanel(wx.Panel):
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
                     if display_values and idx1 == 0:  # first row, so add a text above
-                        text_x = xx - min(float(Length("5mm")), 1.5 * gap_x)
+                        text_x = xx - 1.25 * max(text_scale_x, text_scale_y) * float(
+                            Length("5mm")
+                        )
                         text_y = yy + 0.5 * size_y
                         node = element_branch.add(
                             text=f"{pval2}",
@@ -1328,114 +1429,90 @@ class TemplatePanel(wx.Panel):
                         )
                         node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                         text_op_y.add_reference(node, 0)
-                    if optype == 0:  # Cut
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
-                        usefill = False
-                    elif optype == 1:  # Engrave
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
-                        usefill = False
-                    elif optype == 2:  # Raster
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
-                        usefill = True
-                    elif optype == 3:  # Image
-                        this_op = copy(self.default_op[optype])
-                        master_op = this_op
-                        usefill = False
-                    elif optype == 4:  # Hatch
-                        master_op = copy(self.default_op[optype])
-                        this_op = copy(self.secondary_default_op[optype])
-                        master_op.add_node(this_op)
 
-                        # We need to add a hatch node and make this the target for parameter application
-                        usefill = False
-                    elif optype == 5:  # Wobble
-                        # Wobble is a special case, we need to create a master op and a secondary op
-                        # We need to add a wobble node and make this the target for parameter application
-                        master_op = copy(self.default_op[optype])
-                        this_op = copy(self.secondary_default_op[optype])
+                    # Create the required operations
+                    def copy_op(op):
+                        new_op = copy(op)
+                        if hasattr(op, "settings"):
+                            new_op.settings = copy(op.settings)
+                        return new_op
+
+                    """
+                    0 = _("Cut"),
+                    1 = _("Engrave"),
+                    2 = _("Raster"),
+                    3 = _("Image"),
+                    4 = _("Hatch"),
+                    5 = _("Wobble"),
+                    """
+                    if optype in (0, 1, 2, 3):
+                        master_op = copy_op(self.default_op[optype])
+                        this_op = master_op
+                        usefill = optype == 2
+                    elif optype in (4, 5):
+                        master_op = copy_op(self.default_op[optype])
+                        this_op = copy_op(self.secondary_default_op[optype])
                         master_op.add_node(this_op)
                         usefill = False
                     else:
                         return
+                    self.context.material_operation_power = master_op.power
+                    self.context.material_operation_speed = master_op.speed
                     this_op.label = s_lbl
 
-                    # Do we need to prep the op?
-                    if param_prepper_1 is not None:
-                        param_prepper_1(master_op)
+                    def set_param(op, ptype, value, keep_unit, unit, prepper):
+                        if prepper:
+                            prepper(op)
+                        v = f"{value}{unit}" if keep_unit else value
+                        if ptype == "power" and self.use_percent():
+                            v = v if keep_unit else float(v) * 10.0
+                        if ptype == "speed" and self.use_mm_min():
+                            v = v if keep_unit else float(v) / 60.0
+                        if hasattr(op, ptype):
+                            if ptype == "passes":
+                                v = int(v)
+                            if ptype == "hatch_distance" and not str(v).endswith("mm"):
+                                v = f"{v}mm"
+                            if ptype == "hatch_angle" and not str(v).endswith("deg"):
+                                v = f"{v}deg"
+                            setattr(op, ptype, v)
+                            if hasattr(op, "settings") and ptype in op.settings:
+                                op.settings[ptype] = v
+                        elif hasattr(op, "settings"):
+                            op.settings[ptype] = v
 
-                    if param_keep_unit_1:
-                        value = str(p_value_1) + param_unit_1
-                    else:
-                        value = p_value_1
-                    if param_type_1 == "power" and self.use_percent():
-                        value *= 10.0
-                    if param_type_1 == "speed" and self.use_mm_min():
-                        value /= 60.0
-                    if hasattr(master_op, param_type_1):
-                        # quick and dirty
-                        if param_type_1 == "passes":
-                            value = int(value)
-                        if param_type_1 == "hatch_distance" and not str(value).endswith(
-                            "mm"
-                        ):
-                            value = f"{value}mm"
-                        setattr(master_op, param_type_1, value)
-                    # else:  # Try setting
-                    #     master_op.settings[param_type_1] = value
-                    if hasattr(this_op, param_type_1):
-                        # quick and dirty
-                        if param_type_1 == "passes":
-                            value = int(value)
-                        elif param_type_1 == "hatch_distance" and not str(
-                            value
-                        ).endswith("mm"):
-                            value = f"{value}mm"
-                        elif param_type_1 == "hatch_angle" and not str(value).endswith(
-                            "deg"
-                        ):
-                            value = f"{value}deg"
-                        setattr(this_op, param_type_1, value)
-                    elif hasattr(this_op, "settings"):  # Try setting
-                        this_op.settings[param_type_1] = value
-
-                    # Do we need to prep the op?
-                    if param_prepper_2 is not None:
-                        param_prepper_2(master_op)
-
-                    if param_keep_unit_2:
-                        value = str(p_value_2) + param_unit_2
-                    else:
-                        value = p_value_2
-                    if param_type_2 == "power" and self.use_percent():
-                        value *= 10.0
-                    if param_type_2 == "speed" and self.use_mm_min():
-                        value /= 60.0
-                    if hasattr(master_op, param_type_2):
-                        # quick and dirty
-                        if param_type_2 == "passes":
-                            value = int(value)
-                        if param_type_2 == "hatch_distance" and not str(value).endswith(
-                            "mm"
-                        ):
-                            value = f"{value}mm"
-                        setattr(master_op, param_type_2, value)
-                    if hasattr(this_op, param_type_2):
-                        if param_type_2 == "passes":
-                            value = int(value)
-                        elif param_type_2 == "hatch_distance" and not str(
-                            value
-                        ).endswith("mm"):
-                            value = f"{value}mm"
-                        elif param_type_2 == "hatch_angle" and not str(value).endswith(
-                            "deg"
-                        ):
-                            value = f"{value}deg"
-                        setattr(this_op, param_type_2, value)
-                    elif hasattr(this_op, "settings"):  # Try setting
-                        this_op.settings[param_type_2] = value
+                    set_param(
+                        master_op,
+                        param_type_1,
+                        p_value_1,
+                        param_keep_unit_1,
+                        param_unit_1,
+                        param_prepper_1,
+                    )
+                    set_param(
+                        this_op,
+                        param_type_1,
+                        p_value_1,
+                        param_keep_unit_1,
+                        param_unit_1,
+                        None,
+                    )
+                    set_param(
+                        master_op,
+                        param_type_2,
+                        p_value_2,
+                        param_keep_unit_2,
+                        param_unit_2,
+                        param_prepper_2,
+                    )
+                    set_param(
+                        this_op,
+                        param_type_2,
+                        p_value_2,
+                        param_keep_unit_2,
+                        param_unit_2,
+                        None,
+                    )
 
                     set_color = make_color(
                         idx1,
@@ -1483,8 +1560,20 @@ class TemplatePanel(wx.Panel):
                     if elemnode is not None:
                         elemnode.label = s_lbl
                         this_op.add_reference(elemnode, 0)
-                    yy = yy + gap_y + size_y
-                xx = xx + gap_x + size_x
+                        if duplicate_shapes:
+                            master_op.add_reference(elemnode, ignore_effect=True)
+
+                    yy += gap_y + size_y
+                xx += gap_x + size_x
+
+        # Do we need to check for duplicate shapes?
+        duplicate_shapes = (
+            self.check_duplicate_shapes.IsShown()
+            and self.check_duplicate_shapes.GetValue()
+        )
+
+        # Remember any changes made by the user to the description operations
+        self.check_raster_description_parameters()
 
         # Read the parameters and user input
         optype = self.combo_ops.GetSelection()
@@ -1782,6 +1871,7 @@ class TemplatePanel(wx.Panel):
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
+        self.prefill_defaults()
         self.set_param_according_to_op(None)
 
 

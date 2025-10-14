@@ -1,6 +1,6 @@
 # Contributing
 
-@Tatarize welcomes contributions to this repository from users of MeerK40t.
+The team welcomes contributions to this repository from users of MeerK40t.
 These can be code improvements or language translations made as [Pull Requests](/meerk40t/meerk40t/pulls),
 wiki edits made directly,
 constructive suggestions or bug reports made using [Issues](/meerk40t/meerk40t/issues),
@@ -34,3 +34,4 @@ Please mark such submissions as **Draft** until they are ready for formal review
 
 2.  Where appropriate add new Unit Tests.
 Please ensure that both existing and new Unit Tests run cleanly when you have finished coding.
+Either run "python -m unittest discover test -v" or "python -m pytest" to execute them.

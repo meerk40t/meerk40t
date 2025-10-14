@@ -1,9 +1,9 @@
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
-from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -13,6 +13,14 @@ _ = wx.GetTranslation
 
 
 class MoshiDriverGui(MWindow):
+    """MoshiDriverGui - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for moshidrivergui functionality. Integrates with activate;device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for moshidrivergui functionality in MeerK40t."""
+
+    """MoshiDriverGui - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, **kwds):
         super().__init__(330, 630, *args, **kwds)
         self.context = self.context.device
@@ -45,19 +53,26 @@ class MoshiDriverGui(MWindow):
             context=self.context,
             choices=("bed_dim", "coolant"),
         )
-        panel_effects = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
+        panel_effects = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="moshi-effects"
+        )
+        panel_defaults = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="moshi-defaults"
+        )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
 
         self.panels.append(panel_config)
         self.panels.append(panel_effects)
+        self.panels.append(panel_defaults)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(newpanel)
 
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_effects, _("Effects"))
+        self.notebook_main.AddPage(panel_defaults, _("Operation Defaults"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(newpanel, _("Display Options"))
@@ -91,5 +106,5 @@ class MoshiDriverGui(MWindow):
     @signal_listener("activate;device")
     def on_device_changes(self, *args):
         # Device activated, make sure we are still fine...
-        if self.context.device.name != 'MoshiDevice':
+        if self.context.device.name != "MoshiDevice":
             wx.CallAfter(self.Close)

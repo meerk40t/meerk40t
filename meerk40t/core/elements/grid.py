@@ -122,7 +122,7 @@ def init_commands(kernel):
     # ==========
     # GRID SUBTYPE
     # ==========
-
+    # Hint for translation: _("Origin"), _("Relative"), _("Columns"), _("Rows"), _("X Distance"), _("Y Distance")
     @self.console_argument(
         "columns",
         type=int,
@@ -229,24 +229,26 @@ def init_commands(kernel):
             start_x = -1 * x_distance * (cx - 1)
             start_y = -1 * y_distance * (cy - 1)
             y_pos = start_y
-            for j in range(rows):
-                x_pos = start_x
-                for k in range(columns):
-                    if j != (cy - 1) or k != (cx - 1):
-                        add_elem = list(map(copy, data))
-                        for e in add_elem:
-                            e.matrix *= Matrix.translate(x_pos, y_pos)
-                            self.elem_branch.add_node(e)
-                        data_out.extend(add_elem)
-                        counted += 1
-                    x_pos += x_distance
-                y_pos += y_distance
+            with self.node_lock:
+                for j in range(rows):
+                    x_pos = start_x
+                    for k in range(columns):
+                        if j != (cy - 1) or k != (cx - 1):
+                            add_elem = list(map(copy, data))
+                            for e in add_elem:
+                                e.matrix *= Matrix.translate(x_pos, y_pos)
+                                self.elem_branch.add_node(e)
+                            data_out.extend(add_elem)
+                            counted += 1
+                        x_pos += x_distance
+                    y_pos += y_distance
             channel(f"{counted} copies created")
             # Newly created! Classification needed?
             post.append(classify_new(data_out))
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
+    # Hint for translation: _("Unrotated"), _("Repeats"), _("Radius"), _("Deltaangle"), _("Startangle"), _("Endangle")
     @self.console_argument("repeats", type=int, help=_("Number of repeats"), default=3)
     @self.console_argument("radius", type=str, help=_("Radius"), default="2cm")
     @self.console_argument(
@@ -341,32 +343,33 @@ def init_commands(kernel):
         counted = 0
         # _("Create radial")
         with self.undoscope("Create radial"):
-            currentangle = Angle(segment_len)
-            for cc in range(1, repeats):
-                # print (f"Angle: {currentangle.angle_degrees}")
-                add_elem = list(map(copy, data))
-                for e in add_elem:
-                    if hasattr(e, "as_image"):
-                        images.append(e)
-                    if rotate:
-                        # x_pos = -1 * radius
-                        # y_pos = 0
-                        # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
-                    else:
-                        x_pos = -1 * radius + radius * cos(currentangle)
-                        y_pos = radius * sin(currentangle)
-                        e.matrix *= f"translate({x_pos}, {y_pos})"
-                    self.elem_branch.add_node(e)
+            with self.node_lock:
+                currentangle = Angle(segment_len)
+                for cc in range(1, repeats):
+                    # print (f"Angle: {currentangle.angle_degrees}")
+                    add_elem = list(map(copy, data))
+                    for e in add_elem:
+                        if hasattr(e, "as_image"):
+                            images.append(e)
+                        if rotate:
+                            # x_pos = -1 * radius
+                            # y_pos = 0
+                            # e *= "translate(%f, %f)" % (x_pos, y_pos)
+                            e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
+                        else:
+                            x_pos = -1 * radius + radius * cos(currentangle)
+                            y_pos = radius * sin(currentangle)
+                            e.matrix *= f"translate({x_pos}, {y_pos})"
+                        self.elem_branch.add_node(e)
 
-                counted += 1
-                data_out.extend(add_elem)
+                    counted += 1
+                    data_out.extend(add_elem)
 
-                currentangle += segment_len
-                while currentangle.angle >= tau:
-                    currentangle.angle -= tau
-                while currentangle.angle <= -tau:
-                    currentangle.angle += tau
+                    currentangle += segment_len
+                    while currentangle.angle >= tau:
+                        currentangle.angle -= tau
+                    while currentangle.angle <= -tau:
+                        currentangle.angle += tau
             for e in images:
                 self.do_image_update(e)
 
@@ -376,6 +379,7 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
+    # Hint for translation: _("Copies"), _("Radius"), _("Startangle"), _("Endangle"), _("Rotate"), _("Deltaangle")
     @self.console_argument("copies", type=int, help=_("Number of copies"), default=1)
     @self.console_argument("radius", type=str, help=_("Radius"), default="2cm")
     @self.console_argument(
@@ -468,33 +472,34 @@ def init_commands(kernel):
         counted = 0
         # _("Create circular copy")
         with self.undoscope("Create circular copy"):
-            for cc in range(copies):
-                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
-                add_elem = list(map(copy, data))
-                for e in add_elem:
-                    if hasattr(e, "as_image"):
-                        images.append(e)
-                    if rotate:
-                        x_pos = radius
-                        y_pos = 0
-                        e.matrix *= f"translate({x_pos}, {y_pos})"
-                        e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
-                        e.modified()
-                        if hasattr(e, "update"):
+            with self.node_lock:
+                for cc in range(copies):
+                    # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                    add_elem = list(map(copy, data))
+                    for e in add_elem:
+                        if hasattr(e, "as_image"):
                             images.append(e)
-                    else:
-                        x_pos = radius * cos(currentangle)
-                        y_pos = radius * sin(currentangle)
-                        e.matrix *= f"translate({x_pos}, {y_pos})"
-                        e.translated(x_pos, y_pos)
-                    self.elem_branch.add_node(e)
-                counted += 1
-                data_out.extend(add_elem)
-                currentangle += segment_len
-                while currentangle.angle >= tau:
-                    currentangle.angle -= tau
-                while currentangle.angle <= -tau:
-                    currentangle.angle += tau
+                        if rotate:
+                            x_pos = radius
+                            y_pos = 0
+                            e.matrix *= f"translate({x_pos}, {y_pos})"
+                            e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
+                            e.modified()
+                            if hasattr(e, "update"):
+                                images.append(e)
+                        else:
+                            x_pos = radius * cos(currentangle)
+                            y_pos = radius * sin(currentangle)
+                            e.matrix *= f"translate({x_pos}, {y_pos})"
+                            e.translated(x_pos, y_pos)
+                        self.elem_branch.add_node(e)
+                    counted += 1
+                    data_out.extend(add_elem)
+                    currentangle += segment_len
+                    while currentangle.angle >= tau:
+                        currentangle.angle -= tau
+                    while currentangle.angle <= -tau:
+                        currentangle.angle += tau
             for e in images:
                 self.do_image_update(e)
         channel(f"{counted} copies created")

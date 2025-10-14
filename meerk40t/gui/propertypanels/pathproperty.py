@@ -15,13 +15,27 @@ from meerk40t.gui.propertypanels.attributes import (
     RoundedRectPanel,
     StrokeWidthPanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
 
 class PathPropertyPanel(ScrolledPanel):
+    """PathPropertyPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for pathproperty functionality. Features button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for pathproperty functionality. Key controls include "Retrieve" (button)."""
+
+    """PathPropertyPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)

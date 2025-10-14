@@ -82,7 +82,8 @@ class XCSParser:
             result = True
             label, node = self.groups[grpId]
             if node is None:
-                node = parent.add(type="group", label=label)
+                with self.context.elements.node_lock:
+                    node = parent.add(type="group", label=label)
                 self.groups[grpId] = (label, node)
         return result, node
 
@@ -293,22 +294,24 @@ class XCSParser:
         if geom.index == 0:
             return None
         p_node = group_node if in_group else parent
-        return p_node.add(
-            type="elem path",
-            label=label,
-            id=ident,
-            lock=lock,
-            hidden=set_hidden,
-            matrix=matrix,
-            stroke=stroke,
-            geometry=geom,
-            linejoin=Linejoin.JOIN_MITER,
-            stroke_width=500,
-            mktext=text_content,
-            mkfont=font_name,
-            mkfontsize=font_size,
-            mkalign=alignment,
-        )
+        with self.context.elements.node_lock:
+            node = p_node.add(
+                type="elem path",
+                label=label,
+                id=ident,
+                lock=lock,
+                hidden=set_hidden,
+                matrix=matrix,
+                stroke=stroke,
+                geometry=geom,
+                linejoin=Linejoin.JOIN_MITER,
+                stroke_width=500,
+                mktext=text_content,
+                mkfont=font_name,
+                mkfontsize=font_size,
+                mkalign=alignment,
+            )
+        return node
 
     def parse_path(self, parent, content):
         matrix = self.get_matrix(content, use_translate=True)
@@ -323,18 +326,19 @@ class XCSParser:
         ident, label = self.get_id_and_name(content)
         set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
-        node = p_node.add(
-            type="elem path",
-            label=label,
-            id=ident,
-            lock=lock,
-            hidden=set_hidden,
-            matrix=matrix,
-            stroke=stroke,
-            geometry=geom,
-            linejoin=Linejoin.JOIN_MITER,
-            stroke_width=500,
-        )
+        with self.context.elements.node_lock:
+            node = p_node.add(
+                type="elem path",
+                label=label,
+                id=ident,
+                lock=lock,
+                hidden=set_hidden,
+                matrix=matrix,
+                stroke=stroke,
+                geometry=geom,
+                linejoin=Linejoin.JOIN_MITER,
+                stroke_width=500,
+            )
         self.fix_position(node, content)
         return node
 
@@ -349,19 +353,20 @@ class XCSParser:
         ident, label = self.get_id_and_name(content)
         set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
-        node = p_node.add(
-            type="elem ellipse",
-            label=label,
-            cx=cx,
-            cy=cy,
-            rx=width / 2,
-            ry=height / 2,
-            id=ident,
-            lock=lock,
-            hidden=set_hidden,
-            matrix=matrix,
-            stroke=stroke,
-        )
+        with self.context.elements.node_lock:
+            node = p_node.add(
+                type="elem ellipse",
+                label=label,
+                cx=cx,
+                cy=cy,
+                rx=width / 2,
+                ry=height / 2,
+                id=ident,
+                lock=lock,
+                hidden=set_hidden,
+                matrix=matrix,
+                stroke=stroke,
+            )
         return node
 
     def parse_bitmap(self, parent, content):
@@ -387,15 +392,16 @@ class XCSParser:
         ident, label = self.get_id_and_name(content)
         set_hidden, stroke, lock = self.get_basic_attributes(content)
         p_node = group_node if in_group else parent
-        node = p_node.add(
-            type="elem image",
-            label=label,
-            id=ident,
-            image=image,
-            matrix=matrix,
-            hidden=set_hidden,
-            lock=lock,
-        )
+        with self.context.elements.node_lock:
+            node = p_node.add(
+                type="elem image",
+                label=label,
+                id=ident,
+                image=image,
+                matrix=matrix,
+                hidden=set_hidden,
+                lock=lock,
+            )
         return node
 
     def parse_unknown(self, parent, content):
@@ -445,51 +451,52 @@ class XCSParser:
         main_power = content.get("power", 100)
         data_content = self.get_operation_context(content)
         if not data_content:
-            self.log("Device information detils were empty, no operations created")
+            self.log("Device information details were empty, no operations created")
             return False
         # pprint (data_content)
         data_map = data_content.get("displays", {})
         map_data = data_map.get("value", [])
         operation_list = {}
-        for map_entry in map_data:
-            node_id, processing_type, material_type, power, speed, passes, parameter_set = self.extract_operation_settings(map_entry, main_power)
-            hash_value = f"{processing_type}-{power}-{speed}-{passes}"
-            if hash_value in operation_list:
-                op_node = operation_list[hash_value]
-            else:
-                p_node = self.elements.op_branch
-                op_label = f"{material_type} - {power}%"
-                if processing_type in opname_map:
-                    op_type = opname_map[processing_type]
+        with self.context.elements.node_lock:
+            for map_entry in map_data:
+                node_id, processing_type, material_type, power, speed, passes, parameter_set = self.extract_operation_settings(map_entry, main_power)
+                hash_value = f"{processing_type}-{power}-{speed}-{passes}"
+                if hash_value in operation_list:
+                    op_node = operation_list[hash_value]
                 else:
-                    self.log(f"Unknown processing type: {processing_type}")
-                    continue
-                op_node = p_node.add(
-                    type=op_type,
-                    label=op_label,
-                    power=power * 10,  # was given in percent
-                    speed=speed,
-                    passes=passes,
-                )
-                anything_created = True
-                if op_type == "op cut":
-                    kerf_distance = (
-                        parameter_set.get("kerfDistance", 0)
-                        if parameter_set.get("enableKerf", False)
-                        else 0
+                    p_node = self.elements.op_branch
+                    op_label = f"{material_type} - {power}%"
+                    if processing_type in opname_map:
+                        op_type = opname_map[processing_type]
+                    else:
+                        self.log(f"Unknown processing type: {processing_type}")
+                        continue
+                    op_node = p_node.add(
+                        type=op_type,
+                        label=op_label,
+                        power=power * 10,  # was given in percent
+                        speed=speed,
+                        passes=passes,
                     )
-                    op_node.kerf = kerf_distance
-                if op_type == "op image":
-                    if "density" in parameter_set:
-                        op_node.overrule_dpi = True
-                        op_node.dpi = parameter_set["density"]
-                    if "bitmapMode" in parameter_set:
-                        bmode = parameter_set["bitmapMode"]
-                        # usually 'grayscale'
-                operation_list[hash_value] = op_node
-            if node_id in nodelist:
-                cnode = nodelist[node_id]
-                op_node.add_reference(cnode)
+                    anything_created = True
+                    if op_type == "op cut":
+                        kerf_distance = (
+                            parameter_set.get("kerfDistance", 0)
+                            if parameter_set.get("enableKerf", False)
+                            else 0
+                        )
+                        op_node.kerf = kerf_distance
+                    if op_type == "op image":
+                        if "density" in parameter_set:
+                            op_node.overrule_dpi = True
+                            op_node.dpi = parameter_set["density"]
+                        if "bitmapMode" in parameter_set:
+                            bmode = parameter_set["bitmapMode"]
+                            # usually 'grayscale'
+                    operation_list[hash_value] = op_node
+                if node_id in nodelist:
+                    cnode = nodelist[node_id]
+                    op_node.add_reference(cnode)
         return anything_created
 
     def parse(self, pathname, source, canvasid=0, **kwargs):
@@ -497,7 +504,8 @@ class XCSParser:
 
         # op_branch.remove_all_children()
         # elem_branch.remove_all_children()
-        root_parent = elem_branch.add(type="file", filepath=pathname)
+        with self.context.elements.node_lock:
+            root_parent = elem_branch.add(type="file", filepath=pathname)
         parent = root_parent
         handler = {
             "LINE": self.parse_line,

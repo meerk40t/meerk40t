@@ -1,8 +1,9 @@
 """
-This widget draws the machine origin as well as the X and Y directions for the coordinate system being used.
+This widget draws the machine origin as well as the X and Y directions for the
+coordinate system being used.
 
-The machine origin is actually the position of the 0,0 location for the device being used, whereas the coordinate
-system is the user display space.
+The machine origin is actually the position of the 0,0 location for the device
+being used, whereas the coordinate system is the user display space.
 """
 
 import wx
@@ -47,13 +48,42 @@ class MachineOriginWidget(Widget):
             return
         margin = 5000
         space = self.scene.context.space
-        x, y = space.display.iposition(0, 0)
-        x_dx, x_dy = space.display.iposition(50000, 0)
-        xa1_dx, xa1_dy = space.display.iposition(45000, 5000)
-        xa2_dx, xa2_dy = space.display.iposition(45000, -5000)
-        y_dx, y_dy = space.display.iposition(0, 50000)
-        ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
-        ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
+
+        # Get the actual machine origin coordinates
+        origin_x, origin_y = space.origin_zero()
+
+        # Determine arrow directions based on coordinate system orientation
+        arrow_length = 50000  # Length of the arrow in device units
+
+        # X-axis direction: positive X should point right if right_positive, left otherwise
+        if space.right_positive:
+            x_end_x, x_end_y = origin_x + arrow_length, origin_y + 0
+            x_arrow1_x, x_arrow1_y = origin_x + arrow_length - 5000, origin_y + 5000
+            x_arrow2_x, x_arrow2_y = origin_x + arrow_length - 5000, origin_y - 5000
+        else:
+            x_end_x, x_end_y = origin_x - arrow_length, origin_y + 0
+            x_arrow1_x, x_arrow1_y = origin_x - arrow_length + 5000, origin_y + 5000
+            x_arrow2_x, x_arrow2_y = origin_x - arrow_length + 5000, origin_y - 5000
+
+        # Y-axis direction: positive Y should point down if bottom_positive, up otherwise
+        if space.bottom_positive:
+            y_end_x, y_end_y = origin_x + 0, origin_y + arrow_length
+            y_arrow1_x, y_arrow1_y = origin_x + 5000, origin_y + arrow_length - 5000
+            y_arrow2_x, y_arrow2_y = origin_x - 5000, origin_y + arrow_length - 5000
+        else:
+            y_end_x, y_end_y = origin_x + 0, origin_y - arrow_length
+            y_arrow1_x, y_arrow1_y = origin_x + 5000, origin_y - arrow_length + 5000
+            y_arrow2_x, y_arrow2_y = origin_x - 5000, origin_y - arrow_length + 5000
+
+        # Convert device coordinates to scene coordinates using space.display.iposition
+        origin_dx, origin_dy = space.display.iposition(origin_x, origin_y)
+        x_end_dx, x_end_dy = space.display.iposition(x_end_x, x_end_y)
+        x_arrow1_dx, x_arrow1_dy = space.display.iposition(x_arrow1_x, x_arrow1_y)
+        x_arrow2_dx, x_arrow2_dy = space.display.iposition(x_arrow2_x, x_arrow2_y)
+        y_end_dx, y_end_dy = space.display.iposition(y_end_x, y_end_y)
+        y_arrow1_dx, y_arrow1_dy = space.display.iposition(y_arrow1_x, y_arrow1_y)
+        y_arrow2_dx, y_arrow2_dy = space.display.iposition(y_arrow2_x, y_arrow2_y)
+
         gc.SetBrush(self.brush)
         try:
             dev0x, dev0y = space.device.view.iposition(0, 0)
@@ -64,23 +94,21 @@ class MachineOriginWidget(Widget):
 
         gc.SetBrush(wx.NullBrush)
         gc.SetPen(self.x_axis_pen)
-        # gc.DrawLines will draw a polygon according to the documentation!
-        # While the windows implementation of wxPython does not care
-        # and draws a polyline, the Linux implementation does and closes the
-        # polygon!
+        # Draw X-axis arrow
         arrow1 = gc.CreatePath()
-        arrow1.MoveToPoint((x, y))
-        arrow1.AddLineToPoint((x_dx, x_dy))
-        arrow1.AddLineToPoint((xa1_dx, xa1_dy))
-        arrow1.MoveToPoint((x_dx, x_dy))
-        arrow1.AddLineToPoint((xa2_dx, xa2_dy))
+        arrow1.MoveToPoint((origin_dx, origin_dy))
+        arrow1.AddLineToPoint((x_end_dx, x_end_dy))
+        arrow1.AddLineToPoint((x_arrow1_dx, x_arrow1_dy))
+        arrow1.MoveToPoint((x_end_dx, x_end_dy))
+        arrow1.AddLineToPoint((x_arrow2_dx, x_arrow2_dy))
         gc.DrawPath(arrow1)
 
         gc.SetPen(self.y_axis_pen)
+        # Draw Y-axis arrow
         arrow2 = gc.CreatePath()
-        arrow2.MoveToPoint((x, y))
-        arrow2.AddLineToPoint((y_dx, y_dy))
-        arrow2.AddLineToPoint((ya1_dx, ya1_dy))
-        arrow2.MoveToPoint((y_dx, y_dy))
-        arrow2.AddLineToPoint((ya2_dx, ya2_dy))
+        arrow2.MoveToPoint((origin_dx, origin_dy))
+        arrow2.AddLineToPoint((y_end_dx, y_end_dy))
+        arrow2.AddLineToPoint((y_arrow1_dx, y_arrow1_dy))
+        arrow2.MoveToPoint((y_end_dx, y_end_dy))
+        arrow2.AddLineToPoint((y_arrow2_dx, y_arrow2_dy))
         gc.DrawPath(arrow2)

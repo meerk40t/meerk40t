@@ -4,7 +4,7 @@ This is a giant list of console commands that deal with and often implement the 
 
 from meerk40t.kernel import CommandSyntaxError
 
-from .element_types import *
+from .element_types import op_nodes, elem_group_nodes, elem_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -116,7 +116,8 @@ def init_commands(kernel):
                 drop_node = self._tree
                 for n in drop.split("."):
                     drop_node = drop_node.children[int(n)]
-                drop_node.drop(drag_node)
+                with self.node_lock:
+                    drop_node.drop(drag_node)
             except (IndexError, AttributeError, ValueError):
                 raise CommandSyntaxError
         return "tree", data

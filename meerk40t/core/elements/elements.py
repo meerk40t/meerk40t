@@ -11,8 +11,10 @@ functionality, element classification, and the management of persistent
 operations and preferences.
 """
 
+
 import contextlib
 import os.path
+import threading
 from copy import copy
 from time import time
 
@@ -31,7 +33,7 @@ from meerk40t.kernel import ConsoleFunction, Service, Settings
 from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from . import offset_clpr, offset_mk
-from .element_types import *
+from .element_types import elem_group_nodes, elem_nodes, op_parent_nodes, place_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -66,6 +68,8 @@ def plugin(kernel, lifecycle=None):
             files,
             geometry,
             grid,
+            groups,
+            manual_optimize,
             materials,
             notes,
             placements,
@@ -88,6 +92,7 @@ def plugin(kernel, lifecycle=None):
             shapes.plugin,
             geometry.plugin,
             tree_commands.plugin,
+            groups.plugin,
             undo_redo.plugin,
             clipboard.plugin,
             grid.plugin,
@@ -98,6 +103,8 @@ def plugin(kernel, lifecycle=None):
             offset_mk.plugin,
             offset_clpr.plugin,
             testcases.plugin,
+            manual_optimize.plugin,
+            # optimization_scenarios.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
@@ -642,6 +649,8 @@ class Elemental(Service):
         )
         self._clipboard = {}
         self._clipboard_default = "0"
+        # Thread safety for node addition/removal
+        self._node_lock = threading.RLock()
 
         self.note = None
         self.last_file_autoexec = None
@@ -667,6 +676,7 @@ class Elemental(Service):
         self.setting(bool, "use_undo", True)
         self.setting(int, "undo_levels", 20)
         self.setting(bool, "filenode_selection", False)
+
         undo_active = self.use_undo
         undo_levels = self.undo_levels
         self.undo = Undo(self, self._tree, active=undo_active, levels=undo_levels)
@@ -716,7 +726,7 @@ class Elemental(Service):
                 self.load_default(performclassify=False)
             if list(self.ops()):
                 # Something was loaded for default ops. Mark that.
-                # Hint for translate check: _("Operations restored")
+                # Hint for translate check: _(“Operations restored”)
                 self.undo.mark("Operations restored")  # Mark defaulted
 
         self._default_stroke = None
@@ -731,7 +741,13 @@ class Elemental(Service):
         self._timing_stack = {}
 
         self.default_operations = []
+        self.default_operations_title = ""
         self.init_default_operations_nodes()
+
+    @property
+    def node_lock(self):
+        """Exposes the node lock for external use."""
+        return self._node_lock
 
     def set_start_time(self, key):
         if key in self._timing_stack:
@@ -849,7 +865,7 @@ class Elemental(Service):
     @default_strokewidth.setter
     def default_strokewidth(self, width):
         if isinstance(width, str):
-            width = float(Length(width))
+            width = float(Length(width))  # type: ignore
         self._default_strokewidth = width
 
     @property
@@ -961,7 +977,7 @@ class Elemental(Service):
         return unassigned, nonburnt
 
     def length(self, v):
-        return float(Length(v))
+        return float(Length(v))  # type: ignore
 
     def length_x(self, v):
         try:
@@ -1035,14 +1051,17 @@ class Elemental(Service):
         has_a_color = False
 
         if impose == "to_elem":
-            target_color = op_assign.color
-            if attrib == "auto":
-                if "stroke" in op_assign.allowed_attributes:
-                    attrib = "stroke"
-                elif "fill" in op_assign.allowed_attributes:
-                    attrib = "fill"
-                else:
-                    attrib = "stroke"
+            if not hasattr(op_assign, "color"):
+                attrib = None
+            else:
+                target_color = op_assign.color
+                if attrib == "auto":
+                    if "stroke" in op_assign.allowed_attributes:
+                        attrib = "stroke"
+                    elif "fill" in op_assign.allowed_attributes:
+                        attrib = "fill"
+                    else:
+                        attrib = "stroke"
 
         if attrib is None:
             similar = False
@@ -1060,7 +1079,7 @@ class Elemental(Service):
                     # We accept stroke none or fill none as well!
                     has_a_color = True
                     try:
-                        if c is not None and c.argb is not None:
+                        if self._valid_color(c):
                             first_color = c
                     except (AttributeError, ValueError):
                         first_color = None
@@ -1115,10 +1134,11 @@ class Elemental(Service):
         )
         for n in data:
             if op_assign.can_drop(n):
-                if exclusive:
-                    for ref in list(n._references):
-                        ref.remove_node()
-                op_assign.drop(n, modify=True)
+                with self._node_lock:
+                    if exclusive:
+                        for ref in list(n._references):
+                            ref.remove_node()
+                    op_assign.drop(n, modify=True)
                 if (
                     impose == "to_elem"
                     and target_color is not None
@@ -1144,101 +1164,82 @@ class Elemental(Service):
         NB: we will set the emphasized_time of the parent element
         to the minimum time of all children
         """
+        if not data:
+            return []
 
-        def remove_children_from_list(list_to_deal, parent_node):
-            for idx, node in enumerate(list_to_deal):
-                if node is None:
+        # Use a set for O(1) lookups
+        parent_map = {}
+
+        # Build map of selected children per parent
+        for node in data:
+            if node.parent and node.parent.type in ("file", "group"):
+                parent_map.setdefault(node.parent, []).append(node)
+
+        condensed_data = []
+
+        for node in data:
+            # If this node is a group/file itself, include it directly
+            if node.type in ("file", "group"):
+                condensed_data.append(node)
+                # Set emphasized_time to minimum of children
+                min_time = None
+                for child in node.children:
+                    if (
+                        hasattr(child, "_emphasized_time")
+                        and child._emphasized_time is not None
+                    ):
+                        if min_time is None or child._emphasized_time < min_time:
+                            min_time = child._emphasized_time
+                if min_time is not None:
+                    node._emphasized_time = min_time
+                continue
+
+            # Check if all siblings are selected - if so, use parent instead
+            parent = node.parent
+            if parent and parent.type in ("file", "group"):
+                selected_siblings = parent_map.get(parent, [])
+                if len(selected_siblings) == len(parent.children):
+                    # All children selected, use parent instead
+                    if parent not in condensed_data:
+                        condensed_data.append(parent)
+                        # Set emphasized_time to minimum of children
+                        min_time = None
+                        for child in parent.children:
+                            if (
+                                hasattr(child, "_emphasized_time")
+                                and child._emphasized_time is not None
+                            ):
+                                if (
+                                    min_time is None
+                                    or child._emphasized_time < min_time
+                                ):
+                                    min_time = child._emphasized_time
+                        if min_time is not None:
+                            parent._emphasized_time = min_time
+                    # Don't add the individual node when parent is used
                     continue
-                if node.parent is parent_node:
-                    list_to_deal[idx] = None
-                    if len(node.children) > 0:
-                        remove_children_from_list(list_to_deal, node)
-                    t1 = parent_node._emphasized_time
-                    t2 = node._emphasized_time
-                    if t2 is None:
-                        continue
-                    if t1 is None or t2 < t1:
-                        parent_node._emphasized_time = t2
 
-        align_data = list(data)
-        needs_repetition = True
-        while needs_repetition:
-            # Will be set only if we add a parent, as the process needs then to be repeated
-            needs_repetition = False
+            # Either no condensable parent, or not all siblings selected
+            condensed_data.append(node)
 
-            data_to_align = []
-            # We need to iterate through all the elements
-            # to establish if they belong to a group,
-            # if all the elements in this group are in
-            # the dataset too, then we just take the group
-            # as a representative.
-            data_len = len(align_data)
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_condensed = []
+        for node in condensed_data:
+            if node not in seen:
+                seen.add(node)
+                unique_condensed.append(node)
 
-            for idx1, node_1 in enumerate(align_data):
-                if node_1 is None:
-                    # Has been dealt with already
-                    # print ("Eliminated node")
-                    continue
-                # Is this a group? Then we just take this node
-                # and remove all children nodes
-                if node_1.type in ("file", "group"):
-                    # print (f"Group node ({node_1.display_label()}), eliminate children")
-                    remove_children_from_list(align_data, node_1)
-                    # No continue, as we still need to
-                    # assess the parent case
-
-                parent = node_1.parent
-                if parent is None:
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    # print (f"Adding {node_1.type}, no parent")
-                    continue
-                if parent.type not in ("file", "group"):
-                    # That should not happen per se,
-                    # only for root objects which parent
-                    # is elem_branch
-                    # print (f"Adding {node_1.type}, parent was: {parent.type}")
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    continue
-                # How many children are contained?
-                candidates = len(parent.children)
-                identified = 0
-                if candidates > 0:
-                    # We only need to look to elements not yet dealt with,
-                    # but we start with the current index to include
-                    # node_1 in the count
-                    for idx2 in range(idx1, data_len, 1):
-                        node_2 = align_data[idx2]
-                        if node_2 is not None and node_2.parent is parent:
-                            identified += 1
-                if identified == candidates:
-                    # All children of the parent object are contained
-                    # So we add the parent instead...
-                    data_to_align.append(parent)
-                    remove_children_from_list(align_data, parent)
-                    # print (f"Adding parent for {node_1.type}, all children inside")
-                    needs_repetition = True
-
-                else:
-                    data_to_align.append(node_1)
-                    align_data[idx1] = None
-                    # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
-            if needs_repetition:
-                # We copy the data and do it again....
-                # print ("Repetition required")
-                align_data = list(data_to_align)
-        # One special case though: if we have selected all
-        # elements within a single group then we still deal
-        # with all children
+        # Handle expand_at_end logic
         if expand_at_end:
-            while len(data_to_align) == 1:
-                node = data_to_align[0]
+            while len(unique_condensed) == 1:
+                node = unique_condensed[0]
                 if node is not None and node.type in ("file", "group"):
-                    data_to_align = list(node.children)
+                    unique_condensed = list(node.children)
                 else:
                     break
-        return data_to_align
+
+        return unique_condensed
 
     def translate_node(self, node, dx, dy):
         if not node.can_move(self.lock_allows_move):
@@ -1331,6 +1332,7 @@ class Elemental(Service):
                     dy = groupdy
                 # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
                 self.translate_node(q, dx, dy)
+        self.signal("modified_by_tool")
         self.signal("refresh_scene", "Scene")
         self.signal("warn_state_update")
 
@@ -1487,13 +1489,27 @@ class Elemental(Service):
 
             section = f"{name} {i:06d}"
             settings.write_persistent(section, "type", op.type)
+            effects = next(
+                (
+                    node.get_effect_descriptor()
+                    for node in op.children
+                    if node.type.startswith("effect ")
+                    and hasattr(node, "get_effect_descriptor")
+                ),
+                "",
+            )
+            if effects:
+                op.settings["effects"] = effects
             op.save(settings, section)
-            try:
-                self._save_persistent_operation_tree(
-                    section, op.children, use_settings=settings
-                )
-            except AttributeError:
-                pass
+            # We will save the effect information, ie whether an operation does contain a hatch/wobble/warp
+
+            # We need to save the children as well.
+            # try:
+            #     self._save_persistent_operation_tree(
+            #         section, op.children, use_settings=settings
+            #     )
+            # except AttributeError:
+            #     pass
         if not flush:
             return
         settings.write_configuration()
@@ -1554,7 +1570,9 @@ class Elemental(Service):
         settings = self.op_data if use_settings is None else use_settings
         op_tree = {}
         op_info = {}
-        for section in list(settings.derivable(name)):
+        seclist = list(settings.derivable(name))
+        seclist.sort() # Make sure we load in the right order
+        for section in seclist:
             if section.endswith("info"):
                 for key in settings.keylist(section):
                     content = settings.read_persistent(str, section, key)
@@ -1578,12 +1596,13 @@ class Elemental(Service):
             # op.load(settings, section)
             op_tree[section] = op
         op_list = []
-        for section in op_tree:
-            parent = " ".join(section.split(" ")[:-1])
-            if parent == name:
-                op_list.append(op_tree[section])
-            else:
-                op_tree[parent].add_node(op_tree[section])
+        with self._node_lock:
+            for section in op_tree:
+                parent = " ".join(section.split(" ")[:-1])
+                if parent == name:
+                    op_list.append(op_tree[section])
+                else:
+                    op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
     def load_persistent_operations(self, name, classify=None, clear=True):
@@ -1604,8 +1623,27 @@ class Elemental(Service):
                 self.clear_operations()
             operation_branch = self.op_branch
             oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
-            for op in oplist:
-                operation_branch.add_node(op)
+            with self._node_lock:
+                for op in oplist:
+                    operation_branch.add_node(op)
+                    if not hasattr(op, "settings") or "effects" not in op.settings:
+                        continue
+                    effects = op.settings.get("effects", "")
+                    del op.settings["effects"]
+                    if effects:
+                        parts = effects.split("|")
+                        if len(parts) > 1:
+                            label = parts[0].split()[1] if " " in parts[0] else parts[0]
+                            try:
+                                effnode = op.add(
+                                    type=parts[0], label=f"Autocreated {label}"
+                                )
+                                effnode.set_effect_descriptor(effects)
+                                if hasattr(effnode, "stroke") and hasattr(op, "color"):
+                                    effnode.stroke = op.color
+                            except Exception as e:
+                                print(f"Bootstrap failed for {parts[0]}: {e}")
+
             if classify is None:
                 classify = self.classify_new
             if not classify:
@@ -1615,6 +1653,18 @@ class Elemental(Service):
         self.signal("updateop_tree")
 
     # --------------- Default Operations logic
+
+    def _get_default_list_title(self, opinfo):
+        parts = []
+        if "material" in opinfo and opinfo["material"]:
+            parts.append(opinfo["material"])
+        if "thickness" in opinfo and opinfo["thickness"]:
+            parts.append(opinfo["thickness"])
+        if "title" in opinfo and opinfo["title"]:
+            parts.append(opinfo["title"])
+        mat_title = "-".join(parts)
+        return mat_title
+
     def init_default_operations_nodes(self):
         def next_color(primary, secondary, tertiary, delta=32):
             secondary += delta
@@ -1706,6 +1756,7 @@ class Elemental(Service):
         needs_signal = len(self.default_operations) != 0
         oplist = []
         opinfo = {}
+        _ = self.kernel.translation
         if hasattr(self, "device"):
             std_list = f"_default_{self.device.label}"
             # We need to replace all ' ' by an underscore
@@ -1713,10 +1764,16 @@ class Elemental(Service):
                 std_list = std_list.replace(forbidden, "_")
             # print(f"Try to load '{std_list}'")
             oplist, opinfo = self.load_persistent_op_list(std_list)
+            if not opinfo.get("title", ""):
+                opinfo["title"] = _("Default operations for {dev}").format(
+                    dev=self.device.label
+                )
         if len(oplist) == 0:
             std_list = "_default"
             # print(f"Try to load '{std_list}'")
             oplist, opinfo = self.load_persistent_op_list(std_list)
+            if not opinfo.get("title", ""):
+                opinfo["title"] = _("Default operations")
 
         if len(oplist) == 0:
             # Then let's create something useful
@@ -1735,8 +1792,9 @@ class Elemental(Service):
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
             )
-
+        title = self._get_default_list_title(opinfo)
         self.default_operations = oplist
+        self.default_operations_title = title
         if needs_signal:
             self.signal("default_operations")
 
@@ -1773,14 +1831,40 @@ class Elemental(Service):
                 break
         if newone:
             op_to_use = self.create_usable_copy(targetop)
-            try:
-                self.op_branch.add_node(op_to_use)
-            except ValueError:
-                # This happens when we have somehow lost sync with the node,
-                # and we try to add a node that is already added...
-                # In principle this should be covered by the check
-                # above, but you never know
-                pass
+            with self._node_lock:
+                try:
+                    self.op_branch.add_node(op_to_use)
+                except ValueError:
+                    # This happens when we have somehow lost sync with the node,
+                    # and we try to add a node that is already added...
+                    # In principle this should be covered by the check
+                    # above, but you never know
+                    pass
+        # Lets check whether we have an effect:
+        effects = ""
+        if hasattr(op_to_use, "settings") and "effects" in op_to_use.settings:
+            effects = op_to_use.settings.get("effects", "")
+            del op_to_use.settings["effects"]
+            for node in op.children:
+                if node.type.startswith("effect "):
+                    # Already in place, nothing to do
+                    effects = ""
+                    break
+        if effects:
+            parts = effects.split("|")
+            if len(parts) > 1:
+                label = parts[0].split()[1] if " " in parts[0] else parts[0]
+                try:
+                    with self._node_lock:
+                        effnode = op_to_use.add(
+                            type=parts[0], label=f"Autocreated {label}"
+                        )
+                    effnode.set_effect_descriptor(effects)
+                    if hasattr(effnode, "stroke") and hasattr(op, "color"):
+                        effnode.stroke = op_to_use.color
+                except Exception as e:
+                    print(f"Bootstrap failed for {parts[0]}: {e}")
+
         impose = "to_elem"
         similar = False
         exclusive = True
@@ -1804,7 +1888,6 @@ class Elemental(Service):
         # Let's clean non-used operations that come from defaults...
         if self.remove_non_used_default_ops:
             # print("Remove unused called")
-            deleted = 0
             to_be_deleted = []
 
             for op in list(self.ops()):
@@ -1818,10 +1901,11 @@ class Elemental(Service):
                     if def_op.id == op.id:
                         to_be_deleted.append(op)
                         break
-            for op in to_be_deleted:
-                deleted += 1
-                # print(f"will remove {op.type}- {op.id}")
-                op.remove_node()
+            deleted = len(to_be_deleted)
+            with self._node_lock:
+                for op in to_be_deleted:
+                    # print(f"will remove {op.type}- {op.id}")
+                    op.remove_node()
 
             if deleted:
                 self.signal("operation_removed")
@@ -2056,8 +2140,9 @@ class Elemental(Service):
         with self.undoscope("Load default operations"):
             self.clear_operations()
             nodes = self.create_minimal_op_list()
-            for node in nodes:
-                self.op_branch.add_node(node)
+            with self._node_lock:
+                for node in nodes:
+                    self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -2066,8 +2151,9 @@ class Elemental(Service):
         with self.undoscope("Load default operations"):
             self.clear_operations()
             nodes = self.create_basic_op_list()
-            for node in nodes:
-                self.op_branch.add_node(node)
+            with self._node_lock:
+                for node in nodes:
+                    self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -2207,21 +2293,24 @@ class Elemental(Service):
         @return:
         """
         operation_branch = self.op_branch
-        operation_branch.add_node(op, pos=pos)
+        with self._node_lock:
+            operation_branch.add_node(op, pos=pos)
         self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
         operation_branch = self.op_branch
         items = []
-        for op in adding_ops:
-            operation_branch.add_node(op)
-            items.append(op)
+        with self._node_lock:
+            for op in adding_ops:
+                operation_branch.add_node(op)
+                items.append(op)
         self.signal("add_operation", items)
         return items
 
     def clear_operations(self, fast=False):
         operations = self.op_branch
-        operations.remove_all_children(fast=fast)
+        with self._node_lock:
+            operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
             operations.loop_enabled = False
@@ -2231,13 +2320,15 @@ class Elemental(Service):
 
     def clear_elements(self, fast=False):
         elements = self.elem_branch
-        elements.remove_all_children(fast=fast)
+        with self._node_lock:
+            elements.remove_all_children(fast=fast)
         self.remembered_keyhole_nodes.clear()
         self.registered_keyholes.clear()
 
     def clear_regmarks(self, fast=False):
         elements = self.reg_branch
-        elements.remove_all_children(fast=fast)
+        with self._node_lock:
+            elements.remove_all_children(fast=fast)
 
     def clear_files(self):
         pass
@@ -2358,7 +2449,8 @@ class Elemental(Service):
                 if op_treatment and drag_node.has_ancestor("branch reg"):
                     # We need to first relocate the drag_node to the elem branch
                     # print(f"Relocate {drag_node.type} to elem branch")
-                    self.elem_branch.drop(drag_node, flag=flag)
+                    with self.node_lock:
+                        self.elem_branch.drop(drag_node, flag=flag)
                 if drop_node.can_drop(drag_node):
                     # Is the drag node coming from the regmarks branch?
                     # If yes then we might need to classify.
@@ -2367,7 +2459,8 @@ class Elemental(Service):
                             to_classify.extend(iter(drag_node.flat(elem_nodes)))
                         else:
                             to_classify.append(drag_node)
-                    drop_node.drop(drag_node, modify=True, flag=flag)
+                    with self.node_lock:
+                        drop_node.drop(drag_node, modify=True, flag=flag)
                     success = True
                 # else:
                 #     print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
@@ -2390,34 +2483,38 @@ class Elemental(Service):
                     ref._mark_delete = True
                     to_be_deleted += 1
         fastmode = to_be_deleted >= 100
-        for n in reversed(list(self.flat())):
-            if not hasattr(n, "_mark_delete"):
-                continue
-            if n.type in ("root", "branch elems", "branch reg", "branch ops"):
-                continue
-            n.remove_node(children=False, references=False, fast=fastmode)
+        with self._node_lock:
+            for n in reversed(list(self.flat())):
+                if not hasattr(n, "_mark_delete"):
+                    continue
+                if n.type in ("root", "branch elems", "branch reg", "branch ops"):
+                    continue
+                n.remove_node(children=False, references=False, fast=fastmode)
         self.set_end_time("remove_nodes")
         if fastmode:
             self.signal("rebuild_tree", "all")
 
     def remove_elements(self, element_node_list):
-        for elem in element_node_list:
-            if hasattr(elem, "can_remove") and not elem.can_remove:
-                continue
-            elem.remove_node(references=True)
+        with self._node_lock:
+            for elem in element_node_list:
+                if hasattr(elem, "can_remove") and not elem.can_remove:
+                    continue
+                elem.remove_node(references=True)
         self.validate_selected_area()
 
     def remove_operations(self, operations_list):
-        for op in operations_list:
-            for i, o in enumerate(list(self.ops())):
-                if o is op:
-                    o.remove_node()
-            self.signal("operation_removed")
+        with self._node_lock:
+            for op in operations_list:
+                for i, o in enumerate(list(self.ops())):
+                    if o is op:
+                        o.remove_node()
+        self.signal("operation_removed")
 
     def remove_elements_from_operations(self, elements_list):
-        for node in elements_list:
-            for ref in list(node._references):
-                ref.remove_node()
+        with self._node_lock:
+            for node in elements_list:
+                for ref in list(node._references):
+                    ref.remove_node()
 
     def selected_area(self, painted=False):
         if self._emphasized_bounds_dirty:
@@ -2707,6 +2804,14 @@ class Elemental(Service):
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
 
+    def _valid_color(self, color):
+        try:
+            if color is not None and color.argb is not None:
+                return True
+        except Exception:
+            pass
+        return False
+
     def post_classify(self, data):
         """
         Provides a post_classification algorithm.
@@ -2764,6 +2869,10 @@ class Elemental(Service):
             candidate_dist = float("inf")
             for cand_op in operations:
                 if cand_op.type != "op raster":
+                    continue
+                if not self._valid_color(cand_op.color) or not self._valid_color(
+                    node.fill
+                ):
                     continue
                 col_d = Color.distance(cand_op.color, abs(node.fill))
                 if col_d > fuzzydistance:
@@ -2829,6 +2938,11 @@ class Elemental(Service):
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
+            # is this a node that is under the operations tree? Then skip it
+            if node.type != "reference" and node.has_ancestor("branch ops"):
+                if debug:
+                    debug(f"Skipping {node_desc} as it is already in operations")
+                continue
             classif_info = [False, False]
             # Even for fuzzy we check first a direct hit
             fuzzy_param = (False, True) if fuzzy else (False,)
@@ -2854,8 +2968,7 @@ class Elemental(Service):
                     perform_classification = True
                     if (
                         hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and node.stroke.argb is not None
+                        and self._valid_color(node.stroke)
                         and node.type != "elem text"
                     ):
                         if fuzzy:  # No need to distinguish tempfuzzy here
@@ -2981,7 +3094,7 @@ class Elemental(Service):
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
-                if node.stroke is None or node.stroke.argb is None:
+                if not self._valid_color(node.stroke):
                     classif_info[0] = True
                 if node.type == "elem text":
                     # even if it has, we are not going to do something with it
@@ -2989,7 +3102,7 @@ class Elemental(Service):
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
-                if node.fill is None or node.fill.argb is None:
+                if not self._valid_color(node.fill):
                     classif_info[1] = True
             else:
                 classif_info[1] = True
@@ -3040,7 +3153,7 @@ class Elemental(Service):
                         break
             # Let's make sure we only consider relevant, i.e. existing attributes...
             if hasattr(node, "stroke"):
-                if node.stroke is None or node.stroke.argb is None:
+                if not self._valid_color(node.stroke):
                     classif_info[0] = True
                 if node.type == "elem text":
                     # even if it has, we are not going to do something with it
@@ -3048,7 +3161,7 @@ class Elemental(Service):
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
-                if node.fill is None or node.fill.argb is None:
+                if not self._valid_color(node.fill):
                     classif_info[1] = True
             else:
                 classif_info[1] = True
@@ -3105,8 +3218,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     # Let's loop through the default operations
                     # First the whisperer case
@@ -3134,8 +3246,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     fuzzy_param = (False, True) if fuzzy else (False,)
                     was_classified = False
@@ -3145,7 +3256,9 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
+                            if isinstance(
+                                op_candidate, (CutOpNode, EngraveOpNode)
+                            ) and self._valid_color(op_candidate.color):
                                 if tempfuzzy:
                                     classified = (
                                         Color.distance(
@@ -3174,8 +3287,7 @@ class Elemental(Service):
                 if (
                     not classif_info[0]
                     and hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
+                    and self._valid_color(node.stroke)
                 ):
                     if fuzzy:
                         is_cut = (
@@ -3204,8 +3316,7 @@ class Elemental(Service):
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                    and self._valid_color(node.fill)
                 ):
                     if node.fill.red == node.fill.green == node.fill.blue:
                         is_black = True
@@ -3225,6 +3336,8 @@ class Elemental(Service):
                         if debug:
                             debug(f"Pass 3-fill (fuzzy={tempfuzzy}): check {node.type}")
                         for op_candidate in self.default_operations:
+                            if not self._valid_color(op_candidate.color):
+                                continue
                             classified = False
                             if isinstance(op_candidate, RasterOpNode):
                                 if tempfuzzy:
@@ -3252,8 +3365,7 @@ class Elemental(Service):
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                    and self._valid_color(node.fill)
                 ):
                     default_color = (
                         abs(node.fill) if self.classify_fill else Color("black")
@@ -3332,7 +3444,8 @@ class Elemental(Service):
                         existing = op.is_referenced(node)
 
                     if not existing:
-                        op.add_reference(node)
+                        with self._node_lock:
+                            op.add_reference(node)
                         update_debug_set(debug_set, op)
 
         self.remove_unused_default_copies()
@@ -4108,8 +4221,9 @@ class Elemental(Service):
                         gdel += cdel
                 else:
                     gres += 1
-            for cnode in to_be_deleted:
-                cnode.remove_node(fast=True)
+            with self._node_lock:
+                for cnode in to_be_deleted:
+                    cnode.remove_node(fast=True)
             return gres, gdel
 
         self.set_start_time("empty_groups")
@@ -4179,9 +4293,10 @@ class Elemental(Service):
                             opcount_now = self.count_op()
                             self.remove_invalid_references()
                             self.remove_empty_groups()
-                            for e in self.elems_nodes():
-                                if e not in _stored_elements:
-                                    self.added_elements.append(e)
+                            with self._node_lock:
+                                for e in self.elems_nodes():
+                                    if e not in _stored_elements:
+                                        self.added_elements.append(e)
                             # self.listen_tree(self)
                             self._filename = pathname
                             self.set_end_time("load", display=True)
@@ -4213,7 +4328,8 @@ class Elemental(Service):
         return False
 
     def clear_loaded_information(self):
-        self.added_elements.clear()
+        with self._node_lock:
+            self.added_elements.clear()
 
     def load_types(self, all=True):
         kernel = self.kernel
@@ -4360,8 +4476,9 @@ class Elemental(Service):
             if hasattr(refnode, "fill"):
                 refnode.fill = None
             # Remove it from all classifications
-            for ref in list(refnode._references):
-                ref.remove_node()
+            with self._node_lock:
+                for ref in list(refnode._references):
+                    ref.remove_node()
 
         self.registered_keyholes[rid] = nodelist
         node.set_keyhole(refnode.id, geom=refnode.as_geometry())

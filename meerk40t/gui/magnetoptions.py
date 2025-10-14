@@ -38,6 +38,30 @@ def register_panel_magnetoptions(window, context):
 
 
 class MagnetOptionPanel(wx.Panel):
+    """
+    MagnetOptionPanel - Magnet snapping configuration interface.
+
+    Technical Purpose:
+    Provides configuration controls for magnet snapping behavior in the MeerK40t scene.
+    Manages attraction strength settings, target area selection (left/right, top/bottom, center),
+    and persistence of magnet configurations. Integrates with the scene pane's magnet system
+    to control object snapping during editing operations.
+
+    Signal Listeners:
+    - magnet_options: Updates UI when magnet options change externally
+
+    Signal Emissions:
+    - refresh_scene: Emitted when magnet settings change to update scene display
+
+    End-User Perspective:
+    This panel lets you customize how objects snap to guide lines in the scene. You can choose
+    which parts of objects get attracted to magnet lines (edges or centers), set how strong the
+    attraction is (from weak to enormous), and save/load different magnet configurations for
+    different types of work. The "Left/Right Side" option makes object edges snap to vertical
+    lines, "Top/Bottom Side" makes edges snap to horizontal lines, and "Center" makes object
+    centers snap to any magnet line.
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -221,6 +245,30 @@ class MagnetOptionPanel(wx.Panel):
 
 
 class MagnetActionPanel(wx.Panel):
+    """
+    MagnetActionPanel - Interactive magnet line creation and management interface.
+
+    Technical Purpose:
+    Provides interactive controls for creating, managing, and manipulating magnet lines
+    in the MeerK40t scene. Handles manual positioning of magnet lines, automatic generation
+    around selected objects, and clearing operations. Communicates with the scene pane's
+    magnet system to maintain guide lines for object snapping during editing.
+
+    Signal Listeners:
+    - emphasized: Updates UI when object selection changes to enable/disable selection-based actions
+
+    Signal Emissions:
+    - refresh_scene: Emitted when magnet lines are added/removed to update scene display
+
+    End-User Perspective:
+    This panel gives you direct control over magnet guide lines in your design. You can manually
+    set horizontal and vertical guide lines by entering coordinates and clicking X/Y buttons.
+    For selected objects, you can automatically create guide lines at edges, centers, or divide
+    the selection into equal parts (like thirds, quarters, or fifths). Use the clear buttons to
+    remove all guides, just horizontal ones, or just vertical ones. These guides help you align
+    and position objects precisely during editing.
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -482,6 +530,12 @@ class MagnetActionPanel(wx.Panel):
 
 
 class MagnetPanel(wx.Panel):
+    """MagnetPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides magnet snapping configuration controls for object alignment. Features checkbox controls for user interaction. Integrates with emphasized, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you customize how objects snap to guide lines. Set attraction strength and choose which object parts get attracted to magnets."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

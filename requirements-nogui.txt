@@ -3,3 +3,4 @@ Pillow
 pyusb
 pyserial
 numpy<=1.26.4
+ezdxf

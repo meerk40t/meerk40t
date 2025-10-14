@@ -7,7 +7,7 @@ Registers relevant commands and options.
 """
 import meerk40t.constants as mkconst
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -49,6 +49,16 @@ class MoshiDevice(Service, Status):
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(int, "rapid_speed", 40)
+
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
 
         _ = self._
         choices = [
@@ -290,6 +300,15 @@ class MoshiDevice(Service, Status):
         self.register_choices("coolant", choices)
 
         self.register_choices("moshi-effects", get_effect_choices(self))
+        self.register_choices(
+            "moshi-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -518,6 +537,7 @@ class MoshiDevice(Service, Status):
                 mkconst.RASTER_GREEDY_H,
                 mkconst.RASTER_GREEDY_V,
                 mkconst.RASTER_SPIRAL,
+                mkconst.RASTER_DIAGONAL,
             ),  # Greedy loses registration way too often to be reliable
             "gantry": True,
             "legacy": self.legacy_raster,
@@ -532,3 +552,11 @@ class MoshiDevice(Service, Status):
             if self.mock
             else f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
         )
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

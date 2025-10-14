@@ -114,11 +114,33 @@ class GrblIoButtons(wx.Panel):
 
     def on_url_click(self, event):
         import webbrowser
+
         url = "https://github.com/gnea/grbl/blob/master/doc/markdown/settings.md"
         webbrowser.open(url, new=0, autoraise=True)
 
 
 class GrblHardwareProperties(ScrolledPanel):
+    """
+    GRBL Hardware Properties Panel - Interactive configuration interface for GRBL device parameters.
+
+    **Technical Purpose:**
+    Provides a comprehensive wxPython-based interface for viewing and modifying GRBL hardware
+    settings ($0-$199 parameters). This scrolled panel displays all available GRBL configuration
+    parameters in an editable table format, allowing real-time hardware configuration management.
+    It integrates with the GRBL controller to read current settings, validate user input against
+    parameter data types, and write changes back to the device EEPROM.
+
+    **Signal Listeners:**
+    - `grbl:hwsettings`: Refreshes the parameter table when hardware settings are updated
+
+    **End-User Description:**
+    View and modify all GRBL hardware parameters in a convenient table format. Each parameter
+    shows its current value, units, and description. Edit values directly in the table, then use
+    the Write button to save changes to your GRBL device. The Refresh button reads current settings
+    from hardware, and Export saves your configuration to a file. Double-click parameter info links
+    for detailed documentation, or use the Explanation button for the official GRBL settings guide.
+    """
+
     def __init__(self, *args, context=None, **kwds):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
@@ -213,6 +235,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
     def on_double_click(self, event):
         import webbrowser
+
         x, y = event.GetPosition()
         row_id, flags = self.chart.HitTest((x, y))
         if row_id < 0:
@@ -236,6 +259,12 @@ class GrblHardwareProperties(ScrolledPanel):
 
 
 class GRBLHardwareConfig(MWindow):
+    """GRBLHardwareConfig - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for grblhardwareconfig functionality. Features button controls for user interaction. Integrates with grbl:hwsettings for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for grblhardwareconfig functionality. Key controls include "Refresh" (button), "Write" (button), "Export" (button)."""
+
     def __init__(self, *args, **kwds):
         super().__init__(1000, 500, *args, **kwds)
         self.service = self.context.device

@@ -15,6 +15,11 @@
 
 "Context: Devices":
 - 'meerk40t/device/**/*.py'
+- 'meerk40t/grbl/**/*.py'
+- 'meerk40t/lihuiyu/**/*.py'
+- 'meerk40t/ruida/**/*.py'
+- 'meerk40t/moshi/**/*.py'
+- 'meerk40t/newly/**/*.py'
 
 "Context: GUI":
 - 'meerk40t/gui/**/*.py'

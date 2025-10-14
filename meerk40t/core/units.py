@@ -110,12 +110,12 @@ class Length:
     ):
         self.settings = settings if settings is not None else {}
         self._digits = digits
-        self._amount = amount
+        self._amount: float = 0.0  # Initialize as float
         if relative_length:
             self._relative = Length(relative_length, unitless=unitless).units
         else:
             self._relative = None
-        if self._amount is None:
+        if amount is None:
             if len(args) == 2:
                 value = str(args[0]) + str(args[1])
             elif len(args) == 1:
@@ -130,7 +130,7 @@ class Length:
                 raise ValueError(f"Length was not parsable: '{s}'.")
             amount = float(match.group(1))
             units = match.group(2)
-            if units == "inch" or units == "inches":
+            if units in ["inch", "inches"]:
                 units = "in"
             scale = 1.0
             if units == "":
@@ -178,7 +178,8 @@ class Length:
         else:
             # amount is only ever a number.
             if not isinstance(amount, (float, int)):
-                raise ValueError("Amount must be an number.")
+                raise ValueError("Amount must be a number.")
+            self._amount = float(amount)
         if preferred_units is None:
             preferred_units = ""
         if preferred_units == "inch" or preferred_units == "inches":
@@ -439,47 +440,56 @@ class Length:
     @property
     def length_inches(self):
         amount = self.inches
-        return f"{round(amount, 8)}in"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}in"
 
     @property
     def length_cm(self):
         amount = self.cm
-        return f"{round(amount, 8)}cm"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}cm"
 
     @property
     def length_mm(self):
         amount = self.mm
-        return f"{round(amount, 8)}mm"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}mm"
 
     @property
     def length_nm(self):
         amount = self.nm
-        return f"{round(amount, 8)}nm"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}nm"
 
     @property
     def length_mil(self):
         amount = self.mil
-        return f"{round(amount, 8)}mil"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}mil"
 
     @property
     def length_um(self):
         amount = self.um
-        return f"{round(amount, 8)}um"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}um"
 
     @property
     def length_pt(self):
         amount = self.pt
-        return f"{round(amount, 8)}pt"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}pt"
 
     @property
     def length_spx(self):
         amount = self.spx
-        return f"{round(amount, 8)}spx"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}spx"
 
     @property
     def length_percent(self):
         amount = self.percent
-        return f"{round(amount, 8)}%"
+        digits = self._digits if self._digits is not None else 8
+        return f"{round(amount, digits)}%"
 
     @property
     def length_units(self):
@@ -538,6 +548,10 @@ class Angle:
     def __eq__(self, other):
         if hasattr(other, "angle"):
             other = other.angle
+        try:
+            other = float(other)
+        except (TypeError, ValueError):
+            return False
         c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
         return c1
 
@@ -599,6 +613,12 @@ class Angle:
         return self
 
     def __idiv__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle /= other
+        return self
+
+    def __itruediv__(self, other):
         if isinstance(other, Angle):
             other = other.angle
         self.angle /= other

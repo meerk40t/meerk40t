@@ -279,29 +279,11 @@ def get_movement(context, dx, dy):
 
 
 class TimerButtons:
-    """
-    This is a wrapper class around some buttons that
-    allow a click, hold & repeat action
-    Parameters: interval = time between repeats in seconds
-    After instantiation you can add buttons via the
-    add_button method.
-        add_button(button, routine, parameters)
-    this will call routine(parameters)
-
-    Usage:
-
-        def test1():
-            print ("Clicked")
-
-        def test2(p1, p2):
-            print (f"Clicked with {p1} and {p2}")
-
-        self.timer = TimerButton(self, interval=0.5)
-        button1 = wxButton(self, wx.ID_ANY, "Click and hold me")
-        button2 = wxButton(self, wx.ID_ANY, "Me too, please")
-        self.timer.add_button(button1, test1, None)
-        self.timer.add_button(button2, test2, ('First', 'Second'))
-    """
+    """TimerButtons - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for timerbuttons functionality. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for timerbuttons functionality. Key controls include "ms" (label), "Width:" (label), "Height:" (label)."""
 
     def __init__(self, *args, interval=0.5, accelerate=True, **kwds):
         self.parent = args[0]
@@ -404,6 +386,12 @@ class TimerButtons:
 
 
 class ZMovePanel(wx.Panel):
+    """Move Panel - Send the laser to specific coordinates or saved positions
+    **Technical Purpose:**
+    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you send the laser to specific coordinates or saved positions. Enter coordinates directly or select from saved locations."""
+
     Z_SMALL = 1
     Z_MEDIUM = 10
     Z_LARGE = 100
@@ -567,6 +555,12 @@ class ZMovePanel(wx.Panel):
 
 
 class Drag(wx.Panel):
+    """Drag Panel - Position the laser head and align it with your design
+    **Technical Purpose:**
+    Provides interactive controls for positioning the laser head and aligning it with design elements. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel helps you position the laser head precisely. Use it to align the laser with specific points in your design or move to exact coordinates."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Drag.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1027,10 +1021,16 @@ class Drag(wx.Panel):
         self.context("element* trace quick\n")
         self.drag_ready(True)
 
+    def on_modified(self, *args):
+        # The selection was dragged around by the user, so let's realign the laserposition
+        if self.lockmode != 0:
+            self.align_per_pos(self.lockmode)
+
     def pane_show(self, *args):
         self.context.listen("driver;position", self.on_update)
         self.context.listen("emulator;position", self.on_update)
         self.context.listen("button-repeat", self.on_button_repeat)
+        self.context.listen("modified_by_tool", self.on_modified)
 
     # Not sure whether this is the right thing to do, if it's still locked and then
     # the pane gets hidden?! Let's call it a feature for now...
@@ -1038,6 +1038,7 @@ class Drag(wx.Panel):
         self.context.unlisten("driver;position", self.on_update)
         self.context.unlisten("emulator;position", self.on_update)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+        self.context.unlisten("modified_by_tool", self.on_modified)
 
     def set_timer_options(self):
         interval = self.context.button_repeat
@@ -1088,6 +1089,12 @@ class Drag(wx.Panel):
 
 
 class Jog(wx.Panel):
+    """Jog Panel - Manually move the laser head around the work area
+    **Technical Purpose:**
+    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel gives you manual control over laser movement. Use the directional buttons to move the laser head around the work area for setup and testing."""
+
     def __init__(self, *args, context=None, suppress_z_controls=False, **kwds):
         # begin wxGlade: Jog.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1428,12 +1435,14 @@ class Jog(wx.Panel):
     def on_button_navigate_unlock(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.context("unlock\n")
+        if hasattr(self.context.device.driver, "unlock_rail"):
+            self.context("unlock\n")
 
     def on_button_navigate_lock(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.context("lock\n")
+        if hasattr(self.context.device.driver, "lock_rail"):
+            self.context("lock\n")
 
     def set_home_logic(self):
         tip = _("Send laser to home position")
@@ -1449,6 +1458,17 @@ class Jog(wx.Panel):
     def on_update(self, origin, *args):
         self.set_home_logic()
         self.set_z_support()
+        self.set_lockrail()
+
+    def set_lockrail(self):
+        if hasattr(self.context.device.driver, "lock_rail"):
+            self.button_navigate_lock.Enable()
+        else:
+            self.button_navigate_lock.Disable()
+        if hasattr(self.context.device.driver, "unlock_rail"):
+            self.button_navigate_unlock.Enable()
+        else:
+            self.button_navigate_unlock.Disable()
 
     def set_z_support(self):
         show_z = (
@@ -1491,6 +1511,12 @@ class Jog(wx.Panel):
 
 
 class MovePanel(wx.Panel):
+    """Move Panel - Send the laser to specific coordinates or saved positions
+    **Technical Purpose:**
+    Provides coordinate-based movement controls for sending the laser to specific positions. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you send the laser to specific coordinates or saved positions. Enter coordinates directly or select from saved locations."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1774,6 +1800,12 @@ class MovePanel(wx.Panel):
 
 
 class PulsePanel(wx.Panel):
+    """Pulse Panel - Fire short test laser pulses for alignment and testing
+    **Technical Purpose:**
+    Provides pulse firing controls for laser alignment and testing operations. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you fire short test pulses from the laser. Use it to test laser power, alignment, and focus before running full jobs."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PulsePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -2146,6 +2178,12 @@ class PulsePanel(wx.Panel):
 
 
 class Transform(wx.Panel):
+    """Transform Panel - Scale, rotate, and move your design elements
+    **Technical Purpose:**
+    Provides transformation controls for scaling, rotating, and positioning design elements. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel lets you scale, rotate, and reposition your design elements. Use the controls to adjust size, orientation, and position before cutting."""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Transform.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -2702,6 +2740,12 @@ class Transform(wx.Panel):
 
 
 class JogDistancePanel(wx.Panel):
+    """Jog Panel - Manually move the laser head around the work area
+    **Technical Purpose:**
+    Provides manual movement controls for the laser head around the work area. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel gives you manual control over laser movement. Use the directional buttons to move the laser head around the work area for setup and testing."""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         # begin wxGlade: JogDistancePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -2752,6 +2796,12 @@ class JogDistancePanel(wx.Panel):
 
 
 class NavigationPanel(wx.Panel):
+    """Navigation Panel - Control laser movement and positioning
+    **Technical Purpose:**
+    Provides navigation and positioning controls for laser movement. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for moving the laser around your work area. Use it for setup, testing, and precise positioning."""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -2829,6 +2879,12 @@ class NavigationPanel(wx.Panel):
 
 
 class Navigation(MWindow):
+    """Navigation Panel - Control laser movement and positioning
+    **Technical Purpose:**
+    Provides navigation and positioning controls for laser movement. Features label controls for user interaction. Integrates with wxpane/Navigation, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for moving the laser around your work area. Use it for setup, testing, and precise positioning."""
+
     def __init__(self, *args, **kwds):
         super().__init__(650, 450, *args, **kwds)
 
@@ -2869,7 +2925,7 @@ class Navigation(MWindow):
 
     @staticmethod
     def submenu():
-        # Hint for Translation: _("Editing", _("Jog, Move and Transform"))
+        # Hint for Translation: _("Editing"), _("Jog, Move and Transform")
         return "Editing", "Jog, Move and Transform"
 
     @staticmethod

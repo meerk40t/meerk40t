@@ -9,6 +9,12 @@ _ = wx.GetTranslation
 
 
 class BalorOperationPanel(ScrolledPanel):
+    """BalorOperationPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for baloroperation functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for baloroperation functionality in MeerK40t."""
+
     name = "Balor"
 
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -71,6 +77,7 @@ class BalorOperationPanel(ScrolledPanel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "trailer": "µs",
                 "conditional": (params, "timing_enabled"),
                 "label": _("Laser On Delay"),
                 "tip": _("Delay for the start of the laser"),
@@ -80,6 +87,7 @@ class BalorOperationPanel(ScrolledPanel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "trailer": "µs",
                 "conditional": (params, "timing_enabled"),
                 "label": _("Laser Off Delay"),
                 "tip": _("Delay amount for the end of the laser"),
@@ -89,6 +97,9 @@ class BalorOperationPanel(ScrolledPanel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "trailer": "µs",
+                "lower": 0,
+                "upper": 655350,
                 "conditional": (params, "timing_enabled"),
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),

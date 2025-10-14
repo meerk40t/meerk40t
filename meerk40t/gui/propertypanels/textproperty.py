@@ -182,6 +182,14 @@ class TextVariables(wx.Panel):
 
 
 class TextPropertyPanel(ScrolledPanel):
+    """TextPropertyPanel - User interface panel for laser cutting operations
+    Technical Purpose:
+    Provides user interface controls for textproperty functionality. Features checkbox controls for user interaction. Integrates with refresh_scene for enhanced functionality.
+    End-User Perspective:
+    This panel provides controls for textproperty functionality. Key controls include "Translate Variables" (checkbox)."""
+
+    """TextPropertyPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
@@ -209,10 +217,11 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wxBitmapButton(
-            self, wx.ID_ANY,
+            self,
+            wx.ID_ANY,
             icons8_choose_font.GetBitmap(
                 resize=STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2
-            )
+            ),
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node

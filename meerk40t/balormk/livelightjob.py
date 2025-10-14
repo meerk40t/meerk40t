@@ -208,8 +208,8 @@ class LiveLightJob:
             con: The connection to the laser controller.
         """
         con.light_mode()
-        delay_dark = self.service.delay_jump_long
-        delay_between = self.service.delay_jump_short
+        delay_dark = self.service.redlight_delay_dark
+        delay_between = self.service.redlight_delay_light
         move = True
         # We need to jump back to the first point
         first = True
@@ -499,12 +499,13 @@ class LiveLightJob:
         """
         # draw_geometry.debug_me()
         geometry = Geomstr(draw_geometry)
-        # print (f"Entered with {geometry.bbox()} ({geometry.index} segments [{source}])")
-        if adjust:
-            geometry.transform(self.service.view.matrix)
-            # print (f"Adjusted to {geometry.bbox()}")
+        # print(f"Entered with {geometry.bbox()} ({geometry.index} segments [{source}])")
         rotate = self._redlight_adjust_matrix()
         geometry.transform(rotate)
+        # print(f"After redlight: {geometry.bbox()}")
+        if adjust:
+            geometry.transform(self.service.view.matrix)
+            # print(f"Adjusted to {geometry.bbox()}")
         self.points = list(
             geometry.as_equal_interpolated_points(
                 distance=self.quantization,  # expand_lines=True

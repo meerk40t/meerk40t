@@ -21,6 +21,7 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 # except ImportError:
 #     pass
 from meerk40t.gui.themes import Themes
+from meerk40t.gui.thread_info import ThreadInfo
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.gui.wxutils import TextCtrl, wxButton, wxStaticText
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
@@ -255,11 +256,24 @@ class GoPanel(ActionPanel):
             return
 
         self.button_go.Enable(False)
-        self.context.kernel.busyinfo.start(msg=_("Processing and sending..."))
+        new_plan = self.context.planner.get_free_plan()
+        prefer_threaded = self.context.setting(bool, "prefer_threaded_mode", True)
+        prefix = "threaded " if prefer_threaded else ""
+        busy = self.context.kernel.busyinfo
+        if not prefer_threaded:
+            busy.start(msg=_("Preparing Laserjob..."))
+
         self.context(
-            "planz clear copy preprocess validate blob preopt optimize spool\n"
+            f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
         )
-        self.context.kernel.busyinfo.end()
+        if prefer_threaded:
+            self.context("window open JobSpooler\n")
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
+        else:
+            busy.end()
+            self.context(f"window open JobSpooler\n")
+
         self.button_go.Enable(True)
         # Reset...
         # Deliberately at the end, as clicks queue...
@@ -435,7 +449,6 @@ class wxMeerK40t(wx.App, Module):
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
         # monitors with font scaling enabled.
-
         high_dpi = context.setting(bool, "high_dpi", True)
         if platform.system() == "Windows" and high_dpi:
             try:
@@ -1002,6 +1015,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Notes", Notes)
         kernel.register("window/AutoExec", AutoExec)
         kernel.register("window/JobSpooler", JobSpooler)
+        kernel.register("window/ThreadInfo", ThreadInfo)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Tips", Tips)
         kernel.register("window/ExecuteJob", ExecuteJob)
@@ -1089,8 +1103,8 @@ class wxMeerK40t(wx.App, Module):
                 register_panel_debugger,
                 register_panel_icon,
                 register_panel_plotter,
-                register_panel_window,
                 register_panel_view,
+                register_panel_window,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)

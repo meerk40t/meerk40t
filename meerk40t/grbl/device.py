@@ -7,7 +7,7 @@ Registers relevant commands and options.
 
 from time import sleep
 
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -124,7 +124,7 @@ class GRBLDevice(Service, Status):
                 ),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -137,7 +137,7 @@ class GRBLDevice(Service, Status):
                 ),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",
@@ -236,11 +236,23 @@ class GRBLDevice(Service, Status):
         self.register_choices("bed_dim", choices)
 
         self.register_choices("grbl-effects", get_effect_choices(self))
+        self.register_choices(
+            "grbl-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
         # This device prefers to display speed in mm/min
         self.setting(bool, "use_mm_min_for_speed_display", False)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_mm_min_for_speed_display", False)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -313,6 +325,7 @@ class GRBLDevice(Service, Status):
                 "subsection": "_00_",
                 "dynamic": update,
                 "exclusive": not is_linux,
+                "signals": "update_interface",
             },
             {
                 "attr": "baud_rate",
@@ -324,6 +337,7 @@ class GRBLDevice(Service, Status):
                 # Hint for translation _("Serial Interface")
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
+                "signals": "update_interface",
             },
         ]
         if self.permit_serial:
@@ -506,7 +520,8 @@ class GRBLDevice(Service, Status):
                 "default": 140,
                 "type": float,
                 "label": _("Max vector speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -520,7 +535,8 @@ class GRBLDevice(Service, Status):
                 "default": 750,
                 "type": float,
                 "label": _("Max raster speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -534,7 +550,8 @@ class GRBLDevice(Service, Status):
                 "default": 600,
                 "type": float,
                 "label": _("Travel speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the travel speed for your device to move from point to another."
                 ),
@@ -1046,6 +1063,7 @@ class GRBLDevice(Service, Status):
                     driver.out_pipe = f.write
                     driver.out_real = f.write
                     job.execute()
+                channel(_("Export succeeded: {filename}").format(filename=filename))
 
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
@@ -1277,3 +1295,11 @@ class GRBLDevice(Service, Status):
         if not (self.use_red_dot and self.use_red_dot_for_outline):
             return
         yield ("console", "red off -f")
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

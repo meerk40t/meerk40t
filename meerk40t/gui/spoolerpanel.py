@@ -86,6 +86,12 @@ def register_panel_spooler(window, context):
 
 
 class SpoolerPanel(wx.Panel):
+    """SpoolerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for spooler functionality. Features button, label controls for user interaction. Integrates with pause, spooler;completed for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for spooler functionality. Key controls include "Pause" (button), "Completed jobs:" (label)."""
+
     def __init__(self, *args, context=None, selected_device=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -773,7 +779,10 @@ class SpoolerPanel(wx.Panel):
                             spool_obj.calc_steps()
                         info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                         if hasattr(spooler, "driver"):
-                            if hasattr(spooler.driver, "get_internal_queue_status"):
+                            if (
+                                hasattr(spooler.driver, "get_internal_queue_status")
+                                and spool_obj.status == "Running"
+                            ):
                                 (
                                     internal_current,
                                     internal_total,
@@ -1129,7 +1138,10 @@ class SpoolerPanel(wx.Panel):
                     spool_obj.calc_steps()
                 info_s = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                 if hasattr(spooler, "driver"):
-                    if hasattr(spooler.driver, "get_internal_queue_status"):
+                    if (
+                        hasattr(spooler.driver, "get_internal_queue_status")
+                        and spool_obj.status == "Running"
+                    ):
                         (
                             internal_current,
                             internal_total,

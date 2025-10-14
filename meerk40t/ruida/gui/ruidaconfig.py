@@ -1,9 +1,9 @@
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
-from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -200,9 +200,20 @@ class RuidaConfiguration(MWindow):
         self.panels.append(panel_config)
         self.notebook_main.AddPage(panel_config, _("Configuration"))
 
-        newpanel = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
-        self.panels.append(newpanel)
-        self.notebook_main.AddPage(newpanel, _("Effects"))
+        panel_effects = ChoicePropertyPanel(
+            self.notebook_main, wx.ID_ANY, context=self.context, choices="ruida-effects"
+        )
+        self.panels.append(panel_effects)
+        self.notebook_main.AddPage(panel_effects, _("Effects"))
+
+        panel_defaults = ChoicePropertyPanel(
+            self.notebook_main,
+            wx.ID_ANY,
+            context=self.context,
+            choices="ruida-defaults",
+        )
+        self.panels.append(panel_defaults)
+        self.notebook_main.AddPage(panel_defaults, _("Operation Defaults"))
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
@@ -243,5 +254,5 @@ class RuidaConfiguration(MWindow):
     @signal_listener("activate;device")
     def on_device_changes(self, *args):
         # Device activated, make sure we are still fine...
-        if self.context.device.name != 'RuidaDevice':
+        if self.context.device.name != "RuidaDevice":
             wx.CallAfter(self.Close)

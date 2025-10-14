@@ -693,15 +693,16 @@ def init_commands(kernel):
         c_off = ClipperOffset(interpolation=interpolation)
         c_off.add_nodes(data)
         c_off.process_data(offset, jointype=jointype, separate=separate)
-        for geom in c_off.result_geometry():
-            if geom is not None:
-                newnode = self.elem_branch.add(
-                    geometry=geom, type="elem path", stroke=default_stroke
-                )
-                newnode.stroke_width = UNITS_PER_PIXEL
-                newnode.linejoin = Linejoin.JOIN_ROUND
-                newnode.label = f"Offset: {Length(offset).length_mm}"
-                data_out.append(newnode)
+        with self.node_lock:
+            for geom in c_off.result_geometry():
+                if geom is not None:
+                    newnode = self.elem_branch.add(
+                        geometry=geom, type="elem path", stroke=default_stroke
+                    )
+                    newnode.stroke_width = UNITS_PER_PIXEL
+                    newnode.linejoin = Linejoin.JOIN_ROUND
+                    newnode.label = f"Offset: {Length(offset).length_mm}"
+                    data_out.append(newnode)
 
         # Newly created! Classification needed?
         if len(data_out) > 0:
@@ -803,16 +804,17 @@ def init_commands(kernel):
             c_off.add_nodes(mydata)
             c_off.process_data(offset, jointype=jointype, separate=separate)
             mydata.clear()
-            for geom in c_off.result_geometry():
-                if geom is not None:
-                    newnode = self.elem_branch.add(
-                        geometry=geom, type="elem path", stroke=default_stroke
-                    )
-                    newnode.stroke_width = UNITS_PER_PIXEL
-                    newnode.linejoin = Linejoin.JOIN_ROUND
-                    newnode.label = f"Offset: {Length(offset).length_mm}"
-                    mydata.append(newnode)
-                    data_out.append(newnode)
+            with self.node_lock:
+                for geom in c_off.result_geometry():
+                    if geom is not None:
+                        newnode = self.elem_branch.add(
+                            geometry=geom, type="elem path", stroke=default_stroke
+                        )
+                        newnode.stroke_width = UNITS_PER_PIXEL
+                        newnode.linejoin = Linejoin.JOIN_ROUND
+                        newnode.label = f"Offset: {Length(offset).length_mm}"
+                        mydata.append(newnode)
+                        data_out.append(newnode)
 
         # Newly created! Classification needed?
         if len(data_out) > 0:
@@ -910,15 +912,19 @@ def init_commands(kernel):
         clipper.process_data(method=method, filltype=filltype)
         # _("Create clipper data")
         with self.undoscope("Create clipper data"):
-            for geom in clipper.result_geometry():
-                if geom is not None:
-                    newnode = self.elem_branch.add(
-                        geometry=geom, type="elem path", stroke=firstnode.stroke
-                    )
-                    newnode.stroke_width = UNITS_PER_PIXEL
-                    newnode.linejoin = Linejoin.JOIN_ROUND
-                    newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.display_label()}"
-                    data_out.append(newnode)
+            with self.node_lock:
+                for geom in clipper.result_geometry():
+                    if geom is not None:
+                        simplified_geom = geom.simplify(tolerance=25)
+                        newnode = self.elem_branch.add(
+                            geometry=simplified_geom,
+                            type="elem path",
+                            stroke=firstnode.stroke,
+                        )
+                        newnode.stroke_width = UNITS_PER_PIXEL
+                        newnode.linejoin = Linejoin.JOIN_ROUND
+                        newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.display_label()}"
+                        data_out.append(newnode)
 
             # Newly created! Classification needed?
             if len(data_out) > 0:

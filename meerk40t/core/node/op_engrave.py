@@ -1,6 +1,6 @@
 from math import isnan
 
-from meerk40t.core.elements.element_types import *
+from meerk40t.core.elements.element_types import op_nodes, elem_nodes
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
@@ -119,7 +119,9 @@ class EngraveOpNode(Node, Parameters):
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+            return not any(
+                e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes)
+            )
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -252,14 +254,13 @@ class EngraveOpNode(Node, Parameters):
         if not self.valid_node_for_reference(node):
             # We could raise a ValueError but that will break things...
             return
-        first_is_effect =  (
-            len(self._children) > 0 and
-            self._children[0].type.startswith("effect ")
+        first_is_effect = len(self._children) > 0 and self._children[0].type.startswith(
+            "effect "
         )
         effect = self._children[0] if first_is_effect else None
         ref = self.add(node=node, type="reference", pos=pos, **kwargs)
         node._references.append(ref)
-        if first_is_effect:
+        if first_is_effect and not kwargs.get("ignore_effect", False):
             effect.append_child(ref)
 
     def load(self, settings, section):
@@ -409,6 +410,11 @@ class EngraveOpNode(Node, Parameters):
         self._bounds = None
         if self.output:
             if self._children:
-                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+                self._bounds = Node.union_bounds(
+                    self._children,
+                    bounds=self._bounds,
+                    ignore_locked=False,
+                    ignore_hidden=True,
+                )
             self._bounds_dirty = False
         return self._bounds

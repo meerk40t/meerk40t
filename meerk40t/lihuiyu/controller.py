@@ -16,67 +16,113 @@ Deals with the sending of data via the registered connection, and processes some
 
 import threading
 import time
+from enum import IntEnum
 
 from meerk40t.ch341 import get_ch341_interface
 
-STATUS_SERIAL_CORRECT_M3_FINISH = 204
-# 0xCC, 11001100
-STATUS_OK = 206
-# 0xCE, 11001110
-STATUS_ERROR = 207
-# 0xCF, 11001111
-STATUS_FINISH = 236
-# 0xEC, 11101100
-STATUS_BUSY = 238
-# 0xEE, 11101110
-STATUS_POWER = 239
+# Protocol Constants
+PACKET_SIZE = 30  # Lihuiyu packet size
+MAX_CONFIRMATION_ATTEMPTS = 500  # Maximum attempts to confirm packet
+CONFIRMATION_DELAY_START = 10  # Attempts before starting delay
+MIN_CONFIRMATION_DELAY = 0.001  # Minimum delay between attempts
+MAX_CONFIRMATION_DELAY = 0.1  # Maximum delay between attempts
+USB_LOG_BUFFER_SIZE = 500
 
 
-STATE_X_FORWARD_LEFT = (
-    0b0000000000000001  # Direction is flagged left rather than right.
-)
-STATE_Y_FORWARD_TOP = 0b0000000000000010  # Direction is flagged top rather than bottom.
-STATE_X_STEPPER_ENABLE = 0b0000000000000100  # X-stepper motor is engaged.
-STATE_Y_STEPPER_ENABLE = 0b0000000000001000  # Y-stepper motor is engaged.
-STATE_HORIZONTAL_MAJOR = 0b0000000000010000
-REQUEST_X = 0b0000000000100000
-REQUEST_X_FORWARD_LEFT = 0b0000000001000000  # Requested direction towards the left.
-REQUEST_Y = 0b0000000010000000
-REQUEST_Y_FORWARD_TOP = 0b0000000100000000  # Requested direction towards the top.
-REQUEST_AXIS = 0b0000001000000000
-REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis.
+class LihuiyuStatus(IntEnum):
+    """Status codes returned by Lihuiyu laser controllers."""
+
+    # Device Status Codes
+    SERIAL_CORRECT_M3_FINISH = 204  # 0xCC - Serial number confirmed on M3
+    OK = 206  # 0xCE - Device ready to accept commands
+    ERROR = 207  # 0xCF - Error occurred during processing
+    FINISH = 236  # 0xEC - Processing finished
+    BUSY = 238  # 0xEE - Device is busy processing
+    POWER = 239  # 0xEF - Low power condition
+
+
+class LihuiyuState(IntEnum):
+    """State flags for Lihuiyu controller stepper motors and directions."""
+
+    # Direction States
+    X_FORWARD_LEFT = 0b0000000000000001  # X-axis moving left
+    Y_FORWARD_TOP = 0b0000000000000010  # Y-axis moving up
+
+    # Motor Enable States
+    X_STEPPER_ENABLE = 0b0000000000000100  # X-stepper motor engaged
+    Y_STEPPER_ENABLE = 0b0000000000001000  # Y-stepper motor engaged
+
+    # Axis States
+    HORIZONTAL_MAJOR = 0b0000000000010000  # Horizontal major axis active
+
+    # Request States
+    REQUEST_X = 0b0000000000100000  # X-axis requested
+    REQUEST_X_FORWARD_LEFT = 0b0000000001000000  # X-axis left direction requested
+    REQUEST_Y = 0b0000000010000000  # Y-axis requested
+    REQUEST_Y_FORWARD_TOP = 0b0000000100000000  # Y-axis up direction requested
+    REQUEST_AXIS = 0b0000001000000000  # Axis operation requested
+    REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Horizontal major axis requested
+
+
+# Backward compatibility - keep old constants but mark as deprecated
+STATUS_SERIAL_CORRECT_M3_FINISH = LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value
+STATUS_OK = LihuiyuStatus.OK.value
+STATUS_ERROR = LihuiyuStatus.ERROR.value
+STATUS_FINISH = LihuiyuStatus.FINISH.value
+STATUS_BUSY = LihuiyuStatus.BUSY.value
+STATUS_POWER = LihuiyuStatus.POWER.value
+
+# State constants for backward compatibility
+STATE_X_FORWARD_LEFT = LihuiyuState.X_FORWARD_LEFT.value
+STATE_Y_FORWARD_TOP = LihuiyuState.Y_FORWARD_TOP.value
+STATE_X_STEPPER_ENABLE = LihuiyuState.X_STEPPER_ENABLE.value
+STATE_Y_STEPPER_ENABLE = LihuiyuState.Y_STEPPER_ENABLE.value
+STATE_HORIZONTAL_MAJOR = LihuiyuState.HORIZONTAL_MAJOR.value
+REQUEST_X = LihuiyuState.REQUEST_X.value
+REQUEST_X_FORWARD_LEFT = LihuiyuState.REQUEST_X_FORWARD_LEFT.value
+REQUEST_Y = LihuiyuState.REQUEST_Y.value
+REQUEST_Y_FORWARD_TOP = LihuiyuState.REQUEST_Y_FORWARD_TOP.value
+REQUEST_AXIS = LihuiyuState.REQUEST_AXIS.value
+REQUEST_HORIZONTAL_MAJOR = LihuiyuState.REQUEST_HORIZONTAL_MAJOR.value
 
 
 def get_code_string_from_code(code):
-    if code == STATUS_OK:
-        return "OK"
-    elif code == STATUS_BUSY:
-        return "Busy"
-    elif code == STATUS_ERROR:
-        return "Rejected"
-    elif code == STATUS_FINISH:
-        return "Finish"
-    elif code == STATUS_POWER:
-        return "Low Power"
-    elif code == STATUS_SERIAL_CORRECT_M3_FINISH:
-        return "M3-Finished"
-    elif code == 0:
-        return "USB Failed"
-    else:
-        return f"UNK {code:02x}"
+    """
+    Convert Lihuiyu status codes to human-readable strings.
+
+    Args:
+        code (int): The status code returned by the Lihuiyu device
+
+    Returns:
+        str: Human-readable description of the status code
+
+    Status Code Reference:
+        204 (SERIAL_CORRECT_M3_FINISH): Serial number confirmed on M3 device
+        206 (OK): Device is ready to accept commands
+        207 (ERROR): An error occurred during processing
+        236 (FINISH): Processing has finished
+        238 (BUSY): Device is currently busy processing
+        239 (POWER): Low power condition detected
+        0: USB connection failed
+        Other: Unknown status code in hex format
+    """
+    try:
+        status = LihuiyuStatus(code)
+        return status.name.replace("_", " ").title()
+    except ValueError:
+        return "USB Failed" if code == 0 else f"UNK {code:02x}"
 
 
 def convert_to_list_bytes(data):
+    packet = [0] * PACKET_SIZE
+    data_len = min(len(data), PACKET_SIZE)
     if isinstance(data, str):  # python 2
-        packet = [0] * 30
-        for i in range(0, 30):
+        for i in range(data_len):
             packet[i] = ord(data[i])
-        return packet
     else:
-        packet = [0] * 30
-        for i in range(0, 30):
+        for i in range(data_len):
             packet[i] = data[i]
-        return packet
+    return packet
 
 
 crc_table = [
@@ -126,7 +172,7 @@ def onewire_crc_lookup(line):
     """
 
     crc = 0
-    for i in range(0, 30):
+    for i in range(PACKET_SIZE):
         crc = line[i] ^ crc
         crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
 
@@ -155,7 +201,7 @@ class LihuiyuController:
         self.context = service
         self.state = "unknown"
         self.is_shutdown = False
-        self.serial_confirmed = None
+        self.serial_confirmed = False  # Initialize as boolean, not None
 
         self._thread = None
         self._buffer = (
@@ -168,6 +214,7 @@ class LihuiyuController:
         self._preempt = (
             bytearray()
         )  # Thread-unsafe preempt commands to prepend to the buffer.
+        self._buffer_lock = threading.Lock()
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
@@ -189,15 +236,38 @@ class LihuiyuController:
 
         name = service.safe_label
         self.pipe_channel = service.channel(f"{name}/events")
-        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=USB_LOG_BUFFER_SIZE)
         self.usb_send_channel = service.channel(f"{name}/usb_send")
         self.recv_channel = service.channel(f"{name}/recv")
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
         self.reset()
 
+    def _acquire_all_buffer_locks(self):
+        """
+        Acquire all buffer-related locks in a consistent order to prevent deadlocks.
+        Always acquire locks in the same order: buffer, queue, preempt.
+        """
+        self._buffer_lock.acquire()
+        self._queue_lock.acquire()
+        self._preempt_lock.acquire()
+
+    def _release_all_buffer_locks(self):
+        """
+        Release all buffer-related locks in reverse order.
+        """
+        self._preempt_lock.release()
+        self._queue_lock.release()
+        self._buffer_lock.release()
+
     @property
     def viewbuffer(self):
-        buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
+        self._acquire_all_buffer_locks()
+        try:
+            buffer = (
+                bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
+            )
+        finally:
+            self._release_all_buffer_locks()
         try:
             buffer_str = buffer.decode()
         except ValueError:
@@ -224,7 +294,11 @@ class LihuiyuController:
 
     def __len__(self):
         """Provides the length of the buffer of this device."""
-        return len(self._buffer) + len(self._queue) + len(self._preempt)
+        self._acquire_all_buffer_locks()
+        try:
+            return len(self._buffer) + len(self._queue) + len(self._preempt)
+        finally:
+            self._release_all_buffer_locks()
 
     def open(self):
         with self._connect_lock:
@@ -241,7 +315,7 @@ class LihuiyuController:
                     self.context,
                     self.usb_log,
                     mock=self.context.mock,
-                    mock_status=STATUS_OK,
+                    mock_status=LihuiyuStatus.OK.value,
                     bulk=True,
                 )
             )
@@ -447,9 +521,13 @@ class LihuiyuController:
             self.update_state("active")
 
     def abort(self):
-        self._buffer = bytearray()
-        self._queue = bytearray()
-        self._realtime_buffer = bytearray()
+        self._acquire_all_buffer_locks()
+        try:
+            self._buffer.clear()
+            self._queue.clear()
+            self._realtime_buffer.clear()
+        finally:
+            self._release_all_buffer_locks()
         self.abort_waiting = False
         self.context.signal("pipe;buffer", 0)
         self.update_state("terminate")
@@ -498,7 +576,7 @@ class LihuiyuController:
 
         challenge = bytearray.fromhex(md5(bytes(serial.upper(), "utf8")).hexdigest())
         packet = b"A%s" % challenge
-        packet += b"F" * (30 - len(packet))
+        packet = self._pad_packet_to_size(packet, b"F")
         packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
         self.connection.write(packet)
         try:
@@ -546,7 +624,14 @@ class LihuiyuController:
                 continue
 
             self._check_transfer_buffer()
-            if len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0:
+            self._acquire_all_buffer_locks()
+            try:
+                buffer_empty = (
+                    len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0
+                )
+            finally:
+                self._release_all_buffer_locks()
+            if buffer_empty:
                 # The buffer and realtime buffers are empty. No packet creation possible.
                 self.context.laser_status = "idle"
                 with self._loop_cond:
@@ -618,15 +703,21 @@ class LihuiyuController:
 
     def _check_transfer_buffer(self):
         if len(self._queue):  # check for and append queue
-            with self._queue_lock:
+            self._acquire_all_buffer_locks()
+            try:
                 self._buffer += self._queue
                 self._queue.clear()
+            finally:
+                self._release_all_buffer_locks()
             self.update_buffer()
 
         if len(self._preempt):  # check for and prepend preempt
-            with self._preempt_lock:
+            self._acquire_all_buffer_locks()
+            try:
                 self._realtime_buffer += self._preempt
                 self._preempt.clear()
+            finally:
+                self._release_all_buffer_locks()
             self.update_buffer()
 
     def debug_packet(self, packet):
@@ -659,176 +750,297 @@ class LihuiyuController:
 
         @return: queue process success.
         """
-        if len(self._realtime_buffer) > 0:
-            buffer = self._realtime_buffer
-            realtime = True
-        elif len(self._buffer) > 0:
-            buffer = self._buffer
-            realtime = False
-        else:
+        # Get buffer snapshot and determine which buffer to use
+        buffer, realtime = self._get_buffer_snapshot()
+        if buffer is None:
             return False
 
-        # Find buffer of 30 or containing '\n'.
-        find = buffer.find(b"\n", 0, 30)
-        if find == -1:  # No end found.
-            length = min(30, len(buffer))
-        else:  # Line end found.
-            length = min(30, len(buffer), find + 1)
-        packet = bytes(buffer[:length])
+        # Extract packet from buffer
+        (
+            packet,
+            length,
+            post_send_command,
+            default_checksum,
+        ) = self._extract_packet_from_buffer(buffer)
 
-        # edge condition of catching only pipe command without '\n'
-        if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"%", b"\x18")):
-            packet += buffer[length : length + 1]
-            length += 1
-        post_send_command = None
-        default_checksum = True
-
-        if packet.startswith(b"AT"):
-            # This is as special case for the M3 only:
-            # AT command packages are padded with 0x00 and not 'F' as usal
-            if packet.endswith(b"\n"):
-                packet = packet[:-1]
-            c = b"\x00"
-            packet += c * (30 - len(packet))  # Padding with 0 character
-        # find pipe commands.
-        if packet.endswith(b"\n"):
-            packet = packet[:-1]
-            # There's a special case where we have a trailing "\n" at an exactly 30 byte command,
-            # that requires another package of 30 x F to be sent, so we need to deal with an empty string...
-            if len(packet) == 0:
-                packet += b"F"
-            if packet.endswith(b"P"):
-                # This is a special case where the m3nano seems to fail. So we extend the buffer...
-                packet += b"F"
-            elif packet.endswith(b"-"):  # wait finish
-                packet = packet[:-1]
-                post_send_command = self.wait_finished
-            elif packet.endswith(b"*"):  # abort
-                post_send_command = self.abort
-                packet = packet[:-1]
-            elif packet.endswith(b"&"):  # resume
-                self._resume_busy()
-                packet = packet[:-1]
-            elif packet.endswith(b"!"):  # pause
-                self._pause_busy()
-                packet = packet[:-1]
-            elif packet.endswith(b"%"):  # alt-checksum
-                default_checksum = False
-                packet = packet[:-1]
-            elif packet.endswith(b"\x18"):
-                self.update_state("terminate")
-                self.is_shutdown = True
-                packet = packet[:-1]
-            if packet.startswith(b"A") and not packet.startswith(b"AT"):
-                # This is a challenge code. A is only used for serial challenges.
-                post_send_command = self._confirm_serial
-            if len(packet) != 0:
-                if packet.endswith(b"#"):
-                    packet = packet[:-1]
-                    try:
-                        c = packet[-1]
-                    except IndexError:
-                        c = b"F"  # Packet was simply #. We can do nothing.
-                    packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
-                else:
-                    padder = b"\x00" if packet.startswith(b"AT") else b"F"
-                    packet += padder * (30 - len(packet))  # Padding. '\n'
+        # Check if we should process this packet
         if not realtime and self.state in ("pause", "busy"):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
+        # Send and confirm packet if it's the right size
+        packet_sent = self._send_and_confirm_packet(packet, default_checksum)
+
+        # Update buffer after processing
+        self._update_buffer_after_processing(realtime, length, packet)
+
+        # Execute post-send command if any
+        self._execute_post_send_command(post_send_command)
+
+        return packet_sent
+
+    def _get_buffer_snapshot(self):
+        """
+        Get a snapshot of the buffer to process and determine which buffer to use.
+
+        @return: tuple of (buffer_bytes, is_realtime) or (None, None) if no buffer available
+        """
+        self._acquire_all_buffer_locks()
+        try:
+            if len(self._realtime_buffer) > 0:
+                return bytes(self._realtime_buffer), True
+            elif len(self._buffer) > 0:
+                return bytes(self._buffer), False
+            else:
+                return None, None
+        finally:
+            self._release_all_buffer_locks()
+
+    def _extract_packet_from_buffer(self, buffer):
+        """
+        Extract a packet from the buffer, handling pipe commands and special cases.
+
+        @param buffer: The buffer bytes to extract from
+        @return: tuple of (packet, length, post_send_command, default_checksum)
+        """
+        # Find buffer of PACKET_SIZE or containing '\n'.
+        find = buffer.find(b"\n", 0, PACKET_SIZE)
+        if find == -1:  # No end found.
+            length = min(PACKET_SIZE, len(buffer))
+        else:  # Line end found.
+            length = min(PACKET_SIZE, len(buffer), find + 1)
+        packet = bytes(buffer[:length])
+
+        # Handle edge condition of catching only pipe command without '\n'
+        if packet.endswith((b"-", b"*", b"&", b"!", b"#", b"%", b"\x18")):
+            packet += buffer[length : length + 1]
+            length += 1
+
+        # Process pipe commands and prepare packet
+        return self._process_pipe_commands(packet, length)
+
+    def _process_pipe_commands(self, packet, length):
+        """
+        Process pipe commands (meta-commands) and prepare the packet for sending.
+
+        @param packet: The raw packet bytes
+        @param length: The length of data to remove from buffer
+        @return: tuple of (processed_packet, length, post_send_command, default_checksum)
+        """
+        post_send_command = None
+        default_checksum = True
+
+        # Handle AT command special case
+        if packet.startswith(b"AT"):
+            packet, length = self._handle_at_command(packet, length)
+
+        # Process pipe commands if packet ends with newline
+        if packet.endswith(b"\n"):
+            packet, post_send_command, default_checksum = self._handle_newline_commands(
+                packet
+            )
+
+        # Apply final padding if needed
+        if len(packet) != 0:
+            packet = self._pad_packet_to_size(packet)
+
+        return packet, length, post_send_command, default_checksum
+
+    def _handle_at_command(self, packet, length):
+        """
+        Handle special AT command processing for M3 devices.
+
+        @param packet: The packet starting with AT
+        @param length: Current packet length
+        @return: tuple of (processed_packet, updated_length)
+        """
+        if packet.endswith(b"\n"):
+            packet = packet[:-1]
+        packet = self._pad_packet_to_size(packet, b"\x00")
+        return packet, length
+
+    def _handle_newline_commands(self, packet):
+        """
+        Handle pipe commands when packet ends with newline.
+
+        @param packet: The packet ending with newline
+        @return: tuple of (processed_packet, post_send_command, default_checksum)
+        """
+        post_send_command = None
+        default_checksum = True
+
+        packet = packet[:-1]  # Remove newline
+
+        # Handle empty packet case
+        if len(packet) == 0:
+            packet += b"F"
+
+        # Handle special cases
+        if packet.endswith(b"P"):
+            packet += b"F"  # Extend buffer for m3nano
+        elif packet.endswith(b"-"):  # wait finish
+            packet = packet[:-1]
+            post_send_command = self.wait_finished
+        elif packet.endswith(b"*"):  # abort
+            post_send_command = self.abort
+            packet = packet[:-1]
+        elif packet.endswith(b"&"):  # resume
+            self._resume_busy()
+            packet = packet[:-1]
+        elif packet.endswith(b"!"):  # pause
+            self._pause_busy()
+            packet = packet[:-1]
+        elif packet.endswith(b"%"):  # alt-checksum
+            default_checksum = False
+            packet = packet[:-1]
+        elif packet.endswith(b"\x18"):  # quit
+            self.update_state("terminate")
+            self.is_shutdown = True
+            packet = packet[:-1]
+
+        # Handle serial challenge
+        if packet.startswith(b"A") and not packet.startswith(b"AT"):
+            post_send_command = self._confirm_serial
+
+        return packet, post_send_command, default_checksum
+
+    def _pad_packet_to_size(self, packet, padder=None):
+        """
+        Pad a packet to PACKET_SIZE using the specified padder character.
+
+        @param packet: The packet to pad
+        @param padder: The padding character (bytes). If None, uses default logic:
+                       - For packets ending with "#": uses the last character before "#" or "F" if empty
+                       - For AT commands: uses b"\x00"
+                       - For all other packets: uses b"F"
+        @return: The padded packet
+        """
+        if padder is None:
+            if packet.endswith(b"#"):
+                packet = packet[:-1]
+                try:
+                    padder = bytes([packet[-1]])
+                except IndexError:
+                    padder = b"F"  # Packet was simply #. We can do nothing.
+            else:
+                padder = b"\x00" if packet.startswith(b"AT") else b"F"
+        packet += padder * (PACKET_SIZE - len(packet))
+        return packet
+
+    def _send_and_confirm_packet(self, packet, default_checksum):
+        """
+        Send a packet and wait for confirmation.
+
+        @param packet: The packet to send
+        @param default_checksum: Whether to use default checksum
+        @return: True if packet was sent successfully, False otherwise
+        """
+        if len(packet) != PACKET_SIZE:
+            return len(packet) == 0  # Empty packets are considered successful
+
         # Packet is prepared and ready to send. Open Channel.
         self.open()
-        # print (f"Packet: {packet!r} (len={len(packet)})"    )
-        if len(packet) == 30:
-            # We have a sendable packet.
-            if not self.pre_ok:
-                self.wait_until_accepting_packets()
-            if default_checksum:
-                packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
-            else:
-                packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
-            # self.debug_packet(packet)
-            self.connection.write(packet)
-            self.pre_ok = False
 
-            # Packet is sent, trying to confirm.
-            status = 0
-            flawless = True
-            for attempts in range(500):
-                # We'll try to confirm this at 500 times.
-                try:
-                    self.update_status()
+        # We have a sendable packet.
+        if not self.pre_ok:
+            self.wait_until_accepting_packets()
+
+        # Add checksum and send
+        if default_checksum:
+            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
+        else:
+            packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])
+
+        self.connection.write(packet)
+        self.pre_ok = False
+
+        # Confirm packet was received
+        return self._confirm_packet_receipt(default_checksum)
+
+    def _confirm_packet_receipt(self, default_checksum):
+        """
+        Wait for confirmation that the packet was received correctly.
+
+        @param default_checksum: Whether default checksum was used
+        @return: True if packet was confirmed, False otherwise
+        """
+        status = 0
+        flawless = True
+
+        for attempts in range(MAX_CONFIRMATION_ATTEMPTS):
+            try:
+                self.update_status()
+                # Make sure we have a valid status
+                if self._status is not None and len(self._status) > 1:
                     status = self._status[1]
-                    if attempts > 10:
-                        time.sleep(min(0.001 * attempts, 0.1))
-                except ConnectionError:
-                    # Errors are ignored, must confirm packet.
-                    flawless = False
-                    continue
-                if status == 0:
-                    # We did not read a status.
-                    continue
-                if status == STATUS_OK:
-                    # Packet was fine.
-                    self.pre_ok = True
-                    break
-                elif status == STATUS_BUSY:
-                    # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
-                    continue
-                elif status == STATUS_ERROR:
-                    if not default_checksum:
-                        break
-                    self.context.rejected_count += 1
-                    if flawless:  # Packet was rejected. The CRC failed.
-                        return False
-                    else:
-                        # The channel had the error, assuming packet was actually good.
-                        break
-                elif status == STATUS_FINISH:
-                    # We finished. If we were going to wait for that, we no longer need to.
-                    if post_send_command == self.wait_finished:
-                        post_send_command = None
-                    continue  # This is not a confirmation.
-                elif status == STATUS_SERIAL_CORRECT_M3_FINISH:
-                    if post_send_command == self._confirm_serial:
-                        # We confirmed the serial number on the card.
-                        self.serial_confirmed = True
-                        post_send_command = None
-                        break
-                    elif post_send_command == self.wait_finished:
-                        # This is a STATUS_M3_FINISHED, we no longer wait.
-                        post_send_command = None
-                        continue
+                if attempts > CONFIRMATION_DELAY_START:
+                    time.sleep(
+                        min(MIN_CONFIRMATION_DELAY * attempts, MAX_CONFIRMATION_DELAY)
+                    )
+            except ConnectionError:
+                flawless = False
+                continue
 
-            if status == 0:  # After 500 attempts we could only get status = 0.
-                raise ConnectionError  # Broken pipe. Could not confirm packet.
-            self.context.packet_count += (
-                1  # Our packet is confirmed or assumed confirmed.
-            )
-        else:
-            if len(packet) != 0:
-                # We could only generate a partial packet, throw it back
-                return False
-            # We have an empty packet of only commands. Continue work.
+            if status == 0:
+                continue
 
+            # Check status codes
+            if status == LihuiyuStatus.OK.value:
+                self.pre_ok = True
+                self.context.packet_count += 1
+                return True
+            elif status == LihuiyuStatus.BUSY.value:
+                continue
+            elif status == LihuiyuStatus.ERROR.value:
+                if not default_checksum:
+                    return True
+                self.context.rejected_count += 1
+                return not flawless  # Return True if there were connection errors
+            elif status == LihuiyuStatus.FINISH.value:
+                continue  # This is not a confirmation.
+            elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
+                self.context.packet_count += 1
+                return True
+
+        # After all attempts, if we still have status 0, it's a broken pipe
+        if status == 0:
+            raise ConnectionError("Broken pipe. Could not confirm packet.")
+        return False
+
+    def _update_buffer_after_processing(self, realtime, length, packet):
+        """
+        Update the buffer by removing processed data.
+
+        @param realtime: Whether this was a realtime buffer
+        @param length: Length of data to remove
+        @param packet: The packet that was processed
+        """
         # Packet was processed. Remove that data.
-        if realtime:
-            del self._realtime_buffer[:length]
-        else:
-            del self._buffer[:length]
+        self._acquire_all_buffer_locks()
+        try:
+            if realtime:
+                del self._realtime_buffer[:length]
+            else:
+                del self._buffer[:length]
+        finally:
+            self._release_all_buffer_locks()
+
         if len(packet) != 0:
             # Packet was completed and sent. Only then update the channel.
             self.update_packet(packet)
         self.update_buffer()
 
+    def _execute_post_send_command(self, post_send_command):
+        """
+        Execute post-send command if one was specified.
+
+        @param post_send_command: The command to execute after sending
+        """
         if post_send_command is not None:
-            # Post send command could be wait_finished, and might have a broken pipe.
             try:
                 post_send_command()
             except ConnectionError:
                 # We should have already sent the packet. So this should be fine.
                 pass
-        return True  # A packet was prepped and sent correctly.
 
     def update_status(self):
         try:
@@ -857,14 +1069,14 @@ class LihuiyuController:
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
-            if status == STATUS_OK:
+            if status == LihuiyuStatus.OK.value:
                 self.pre_ok = False
                 break
-            if status == STATUS_ERROR:
+            if status == LihuiyuStatus.ERROR.value:
                 break
             time.sleep(0.05)
             if self.context is not None:
-                self.context.signal("pipe;wait", STATUS_OK, i)
+                self.context.signal("pipe;wait", LihuiyuStatus.OK.value, i)
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
@@ -885,7 +1097,7 @@ class LihuiyuController:
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
-            if status == STATUS_ERROR:
+            if status == LihuiyuStatus.ERROR.value:
                 self.context.rejected_count += 1
             if status & 0x02 == 0:
                 # StateBitPEMP = 0x00000200, Finished = 0xEC, 11101100
@@ -907,7 +1119,7 @@ class LihuiyuController:
                 return  # Abort all the processes was requested. This state change would be after clearing.
             self.update_status()
             status = self._status[1]
-            if status == STATUS_SERIAL_CORRECT_M3_FINISH:
+            if status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
                 self.serial_confirmed = True
                 return  # We're done.
         self.serial_confirmed = False

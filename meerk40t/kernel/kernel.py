@@ -5,6 +5,9 @@ import re
 import subprocess
 import threading
 import time
+import ast
+import operator
+
 from datetime import datetime
 from threading import Thread
 from typing import Any, Callable, Generator, List, Optional, Tuple, Union
@@ -30,6 +33,43 @@ KERNEL_VERSION = "0.0.10"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
+
+# Supported operators
+SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+def safe_eval(expr, term, term_value):
+    """
+    Safely evaluate arithmetic expressions with <term> as a variable.
+    Supports ast.Constant and ast.Num for compatibility.
+    """
+    def _eval(node):
+        if isinstance(node, ast.Constant):  # Python 3.8+
+            return node.value
+        elif isinstance(node, ast.Num):  # Python <3.8
+            return node.n
+        elif isinstance(node, ast.BinOp):
+            return SAFE_OPERATORS[type(node.op)](
+                _eval(node.left), _eval(node.right)
+            )
+        elif isinstance(node, ast.UnaryOp):
+            return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
+        elif isinstance(node, ast.Name):
+            if node.id == term:
+                return term_value
+            raise ValueError(f"Unknown variable: {node.id}")
+        else:
+            raise ValueError("Unsupported expression")
+    return _eval(ast.parse(expr, mode="eval").body)
 
 
 class BusyInfo:
@@ -117,6 +157,7 @@ class Kernel(Settings):
         # All registered threads.
         self.threads = {}
         self.thread_lock = threading.Lock()
+        self.thread_local = threading.local() 
 
         # All established delegates
         self.delegates = []
@@ -861,6 +902,11 @@ class Kernel(Settings):
                     channel(f"kernel-premain: {str(k)}")
                 if hasattr(k, "premain"):
                     k.premain()
+                    if self._shutdown:
+                        # Quit the program if shutdown was requested during premain
+                        # print (f"Shutdown requested during premain of {str(k)}: start was {KERNEL_LIFECYCLE_NAMES[start]}, end={KERNEL_LIFECYCLE_NAMES[end]}.")
+                        start = LIFECYCLE_KERNEL_PRESHUTDOWN
+                        end = LIFECYCLE_KERNEL_SHUTDOWN
         if start < LIFECYCLE_KERNEL_PREMAIN <= end:
             if channel:
                 channel("(plugin) kernel-premain")
@@ -1249,7 +1295,8 @@ class Kernel(Settings):
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
                     if line in ("quit", "shutdown", "exit", "restart"):
-                        self._quit = True
+                        print (f"Will shut down due to '{line}' command.")
+                        self._shutdown = True
                         if line == "restart":
                             self._restart = True
                         break
@@ -1258,7 +1305,6 @@ class Kernel(Settings):
                         break
 
             import asyncio
-
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
@@ -1385,7 +1431,7 @@ class Kernel(Settings):
         for thread_name in list(self.threads):
             thread_count += 1
             try:
-                thread = self.threads[thread_name]
+                thread = self.threads[thread_name][0]
             except KeyError:
                 if channel:
                     channel(_("Thread {name} exited safely").format(name=thread_name))
@@ -1756,6 +1802,8 @@ class Kernel(Settings):
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
+        user_type : bool = False,
+        info : str = "",
     ) -> Thread:
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
@@ -1778,7 +1826,7 @@ class Kernel(Settings):
         if thread_name is None:
             thread_name = func.__name__
         try:
-            old_thread = self.threads[thread_name]
+            old_thread = self.threads[thread_name][0]
             channel(
                 _("Thread: {name} already exists. Waiting...").format(name=thread_name)
             )
@@ -1822,7 +1870,13 @@ class Kernel(Settings):
                 channel(_("Thread: {name}, Finished").format(name=thread_name))
 
         thread.run = run
-        self.threads[thread_name] = thread
+        self.threads[thread_name] = [
+            thread, 
+            "Running",
+            user_type,
+            info,
+            time.time(),
+        ]
         thread.daemon = daemon
         thread.start()
         self.thread_lock.release()
@@ -1848,6 +1902,32 @@ class Kernel(Settings):
             return _("Idle")
         elif state == "unknown":
             return _("Unknown")
+
+    def get_thread_message(self, thread_name) -> str:
+        if thread_name not in self.threads:
+            return ""
+        message = self.threads[thread_name][1]
+        return message
+
+    def set_thread_message(self, thread_name, message):
+        if thread_name not in self.threads:
+            return
+        thread, _, user_type, info, started = self.threads[thread_name]
+        # Update the thread status
+        self.threads[thread_name] = [thread, message, user_type, info, started]
+
+    def get_thread_messages(self, user_type_only: bool = False) -> list:
+        """
+        Get a list of all thread messages.
+        @param user_type_only: If True, only include user threads.
+        @return: List of thread messages (thread_name, status, user_type, info)
+        """
+        messages = []
+        for thread_name, (_, message, user_type, info) in self.threads.items():
+            if user_type_only and not user_type:
+                continue
+            messages.append([thread_name, message, user_type, info])
+        return messages 
 
     # ==========
     # SCHEDULER
@@ -2096,7 +2176,12 @@ class Kernel(Settings):
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
-                    listener(origin, *message)
+                    try:
+                        listener(origin, *message)
+                    except RuntimeError as e:
+                        print(
+                            f"Listener {listener} no longer available. Error in {signal}: {e}"
+                        )
                     if signal_channel and signal not in to_be_ignored:
                         signal_channel(
                             f"Signal: {origin} {signal}: "
@@ -2685,13 +2770,19 @@ class Kernel(Settings):
             """
             channel(_("----------"))
             channel(_("Registered Threads:"))
+            parts = ["Nr", "thread", "status", "type", "info", "alive"]
+            channel(" ".join(parts))
+            channel("-"*60)
             for i, thread_name in enumerate(list(self.threads)):
-                thread = self.threads[thread_name]
-                parts = list()
+                thread, message, user_type, info, started = self.threads[thread_name]
+                parts = []
                 parts.append(f"{i + 1}:")
-                parts.append(str(thread))
-                if thread.is_alive:
-                    parts.append(_("is alive."))
+                parts.append(thread_name)
+                parts.append("<user>" if user_type else "<system>")
+                parts.append(message)
+                parts.append(info)
+                runtime = time.time() - started
+                parts.append(f"{runtime:.1f}s" if thread.is_alive else _("dead"))
                 channel(" ".join(parts))
             channel(_("----------"))
 
@@ -2955,7 +3046,7 @@ class Kernel(Settings):
                     else:
                         winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
                 except Exception as e:
-                    channel("Encountered exception {e} during play")
+                    channel(_("Encountered exception {error}").format(error=e))
                     pass
 
             def _play_darwin():
@@ -2964,7 +3055,7 @@ class Kernel(Settings):
                 try:
                     subprocess.run(cmd, shell=False)
                 except OSError as e:
-                    channel(f"Could not run {cmd[0]}: {e}")
+                    channel(_("Encountered exception {error}").format(error=f"{e} (cmd={cmd[0]})"))
 
             def _play_linux():
                 try:
@@ -3671,6 +3762,109 @@ class Kernel(Settings):
             except (TypeError, RuntimeError) as e:
                 channel(f"Error while sending {signalname}, {signalargs}: {e}")
             return
+
+        # ==========
+        # Threaded execution
+        # ==========
+        @self.console_command(
+            "threaded",
+            help=_(
+                "Execute the following command as a separate task in the background"
+            ),
+        )
+        def threaded_command(channel, _, remainder=None, **kwargs):
+            def handler():
+                """
+                Runs the specified command in a background thread and reports completion time.
+                This function is intended to be used as a job handler for asynchronous command execution.
+                """
+                self.thread_local.thread_name = job_identifier
+                self.signal("thread_update", "/", job_identifier, "started")
+                t0 = time.perf_counter()
+                try:
+                    data_out = self._console_parse(remainder, channel=self._console_channel)
+                except Exception as e:
+                    self._console_channel(_("Encountered exception {error}").format(error=e))
+
+                t1 = time.perf_counter()
+                self._console_channel(
+                    _("Finished command {cmd} after {duration}sec").format(
+                        cmd=remainder, duration=f"{t1 - t0:.2f}"
+                    )
+                )
+                self.signal("thread_update", "/", job_identifier, "ended")
+
+            if remainder is None:
+                # List all scheduled jobs that fit our format
+                i = 0
+                for job_name, job in self.jobs.items():
+                    if job_name is None or not job_name.startswith("threaded-"):
+                        continue
+                    i += 1
+                    parts = list()
+                    parts.append(f"{i}:")
+                    parts.append(job.info)
+                    parts.append(f"{time.time() - job._created}sec")
+                    parts.append(job.message)
+                    channel(" ".join(parts))
+                channel(_("----------"))
+                return
+            job_identifier = f"user-{time.time():.4f}"
+            thread = self.threaded(handler, thread_name=job_identifier, user_type=True, info=remainder)
+            # self.schedule(job)
+            channel(
+                _("Command '{cmd}' is now running in the background.").format(
+                    cmd=remainder
+                )
+            )
+
+        @self.console_option(
+            "variable", "v", type=str, default="loop", help=_("Variable name to replace (default 'loop')")
+        )
+        @self.console_argument("range_from", type=int, help=_("First value to take"))
+        @self.console_argument("range_to", type=int, help=_("Last value to take"))
+        @self.console_command("loop", help=_("loop a given command"))
+        def loop_command(
+            channel, _, range_from=None, range_to=None, remainder=None, variable=None, **kwargs
+        ):
+            if variable is None:
+                variable = "loop"
+            if range_from is None or range_to is None:
+                channel(_("Please provide the range to loop in"))
+                return
+            try:
+                range_from = int(range_from)
+                range_to = int(range_to)
+                if range_to < range_from:
+                    raise ValueError(
+                        _("upper bound needs to be greater than lower bound")
+                    )
+            except ValueError as e:
+                channel(
+                    _("Invalid values for from={lbound}, to={ubound}: {error}").format(
+                        lbound=range_from, ubound=range_to, error=e
+                    )
+                )
+                return
+            if remainder is None:
+                channel(_("Please provide a command to loop."))
+                return
+
+            for loop_index in range(range_from, range_to + 1):
+
+                def repl(match):
+                    expr = match.group(1)
+                    try:
+                        return str(safe_eval(expr, variable, loop_index))
+                    except Exception:
+                        return match.group(0)
+
+                cmd = re.sub(r"\{([^}]+)\}", repl, remainder)
+                channel(f"#{loop_index}: {cmd}")
+                try:
+                    data_out = self._console_parse(cmd, channel=self._console_channel)
+                except Exception as e:
+                    channel(_("Encountered exception {error}").format(error=e))
 
         # ==========
         # LIFECYCLE

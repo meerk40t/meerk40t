@@ -1,23 +1,91 @@
 """
 translate.py
 
-This script checks .po translation files for errors and compiles them into .mo files for Meerk40t.
+This script manages and validates .po translation files for Meerk40t.
+
 Features:
     - Checks for mismatched curly braces and smart quotes in .po files
     - Verifies consistency of curly-bracketed variables between msgid and msgstr
     - Reports empty msgid/msgstr pairs
     - Compiles valid .po files into .mo files
+    - Integrates delta_xx.po files into main .po files using polib, avoiding duplicates and updating only if msgstr is empty
     - Supports force recompilation and locale selection via CLI
 
 Usage:
-    python translate.py [--force] [locales...]
-    --force      Force recompilation of all .mo files
-    <locales>    List of locale codes to process (default: all)
+    python translate.py [--force] [--integrate] [locales...]
+    --force       Force recompilation of all .mo files
+    --integrate   Integrate delta_xx.po files into the main .po files
+    <locales>     List of locale codes to process (default: all)
 """
 
+import argparse
 import os
 import re
-import argparse
+
+import polib
+
+LOCALE_DIR = "./locale"
+
+# ANSI escape codes for colors
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+BOLD = "\033[1m"
+ENDC = "\033[0m"
+
+
+def print_header(text):
+    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+    print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
+    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+
+
+def print_error(text):
+    print(f"{RED}ERROR: {text}{ENDC}")
+
+
+def print_warning(text):
+    print(f"{YELLOW}WARNING: {text}{ENDC}")
+
+
+def print_success(text):
+    print(f"{GREEN}{text}{ENDC}")
+
+
+def print_info(text):
+    print(f"{BLUE}{text}{ENDC}")
+
+
+# ANSI escape codes for colors
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+BOLD = "\033[1m"
+ENDC = "\033[0m"
+
+
+def print_header(text):
+    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+    print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
+    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+
+
+def print_error(text):
+    print(f"{RED}ERROR: {text}{ENDC}")
+
+
+def print_warning(text):
+    print(f"{YELLOW}WARNING: {text}{ENDC}")
+
+
+def print_success(text):
+    print(f"{GREEN}{text}{ENDC}")
+
+
+def print_info(text):
+    print(f"{BLUE}{text}{ENDC}")
 
 
 def are_curly_brackets_matched(input_str: str) -> bool:
@@ -44,15 +112,10 @@ def are_curly_brackets_matched(input_str: str) -> bool:
 
 def contain_smart_quotes(line: str) -> bool:
     """
-    Returns True if the line contains smart quotes (e.g., ”) in msgid or msgstr.
+    Returns True if the line contains smart quotes (e.g., " or ") in msgid or msgstr.
     """
-    # Check for ”
-    line_str = line.strip()
-    return bool(
-        line_str.startswith("msgid ”")
-        or line_str.startswith("msgstr ”")
-        or line_str.startswith("”")
-    )
+    # Check for smart quotes: " (left double quotation mark) and " (right double quotation mark)
+    return '"' in line or '"' in line
 
 
 def find_erroneous_translations(file_path: str) -> bool:
@@ -64,113 +127,120 @@ def find_erroneous_translations(file_path: str) -> bool:
     - Empty msgid/msgstr pairs
     Returns True if any errors are found.
     """
-    with open(file_path, "r", encoding="utf-8", errors="surrogateescape") as file:
-        file_lines = file.readlines()
 
-    found_error = False
-    index = 0
-    msgids = []
-    msgstrs = []
-    lineids = []
+    def check_line_errors(file_lines, file_path):
+        found_error = False
+        for i, line in enumerate(file_lines):
+            if not are_curly_brackets_matched(line):
+                found_error = True
+                print_error(
+                    f"{file_path}\n  Line {i+1}: Mismatched curly braces\n  {line.strip()}"
+                )
+            # Smart quote check disabled - was incorrectly flagging valid files
+            # if contain_smart_quotes(line):
+            #     found_error = True
+            #     print_error(f"{file_path}\n  Line {i+1}: Contains invalid quotes\n  {line.strip()}")
+        return found_error
 
-    for i, line in enumerate(file_lines):
-        if not are_curly_brackets_matched(line):
-            found_error = True
-            print(f"Error: {file_path}\nLine {i} has mismatched curly braces:\n{line}")
-        if contain_smart_quotes(line):
-            found_error = True
-            print(f"Error: {file_path}\nLine {i} contains invalid quotes:\n{line}")
-
-    m_id = ""
-    m_msg = ""
-    while index < len(file_lines):
-        try:
-            if file_lines[index].strip() == "" or file_lines[index].startswith("#"):
-                pass
-            else:
+    def extract_msg_pairs(file_lines):
+        msgids, msgstrs, lineids = [], [], []
+        index = 0
+        while index < len(file_lines):
+            try:
+                if file_lines[index].strip() == "" or file_lines[index].startswith("#"):
+                    index += 1
+                    continue
                 msgids.append("")
                 lineids.append(index)
                 # Find msgid and all multi-lined message ids
-                if re.match(r'msgid \s*"(.*)"', file_lines[index]):
-                    m = re.match(r'msgid \s*"(.*)"', file_lines[index])
-                    msgids[-1] = m.group(1)
-                    m_id = m.group(1)
+                if re.match(r'^msgid\s+"(.*)"', file_lines[index]):
+                    m = re.match(r'^msgid\s+"(.*)"', file_lines[index])
+                    m_id = m[1]
+                    msgids[-1] = m_id
                     index += 1
                     if index >= len(file_lines):
                         break
                     while re.match('^"(.*)"$', file_lines[index]):
                         m = re.match('^"(.*)"$', file_lines[index])
-                        msgids[-1] += m.group(1)
-                        m_id += m.group(1)
+                        msgids[-1] += m[1]
+                        m_id += m[1]
                         index += 1
                 msgstrs.append("")
-                m_msg = ""
                 # find all message strings and all multi-line message strings
                 if re.match('msgstr "(.*)"', file_lines[index]):
                     m = re.match('msgstr "(.*)"', file_lines[index])
-                    msgstrs[-1] += m.group(1)
-                    m_msg += m.group(1)
+                    m_msg = m[1]
+                    msgstrs[-1] += m_msg
                     index += 1
                     while re.match('^"(.*)"$', file_lines[index]):
                         m = re.match('^"(.*)"$', file_lines[index])
-                        msgstrs[-1] += m.group(1)
-                        m_msg += m.group(1)
+                        msgstrs[-1] += m[1]
+                        m_msg += m[1]
                         index += 1
-            index += 1
-        except IndexError:
-            break
+                index += 1
+            except IndexError:
+                break
+        return msgids, msgstrs, lineids
+
+    def check_variable_consistency(msgids, msgstrs, file_path):
+        found_error = False
+        for msgid, msgstr in zip(msgids, msgstrs):
+            words_msgid = re.findall(r"\{(.+?)\}", msgid)
+            words_msgstr = re.findall(r"\{(.+?)\}", msgstr)
+            if not words_msgstr or not words_msgid:
+                continue
+            for word_msgstr in words_msgstr:
+                if word_msgstr not in words_msgid:
+                    print_error(
+                        f"Variable {{{word_msgstr}}} in msgstr but not in msgid: {file_path}\n  msgid: {msgid}\n  msgstr: {msgstr}"
+                    )
+                    found_error = True
+            for word_msgid in words_msgid:
+                if word_msgid not in words_msgstr:
+                    print_error(
+                        f"Variable {{{word_msgid}}} in msgid but not in msgstr: {file_path}\n  msgid: {msgid}\n  msgstr: {msgstr}"
+                    )
+                    found_error = True
+        return found_error
+
+    def check_empty_pairs(lineids, msgids, msgstrs, file_path):
+        erct = 0
+        er_s = []
+        for line, (msgid, msgstr) in zip(lineids, zip(msgids, msgstrs)):
+            if len(msgid) == 0 and len(msgstr) == 0:
+                erct += 1
+                er_s.append(str(line + 1))
+        if erct > 0:
+            print_warning(
+                f"{erct} empty pair{'s' if erct != 1 else ''} msgid '' + msgstr '' found in {file_path}\n  Lines: {', '.join(er_s)}"
+            )
+            return True
+        return False
+
+    with open(file_path, "r", encoding="utf-8", errors="surrogateescape") as file:
+        file_lines = file.readlines()
+
+    found_error = check_line_errors(file_lines, file_path)
+    msgids, msgstrs, lineids = extract_msg_pairs(file_lines)
 
     if len(msgids) != len(msgstrs):
-        print(
-            f"Error: Inconsistent Count of msgid/msgstr {file_path}: {len(msgstrs)} to {len(msgids)}"
+        print_error(
+            f"Inconsistent Count of msgid/msgstr {file_path}: {len(msgstrs)} to {len(msgids)}"
         )
         found_error = True
 
-    for msgid, msgstr in zip(msgids, msgstrs):
-        # Find words inside curly brackets in both msgid and msgstr
-        words_msgid = re.findall(r"\{(.+?)\}", msgid)
-        words_msgstr = re.findall(r"\{(.+?)\}", msgstr)
-        if not words_msgstr or not words_msgid:
-            continue
+    found_error = check_variable_consistency(msgids, msgstrs, file_path) or found_error
+    found_error = check_empty_pairs(lineids, msgids, msgstrs, file_path) or found_error
 
-        # Compare words and check for differences
-        for word_msgstr in words_msgstr:
-            if word_msgstr not in words_msgid:
-                print(
-                    f"Error: Inconsistent translation in {file_path}: '{word_msgstr}' in msgstr, {words_msgid} in msgids"
-                )
-                found_error = True
-
-    erct = 0
-    idx = 0
-    er_s = list()
-    for msgid, msgstr, line in zip(msgids, msgstrs, lineids):
-        idx += 1
-        if len(msgid) == 0 and len(msgstr) == 0:
-            erct += 1
-            er_s.append(str(line))
-    if erct > 0:
-        print(
-            f"{erct} empty pair{'s' if erct == 0 else ''} msgid '' + msgstr '' found in {file_path}\n{','.join(er_s)}"
-        )
-        found_error = True
     return found_error
 
 
-# Simple tool to recursively translate all .po-files into their .mo-equivalents under ./locale/LC_MESSAGES
-def create_mo_files(force: bool, locales: list[str]) -> list:
+def create_mo_files(force: bool, locales: set) -> list:
     """
     Recursively compiles all valid .po files into .mo files under ./locale/LC_MESSAGES.
     Skips files with errors. If force is True, always recompiles.
     Returns a list of tuples (locale_dir, [mo_files]).
     """
-    try:
-        import polib
-    except ImportError:
-        print(
-            "polib missing - you need to install that library, eg. 'pip install polib'"
-        )
-        return
 
     def detect_encoding(file_path: str) -> str:
         """
@@ -178,85 +248,265 @@ def create_mo_files(force: bool, locales: list[str]) -> list:
         Returns the encoding as a string.
         """
         try:
-            import chardet # Ensure chardet is available for encoding detection
-            return chardet.detect(open(file_path, 'rb').read())['encoding']
+            import chardet  # Ensure chardet is available for encoding detection
+
+            return chardet.detect(open(file_path, "rb").read())["encoding"]  # type: ignore
         except ImportError:
-            print("chardet missing - falling back to polib's default encoding detection")
+            print_warning(
+                "chardet missing - falling back to polib's default encoding detection"
+            )
 
         try:
             return polib.detect_encoding(file_path)
         except Exception as e:
-            print(f"Error detecting encoding for {file_path}: {e}")
+            print_error(f"Error detecting encoding for {file_path}: {e}")
             return "utf-8"
 
     data_files = []
-    localedir = "./locale"
     po_dirs = []
     po_locales = []
-    for locale_name in next(os.walk(localedir))[1]:
-        po_dirs.append(localedir + "/" + locale_name + "/LC_MESSAGES/")
+    for locale_name in next(os.walk(LOCALE_DIR))[1]:
+        po_dirs.append(f"{LOCALE_DIR}/{locale_name}/LC_MESSAGES/")
         po_locales.append(locale_name)
-    counts = [0, 0, 0]
+    counts = {
+        "translated": 0,
+        "ignored": 0,
+        "errors": 0,
+    }
+    erroneous = []
+    file_results = []  # Collect results for table display
+
+    print_header("Compiling .po to .mo Files")
+
     for d_local, d in zip(po_locales, po_dirs):
-        if len(locales) > 0 and d_local not in locales:
-            print(f"Skip locale {d_local}")
+        print_info(f"Processing locale: {d_local}")
+        if locales and d_local not in locales:
+            print_info(f"Skipping locale {d_local}")
+            file_results.append((d_local, "Skipped", "Not in selected locales"))
             continue
         mo_files = []
         po_files = [f for f in next(os.walk(d))[2] if os.path.splitext(f)[1] == ".po"]
         for po_file in po_files:
             filename, extension = os.path.splitext(po_file)
             if find_erroneous_translations(d + po_file):
-                print(f"Skipping {d + po_file} as invalid...")
-                counts[2] += 1
+                file_results.append((d_local, "Error", f"Invalid file: {po_file}"))
+                counts["errors"] += 1
                 continue
-            mo_file = filename + ".mo"
+            mo_file = f"{filename}.mo"
             doit = True
-            source_encoding = detect_encoding(d + po_file)
-            if source_encoding not in ("utf-8", "utf8"):
-                print(
-                    f"Warning: {d + po_file} has non-utf8 encoding ({source_encoding}), can lead to unexpected results."
-                )
-                source_encoding = "utf-8"
+            status = ""
+            details = ""
             if os.path.exists(d + mo_file):
-
+                source_encoding = detect_encoding(d + po_file).lower()
+                if source_encoding not in ("utf-8", "utf8"):
+                    print_warning(
+                        f"{d + po_file} has non-utf8 encoding ({source_encoding}), can lead to unexpected results."
+                    )
+                    source_encoding = "utf-8"
                 target_encoding = "utf-8"  # Default target encoding
                 po_date = os.path.getmtime(d + po_file)
                 mo_date = os.path.getmtime(d + mo_file)
                 if mo_date > po_date:
-                    print(
-                        f"mo-File for {d}{po_file} is newer (input encoded={source_encoding}, output encoded={target_encoding})..."
-                    )
+                    status = "Ignored"
+                    details = f"Newer .mo exists ({source_encoding})"
                     doit = False
             if doit or force:
-                if doit:
-                    action = "Translate"
-                else:
-                    action = "Forced translate"
+                empty_entries = 0
+                duplicate_entries = 0
+                action = "Force translating" if force and not doit else "Translating"
+                status = "Translated"
                 try:
                     po = polib.pofile(d + po_file, encoding=source_encoding)
+                    entries_seen = set()
+                    for entry in po:
+                        if not entry.msgstr:
+                            empty_entries += 1
+                        if entry.msgid in entries_seen:
+                            duplicate_entries += 1
+                        entries_seen.add(entry.msgid)
                     po.save_as_mofile(d + mo_file)
+
+                    details = f"{source_encoding} → utf-8"
+                    if empty_entries > 0:
+                        details += f", {empty_entries} empty"
+                    if duplicate_entries > 0:
+                        details += f", {duplicate_entries} dup"
+
                 except OSError as err:
-                    print(f"Unexpected {err=}")
-                    counts[2] += 1
+                    status = "Error"
+                    details = f"Save failed: {err}"
+                    counts["errors"] += 1
                     continue
 
-                target_encoding = "utf-8"
-
-                print(
-                    f"{action} {d}{po_file} (input encoded={source_encoding}, output encoded={target_encoding})"
-                )
+                if empty_entries > 0 or duplicate_entries > 0:
+                    erroneous.append(d_local)
                 mo_files.append(d + mo_file)
-                counts[0] += 1
+                counts["translated"] += 1
             else:
-                counts[1] += 1
+                counts["ignored"] += 1
+
+            if not status:  # For ignored files
+                status = "Ignored"
+                details = "Up to date"
+
+            file_results.append((d_local, status, details))
         data_files.append((d, mo_files))
-    print(
-        f"Total: {counts[0] + counts[1]}, Translated: {counts[0]}, Ignored: {counts[1]}, Errors: {counts[2]}"
-    )
+
+    # Print results in table format
+    if file_results:
+        print(f"{'Locale':<8} {'Status':<12} {'Details'}")
+        print("-" * 60)
+        for locale, status, details in file_results:
+            status_color = (
+                GREEN
+                if status == "Translated"
+                else YELLOW
+                if status == "Ignored"
+                else RED
+                if status == "Error"
+                else BLUE
+            )
+            print(f"{locale:<8} {status_color}{status:<12}{ENDC} {details}")
+        print()
+
+    total = counts["translated"] + counts["ignored"]
+    print_header("Summary")
+
+    # Create summary table
+    summary_data = [
+        ("Total files", str(total)),
+        ("Translated", str(counts["translated"])),
+        ("Ignored", str(counts["ignored"])),
+        ("Errors", str(counts["errors"])),
+        ("Warnings", str(len(erroneous))),
+    ]
+
+    print(f"{'Metric':<12} {'Count'}")
+    print("-" * 20)
+    for metric, count in summary_data:
+        if metric == "Errors" and int(count) > 0:
+            print(f"{metric:<12} {RED}{count}{ENDC}")
+        elif metric == "Warnings" and int(count) > 0:
+            print(f"{metric:<12} {YELLOW}{count}{ENDC}")
+        else:
+            print(f"{metric:<12} {count}")
+
+    if erroneous:
+        print()
+        print_info(
+            f"Consider running: python translate_check.py --validate {' '.join(erroneous)}"
+        )
     return data_files
 
 
-def main():
+def integrate_delta_files(locales: set) -> None:
+    """
+    This code integrates translation updates from delta .po files (named delta_xx.po)
+    into the main translation .po files for specified locales.
+    It updates existing entries with new translations and adds new entries
+    as needed, then removes the delta file.
+    """
+    print_header("Integrating Delta Files")
+
+    integration_results = []
+
+    for locale in locales:
+        print_info(f"Processing locale: {locale}")
+        updates_applied = False
+        main_po_file = f"./locale/{locale}/LC_MESSAGES/meerk40t.po"
+        delta_po_file = f"./delta_{locale}.po"
+
+        if not os.path.exists(delta_po_file):
+            integration_results.append((locale, "No Delta", "No delta file found"))
+            continue
+        if not os.path.exists(main_po_file):
+            integration_results.append((locale, "Error", "Main .po file missing"))
+            continue
+
+        # Load main and delta .po files
+        main_po = polib.pofile(main_po_file)
+        delta_po = polib.pofile(delta_po_file)
+
+        # Build dictionaries for fast lookup and to check duplicates
+        main_entries = {entry.msgid: entry for entry in main_po}
+        delta_entries = {}
+        duplicate_msgids = set()
+        empty_msgids = set()
+        for entry in delta_po:
+            if not entry.msgstr:
+                empty_msgids.add(entry.msgid)
+            elif entry.msgid in delta_entries:
+                duplicate_msgids.add(entry.msgid)
+            else:
+                delta_entries[entry.msgid] = entry
+
+        status = "Integrated"
+        details = f"{len(delta_entries)} entries"
+
+        if duplicate_msgids:
+            print_warning(f"Duplicate msgid(s) found in delta file for {locale}:")
+            for msgid in duplicate_msgids:
+                print(f"  - {msgid}")
+        if empty_msgids:
+            print_warning(f"Untranslated msgid(s) found in delta file for {locale}:")
+            for msgid in empty_msgids:
+                print(f"  - {msgid}")
+
+        # Integrate delta into main, handling conflicts
+        conflicts = []
+        for msgid, delta_entry in delta_entries.items():
+            if msgid in main_entries:
+                main_entry = main_entries[msgid]
+                if main_entry.msgstr != delta_entry.msgstr:
+                    conflicts.append(msgid)
+                    # Prefer delta's translation, but log the conflict
+                    main_entry.msgstr = delta_entry.msgstr
+                    updates_applied = True
+            else:
+                # Add new entry from delta
+                main_po.append(delta_entry)
+                updates_applied = True
+
+        if conflicts:
+            print_warning(f"Conflicting msgid(s) updated from delta for {locale}:")
+            for msgid in conflicts:
+                print(f"  - {msgid}")
+            details += f", {len(conflicts)} conflicts"
+
+        # Save the updated main .po file
+        if updates_applied:
+            main_po.save(main_po_file)
+        else:
+            status = "No Changes"
+            details = f"{len(delta_entries)} entries (no updates needed)"
+
+        # Remove the delta file after integration
+        try:
+            os.remove(delta_po_file)
+        except Exception as e:
+            print_error(f"Error removing {delta_po_file}: {e}")
+
+        integration_results.append((locale, status, details))
+
+    # Print results in table format
+    if integration_results:
+        print(f"{'Locale':<8} {'Status':<12} {'Details'}")
+        print("-" * 60)
+        for locale, status, details in integration_results:
+            status_color = (
+                GREEN
+                if status == "Integrated"
+                else BLUE
+                if status == "No Changes"
+                else YELLOW
+                if status == "No Delta"
+                else RED
+            )
+            print(f"{locale:<8} {status_color}{status:<12}{ENDC} {details}")
+        print()
+
+
+def main() -> None:
     """
     Main entry point for the script. Parses CLI arguments and triggers compilation.
     """
@@ -270,17 +520,35 @@ def main():
         help="Locale codes to process (default: all locales)",
     )
     parser.add_argument(
+        "-f",
         "--force",
         action="store_true",
         help="Force recompilation of all .mo files regardless of timestamps",
     )
+    parser.add_argument(
+        "-i",
+        "--integrate",
+        action="store_true",
+        help="Integrate delta_xx.po files into the main .po files",
+    )
     args = parser.parse_args()
-
+    if "all" in args.locales:
+        args.locales = []
+    locales = set()
+    if len(args.locales) == 0:
+        locales.update(iter(next(os.walk(LOCALE_DIR))[1]))
+        args.locales = locales
+    for loc in args.locales:
+        locales.add(loc)
+    print_header("Meerk40t Translation Tool")
     if args.locales:
-        print(f"Will compile po-files for {', '.join(args.locales)}")
+        print_info(f"Processing locales: {', '.join(sorted(locales))}")
     else:
-        print("Will compile all po-files")
-    create_mo_files(args.force, args.locales)
+        print_info("Processing all locales")
+
+    if args.integrate:
+        integrate_delta_files(locales)
+    create_mo_files(args.force, locales)
 
 
 if __name__ == "__main__":

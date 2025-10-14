@@ -384,3 +384,12 @@ class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.ry = self.rx
 
         self.altered()
+
+    def set_geometry(self, geom):
+        # We need to change ourself into a PathNode
+        new_settings = dict(self.node_dict)
+        new_settings["type"] = "elem path"
+        new_settings["geometry"] = geom
+        new_settings["matrix"] = Matrix()
+        node = self.replace_node(keep_children=True, **new_settings)
+        return node

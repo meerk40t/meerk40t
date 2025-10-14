@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -489,6 +489,7 @@ detrand_t = (
 )
 
 
+@njit(cache=True)
 def detrand(x: int, y: int) -> int:
     """deterministically and efficiently hash (x,y) into a pseudo-random bit"""
     # /* 0x04b3e375 and 0x05a8ef93 are chosen to contain every possible 5-bit sequence */
@@ -502,7 +503,47 @@ def detrand(x: int, y: int) -> int:
     return z
 
 
-def majority(bm: np.array, x: int, y: int) -> int:
+@njit(cache=True)
+def _safe_get(bm: np.ndarray, y: int, x: int) -> int:
+    """Safe bitmap access with bounds checking."""
+    h, w = bm.shape
+    return bm[y, x] if 0 <= y < h and 0 <= x < w else 0
+
+
+@njit(cache=True)
+def _should_turn_right(
+    turnpolicy: int, sign: bool, x: int, y: int, bm: np.ndarray
+) -> bool:
+    """Determine if we should turn right based on turn policy."""
+    if turnpolicy == POTRACE_TURNPOLICY_RIGHT:
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_BLACK and sign:
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_WHITE and not sign:
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_RANDOM and detrand(x, y):
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_MAJORITY and majority(bm, x, y):
+        return True
+    elif turnpolicy == POTRACE_TURNPOLICY_MINORITY and not majority(bm, x, y):
+        return True
+    return False
+
+
+@njit(cache=True)
+def _turn_right(dirx: int, diry: int) -> Tuple[int, int]:
+    """Turn direction 90 degrees to the right."""
+    return diry, -dirx
+
+
+@njit(cache=True)
+def _turn_left(dirx: int, diry: int) -> Tuple[int, int]:
+    """Turn direction 90 degrees to the left."""
+    return -diry, dirx
+
+
+@njit(cache=True)
+def majority(bm: np.ndarray, x: int, y: int) -> int:
     """
      /* return the "majority" value of bitmap bm at intersection (x,y). We
     assume that the bitmap is balanced at "radius" 1.  */
@@ -510,22 +551,10 @@ def majority(bm: np.array, x: int, y: int) -> int:
     for i in range(2, 5):  # /* check at "radius" i */
         ct = 0
         for a in range(-i + 1, i - 2):
-            try:
-                ct += 1 if bm[y + i - 1][x + a] else -1
-            except IndexError:
-                pass
-            try:
-                ct += 1 if bm[y + a - 1][x + i - 1] else -1
-            except IndexError:
-                pass
-            try:
-                ct += 1 if bm[y - i][x + a - 1] else -1
-            except IndexError:
-                pass
-            try:
-                ct += 1 if bm[y + a][x - i] else -1
-            except IndexError:
-                pass
+            ct += 1 if _safe_get(bm, y + i - 1, x + a) else -1
+            ct += 1 if _safe_get(bm, y + a - 1, x + i - 1) else -1
+            ct += 1 if _safe_get(bm, y - i, x + a - 1) else -1
+            ct += 1 if _safe_get(bm, y + a, x - i) else -1
         if ct > 0:
             return 1
         elif ct < 0:
@@ -539,7 +568,8 @@ def majority(bm: np.array, x: int, y: int) -> int:
 """
 
 
-def xor_to_ref(bm: np.array, x: int, y: int, xa: int) -> None:
+@njit(cache=True)
+def xor_to_ref(bm: np.ndarray, x: int, y: int, xa: int) -> None:
     """
      /* efficiently invert bits [x,infty) and [xa,infty) in line y. Here xa
     must be a multiple of BM_WORDBITS. */
@@ -551,7 +581,7 @@ def xor_to_ref(bm: np.array, x: int, y: int, xa: int) -> None:
         bm[y, xa:x] ^= True
 
 
-def xor_path(bm: np.array, p: _Path) -> None:
+def xor_path(bm: np.ndarray, p: _Path) -> None:
     """
     a path is represented as an array of points, which are thought to
     lie on the corners of pixels (not on their centers). The path point
@@ -575,7 +605,56 @@ def xor_path(bm: np.array, p: _Path) -> None:
             y1 = y
 
 
-def findpath(bm: np.array, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Path:
+@njit(cache=True)
+def _findpath_jit(bm: np.ndarray, x0: int, y0: int, sign: bool, turnpolicy: int):
+    """
+    JIT-compiled version of findpath for performance.
+    Returns tuple of (points_list, area, sign) instead of Path object.
+    """
+    x = x0
+    y = y0
+    dirx = 0
+    diry = -1  # Start moving up
+    pt = []
+    area = 0
+
+    while True:  # Main path tracing loop
+        # Add current point to path
+        pt.append((int(x), int(y)))
+
+        # Move to next point
+        x += dirx
+        y += diry
+        area += x * diry
+
+        # Check if path is complete (back to start)
+        if x == x0 and y == y0:
+            break
+
+        # Determine next direction based on neighboring pixels
+        cy = y + (diry - dirx - 1) // 2
+        cx = x + (dirx + diry - 1) // 2
+        c = _safe_get(bm, cy, cx)
+
+        dy = y + (diry + dirx - 1) // 2
+        dx = x + (dirx - diry - 1) // 2
+        d = _safe_get(bm, dy, dx)
+
+        # Decide turn direction based on pixel configuration
+        if c and not d:  # Ambiguous turn - use turn policy
+            if _should_turn_right(turnpolicy, sign, x, y, bm):
+                dirx, diry = _turn_right(dirx, diry)
+            else:
+                dirx, diry = _turn_left(dirx, diry)
+        elif c:  # Right turn
+            dirx, diry = _turn_right(dirx, diry)
+        elif not d:  # Left turn
+            dirx, diry = _turn_left(dirx, diry)
+
+    return pt, area, sign
+
+
+def findpath(bm, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Path:
     """
     /* compute a path in the given pixmap, separating black from white.
     Start path at the point (x0,x1), which must be an upper left corner
@@ -584,73 +663,18 @@ def findpath(bm: np.array, x0: int, y0: int, sign: bool, turnpolicy: int) -> _Pa
     cannot have length 0). Sign is required for correct interpretation
     of turnpolicies. */"""
 
-    x = x0
-    y = y0
-    dirx = 0
-    diry = -1  # diry-1
-    pt = []
-    area = 0
+    # Use JIT-compiled version for performance
+    pt_tuples, area, sign = _findpath_jit(bm, x0, y0, sign, turnpolicy)
 
-    while True:  # /* while this path */
-        # /* add point to path */
-        pt.append(_Point(int(x), int(y)))
-
-        # /* move to next point */
-        x += dirx
-        y += diry
-        area += x * diry
-
-        # /* path complete? */
-        if x == x0 and y == y0:
-            break
-
-        # /* determine next direction */
-        cy = y + (diry - dirx - 1) // 2
-        cx = x + (dirx + diry - 1) // 2
-        try:
-            c = bm[cy][cx]
-        except IndexError:
-            c = 0
-        dy = y + (diry + dirx - 1) // 2
-        dx = x + (dirx - diry - 1) // 2
-        try:
-            d = bm[dy][dx]
-        except IndexError:
-            d = 0
-
-        if c and not d:  # /* ambiguous turn */
-            if (
-                turnpolicy == POTRACE_TURNPOLICY_RIGHT
-                or (turnpolicy == POTRACE_TURNPOLICY_BLACK and sign)
-                or (turnpolicy == POTRACE_TURNPOLICY_WHITE and not sign)
-                or (turnpolicy == POTRACE_TURNPOLICY_RANDOM and detrand(x, y))
-                or (turnpolicy == POTRACE_TURNPOLICY_MAJORITY and majority(bm, x, y))
-                or (
-                    turnpolicy == POTRACE_TURNPOLICY_MINORITY and not majority(bm, x, y)
-                )
-            ):
-                tmp = dirx  # /* right turn */
-                dirx = diry
-                diry = -tmp
-            else:
-                tmp = dirx  # /* left turn */
-                dirx = -diry
-                diry = tmp
-        elif c:  # /* right turn */
-            tmp = dirx
-            dirx = diry
-            diry = -tmp
-        elif not d:  # /* left turn */
-            tmp = dirx
-            dirx = -diry
-            diry = tmp
+    # Convert tuples back to _Point objects
+    pt = [_Point(x, y) for x, y in pt_tuples]
 
     # /* allocate new path object */
     return _Path(pt, area, sign)
 
 
-@njit()
-def findnext(bm: np.array) -> Optional[Tuple[Union[int], int]]:
+@njit(cache=True)
+def findnext(bm: np.ndarray) -> Optional[Tuple[int, int]]:
     """
     /* find the next set pixel in a row <= y. Pixels are searched first
        left-to-right, then top-down. In other words, (x,y)<(x',y') if y>y'
@@ -658,14 +682,13 @@ def findnext(bm: np.array) -> Optional[Tuple[Union[int], int]]:
        (*xp,*yp). Else return 1. Note that this function assumes that
        excess bytes have been cleared with bm_clearexcess. */
     """
-    w = np.nonzero(bm)
-    if len(w[0]) == 0:
-        return None
-
-    q = np.where(w[0] == w[0][-1])
-    y = w[0][q]
-    x = w[1][q]
-    return y[0], x[0]
+    h, w = bm.shape
+    # scan bottom-up, left-to-right
+    for y in range(h - 1, -1, -1):
+        for x in range(w):
+            if bm[y, x]:
+                return y, x
+    return None
 
 
 def setbbox_path(p: _Path):
@@ -692,7 +715,7 @@ def setbbox_path(p: _Path):
     return x0, y0, x1, y1
 
 
-def pathlist_to_tree(plist: list, bm: np.array) -> None:
+def pathlist_to_tree(plist: list, bm: np.ndarray) -> None:
     """
     /* Give a tree structure to the given path list, based on "insideness"
        testing. I.e., path A is considered "below" path B if it is inside
@@ -817,7 +840,7 @@ def pathlist_to_tree(plist: list, bm: np.array) -> None:
 
 
 def bm_to_pathlist(
-    bm: np.array, turdsize: int = 2, turnpolicy: int = POTRACE_TURNPOLICY_MINORITY
+    bm: np.ndarray, turdsize: int = 2, turnpolicy: int = POTRACE_TURNPOLICY_MINORITY
 ) -> list:
     """
     /* Decompose the given bitmap into paths. Returns a linked list of
@@ -859,6 +882,7 @@ def bm_to_pathlist(
 # /* auxiliary functions */
 
 
+@njit(cache=True)
 def sign(x):
     if x > 0:
         return 1
@@ -868,6 +892,7 @@ def sign(x):
         return 0
 
 
+@njit(cache=True)
 def mod(a: int, n: int) -> int:
     """Note: the "mod" macro works correctly for
     negative a. Also note that the test for a>=n, while redundant,
@@ -980,16 +1005,16 @@ def pointslope(pp: _Path, i: int, j: int, ctr: _Point, dir: _Point) -> None:
     c -= lambda2
 
     if math.fabs(a) >= math.fabs(c):
-        l = math.sqrt(a * a + b * b)
-        if l != 0:
-            dir.x = -b / l
-            dir.y = a / l
+        length = math.sqrt(a * a + b * b)
+        if length != 0:
+            dir.x = -b / length
+            dir.y = a / length
     else:
-        l = math.sqrt(c * c + b * b)
-        if l != 0:
-            dir.x = -c / l
-            dir.y = b / l
-    if l == 0:
+        length = math.sqrt(c * c + b * b)
+        if length != 0:
+            dir.x = -c / length
+            dir.y = b / length
+    if length == 0:
         # sometimes this can happen when k=4:
         # the two eigenvalues coincide */
         dir.x = 0
@@ -1013,6 +1038,7 @@ def quadform(Q: list, w: _Point) -> float:
     return sum
 
 
+@njit(cache=True)
 def xprod(p1x, p1y, p2x, p2y) -> float:
     """calculate p1 x p2"""
     return p1x * p2y - p1y * p2x
@@ -1481,9 +1507,9 @@ def _adjust_vertices(pp: _Path) -> int:
             v[0] = dir[i].y
             v[1] = -dir[i].x
             v[2] = -v[1] * ctr[i].y - v[0] * ctr[i].x
-            for l in range(3):
+            for idx in range(3):
                 for k in range(3):
-                    q[i][l][k] = v[l] * v[k] / d
+                    q[i][idx][k] = v[idx] * v[k] / d
 
     """/* now calculate the "intersections" of consecutive segments.
          Instead of using the actual intersection, we find the point
@@ -1503,9 +1529,9 @@ def _adjust_vertices(pp: _Path) -> int:
         j = mod(i - 1, m)
 
         # /* add quadratic forms */
-        for l in range(3):
+        for idx in range(3):
             for k in range(3):
-                Q[l][k] = q[j][l][k] + q[i][l][k]
+                Q[idx][k] = q[j][idx][k] + q[i][idx][k]
 
         while True:
             # /* minimize the quadratic form Q on the unit square */
@@ -1533,9 +1559,9 @@ def _adjust_vertices(pp: _Path) -> int:
                 v[1] = 0
             d = sq(v[0]) + sq(v[1])
             v[2] = -v[1] * s.y - v[0] * s.x
-            for l in range(3):
+            for idx in range(3):
                 for k in range(3):
-                    Q[l][k] += v[l] * v[k] / d
+                    Q[idx][k] += v[idx] * v[k] / d
         dx = math.fabs(w.x - s.x)
         dy = math.fabs(w.y - s.y)
         if dx <= 0.5 and dy <= 0.5:
@@ -1570,9 +1596,9 @@ def _adjust_vertices(pp: _Path) -> int:
                     xmin = w.x
                     ymin = w.y
         # /* check four corners */
-        for l in range(2):
+        for idx in range(2):
             for k in range(2):
-                w = _Point(s.x - 0.5 + l, s.y - 0.5 + k)
+                w = _Point(s.x - 0.5 + idx, s.y - 0.5 + k)
                 cand = quadform(Q, w)
                 if cand < min:
                     min = cand

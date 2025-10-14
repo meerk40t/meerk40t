@@ -1,9 +1,9 @@
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
-from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -13,6 +13,14 @@ _ = wx.GetTranslation
 
 
 class NewlyConfiguration(MWindow):
+    """NewlyConfiguration - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for newlyconfiguration functionality. Integrates with activate;device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for newlyconfiguration functionality in MeerK40t."""
+
+    """NewlyConfiguration - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, **kwds):
         super().__init__(420, 570, *args, **kwds)
         self.context = self.context.device
@@ -60,9 +68,17 @@ class NewlyConfiguration(MWindow):
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Raster Chart"))
 
-        newpanel = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
+        newpanel = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="newly-effects"
+        )
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Effects"))
+
+        newpanel = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="newly-defaults"
+        )
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Operation Defaults"))
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
@@ -120,5 +136,5 @@ class NewlyConfiguration(MWindow):
     @signal_listener("activate;device")
     def on_device_changes(self, *args):
         # Device activated, make sure we are still fine...
-        if self.context.device.name != 'newly':
+        if self.context.device.name != "newly":
             wx.CallAfter(self.Close)

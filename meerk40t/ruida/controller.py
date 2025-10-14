@@ -22,7 +22,6 @@ class RuidaController:
 
         self.job = RDJob()
         self._send_queue = []
-        self._send_lock = threading.Condition()
         self._send_thread = None
         self.events = service.channel(f"{service.safe_label}/events")
 
@@ -50,20 +49,18 @@ class RuidaController:
         while self._send_queue:
             data = self._send_queue.pop(0)
             self.write(data)
-            with self._send_lock:
-                if not self._send_lock.wait(5):
-                    self.service.signal("warning", "Connection Problem.", "Timeout")
-                    return
         self._send_queue.clear()
         self._send_thread = None
         self.events("File Sent.")
 
     def recv(self, reply):
-        e = self.job.unswizzle(reply)
-        if e == ACK:
-            with self._send_lock:
-                self._send_lock.notify()
-        self.events(f"-->: {e}")
+        '''Receive reply from the controller.
+
+        The only reason this will be called is in response to a command
+        which requires reply data from the controller. Forward to the
+        RDJob for parsing.'''
+        _decoded = self.job.decode_reply(reply)
+        self.events(f"-->: {_decoded}")
 
     def start_record(self):
         self.job.get_setting(MEM_CARD_ID, output=self.write)

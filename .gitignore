@@ -136,3 +136,11 @@ MeerK40t-*.txt
 # Sourcery settings
 .sourcery.yaml
 .pre-commit-config.yaml
+meerk40t.spec
+mk40t.py
+
+# Local test files
+local_workspace/
+
+# VS Code settings
+.vscode/

@@ -5,7 +5,7 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
-from meerk40t.device.devicechoices import get_effect_choices
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -19,7 +19,7 @@ from .tcp_connection import TCPConnection
 from .udp_connection import UDPConnection
 
 
-class RuidaDevice(Service):
+class RuidaDevice(Service, Status):
     """
     RuidaDevice is driver for the Ruida Controllers
     """
@@ -38,6 +38,15 @@ class RuidaDevice(Service):
                     setattr(self, attr, default)
 
         # self.setting(str, "label", path)
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
 
         _ = self._
         choices = [
@@ -127,7 +136,7 @@ class RuidaDevice(Service):
                 "section": "_10_" + _("Configuration"),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "user_margin_y",
@@ -141,7 +150,7 @@ class RuidaDevice(Service):
                 "section": "_10_" + _("Configuration"),
                 # Hint for translation _("User Offset")
                 "subsection": "_30_User Offset",
-                "ignore": True, # Does not work yet, so don't show
+                "ignore": True,  # Does not work yet, so don't show
             },
             {
                 "attr": "flip_x",
@@ -228,7 +237,8 @@ class RuidaDevice(Service):
                 "default": 20.0,
                 "type": float,
                 "label": _("Laser Power"),
-                "trailer": "%",
+                "style": "power",
+                "percent": _use_percent_for_power,
                 "tip": _("What power level do we cut at?"),
             },
             {
@@ -236,7 +246,8 @@ class RuidaDevice(Service):
                 "object": self,
                 "default": 40.0,
                 "type": float,
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "label": _("Cut Speed"),
                 "tip": _("How fast do we cut?"),
             },
@@ -244,6 +255,15 @@ class RuidaDevice(Service):
         self.register_choices("ruida-global", choices)
 
         self.register_choices("ruida-effects", get_effect_choices(self))
+        self.register_choices(
+            "ruida-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         choices = [
             {
@@ -391,6 +411,9 @@ class RuidaDevice(Service):
             elif self.interface == "usb":
                 self.active_interface = self.interface_usb
                 self.driver.controller.write = self.interface_usb.write
+            _swizzle = self.driver.controller.job.swizzle
+            _unswizzle = self.driver.controller.job.unswizzle
+            self.active_interface.set_swizzles(_swizzle, _unswizzle)
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(command, channel, _, data=None, **kwargs):
@@ -709,3 +732,11 @@ class RuidaDevice(Service):
 
     def cool_helper(self, choice_dict):
         self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

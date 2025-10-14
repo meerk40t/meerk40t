@@ -9,11 +9,12 @@ import wx
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
+    icon_warning,
     icons8_connected,
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxButton, wxStaticText
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -26,7 +27,91 @@ realtime_commands = (
 )
 
 
+class MacroEditDialog(wx.Dialog):
+    def __init__(self, parent, title, current_title, current_macro, context=None):
+        super().__init__(parent, title=title, size=wx.Size(400, 300))
+        self.current_title = current_title
+        self.current_macro = current_macro
+        self.context = context
+        if context:
+            context.themes.set_window_colors(self)
+        self.SetHelpText("grblmacroedit")
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Title field
+        title_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        title_label = wx.StaticText(self, label=_("Title:"))
+        self.title_ctrl = wx.TextCtrl(self, value=current_title)
+        title_sizer.Add(title_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        title_sizer.Add(self.title_ctrl, 1, wx.EXPAND)
+        sizer.Add(title_sizer, 0, wx.EXPAND | wx.ALL, 10)
+
+        # Content field
+        content_label = wx.StaticText(self, label=_("Content:"))
+        sizer.Add(content_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        self.content_ctrl = wx.TextCtrl(
+            self,
+            value=current_macro,
+            style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER
+        )
+        self.content_ctrl.SetMinSize(wx.Size(-1, 150))
+        sizer.Add(self.content_ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
+        # Buttons
+        button_sizer = wx.StdDialogButtonSizer()
+        self.ok_button = wx.Button(self, wx.ID_OK)
+        self.cancel_button = wx.Button(self, wx.ID_CANCEL)
+        button_sizer.AddButton(self.ok_button)
+        button_sizer.AddButton(self.cancel_button)
+        button_sizer.Realize()
+        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+
+        self.SetSizer(sizer)
+        self.Layout()
+
+        # Center the dialog
+        self.Centre()
+
+        # Bind events
+        self.ok_button.Bind(wx.EVT_BUTTON, self.on_ok)
+        self.cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
+
+    def on_ok(self, event):
+        self.EndModal(wx.ID_OK)
+
+    def on_cancel(self, event):
+        self.EndModal(wx.ID_CANCEL)
+
+    def get_title(self):
+        return self.title_ctrl.GetValue()
+
+    def get_macro(self):
+        return self.content_ctrl.GetValue()
+
+
 class GRBLControllerPanel(wx.Panel):
+    """
+    GRBL Controller Panel - Real-time communication interface for GRBL laser devices.
+
+    **Technical Purpose:**
+    Provides a comprehensive wxPython-based control interface for GRBL-compatible laser devices,
+    enabling real-time communication, command execution, and device monitoring. This panel serves
+    as the primary user interface for device interaction, handling connection management, G-code
+    command transmission, macro execution, and communication logging. It integrates with the
+    MeerK40t kernel's signal system to maintain synchronized device state and user interface updates.
+
+    **Signal Listeners:**
+    - `update_interface`: Updates GUI button states and connection status indicators
+    - `grbl_controller_update`: Refreshes the communication log display with new data
+
+    **End-User Description:**
+    Control and monitor your GRBL laser device in real-time. Connect or disconnect from the device,
+    send individual G-code commands or execute stored macros, and view all communication in the log window.
+    Use predefined buttons for common operations like homing, status queries, and alarm clearing.
+    Right-click macro buttons to customize them with your frequently used command sequences.
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SerialControllerPanel.__init__
         self.service = context
@@ -40,7 +125,6 @@ class GRBLControllerPanel(wx.Panel):
         self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
         )
-
         self.button_device_connect.SetFont(
             wx.Font(
                 12,
@@ -57,7 +141,20 @@ class GRBLControllerPanel(wx.Panel):
         self.button_device_connect.SetBitmap(
             icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
         )
-        sizer_1.Add(self.button_device_connect, 0, wx.EXPAND, 0)
+        self.button_device_in_error = wxButton(self, wx.ID_ANY, "")
+        self.button_device_in_error.Hide()
+        self.button_device_in_error.SetToolTip(_("Device is in error state."))
+        self.button_device_in_error.SetMinSize(dip_size(self, 32, 32))
+        self.button_device_in_error.SetBitmap(
+            icon_warning.GetBitmap(use_theme=False, resize=self.iconsize)
+        )
+        self.label_device_status = wxStaticText(self, wx.ID_ANY, "")
+        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_buttons.Add(self.button_device_connect, 1, wx.EXPAND, 0)
+        sizer_buttons.Add(self.button_device_in_error, 0, wx.EXPAND, 0)
+        sizer_buttons.Add(self.label_device_status, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_1.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
         static_line_2.SetMinSize(dip_size(self, 483, 5))
@@ -99,17 +196,21 @@ class GRBLControllerPanel(wx.Panel):
             if entry[3] is not None:
                 btn.SetBitmap(
                     entry[3].GetBitmap(
-                        resize=0.5 * get_default_icon_size(self.context), use_theme=False
+                        resize=0.5 * get_default_icon_size(self.context),
+                        use_theme=False,
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         self.macros = []
+        self.macro_titles = []
         for idx in range(5):
             macrotext = self.service.setting(str, f"macro_{idx}", "")
             self.macros.append(macrotext)
-            btn = wxButton(self, wx.ID_ANY, f"Macro {idx+1}")
+            macrotitle = self.service.setting(str, f"macro_title_{idx}", "")
+            self.macro_titles.append(macrotitle)
+            btn = wxButton(self, wx.ID_ANY, f"Macro {idx+1}" if macrotitle == "" else macrotitle)
             btn.Bind(wx.EVT_BUTTON, self.send_macro(idx))
             btn.Bind(wx.EVT_RIGHT_DOWN, self.edit_macro(idx))
             btn.SetToolTip(_("Send list of commands to device. Right click to edit."))
@@ -248,6 +349,9 @@ class GRBLControllerPanel(wx.Panel):
 
         return handler
 
+    def on_button_device_in_error(self, event):
+        self.service("clear_alarm\n")
+
     def send_macro(self, idx):
         def handler(event):
             macro = self.macros[idx]
@@ -256,22 +360,35 @@ class GRBLControllerPanel(wx.Panel):
                     self.command_log.append(f"Macro {idx + 1}: {line}")
                 else:
                     self.service.driver(f"{line}{self.service.driver.line_end}")
+
         return handler
 
     def edit_macro(self, idx):
         def handler(event):
             macro = str(self.macros[idx])
-            dlg = wx.TextEntryDialog(
-                self, _("Content for macro {index}").format(index = idx + 1),
-                value=macro,
-                style=wx.TE_MULTILINE | wx.OK | wx.CANCEL | wx.CENTRE | wx.ICON_QUESTION,
+            title = str(self.macro_titles[idx])
+            # open a simple dialog to edit the macro: both title and content
+            dlg = MacroEditDialog(
+                self,
+                _("Edit Macro {index}").format(index=idx + 1),
+                title,
+                macro,
+                context=self.service,
             )
-            dlg.ShowModal()
-            newmacro = dlg.GetValue()
+            if dlg.ShowModal() == wx.ID_OK:
+                new_title = dlg.get_title()
+                new_macro = dlg.get_macro()
+                if new_title != title:
+                    self.macro_titles[idx] = new_title
+                    setattr(self.service, f"macro_title_{idx}", new_title)
+                    # Update button label
+                    button = self.FindWindowById(event.GetId())
+                    if button:
+                        button.SetLabel(f"Macro {idx+1}" if new_title == "" else new_title)
+                if new_macro != macro:
+                    self.macros[idx] = new_macro
+                    setattr(self.service, f"macro_{idx}", new_macro)
             dlg.Destroy()
-            if newmacro != macro:
-                self.macros[idx] = newmacro
-                setattr(self.service, f"macro_{idx}", newmacro)
 
         return handler
 
@@ -350,6 +467,7 @@ class GRBLControllerPanel(wx.Panel):
             buffer = self._buffer
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
+        self.update_device_buttons()
 
     def set_color_according_to_state(self, stateval, control):
         def color_distance(c1, c2):
@@ -413,6 +531,23 @@ class GRBLControllerPanel(wx.Panel):
                 icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
+        self.update_device_buttons()
+
+    def update_device_buttons(self):
+        def properly_connected():
+            return not (
+                self.state == "uninitialized"
+                or self.state == "disconnected"
+                or self.state is None
+            )
+
+        self.button_device_in_error.Show(
+            self.service.controller.error_condition and properly_connected()
+        )
+        self.label_device_status.SetLabel(
+            f"{self.service.controller.last_state if properly_connected() else ''}"
+        )
+        self.Layout()
 
     def pane_show(self):
         if (
@@ -435,6 +570,7 @@ class GRBLControllerPanel(wx.Panel):
                 icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
+        self.update_device_buttons()
 
     def pane_hide(self):
         return
@@ -478,6 +614,7 @@ class GRBLController(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for Translation: _("Device-Control"), _("GRBL Controller")
         return "Device-Control", "GRBL Controller"
 
     @staticmethod

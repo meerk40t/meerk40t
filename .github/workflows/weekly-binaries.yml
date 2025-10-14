@@ -1,0 +1,558 @@
+name: Weekly Binary Builds
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+        architecture: x86
+
+    - name: Install dependencies
+      run: |
+        pip install "opencv-python-headless<=4.8.1.78"
+        pip install -r requirements.txt
+        pip install -r requirements-optional-win.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Build PyInstaller bootloaders
+      env:
+        PYTHONHASHSEED: 12506
+      run: |
+        git clone --depth=1 https://github.com/pyinstaller/pyinstaller
+        cd pyinstaller/bootloader
+        python3 ./waf distclean all --target-arch=32bit
+        cd ..
+        pip3 install .
+        cd ..
+
+    - name: Generate icons
+      run: |
+        choco install imagemagick
+        # Generate icons using the build script
+        tools\build_icon.cmd "w${{ github.run_number }}"
+
+    - name: Build MeerK40t Windows binary
+      run: |
+        cd meerk40t
+        move external_plugins.py external_plugins.unused
+        move external_plugins_build.py external_plugins.py
+        cd ..
+
+        move meerk40t.py mk40t.py
+        pyinstaller .github/workflows/win/meerk40t.spec
+        move mk40t.py meerk40t.py
+
+        cd dist
+        move MeerK40t.exe "MeerK40t-windows-${{ github.run_number }}.exe"
+
+    - name: Upload Windows binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-windows
+        path: dist/MeerK40t-windows-${{ github.run_number }}.exe
+        retention-days: 60
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        pip install "opencv-python-headless<=4.8.1.78"
+        pip install -r requirements.txt
+        pip install -r requirements-optional-macos.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Install PyInstaller
+      run: |
+        pip install pyinstaller
+
+    - name: Generate icons
+      run: |
+        brew install imagemagick
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
+        # Copy the generated .icns file to the expected location
+        cp meerk40t.icns .github/workflows/mac/meerk40t.icns
+
+    - name: Build MeerK40t macOS binary
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        mv meerk40t.py mk40t.py
+        # --target-architecture universal2   - does not work!
+        pyinstaller \
+          --hidden-import wx._adv \
+          --hidden-import wx._xml \
+          --hidden-import meerk40t \
+          --windowed \
+          --noconfirm \
+          -i .github/workflows/mac/meerk40t.icns \
+          --add-data 'locale/:locale/' \
+          --name MeerK40t \
+          mk40t.py
+        mv mk40t.py meerk40t.py
+
+        # Extract application metadata
+        APPNAME=$(python3 -c "
+        from meerk40t.main import APPLICATION_NAME
+        print(APPLICATION_NAME)
+        ")
+        MKVERSION=$(python3 -c "
+        from meerk40t.main import APPLICATION_VERSION
+        version_parts = APPLICATION_VERSION.split()
+        print(version_parts[1] if len(version_parts) > 1 else version_parts[0])
+        ")
+
+        echo "Setting app name to: $APPNAME"
+        echo "Setting app version to: $MKVERSION"
+
+        # Set version information in the app bundle
+        plutil -replace CFBundleName -string "$APPNAME" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleShortVersionString -string "$MKVERSION" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleVersion -string "$MKVERSION" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleIdentifier -string "org.tatarize.MeerK40t" dist/MeerK40t.app/Contents/Info.plist
+
+        cd dist
+        mv MeerK40t.app "MeerK40t-macos-${{ github.run_number }}.app"
+        zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
+        cd ..
+        mv "MeerK40t-macos-${{ github.run_number }}.zip" dist/
+
+    - name: Upload macOS binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-macos
+        path: dist/MeerK40t-macos-${{ github.run_number }}.zip
+        retention-days: 60
+
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt install libgtk-3-dev cmake libeigen3-dev
+        sudo apt install libagg-dev libpotrace-dev
+        sudo apt install libpython3-dev
+        sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
+        sudo apt install libsdl2-dev libsm-dev libx11-dev
+        sudo apt install fuse libfuse2  # FUSE for AppImage support
+        python3 -m ensurepip --upgrade
+        python3 -m pip install --upgrade pip
+        pip cache purge
+        pip install setuptools
+        pip install pyinstaller wheel
+        pip install numpy==1.26.4
+        pip install pyusb
+        pip install wheel
+        pip install wxPython
+        pip install potracer
+        pip install pypotrace
+        pip install pillow==9.5.0
+        pip install ezdxf
+        pip install pyserial
+        pip install bitarray
+        # pip install scipy
+        pip install numba
+        pip install --no-cache-dir opencv-python-headless==4.5.3.56
+        # pip install meerk40t-camera
+        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Install PyInstaller
+      run: |
+        pip install pyinstaller
+
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        echo "Running icon generation script..."
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
+        echo "Icon generation completed. Checking results..."
+        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files were not created"
+
+    - name: Build with PyInstaller
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        pyinstaller .github/workflows/linux/meerk40t_build.spec
+
+    - name: Create AppImage
+      run: |
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        chmod +x appimagetool
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
+
+        # Copy the executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
+
+        # Copy icon - should already be in PNG format from build_icon.sh
+        echo "Checking for icon files..."
+        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files not found"
+
+        if [ -f "meerk40t.png" ]; then
+          echo "Found meerk40t.png, copying to AppDir locations..."
+          # Copy to proper freedesktop.org location
+          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          # Also copy to AppDir root for desktop file to find it
+          cp meerk40t.png AppDir/meerk40t.png
+          echo "Icon copy completed successfully"
+        else
+          echo "WARNING: meerk40t.png not found. Checking if we can convert from ICO..."
+          if [ -f "meerk40t.ico" ]; then
+            echo "Attempting fallback conversion from ICO to PNG..."
+            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png 2>&1; then
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+              echo "Fallback conversion succeeded"
+            else
+              echo "WARNING: Fallback conversion failed. AppImage will not have a custom icon."
+            fi
+          else
+            echo "WARNING: Neither meerk40t.png nor meerk40t.ico found. AppImage will not have a custom icon."
+          fi
+        fi
+
+        # Copy desktop file
+        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
+        cp .github/workflows/linux/meerk40t.desktop AppDir/
+        chmod +x AppDir/meerk40t.desktop
+
+        # Copy AppStream metainfo
+        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
+
+        # Copy AppRun script
+        cp .github/workflows/linux/AppRun AppDir/
+        chmod +x AppDir/AppRun
+
+        # Build AppImage
+        ./appimagetool AppDir "MeerK40t-linux-${{ github.run_number }}.AppImage"
+
+    - name: Debug Check AppImage creation
+      run: |
+        echo "Current directory contents:"
+        ls -la
+        echo "Checking if AppImage exists:"
+        ls -la "MeerK40t-linux-${{ github.run_number }}.AppImage" 2>/dev/null || echo "AppImage not found!"
+
+    - name: Test AppImage
+      run: |
+        # Make AppImage executable and test basic functionality
+        chmod +x "MeerK40t-linux-${{ github.run_number }}.AppImage"
+        # Note: Can't run GUI in headless environment, but we can check if it starts
+        timeout 15s ./"MeerK40t-linux-${{ github.run_number }}.AppImage" --version
+        if [ $? -ne 0 ]; then
+          echo "ERROR: AppImage failed to start or did not return version information."
+          exit 1
+        fi
+
+    - name: Verify AppImage before upload
+      run: |
+        # Verify AppImage exists before upload
+        if [ -f "MeerK40t-linux-${{ github.run_number }}.AppImage" ]; then
+          echo "AppImage found, proceeding with upload"
+          ls -la "MeerK40t-linux-${{ github.run_number }}.AppImage"
+        else
+          echo "ERROR: AppImage not found!"
+          ls -la
+          exit 1
+        fi
+
+    - name: Upload Linux AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-linux
+        path: MeerK40t-linux-${{ github.run_number }}.AppImage
+        retention-days: 60
+
+  create-release:
+    # Run even if some builds fail, as long as at least one succeeds
+    needs: [build-windows, build-macos, build-linux]
+    if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success')
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get merged PRs since last release
+      id: get-prs
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Get all releases to find both latest stable and latest overall
+          let latestStableReleaseDate = new Date('2020-01-01'); // fallback
+          let latestAnyReleaseDate = new Date('2020-01-01'); // fallback
+          
+          try {
+            const allReleases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 10 // Get more to find stable releases
+            });
+            
+            // Find latest stable release (not prerelease)
+            const stableReleases = allReleases.data.filter(release => !release.prerelease);
+            if (stableReleases.length > 0) {
+              const latestStable = stableReleases[0];
+              console.log('Latest stable release:', latestStable.tag_name, 'published at:', latestStable.published_at);
+              if (latestStable.published_at) {
+                latestStableReleaseDate = new Date(latestStable.published_at);
+              }
+            }
+            
+            // Find latest release of any type
+            if (allReleases.data.length > 0) {
+              const latestAny = allReleases.data[0];
+              console.log('Latest any release:', latestAny.tag_name, 'published at:', latestAny.published_at, 'prerelease:', latestAny.prerelease);
+              if (latestAny.published_at) {
+                latestAnyReleaseDate = new Date(latestAny.published_at);
+              }
+            }
+          } catch (error) {
+            console.log('Could not fetch releases, using fallback dates');
+          }
+          
+          // Get merged PRs
+          const prs = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'closed',
+            sort: 'updated',
+            direction: 'desc',
+            per_page: 50
+          });
+          
+          console.log('Found', prs.data.length, 'total closed PRs');
+          console.log('Latest stable release date:', latestStableReleaseDate.toISOString());
+          console.log('Latest any release date:', latestAnyReleaseDate.toISOString());
+          
+          // Get PRs since latest stable release
+          const allPrsSinceStable = prs.data
+            .filter(pr => pr.merged_at !== null)
+            .filter(pr => {
+              const prDate = new Date(pr.merged_at);
+              return prDate > latestStableReleaseDate;
+            });
+          
+          const prsSinceStable = allPrsSinceStable.slice(0, 15); // Limit to 15 most recent
+          
+          // Get PRs since latest release (any type) - but only if it's newer than stable
+          let prsSinceAny = [];
+          let allPrsSinceAny = [];
+          
+          if (latestAnyReleaseDate > latestStableReleaseDate) {
+            allPrsSinceAny = prs.data
+              .filter(pr => pr.merged_at !== null)
+              .filter(pr => {
+                const prDate = new Date(pr.merged_at);
+                return prDate > latestAnyReleaseDate;
+              });
+            prsSinceAny = allPrsSinceAny.slice(0, 10); // Limit to 10 most recent
+          }
+          
+          console.log('Found', prsSinceStable.length, 'PRs since latest stable release (showing up to 15)');
+          console.log('Found', prsSinceAny.length, 'PRs since latest release (any type) (showing up to 10)');
+          
+          let changes = '';
+          
+          // Section 1: Changes since latest release (any type) - only show if different from stable
+          if (prsSinceAny.length > 0) {
+            changes += '### 🔄 Changes Since Last Release\n\n';
+            prsSinceAny.forEach(pr => {
+              changes += `- ${pr.title} ([#${pr.number}](${pr.html_url})) by @${pr.user.login}\n`;
+            });
+            if (allPrsSinceAny.length > 10) {
+              changes += `\n*...and ${allPrsSinceAny.length - 10} more changes*\n`;
+            }
+            changes += '\n';
+          }
+          
+          // Section 2: Changes since latest stable release - always show
+          if (prsSinceStable.length > 0) {
+            changes += '### 🔄 Changes Since Latest Stable Release\n\n';
+            prsSinceStable.forEach(pr => {
+              changes += `- ${pr.title} ([#${pr.number}](${pr.html_url})) by @${pr.user.login}\n`;
+            });
+            if (allPrsSinceStable.length > 15) {
+              changes += `\n*...and ${allPrsSinceStable.length - 15} more changes*\n`;
+            }
+            changes += '\n';
+          } else {
+            changes += '### 🔄 Changes Since Latest Stable Release\n\nNo changes since the latest stable release.\n\n';
+          }
+          
+          core.setOutput('changes', changes);
+
+    - name: Download all binaries
+      run: |
+        # Create binaries directory
+        mkdir -p binaries
+        
+        # Download artifacts conditionally based on build success
+        if [ "${{ needs.build-windows.result }}" = "success" ]; then
+          echo "Windows build succeeded - downloading artifact"
+        fi
+        if [ "${{ needs.build-macos.result }}" = "success" ]; then
+          echo "macOS build succeeded - downloading artifact"
+        fi
+        if [ "${{ needs.build-linux.result }}" = "success" ]; then
+          echo "Linux build succeeded - downloading artifact"
+        fi
+      continue-on-error: true
+
+    - name: Download Windows binary
+      if: needs.build-windows.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: meerk40t-windows
+        path: binaries/
+
+    - name: Download macOS binary
+      if: needs.build-macos.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: meerk40t-macos
+        path: binaries/
+
+    - name: Download Linux binary
+      if: needs.build-linux.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: meerk40t-linux
+        path: binaries/
+
+    - name: Debug List downloaded binaries
+      run: |
+        echo "Contents of binaries directory:"
+        ls -la binaries/
+        echo "Available artifacts:"
+        ls -la
+
+    - name: Create weekly release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: weekly-${{ github.run_number }}
+        name: Weekly Build ${{ github.run_number }}
+        body: |
+          ## 🚀 MeerK40t Weekly Build ${{ github.run_number }}
+
+          **Automated weekly binary build of MeerK40t - the open-source laser cutting software.**
+
+          ### 📋 Build Information
+          - **Commit**: [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+          - **Build**: # ${{ github.run_number }}
+          - **Date**: ${{ github.event.repository.updated_at }}
+          - **Branch**: `${{ github.ref_name }}`
+
+          ${{ steps.get-prs.outputs.changes }}
+
+          ### 📦 Downloads
+
+          | Platform | Status | File | Description |
+          |----------|--------|------|-------------|
+          ${{ needs.build-windows.result == 'success' && format('| **Windows** | ✅ Available | `MeerK40t-windows-{0}.exe` | 32-bit Windows executable |', github.run_number) || '| **Windows** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-macos.result == 'success' && format('| **macOS** | ✅ Available | `MeerK40t-macos-{0}.app.zip` | macOS application bundle (zipped) |', github.run_number) || '| **macOS** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-{0}.AppImage` | Linux AppImage (universal) |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
+
+          ### 🖥️ System Requirements
+
+          #### Windows
+          - Windows 10 or later
+          - 32-bit architecture support
+          - No additional dependencies required
+
+          #### macOS
+          - macOS 10.14 or later
+          - Intel and Apple Silicon support
+
+          #### Linux
+          - Most modern Linux distributions
+          - AppImage format - no installation required
+
+          ### 🚀 Installation Instructions
+
+          #### Windows
+          1. Download `MeerK40t-windows-${{ github.run_number }}.exe`
+          2. Run the executable (may show security warnings - allow it)
+          3. MeerK40t will start automatically
+
+          #### macOS
+          1. Download `MeerK40t-macos-${{ github.run_number }}.app.zip`
+          2. Extract the zip file
+          3. Move `MeerK40t.app` to your Applications folder
+          4. **First time only**: Right-click (or Control-click) on MeerK40t in Applications and select "Open"
+          5. Click "Open" in the security dialog to bypass Gatekeeper for this unsigned application
+          6. Run MeerK40t from Applications (subsequent launches will work normally)
+
+          #### Linux
+          1. Download `MeerK40t-linux-${{ github.run_number }}.AppImage`
+          2. Make it executable: `chmod +x MeerK40t-linux-${{ github.run_number }}.AppImage`
+          3. Run: `./MeerK40t-linux-${{ github.run_number }}.AppImage`
+
+          ### ⚠️ Important Notes
+
+          - This is a **weekly development build** - use at your own risk
+          - For stable releases, see: [Release Versions](${{ github.server_url }}/${{ github.repository }}/releases)
+          - Latest stable: [0.9.x series](${{ github.server_url }}/${{ github.repository }}/releases/latest)
+
+          ${{ (needs.build-windows.result != 'success' || needs.build-macos.result != 'success' || needs.build-linux.result != 'success') && '
+          ### ⚠️ Build Status
+
+          Some platform builds failed. Only successfully built binaries are included in this release. Failed builds will be addressed in future releases.
+          ' || '' }}
+        files: |
+          ${{ needs.build-windows.result == 'success' && format('binaries/MeerK40t-windows-{0}.exe', github.run_number) || '' }}
+          ${{ needs.build-macos.result == 'success' && format('binaries/MeerK40t-macos-{0}.zip', github.run_number) || '' }}
+          ${{ needs.build-linux.result == 'success' && format('binaries/MeerK40t-linux-{0}.AppImage', github.run_number) || '' }}
+        prerelease: true

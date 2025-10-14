@@ -945,9 +945,10 @@ def init_commands(kernel):
             if node_path is None or len(node_path) == 0:
                 continue
             node_path.validate_connections()
-            newnode = self.elem_branch.add(
-                path=node_path, type="elem path", stroke=node.stroke
-            )
+            with self.node_lock:
+                newnode = self.elem_branch.add(
+                    path=node_path, type="elem path", stroke=node.stroke
+                )
             newnode.stroke_width = UNITS_PER_PIXEL
             newnode.linejoin = Linejoin.JOIN_ROUND
             newnode.label = (

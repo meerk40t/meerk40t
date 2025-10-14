@@ -1,6 +1,5 @@
 import os
 import unittest
-
 from test import bootstrap
 
 lmc_rect = """listReadyMark        0000 0000 0000 0000 0000
@@ -12,12 +11,12 @@ listQSwitchPeriod    03e8 0000 0000 0000 0000
 listMarkSpeed        0008 0000 0000 0000 0000
 listLaserOnDelay     0064 0000 0000 0000 0000
 listLaserOffDelay    0064 0000 0000 0000 0000
-listPolygonDelay     0064 0000 0000 0000 0000
-listJumpTo           ba2e 45d1 0000 5248 0000
-listMarkTo           ba2e 2e8b 0000 1746 0000
-listMarkTo           d174 2e8b 0000 1746 0000
+listPolygonDelay     000a 0000 0000 0000 0000
+listJumpTo           d174 2e8b 0000 7331 0000
 listMarkTo           d174 45d1 0000 1746 0000
 listMarkTo           ba2e 45d1 0000 1746 0000
+listMarkTo           ba2e 2e8b 0000 1746 0000
+listMarkTo           d174 2e8b 0000 1746 0000
 listDelayTime        001e 0000 0000 0000 0000
 listEndOfList        0000 0000 0000 0000 0000
 """
@@ -31,12 +30,12 @@ listQSwitchPeriod    03e8 0000 0000 0000 0000
 listMarkSpeed        0008 0000 0000 0000 0000
 listLaserOnDelay     0064 0000 0000 0000 0000
 listLaserOffDelay    0064 0000 0000 0000 0000
-listPolygonDelay     0064 0000 0000 0000 0000
-listJumpTo           ba2e 8ba2 0000 3b54 0000
-listMarkTo           ba2e 5d17 0000 2e8b 0000
-listMarkTo           d174 5d17 0000 1746 0000
+listPolygonDelay     000a 0000 0000 0000 0000
+listJumpTo           d174 5d17 0000 589e 0000
 listMarkTo           d174 8ba2 0000 2e8b 0000
 listMarkTo           ba2e 8ba2 0000 1746 0000
+listMarkTo           ba2e 5d17 0000 2e8b 0000
+listMarkTo           d174 5d17 0000 1746 0000
 listDelayTime        001e 0000 0000 0000 0000
 listEndOfList        0000 0000 0000 0000 0000
 """
@@ -89,6 +88,7 @@ class TestDriverGRBL(unittest.TestCase):
             kernel()
         with open(file1) as f:
             data = f.read()
+        # print (f"Received:\n{data}")
         self.assertEqual(lmc_rect, data)
 
     def test_driver_basic_rect_cut(self):

@@ -20,7 +20,7 @@ _SYSTEMCTL_TARGETS = [
 ]
 
 
-def _run_systemctl(action: str):
+def _run_systemctl(action: str) -> bool:
     try:
         # Check if systemctl is available
         proc = subprocess.run(["systemctl", action] + _SYSTEMCTL_TARGETS)
@@ -34,7 +34,7 @@ def _run_systemctl(action: str):
     return proc.returncode == 0
 
 
-def _darwin_inhibit():
+def _darwin_inhibit() -> bool:
     try:
         proc = subprocess.run(["caffeinate", "-i"])
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -46,7 +46,7 @@ def _darwin_inhibit():
     return proc.returncode == 0
 
 
-def _darwin_release():
+def _darwin_release() -> bool:
     try:
         # Use killall to stop caffeinate
         proc = subprocess.run(["killall", "caffeinate"])
@@ -56,15 +56,15 @@ def _darwin_release():
     return proc.returncode == 0
 
 
-def _linux_inhibit():
+def _linux_inhibit() -> bool:
     return _run_systemctl("mask")
 
 
-def _linux_release():
+def _linux_release() -> bool:
     return _run_systemctl("unmask")
 
 
-def _windows_inhibit():
+def _windows_inhibit() -> bool:
     try:
         # Set the thread execution state to prevent sleep
         ctypes.windll.kernel32.SetThreadExecutionState(
@@ -76,7 +76,7 @@ def _windows_inhibit():
     return True
 
 
-def _windows_release():
+def _windows_release() -> bool:
     try:
         # Reset the thread execution state to allow sleep
         ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS)
@@ -98,7 +98,7 @@ _ACTIONS = {
 
 
 class Inhibitor:
-    def __init__(self):
+    def __init__(self) -> None:
         self._os = platform.system()
         self.active = False
         self._actions = _ACTIONS.get(self._os)
@@ -107,14 +107,14 @@ class Inhibitor:
     def available(self) -> bool:
         return self._actions is not None
 
-    def inhibit(self):
+    def inhibit(self) -> None:
         if not self.available or self.active:
             return
-        if self._actions["inhibit"]():
+        if self._actions and self._actions["inhibit"]():
             self.active = True
 
-    def release(self):
+    def release(self) -> None:
         if not self.available or not self.active:
             return
-        if self._actions["release"]():
+        if self._actions and self._actions["release"]():
             self.active = False

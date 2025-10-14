@@ -1,0 +1,185 @@
+name: Create Linux AppImage
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Cache Python packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          cmake \
+          libeigen3-dev \
+          libagg-dev \
+          libpotrace-dev \
+          python3-dev \
+          wget \
+          fuse \
+          libfuse2 \
+          desktop-file-utils \
+          imagemagick
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel pyinstaller
+
+        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+
+        # Install core dependencies from requirements.txt
+        pip install -r requirements.txt
+
+        # Install pyclipr with PEP 517 to avoid deprecation warning
+        pip install --use-pep517 pyclipr
+
+        # Install Linux-specific optional dependencies
+        pip install -r requirements-optional-linux.txt
+
+        # Install additional packages not in requirements files
+        pip install bitarray
+
+        # Install project in development mode
+        pip install -e .
+
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
+
+    - name: Build with PyInstaller
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        pyinstaller .github/workflows/linux/meerk40t_build.spec
+
+    - name: Create AppImage
+      run: |
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        chmod +x appimagetool
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
+
+        # Copy the executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
+
+        # Copy icon - should already be in PNG format from build_icon.sh
+        echo "Checking for icon files..."
+        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files not found"
+
+        if [ -f "meerk40t.png" ]; then
+          echo "Found meerk40t.png, copying to AppDir locations..."
+          # Copy to proper freedesktop.org location
+          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          # Also copy to AppDir root for desktop file to find it
+          cp meerk40t.png AppDir/meerk40t.png
+          echo "Icon copy completed successfully"
+        else
+          echo "WARNING: meerk40t.png not found. Checking if we can convert from ICO..."
+          if [ -f "meerk40t.ico" ]; then
+            echo "Attempting fallback conversion from ICO to PNG..."
+            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png 2>&1; then
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+              echo "Fallback conversion succeeded"
+            else
+              echo "WARNING: Fallback conversion failed. AppImage will not have a custom icon."
+            fi
+          else
+            echo "WARNING: Neither meerk40t.png nor meerk40t.ico found. AppImage will not have a custom icon."
+          fi
+        fi
+
+        # Copy desktop file
+        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
+        cp .github/workflows/linux/meerk40t.desktop AppDir/
+        chmod +x AppDir/meerk40t.desktop
+
+        # Copy AppStream metainfo
+        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
+
+        # Copy AppRun script
+        cp .github/workflows/linux/AppRun AppDir/
+        chmod +x AppDir/AppRun
+
+        # Build AppImage
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          APPIMAGE_TAG="${{ github.sha }}"
+        fi
+        ./appimagetool AppDir meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+
+    - name: Test AppImage
+      run: |
+        # Make AppImage executable and test basic functionality
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          APPIMAGE_TAG="${{ github.sha }}"
+        fi
+        chmod +x meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+        # Note: Can't run GUI in headless environment, but we can check if it starts
+        timeout 15s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
+        if [ $? -ne 0 ]; then
+          echo "ERROR: AppImage failed to start or did not return version information."
+          exit 1
+        fi
+
+    - name: Check AppImage exists before upload
+      if: github.event_name == 'release'
+      run: |
+        APPIMAGE_TAG="${{ github.event.release.tag_name }}"
+        if [ ! -f "meerk40t-${APPIMAGE_TAG}-x86_64.AppImage" ]; then
+          echo "ERROR: AppImage file meerk40t-${APPIMAGE_TAG}-x86_64.AppImage not found. Upload step will fail."
+          exit 1
+        fi
+
+    - name: Upload AppImage to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          meerk40t-${{ github.event.release.tag_name }}-x86_64.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload AppImage as Artifact
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-appimage
+        path: meerk40t-${{ github.sha }}-x86_64.AppImage

@@ -226,6 +226,8 @@ class GalvoController:
     single commands.
     """
 
+    DEBUG = True
+
     def __init__(
         self,
         service,
@@ -427,7 +429,7 @@ class GalvoController:
             try:
                 r = self.connection.read(self._machine_index)
                 return struct.unpack("<4H", r)
-            except ConnectionError:
+            except (ConnectionError, struct.error):
                 return ERR
 
     def status(self):
@@ -588,6 +590,19 @@ class GalvoController:
             if self._active_list is None:
                 self._list_new()
             index = self._active_index
+            msg = struct.pack(
+                "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+            )
+            if self.DEBUG:
+                cmdstr = list_command_lookup.get(command, "unknown")
+                remainder = f"{v1} {v2} {v3} {v4} {v5}"
+                while remainder.endswith(" 0"):
+                    remainder = remainder[:-2]
+                packet = struct.pack(
+                    "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+                )
+                hexstr = " ".join(f"{x:02X}" for x in packet)
+                self.usb_log(f"> {hexstr} -- {cmdstr} {remainder}")
             self._active_list[index : index + 12] = struct.pack(
                 "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
             )
@@ -662,7 +677,11 @@ class GalvoController:
             self.power(power)
 
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
-
+        # print("Settings:")
+        # print(f"Timing enabled: {settings.get('timing_enabled', False)}")
+        # print(f"Delay on: {settings.get('delay_laser_on', None)}")
+        # print(f"Delay off: {settings.get('delay_laser_off', None)}")
+        # print(f"Polygon delay: {settings.get('delay_polygon', None)}")
         if str(settings.get("timing_enabled", False)).lower() == "true":
             self.list_laser_on_delay(
                 settings.get("delay_laser_on", self.service.delay_laser_on)
@@ -671,7 +690,7 @@ class GalvoController:
                 settings.get("delay_laser_off", self.service.delay_laser_off)
             )
             self.list_polygon_delay(
-                settings.get("delay_laser_polygon", self.service.delay_polygon)
+                settings.get("delay_polygon", self.service.delay_polygon)
             )
         else:
             # Use globals
@@ -1188,7 +1207,8 @@ class GalvoController:
         if self._delay_on == delay:
             return
         self._delay_on = delay
-        self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self.usb_log(f"Laser on delay was set to {delay}")
+        self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_laser_off_delay(self, delay):
         """
@@ -1199,7 +1219,10 @@ class GalvoController:
         if self._delay_off == delay:
             return
         self._delay_off = delay
-        self._list_write(listLaserOffDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self.usb_log(f"Laser off delay was set to {delay}")
+        self._list_write(
+            listLaserOffDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000
+        )
 
     def list_mark_frequency(self, frequency):
         """
@@ -1245,7 +1268,7 @@ class GalvoController:
         if self._delay_jump == delay:
             return
         self._delay_jump = delay
-        self._list_write(listJumpDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(listJumpDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_polygon_delay(self, delay):
         """
@@ -1253,10 +1276,12 @@ class GalvoController:
         @param delay:
         @return:
         """
-        if self._delay_poly == delay:
+        value = int(min(65535, max(0, delay / 10.0)))
+        if self._delay_poly == value:
             return
-        self._delay_poly = delay
-        self._list_write(listPolygonDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._delay_poly = value
+        self._list_write(listPolygonDelay, value)
+        self.usb_log(f"Polygon delay was set to {delay} -> {value}")
 
     def list_write_port(self):
         """
@@ -1318,7 +1343,7 @@ class GalvoController:
         @param delay:
         @return:
         """
-        self._list_write(listFlyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
+        self._list_write(listFlyDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000)
 
     def list_set_co2_fpk(self, fpk1, fpk2=None):
         """
@@ -1489,7 +1514,7 @@ class GalvoController:
 
     def set_max_poly_delay(self, delay):
         return self._command(
-            SetMaxPolyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000
+            SetMaxPolyDelay, abs(delay), 0x0000 if delay >= 0 else 0x8000
         )
 
     def set_end_of_list(self, end):

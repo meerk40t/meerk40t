@@ -64,7 +64,9 @@ def register_panel_ribbon(window, context):
         window, wx.ID_ANY, context=context, pane=pane_ribbon, identifier="primary"
     )
     pane_ribbon.control = ribbon
-    pane_ribbon.helptext = _("Toolbar with the main commands to control jobs and devices")
+    pane_ribbon.helptext = _(
+        "Toolbar with the main commands to control jobs and devices"
+    )
 
     window.on_pane_create(pane_ribbon)
     context.register("pane/ribbon", pane_ribbon)
@@ -144,6 +146,53 @@ def register_panel_ribbon(window, context):
 
 
 class MKRibbonBarPanel(RibbonBarPanel):
+    """MeerK40t Ribbon Bar Panel - Dynamic toolbar system providing categorized command access
+
+    **Technical Purpose:**
+    Implements a fully dynamic ribbon interface that organizes MeerK40t commands into categorized panels
+    and pages. Supports runtime reconfiguration, user-defined buttons, and responsive layout adaptation.
+    Manages button state based on selection context and provides extensible architecture for command
+    registration and organization.
+
+    **Signals:**
+    - ribbon_recreate: Triggers complete ribbon recreation when configuration changes
+    - ribbon_show_labels: Toggles label display beneath ribbon icons
+    - emphasized: Updates button enable states when element selection changes
+    - undoredo: Refreshes undo/redo button states when operation history changes
+    - selected: Updates button enable rules when selection state changes
+    - element_property_update: Refreshes button states when element properties change
+    - icons: Updates icon display when icon resources change
+    - icon;label: Updates button labels and tooltips when text changes
+    - tool_changed: Updates tool toggle states when active tool changes
+    - page: Forces ribbon page activation when page signal received
+
+    **Lookup Listeners:**
+    - button/basicediting: Updates basic editing panel buttons
+    - button/undo: Updates undo operation buttons
+    - button/project: Updates project management buttons
+    - button/modify: Updates element modification buttons
+    - button/geometry: Updates geometric operation buttons
+    - button/preparation: Updates job preparation buttons
+    - button/jobstart: Updates job execution buttons
+    - button/control: Updates device control buttons
+    - button/device: Updates device configuration buttons
+    - button/config: Updates application configuration buttons
+    - button/align: Updates alignment operation buttons
+    - button/select: Updates selection operation buttons
+    - button/tools: Updates tool creation buttons
+    - button/lasercontrol: Updates laser control buttons
+    - button/extended_tools: Updates extended tool buttons
+    - button/group: Updates grouping operation buttons
+    - button/user: Updates user-defined custom buttons
+
+    **User Interface:**
+    - Multi-page ribbon with categorized command panels
+    - Dynamic button enable/disable based on selection context
+    - Configurable label display beneath icons
+    - Support for user-defined custom buttons with flexible actions
+    - Responsive layout adapting to available space
+    - Tool toggle states reflecting current active tool"""
+
     def __init__(
         self,
         parent,
@@ -703,7 +752,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
             for panel in page.panels:
                 for button in panel.buttons:
                     if button.identifier in node:
-                        button.label = newlabel if newlabel is not None else button.label
+                        button.label = (
+                            newlabel if newlabel is not None else button.label
+                        )
                         button.tip = (
                             newtooltip if newtooltip is not None else button.tip
                         )
@@ -714,7 +765,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                                     subbutton["label"] = newlabel
                                 if newtooltip is not None:
                                     subbutton["tip"] = newtooltip
-        self.redrawn()  
+        self.redrawn()
 
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
@@ -804,10 +855,13 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
 
 class RibbonEditor(wx.Panel):
-    """
-    RibbonEditor is a panel that allows you to define the content
-    of the ribbonbar on top of Mks main window
-    """
+    """RibbonEditor - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribboneditor functionality. Features checkbox, button controls for user interaction. Integrates with icon;label, button/device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for ribboneditor functionality. Key controls include "Show the Ribbon Labels" (checkbox), "Add to page" (button), "Apply" (button)."""
+
+    """RibbonEditor - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__

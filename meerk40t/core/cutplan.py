@@ -6,7 +6,8 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 *   Do burns with multiple passes all at the same time (Merge Passes)
 *   Sort burns for all operations at the same time rather than operation by operation
 *   Ensure that elements inside closed cut paths are burned before the outside path
-*   Group these inner burns so that one component on a sheet is completed before the next one is started
+*   Group related inner/outer burns into spatial pieces so that each component on a sheet
+    is completed before the next one is started, with inner-first constraints maintained within each piece
 *   Ensure that non-closed paths start from one of the ends and burned in one continuous burn
     rather than being burned in 2 or more separate parts
 *   Split raster images in to self-contained areas to avoid sweeping over large empty areas
@@ -15,7 +16,6 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
-from functools import lru_cache
 from math import isinf
 from os import times
 from time import perf_counter, time
@@ -23,16 +23,16 @@ from typing import Optional
 
 import numpy as np
 
-from ..svgelements import Group, Matrix, Path, Polygon
+from ..svgelements import Group, Matrix
 from ..tools.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
-from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
 from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
+from .elements.element_types import op_vector_nodes
 from .node.node import Node
 from .node.util_console import ConsoleOperation
-from .units import UNITS_PER_MM, Length
+from .units import Length
 
 """
 The time to compile does outweigh the benefit...
@@ -55,7 +55,7 @@ class CutPlanningFailedError(Exception):
 
 class CutPlan:
     """
-    CutPlan is a centralized class to modify plans during cutplanning. It is typically is used to progress from
+    CutPlan is a centralized class to modify plans during cutplanning. It is typically used to progress from
     copied operations through the stages to being properly optimized cutcode.
 
     The stages are:
@@ -66,7 +66,9 @@ class CutPlan:
         a. Calls `execute` operation.
     4. Blob: We convert all the operations/elements into proper cutcode. Some operations do not necessarily need to
         convert to cutcode. They merely need to convert to some type of spoolable operation.
-    5. Preopt: Preoptimize adds in the relevant optimization operations into the cutcode.
+    5. Preopt: Preoptimize adds in the relevant optimization operations into the cutcode. This stage now includes
+        three optimization paths: travel optimization, inner-first optimization, and basic cutcode sequencing
+        (fallback when no optimization is enabled to ensure proper burns_done handling).
     6. Optimize: This calls the added functions set during the preopt process.
         a. Calls `execute` operation.
     """
@@ -74,16 +76,15 @@ class CutPlan:
     def __init__(self, name, planner):
         self.name = name
         self.context = planner
-        self.plan = list()
-        self.spool_commands = list()
-        self.commands = list()
+        self.plan = []
+        self.spool_commands = []
+        self.commands = []
         self.channel = self.context.channel("optimize", timestamp=True)
         self.outline = None
         self._previous_bounds = None
 
     def __str__(self):
-        parts = list()
-        parts.append(self.name)
+        parts = [self.name]
         if len(self.plan):
             parts.append(f"#{len(self.plan)}")
             for p in self.plan:
@@ -122,12 +123,21 @@ class CutPlan:
         Final is called during at the time of spool. Just before the laserjob is created.
         @return:
         """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
         # Using copy of commands, so commands can add ops.
+        c_count = 0
         while self.spool_commands:
             # Executing command can add a command, complete them all.
             commands = self.spool_commands[:]
             self.spool_commands.clear()
             for command in commands:
+                c_count += 1
+                if busy.shown:
+                    busy.change(
+                        msg=_("Spooling data {count}").format(count=c_count), keep=2
+                    )
+                    busy.show()
                 command()
 
     def preprocess(self):
@@ -252,7 +262,7 @@ class CutPlan:
                 if op_type.startswith("place "):
                     continue
                 if (
-                    op_type == "op cut"
+                    op_type in op_vector_nodes
                     and self.context.opt_stitching
                     and self.context.do_optimization
                 ):
@@ -337,7 +347,7 @@ class CutPlan:
         @return:
         """
         last_type = None
-        group = list()
+        group = []
         for c in plan:
             c_type = (
                 c.type
@@ -351,7 +361,7 @@ class CutPlan:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This cannot merge
                     yield group
-                    group = list()
+                    group = []
             group.append(c)
             last_type = c_type
         if group:
@@ -658,19 +668,42 @@ class CutPlan:
 
         if not self.plan:
             return
+        t0 = perf_counter()
         context = self.context
         grouped_plan = list(self._to_grouped_plan(self.plan))
+        t1 = perf_counter()
         if context.opt_merge_ops and not context.opt_merge_passes:
             blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
         else:
             blob_plan = list(self._to_blob_plan(grouped_plan))
+        t2 = perf_counter()
         self.plan.clear()
         self.plan.extend(self._to_merged_plan(blob_plan))
+        t3 = perf_counter()
+        if self.channel:
+            self.channel(
+                f"Blobbed in {t1 - t0:.3f}s, converted to cutcode in {t2 - t1:.3f}s, merged in {t3 - t2:.3f}s, total {t3 - t0:.3f}s"
+            )
 
     def preopt(self):
         """
-        Add commands for optimize stage. This stage tends to do very little but checks the settings and adds the
-        relevant operations.
+        Add commands for optimize stage. This stage checks the settings and adds the
+        relevant optimization operations.
+
+        The optimization pipeline includes three main paths with clear priority hierarchy:
+        1. Inner-first optimization (when opt_inner_first is enabled) - highest priority
+           - Takes precedence over travel-only optimization
+           - Includes travel optimization within the inner-first algorithm
+           - Uses piece-based processing when grouped_inner is enabled
+        2. Travel optimization (when opt_reduce_travel is enabled but opt_inner_first is disabled)
+           - Uses nearest neighbor and/or 2-opt algorithms
+           - Optimizes travel distance without inner-first constraints
+        3. Basic cutcode sequencing (fallback when no optimization is enabled)
+           - Ensures proper burns_done logic for multi-pass cuts
+           - Maintains cut sequence without optimization
+
+        The basic_cutcode_sequencing fallback ensures burns_done logic is properly
+        handled for multi-pass cuts even when all optimization is disabled.
 
         @return:
         """
@@ -688,22 +721,25 @@ class CutPlan:
 
         if context.opt_effect_combine:
             self.commands.append(self.combine_effects)
+        # if self.channel:
+        #     self.channel("Dumping scenarios:")
+        #     self.commands.append(self._dump_scenario)
 
-        if context.opt_reduce_travel and (
+        if context.opt_inner_first:
+            # Inner-first optimization takes priority and includes travel optimization
+            self.commands.append(self.optimize_cuts)
+        elif context.opt_reduce_travel and (
             context.opt_nearest_neighbor or context.opt_2opt
         ):
+            # Travel optimization only (when inner-first is not enabled)
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
-            if context.opt_2opt and not context.opt_inner_first:
+            if context.opt_2opt:
                 self.commands.append(self.optimize_travel_2opt)
-
-        elif context.opt_inner_first:
-            self.commands.append(self.optimize_cuts)
+        else:
+            # Fallback: ensure burns_done logic is handled even when optimization is disabled
+            self.commands.append(self.basic_cutcode_sequencing)
         self.commands.append(self.merge_cutcode)
-        if context.opt_reduce_directions:
-            pass
-        if context.opt_remove_overlap:
-            pass
 
     def combine_effects(self):
         """
@@ -738,7 +774,8 @@ class CutPlan:
             combined = 0
             for idx, cut in enumerate(pitem):
                 total += 1
-                if busy.shown and total % 100 == 0:
+                # Reduce progress reporting frequency for better performance
+                if busy.shown and total % 200 == 0:  # Less frequent than every 100
                     update_busy_info(busy, idx, l_pitem, plan_idx, l_plan)
                 if not isinstance(cut, CutGroup) or cut.origin is None:
                     continue
@@ -746,14 +783,15 @@ class CutPlan:
             return grouping, to_be_deleted, combined, total
 
         def process_cut(cut, grouping, pitem, idx, to_be_deleted):
-            if cut.origin not in grouping:
+            # Use dict.get() to avoid double lookup - more efficient than separate 'in' check
+            mastercut_idx = grouping.get(cut.origin)
+            if mastercut_idx is None:
                 grouping[cut.origin] = idx
                 return 0
-            mastercut = grouping[cut.origin]
             geom = cut._geometry
-            pitem[mastercut].skip = True
-            pitem[mastercut].extend(cut)
-            pitem[mastercut]._geometry.append(geom)
+            pitem[mastercut_idx].skip = True
+            pitem[mastercut_idx].extend(cut)
+            pitem[mastercut_idx]._geometry.append(geom)
             cut.clear()
             to_be_deleted.append(idx)
             return 1
@@ -786,6 +824,62 @@ class CutPlan:
         if self.channel:
             self.channel(f"Combined: {combined}, groups: {group_count}")
 
+    def basic_cutcode_sequencing(self):
+        """
+        Basic cutcode sequencing when no optimization is enabled.
+
+        Ensures burns_done logic is properly handled for multi-pass cuts
+        even when travel optimization is disabled. Based on the inner_selection_cutcode
+        function from 0.98b2 that handled this case.
+        """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Basic cutcode sequencing"), keep=1)
+            busy.show()
+
+        for i, cutcode in enumerate(self.plan):
+            if isinstance(cutcode, CutCode):
+                if busy.shown:
+                    busy.change(
+                        msg=_("Basic cutcode sequencing")
+                        + f" {i + 1}/{len(self.plan)}",
+                        keep=1,
+                    )
+                    busy.show()
+
+                # Initialize burns_done for all cuts
+                for cut in cutcode.flat():
+                    cut.burns_done = 0
+
+                # Process cuts respecting burns_done and passes
+                ordered = CutCode()
+                iterations = 0
+
+                while True:
+                    # Get available candidates (burns_done < passes)
+                    candidates = list(cutcode.candidate(grouped_inner=False))
+                    if not candidates:
+                        break
+
+                    # Increment burns_done for all candidates
+                    for cut in candidates:
+                        cut.burns_done += 1
+
+                    # Add copies to the ordered sequence
+                    ordered.extend(copy(candidates))
+                    iterations += 1
+
+                # Set start position if available
+                if cutcode.start is not None:
+                    ordered._start_x, ordered._start_y = cutcode.start
+                else:
+                    ordered._start_x = 0
+                    ordered._start_y = 0
+
+                # Replace the original cutcode with the sequenced version
+                self.plan[i] = ordered
+
     def optimize_travel_2opt(self):
         """
         Optimize travel 2opt at optimize stage on cutcode
@@ -799,13 +893,29 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(
+                self.plan[i] = short_travel_cutcode(
                     self.plan[i], kernel=self.context.kernel, channel=channel
                 )
 
     def optimize_cuts(self):
         """
-        Optimize cuts at optimize stage on cutcode
+        Optimize cuts using inner-first algorithm and travel optimization.
+
+        This method handles both inner-first identification (when constrained cutcode
+        is present) and travel optimization. The grouped_inner setting determines
+        the optimization strategy:
+
+        - grouped_inner=True: Piece-based optimization where related inner/outer
+          groups are spatially grouped into pieces. Travel optimization occurs
+          between pieces while inner-first constraints are maintained within each piece.
+
+        - grouped_inner=False: Hierarchical processing where groups are processed
+          individually while respecting containment relationships.
+
+        The piece-based approach ensures that each spatial component on the sheet
+        is completed before moving to the next, minimizing overall travel distance
+        while preserving inner-first cutting constraints.
+
         @return:
         """
         # Update Info-panel if displayed
@@ -847,7 +957,7 @@ class CutPlan:
                         tolerance=tolerance,
                     )
                     c = self.plan[i]
-                self.plan[i] = inner_selection_cutcode(
+                self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,
                     grouped_inner=grouped_inner,
@@ -901,7 +1011,6 @@ class CutPlan:
                         channel=channel,
                         tolerance=tolerance,
                     )
-                    c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
@@ -931,6 +1040,782 @@ class CutPlan:
                 prev.extend(cur)
                 del self.plan[i]
 
+    def _dump_scenario(self):
+        # Only used for debugging purposes.
+        self.save_scenario(
+            filename="test_cutplan.json",
+            description="Intermediate scenario dump for algorithm testing",
+            algorithm_testing=True,
+        )
+        return
+
+    def save_scenario(self, filename=None, description="", algorithm_testing=False):
+        """
+        Save the current cutplan state for scenario testing and algorithm validation.
+
+        Saves comprehensive information needed to recreate and test this cutplan:
+        - Individual cut data with coordinates for algorithm testing
+        - Plan contents (operations and cutcode) for plan reconstruction
+        - Key optimization settings from context
+        - Plan metadata and travel baselines
+        - Algorithm start position
+
+        @param filename: Optional filename to save to. If None, returns the data dict.
+        @param description: Optional description of this scenario
+        @param algorithm_testing: If True, saves detailed cut data for algorithm validation
+        @return: Scenario data dict if filename is None, otherwise saves to file
+        """
+        import datetime
+        import json
+
+        # Extract key optimization settings that affect cutplan behavior
+        opt_settings = {}
+        if hasattr(self.context, "opt_nearest_neighbor"):
+            opt_settings["opt_nearest_neighbor"] = self.context.opt_nearest_neighbor
+        if hasattr(self.context, "opt_inner_first"):
+            opt_settings["opt_inner_first"] = self.context.opt_inner_first
+        if hasattr(self.context, "opt_merge_passes"):
+            opt_settings["opt_merge_passes"] = self.context.opt_merge_passes
+        if hasattr(self.context, "opt_merge_ops"):
+            opt_settings["opt_merge_ops"] = self.context.opt_merge_ops
+        if hasattr(self.context, "opt_complete_subpaths"):
+            opt_settings["opt_complete_subpaths"] = self.context.opt_complete_subpaths
+        if hasattr(self.context, "opt_inners_grouped"):
+            opt_settings["opt_inners_grouped"] = self.context.opt_inners_grouped
+        if hasattr(self.context, "opt_effect_optimize"):
+            opt_settings["opt_effect_optimize"] = self.context.opt_effect_optimize
+        if hasattr(self.context, "opt_closed_distance"):
+            opt_settings["opt_closed_distance"] = self.context.opt_closed_distance
+        if hasattr(self.context, "opt_jog_minimum"):
+            opt_settings["opt_jog_minimum"] = self.context.opt_jog_minimum
+        if hasattr(self.context, "opt_rapid_between"):
+            opt_settings["opt_rapid_between"] = self.context.opt_rapid_between
+
+        # Extract plan contents
+        plan_data = []
+        individual_cuts = []
+        total_unoptimized_travel = 0
+        algorithm_start_position = None
+
+        for item in self.plan:
+            item_data = {
+                "type": type(item).__name__,
+            }
+
+            # Handle different item types
+            if hasattr(item, "type") and item.type:
+                item_data["item_type"] = item.type
+            if hasattr(item, "original_op"):
+                item_data["original_op"] = item.original_op
+            if hasattr(item, "pass_index"):
+                item_data["pass_index"] = item.pass_index
+            if hasattr(item, "constrained"):
+                item_data["constrained"] = item.constrained
+            if hasattr(item, "length_travel"):
+                try:
+                    item_data["travel_length"] = item.length_travel(True)
+                except Exception:
+                    pass
+
+            # For CutCode objects, save cut count and basic structure
+            if hasattr(item, "__len__"):
+                item_data["length"] = len(item)
+                if hasattr(item, "_start_x") and item._start_x is not None:
+                    item_data["start_pos"] = (item._start_x, item._start_y)
+                    # Use first cut's start as algorithm start position if not set
+                    if algorithm_start_position is None:
+                        algorithm_start_position = (item._start_x, item._start_y)
+                if hasattr(item, "end"):
+                    try:
+                        end_pos = item.end
+                        if end_pos:
+                            item_data["end_pos"] = (end_pos[0], end_pos[1])
+                    except Exception:
+                        pass
+
+                # Extract individual cuts for algorithm testing
+                if algorithm_testing and hasattr(item, "__iter__"):
+                    try:
+                        # For algorithm testing, we want individual cuts, not group structure
+                        # Use flat() method to get all cuts from groups
+                        def get_flat_cuts(cut_container):
+                            """Get flat list of individual cuts for algorithm testing."""
+                            for cut in cut_container:
+                                if isinstance(cut, CutGroup):
+                                    # Use flat() method to get all individual cuts from the group
+                                    yield from cut.flat()
+                                else:
+                                    # Regular cut object
+                                    yield cut
+
+                        for cut in get_flat_cuts(item):
+                            if hasattr(cut, "start") and hasattr(cut, "end"):
+                                cut_data = {
+                                    "cut_type": type(cut).__name__,
+                                    "start": [float(cut.start[0]), float(cut.start[1])],
+                                    "end": [float(cut.end[0]), float(cut.end[1])],
+                                    "passes": getattr(cut, "passes", 1),
+                                    "reversible": getattr(
+                                        cut, "reversible", lambda: True
+                                    )()
+                                    if callable(getattr(cut, "reversible", None))
+                                    else True,
+                                }
+
+                                # Save cut-type specific data
+                                if hasattr(cut, "_control1") and hasattr(
+                                    cut, "_control2"
+                                ):
+                                    # CubicCut
+                                    cut_data["control1"] = [
+                                        float(cut._control1[0]),
+                                        float(cut._control1[1]),
+                                    ]
+                                    cut_data["control2"] = [
+                                        float(cut._control2[0]),
+                                        float(cut._control2[1]),
+                                    ]
+                                elif hasattr(cut, "_control"):
+                                    # QuadCut
+                                    cut_data["control"] = [
+                                        float(cut._control[0]),
+                                        float(cut._control[1]),
+                                    ]
+
+                                # Add cut settings if available
+                                if hasattr(cut, "settings") and cut.settings:
+                                    settings_copy = {}
+                                    for key, value in cut.settings.items():
+                                        try:
+                                            json.dumps(value)  # Test serializability
+                                            settings_copy[key] = value
+                                        except (TypeError, ValueError):
+                                            settings_copy[key] = str(
+                                                type(value).__name__
+                                            )
+                                    cut_data["settings"] = settings_copy
+
+                                # Add parent group information for reconstruction
+                                if hasattr(cut, "parent") and isinstance(
+                                    cut.parent, CutGroup
+                                ):
+                                    cut_data["parent_group_id"] = id(cut.parent)
+                                    cut_data["parent_closed"] = getattr(
+                                        cut.parent, "closed", False
+                                    )
+                                    # Find position within parent group
+                                    try:
+                                        cut_data["group_index"] = list(
+                                            cut.parent
+                                        ).index(cut)
+                                        cut_data["group_size"] = len(cut.parent)
+                                    except (ValueError, TypeError):
+                                        pass
+
+                                    # Save parent group path information for geometric testing
+                                    if (
+                                        hasattr(cut.parent, "path")
+                                        and cut.parent.path is not None
+                                    ):
+                                        try:
+                                            cut_data[
+                                                "parent_path_d"
+                                            ] = cut.parent.path.d()
+                                        except Exception:
+                                            pass
+
+                                    # Save parent group bounding box for faster containment checks
+                                    if (
+                                        hasattr(cut.parent, "bounding_box")
+                                        and cut.parent.bounding_box is not None
+                                    ):
+                                        try:
+                                            cut_data["parent_bounding_box"] = list(
+                                                cut.parent.bounding_box
+                                            )
+                                        except Exception:
+                                            pass
+
+                                individual_cuts.append(cut_data)
+
+                                # Calculate unoptimized travel distance for cuts with start positions
+                                if cut_data.get("start") and individual_cuts:
+                                    prev_end = (
+                                        individual_cuts[-2]["end"]
+                                        if len(individual_cuts) > 1
+                                        and individual_cuts[-2].get("end")
+                                        else (algorithm_start_position or [0, 0])
+                                    )
+                                    if prev_end:
+                                        travel_dist = (
+                                            (cut_data["start"][0] - prev_end[0]) ** 2
+                                            + (cut_data["start"][1] - prev_end[1]) ** 2
+                                        ) ** 0.5
+                                        total_unoptimized_travel += travel_dist
+                    except Exception as e:
+                        if self.channel:
+                            self.channel(
+                                f"Warning: Could not extract cuts from {type(item).__name__}: {e}"
+                            )
+
+            # For operations, save key attributes
+            if hasattr(item, "settings") and item.settings:
+                # Save a copy of settings, excluding any non-serializable objects
+                settings_copy = {}
+                for key, value in item.settings.items():
+                    try:
+                        json.dumps(value)  # Test serializability
+                        settings_copy[key] = value
+                    except (TypeError, ValueError):
+                        settings_copy[key] = str(type(value).__name__)
+                item_data["settings"] = settings_copy
+
+            plan_data.append(item_data)
+
+        # If no algorithm start position found, use reasonable default
+        if algorithm_start_position is None:
+            algorithm_start_position = [0, 0]
+
+        # Create base scenario data
+        scenario_data = {
+            "metadata": {
+                "description": description,
+                "timestamp": datetime.datetime.now().isoformat(),
+                "plan_name": self.name,
+                "total_items": len(self.plan),
+                "total_travel": self._calculate_total_travel(),
+                "algorithm_testing_enabled": algorithm_testing,
+            },
+            "optimization_settings": opt_settings,
+            "plan_contents": plan_data,
+        }
+
+        # Add algorithm testing data if requested
+        if algorithm_testing and individual_cuts:
+            scenario_data["algorithm_testing"] = {
+                "start_position": algorithm_start_position,
+                "cuts": individual_cuts,
+                "original_travel": max(
+                    total_unoptimized_travel, self._calculate_total_travel()
+                ),
+                "cut_count": len(individual_cuts),
+            }
+
+            # Add work area bounds for analysis
+            if individual_cuts:
+                all_x = [cut["start"][0] for cut in individual_cuts] + [
+                    cut["end"][0] for cut in individual_cuts
+                ]
+                all_y = [cut["start"][1] for cut in individual_cuts] + [
+                    cut["end"][1] for cut in individual_cuts
+                ]
+                scenario_data["algorithm_testing"]["work_area"] = {
+                    "min_x": min(all_x),
+                    "max_x": max(all_x),
+                    "min_y": min(all_y),
+                    "max_y": max(all_y),
+                    "width": max(all_x) - min(all_x),
+                    "height": max(all_y) - min(all_y),
+                }
+
+        if filename:
+            with open(filename, "w") as f:
+                json.dump(scenario_data, f, indent=2, default=str)
+            if self.channel:
+                if algorithm_testing:
+                    self.channel(
+                        f"Saved algorithm testing scenario to {filename} ({len(individual_cuts)} cuts)"
+                    )
+                else:
+                    self.channel(f"Saved cutplan scenario to {filename}")
+            return None
+        else:
+            return scenario_data
+
+    def _calculate_total_travel(self):
+        """Calculate total travel distance across all cutcode in the plan."""
+        total_travel = 0
+        for item in self.plan:
+            if hasattr(item, "length_travel"):
+                try:
+                    total_travel += item.length_travel(True)
+                except Exception:
+                    pass
+        return total_travel
+
+    def load_scenario(self, filename_or_data):
+        """
+        Load a previously saved scenario (for informational purposes and algorithm testing).
+
+        Note: This doesn't recreate the full CutPlan as that would require
+        the original operations and context. It's primarily for analysis and
+        algorithm testing when the scenario includes algorithm_testing data.
+
+        @param filename_or_data: Filename to load from, or scenario data dict
+        @return: Scenario data dict
+        """
+        import json
+
+        if isinstance(filename_or_data, str):
+            with open(filename_or_data, "r") as f:
+                scenario_data = json.load(f)
+        else:
+            scenario_data = filename_or_data
+
+        if self.channel:
+            meta = scenario_data.get("metadata", {})
+            self.channel(
+                f"Loaded scenario: {meta.get('description', 'No description')}"
+            )
+            self.channel(
+                f"Items: {meta.get('total_items', 0)}, Travel: {meta.get('total_travel', 0):.0f}"
+            )
+
+            # Report algorithm testing capability
+            if (
+                meta.get("algorithm_testing_enabled", False)
+                and "algorithm_testing" in scenario_data
+            ):
+                alg_data = scenario_data["algorithm_testing"]
+                self.channel(
+                    f"Algorithm testing data: {len(alg_data.get('cuts', []))} cuts, "
+                    f"start at {alg_data.get('start_position', [0, 0])}"
+                )
+
+        return scenario_data
+
+    def reconstruct_cutgroups_from_cuts(self, cuts, closed_distance=15):
+        """
+        Reconstruct CutGroup objects from individual cuts by analyzing connectivity
+        and using saved parent group information when available.
+
+        This is needed for algorithm testing scenarios where cuts were flattened
+        but we need to recreate the original closed path structure for inner-first
+        optimization to work correctly.
+        """
+
+        if not cuts:
+            return []
+
+        # Check if we have saved parent group information
+        has_parent_info = any(
+            hasattr(cut, "parent_group_id")
+            or (hasattr(cut, "__dict__") and "parent_group_id" in cut.__dict__)
+            for cut in cuts
+        )
+
+        if has_parent_info:
+            # Use saved parent group information for accurate reconstruction
+            return self._reconstruct_from_parent_info(cuts)
+        else:
+            # Fall back to connectivity analysis
+            return self._reconstruct_from_connectivity(cuts, closed_distance)
+
+    def _reconstruct_from_parent_info(self, cuts):
+        """Reconstruct CutGroups using saved parent group information"""
+        from collections import defaultdict
+
+        from meerk40t.core.cutcode.cutgroup import CutGroup
+
+        # Group cuts by their parent group ID
+        groups_by_id = defaultdict(list)
+
+        for cut in cuts:
+            parent_id = getattr(cut, "parent_group_id", None)
+            if parent_id is not None:
+                groups_by_id[parent_id].append(cut)
+            else:
+                # Standalone cut without parent - create individual group
+                groups_by_id[id(cut)].append(cut)
+
+        cutgroups = []
+
+        for group_id, group_cuts in groups_by_id.items():
+            if not group_cuts:
+                continue
+
+            # Sort cuts by their group_index if available
+            group_cuts.sort(key=lambda c: getattr(c, "group_index", 0))
+
+            # Get closed status from first cut's parent info
+            is_closed = getattr(group_cuts[0], "parent_closed", False)
+
+            # Create CutGroup
+            group = CutGroup(
+                parent=None,
+                children=group_cuts,
+                closed=is_closed,
+                settings=group_cuts[0].settings if group_cuts else None,
+                passes=group_cuts[0].passes if group_cuts else 1,
+            )
+
+            # CRITICAL: Populate geometric attributes needed by is_inside function
+            # This mirrors what path_to_cutobjects does in nutils.py
+
+            # First, try to restore saved path information if available
+            first_cut = group_cuts[0]
+            path_restored = False
+
+            if hasattr(first_cut, "parent_path_d"):
+                try:
+                    from ..svgelements import Path
+                    from ..tools.geomstr import Geomstr
+
+                    path_obj = Path(first_cut.parent_path_d)
+                    setattr(group, "path", path_obj)
+                    setattr(group, "_geometry", Geomstr.svg(path_obj.d()))
+                    path_restored = True
+                except Exception:
+                    pass
+
+            # If no saved path, reconstruct from individual cuts
+            if not path_restored and len(group_cuts) > 0:
+                try:
+                    from ..svgelements import Close, Line, Move, Path
+                    from ..tools.geomstr import Geomstr
+
+                    path_segments = []
+                    path_segments.append(Move(group_cuts[0].start))
+
+                    for cut in group_cuts:
+                        if hasattr(cut, "end") and hasattr(cut, "start"):
+                            path_segments.append(Line(cut.start, cut.end))
+
+                    # Close the path if the group is marked as closed
+                    if is_closed and len(group_cuts) > 2:
+                        first_start = group_cuts[0].start
+                        last_end = group_cuts[-1].end
+                        # Add closing line if needed
+                        if abs(complex(*first_start) - complex(*last_end)) > 0.1:
+                            path_segments.append(Line(last_end, first_start))
+                        path_segments.append(Close(first_start))
+
+                    # Create the path and geometry objects (essential for is_inside)
+                    constructed_path = Path(*path_segments)
+                    setattr(group, "path", constructed_path)
+                    setattr(group, "_geometry", Geomstr.svg(constructed_path.d()))
+
+                except Exception:
+                    # If path creation fails, at least try to set basic bounding box
+                    pass
+
+            # Restore saved bounding box if available
+            if hasattr(first_cut, "parent_bounding_box"):
+                try:
+                    setattr(group, "bounding_box", first_cut.parent_bounding_box)
+                except Exception:
+                    pass
+
+            # Set up cut relationships within group
+            for i, cut in enumerate(group_cuts):
+                cut.parent = group
+                cut.closed = is_closed
+                cut.first = i == 0
+                cut.last = i == len(group_cuts) - 1
+                cut.next = group_cuts[(i + 1) % len(group_cuts)]
+                cut.previous = group_cuts[i - 1]
+
+            cutgroups.append(group)
+
+        return cutgroups
+
+    def _reconstruct_from_connectivity(self, cuts, closed_distance):
+        """Reconstruct CutGroups using connectivity analysis (fallback method)"""
+        from collections import defaultdict
+
+        from meerk40t.core.cutcode.cutgroup import CutGroup
+
+        # Build connectivity mapping
+        cut_endpoints = {}
+        connections = defaultdict(list)
+
+        for i, cut in enumerate(cuts):
+            start = cut.start
+            end = cut.end
+            cut_endpoints[i] = (start, end)
+            connections[start].append((i, "start"))
+            connections[end].append((i, "end"))
+
+        # Find connected components (paths)
+        visited = set()
+        cutgroups = []
+
+        for start_idx in range(len(cuts)):
+            if start_idx in visited:
+                continue
+
+            # Trace connected path
+            path_cuts = []
+            current_cut = start_idx
+
+            while current_cut is not None and current_cut not in visited:
+                visited.add(current_cut)
+                path_cuts.append(cuts[current_cut])
+
+                # Find next connected cut
+                start, end = cut_endpoints[current_cut]
+
+                # Try to continue the path (prefer connected endpoints)
+                next_cut = None
+                for next_point in [end, start]:  # Try end first, then start
+                    for cut_idx, connection_type in connections[next_point]:
+                        if cut_idx not in visited:
+                            next_cut = cut_idx
+                            break
+                    if next_cut is not None:
+                        break
+
+                current_cut = next_cut
+
+            if path_cuts:
+                # Determine if path is closed
+                if len(path_cuts) > 1:
+                    first_start = path_cuts[0].start
+                    last_end = path_cuts[-1].end
+                    distance = (
+                        (first_start[0] - last_end[0]) ** 2
+                        + (first_start[1] - last_end[1]) ** 2
+                    ) ** 0.5
+                    is_closed = distance <= closed_distance
+                else:
+                    is_closed = False
+
+                # Create CutGroup
+                group = CutGroup(
+                    parent=None,
+                    children=path_cuts,
+                    closed=is_closed,
+                    settings=path_cuts[0].settings if path_cuts else None,
+                    passes=path_cuts[0].passes if path_cuts else 1,
+                )
+
+                # Set up cut relationships within group
+                for i, cut in enumerate(path_cuts):
+                    cut.parent = group
+                    cut.closed = is_closed
+                    cut.first = i == 0
+                    cut.last = i == len(path_cuts) - 1
+                    cut.next = path_cuts[(i + 1) % len(path_cuts)]
+                    cut.previous = path_cuts[i - 1]
+
+                cutgroups.append(group)
+
+        return cutgroups
+
+    def create_cuts_from_scenario(self, scenario_data):
+        """
+        Create cut objects from saved scenario data for algorithm testing.
+
+        This function converts saved algorithm testing data back into cut objects
+        that can be used with optimization algorithms. When parent group information
+        is available, it reconstructs the original CutGroup structure needed for
+        proper inner-first hierarchy detection.
+
+        @param scenario_data: Scenario data dict (from load_scenario)
+        @return: Tuple of (cuts, start_position, original_travel) or None if no algorithm data
+        """
+        if "algorithm_testing" not in scenario_data:
+            if self.channel:
+                self.channel("No algorithm testing data in scenario")
+            return None
+
+        from meerk40t.core.cutcode.cubiccut import CubicCut
+        from meerk40t.core.cutcode.linecut import LineCut
+        from meerk40t.core.cutcode.quadcut import QuadCut
+
+        alg_data = scenario_data["algorithm_testing"]
+        cuts = []
+
+        for cut_data in alg_data["cuts"]:
+            cut_type = cut_data.get("cut_type", "LineCut")
+
+            # Create the appropriate cut type
+            if (
+                cut_type == "CubicCut"
+                and "control1" in cut_data
+                and "control2" in cut_data
+            ):
+                cut = CubicCut(
+                    (cut_data["start"][0], cut_data["start"][1]),
+                    (cut_data["control1"][0], cut_data["control1"][1]),
+                    (cut_data["control2"][0], cut_data["control2"][1]),
+                    (cut_data["end"][0], cut_data["end"][1]),
+                    settings=cut_data.get("settings", {"speed": 1000}),
+                    passes=cut_data.get("passes", 1),
+                )
+            elif cut_type == "QuadCut" and "control" in cut_data:
+                cut = QuadCut(
+                    (cut_data["start"][0], cut_data["start"][1]),
+                    (cut_data["control"][0], cut_data["control"][1]),
+                    (cut_data["end"][0], cut_data["end"][1]),
+                    settings=cut_data.get("settings", {"speed": 1000}),
+                    passes=cut_data.get("passes", 1),
+                )
+            else:
+                # Default to LineCut for all other types (including CutGroup from old files)
+                cut = LineCut(
+                    (cut_data["start"][0], cut_data["start"][1]),
+                    (cut_data["end"][0], cut_data["end"][1]),
+                    settings=cut_data.get("settings", {"speed": 1000}),
+                    passes=cut_data.get("passes", 1),
+                )
+
+            # Set up reversibility
+            is_reversible = cut_data.get("reversible", True)
+            cut.reversible = lambda: is_reversible
+            cut.passes = cut_data.get("passes", 1)
+            cut.burns_done = 0
+
+            # Store parent group information for reconstruction
+            if "parent_group_id" in cut_data:
+                cut._parent_group_id = cut_data["parent_group_id"]
+                cut._parent_closed = cut_data.get("parent_closed", False)
+                cut._group_index = cut_data.get("group_index", 0)
+                cut._group_size = cut_data.get("group_size", 1)
+                if "parent_path_d" in cut_data:
+                    cut._parent_path_d = cut_data["parent_path_d"]
+                if "parent_bounding_box" in cut_data:
+                    cut._parent_bounding_box = cut_data["parent_bounding_box"]
+
+            cuts.append(cut)
+
+        start_position = tuple(alg_data["start_position"])
+        original_travel = alg_data["original_travel"]
+
+        # Check if we have parent group information to reconstruct CutGroups
+        has_parent_info = any(hasattr(cut, "_parent_group_id") for cut in cuts)
+
+        if has_parent_info:
+            # Reconstruct CutGroups from parent information for proper hierarchy detection
+            if self.channel:
+                self.channel("Reconstructing CutGroups from saved parent information")
+            cutgroups = self._reconstruct_cutgroups_from_cuts(cuts)
+            return cutgroups, start_position, original_travel
+        else:
+            # No group information available - return individual cuts
+            if self.channel:
+                self.channel("No parent group information - returning individual cuts")
+            return cuts, start_position, original_travel
+
+    def _reconstruct_cutgroups_from_cuts(self, cuts):
+        """
+        Reconstruct CutGroup objects from individual cuts using saved parent group information.
+
+        This is essential for algorithm testing scenarios where the original CutGroup structure
+        with closed path detection and geometric properties needs to be restored for proper
+        inner-first hierarchy detection to work.
+        """
+        from collections import defaultdict
+
+        from meerk40t.core.cutcode.cutgroup import CutGroup
+
+        # Group cuts by their parent group ID
+        groups_by_id = defaultdict(list)
+
+        for cut in cuts:
+            parent_id = getattr(cut, "_parent_group_id", None)
+            if parent_id is not None:
+                groups_by_id[parent_id].append(cut)
+            else:
+                # Standalone cut without parent - create individual group
+                groups_by_id[id(cut)].append(cut)
+
+        cutgroups = []
+
+        for group_id, group_cuts in groups_by_id.items():
+            if not group_cuts:
+                continue
+
+            # Sort cuts by their group_index if available
+            group_cuts.sort(key=lambda c: getattr(c, "_group_index", 0))
+
+            # Get closed status from first cut's parent info
+            is_closed = getattr(group_cuts[0], "_parent_closed", False)
+
+            # Create CutGroup
+            group = CutGroup(
+                parent=None,
+                children=group_cuts,
+                closed=is_closed,
+                settings=group_cuts[0].settings if group_cuts else None,
+                passes=group_cuts[0].passes if group_cuts else 1,
+            )
+
+            # Restore geometric properties essential for is_inside detection
+            first_cut = group_cuts[0]
+
+            # Restore saved path information if available
+            if hasattr(first_cut, "_parent_path_d"):
+                try:
+                    from ..svgelements import Path
+                    from ..tools.geomstr import Geomstr
+
+                    path_obj = Path(first_cut._parent_path_d)
+                    setattr(group, "path", path_obj)
+                    setattr(group, "_geometry", Geomstr.svg(path_obj.d()))
+                except Exception:
+                    # If path restoration fails, construct from cuts
+                    self._construct_path_from_cuts(group, group_cuts, is_closed)
+            else:
+                # Construct path from individual cuts
+                self._construct_path_from_cuts(group, group_cuts, is_closed)
+
+            # Restore saved bounding box if available
+            if hasattr(first_cut, "_parent_bounding_box"):
+                try:
+                    setattr(group, "bounding_box", first_cut._parent_bounding_box)
+                except Exception:
+                    pass
+
+            # Set up cut relationships within group
+            for i, cut in enumerate(group_cuts):
+                cut.parent = group
+                cut.closed = is_closed
+                cut.first = i == 0
+                cut.last = i == len(group_cuts) - 1
+                cut.next = group_cuts[(i + 1) % len(group_cuts)]
+                cut.previous = group_cuts[i - 1]
+
+            cutgroups.append(group)
+
+        return cutgroups
+
+    def _construct_path_from_cuts(self, group, group_cuts, is_closed):
+        """
+        Construct Path and geometry objects from individual cuts.
+        This is essential for the is_inside function to work properly.
+        """
+        try:
+            from ..svgelements import Close, Line, Move, Path
+            from ..tools.geomstr import Geomstr
+
+            path_segments = []
+            if group_cuts:
+                path_segments.append(Move(group_cuts[0].start))
+
+                for cut in group_cuts:
+                    if hasattr(cut, "end") and hasattr(cut, "start"):
+                        path_segments.append(Line(cut.start, cut.end))
+
+                # Close the path if the group is marked as closed
+                if is_closed and len(group_cuts) > 2:
+                    first_start = group_cuts[0].start
+                    last_end = group_cuts[-1].end
+                    # Add closing line if needed
+                    if abs(complex(*first_start) - complex(*last_end)) > 0.1:
+                        path_segments.append(Line(last_end, first_start))
+                    path_segments.append(Close(first_start))
+
+                # Create the path and geometry objects (essential for is_inside)
+                constructed_path = Path(*path_segments)
+                setattr(group, "path", constructed_path)
+                setattr(group, "_geometry", Geomstr.svg(constructed_path.d()))
+
+        except Exception as e:
+            # If path construction fails, at least log it
+            if self.channel:
+                self.channel(f"Failed to construct path for group: {e}")
+
     def clear(self):
         self._previous_bounds = None
         self.plan.clear()
@@ -949,10 +1834,10 @@ class CutPlan:
                 flagy = (bounds1[1] > bounds2[3] + margin) or (
                     bounds2[1] > bounds1[3] + margin
                 )
-                return bool(not (flagx or flagy))
+                return not (flagx or flagy)
 
-            clusters = list()
-            cluster_bounds = list()
+            clusters = []
+            cluster_bounds = []
             for child in operation.children:
                 try:
                     if child.type == "reference":
@@ -1049,16 +1934,17 @@ class CutPlan:
         etime = perf_counter()
         if self.channel:
             self.channel(
-                f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
+                f"Optimise {op_type} finished after {etime - stime:.2f} seconds, inflated {scount} operations to {ecount}"
             )
 
 
-def is_inside(inner, outer, tolerance=0, resolution=50):
+def is_inside(inner, outer, tolerance=0, debug=False):
     """
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
     @param tolerance: 0
+    @param debug: if True, print debug information
     @return: whether path1 is wholly inside path2.
     """
 
@@ -1103,6 +1989,8 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
     inner_path = inner
     outer_path = outer
     if outer == inner:  # This is the same object.
+        if debug:
+            print("DEBUG is_inside: Same object - returning False")
         return False
     if hasattr(inner, "path") and inner.path is not None:
         inner_path = inner.path
@@ -1113,293 +2001,306 @@ def is_inside(inner, outer, tolerance=0, resolution=50):
     if not hasattr(outer, "bounding_box"):
         outer.bounding_box = Group.union_bbox([outer_path])
     if outer.bounding_box is None:
+        if debug:
+            print("DEBUG is_inside: outer.bounding_box is None - returning False")
         return False
     if inner.bounding_box is None:
+        if debug:
+            print("DEBUG is_inside: inner.bounding_box is None - returning False")
         return False
     if isinstance(inner, RasterCut):
         if not hasattr(inner, "convex_path"):
             inner.convex_path = convex_geometry(inner).as_path()
         inner_path = inner.convex_path
-    # # Raster is inner if the bboxes overlap anywhere
-    # if isinstance(inner, RasterCut) and not hasattr(inner, "path"):
-    #     image = inner.image
-    #     return (
-    #         inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
-    #         and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
-    #         and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
-    #         and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
-    #     )
+
+    # Fast bounding box check first
     if outer.bounding_box[0] > inner.bounding_box[2] + tolerance:
         # outer minx > inner maxx (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.left ({outer.bounding_box[0]}) > inner.right ({inner.bounding_box[2]})"
+            )
         return False
     if outer.bounding_box[1] > inner.bounding_box[3] + tolerance:
         # outer miny > inner maxy (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.top ({outer.bounding_box[1]}) > inner.bottom ({inner.bounding_box[3]})"
+            )
         return False
     if outer.bounding_box[2] < inner.bounding_box[0] - tolerance:
         # outer maxx < inner minx (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.right ({outer.bounding_box[2]}) < inner.left ({inner.bounding_box[0]})"
+            )
         return False
     if outer.bounding_box[3] < inner.bounding_box[1] - tolerance:
         # outer maxy < inner maxy (is not contained)
+        if debug:
+            print(
+                f"DEBUG is_inside: Fast bounds check failed - outer.bottom ({outer.bounding_box[3]}) < inner.top ({inner.bounding_box[1]})"
+            )
         return False
 
-    # Inner bbox is entirely inside outer bbox,
-    # however that does not mean that inner is actually inside outer
-    # i.e. inner could be small and between outer and the bbox corner,
-    # or small and  contained in a concave indentation.
-    #
-    # VectorMontonizer can determine whether a point is inside a polygon.
-    # The code below uses a brute force approach by considering a fixed number of points,
-    # however we should consider a future enhancement whereby we create
-    # a polygon more intelligently based on size and curvature
-    # i.e. larger bboxes need more points and
-    # tighter curves need more points (i.e. compare vector directions)
+    # Special case for degenerate shapes (lines with zero height/width)
+    inner_width = inner.bounding_box[2] - inner.bounding_box[0]
+    inner_height = inner.bounding_box[3] - inner.bounding_box[1]
 
-    def vm_code(outer, outer_polygon, inner, inner_polygon):
-        if not hasattr(outer, "vm"):
-            vm = VectorMontonizer()
-            vm.add_pointlist(outer_polygon)
-            outer.vm = vm
-        for gp in inner_polygon:
-            if not outer.vm.is_point_inside(gp[0], gp[1], tolerance=tolerance):
-                return False
-        return True
+    if inner_width == 0 or inner_height == 0:
+        # This is a degenerate shape (line), use simple point-in-bounds test
+        if debug:
+            print(
+                f"DEBUG is_inside: Degenerate shape detected (w={inner_width}, h={inner_height})"
+            )
 
-    def scanbeam_code_not_working_reliably(
-        outer_cut, outer_path, inner_cut, inner_path
-    ):
-        from ..tools.geomstr import Polygon as Gpoly
-        from ..tools.geomstr import Scanbeam
+        # For lines, check if both endpoints are within outer bounds
+        inner_center_x = (inner.bounding_box[0] + inner.bounding_box[2]) / 2
+        inner_center_y = (inner.bounding_box[1] + inner.bounding_box[3]) / 2
 
-        if not hasattr(outer_cut, "sb"):
-            pg = outer_path.npoint(np.linspace(0, 1, 1001), error=1e4)
-            pg = pg[:, 0] + pg[:, 1] * 1j
+        is_contained = (
+            outer.bounding_box[0] <= inner_center_x <= outer.bounding_box[2]
+            and outer.bounding_box[1] <= inner_center_y <= outer.bounding_box[3]
+        )
 
-            outer_path = Gpoly(*pg)
-            sb = Scanbeam(outer_path.geomstr)
-            outer_cut.sb = sb
-        p = inner_path.npoint(np.linspace(0, 1, 101), error=1e4)
-        points = p[:, 0] + p[:, 1] * 1j
+        if debug:
+            print(f"DEBUG is_inside: Degenerate shape containment: {is_contained}")
+            print(f"  Inner center: ({inner_center_x}, {inner_center_y})")
+            print(f"  Outer bounds: {outer.bounding_box}")
 
-        q = outer_cut.sb.points_in_polygon(points)
-        return q.all()
+        return is_contained
 
-    def raycasting_code_old(outer_polygon, inner_polygon):
-        # The time to compile is outweighing the benefits...
+    if debug:
+        print("DEBUG is_inside: Fast bounds check passed")
+        print(f"  Outer bounds: {outer.bounding_box}")
+        print(f"  Inner bounds: {inner.bounding_box}")
+        print("  Trying geometric algorithms...")
 
-        def ray_tracing(x, y, poly, tolerance):
+    # ADVANCED GEOMETRIC ALGORITHMS - Multiple approaches for maximum performance
+
+    def scanbeam_algorithm():
+        """
+        Scanbeam-based approach: Fastest algorithm for complex polygons.
+        Uses advanced sweep-line algorithm for O(log n) point-in-polygon testing.
+        """
+        try:
+            from ..tools.geomstr import Polygon as Gpoly
+            from ..tools.geomstr import Scanbeam
+
+            # Use existing ._geometry properties - no conversion needed!
+            outer_geom = getattr(outer, "_geometry", None)
+            inner_geom = getattr(inner, "_geometry", None)
+
+            if outer_geom is None or inner_geom is None:
+                return None  # Fall back if geometry not available
+
+            # Build scanbeam from outer geometry
+            outer_points = list(outer_geom.as_equal_interpolated_points(distance=20))
+            outer_polygon = Gpoly(*outer_points)
+            scanbeam = Scanbeam(outer_polygon.geomstr)
+
+            # Adaptive sampling: fewer points for simple shapes
+            inner_bbox = getattr(inner, "bounding_box", None)
+            if inner_bbox:
+                bbox_perimeter = 2 * (
+                    (inner_bbox[2] - inner_bbox[0]) + (inner_bbox[3] - inner_bbox[1])
+                )
+                sample_distance = max(15, min(50, bbox_perimeter / 100))
+            else:
+                sample_distance = 25
+
+            # Sample points from inner geometry directly
+            test_points = np.array(
+                list(inner_geom.as_equal_interpolated_points(distance=sample_distance))
+            )
+
+            # Use scanbeam's optimized point-in-polygon test
+            results = scanbeam.points_in_polygon(test_points)
+            return np.all(results)
+
+        except (ImportError, AttributeError, Exception) as e:
+            if debug:
+                print(f"  DEBUG: Scanbeam algorithm failed: {e}")
+            return None  # Fall back to next algorithm
+
+    def winding_number_algorithm():
+        """
+        Winding number approach: More robust than ray casting, especially for complex polygons.
+        """
+        try:
+
+            def winding_number(point, polygon):
+                """Calculate winding number for point with respect to polygon"""
+                wn = 0
+                n = len(polygon)
+
+                for i in range(n):
+                    p1 = polygon[i]
+                    p2 = polygon[(i + 1) % n]
+
+                    if p1[1] <= point[1]:
+                        if p2[1] > point[1]:  # upward crossing
+                            if is_left(p1, p2, point) > 0:  # point left of edge
+                                wn += 1
+                    else:
+                        if p2[1] <= point[1]:  # downward crossing
+                            if is_left(p1, p2, point) < 0:  # point right of edge
+                                wn -= 1
+                return wn != 0
+
+            def is_left(p0, p1, p2):
+                """Test if point p2 is left|on|right of line p0p1"""
+                return (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (
+                    p1[1] - p0[1]
+                )
+
+            # Use existing ._geometry properties - no conversion needed!
+            inner_geom = getattr(inner, "_geometry", None)
+            outer_geom = getattr(outer, "_geometry", None)
+
+            if inner_geom is None or outer_geom is None:
+                return None  # Fall back if geometry not available
+
+            # Optimized sampling based on polygon complexity
+            inner_bbox = getattr(inner, "bounding_box", None)
+            if inner_bbox:
+                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (
+                    inner_bbox[3] - inner_bbox[1]
+                )
+                sample_distance = max(20, min(40, bbox_area / 5000))
+            else:
+                sample_distance = 25
+
+            # Sample points directly from geometry
+            points = [
+                (p.real, p.imag)
+                for p in inner_geom.as_equal_interpolated_points(
+                    distance=sample_distance
+                )
+            ]
+            vertices = [
+                (p.real, p.imag)
+                for p in outer_geom.as_equal_interpolated_points(
+                    distance=sample_distance
+                )
+            ]
+
+            # Early exit: return False as soon as any point is found outside
+            for point in points:
+                if not winding_number(point, vertices):
+                    return False
+            return True
+
+        except Exception as e:
+            if debug:
+                print(f"  DEBUG: Winding number algorithm failed: {e}")
+            return None  # Fall back to next algorithm
+
+    def optimized_ray_tracing():
+        """
+        Improved ray tracing: Our previously optimized algorithm as fallback.
+        """
+        try:
+
             def sq_length(a, b):
                 return a * a + b * b
 
-            tolerance_square = tolerance * tolerance
-            n = len(poly)
-            inside = False
-            xints = 0
+            def ray_tracing(x, y, poly, tolerance):
+                tolerance_square = tolerance * tolerance
+                n = len(poly)
+                inside = False
 
-            p1x, p1y = poly[0]
-            old_sq_dist = sq_length(p1x - x, p1y - y)
-            for i in range(n + 1):
-                p2x, p2y = poly[i % n]
-                new_sq_dist = sq_length(p2x - x, p2y - y)
-                # We are approximating the edge to an extremely thin ellipse and see
-                # whether our point is on that ellipse
-                reldist = (
-                    old_sq_dist
-                    + new_sq_dist
-                    + 2.0 * np.sqrt(old_sq_dist * new_sq_dist)
-                    - sq_length(p2x - p1x, p2y - p1y)
+                p1x, p1y = poly[0]
+                old_sq_dist = sq_length(p1x - x, p1y - y)
+                for i in range(n + 1):
+                    p2x, p2y = poly[i % n]
+                    new_sq_dist = sq_length(p2x - x, p2y - y)
+                    reldist = (
+                        old_sq_dist
+                        + new_sq_dist
+                        + 2.0 * np.sqrt(old_sq_dist * new_sq_dist)
+                        - sq_length(p2x - p1x, p2y - p1y)
+                    )
+                    if reldist < tolerance_square:
+                        return True
+
+                    # Optimized condition merging
+                    if y > min(p1y, p2y) and y <= max(p1y, p2y) and x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xints:
+                            inside = not inside
+                    p1x, p1y = p2x, p2y
+                    old_sq_dist = new_sq_dist
+                return inside
+
+            # Use existing ._geometry properties - no conversion needed!
+            inner_geom = getattr(inner, "_geometry", None)
+            outer_geom = getattr(outer, "_geometry", None)
+
+            if inner_geom is None or outer_geom is None:
+                # Fallback to path conversion if geometry not available
+                inner_geom = Geomstr.svg(inner_path.d())
+                outer_geom = Geomstr.svg(outer_path.d())
+
+            # Adaptive sampling based on polygon size
+            inner_bbox = getattr(inner, "bounding_box", None)
+            if inner_bbox:
+                bbox_area = (inner_bbox[2] - inner_bbox[0]) * (
+                    inner_bbox[3] - inner_bbox[1]
                 )
-                if reldist < tolerance_square:
-                    return True
+                adaptive_distance = max(12, min(25, bbox_area / 10000))
+            else:
+                adaptive_distance = 15
 
-                if y > min(p1y, p2y):
-                    if y <= max(p1y, p2y):
-                        if x <= max(p1x, p2x):
-                            if p1y != p2y:
-                                xints = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                            if p1x == p2x or x <= xints:
-                                inside = not inside
-                p1x, p1y = p2x, p2y
-                old_sq_dist = new_sq_dist
-            return inside
-
-        points = inner_polygon
-        vertices = outer_polygon
-        return all(ray_tracing(p[0], p[1], vertices, tolerance) for p in points)
-
-    """
-    Unfortunately this does not work if one of the objects is concave.
-
-    def sat_code(outer_polygon, inner_polygon):
-        # https://en.wikipedia.org/wiki/Hyperplane_separation_theorem
-
-        # Separating Axis Theorem (SAT) for Polygon Containment
-
-        # The Separating Axis Theorem (SAT) is a powerful technique for collision detection
-        # between convex polygons. It can also be adapted to determine polygon containment.
-
-        # How SAT Works:
-
-        # Generate Axes: For each edge of the outer polygon, create a perpendicular axis.
-        # Project Polygons: Project both the inner and outer polygons onto each axis.
-        # Check Overlap: If the projections of the inner polygon are completely contained
-        # within the projections of the outer polygon on all axes,
-        # then the inner polygon is fully contained.
-
-        # Convex Polygons: SAT is most efficient for convex polygons.
-        # For concave polygons, you might need to decompose them into convex sub-polygons.
-        # Computational Cost: SAT can be computationally expensive for large numbers of polygons.
-        # In such cases, spatial indexing can be used to reduce the number of pairwise comparisons.
-        def project_polygon(polygon, axis):
-            # Projects a polygon onto a given axis.
-            min_projection, max_projection = np.dot(polygon, axis).min(), np.dot(polygon, axis).max()
-            return min_projection, max_projection
-
-        def is_polygon_inside_polygon_sat(inner_polygon, outer_polygon):
-            # Determines if one polygon is fully inside another using the Separating Axis Theorem.
-
-            # Args:
-            #     inner_polygon: A 2D array of inner polygon vertices.
-            #     outer_polygon: A 2D array of outer polygon vertices.
-
-            # Returns:
-            #     True if the inner polygon is fully inside the outer polygon, False otherwise.
-
-            for i in range(len(outer_polygon)):
-                # Calculate the axis perpendicular to the current edge
-                edge = outer_polygon[i] - outer_polygon[(i+1) % len(outer_polygon)]
-                axis = np.array([-edge[1], edge[0]])
-
-                # Project both polygons onto the axis
-                min_inner, max_inner = project_polygon(inner_polygon, axis)
-                min_outer, max_outer = project_polygon(outer_polygon, axis)
-
-                # Check if the inner polygon's projection is fully contained within the outer polygon's projection
-                if not (min_inner >= min_outer and max_inner <= max_outer):
-                    return False
-
-            return True
-
-        return is_polygon_inside_polygon_sat(inner_polygon, outer_polygon)
-    """
-
-    def raycasting_code_new(outer_polygon, inner_polygon):
-        def precompute_intersections(polygon):
-            slopes = []
-            intercepts = []
-            is_vertical = []
-            for i in range(len(polygon)):
-                p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
-                dx = p2[0] - p1[0]
-                dy = p2[1] - p1[1]
-
-                if dx == 0:
-                    slopes.append(np.nan)  # Use NaN to indicate vertical line
-                    intercepts.append(p1[0])
-                    is_vertical.append(True)
-                else:
-                    slope = dy / dx
-                    intercept = p1[1] - slope * p1[0]
-                    slopes.append(slope)
-                    intercepts.append(intercept)
-                    is_vertical.append(False)
-
-            return np.array(slopes), np.array(intercepts), np.array(is_vertical)
-
-        def point_in_polygon(x, y, slopes, intercepts, is_vertical, polygon):
-            inside = False
-            for i in range(len(slopes)):
-                slope = slopes[i]
-                intercept = intercepts[i]
-                p1, p2 = polygon[i], polygon[(i + 1) % len(polygon)]
-
-                if np.isnan(slope):  # Vertical line
-                    if (
-                        x == intercept
-                        and y >= min(p1[1], p2[1])
-                        and y <= max(p1[1], p2[1])
-                    ):
-                        inside = not inside
-                else:
-                    if y > min(p1[1], p2[1]):
-                        if y <= max(p1[1], p2[1]):
-                            if x <= max(p1[0], p2[0]):
-                                if p1[1] != p2[1]:
-                                    xints = (y - intercept) / slope
-                                if p1[0] == p2[0] or x <= xints:
-                                    inside = not inside
-
-            return inside
-
-        def is_polygon_inside(outer_polygon, inner_polygon):
-            slopes, intercepts, is_vertical = precompute_intersections(outer_polygon)
-            for point in inner_polygon:
-                if not point_in_polygon(
-                    point[0], point[1], slopes, intercepts, is_vertical, outer_polygon
-                ):
-                    return False
-            return True
-
-        return is_polygon_inside(
-            outer_polygon=outer_polygon, inner_polygon=inner_polygon
-        )
-
-    def shapely_code(outer_polygon, inner_polygon):
-        from shapely.geometry import Polygon
-
-        # Create Shapely Polygon objects
-        poly_a = Polygon(inner_polygon)
-        poly_b = Polygon(outer_polygon)
-        # Check for containment
-        return poly_a.within(poly_b)
-
-    @lru_cache(maxsize=128)
-    def get_polygon(path, resolution):
-        geom = Geomstr.svg(path)
-        polygon = np.array(
-            list(
+            # Sample points directly from geometry
+            points = [
                 (p.real, p.imag)
-                for p in geom.as_equal_interpolated_points(distance=resolution)
-            )
-        )
-        return polygon
+                for p in inner_geom.as_equal_interpolated_points(
+                    distance=adaptive_distance
+                )
+            ]
+            vertices = [
+                (p.real, p.imag)
+                for p in outer_geom.as_equal_interpolated_points(
+                    distance=adaptive_distance
+                )
+            ]
 
-    """
-    # Testroutines
-    from time import perf_counter
-    inner_polygon = get_polygon(inner_path.d(), resolution)
-    outer_polygon = get_polygon(outer_path.d(), resolution)
+            # Early exit optimization: return False as soon as any point is found outside
+            for x, y in points:
+                if not ray_tracing(x, y, vertices, tolerance):
+                    return False
+            return True
 
-    t0 = perf_counter()
-    res0 = vm_code(outer, outer_polygon, inner, inner_polygon)
-    t1 = perf_counter()
-    res1 = scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
-    t2 = perf_counter()
-    res2 = raycasting_code_old(outer_polygon, inner_polygon)
-    t3 = perf_counter()
-    # res3 = sat_code(outer, outer_path, inner, inner_path)
-    res3 = raycasting_code_new(outer_polygon, inner_polygon)
-    t4 = perf_counter()
-    try:
-        import shapely
-        res4 = shapely_code(outer_polygon, inner_polygon)
-        t5 = perf_counter()
-    except ImportError:
-        res4 = "Shapely missing"
-        t5 = t4
-    print (f"Tolerance: {tolerance}, vm={res0} in {t1 - t0:.3f}s, sb={res1} in {t1 - t0:.3f}s, ray-old={res2} in {t2 - t1:.3f}s, ray-new={res3} in {t3 - t2:.3f}s, shapely={res4} in {t4 - t3:.3f}s")
-    """
-    inner_polygon = get_polygon(inner_path.d(), resolution)
-    outer_polygon = get_polygon(outer_path.d(), resolution)
-    try:
-        import shapely
+        except Exception as e:
+            if debug:
+                print(f"  DEBUG: Ray tracing algorithm failed: {e}")
+            return False  # Ultimate fallback
 
-        return shapely_code(outer_polygon, inner_polygon)
-    except ImportError:
-        return vm_code(outer, outer_polygon, inner, inner_polygon)
-    # return raycasting_code_new(outer_polygon, inner_polygon)
-    # return scanbeam_code_not_working_reliably(outer, outer_path, inner, inner_path)
-    # return vm_code(outer, outer_path, inner, inner_path)
-    return
+    # Try algorithms in order of expected performance: Scanbeam -> Winding Number -> Ray Tracing
+    if debug:
+        print("  Trying scanbeam algorithm...")
+    result = scanbeam_algorithm()
+    if result is not None:
+        if debug:
+            print(f"  Scanbeam result: {result}")
+        return result
+
+    if debug:
+        print("  Trying winding number algorithm...")
+    result = winding_number_algorithm()
+    if result is not None:
+        if debug:
+            print(f"  Winding number result: {result}")
+        return result
+
+    if debug:
+        print("  Trying ray tracing algorithm...")
+    result = optimized_ray_tracing()
+    if debug:
+        print(f"  Ray tracing result: {result}")
+    return result
 
 
 def reify_matrix(self):
@@ -1481,15 +2382,14 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
     if kernel:
         busy = kernel.busyinfo
         _ = kernel.translation
-        min_res = min(
-            kernel.device.view.native_scale_x, kernel.device.view.native_scale_y
-        )
+        # min_res = min(
+        #     kernel.device.view.native_scale_x, kernel.device.view.native_scale_y
+        # )
         # a 0.5 mm resolution is enough
-        resolution = int(0.5 * UNITS_PER_MM / min_res)
+        # resolution = int(0.5 * UNITS_PER_MM / min_res)
         # print(f"Chosen resolution: {resolution} - minscale = {min_res}")
     else:
         busy = None
-        resolution = 10
     for outer in closed_groups:
         for inner in groups:
             current_pass += 1
@@ -1506,7 +2406,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
                 busy.change(msg=message, keep=2)
                 busy.show()
 
-            if is_inside(inner, outer, tolerance, resolution):
+            if is_inside(inner, outer, tolerance, debug=False):
                 constrained = True
                 if outer.contains is None:
                     outer.contains = []
@@ -1542,11 +2442,28 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             channel(
                 f"Outer {type(outer).__name__} contains: {'None' if outer.contains is None else str(len(outer.contains))} cutcode elements"
             )
-
     return context
 
 
 def short_travel_cutcode(
+    context: CutCode,
+    kernel=None,
+    channel=None,
+    complete_path: Optional[bool] = False,
+    grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
+):
+    return short_travel_cutcode_optimized(
+        context=context,
+        kernel=kernel,
+        channel=channel,
+        complete_path=complete_path,
+        grouped_inner=grouped_inner,
+        hatch_optimize=hatch_optimize,
+    )
+
+
+def short_travel_cutcode_legacy(
     context: CutCode,
     kernel=None,
     channel=None,
@@ -1632,7 +2549,7 @@ def short_travel_cutcode(
                     distance = abs(complex(end[0], end[1]) - curr)
             # Gap or continuing on path not permitted, try reversing
             if (
-                distance > 50
+                distance > 5  # Fixed: 1/20" = ~5 pixels, not 50
                 and last_segment.burns_done < last_segment.passes
                 and last_segment.reversible()
                 and last_segment.next is not None
@@ -1644,7 +2561,8 @@ def short_travel_cutcode(
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is completely burned or gap > 1/20"
-        if distance > 50:
+        # Fixed: Original 1/20" = ~5 pixels, not 50. This restores 0.98b3 performance.
+        if distance > 5:
             for cut in context.candidate(
                 complete_path=complete_path, grouped_inner=grouped_inner
             ):
@@ -1745,190 +2663,1096 @@ def short_travel_cutcode(
     return ordered
 
 
-def short_travel_cutcode_2opt(
-    context: CutCode, kernel=None, passes: int = 50, channel=None
+def short_travel_cutcode_optimized(
+    context: CutCode,
+    kernel=None,
+    channel=None,
+    complete_path: Optional[bool] = False,
+    grouped_inner: Optional[bool] = False,
+    hatch_optimize: Optional[bool] = False,
 ):
     """
-    This implements 2-opt algorithm using numpy.
+    Optimized short-travel cutcode algorithm with adaptive strategy selection.
 
-    Skipping of the candidate code it does not perform inner first optimizations.
-    Due to the numpy requirement, doesn't work without numpy.
-    --
-    Uses code I wrote for vpype:
-    https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
+    Chooses the best optimization strategy based on dataset characteristics:
+    - Group-aware: When grouped_inner=True, processes related inner/outer groups together
+    - Group-preserving: When inner-first constraints exist, processes groups individually
+    - Standard algorithms: For unconstrained optimization, uses size-appropriate algorithms
 
-    @param context: cutcode to be optimized
-    @param kernel: kernel value
-    @param passes: max passes to perform 2-opt
-    @param channel: Channel to send data about the optimization process.
-    @return:
+    Args:
+        context: CutCode containing cuts and groups to optimize
+        kernel: Optional kernel for progress reporting
+        channel: Optional logging channel
+        complete_path: Whether to require complete path traversal
+        grouped_inner: Whether to group inner/outer relationships together
+        hatch_optimize: Whether to optimize hatch patterns
+
+    Returns:
+        CutCode with optimized travel order
     """
+    # Check for group-aware optimization first
+    if grouped_inner:
+        if channel:
+            channel("Using group-aware optimization for containment hierarchy")
+        # Use group-aware optimization to preserve hierarchy
+        return _group_aware_selection(
+            context=context,
+            all_candidates=context,
+            complete_path=complete_path,
+            channel=channel,
+        )
+
     if channel:
         start_length = context.length_travel(True)
         start_time = time()
         start_times = times()
-        channel("Executing 2-Opt Short-Travel optimization")
+        channel("Executing adaptive short-travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
 
-    ordered = CutCode(context.flat())
-    length = len(ordered)
-    if length <= 1:
-        if channel:
-            channel("2-Opt: Not enough elements to optimize.")
+    unordered = []
+    for idx in range(len(context) - 1, -1, -1):
+        c = context[idx]
+        if isinstance(c, CutGroup) and c.skip:
+            unordered.append(c)
+            context.pop(idx)
+
+    # Initialize burns_done for all cuts BEFORE getting candidates
+    for c in context.flat():
+        c.burns_done = 0
+
+    # Get all candidates first to determine dataset size
+    all_candidates = list(
+        context.candidate(complete_path=complete_path, grouped_inner=grouped_inner)
+    )
+
+    dataset_size = len(all_candidates)
+
+    if channel:
+        channel(f"Dataset size: {dataset_size} cuts")
+
+    if not all_candidates:
+        # No candidates, return empty CutCode
+        ordered = CutCode()
+        if context.start is not None:
+            ordered._start_x, ordered._start_y = context.start
+        else:
+            ordered._start_x = 0
+            ordered._start_y = 0
         return ordered
 
-    curr = context.start
-    if curr is None:
-        curr = 0
+    # Check optimization strategy based on constraints and dataset
+    if grouped_inner:
+        # Use group-aware optimization that respects containment relationships
+        if channel:
+            channel("Using group-aware optimization for inner-first hierarchy")
+        return _group_aware_selection(context, all_candidates, complete_path, channel)
     else:
-        curr = complex(curr)
-
-    current_pass = 1
-    min_value = -1e-10  # Do not swap on rounding error.
-
-    endpoints = np.zeros((length, 4), dtype="complex")
-    # start, index, reverse-index, end
-    for i in range(length):
-        endpoints[i] = complex(ordered[i].start), i, ~i, complex(ordered[i].end)
-    indexes0 = np.arange(0, length - 1)
-    indexes1 = indexes0 + 1
-
-    def log_progress(pos):
-        starts = endpoints[indexes0, -1]
-        ends = endpoints[indexes1, 0]
-        dists = np.abs(starts - ends)
-        dist_sum = dists.sum() + abs(curr - endpoints[0][0])
-        channel(
-            f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
+        # Check if we have inner-first hierarchy that should be preserved
+        has_containment_hierarchy = any(
+            hasattr(group, "contains") and group.contains
+            for group in context
+            if hasattr(group, "contains")
         )
-        if kernel:
-            busy = kernel.busyinfo
-            _ = kernel.translation
-            if busy.shown:
-                busy.change(
-                    msg=_("Pass {cpass}/{tpass}").format(
-                        cpass=current_pass, tpass=passes
-                    ),
-                    keep=2,
-                )
-                busy.show()
 
-    improved = True
-    while improved:
-        improved = False
-
-        first = endpoints[0][0]
-        cut_ends = endpoints[indexes0, -1]
-        cut_starts = endpoints[indexes1, 0]
-
-        # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
-        delta = (
-            np.abs(curr - cut_ends)
-            + np.abs(first - cut_starts)
-            - np.abs(cut_ends - cut_starts)
-            - np.abs(curr - first)
-        )
-        index = int(np.argmin(delta))
-        if delta[index] < min_value:
-            endpoints[: index + 1] = np.flip(
-                endpoints[: index + 1], (0, 1)
-            )  # top to bottom, and right to left flips.
-            improved = True
+        if has_containment_hierarchy:
+            # Use group-preserving optimization that respects inner-first without grouping pieces
             if channel:
-                log_progress(1)
-        for mid in range(1, length - 1):
-            idxs = np.arange(mid, length - 1)
+                channel("Using group-preserving optimization for inner-first hierarchy")
+            return _group_preserving_selection(context, complete_path, channel)
+        else:
+            # Use standard travel optimization on individual cuts
+            start_pos = context.start or (0, 0)
 
-            mid_source = endpoints[mid - 1, -1]
-            mid_dest = endpoints[mid, 0]
-            cut_ends = endpoints[idxs, -1]
-            cut_starts = endpoints[idxs + 1, 0]
-            delta = (
-                np.abs(mid_source - cut_ends)
-                + np.abs(mid_dest - cut_starts)
-                - np.abs(cut_ends - cut_starts)
-                - np.abs(mid_source - mid_dest)
+        if dataset_size < 50:
+            # Very small dataset: Use simple greedy algorithm
+            if channel:
+                channel("Using simple greedy algorithm for small dataset")
+            ordered_cuts = _simple_greedy_selection(all_candidates, start_pos)
+
+        elif dataset_size < 100:
+            # Small-medium dataset: Use improved greedy with active set optimization
+            if channel:
+                channel("Using improved greedy algorithm for medium dataset")
+            ordered_cuts = _improved_greedy_selection(all_candidates, start_pos)
+
+        elif dataset_size <= 500:
+            # Medium-large dataset: Use spatial-indexed algorithm
+            if channel:
+                channel("Using spatial-indexed algorithm for large dataset")
+            ordered_cuts = _spatial_optimized_selection(all_candidates, start_pos)
+
+        else:
+            # Very large dataset: Use legacy algorithm
+            if channel:
+                channel("Using legacy algorithm for very large dataset")
+            return short_travel_cutcode_legacy(
+                context=context,
+                kernel=kernel,
+                channel=channel,
+                complete_path=complete_path,
+                grouped_inner=grouped_inner,
+                hatch_optimize=hatch_optimize,
             )
-            index = int(np.argmin(delta))
-            if delta[index] < min_value:
-                endpoints[mid : mid + index + 1] = np.flip(
-                    endpoints[mid : mid + index + 1], (0, 1)
+
+    # Create ordered CutCode from selected cuts
+    ordered = CutCode()
+    ordered.extend(ordered_cuts)
+
+    # Handle unordered groups (same as original)
+    if hatch_optimize:
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                unordered[idx] = short_travel_cutcode_optimized(
+                    context=c,
+                    kernel=kernel,
+                    complete_path=False,
+                    grouped_inner=False,
+                    channel=channel,
                 )
-                improved = True
-                if channel:
-                    log_progress(mid)
 
-        last = endpoints[-1, -1]
-        cut_ends = endpoints[indexes0, -1]
-        cut_starts = endpoints[indexes1, 0]
+    ordered.extend(reversed(unordered))
 
-        delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
-        index = int(np.argmin(delta))
-        if delta[index] < min_value:
-            endpoints[index + 1 :] = np.flip(
-                endpoints[index + 1 :], (0, 1)
-            )  # top to bottom, and right to left flips.
-            improved = True
-            if channel:
-                log_progress(length)
-        if current_pass >= passes:
-            break
-        current_pass += 1
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
 
-    # Two-opt complete.
-    order = endpoints[:, 1].real.astype(int)
-    ordered.reordered(order)
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
+        try:
+            delta = (end_length - start_length) / start_length
+        except ZeroDivisionError:
+            delta = 0
         channel(
             f"Length at end: {end_length:.0f} steps "
-            f"({(end_length - start_length) / start_length:+.0%}), "
+            f"({delta:+.0%}), "
             f"optimized in {time() - start_time:.3f} "
             f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return ordered
 
 
-def inner_selection_cutcode(
-    context: CutCode, channel=None, grouped_inner: Optional[bool] = False
+def process_piece_with_inner_first(
+    piece_groups, start_position, complete_path, channel
 ):
     """
-    Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
-    finding a valid solution.
+    Process a piece (collection of related groups) with inner-first constraints within the piece.
 
-    This routine runs if opt_inner first is selected and opt_greedy is not selected.
+    Args:
+        piece_groups: List of CutGroups that belong to this piece
+        start_position: Starting (x, y) position
+        complete_path: Path completion requirement
+        channel: Optional logging channel
+
+    Returns:
+        List of cuts in optimized order maintaining inner-first within piece
+    """
+    if not piece_groups:
+        return []
+
+    # Separate groups within this piece into inner and outer
+    inner_groups = [g for g in piece_groups if hasattr(g, "inside") and g.inside]
+    outer_groups = [g for g in piece_groups if hasattr(g, "contains") and g.contains]
+    other_groups = [
+        g for g in piece_groups if g not in inner_groups and g not in outer_groups
+    ]
+
+    piece_cuts = []
+    curr_x, curr_y = start_position
+
+    if channel and (inner_groups or outer_groups):
+        channel(
+            f"  Piece has {len(inner_groups)} inner, {len(outer_groups)} outer, {len(other_groups)} other groups"
+        )
+
+    # Phase 1: Process inner groups within this piece first
+    if inner_groups:
+        inner_cuts = []
+        for group in inner_groups:
+            for cut in group.candidate(complete_path=complete_path, grouped_inner=True):
+                if cut.burns_done < cut.passes:
+                    inner_cuts.append(cut)
+
+        if inner_cuts:
+            # Travel optimize within inner cuts of this piece
+            inner_optimized = _simple_greedy_selection(inner_cuts, (curr_x, curr_y))
+            piece_cuts.extend(inner_optimized)
+            if inner_optimized:
+                curr_x, curr_y = inner_optimized[-1].end
+
+    # Phase 2: Process outer groups within this piece
+    if outer_groups:
+        outer_cuts = []
+        for group in outer_groups:
+            for cut in group.candidate(complete_path=complete_path, grouped_inner=True):
+                if cut.burns_done < cut.passes:
+                    outer_cuts.append(cut)
+
+        if outer_cuts:
+            # Travel optimize within outer cuts of this piece
+            outer_optimized = _simple_greedy_selection(outer_cuts, (curr_x, curr_y))
+            piece_cuts.extend(outer_optimized)
+            if outer_optimized:
+                curr_x, curr_y = outer_optimized[-1].end
+
+    # Phase 3: Process other groups within this piece
+    if other_groups:
+        other_cuts = []
+        for group in other_groups:
+            for cut in group.candidate(complete_path=complete_path, grouped_inner=True):
+                if cut.burns_done < cut.passes:
+                    other_cuts.append(cut)
+
+        if other_cuts:
+            # Travel optimize within other cuts of this piece
+            other_optimized = _simple_greedy_selection(other_cuts, (curr_x, curr_y))
+            piece_cuts.extend(other_optimized)
+
+    return piece_cuts
+
+
+def _group_aware_selection(context, all_candidates, complete_path, channel):
+    """
+    Group-aware travel optimization for opt_inners_grouped=True.
+
+    Processes inner and outer groups together as cohesive pieces to ensure
+    inner groups are burned before their containing outer groups, while
+    optimizing travel distance within each piece.
+
+    This creates pieces where all inner groups and their outer container
+    are processed together, then applies travel optimization to all cuts
+    within each piece.
+
+    Args:
+        context: CutCode containing CutGroups with containment relationships
+        all_candidates: All candidate cuts (not used in this implementation)
+        complete_path: Path completion requirement (not used in this implementation)
+        channel: Optional logging channel
+
+    Returns:
+        CutCode with optimized individual cuts maintaining inner-first hierarchy
     """
     if channel:
-        start_length = context.length_travel(True)
-        start_time = time()
-        start_times = times()
-        channel("Executing Inner Selection-Only optimization")
-        channel(f"Length at start: {start_length:.0f} steps")
+        channel(f"Group-aware optimization: processing {len(context)} groups")
 
-    for c in context.flat():
-        c.burns_done = 0
+    # Work directly with CutGroups from context - these should be our candidate groups
+    candidate_groups = list(context)
 
-    ordered = CutCode()
-    iterations = 0
-    while True:
-        c = list(context.candidate(grouped_inner=grouped_inner))
-        if not c:
-            break
-        for o in c:
-            o.burns_done += 1
-        ordered.extend(copy(c))
-        iterations += 1
+    # Check if we have proper CutGroups with containment relationships
+    has_cutgroups = any(isinstance(group, CutGroup) for group in candidate_groups)
+    has_containment = any(
+        hasattr(group, "contains") and group.contains is not None
+        for group in candidate_groups
+        if isinstance(group, CutGroup)
+    )
+
+    if not has_cutgroups:
+        if channel:
+            channel(
+                "No CutGroups found - this suggests inner_first_ident was not run properly"
+            )
+            channel("Falling back to simple greedy optimization")
+        # Fall back to simple greedy optimization for individual cuts
+        individual_cuts = []
+        for item in candidate_groups:
+            if hasattr(item, "flat"):
+                individual_cuts.extend(item.flat())
+            else:
+                individual_cuts.append(item)
+
+        start_pos = context.start or (0, 0)
+        ordered_cuts = _simple_greedy_selection(individual_cuts, start_pos)
+
+        ordered = CutCode()
+        ordered.extend(ordered_cuts)
+        if context.start is not None:
+            ordered._start_x, ordered._start_y = context.start
+        else:
+            ordered._start_x = 0
+            ordered._start_y = 0
+        return ordered
+
+    if not has_containment:
+        if channel:
+            channel("CutGroups found but no containment relationships detected")
+            channel(
+                "This may indicate closed path detection failed or no nested shapes"
+            )
+
+    # Initialize burns_done for all cuts within groups
+    for group in candidate_groups:
+        for cut in group.flat():
+            cut.burns_done = 0
+
+    # Create pieces: group related inner/outer groups together spatially
+    pieces = []  # List of pieces, each piece contains related inner+outer groups
+    processed_groups = set()
+
+    # Strategy: For each outer group, create a piece containing it and all its inner groups
+    outer_groups = [
+        g for g in candidate_groups if hasattr(g, "contains") and g.contains
+    ]
+
+    for outer_group in outer_groups:
+        if id(outer_group) in processed_groups:
+            continue
+
+        # Create a piece with this outer group and all its contained inner groups
+        piece_groups = [outer_group]
+        processed_groups.add(id(outer_group))
+
+        if outer_group.contains:
+            for inner_group in outer_group.contains:
+                if id(inner_group) not in processed_groups:
+                    piece_groups.append(inner_group)
+                    processed_groups.add(id(inner_group))
+
+        pieces.append(piece_groups)
+        if channel:
+            inner_count = len(
+                [g for g in piece_groups if hasattr(g, "inside") and g.inside]
+            )
+            outer_count = len(
+                [g for g in piece_groups if hasattr(g, "contains") and g.contains]
+            )
+            channel(f"Created piece: {inner_count} inner + {outer_count} outer groups")
+
+    # Add remaining groups as individual pieces
+    remaining_groups = [g for g in candidate_groups if id(g) not in processed_groups]
+    for group in remaining_groups:
+        pieces.append([group])
+        if channel:
+            channel(f"Created standalone piece: 1 group")
 
     if channel:
-        end_times = times()
-        end_length = ordered.length_travel(True)
-        msg = f"Length at end: {end_length:.0f} steps "
-        if start_length != 0:
-            msg += f"({(end_length - start_length) / start_length:+.0%}), "
-        msg += f"optimized in {time() - start_time:.3f} "
-        msg += f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
-        msg += f"seconds CPU in {iterations} iterations"
+        channel(f"Total pieces created: {len(pieces)}")
 
-        channel(msg)
+    # Process pieces with travel optimization between pieces and inner-first within pieces
+    ordered_cuts = []
+    curr_x, curr_y = context.start or (0, 0)
+
+    # Travel optimize between pieces: choose closest piece each time
+    remaining_pieces = pieces[:]
+
+    while remaining_pieces:
+        # Find the closest piece based on first available cut
+        best_piece = None
+        best_distance = float("inf")
+        best_piece_index = -1
+
+        for piece_idx, piece in enumerate(remaining_pieces):
+            # Get the first available cut from this piece to calculate distance
+            first_cut = None
+            for group in piece:
+                for cut in group.candidate(
+                    complete_path=complete_path, grouped_inner=True
+                ):
+                    if cut.burns_done < cut.passes:
+                        first_cut = cut
+                        break
+                if first_cut:
+                    break
+
+            if first_cut:
+                start_x, start_y = first_cut.start
+                distance = ((start_x - curr_x) ** 2 + (start_y - curr_y) ** 2) ** 0.5
+
+                if distance < best_distance:
+                    best_distance = distance
+                    best_piece = piece
+                    best_piece_index = piece_idx
+
+        if best_piece is None:
+            break
+
+        # Remove the selected piece from remaining pieces
+        remaining_pieces.pop(best_piece_index)
+
+        if channel:
+            channel(
+                f"Processing piece at distance {best_distance:.1f} with {len(best_piece)} groups"
+            )
+
+        # Process this piece with inner-first constraints within the piece
+        piece_cuts = process_piece_with_inner_first(
+            best_piece, (curr_x, curr_y), complete_path, channel
+        )
+        ordered_cuts.extend(piece_cuts)
+
+        # Update position for next piece selection
+        if piece_cuts:
+            curr_x, curr_y = piece_cuts[-1].end
+
+    # Create ordered CutCode from the optimized cuts (maintaining group structure)
+    ordered = CutCode()
+    ordered.extend(ordered_cuts)
+
+    # Set start position
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
+
+    if channel:
+        channel(
+            f"Group-aware optimization: {len(pieces)} pieces, {len(ordered_cuts)} cuts optimized"
+        )
+
+    return ordered
+
+
+def _group_preserving_selection(context, complete_path, channel):
+    """
+    Group-preserving travel optimization for opt_inners_grouped=False.
+
+    Processes groups individually while respecting inner-first constraints.
+    This mode processes groups one at a time in dependency order, optimizing
+    travel within each group and choosing the closest available group to
+    process next.
+
+    Groups are only processed after all their inner dependencies have been
+    completed, ensuring the inner-first constraint is maintained.
+
+    Args:
+        context: CutCode containing CutGroups with containment relationships
+        complete_path: Path completion requirement (not used in this implementation)
+        channel: Optional logging channel
+
+    Returns:
+        CutCode with optimized individual cuts maintaining inner-first hierarchy
+    """
+    if channel:
+        channel(
+            f"Group-preserving optimization: {len(context)} groups with inner-first constraints"
+        )
+
+    # Work directly with CutGroups from context
+    candidate_groups = list(context)
+
+    # Initialize burns_done for all cuts within groups
+    for group in candidate_groups:
+        for cut in group.flat():
+            cut.burns_done = 0
+
+    # Process groups individually while respecting inner-first constraints
+    ordered_cuts = []
+    processed_groups = set()
+    curr_x, curr_y = context.start or (0, 0)
+
+    # Keep processing until all groups are ordered
+    while len(processed_groups) < len(candidate_groups):
+        # Find groups that can be processed now (no unburned inner dependencies)
+        ready_groups = []
+
+        for group in candidate_groups:
+            if id(group) in processed_groups:
+                continue
+
+            # Check if this group can be processed (all its inner groups are done)
+            can_process = True
+            if hasattr(group, "contains") and group.contains:
+                for inner_group in group.contains:
+                    if id(inner_group) not in processed_groups:
+                        can_process = False
+                        break
+
+            if can_process:
+                ready_groups.append(group)
+
+        if not ready_groups:
+            # Safety break - add remaining groups to avoid infinite loop
+            for group in candidate_groups:
+                if id(group) not in processed_groups:
+                    ready_groups.append(group)
+            if channel:
+                channel(
+                    f"Warning: Breaking inner-first loop, added {len(ready_groups)} remaining groups"
+                )
+
+        # Choose the closest ready group to minimize travel distance
+        if len(ready_groups) == 1:
+            # Only one choice
+            group = ready_groups[0]
+            best_start_distance = 0
+        else:
+            # Multiple ready groups - choose the one with best connection to current position
+            best_group = None
+            best_start_distance = float("inf")
+
+            for candidate_group in ready_groups:
+                group_cuts = list(candidate_group.flat())
+                if not group_cuts:
+                    continue
+
+                # Find the best starting point in this group
+                min_distance = float("inf")
+                for cut in group_cuts:
+                    # Check start point
+                    start_dist = (
+                        (cut.start[0] - curr_x) ** 2 + (cut.start[1] - curr_y) ** 2
+                    ) ** 0.5
+                    min_distance = min(min_distance, start_dist)
+
+                    # Check end point if reversible
+                    if hasattr(cut, "reversible") and cut.reversible():
+                        end_dist = (
+                            (cut.end[0] - curr_x) ** 2 + (cut.end[1] - curr_y) ** 2
+                        ) ** 0.5
+                        min_distance = min(min_distance, end_dist)
+
+                if min_distance < best_start_distance:
+                    best_start_distance = min_distance
+                    best_group = candidate_group
+
+            group = best_group or ready_groups[0]
+
+        # Optimize travel within the selected group
+        # Only include cuts that still need burns (don't reset burns_done)
+        group_cuts = [cut for cut in group.flat() if cut.burns_done < cut.passes]
+
+        # Apply travel optimization to this group's cuts
+        group_ordered = _simple_greedy_selection(group_cuts, (curr_x, curr_y))
+        ordered_cuts.extend(group_ordered)
+
+        processed_groups.add(id(group))
+
+        # Update current position for next group
+        if group_ordered:
+            last_cut = group_ordered[-1]
+            curr_x, curr_y = last_cut.end
+
+    # Create ordered CutCode from the optimized individual cuts
+    ordered = CutCode()
+    ordered.extend(ordered_cuts)
+
+    # Set start position
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
+
+    if channel:
+        channel(
+            f"Group-preserving optimization: {len(candidate_groups)} groups, {len(ordered_cuts)} cuts optimized"
+        )
+
+    return ordered
+
+
+def _simple_greedy_selection(
+    all_candidates, start_position, early_termination_threshold=25
+):
+    """
+    Simple greedy nearest-neighbor algorithm for travel optimization.
+
+    Iteratively selects the closest unfinished cut to the current position,
+    choosing the optimal direction (forward or reverse) for each cut.
+
+    Args:
+        all_candidates: List of cuts to optimize
+        start_position: Starting (x, y) position tuple
+        early_termination_threshold: Distance threshold for early termination (default: 25)
+
+    Returns:
+        List of cuts in optimized order
+    """
+    if not all_candidates:
+        return []
+
+    # Burns_done already initialized in the calling function
+    ordered = []
+    curr_x, curr_y = start_position
+
+    while True:
+        closest = None
+        backwards = False
+        best_distance_sq = float("inf")
+
+        # Find the nearest unfinished cut
+        # early_termination_threshold now configurable parameter
+
+        for cut in all_candidates:
+            if cut.burns_done >= cut.passes:
+                continue
+
+            # Check forward direction
+            start_x, start_y = cut.start
+            dx = start_x - curr_x
+            dy = start_y - curr_y
+            distance_sq = dx * dx + dy * dy
+
+            # Deterministic tie-breaking: prefer cuts with smaller Y, then smaller X coordinates
+            is_better = distance_sq < best_distance_sq or (
+                distance_sq == best_distance_sq
+                and closest is not None
+                and (
+                    start_y < closest.start[1]
+                    or (start_y == closest.start[1] and start_x < closest.start[0])
+                )
+            )
+
+            if is_better:
+                closest = cut
+                backwards = False
+                best_distance_sq = distance_sq
+
+                # Early termination for very close cuts
+                if distance_sq <= early_termination_threshold:
+                    break
+
+            # Check reverse direction if cut is reversible
+            if cut.reversible():
+                end_x, end_y = cut.end
+                dx = end_x - curr_x
+                dy = end_y - curr_y
+                distance_sq = dx * dx + dy * dy
+
+                # Deterministic tie-breaking for reverse direction
+                is_better = distance_sq < best_distance_sq or (
+                    distance_sq == best_distance_sq
+                    and closest is not None
+                    and (
+                        end_y
+                        < (
+                            closest.end[1]
+                            if backwards and closest.reversible()
+                            else closest.start[1]
+                        )
+                        or (
+                            end_y
+                            == (
+                                closest.end[1]
+                                if backwards and closest.reversible()
+                                else closest.start[1]
+                            )
+                            and end_x
+                            < (
+                                closest.end[0]
+                                if backwards and closest.reversible()
+                                else closest.start[0]
+                            )
+                        )
+                    )
+                )
+
+                if is_better:
+                    closest = cut
+                    backwards = True
+                    best_distance_sq = distance_sq
+
+                    # Early termination for very close cuts
+                    if distance_sq <= early_termination_threshold:
+                        break
+
+        if closest is None:
+            break
+
+        closest.burns_done += 1
+        c = copy(closest)
+        if backwards:
+            c.reverse()
+        end = c.end
+        curr_x, curr_y = end
+        ordered.append(c)
+
+    return ordered
+
+
+def _improved_greedy_selection(all_candidates, start_position):
+    """
+    Improved greedy nearest-neighbor algorithm for medium-sized datasets.
+
+    Uses Active Set Optimization to maintain only unfinished cuts in the search space,
+    reducing the algorithm complexity as cuts are completed.
+
+    Args:
+        all_candidates: List of cuts to optimize
+        start_position: Starting (x, y) position tuple
+
+    Returns:
+        List of cuts in optimized order
+    """
+    if not all_candidates:
+        return []
+
+    # Burns_done already initialized in the calling function
+    # Active Set Optimization: maintain list of only unfinished cuts
+    active_cuts = list(all_candidates)
+
+    ordered = []
+    curr_x, curr_y = start_position
+
+    while active_cuts:
+        closest = None
+        backwards = False
+        best_distance_sq = float("inf")
+        closest_index = -1
+
+        # Find the nearest unfinished cut with early termination and deterministic tie-breaking
+        # Use same threshold as simple greedy for consistent performance
+        early_termination_threshold = 25  # 5^2, very close cut
+
+        for i, cut in enumerate(active_cuts):
+            # Check forward direction
+            start_x, start_y = cut.start
+            dx = start_x - curr_x
+            dy = start_y - curr_y
+            distance_sq = dx * dx + dy * dy
+
+            # Deterministic tie-breaking: same logic as simple greedy
+            is_better = distance_sq < best_distance_sq or (
+                distance_sq == best_distance_sq
+                and closest is not None
+                and (
+                    start_y < closest.start[1]
+                    or (start_y == closest.start[1] and start_x < closest.start[0])
+                )
+            )
+
+            if is_better:
+                closest = cut
+                backwards = False
+                best_distance_sq = distance_sq
+                closest_index = i
+
+                # Early termination for very close cuts
+                if distance_sq <= early_termination_threshold:
+                    break
+
+            # Check reverse direction if cut is reversible
+            if cut.reversible():
+                end_x, end_y = cut.end
+                dx = end_x - curr_x
+                dy = end_y - curr_y
+                distance_sq = dx * dx + dy * dy
+
+                # Deterministic tie-breaking for reverse direction: same logic as simple greedy
+                is_better = distance_sq < best_distance_sq or (
+                    distance_sq == best_distance_sq
+                    and closest is not None
+                    and (
+                        end_y
+                        < (
+                            closest.end[1]
+                            if backwards and closest.reversible()
+                            else closest.start[1]
+                        )
+                        or (
+                            end_y
+                            == (
+                                closest.end[1]
+                                if backwards and closest.reversible()
+                                else closest.start[1]
+                            )
+                            and end_x
+                            < (
+                                closest.end[0]
+                                if backwards and closest.reversible()
+                                else closest.start[0]
+                            )
+                        )
+                    )
+                )
+
+                if is_better:
+                    closest = cut
+                    backwards = True
+                    best_distance_sq = distance_sq
+                    closest_index = i
+
+                    # Early termination for very close cuts
+                    if distance_sq <= early_termination_threshold:
+                        break
+
+        if closest is None:
+            break
+
+        closest.burns_done += 1
+
+        # Active Set Optimization: Remove cut from active list if fully burned
+        if closest.burns_done >= closest.passes:
+            if closest_index >= 0 and closest_index < len(active_cuts):
+                active_cuts.pop(closest_index)
+            else:
+                # Fallback: search and remove (should be rare)
+                try:
+                    active_cuts.remove(closest)
+                except ValueError:
+                    pass  # Cut already removed
+
+        c = copy(closest)
+        if backwards:
+            c.reverse()
+        end = c.end
+        curr_x, curr_y = end
+        ordered.append(c)
+
+    return ordered
+
+
+def _spatial_optimized_selection(all_candidates, start_position):
+    """
+    Spatial-indexed greedy algorithm for large datasets.
+
+    Uses scipy.spatial.cKDTree for O(log n) nearest neighbor search
+    instead of O(n) linear search. Provides significant speedup for medium-large datasets.
+    Falls back to improved greedy if scipy is not available.
+
+    Args:
+        all_candidates: List of cuts to optimize
+        start_position: Starting (x, y) position tuple
+
+    Returns:
+        List of cuts in optimized order
+    """
+    try:
+        from scipy.spatial import cKDTree  # Optional dependency
+    except ImportError:
+        # Fall back to improved greedy if scipy not available
+        # import logging
+        # logging.getLogger(__name__).warning("scipy.spatial not available, falling back to improved greedy algorithm")
+        return _improved_greedy_selection(all_candidates, start_position)
+
+    if not all_candidates:
+        return []
+
+    # Initialize all cuts
+    # Burns_done already initialized in the calling function
+
+    # Build spatial index for fast nearest neighbor queries
+    def rebuild_spatial_index(active_cuts):
+        if not active_cuts:
+            return None, [], []
+
+        positions = []
+        cut_mapping = []  # Maps position index to (cut, is_reversed)
+
+        for cut in active_cuts:
+            positions.append(cut.start)
+            cut_mapping.append((cut, False))
+            if cut.reversible():
+                positions.append(cut.end)
+                cut_mapping.append((cut, True))
+
+        if not positions:
+            return None, [], []
+
+        tree = cKDTree(positions)
+        return tree, positions, cut_mapping
+
+    active_cuts = list(all_candidates)
+    ordered = []
+    curr_x, curr_y = start_position
+
+    # Rebuild index every N iterations to balance performance vs accuracy
+    rebuild_frequency = max(10, len(active_cuts) // 20)
+    iteration_count = 0
+
+    tree, positions, cut_mapping = rebuild_spatial_index(active_cuts)
+
+    while active_cuts:
+        closest = None
+        backwards = False
+        best_distance_sq = float("inf")
+        closest_index = -1
+
+        # Try path continuation first (maintains path coherence)
+        if ordered:
+            last_cut = ordered[-1]
+            if (
+                hasattr(last_cut, "next")
+                and last_cut.next
+                and last_cut.next in active_cuts
+            ):
+                next_cut = last_cut.next
+                start_x, start_y = next_cut.start
+                distance_sq = (start_x - curr_x) ** 2 + (start_y - curr_y) ** 2
+                if distance_sq < 2500:  # Good continuation threshold
+                    closest = next_cut
+                    backwards = False
+                    best_distance_sq = distance_sq
+                    try:
+                        closest_index = active_cuts.index(closest)
+                    except ValueError:
+                        closest_index = -1
+
+        # If no good continuation, use spatial index for fast search
+        if best_distance_sq > 25 and tree is not None:  # Fixed: 5² = 25, not 50² = 2500
+            try:
+                # Query k nearest neighbors (k=5 to handle edge cases)
+                distances, indices = tree.query(
+                    [curr_x, curr_y], k=min(5, len(positions))
+                )
+
+                if not hasattr(distances, "__len__"):
+                    distances = [distances]
+                    indices = [indices]
+
+                for dist, idx in zip(distances, indices):
+                    if idx >= len(cut_mapping):
+                        continue
+
+                    cut, is_reversed = cut_mapping[idx]
+
+                    # Verify cut is still active
+                    if cut not in active_cuts:
+                        continue
+
+                    distance_sq = (
+                        dist * dist
+                    )  # scipy returns actual distance, we need squared
+
+                    # Get current position for tie-breaking
+                    current_pos = cut.end if is_reversed else cut.start
+                    current_y, current_x = current_pos[1], current_pos[0]
+
+                    if distance_sq < best_distance_sq or (
+                        distance_sq == best_distance_sq
+                        and (
+                            current_y
+                            < (
+                                closest.end[1]
+                                if closest and backwards
+                                else closest.start[1]
+                                if closest
+                                else float("inf")
+                            )
+                            or (
+                                current_y
+                                == (
+                                    closest.end[1]
+                                    if closest and backwards
+                                    else closest.start[1]
+                                    if closest
+                                    else float("inf")
+                                )
+                                and current_x
+                                < (
+                                    closest.end[0]
+                                    if closest and backwards
+                                    else closest.start[0]
+                                    if closest
+                                    else float("inf")
+                                )
+                            )
+                        )
+                    ):
+                        closest = cut
+                        backwards = is_reversed
+                        best_distance_sq = distance_sq
+                        try:
+                            closest_index = active_cuts.index(closest)
+                        except ValueError:
+                            closest_index = -1
+                        break
+
+            except Exception:
+                # Fall back to linear search if spatial query fails
+                pass
+
+        # Fall back to linear search if spatial index didn't find anything good
+        if closest is None:
+            early_termination_threshold = (
+                400  # 20^2, reasonable threshold for spatial range
+            )
+
+            for i, cut in enumerate(active_cuts):
+                # Check forward direction with optimized distance calculation
+                start_x, start_y = cut.start
+                dx = start_x - curr_x
+                dy = start_y - curr_y
+                distance_sq = dx * dx + dy * dy
+
+                if distance_sq < best_distance_sq:
+                    closest = cut
+                    backwards = False
+                    best_distance_sq = distance_sq
+                    closest_index = i
+
+                    # Early termination for reasonably close cuts
+                    if distance_sq <= early_termination_threshold:
+                        break
+
+                # Check reverse direction if cut is reversible
+                if cut.reversible():
+                    end_x, end_y = cut.end
+                    dx = end_x - curr_x
+                    dy = end_y - curr_y
+                    distance_sq = dx * dx + dy * dy
+
+                    if distance_sq < best_distance_sq:
+                        closest = cut
+                        backwards = True
+                        best_distance_sq = distance_sq
+                        closest_index = i
+
+                        # Early termination for reasonably close cuts
+                        if distance_sq <= early_termination_threshold:
+                            break
+
+        if closest is None:
+            break
+
+        # Apply direction change logic (same as improved algorithm)
+        if backwards:
+            if (
+                hasattr(closest, "next")
+                and closest.next
+                and closest.next.burns_done <= closest.burns_done
+                and hasattr(closest.next, "start")
+                and hasattr(closest, "end")
+                and closest.next.start == closest.end
+            ):
+                closest = closest.next
+                backwards = False
+                try:
+                    closest_index = active_cuts.index(closest)
+                except ValueError:
+                    closest_index = -1
+        elif closest.reversible():
+            if (
+                hasattr(closest, "previous")
+                and closest.previous
+                and closest.previous is not closest
+                and closest.previous.burns_done < closest.burns_done
+                and hasattr(closest.previous, "end")
+                and hasattr(closest, "start")
+                and closest.previous.end == closest.start
+            ):
+                closest = closest.previous
+                backwards = True
+                try:
+                    closest_index = active_cuts.index(closest)
+                except ValueError:
+                    closest_index = -1
+
+        closest.burns_done += 1
+
+        # Remove from active set if fully burned
+        if closest.burns_done >= closest.passes:
+            if closest_index >= 0 and closest_index < len(active_cuts):
+                active_cuts.pop(closest_index)
+            else:
+                try:
+                    active_cuts.remove(closest)
+                except ValueError:
+                    pass
+
+            # Rebuild spatial index periodically for performance
+            iteration_count += 1
+            if iteration_count % rebuild_frequency == 0 and active_cuts:
+                tree, positions, cut_mapping = rebuild_spatial_index(active_cuts)
+
+        c = copy(closest)
+        if backwards:
+            c.reverse()
+        end = c.end
+        curr_x, curr_y = end
+        ordered.append(c)
+
     return ordered

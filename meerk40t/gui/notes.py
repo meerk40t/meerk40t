@@ -3,7 +3,7 @@ from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
-from .wxutils import wxCheckBox, TextCtrl
+from .wxutils import TextCtrl, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -25,12 +25,18 @@ def register_panel(window, context):
     pane.control = panel
     pane.submenu = "_50_" + _("Tools")
     pane.helptext = _("Edit job notes")
- 
+
     window.on_pane_create(pane)
     context.register("pane/notes", pane)
 
 
 class NotePanel(wx.Panel):
+    """NotePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for note functionality. Integrates with wxpane/Notes for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for note functionality in MeerK40t."""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -113,6 +119,12 @@ class NotePanel(wx.Panel):
 
 
 class Notes(MWindow):
+    """Notes - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for notes functionality. Integrates with wxpane/Notes for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for notes functionality in MeerK40t."""
+
     def __init__(self, *args, **kwds):
         super().__init__(450, 350, *args, **kwds)
 
@@ -140,4 +152,3 @@ class Notes(MWindow):
     @staticmethod
     def helptext():
         return _("Edit job notes")
-    

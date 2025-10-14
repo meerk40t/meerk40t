@@ -14,7 +14,7 @@ To get up and running, simply download Meerk40t from [here](https://github.com/m
 <summary>Release Versions (Just use the latest)</summary>
 
 
-> * 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.7.5](https://github.com/meerk40t/meerk40t/releases#latest) or try a prerelease even: [release list](https://github.com/meerk40t/meerk40t/releases) 
+> * 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.8100](https://github.com/meerk40t/meerk40t/releases/tag/0.9.8100) (2025-08-15) or try a prerelease even: [release list](https://github.com/meerk40t/meerk40t/releases)
 > * 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
 > * 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
 > * 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)
@@ -39,7 +39,7 @@ The wxMeerK40t is the GUI and is written in wxPython. We use AUI to allow to hav
 
 ## Drivers
 
-Meerk40t provides a variety of drivers with an extensible framework to provide support for other new laser devices. The code was written with the myriad of possibilities for different software in mind. For example, it may be essential that GRBL be able to reset an alarm or notify the user of particular error codes. The configuration for GRBL is not the same for the configuration of other laser control drivers. With this in mind, Meerk40t can radically change how and when it works
+Meerk40t provides a variety of drivers with an extensible framework to provide support for other new laser devices. The code was written with the myriad of possibilities for different software in mind. For example, it may be essential that GRBL be able to reset an alarm or notify the user of particular error codes. The configuration for GRBL is not the same for the configuration of other laser control drivers. With this in mind, MeerK40t can radically change how and when it works
 
 
 ### Supported devices
@@ -49,69 +49,3 @@ Meerk40t provides a variety of drivers with an extensible framework to provide s
 *   Moshiboard
 *   NewlyDraw System 8.1 Lasers
 *   Ruida-Emulation (Middleman between Lightburn and K40)
-
-<details>
-<summary>More device support info</summary>
-
-### Lihuiyu M2-Nano/M3-Nano
-For the Lihuiyu (stock driver), Meerk40t supports both the windows and libusb connection methods, making it compatible with Whisperer and with the original Chinese software. So MeerK40t can usually run alongside these other pieces of software interchangeably.
-
-### GRBL
-
-GRBL is itself open source and the various interfaces with the board should be quite well understood.
-
-### EZCAD2-Compatible Galvo LMC
-
-Meerk40t supports controlling galvo as well as gantry lasers with open source support.
-
-### Moshiboard
-
-The support for old moshiboards makes meerk40t the only known opensource software that controls moshiboards.
-
-### System 8.1 Lasers (NewlyDraw)
-
-HPGL-modified laser systems produced under many different company names
-
-</details>
-
-## Support
-The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
-
-If you have a bug, feature request, or other issue raise it [here](https://github.com/meerk40t/meerk40t/issues).
-These are likely to be resolved. Squeaky wheels get the grease.
-
-Please provide as much information as you can when reporting something:
-- what version did you use?
-- on which operating system?
-- what did you try to achieve? 
-- what was the outcome?
-- screenshots, video, sample files - you can't overdeliver
-
-If you need additional support, please research/ask on:
-
-*   [Discord](https://discord.gg/vkDD3HdQq6) - main exchange forum, try this one first 
-*   [Facebook](https://www.facebook.com/groups/716000085655097/) - less frequently visited
-*   [Maker Forums](https://forum.makerforums.info/t/about-the-meerk40t-category/79660)
-*   [YouTube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
-*   [YouTube - Some instruction videos](https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ)
-
-
-## Assisting the Project
-
-Open source projects live and die with their support. There are a lots of ways to help the project. There are also a lot of ways the project should help you.
-*   Code
-*   Provide Translations in other languages.
-*   Design ( Good design instincts, smooth out the rough edges)
-*   Compile/Testers
-*   Beta testers
-*   Make helpful support content
-*   Make guides ("How to set up cameras?", etc.)
-*   Bounce ideas around
-  
-If you want to get into contact and help, then the [Discord Channel](https://discord.gg/vkDD3HdQq6) is the easiest and fastest way to reach out to us - we are looking forward to hear from you.
-
-
-## Lightburn integration
-Meerk40t allows to act as an intermediary between your K40 laser and software that supports Ruida-controlled laser equipment - [Lightburn](https://lightburnsoftware.com/) is a relevant example of such a software product. You just need to issue the command ``ruidacontrol`` in MeerK40ts console window, and you will then be able to add an emulated Ruida Laser inside Lightburn™. Laser jobs that are created inside Lightburn™ and sent to this laser will be picked up by MeerK40t and sent to your K40. See some more detailed instructions in this [video](https://www.youtube.com/watch?v=LUUfLf5Agu0). Please note `ruidacontrol` will require the DSP version of Lightburn™. (Present in all versions since 0.7)
-
-With 0.9 another way of interacting with Lightburn was introduced, which will work as well with the standard version of LB: You just need to issue the command ``grblcontrol`` in MeerK40ts console window, and you will then be able to add an emulated remote GBRL-LPC laser inside Lightburn or any TCP GRBL control software.

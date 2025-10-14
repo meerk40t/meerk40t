@@ -453,7 +453,7 @@ class MeerK40t(MWindow):
         kernel = self.context.kernel
 
         maxit = hasattr(kernel.args, "maximized") and kernel.args.maximized
-        minit = hasattr(kernel.args, "minimized") and kernel.args.minimized 
+        minit = hasattr(kernel.args, "minimized") and kernel.args.minimized
         remember = self.context.setting(bool, "remember_main_pos", True)
         if remember:
             self.RestoreWindowState(force_maximized=maxit, force_minimized=minit)
@@ -464,7 +464,37 @@ class MeerK40t(MWindow):
             elif minit:
                 self.Iconize()
         self.Bind(wx.EVT_ACTIVATE, self.on_active)
+        # Bind the power events
+        self.Bind(wx.EVT_POWER_SUSPENDING, self.on_power_suspend)
+        self.Bind(wx.EVT_POWER_RESUME, self.on_power_resume)
 
+    def on_power_suspend(self, event):
+        # Do we have an active job? If yes, we would like to pause it
+        if self.context.setting(bool, "pause_on_suspend", True):
+            channel = self.context.kernel.channels["console"]
+            available_devices = self.context.kernel.services("device")
+            for device in available_devices:
+                if hasattr(device.driver, "paused") and device.driver.paused:
+                    continue
+                if not hasattr(device, "spooler") or device.spooler is None:
+                    continue
+                active = any(
+                    hasattr(e, "is_running") and e.is_running() for e in spooler.queue
+                )
+                if active:
+                    if hasattr(device.driver, "pause") and callable(
+                        device.driver.pause
+                    ):
+                        device.driver.pause()
+                    channel(f"Did need to stop {device.label} before suspend")
+            self.context.signal("system_suspended")
+            channel("Suspending...")
+        if event is not None:
+            event.Skip()
+
+    def on_power_resume(self, event):
+        event.Skip()  # Continue processing the event
+        self.context.signal("system_resumed")
 
     def SaveWindowState(self):
         # Save window position, size, and state
@@ -478,7 +508,13 @@ class MeerK40t(MWindow):
         self.context.mainwin_maximized = maximized
         self.context.mainwin_minimized = minimized
 
-    def RestoreWindowState(self, default_pos=None, default_size=None, force_minimized=False, force_maximized=False):
+    def RestoreWindowState(
+        self,
+        default_pos=None,
+        default_size=None,
+        force_minimized=False,
+        force_maximized=False,
+    ):
         # Restore window position, size, and state
         pos = self.context.mainwin_pos
         size = self.context.mainwin_size
@@ -487,11 +523,13 @@ class MeerK40t(MWindow):
         # Get all screens
         display_count = wx.Display.GetCount()
         screens = [wx.Display(i).GetGeometry() for i in range(display_count)]
+
         def in_any_screen(x, y):
             for rect in screens:
                 if rect.Contains(wx.Point(x, y)):
                     return True
             return False
+
         # Default position and size: use first screen's geometry
         if screens:
             first_screen = screens[0]
@@ -504,11 +542,16 @@ class MeerK40t(MWindow):
                 default_pos = wx.Point(0, 0)
             if default_size is None:
                 default_size = wx.Size(1024, 768)
+
         # Validate position and size to ensure the window is mostly visible on a screen
         def rect_mostly_in_screen(x, y, w, h, threshold=0.5):
             # Returns True if at least `threshold` fraction of the window area is on any screen
             window_rect = wx.Rect(x, y, w, h)
-            for screen in wx.Display.GetCount() and [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())] or []:
+            for screen in (
+                [wx.Display(i).GetGeometry() for i in range(wx.Display.GetCount())]
+                if wx.Display.GetCount()
+                else []
+            ):
                 intersection = window_rect.Intersect(screen)
                 if intersection.IsEmpty():
                     continue
@@ -522,9 +565,13 @@ class MeerK40t(MWindow):
 
         # Determine intended position and size
         intended_pos = pos if pos else (default_pos.x, default_pos.y)
-        intended_size = size if size else (default_size.GetWidth(), default_size.GetHeight())
+        intended_size = (
+            size if size else (default_size.GetWidth(), default_size.GetHeight())
+        )
 
-        if rect_mostly_in_screen(intended_pos[0], intended_pos[1], intended_size[0], intended_size[1]):
+        if rect_mostly_in_screen(
+            intended_pos[0], intended_pos[1], intended_size[0], intended_size[1]
+        ):
             self.SetPosition(wx.Point(intended_pos[0], intended_pos[1]))
         else:
             self.SetPosition(default_pos)
@@ -1154,7 +1201,7 @@ class MeerK40t(MWindow):
         context.setting(tuple, "mainwin_size", None)
         context.setting(bool, "mainwin_maximized", False)
         context.setting(bool, "mainwin_minimized", False)
-        
+
         # Standard-Icon-Sizes
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
@@ -1786,26 +1833,35 @@ class MeerK40t(MWindow):
             return handler
 
         def run_job(*args):
+            context = kernel.root
+            hold = context.setting(bool, "laserpane_hold", False)
+            prefer_threaded = context.setting(bool, "prefer_threaded_mode", True)
+            prefix = "threaded " if prefer_threaded else ""
+
             busy = kernel.busyinfo
             context = kernel.root
             opt = kernel.planner.do_optimization
-            busy.start(msg=_("Preparing Laserjob..."))
-            plan = kernel.planner.get_or_make_plan("z")
-            context.setting(bool, "laserpane_hold", False)
-            if plan.plan and context.laserpane_hold:
-                context("planz spool\n")
+            last_plan = kernel.planner.get_last_plan()
+            if last_plan is not None and hold:
+                context(f"plan{last_plan} spool\n")
             else:
+                new_plan = kernel.planner.get_free_plan()
+                if not prefer_threaded:
+                    busy.start(msg=_("Preparing Laserjob..."))
                 if opt:
                     context(
-                        "planz clear copy preprocess validate blob preopt optimize spool\n"
+                        f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
                     )
                 else:
-                    context("planz clear copy preprocess validate blob spool\n")
+                    context(
+                        f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n"
+                    )
+                if not prefer_threaded:
+                    busy.end()
             if context.auto_spooler:
                 context("window open JobSpooler\n")
             # And we disarm again
             disarm_laser()
-            busy.end()
 
         def run_job_extended(*args):
             context = kernel.root
@@ -2644,46 +2700,6 @@ class MeerK40t(MWindow):
             },
         )
 
-        def group_selection():
-            group_node = None
-            lets_do_it = False
-            data = list(kernel.elements.elems(emphasized=True))
-            sel_count = len(data)
-            my_parent = None
-            for node in data:
-                this_parent = None
-                if hasattr(node, "parent") and hasattr(node.parent, "type"):
-                    if node.parent.type in ("group", "file"):
-                        this_parent = node.parent
-                    if this_parent is not None:
-                        my_parent = this_parent
-                else:
-                    if my_parent != this_parent:
-                        # different parents, so definitely a do it
-                        lets_do_it = True
-                        break
-            if not lets_do_it:
-                if my_parent is None:
-                    # All base elements
-                    lets_do_it = True
-                else:
-                    parent_ct = len(my_parent.children)
-                    if parent_ct != sel_count:
-                        # Not the full group...
-                        lets_do_it = True
-
-            if lets_do_it:
-                with kernel.elements.undoscope("Group"):
-                    for node in data:
-                        if group_node is None:
-                            group_node = node.parent.add(
-                                type="group", label="Group", expanded=True
-                            )
-                        group_node.append_child(node)
-                        node.emphasized = True
-                    if group_node is not None:
-                        group_node.emphasized = True
-                        kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         # buttonsize = STD_ICON_SIZE
@@ -2694,7 +2710,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_group_objects,
                 "tip": _("Group elements together"),
                 "help": "group",
-                "action": lambda v: group_selection(),
+                "action": exec_plain("group\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2703,28 +2719,6 @@ class MeerK40t(MWindow):
             },
         )
 
-        def ungroup_selection():
-            def release_em(node):
-                for n in list(node.children):
-                    node.insert_sibling(n)
-                node.remove_node()  # Removing group/file node.
-
-            with kernel.elements.undoscope("Ungroup"):
-                found_some = False
-                for node in list(kernel.elements.elems(emphasized=True)):
-                    if node is not None and node.type in ("group", "file"):
-                        found_some = True
-                        release_em(node)
-                if not found_some:
-                    # So let's see that we address the parents...
-                    for node in list(kernel.elements.elems(emphasized=True)):
-                        if (
-                            node is not None
-                            and hasattr(node, "parent")
-                            and hasattr(node.parent, "type")
-                            and node.parent.type in ("group", "file")
-                        ):
-                            release_em(node.parent)
 
         def part_of_group():
             for node in list(kernel.elements.elems(emphasized=True)):
@@ -2739,7 +2733,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_ungroup_objects,
                 "tip": _("Ungroup elements"),
                 "help": "group",
-                "action": lambda v: ungroup_selection(),
+                "action": exec_plain("ungroup\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: part_of_group(),
             },
@@ -4679,8 +4673,8 @@ class MeerK40t(MWindow):
                         win = win.GetParent()
             if section is None or section == "":
                 section = "GUI"
-            section = section.upper()
-            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
+            section = section.lower()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help-{section}"
             import webbrowser
 
             webbrowser.open(url, new=0, autoraise=True)
