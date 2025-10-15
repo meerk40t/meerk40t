@@ -150,6 +150,49 @@ jobs:
         name: meerk40t-macos
         path: dist/MeerK40t-macos-${{ github.run_number }}.zip
         retention-days: 60
+  
+  build-minimal-linux:
+    runs-on: rocky8
+    steps:
+    - name: Glibc
+      run: |
+        echo $(ldd --version)
+
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Ensure dependencies installed
+      run: |
+        . /home/jacob/py311/bin/activate
+        pip install ezdxf pyserial
+        pip install scipy
+        pip install meerk40t-camera opencv-python-headless
+        pip install pillow
+        pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/rocky-8/wxPython-4.2.1-cp311-cp311-linux_x86_64.whl
+
+    - name: Build Meerk40t
+      run: |
+        . /home/jacob/py311/bin/activate
+        mv meerk40t.py mk40t.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+        mv dist/MeerK40t "dist/MeerK40t-linux-minimal-${{ github.run_number }}"
+
+    - name: Set release version
+      id: set_release_version
+      run: |
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+        else
+          echo "RELEASE_VERSION=9.999.9" >> $GITHUB_ENV
+        fi
+
+    - name: Upload minimal Linux binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-minimal-linux
+        path: dist/MeerK40t-linux-minimal-${{ github.run_number }}
+        retention-days: 60
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -314,8 +357,8 @@ jobs:
 
   create-release:
     # Run even if some builds fail, as long as at least one succeeds
-    needs: [build-windows, build-macos, build-linux]
-    if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success')
+    needs: [build-windows, build-macos, build-linux, build-minimal-linux]
+    if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success' || needs.build-minimal-linux.result == 'success')
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
@@ -470,6 +513,13 @@ jobs:
         name: meerk40t-linux
         path: binaries/
 
+    - name: Download minimal Linux binary
+      if: needs.build-minimal-linux.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: meerk40t-minimal-linux
+        path: binaries/
+
     - name: Debug List downloaded binaries
       run: |
         echo "Contents of binaries directory:"
@@ -504,6 +554,7 @@ jobs:
           ${{ needs.build-windows.result == 'success' && format('| **Windows** | ✅ Available | `MeerK40t-windows-{0}.exe` | 32-bit Windows executable |', github.run_number) || '| **Windows** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-macos.result == 'success' && format('| **macOS** | ✅ Available | `MeerK40t-macos-{0}.app.zip` | macOS application bundle (zipped) |', github.run_number) || '| **macOS** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-{0}.AppImage` | Linux AppImage (universal) |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-minimal-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-minimal-{0}` | Linux binary |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
 
           ### 🖥️ System Requirements
 
@@ -535,10 +586,15 @@ jobs:
           5. Click "Open" in the security dialog to bypass Gatekeeper for this unsigned application
           6. Run MeerK40t from Applications (subsequent launches will work normally)
 
-          #### Linux
+          #### Linux (AppImage)
           1. Download `MeerK40t-linux-${{ github.run_number }}.AppImage`
           2. Make it executable: `chmod +x MeerK40t-linux-${{ github.run_number }}.AppImage`
           3. Run: `./MeerK40t-linux-${{ github.run_number }}.AppImage`
+
+          #### Linux (Binary)
+          1. Download `MeerK40t-linux-minimal-${{ github.run_number }}`
+          2. Make it executable: `chmod +x MeerK40t-linux-minimal-${{ github.run_number }}`
+          3. Run: `./MeerK40t-linux-minimal-${{ github.run_number }}`
 
           ### ⚠️ Important Notes
 
@@ -555,4 +611,5 @@ jobs:
           ${{ needs.build-windows.result == 'success' && format('binaries/MeerK40t-windows-{0}.exe', github.run_number) || '' }}
           ${{ needs.build-macos.result == 'success' && format('binaries/MeerK40t-macos-{0}.zip', github.run_number) || '' }}
           ${{ needs.build-linux.result == 'success' && format('binaries/MeerK40t-linux-{0}.AppImage', github.run_number) || '' }}
+          ${{ needs.build-minimal-linux.result == 'success' && format('binaries/MeerK40t-linux-minimal-{0}', github.run_number) || '' }}
         prerelease: true
