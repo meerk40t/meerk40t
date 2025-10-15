@@ -40,7 +40,7 @@ import polib
 try:
     import chardet  # Ensure chardet is available for encoding detection
 except ImportError:
-    chardet
+    chardet = None
 
 
 # ANSI color codes for terminal output
