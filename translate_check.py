@@ -669,7 +669,6 @@ def fix_result_string(translated: str, original: str) -> str:
     translated = translated.replace("\\\\", "\\")
     return translated
 
-
 def perform_basic_checks(locales: List[str]) -> None:
     print_header("Checking Encoding")
     encoding_results = check_encoding(list(locales))
@@ -696,13 +695,13 @@ def perform_basic_checks(locales: List[str]) -> None:
         result_dict["unused"] = len(
             [p for p in pairs if lf_coded(p[0]) not in id_strings_source]
         )
-        result_dict["duplicate"] = len(pairs) - len(set(p[0] for p in pairs))
+        result_dict["duplicate"] = len(pairs) - len({p[0] for p in pairs})
         missing_ids = [s for s in id_strings_source if s not in id_strings and s]
         result_dict["missing"] = len(missing_ids)
         # if missing_ids:
         #     print_warning(f"Locale {locale} is missing {len(missing_ids)} entries, first one: '{repr(missing_ids[0])}'")
 
-    for locale in locales:
+    for locale in sorted(locales):
         if locale not in summary:
             encoding_status = "ERROR"
             details = "Not processed"
