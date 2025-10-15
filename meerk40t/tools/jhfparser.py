@@ -12,6 +12,8 @@ JHFPARSER_VERSION = "0.0.1"
     applications like laser engraving. (https://en.wikipedia.org/wiki/Hershey_fonts)
 """
 
+STD_FONT_FILE = "meerk40t.jhf"
+
 
 class JhfPath:
     """
@@ -52,7 +54,7 @@ class JhfFont:
     on the font which create the vector path.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename: str, glyph_data=None):
         self.STROKE_BASED = True
         self.type = "Hershey"
         self.glyphs = dict()  # Glyph dictionary
@@ -62,7 +64,8 @@ class JhfFont:
         self.active = True
         self.font_name = fname
         self._line_information = []
-        self._parse(filename)
+        if filename:
+            self._parse(filename)
 
     def __str__(self):
         return f'{self.type}("{self.font_name}", glyphs: {len(self.glyphs)})'
@@ -81,7 +84,9 @@ class JhfFont:
             if (not line) or line == "\x1a":  # eof
                 return False
             line = line.rstrip()
+        return self._parse_glyph_line(line, glyphindex)
 
+    def _parse_glyph_line(self, line, glyphindex):
         # read a Hershey format line
         glyphnum = int(line[0:5])  # glyphnum (junk in some .jhf files)
         nverts = int(line[5:8]) - 1
@@ -98,7 +103,7 @@ class JhfFont:
             nvertchars = len(vertchars)
         if nverts * 2 != nvertchars:
             print(
-                f"Parse Hershey Glyph: format error (nvertchars={nvertchars} not {2*nverts})"
+                f"Parse Hershey Glyph: format error (nvertchars={nvertchars} not {2 * nverts})"
             )
         else:
             # print(f"Glyph, idx={glyphindex}, glyphnum={glyphnum}, left={leftpos}, right={rightpos}, vertices={nverts}")
@@ -163,8 +168,11 @@ class JhfFont:
                 while self._read_hershey_glyph(f, glyphindex):
                     glyphindex += 1
                 self.valid = True
+            self._check_extensions()
         except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             self.valid = False
+
+    def _check_extensions(self):
         # Establish font extension in X
         cidx = 0
         for g in self.glyphs:
@@ -355,3 +363,124 @@ class JhfFont:
             offsets.append(offs)
         self.active = True
         _do_render(vtext, offsets)
+
+
+class SimplexFont(JhfFont):
+    def __init__(self, filename: str):
+        # filename is ignored
+        super().__init__(filename="")
+        self.font_name = STD_FONT_FILE
+        self.font_data()
+        self.valid = True
+
+    def font_data(self):
+        # This is a represenation of the Hershey Simplex font in JHF format.
+        futural = r"""
+12345  1JZ
+12345  9MWRFRT RRYQZR[SZRY
+12345  6JZNFNM RVFVM
+12345 12H]SBLb RYBRb RLOZO RKUYU
+12345 27H\PBP_ RTBT_ RYIWGTFPFMGKIKKLMMNOOUQWRXSYUYXWZT[P[MZKX
+12345 32F^[FI[ RNFPHPJOLMMKMIKIIJGLFNFPGSHVHYG[F RWTUUTWTYV[X[ZZ[X[VYTWT
+12345 35E_\O\N[MZMYNXPVUTXRZP[L[JZIYHWHUISJRQNRMSKSIRGPFNGMIMKNNPQUXWZY[[[\Z\Y
+12345  8MWRHQGRFSGSIRKQL
+12345 11KYVBTDRGPKOPOTPYR]T`Vb
+12345 11KYNBPDRGTKUPUTTYR]P`Nb
+12345  9JZRLRX RMOWU RWOMU
+12345  6E_RIR[ RIR[R
+12345  8NVSWRXQWRVSWSYQ[
+12345  3E_IR[R
+12345  6NVRVQWRXSWRV
+12345  3G][BIb
+12345 18H\QFNGLJKOKRLWNZQ[S[VZXWYRYOXJVGSFQF
+12345  5H\NJPISFS[
+12345 15H\LKLJMHNGPFTFVGWHXJXLWNUQK[Y[
+12345 16H\MFXFRNUNWOXPYSYUXXVZS[P[MZLYKW
+12345  7H\UFKTZT RUFU[
+12345 18H\WFMFLOMNPMSMVNXPYSYUXXVZS[P[MZLYKW
+12345 24H\XIWGTFRFOGMJLOLTMXOZR[S[VZXXYUYTXQVOSNRNOOMQLT
+12345  6H\YFO[ RKFYF
+12345 30H\PFMGLILKMMONSOVPXRYTYWXYWZT[P[MZLYKWKTLRNPQOUNWMXKXIWGTFPF
+12345 24H\XMWPURRSQSNRLPKMKLLINGQFRFUGWIXMXRWWUZR[P[MZLX
+12345 12NVROQPRQSPRO RRVQWRXSWRV
+12345 14NVROQPRQSPRO RSWRXQWRVSWSYQ[
+12345  4F^ZIJRZ[
+12345  6E_IO[O RIU[U
+12345  4F^JIZRJ[
+12345 21I[LKLJMHNGPFTFVGWHXJXLWNVORQRT RRYQZR[SZRY
+12345 56E`WNVLTKQKOLNMMPMSNUPVSVUUVS RQKOMNPNSOUPV RWKVSVUXVZV\T]Q]O\L[JYHWGTFQFNGLHJJILHOHRIUJWLYNZQ[T[WZYYZX RXKWSWUXV
+12345  9I[RFJ[ RRFZ[ RMTWT
+12345 24G\KFK[ RKFTFWGXHYJYLXNWOTP RKPTPWQXRYTYWXYWZT[K[
+12345 19H]ZKYIWGUFQFOGMILKKNKSLVMXOZQ[U[WZYXZV
+12345 16G\KFK[ RKFRFUGWIXKYNYSXVWXUZR[K[
+12345 12H[LFL[ RLFYF RLPTP RL[Y[
+12345  9HZLFL[ RLFYF RLPTP
+12345 23H]ZKYIWGUFQFOGMILKKNKSLVMXOZQ[U[WZYXZVZS RUSZS
+12345  9G]KFK[ RYFY[ RKPYP
+12345  3NVRFR[
+12345 11JZVFVVUYTZR[P[NZMYLVLT
+12345  9G\KFK[ RYFKT RPOY[
+12345  6HYLFL[ RL[X[
+12345 12F^JFJ[ RJFR[ RZFR[ RZFZ[
+12345  9G]KFK[ RKFY[ RYFY[
+12345 22G]PFNGLIKKJNJSKVLXNZP[T[VZXXYVZSZNYKXIVGTFPF
+12345 14G\KFK[ RKFTFWGXHYJYMXOWPTQKQ
+12345 25G]PFNGLIKKJNJSKVLXNZP[T[VZXXYVZSZNYKXIVGTFPF RSWY]
+12345 17G\KFK[ RKFTFWGXHYJYLXNWOTPKP RRPY[
+12345 21H\YIWGTFPFMGKIKKLMMNOOUQWRXSYUYXWZT[P[MZKX
+12345  6JZRFR[ RKFYF
+12345 11G]KFKULXNZQ[S[VZXXYUYF
+12345  6I[JFR[ RZFR[
+12345 12F^HFM[ RRFM[ RRFW[ R\FW[
+12345  6H\KFY[ RYFK[
+12345  7I[JFRPR[ RZFRP
+12345  9H\YFK[ RKFYF RK[Y[
+12345 12KYOBOb RPBPb ROBVB RObVb
+12345  3KYKFY^
+12345 12KYTBTb RUBUb RNBUB RNbUb
+12345  6JZRDJR RRDZR
+12345  3I[Ib[b
+12345  8NVSKQMQORPSORNQO
+12345 18I\XMX[ RXPVNTMQMONMPLSLUMXOZQ[T[VZXX
+12345 18H[LFL[ RLPNNPMSMUNWPXSXUWXUZS[P[NZLX
+12345 15I[XPVNTMQMONMPLSLUMXOZQ[T[VZXX
+12345 18I\XFX[ RXPVNTMQMONMPLSLUMXOZQ[T[VZXX
+12345 18I[LSXSXQWOVNTMQMONMPLSLUMXOZQ[T[VZXX
+12345  9MYWFUFSGRJR[ ROMVM
+12345 23I\XMX]W`VaTbQbOa RXPVNTMQMONMPLSLUMXOZQ[T[VZXX
+12345 11I\MFM[ RMQPNRMUMWNXQX[
+12345  9NVQFRGSFREQF RRMR[
+12345 12MWRFSGTFSERF RSMS^RaPbNb
+12345  9IZMFM[ RWMMW RQSX[
+12345  3NVRFR[
+12345 19CaGMG[ RGQJNLMOMQNRQR[ RRQUNWMZM\N]Q][
+12345 11I\MMM[ RMQPNRMUMWNXQX[
+12345 18I\QMONMPLSLUMXOZQ[T[VZXXYUYSXPVNTMQM
+12345 18H[LMLb RLPNNPMSMUNWPXSXUWXUZS[P[NZLX
+12345 18I\XMXb RXPVNTMQMONMPLSLUMXOZQ[T[VZXX
+12345  9KXOMO[ ROSPPRNTMWM
+12345 18J[XPWNTMQMNNMPNRPSUTWUXWXXWZT[Q[NZMX
+12345  9MYRFRWSZU[W[ ROMVM
+12345 11I\MMMWNZP[S[UZXW RXMX[
+12345  6JZLMR[ RXMR[
+12345 12G]JMN[ RRMN[ RRMV[ RZMV[
+12345  6J[MMX[ RXMM[
+12345 10JZLMR[ RXMR[P_NaLbKb
+12345  9J[XMM[ RMMXM RM[X[
+12345 40KYTBRCQDPFPHQJRKSMSOQQ RRCQEQGRISJTLTNSPORSTTVTXSZR[Q]Q_Ra RQSSUSWRYQZP\P^Q`RaTb
+12345  3NVRBRb
+12345 40KYPBRCSDTFTHSJRKQMQOSQ RRCSESGRIQJPLPNQPURQTPVPXQZR[S]S_Ra RSSQUQWRYSZT\T^S`RaPb
+12345 24F^IUISJPLONOPPTSVTXTZS[Q RISJQLPNPPQTTVUXUZT[Q[O
+12345 35JZJFJ[K[KFLFL[M[MFNFN[O[OFPFP[Q[QFRFR[S[SFTFT[U[UFVFV[W[WFXFX[Y[YFZFZ[        
+        """
+        lines = futural.split("\n")
+        glyphnum = 32
+        self.glyphs = dict()
+        for line in lines:
+            if line.strip() == "":
+                continue
+            print(f"Line {glyphnum}: '{line}'")
+            self._parse_glyph_line(line.strip(), glyphnum)
+            glyphnum += 1
+        self._check_extensions()
+        self.valid = True
