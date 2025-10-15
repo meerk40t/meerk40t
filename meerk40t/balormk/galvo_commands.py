@@ -312,7 +312,7 @@ def plugin(service, lifecycle):
     @service.console_argument("time", type=float, help=_("laser fire pulse duration"))
     @service.console_command(
         "pulse",
-        help=_("pulse <time>: Pulse the laser in place."),
+        help="pulse <time> : " + _("Pulse the laser in place."),
     )
     def pulse(
         command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwargs
@@ -363,7 +363,7 @@ def plugin(service, lifecycle):
 
     @service.console_command(
         "usb_disconnect",
-        help=_("connect usb"),
+        help=_("disconnect usb"),
     )
     def usb_disconnect(command, channel, _, data=None, remainder=None, **kwgs):
         service.spooler.command("disconnect", priority=1)

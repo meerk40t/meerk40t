@@ -172,9 +172,7 @@ def plugin(kernel, lifecycle):
     )
     @kernel.console_command(
         "render_split",
-        help=_("render_split <columns> <rows> <dpi>")
-        + "\n"
-        + _("Render selected elements and split the image into multiple parts"),
+        help="render_split <columns> <rows> <dpi> : " + _("Render selected elements and split the image into multiple parts"),
         input_type=(None, "elements"),
         output_type="elements",
     )

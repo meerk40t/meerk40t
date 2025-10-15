@@ -743,7 +743,7 @@ class NewlyDevice(Service, Status):
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
-            help=_("pulse <time>: Pulse the laser in place."),
+            help="pulse <time> : " + _("Pulse the laser in place."),
         )
         def pulse(
             command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs

@@ -159,6 +159,7 @@ I segnaposto per "data" e "ora" possono anche contenere istruzioni di formattazi
 
 Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 """
+
 french_wordlist_howto = """
 Les listes de mots vous permettent de créer des éléments de texte dans votre conception contenant du texte d'espace réservé qui est remplacé au moment de la gravure à partir de cette liste de mots. Vous pouvez ainsi graver plusieurs éléments avec des textes différents sans avoir à modifier votre conception à chaque fois.
 
@@ -283,7 +284,7 @@ Puede usar tantos nombres de marcadores de posición como desee en los campos de
 
 El valor 'Índice' en la tabla de la Lista de Palabras indica qué entrada de la lista de contenidos se usará a continuación, cero significa la primera entrada. El índice se incrementa automáticamente en uno al final de cada grabación.
 
-Pero suponga que por eficiencia ahora quiere grabar dos etiquetas de reserva de asientos al mismo tiempo, cada una con un nombre diferente de la misma lista. En este caso, si la primera etiqueta usa '{NOMBRE#+0}' y la segunda '{NOMBRE#+1}' (note el signo más). '{NOMBRE}' o '{NOMBRE#+0}' usa la entrada actual (apuntada por el valor de Índice), '{NOMBRE#+1}' usa la siguiente entrada después de la actual, etc.
+Pero suponga que por eficiencia ahora quiere grabar dos etiquetas de reserva de asientos al mismo tiempo, cada una con un nombre diferente de la misma lista. En este caso, si la primera etiqueta usa '{NOMBRE#+0}' y la segunda '{NOMBRE#+1}' (note el signo de más). '{NOMBRE}' o '{NOMBRE#+0}' usa la entrada actual (apuntada por el valor de Índice), '{NOMBRE#+1}' usa la siguiente entrada después de la actual, etc.
 
 Con el uso anterior, puede usar estos valores tantas veces como desee en su diseño. Para avanzar el índice debe hacer clic en los botones Anterior / Siguiente en la barra de herramientas.
 
@@ -333,11 +334,11 @@ chinese_wordlist_howto = """
 
 单词列表表中的“索引”值指示下一个将使用内容列表中的哪个条目，零表示第一个条目。每次烧录结束时，索引会自动加一。
 
-但假设为了提高效率，您现在想同时烧录两个座位预留标签，每个标签都来自同一个列表但名字不同。在这种情况下，如果第一个标签使用“{NAME#+0}”，第二个使用“{NAME#+1}”（注意加号）。 “{NAME}”或“{NAME#+0}”使用当前条目（由索引值指向）， “{NAME#+1}”使用当前条目之后的下一个条目，依此类推。
+但假设为了提高效率，您现在想同时烧录两个座位预留标签，每个标签都来自同一个列表但名字不同。在这种情况下，如果第一个标签使用“{ISIM#+0}”，第二个使用“{ISIM#+1}”（加号请注意）。 “{ISIM}”或“{ISIM#+0}”使用当前条目（由索引值指向）， “{ISIM#+1}”使用当前条目之后的下一个条目，依此类推。
 
 通过上述用法，您可以在设计中多次使用这些值。要推进索引，您需要点击工具栏上的上一个/下一个按钮。
 
-除了使用此单词列表编辑器手动输入单词列表值外，您还可以使用标准逗号分隔的CSV文件。占位符名称在标准CSV头行（CSV文件的第一行）中定义，内容则取自所有后续行。创建CSV文件的最简单方法是使用电子表格（如Excel），当然对于电商网站，您的网站也可以根据客户在线下单自动创建CSV文件。
+除了使用此单词列表编辑器手动输入单词列表值外，您还可以使用标准逗号分隔的CSV文件。占位符名称在标准CSV头行（CSV文件的第一行）中定义，内容则取自所有后续行。创建CSV文件的最简单方法是使用电子表格（如Excel），当然，对于电商网站，您的网站也可以根据客户在线下单自动创建CSV文件。
 
 从CSV文件加载的条目显示为类型CSV，您可以同时为所有CSV条目设置索引值。
 
@@ -387,9 +388,9 @@ Ha azonban hatékonyság szempontjából most két ülésfoglaló címkét szere
 
 A fenti használattal ezeket az értékeket annyiszor használhatja a tervezésben, ahányszor csak szeretné. Az index előrehaladásához kattintson az Előző/Következő gombokra az eszköztáron.
 
-A szólista értékeit nemcsak manuálisan viheti be a Szólista szerkesztővel, hanem használhat szabványos, vesszővel elválasztott CSV-fájlt is. A helyőrző neveket a szabványos CSV-fejléc sorban (a CSV-fájl első sora) határozza meg, a tartalmat pedig az összes következő sorból veszi. A CSV-fájl létrehozásának legegyszerűbb módja egy táblázatkezelő, például az Excel használata, de például webáruházak esetén a weboldal automatikusan létrehozhatja a CSV-fájlt az online leadott rendelésekből.
+A szólista értékeit nemcsak manuálisan viheti be a Szólista szerkesztővel, hanem használhat szabványos, vesszővel elválasztott CSV-fájlt is. A helyőrző neveket a szabványos CSV-fejléc sorban (a CSV-fájl első sora) határozza meg, a tartalmat pedig az összes következő sorból veszi. A CSV-fájl létrehozásának legegyszerűbb módja egy táblázatkezelő, például az Excel használata, de például webáruházak esetén a weboldal automatikusan létrehozhatja a CSV-fájlokat az online leadott rendelésekből.
 
-A CSV-fájlból betöltött bejegyzések típusa CSV-ként jelenik meg, és az összes CSV-bejegyzés indexértékét egyszerre beállíthatja.
+A CSV-fájlban betöltött bejegyzések típusa CSV-ként jelenik meg, és az összes CSV-bejegyzés indexértékét egyszerre beállíthatja.
 
 Megjegyzés: Ha a CSV-fájlban nincs fejlécsor, az oszlopokat 'column_1', 'column_2' stb. néven nevezi el.
 
@@ -533,7 +534,7 @@ japanese_wordlist_howto = """
 
 ワードリストテーブルの「インデックス」値は、次に使用される内容リストのエントリを示します。ゼロは最初のエントリを意味します。インデックスは各焼成の最後に自動的に1つ増加します。
 
-効率のために、同じリストから異なる名前を持つ2つの席予約タグを同時に焼成したい場合、最初のタグは「{NAME#+0}」、2番目は「{NAME#+1}」（プラス記号に注意）を使用します。「{NAME}」または「{NAME#+0}」は現在のエントリ（インデックス値が指すもの）を使用し、「{NAME#+1}」は現在の次のエントリを使用します。
+効率のために、同じリストから異なる名前を持つ2つの席予約タグを同時に焼成したい場合、最初のタグは「{ISIM#+0}」、2番目は「{ISIM#+1}」（プラス記号に注意）を使用します。「{ISIM}」または「{ISIM#+0}」使用中のエントリ（インデックス値が指すもの）を、「{ISIM#+1}」は現在の次のエントリを使用します。
 
 上記の使い方で、これらの値はデザイン内で何度でも使用できます。インデックスを進めるには、ツールバーの前/次ボタンをクリックします。
 
@@ -545,8 +546,8 @@ CSVファイルから読み込まれたエントリはタイプCSVとして表�
 
 ワードリストには、いくつかの特別なエントリも含まれています（キャリブレーションデザインに特に便利です）：
     * 'version'   - Meerk40tバージョン
-    * 'date'      - 焼成開始日
-    * 'time'      - 焼成開始時刻
+    * 'date'      - 烧录开始日期
+    * 'time'      - 烧录开始时刻
     * 'op_device' - 使用しているデバイス
     * 'op_speed'  - 現在の操作の速度
     * 'op_power'  - 現在の操作のPPI
@@ -610,6 +611,57 @@ De tijdelijke aanduidingen voor 'date' en 'time' kunnen ook opmaakopdrachten bev
 Voor een volledige set opmaakopdrachten, zie: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 """
 
+turkish_wordlist_howto = """
+Kelime Listeleri, tasarımınızda yer tutucu metin içeren metin öğeleri oluşturmanıza olanak tanır. Bu yer tutucu metin, yakma sırasında bu Kelime Listesinden alınan içerikle değiştirilir. Böylece, tasarımınızı her seferinde değiştirmek zorunda kalmadan farklı metinlere sahip birden fazla öğe yakabilirsiniz.
+
+Bir yer tutucu, süslü parantezler içinde bir isimdan oluşur, örneğin '{ISIM}'. Bu ismi Kelime Listesi Düzenleyicisinde kullanarak yer tutucu ile ilişkilendirirsiniz ve yer tutucu, ilgili Kelime Listesi İçeriğine girdiğiniz metinle değiştirilir.
+
+Bu işlevin nasıl kullanılacağına bir örnek olarak, her birinde farklı bir kişinin adı olan bir dizi akşam yemeği rezervasyon etiketi oluşturmak istediğinizi hayal edin. Ad etiketinin dış hatlarını (örneğin bir dikdörtgen) oluşturduktan sonra, Metin çizim aracını kullanarak aşağıdaki metni içeren bir Metin öğesi oluşturun:
+'Bu koltuk {ISIM} için ayrılmıştır'
+
+Daha sonra bu Kelime Listesi düzenleyicisini kullanarak aşağıdaki gibi bir veya daha fazla giriş oluşturun:
+    |-----------|------|-------|
+    |   İsim    | Tip  | İndeks|
+    |-----------|------|-------|
+    | isim      | Metin|   0   |
+    |-----------|------|-------|
+Ardından 'isim' satırına tıklayın ve İçerik paneline birkaç öğe ekleyin, örneğin:
+    Ahmet
+    Mehmet
+    Ayşe
+Artık yakma işlemini gerçekleştirdiğinizde, üzerinde farklı isimler olan bireysel yer etiketi alırsınız, örneğin 'Bu koltuk Ayşe için ayrılmıştır'.
+
+Tasarımınızda metin alanlarında istediğiniz kadar farklı yer tutucu ismi kullanabilirsiniz.
+
+Kelime Listesi tablosundaki 'İndeks' değeri, içerik listesinden bir sonraki hangi girişin kullanılacağını gösterir, sıfır ilk girişi ifade eder. İndeks, her yakma işleminin sonunda otomatik olarak bir artırılır.
+
+Verimlilik açısından artık aynı listeden farklı isimlerle iki koltuk rezervasyon etiketini aynı anda yakmak istediğinizi varsayalım. Bu durumda, ilk etiket '{ISIM#+0}', ikinci ise '{ISIM#+1}' kullanır (artı işaretine dikkat edin). '{ISIM}' veya '{ISIM#+0}' mevcut girişi (İndeks değeriyle gösterilen), '{ISIM#+1}' ise mevcut girişten sonraki bir sonraki girişi kullanır.
+
+Yukarıdaki kullanım ile bu değerleri tasarımınızda istediğiniz kadar kullanabilirsiniz. İndeksi ilerletmek için araç çubuğundaki Önceki / Sonraki düğmelerine tıklamanız gerekir.
+
+Kelime Listesi değerlerini bu Kelime Listesi Düzenleyicisi ile manuel olarak girmek yerine, standart virgülle ayrılmış bir CSV dosyası da kullanabilirsiniz. Yer tutucu isimleri standart CSV başlık satırında (CSV dosyasının ilk satırı) tanımlanır, içerik tüm sonraki satırlardan alınır. Bir CSV dosyası oluşturmanın en kolay yolu bir elektronik tablo (örneğin Excel) kullanmaktır, ancak e-ticaret siteleri için web siteniz müşteriler tarafından çevrimiçi verilen siparişlerden CSV dosyasını otomatik olarak oluşturabilir.
+
+CSV dosyasından yüklenen girişler Tip CSV olarak gösterilir ve tüm CSV girişleri için İndeks değerlerini aynı anda ayarlayabilirsiniz.
+
+Not: CSV'nizin başlık satırı yoksa, sütunlar 'column_1', 'column_2' vb. olarak adlandırılır.
+
+Kelime Listesi ayrıca bazı özel girişler içerir (özellikle kalibrasyon tasarımları için faydalı olabilir):
+    * 'version'   - Meerk40t sürümü
+    * 'date'      - Yakma işlemi başlangıç tarihi
+    * 'time'      - Yakma işlemi başlangıç saati
+    * 'op_device' - Yakma yaptığınız cihaz
+    * 'op_speed'  - Mevcut işlemin hızı
+    * 'op_power'  - Mevcut işlemin PPI değeri
+    * 'op_dpi'    - Mevcut (raster) işlemin DPI değeri
+    * 'op_passes' - Mevcut işlemin geçiş sayısı
+
+'date' ve 'time' için yer tutucular ayrıca yerel alışkanlıklarınıza göre biçimlendirmenize olanak tanıyan biçimlendirme yönergeleri içerebilir, örneğin:
+    {date@%d.%m.%Y} - 31.12.2022
+    {time@%H:%M} - 23:59
+
+Tam biçimlendirme yönergeleri için bkz.: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+"""
+
 english_material_howto = """
 The Material Library Manager allows to create, maintain, use and manage operations that are customized to provide a desired effect with a given material (hence the name Material Library).
 The parameters you want to use e.g. for cutting acrylic are very different from the ones you want to use to engrave a picture on slate.
@@ -671,6 +723,11 @@ De parameters die u bijvoorbeeld wilt gebruiken voor het snijden van acryl zijn 
 U kunt dergelijke materiaalsinstellingen delen met de MeerK40t-gemeenschap en profiteren van de bijdragen van anderen door hun instellingen te laden en te gebruiken.
 """
 
+turkish_material_howto = """
+Malzeme Kütüphanesi Yöneticisi, belirli bir malzeme ile istenen etkiyi sağlamak için özelleştirilmiş işlemler oluşturmanıza, sürdürmenize, kullanmanıza ve yönetmenize olanak tanır (bu nedenle adı Malzeme Kütüphanesi'dir).
+Örneğin, akrilik kesmek için kullanmak istediğiniz parametreler, arduvaz üzerine bir resim kazımak için kullanmak istediklerinizden çok farklıdır.
+Bu tür bir malzeme ayarını MeerK40t topluluğu ile paylaşabilir ve başkalarının katkılarından yararlanmak için onların ayarlarını yükleyip kullanabilirsiniz.
+"""
 
 def asset(context, asset):
     language_map = {
@@ -686,6 +743,7 @@ def asset(context, asset):
         9: "japanese",
         10: "dutch",
         11: "russian",
+        12: "turkish",
     }
     lang = language_map.get(getattr(context, "language", 0), "english")
     text = ""

@@ -21,7 +21,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "spool",
-            help=_("spool <command>"),
+            help="spool <command> : " + _("Send a command to the spooler"),
             regex=True,
             input_type=(None, "plan"),
             output_type="spooler",
@@ -89,7 +89,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "list",
-            help=_("spool<?> list"),
+            help="spool<?> list : " + _("List all spooled jobs"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -110,7 +110,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "clear",
-            help=_("spooler<?> clear"),
+            help="spooler<?> clear : " + _("clear the spooler queue"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -154,7 +154,7 @@ def plugin(kernel, lifecycle):
             ("left", "right", "up", "down"),
             input_type=("spooler", None),
             output_type="spooler",
-            help=_("cmd <amount>"),
+            help="<left/right/up/down> <amount> : " + _("Move the laser in the specified direction."),
         )
         def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
@@ -239,7 +239,7 @@ def plugin(kernel, lifecycle):
             "move_relative",
             input_type=("spooler", None),
             output_type="spooler",
-            help=_("move_relative <dx> <dy>"),
+            help="move_relative <dx> <dy> : " + _("Move the laser relative to its current position."),
         )
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:

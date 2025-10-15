@@ -790,7 +790,7 @@ def plugin(kernel, lifecycle):
             help=_("Character spacing factor"),
         )
         @context.console_command(
-            "linetext", help=_("linetext <font> <font_size> <text>")
+            "linetext", help="linetext <font> <font_size> <text> : " + _("Render vector text")
         )
         def linetext(
             command,
@@ -807,7 +807,7 @@ def plugin(kernel, lifecycle):
         ):
             if x is None or y is None or text is None:
                 channel(
-                    _("linetext <x> <y> <text> - please provide all required arguments")
+                    "linetext <x> <y> <text> - " + _("please provide all required arguments")
                 )
                 registered_fonts = context.fonts.available_fonts()
                 for item in registered_fonts:

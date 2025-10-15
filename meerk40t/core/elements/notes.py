@@ -30,7 +30,7 @@ def init_commands(kernel):
     # NOTES COMMANDS
     # ==========
     @self.console_option("append", "a", type=bool, action="store_true", default=False)
-    @self.console_command("note", help=_("note <note>"))
+    @self.console_command("note", help="note <note> : " + _("set or append a note"), input_type=None, output_type=None)
     def note(command, channel, _, append=False, remainder=None, **kwargs):
         _note = remainder
         if _note is None:
