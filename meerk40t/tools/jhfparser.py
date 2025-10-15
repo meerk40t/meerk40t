@@ -1,4 +1,6 @@
 import os
+import base64
+import zlib
 
 JHFPARSER_VERSION = "0.0.1"
 
@@ -11,6 +13,8 @@ JHFPARSER_VERSION = "0.0.1"
     used in computer graphics, computer-aided design programs, and more recently also in computer-aided manufacturing
     applications like laser engraving. (https://en.wikipedia.org/wiki/Hershey_fonts)
 """
+
+STD_FONT_FILE = "meerk40t.jhf"
 
 
 class JhfPath:
@@ -52,7 +56,7 @@ class JhfFont:
     on the font which create the vector path.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename: str, glyph_data=None):
         self.STROKE_BASED = True
         self.type = "Hershey"
         self.glyphs = dict()  # Glyph dictionary
@@ -62,7 +66,8 @@ class JhfFont:
         self.active = True
         self.font_name = fname
         self._line_information = []
-        self._parse(filename)
+        if filename:
+            self._parse(filename)
 
     def __str__(self):
         return f'{self.type}("{self.font_name}", glyphs: {len(self.glyphs)})'
@@ -81,7 +86,9 @@ class JhfFont:
             if (not line) or line == "\x1a":  # eof
                 return False
             line = line.rstrip()
+        return self._parse_glyph_line(line, glyphindex)
 
+    def _parse_glyph_line(self, line, glyphindex):
         # read a Hershey format line
         glyphnum = int(line[0:5])  # glyphnum (junk in some .jhf files)
         nverts = int(line[5:8]) - 1
@@ -98,7 +105,7 @@ class JhfFont:
             nvertchars = len(vertchars)
         if nverts * 2 != nvertchars:
             print(
-                f"Parse Hershey Glyph: format error (nvertchars={nvertchars} not {2*nverts})"
+                f"Parse Hershey Glyph: format error (nvertchars={nvertchars} not {2 * nverts})"
             )
         else:
             # print(f"Glyph, idx={glyphindex}, glyphnum={glyphnum}, left={leftpos}, right={rightpos}, vertices={nverts}")
@@ -163,8 +170,11 @@ class JhfFont:
                 while self._read_hershey_glyph(f, glyphindex):
                     glyphindex += 1
                 self.valid = True
+            self._check_extensions()
         except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             self.valid = False
+
+    def _check_extensions(self):
         # Establish font extension in X
         cidx = 0
         for g in self.glyphs:
@@ -355,3 +365,32 @@ class JhfFont:
             offsets.append(offs)
         self.active = True
         _do_render(vtext, offsets)
+
+
+class SimplexFont(JhfFont):
+    def __init__(self, filename: str):
+        # filename is ignored
+        super().__init__(filename="")
+        self.font_name = STD_FONT_FILE
+        self.font_data()
+        self.valid = True
+
+    def font_data(self):
+        # This is a represenation of the Hershey Simplex font in JHF format.
+        # The font data is compressed with zlib and base64-encoded to save space.
+        # Original size: 3515 bytes, Compressed: 1536 bytes (43.7% reduction)
+        COMPRESSED_FUTURAL = "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"
+
+        # Decompress the font data
+        futural = zlib.decompress(base64.b64decode(COMPRESSED_FUTURAL)).decode("utf-8")
+        lines = futural.split("\n")
+        glyphnum = 32
+        self.glyphs = dict()
+        for line in lines:
+            if line.strip() == "":
+                continue
+            # print(f"Line {glyphnum}: '{line}'")
+            self._parse_glyph_line(line.strip(), glyphnum)
+            glyphnum += 1
+        self._check_extensions()
+        self.valid = True

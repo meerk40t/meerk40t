@@ -8,7 +8,7 @@ from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.tools.geomstr import BeamTable, Geomstr
-from meerk40t.tools.jhfparser import JhfFont
+from meerk40t.tools.jhfparser import JhfFont, SimplexFont, STD_FONT_FILE
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont, TTFParsingError
 
@@ -105,6 +105,10 @@ class Meerk40tFonts:
         self._available_fonts = None
 
     @property
+    def std_font_file(self):
+        return STD_FONT_FILE
+    
+    @property
     def fonts_registered(self):
         fonts = {
             "shx": ("Autocad", ShxFont, None),
@@ -152,6 +156,8 @@ class Meerk40tFonts:
 
     @lru_cache(maxsize=512)
     def get_font_information(self, full_file_name):
+        if full_file_name == STD_FONT_FILE:
+            return STD_FONT_FILE
         filename, file_extension = splitext(full_file_name)
         if len(file_extension) == 0:
             return None
@@ -220,6 +226,8 @@ class Meerk40tFonts:
 
     @lru_cache(maxsize=128)
     def cached_fontclass(self, fontname):
+        if fontname == STD_FONT_FILE:
+            return SimplexFont("")
         registered_fonts = self.fonts_registered
         if not exists(fontname):
             return
@@ -416,6 +424,8 @@ class Meerk40tFonts:
         for fname in candidates:
             if self._validate_font(fname):
                 return self.full_name(fname)
+        # lets fallback to our internal font if nothing else works
+        
         return None
 
     def _try_available(self):
@@ -638,6 +648,12 @@ class Meerk40tFonts:
             except (OSError, FileNotFoundError, PermissionError):
                 self._available_fonts = []
             if len(self._available_fonts):
+                # Check that the std font is present
+                if not any(f[0] == STD_FONT_FILE for f in self._available_fonts):
+                    self._available_fonts.insert(
+                        0,
+                        (STD_FONT_FILE, "MeerK40t Simple", "Hershey", "Regular", False)
+                    )
                 # t1 = perf_counter()
                 # print (f"Cached, took {t1 - t0:.2f}sec")
                 return self._available_fonts
@@ -701,6 +717,7 @@ class Meerk40tFonts:
                 continue
             # for key, value in found.items():
             #     print(f"{key}: {value} - {fontpath}")
+        self._available_fonts.append( (STD_FONT_FILE, "MeerK40t Simple", "Hershey", "Regular", False) )
         self._available_fonts.sort(key=lambda e: e[1])
         try:
             with open(cache, "w", encoding="utf-8") as f:

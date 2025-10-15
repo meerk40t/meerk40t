@@ -321,6 +321,7 @@ class TemplatePanel(wx.Panel):
         self.combo_images.SetSelection(0)
         self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Labels"))
         self.check_values = wxCheckBox(self, wx.ID_ANY, _("Values"))
+        self.check_use_vector_labels = wxCheckBox(self, wx.ID_ANY, _("Simple"))
 
         self.combo_param_1 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -400,6 +401,7 @@ class TemplatePanel(wx.Panel):
         )
         sizer_param_check.Add(self.check_labels, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_param_check.Add(self.check_values, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_param_check.Add(self.check_use_vector_labels, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_param_optype.Add(self.sizer_param_op, 1, wx.EXPAND, 0)
         sizer_param_optype.Add(sizer_param_check, 1, wx.EXPAND, 0)
@@ -625,6 +627,8 @@ class TemplatePanel(wx.Panel):
         self.check_values.SetToolTip(
             _("Will create the corresponding values as labels at the sides of the grid")
         )
+        self.check_use_vector_labels.SetToolTip(_("Use vector shapes for labels"))
+        
         self.text_min_1.SetToolTip(_("Minimum value for 1st parameter"))
         self.text_max_1.SetToolTip(_("Maximum value for 1st parameter"))
         self.text_min_2.SetToolTip(_("Minimum value for 2nd parameter"))
@@ -1283,6 +1287,8 @@ class TemplatePanel(wx.Panel):
             # print (f"Creating operations for {len(range1)} x {len(range2)}")
             display_labels = self.check_labels.GetValue()
             display_values = self.check_values.GetValue()
+            use_line_labels = self.check_use_vector_labels.GetValue()
+            
             color_aspect_1 = max(0, self.combo_color_1.GetSelection())
             color_aspect_2 = max(0, self.combo_color_2.GetSelection())
             color_growing_1 = self.check_color_direction_1.GetValue()
@@ -1313,8 +1319,14 @@ class TemplatePanel(wx.Panel):
                 for axis, label in zip(
                     ("X", "Y"), (self.DESC_X_AXIS, self.DESC_Y_AXIS)
                 ):
-                    op = RasterOpNode()
-                    op.color = Color("black")
+                    if use_line_labels:
+                        op = EngraveOpNode()
+                        op.label = label 
+                        opcolor = "green"   
+                    else:
+                        op = RasterOpNode()
+                        opcolor = "black"
+                    op.color = Color(opcolor)
                     op.label = label
                     op.speed = self.description_speed
                     op.power = self.description_power
@@ -1324,13 +1336,28 @@ class TemplatePanel(wx.Panel):
             if display_labels:
 
                 def add_axis_label(text, x, y, scale, op):
-                    node = element_branch.add(
-                        text=text,
-                        matrix=Matrix(f"translate({x}, {y}) scale({scale})"),
-                        anchor="middle",
-                        fill=Color("black"),
-                        type="elem text",
-                    )
+                    if use_line_labels:
+                        fonts = self.context.fonts
+                        node = fonts.create_linetext_node(
+                            x,
+                            y,
+                            text,
+                            font=fonts.std_font_file,
+                            font_size=12 * scale,
+                            align="middle",
+                        )
+                        node.stroke = Color("green")
+                        node.stroke_width = 1000
+                        element_branch.add_node(node)
+                    else:
+                        node = element_branch.add(
+                            text=text,
+                            matrix=Matrix(f"translate({x}, {y}) scale({scale})"),
+                            anchor="middle",
+                            fill=Color("black"),
+                            type="elem text",
+                        )
+
                     op.add_reference(node, 0)
                     return node
 
@@ -1385,15 +1412,29 @@ class TemplatePanel(wx.Panel):
                     text_y = yy - 1.25 * max(text_scale_x, text_scale_y) * float(
                         Length("5mm")
                     )
-                    node = element_branch.add(
-                        text=f"{pval1}",
-                        matrix=Matrix(
-                            f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
-                        ),
-                        anchor="middle",
-                        fill=Color("black"),
-                        type="elem text",
-                    )
+                    if use_line_labels:
+                        fonts = self.context.fonts
+                        node = fonts.create_linetext_node(
+                            text_x,
+                            text_y,
+                            f"{pval1}",
+                            font=fonts.std_font_file,
+                            font_size=16 * text_scale_x * UNITS_PER_PIXEL, # 2/3 of header-size which is 2*12
+                            align="middle",
+                        )
+                        node.stroke = Color("green")
+                        node.stroke_width = 1000
+                        element_branch.add_node(node)
+                    else:
+                        node = element_branch.add(
+                            text=f"{pval1}",
+                            matrix=Matrix(
+                                f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
+                            ),
+                            anchor="middle",
+                            fill=Color("black"),
+                            type="elem text",
+                        )
                     # node.matrix.post_rotate(tau / 4, text_x, text_y)
                     node.modified()
                     text_op_x.add_reference(node, 0)
@@ -1418,15 +1459,29 @@ class TemplatePanel(wx.Panel):
                             Length("5mm")
                         )
                         text_y = yy + 0.5 * size_y
-                        node = element_branch.add(
-                            text=f"{pval2}",
-                            matrix=Matrix(
-                                f"translate({text_x}, {text_y}) scale({text_scale_y * UNITS_PER_PIXEL})"
-                            ),
-                            anchor="middle",
-                            fill=Color("black"),
-                            type="elem text",
-                        )
+                        if use_line_labels:
+                            fonts = self.context.fonts
+                            node = fonts.create_linetext_node(
+                                text_x,
+                                text_y,
+                                f"{pval2}",
+                                font=fonts.std_font_file,
+                                font_size=16 * text_scale_y * UNITS_PER_PIXEL,  # 2/3 of header-size which is 2*12
+                                align="middle",
+                            )
+                            node.stroke = Color("green")
+                            node.stroke_width = 1000
+                            element_branch.add_node(node)
+                        else:
+                            node = element_branch.add(
+                                text=f"{pval2}",
+                                matrix=Matrix(
+                                    f"translate({text_x}, {text_y}) scale({text_scale_y * UNITS_PER_PIXEL})"
+                                ),
+                                anchor="middle",
+                                fill=Color("black"),
+                                type="elem text",
+                            )
                         node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                         text_op_y.add_reference(node, 0)
 
@@ -1711,6 +1766,7 @@ class TemplatePanel(wx.Panel):
         self.context.setting(str, "template_gap_2", "5")
         self.context.setting(bool, "template_show_labels", True)
         self.context.setting(bool, "template_show_values", True)
+        self.context.setting(bool, "template_simple_labels", True)
         self.context.setting(int, "template_color1", 0)
         self.context.setting(int, "template_color2", 2)
         self.context.setting(bool, "template_coldir1", False)
@@ -1741,6 +1797,7 @@ class TemplatePanel(wx.Panel):
             self.context.template_coldir2,
             self.context.template_list1,
             self.context.template_list2,
+            self.context.template_simple_labels,
         )
         # print (f"Save data to {templatename}, infofield-len={len(info_field)}")
         key = f"{templatename}"
@@ -1784,10 +1841,12 @@ class TemplatePanel(wx.Panel):
             self.context.template_coldir2 = info_field[18]
             self.context.template_list1 = get_setting(19, "")
             self.context.template_list2 = get_setting(20, "")
+            self.context.template_simple_labels = get_setting(21, True)
 
     def save_settings(self, templatename=None):
         self.context.template_show_values = self.check_values.GetValue()
         self.context.template_show_labels = self.check_labels.GetValue()
+        self.context.template_simple_labels = self.check_use_vector_labels.GetValue()
         self.context.template_optype = self.combo_ops.GetSelection()
         self.context.template_param1 = self.combo_param_1.GetSelection()
         self.context.template_param2 = self.combo_param_2.GetSelection()
@@ -1826,6 +1885,7 @@ class TemplatePanel(wx.Panel):
             )
             self.check_values.SetValue(self.context.template_show_values)
             self.check_labels.SetValue(self.context.template_show_labels)
+            self.check_use_vector_labels.SetValue(self.context.template_simple_labels)
             self.combo_ops.SetSelection(
                 min(self.context.template_optype, self.combo_ops.GetCount() - 1)
             )
