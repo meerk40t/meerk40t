@@ -432,6 +432,7 @@ def validate_po(
     id_strings_source: List[str],
     id_usage: List[str],
     id_pairs: List[Tuple[str, str]],
+    auto_correct: bool = True,
 ) -> Tuple[str, int, int, int, int]:
     """
     Validates .po files and returns (status, written, empty, duplicate, unused) tuple for table display.
@@ -455,6 +456,7 @@ def validate_po(
     ignored_duplicate = 0
     ignored_unused = 0
     faulty_curly = 0
+    do_it_yourself = False
     for msgid, msgstr in id_pairs:
         t_msgid = lf_coded(msgid)
         if not msgstr or t_msgid not in id_strings_source or msgid in seen:
@@ -498,9 +500,12 @@ def validate_po(
             print_warning(
                 f"Missing placeholder(s) in msgstr for msgid: {msgid}\n  Missing: {', '.join(missing_placeholders)}\n  msgstr: {msgstr}"
             )
-            # Fix: Insert missing placeholders into msgstr at the end
-            for ph in missing_placeholders:
-                entry.msgstr += f" {{{ph}}}"  # Add with space for clarity
+            if auto_correct:
+                # Fix: Insert missing placeholders into msgstr at the end
+                for ph in missing_placeholders:
+                    entry.msgstr += f" {{{ph}}}"  # Add with space for clarity
+            else:
+                do_it_yourself = True
             faulty_curly += 1
         # Only replace if both have the same number of curly bracketed texts
         if msgid_curly and msgstr_curly:
@@ -508,26 +513,26 @@ def validate_po(
             def replace_if_not_found(msgstr, msgid_curly, msgstr_curly):
                 new_msgstr = msgstr
                 for i, str_val in enumerate(msgstr_curly):
-                    if str_val not in msgid_curly:
-                        # Replace the i-th curly bracketed text in msgstr with the i-th from msgid (if available)
-                        if i < len(msgid_curly):
-                            # Replace the i-th occurrence
-                            def replace_nth(text, sub, repl, n):
-                                matches = list(re.finditer(re.escape(sub), text))
-                                if len(matches) > n:
-                                    start, end = matches[n].span()
-                                    return text[:start] + repl + text[end:]
-                                return text
-
-                            new_msgstr = replace_nth(
-                                new_msgstr, str_val, msgid_curly[i], i
-                            )
+                    if str_val not in msgid_curly and i < len(msgid_curly):
+                        def replace_nth(text, sub, repl, n):
+                            matches = list(re.finditer(re.escape(sub), text))
+                            if len(matches) > n:
+                                start, end = matches[n].span()
+                                return text[:start] + repl + text[end:]
+                            return text
+                    
+                        new_msgstr = replace_nth(
+                            new_msgstr, str_val, msgid_curly[i], i
+                        )
                 return new_msgstr
 
             new_msgstr = replace_if_not_found(msgstr, msgid_curly, msgstr_curly)
             if new_msgstr != msgstr:
                 faulty_curly += 1
-                entry.msgstr = new_msgstr
+                if auto_correct:
+                    entry.msgstr = new_msgstr
+                else:
+                    do_it_yourself = True   
         po.append(entry)
         seen.add(msgid)
         written += 1
@@ -535,6 +540,10 @@ def validate_po(
     print_success(
         f"Validation for {locale} completed: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
     )
+    if do_it_yourself:
+        print_warning(
+            f"Some entries had issues with curly brace placeholders. Please review 'fixed_{locale}_meerk40t.po' and correct them manually."
+        )
     return "Validated", written, ignored_empty, ignored_duplicate, ignored_unused
 
 
