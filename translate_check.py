@@ -21,7 +21,7 @@ Arguments:
     -a, --auto       Try a translation using an online service
 
 Supported locales:
-    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, zh
+    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, tr, zh
 
 Some testcases:
  _("This is a test string.")
@@ -36,6 +36,7 @@ import os
 from typing import List, Tuple
 
 import polib
+
 try:
     import chardet  # Ensure chardet is available for encoding detection
 except ImportError:
@@ -485,6 +486,7 @@ def validate_po(
                 entry.occurrences.append((file, line))
         # Compare the spelling of all texts with curly braces, take the value from msgid if different
         import re
+
         def extract_curly(text):
             return re.findall(r"\{([^{}]*)\}", text)
 
@@ -493,7 +495,9 @@ def validate_po(
         # Check for missing placeholders in msgstr that are present in msgid
         missing_placeholders = [ph for ph in msgid_curly if ph not in msgstr_curly]
         if missing_placeholders:
-            print_warning(f"Missing placeholder(s) in msgstr for msgid: {msgid}\n  Missing: {', '.join(missing_placeholders)}\n  msgstr: {msgstr}")
+            print_warning(
+                f"Missing placeholder(s) in msgstr for msgid: {msgid}\n  Missing: {', '.join(missing_placeholders)}\n  msgstr: {msgstr}"
+            )
             # Fix: Insert missing placeholders into msgstr at the end
             for ph in missing_placeholders:
                 entry.msgstr += f" {{{ph}}}"  # Add with space for clarity
@@ -514,8 +518,12 @@ def validate_po(
                                     start, end = matches[n].span()
                                     return text[:start] + repl + text[end:]
                                 return text
-                            new_msgstr = replace_nth(new_msgstr, str_val, msgid_curly[i], i)
+
+                            new_msgstr = replace_nth(
+                                new_msgstr, str_val, msgid_curly[i], i
+                            )
                 return new_msgstr
+
             new_msgstr = replace_if_not_found(msgstr, msgid_curly, msgstr_curly)
             if new_msgstr != msgstr:
                 faulty_curly += 1
@@ -620,7 +628,7 @@ def detect_encoding(file_path: str) -> str:
     Detects the encoding of a file.
     Returns 'utf-8' if the file is encoded in UTF-8, otherwise returns the detected encoding.
     """
-    
+
     if chardet:
         result = chardet.detect(open(file_path, "rb").read())
         return result["encoding"] if result and result.get("encoding") else "unknown"
@@ -660,6 +668,85 @@ def fix_result_string(translated: str, original: str) -> str:
     # There might be erroneous double escapes added, we remove them
     translated = translated.replace("\\\\", "\\")
     return translated
+
+
+def perform_basic_checks(locales: List[str]) -> None:
+    print_header("Checking Encoding")
+    encoding_results = check_encoding(list(locales))
+
+    # Display results in table format
+    # Gather a dictionary of results to summarize
+    summary = {}
+    for locale, encoding_status, details in encoding_results:
+        result_dict = {"encode_status": encoding_status, "encode_details": details}
+        summary[locale] = result_dict
+    id_strings_source, id_usage = read_source()
+    print(
+        f"{'Locale':<8} {'Encoding':<10} {'Entries':<7} {'Unused':<7} {'Empty':<7} {'Dup':<7} {'Missing':<7} {'Needed':<7} {'Status':<10}"
+    )
+    print("-" * 75)
+    for locale in locales:
+        result_dict = summary.get(
+            locale, {"encode_status": "ERROR", "encode_details": "Not processed"}
+        )
+        summary[locale] = result_dict
+        id_strings, pairs = read_po(locale)
+        result_dict["entries"] = len(id_strings)
+        result_dict["empty_pairs"] = len([p for p in pairs if not p[1]])
+        result_dict["unused"] = len(
+            [p for p in pairs if lf_coded(p[0]) not in id_strings_source]
+        )
+        result_dict["duplicate"] = len(pairs) - len(set(p[0] for p in pairs))
+        missing_ids = [s for s in id_strings_source if s not in id_strings and s]
+        result_dict["missing"] = len(missing_ids)
+        # if missing_ids:
+        #     print_warning(f"Locale {locale} is missing {len(missing_ids)} entries, first one: '{repr(missing_ids[0])}'")
+
+    for locale in locales:
+        if locale not in summary:
+            encoding_status = "ERROR"
+            details = "Not processed"
+            missing = "N/A"
+            entries = "N/A"
+            unused = "N/A"
+            empty = "N/A"
+            duplicate = "N/A"
+            translation_status = "N/A"
+        else:
+            encoding_status = summary[locale]["encode_status"]
+            details = summary[locale]["encode_details"]
+            missing = summary[locale].get("missing", "N/A")
+            entries = summary[locale].get("entries", "N/A")
+            unused = summary[locale].get("unused", "N/A")
+            empty = summary[locale].get("empty_pairs", "N/A")
+            duplicate = summary[locale].get("duplicate", "N/A")
+            non_translated = missing + empty
+            translation_status = (
+                "OK"
+                if non_translated == 0
+                else "Warning"
+                if non_translated < 15
+                else "Error"
+            )
+        encoding_status_color = (
+            GREEN
+            if encoding_status == "OK"
+            else YELLOW
+            if encoding_status == "Warning"
+            else RED
+        )
+
+        translation_status_color = (
+            GREEN
+            if translation_status == "OK"
+            else YELLOW
+            if translation_status == "Warning"
+            else RED
+        )
+        print(
+            f"{locale:<8} {encoding_status_color}{encoding_status:<10}{ENDC} {entries:<7} {unused:<7} {empty:<7} {duplicate:<7} {missing:<7} {missing + empty:<7} {translation_status_color}{translation_status:<10}{ENDC}"
+        )
+    print()
 
 
 def main():
@@ -702,7 +789,7 @@ def main():
             locales = set(LOCALE_LONG_NAMES.keys())
             break
         if loc == "en":
-            print(
+            print_info(
                 "English is the default language, we will create the default .po file."
             )
             locales.add("en")
@@ -714,7 +801,7 @@ def main():
                 found = True
                 break
         if not found:
-            print(f"Unknown locale '{loc}', using 'de' as default.")
+            print_error(f"Unknown locale '{loc}', using 'de' as default.")
             if "de" not in locales:
                 locales.add("de")
 
@@ -723,26 +810,14 @@ def main():
     print()
 
     if args.check:
-        print_header("Checking Encoding")
-        encoding_results = check_encoding(list(locales))
-
-        # Display results in table format
-        if encoding_results:
-            print(f"{'Locale':<8} {'Status':<10} {'Details'}")
-            print("-" * 70)
-            for locale, status, details in encoding_results:
-                status_color = (
-                    GREEN if status == "OK" else YELLOW if status == "Warning" else RED
-                )
-                print(f"{locale:<8} {status_color}{status:<10}{ENDC} {details}")
-        print()
+        perform_basic_checks(locales)
         return
 
     do_translate = args.auto and GOOGLETRANS
     if args.auto and not GOOGLETRANS:
-        print("googletrans module not found, cannot do automatic translation.")
+        print_error("googletrans module not found, cannot do automatic translation.")
 
-    print("Reading sources...")
+    print_info("Reading sources...")
     id_strings_source, id_usage = read_source()
 
     check_results = []
