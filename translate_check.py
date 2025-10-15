@@ -33,10 +33,14 @@ Some testcases:
 
 import argparse
 import os
-from contextlib import suppress
 from typing import List, Tuple
 
 import polib
+try:
+    import chardet  # Ensure chardet is available for encoding detection
+except ImportError:
+    chardet
+
 
 # ANSI color codes for terminal output
 RED = "\033[91m"
@@ -616,9 +620,8 @@ def detect_encoding(file_path: str) -> str:
     Detects the encoding of a file.
     Returns 'utf-8' if the file is encoded in UTF-8, otherwise returns the detected encoding.
     """
-    with suppress(ImportError):
-        import chardet  # Ensure chardet is available for encoding detection
-
+    
+    if chardet:
         result = chardet.detect(open(file_path, "rb").read())
         return result["encoding"] if result and result.get("encoding") else "unknown"
 
