@@ -105,6 +105,10 @@ class Meerk40tFonts:
         self._available_fonts = None
 
     @property
+    def std_font_file(self):
+        return STD_FONT_FILE
+    
+    @property
     def fonts_registered(self):
         fonts = {
             "shx": ("Autocad", ShxFont, None),
