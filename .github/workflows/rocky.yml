@@ -18,7 +18,7 @@ jobs:
         echo $(ldd --version)
 
     - name: Checkout meerk40t
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Ensure dependencies installed
       run: |
