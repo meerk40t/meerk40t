@@ -108,7 +108,11 @@ def svgfont_to_wx(textnode):
             hasattr(textnode, '_cached_font_style') and
             textnode._cached_font_style == textnode.font_style and
             hasattr(textnode, '_cached_font_family') and
-            textnode._cached_font_family == textnode.font_family):
+            textnode._cached_font_family == textnode.font_family and
+            hasattr(textnode, '_cached_font_underline') and
+            textnode._cached_font_underline == textnode.underline and
+            hasattr(textnode, '_cached_font_strikethrough') and
+            textnode._cached_font_strikethrough == textnode.strikethrough):
             # Cache is valid, skip conversion
             return
     except (AttributeError, TypeError):
@@ -163,6 +167,8 @@ def svgfont_to_wx(textnode):
     textnode._cached_font_weight = textnode.font_weight
     textnode._cached_font_style = textnode.font_style
     textnode._cached_font_family = textnode.font_family
+    textnode._cached_font_underline = textnode.underline
+    textnode._cached_font_strikethrough = textnode.strikethrough
 
 
 def svg_to_wx_family(textnode, wxfont):
@@ -237,10 +243,15 @@ class LaserRender:
         Create a wx.Font with automatic int fallback for older wx versions.
         This prevents repeated try-except blocks throughout the code.
         """
+        # Validate font_size is numeric before attempting font creation
+        if not isinstance(font_size, (int, float)):
+            raise TypeError(f"font_size must be int or float, got {type(font_size).__name__}")
+        
         try:
             return wx.Font(font_size, family, style, weight)
         except TypeError:
             # Older wxPython versions don't support fractional font sizes
+            # This specific TypeError from wx.Font means font_size type is not supported
             return wx.Font(int(font_size), family, style, weight)
 
     def _validate_cache_ttl(self, cache):
@@ -280,17 +291,22 @@ class LaserRender:
             cache = cut._cache
         except AttributeError:
             cache = None
-        # Validate cache TTL - if expired, clear it
-        if cache is not None and not self._validate_cache_ttl(cache):
-            cut._cache = None
-            cache = None
+        # Validate cache TTL and image identity - if expired or image changed, clear it
+        current_image_id = id(image)
+        if cache is not None:
+            # Check both TTL and image identity
+            image_changed = (hasattr(cut, '_cache_id') and cut._cache_id != current_image_id)
+            cache_expired = not self._validate_cache_ttl(cache)
+            if image_changed or cache_expired:
+                cut._cache = None
+                cache = None
         if cache is None:
             cut._cache_width, cut._cache_height = image.size
             try:
                 cut._cache = self.make_thumbnail(image, maximum=5000)
             except (MemoryError, RuntimeError):
                 cut._cache = None
-            cut._cache_id = id(image)
+            cut._cache_id = current_image_id
         if cut._cache is not None:
             gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
             if cut.highlighted:
@@ -315,10 +331,7 @@ class LaserRender:
         start = cut.start
         p.MoveToPoint(start[0] + x, start[1] + y)
         todraw = cache
-        if residual is None:
-            maxcount = -1
-        else:
-            maxcount = int(len(todraw) * residual)
+        maxcount = -1 if residual is None else int(len(todraw) * residual)
         count = 0
         for px, py, pon in todraw:
             if px is None or py is None:
@@ -342,10 +355,7 @@ class LaserRender:
         if cache is None:
             return
         todraw = cache
-        if residual is None:
-            maxcount = -1
-        else:
-            maxcount = int(len(todraw) * residual)
+        maxcount = -1 if residual is None else int(len(todraw) * residual)
         count = 0
         for ox, oy, pon, px, py in todraw:
             if pon == 0:
