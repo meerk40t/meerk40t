@@ -1674,6 +1674,7 @@ def init_tree(kernel):
         with self.undoscope("Delete group"):
             with self.node_lock:
                 node.remove_node()
+        self.signal("element_removed")
 
     @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
@@ -1711,6 +1712,7 @@ def init_tree(kernel):
             with self.node_lock:
                 for e in to_be_removed:
                     e.remove_node()
+        self.signal("element_removed")
         self.set_emphasis(None)
 
     @tree_conditional(lambda node: not is_regmark(node))

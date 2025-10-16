@@ -2501,6 +2501,8 @@ class Elemental(Service):
         self.set_end_time("remove_nodes")
         if fastmode:
             self.signal("rebuild_tree", "all")
+        else:
+            self.signal("element_removed")
 
     def remove_elements(self, element_node_list):
         with self._node_lock:
@@ -2508,6 +2510,7 @@ class Elemental(Service):
                 if hasattr(elem, "can_remove") and not elem.can_remove:
                     continue
                 elem.remove_node(references=True)
+        self.signal("element_removed")
         self.validate_selected_area()
 
     def remove_operations(self, operations_list):
