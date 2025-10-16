@@ -203,8 +203,6 @@ def plugin(kernel, lifecycle=None):
                     try:
                         os.remove(input_file)
                         os.remove(output_file)
-                    except (PermissionError, OSError):
-                        pass
                     except Exception as e:
                         channel(f"Could not remove temporary files: {e}")
                     # kernel.root.signal("freeze_tree", False)
