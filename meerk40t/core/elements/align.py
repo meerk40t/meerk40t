@@ -234,7 +234,7 @@ def init_commands(kernel):
         if align_y not in ("min", "max", "center", "none"):
             channel(_("Invalid alignment parameter for y"))
             return
-        elements = self.condense_elements(data)
+        elements = self.condense_elements(data, expand_single_group_at_end=True)
 
         if mode == "default":
             if len(elements) < 2:
@@ -658,7 +658,7 @@ def init_commands(kernel):
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
             return "align", (mode, group, bound, raw_elements)
-        elements = self.condense_elements(raw_elements)
+        elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=True, distance=True)
         self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
@@ -679,7 +679,7 @@ def init_commands(kernel):
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
             return "align", (mode, group, bound, raw_elements)
-        elements = self.condense_elements(raw_elements)
+        elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=True, distance=False)
         self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
@@ -700,7 +700,7 @@ def init_commands(kernel):
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
             return "align", (mode, group, bound, raw_elements)
-        elements = self.condense_elements(raw_elements)
+        elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=False, distance=True)
         self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
@@ -721,7 +721,7 @@ def init_commands(kernel):
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
             return "align", (mode, group, bound, raw_elements)
-        elements = self.condense_elements(raw_elements)
+        elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=False, distance=False)
         self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
