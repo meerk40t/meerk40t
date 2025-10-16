@@ -3822,7 +3822,7 @@ def init_tree(kernel):
                 if justonegroup:
                     minimaldata = alldata
                 else:
-                    minimaldata = self.condense_elements(alldata, expand_at_end=False)
+                    minimaldata = self.condense_elements(alldata)
                 for e in minimaldata:
                     parent = e.parent
                     copy_single_node(e, parent, copies, _dx, _dy)

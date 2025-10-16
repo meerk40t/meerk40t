@@ -1155,91 +1155,99 @@ class Elemental(Service):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    def condense_elements(self, data, expand_at_end=True):
-        """
-        This routine looks at a given dataset and will condense
-        it in the sense that if all elements of a given hierarchy
-        (i.e. group or file) are in this set, then they will be
-        replaced and represented by this parent element
-        NB: we will set the emphasized_time of the parent element
-        to the minimum time of all children
-        """
+    def condense_elements(self, data, expand_single_group_at_end: bool = False):
+        """Return a minimal node selection by recursively collapsing fully covered branches.
+
+        Every node in ``data`` is checked. Whenever all children of a ``group``/``file`` are
+        present they are replaced by that parent, and the search continues upward so that an
+        entire subtree can resolve to the highest qualifying ancestor. The promoted parent
+        inherits the earliest ``_emphasized_time`` of its descendants, and the relative order is
+        maintained based on the original child positions. When ``expand_single_group_at_end`` is
+        ``True`` the final result collapses only during processing; if the output would be just a
+        single group/file the routine returns its children instead."""
         if not data:
             return []
 
-        # Use a set for O(1) lookups
-        parent_map = {}
+        condensible_types = {"file", "group"}
+        selection = set(data)
+        order_map = {node: idx for idx, node in enumerate(data)}
 
-        # Build map of selected children per parent
-        for node in data:
-            if node.parent and node.parent.type in ("file", "group"):
-                parent_map.setdefault(node.parent, []).append(node)
+        def node_depth(node):
+            depth = 0
+            parent = node.parent
+            while parent is not None:
+                depth += 1
+                parent = parent.parent
+            return depth
 
-        condensed_data = []
+        def set_parent_emphasized_time(parent):
+            min_time = None
+            for child in parent.children:
+                child_time = getattr(child, "_emphasized_time", None)
+                if child_time is not None and (min_time is None or child_time < min_time):
+                    min_time = child_time
+            if min_time is not None:
+                parent._emphasized_time = min_time
 
-        for node in data:
-            # If this node is a group/file itself, include it directly
-            if node.type in ("file", "group"):
-                condensed_data.append(node)
-                # Set emphasized_time to minimum of children
-                min_time = None
-                for child in node.children:
-                    if (
-                        hasattr(child, "_emphasized_time")
-                        and child._emphasized_time is not None
-                    ):
-                        if min_time is None or child._emphasized_time < min_time:
-                            min_time = child._emphasized_time
-                if min_time is not None:
-                    node._emphasized_time = min_time
+        # Process deepest nodes first so children collapse before ancestors
+        nodes_to_process = sorted(selection, key=node_depth, reverse=True)
+
+        for node in nodes_to_process:
+            if node not in selection:
                 continue
 
-            # Check if all siblings are selected - if so, use parent instead
-            parent = node.parent
-            if parent and parent.type in ("file", "group"):
-                selected_siblings = parent_map.get(parent, [])
-                if len(selected_siblings) == len(parent.children):
-                    # All children selected, use parent instead
-                    if parent not in condensed_data:
-                        condensed_data.append(parent)
-                        # Set emphasized_time to minimum of children
-                        min_time = None
-                        for child in parent.children:
-                            if (
-                                hasattr(child, "_emphasized_time")
-                                and child._emphasized_time is not None
-                            ):
-                                if (
-                                    min_time is None
-                                    or child._emphasized_time < min_time
-                                ):
-                                    min_time = child._emphasized_time
-                        if min_time is not None:
-                            parent._emphasized_time = min_time
-                    # Don't add the individual node when parent is used
-                    continue
-
-            # Either no condensable parent, or not all siblings selected
-            condensed_data.append(node)
-
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_condensed = []
-        for node in condensed_data:
-            if node not in seen:
-                seen.add(node)
-                unique_condensed.append(node)
-
-        # Handle expand_at_end logic
-        if expand_at_end:
-            while len(unique_condensed) == 1:
-                node = unique_condensed[0]
-                if node is not None and node.type in ("file", "group"):
-                    unique_condensed = list(node.children)
-                else:
+            # If any ancestor already represents this branch, skip the node
+            ancestor = node.parent
+            remove_node = False
+            while ancestor is not None:
+                if ancestor in selection:
+                    selection.discard(node)
+                    remove_node = True
                     break
+                if ancestor.type not in condensible_types:
+                    break
+                ancestor = ancestor.parent
+            if remove_node:
+                continue
 
-        return unique_condensed
+            current = node
+            parent = current.parent
+            while parent is not None and parent.type in condensible_types:
+                children = tuple(parent.children)
+                if all(child in selection for child in children):
+                    for child in children:
+                        selection.discard(child)
+                    selection.add(parent)
+
+                    child_orders = [order_map.get(child) for child in children if child in order_map]
+                    if child_orders:
+                        order_map[parent] = min(child_orders)
+                    else:
+                        order_map.setdefault(parent, len(order_map))
+
+                    set_parent_emphasized_time(parent)
+
+                    current = parent
+                    parent = current.parent
+                    continue
+                break
+
+        # Prepare ordered result
+        def sort_key(node):
+            base = order_map.get(node)
+            if base is None:
+                base = len(order_map)
+            return (base, node_depth(node))
+
+        result = sorted(selection, key=sort_key)
+        while len(result) == 1 and expand_single_group_at_end and result[0].type in condensible_types:
+            # If we have just one group at the end then we expand the result to the children
+            node = result[0]
+            if len(node.children) == 0:
+                break
+            result = list(node.children)
+
+        return result
 
     def translate_node(self, node, dx, dy):
         if not node.can_move(self.lock_allows_move):
