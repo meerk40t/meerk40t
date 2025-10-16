@@ -14,6 +14,8 @@ on:
       - '.github/workflows/codeql*.yml'
   schedule:
     - cron: '0 23 * * 5'
+  workflow_dispatch:
+    # Allow manual triggering from GitHub Actions UI
 
 concurrency:
   group: codeql-${{ github.ref }}
