@@ -322,7 +322,7 @@ class TemplatePanel(wx.Panel):
         self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Labels"))
         self.check_values = wxCheckBox(self, wx.ID_ANY, _("Values"))
         self.check_use_vector_labels = wxCheckBox(self, wx.ID_ANY, _("Simple"))
-
+        self.text_subtitle_x = TextCtrl(self, wx.ID_ANY, "")
         self.combo_param_1 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -348,6 +348,7 @@ class TemplatePanel(wx.Panel):
         )
         self.check_color_direction_1 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
+        self.text_subtitle_y = TextCtrl(self, wx.ID_ANY, "")
         self.combo_param_2 = wxComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -411,6 +412,12 @@ class TemplatePanel(wx.Panel):
             self, wx.ID_ANY, _("First parameter (X-Axis)"), wx.VERTICAL
         )
 
+        hline_subtitle_1 = wx.BoxSizer(wx.HORIZONTAL)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Subtitle:"))
+        size_it(mylbl, LABEL_WIDTH)
+        hline_subtitle_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_subtitle_1.Add(self.text_subtitle_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wxStaticText(self, wx.ID_ANY, _("Parameter:"))
         size_it(mylbl, LABEL_WIDTH)
@@ -466,6 +473,7 @@ class TemplatePanel(wx.Panel):
         hline_color_1.Add(self.combo_color_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.check_color_direction_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        self.sizer_param_x.Add(hline_subtitle_1, 0, wx.EXPAND, 0)
         self.sizer_param_x.Add(hline_param_1, 0, wx.EXPAND, 0)
         self.sizer_param_x.Add(self.min_max_container_1, 0, wx.EXPAND, 0)
         self.sizer_param_x.Add(self.list_options_1, 0, wx.EXPAND, 0)
@@ -476,6 +484,12 @@ class TemplatePanel(wx.Panel):
         self.sizer_param_y = StaticBoxSizer(
             self, wx.ID_ANY, _("Second parameter (Y-Axis)"), wx.VERTICAL
         )
+
+        hline_subtitle_2 = wx.BoxSizer(wx.HORIZONTAL)
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Subtitle:"))
+        size_it(mylbl, LABEL_WIDTH)
+        hline_subtitle_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_subtitle_2.Add(self.text_subtitle_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wxStaticText(self, wx.ID_ANY, _("Parameter:"))
@@ -533,6 +547,7 @@ class TemplatePanel(wx.Panel):
         hline_color_2.Add(self.combo_color_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.check_color_direction_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        self.sizer_param_y.Add(hline_subtitle_2, 0, wx.EXPAND, 0)
         self.sizer_param_y.Add(hline_param_2, 0, wx.EXPAND, 0)
         self.sizer_param_y.Add(self.min_max_container_2, 0, wx.EXPAND, 0)
         self.sizer_param_y.Add(self.list_options_2, 0, wx.EXPAND, 0)
@@ -585,6 +600,8 @@ class TemplatePanel(wx.Panel):
             "You can define the common parameters for this operation in the other tabs on top of this window"
         )
         self.combo_ops.SetToolTip(s)
+        self.text_subtitle_x.SetToolTip(_("Choose the subtitle for the X axis"))
+        self.text_subtitle_y.SetToolTip(_("Choose the subtitle for the Y axis"))
         self.combo_param_1.SetToolTip(
             _("Choose the first parameter that you want to be tested")
         )
@@ -660,6 +677,7 @@ class TemplatePanel(wx.Panel):
 
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_1)
         self.Bind(wx.EVT_CHECKLISTBOX, self.validate_input, self.list_options_2)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_labels, self.check_labels)
 
         self.SetSizer(sizer_main)
         self.Layout()
@@ -708,6 +726,11 @@ class TemplatePanel(wx.Panel):
             else:
                 result = result[:-1]
         return result
+
+    def on_check_labels(self, event):
+        active = bool(self.check_labels.GetValue())
+        self.text_subtitle_x.Enable(active)
+        self.text_subtitle_y.Enable(active) 
 
     def on_combo_image(self, event):
         self.validate_input(event)
@@ -1361,26 +1384,36 @@ class TemplatePanel(wx.Panel):
                     op.add_reference(node, 0)
                     return node
 
+                unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
+                header = f"{param_name_1}{unit_str}"
+                linecount = 1
+                if self.text_subtitle_x.GetValue().strip():
+                    header += f"\n{self.text_subtitle_x.GetValue().strip()}"
+                    linecount += 1
                 text_x = start_x + expected_width / 2
                 # maintext gap label gap shape
-                text_y = start_y - 2 * max(text_scale_x, text_scale_y) * float(
+                text_y = start_y - (linecount + 1) * max(text_scale_x, text_scale_y) * float(
                     Length("10mm")
                 )
-                unit_str = f" [{param_unit_1}]" if param_unit_1 else ""
                 add_axis_label(
-                    f"{param_name_1}{unit_str}",
+                    header,
                     text_x,
                     text_y,
                     2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
                     text_op_x,
                 )
-                text_x = start_x - 2 * max(text_scale_x, text_scale_y) * float(
+                unit_str = f" [{param_unit_2}]" if param_unit_2 else ""
+                header = f"{param_name_2}{unit_str}"
+                linecount = 1
+                if self.text_subtitle_y.GetValue().strip():
+                    header += f"\n{self.text_subtitle_y.GetValue().strip()}"
+                    linecount += 1
+                text_x = start_x - (linecount + 1) * max(text_scale_x, text_scale_y) * float(
                     Length("10mm")
                 )
                 text_y = start_y + expected_height / 2
-                unit_str = f" [{param_unit_2}]" if param_unit_2 else ""
                 node = add_axis_label(
-                    f"{param_name_2}{unit_str}",
+                    header,
                     text_x,
                     text_y,
                     2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL,
@@ -1773,6 +1806,8 @@ class TemplatePanel(wx.Panel):
         self.context.setting(bool, "template_coldir2", False)
         self.context.setting(str, "template_list1", "")
         self.context.setting(str, "template_list2", "")
+        self.context.setting(str, "template_subtitle_x", "")
+        self.context.setting(str, "template_subtitle_y", "")
 
     def _set_settings(self, templatename):
         info_field = (
@@ -1798,6 +1833,8 @@ class TemplatePanel(wx.Panel):
             self.context.template_list1,
             self.context.template_list2,
             self.context.template_simple_labels,
+            self.context.template_subtitle_x,
+            self.context.template_subtitle_y,   
         )
         # print (f"Save data to {templatename}, infofield-len={len(info_field)}")
         key = f"{templatename}"
@@ -1842,6 +1879,8 @@ class TemplatePanel(wx.Panel):
             self.context.template_list1 = get_setting(19, "")
             self.context.template_list2 = get_setting(20, "")
             self.context.template_simple_labels = get_setting(21, True)
+            self.context.template_subtitle_x = get_setting(22, "")
+            self.context.template_subtitle_y = get_setting(23, "")
 
     def save_settings(self, templatename=None):
         self.context.template_show_values = self.check_values.GetValue()
@@ -1866,6 +1905,8 @@ class TemplatePanel(wx.Panel):
         self.context.template_coldir2 = self.check_color_direction_2.GetValue()
         self.context.template_list1 = "|".join(self.list_options_1.GetCheckedStrings())
         self.context.template_list2 = "|".join(self.list_options_2.GetCheckedStrings())
+        self.context.template_subtitle_x = self.text_subtitle_x.GetValue()
+        self.context.template_subtitle_y = self.text_subtitle_y.GetValue()
         if templatename:
             # let's try to restore the settings
             self._set_settings(templatename)
@@ -1885,6 +1926,10 @@ class TemplatePanel(wx.Panel):
             )
             self.check_values.SetValue(self.context.template_show_values)
             self.check_labels.SetValue(self.context.template_show_labels)
+            self.text_subtitle_x.SetValue(self.context.template_subtitle_x)
+            self.text_subtitle_y.SetValue(self.context.template_subtitle_y)
+            self.text_subtitle_x.Enable(self.context.template_show_labels)
+            self.text_subtitle_y.Enable(self.context.template_show_labels)
             self.check_use_vector_labels.SetValue(self.context.template_simple_labels)
             self.combo_ops.SetSelection(
                 min(self.context.template_optype, self.combo_ops.GetCount() - 1)
