@@ -9,6 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.gui_optypes import get_operation_info
 from meerk40t.gui.wxutils import ScrolledPanel, wxButton, wxListCtrl
 from meerk40t.kernel import signal_listener
 
@@ -72,14 +73,9 @@ class OpInfoPanel(ScrolledPanel):
         )
         self.SetSizer(sizer_main)
         self.Layout()
+    
+        self.opinfo = get_operation_info()
 
-        self.opinfo = {
-            "op cut": ("Cut", icons8_laser_beam, 0),
-            "op raster": ("Raster", icons8_direction, 0),
-            "op image": ("Image", icons8_image, 0),
-            "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
-            "op dots": ("Dots", icon_points, 0),
-        }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
         for key in self.opinfo:

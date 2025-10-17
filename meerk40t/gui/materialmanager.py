@@ -52,19 +52,11 @@ import wx
 from meerk40t.core.elements.element_types import op_vector_nodes
 from meerk40t.core.node.node import Node
 from meerk40t.gui.icons import (
-    icon_effect_hatch,
-    icon_effect_wobble,
-    icon_hatch,
     icon_library,
-    icon_points,
     icons8_caret_down,
     icons8_caret_up,
-    icons8_console,
-    icons8_direction,
-    icons8_image,
-    icons8_laser_beam,
-    icons8_laserbeam_weak,
 )
+from meerk40t.gui.gui_optypes import get_operation_info
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     EditableListCtrl,
@@ -469,17 +461,7 @@ class MaterialPanel(ScrolledPanel):
         )
         self.list_preview.resize_columns()
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
-        self.opinfo = {
-            "op cut": ("Cut", icons8_laser_beam),
-            "op raster": ("Raster", icons8_direction),
-            "op image": ("Image", icons8_image),
-            "op engrave": ("Engrave", icons8_laserbeam_weak),
-            "op dots": ("Dots", icon_points),
-            "op hatch": ("Hatch", icon_hatch),
-            "effect hatch": ("Hatch", icon_effect_hatch),
-            "effect wobble": ("Wobble", icon_effect_wobble),
-            "generic": ("Generic", icons8_console),
-        }
+        self.opinfo = get_operation_info()
 
         param_box = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.VERTICAL)
 
@@ -2129,15 +2111,16 @@ class MaterialPanel(ScrolledPanel):
                         if opc is None:
                             opc = Color("black")
                         fgcol = (
-                            wx.BLACK
+                            Color("black")
                             if Color.distance(opc, "black")
                             > Color.distance(opc, "white")
-                            else wx.WHITE
+                            else Color("white")
                         )
                         forced_bg = (opc.red, opc.green, opc.blue, opc.alpha)
                         bmap = info[1].GetBitmap(
                             resize=(iconsize, iconsize),
                             noadjustment=True,
+                            use_theme=False,
                             color=fgcol,
                             forced_background=forced_bg,
                         )

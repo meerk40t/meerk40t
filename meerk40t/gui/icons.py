@@ -576,22 +576,12 @@ class VectorIcon:
         )
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        # dc.SetBackground(self._background)
-        # dc.SetBackground(wx.RED_BRUSH)
-        # dc.Clear()
-        if forced_background:
-            dc.SetBackground(
-                wx.Brush(
-                    wx.Colour(
-                        forced_background[0],
-                        forced_background[1],
-                        forced_background[2],
-                    )
-                )
-            )
-            dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.dc = dc
+        # Fill the complete canvas with a color
+        if forced_background:
+            gc.SetBrush(wx.Brush(wx.Colour(red=forced_background[0], green=forced_background[1], blue=forced_background[2])))
+            gc.DrawRectangle(0, 0, final_icon_width, final_icon_height)
         stroke_paths = []
         fill_paths = []
         # Establish the box...

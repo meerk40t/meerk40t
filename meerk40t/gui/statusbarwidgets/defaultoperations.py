@@ -7,10 +7,12 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import dip_size, wxStaticBitmap
-
+from meerk40t.core.elements.element_types import op_burnable_nodes
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
+
+DEFAULT_SORT_ORDER = ("op cut", "op engrave", "op raster", "op image", "op dots")
 
 
 class DefaultOperationWidget(StatusBarWidget):
@@ -67,22 +69,30 @@ class DefaultOperationWidget(StatusBarWidget):
             + _("Right click for options")
             + "\n"
             + _("Origin: {title}").format(
-                title=self.tree_name if self.is_sync_mode else self.context.elements.default_operations_title
+                title=self.tree_name
+                if self.is_sync_mode
+                else self.context.elements.default_operations_title
             )
         )
 
     def source_ops(self):
+        # We might have effects in the tree too - so we need to get only the operations
         if self.is_sync_mode:
-            return list(self.context.elements.ops())
+            return [
+                op for op in self.context.elements.ops() if op.type in op_burnable_nodes
+            ]
         else:
-            return list(self.context.elements.default_operations)
-        
+            return [
+                op
+                for op in self.context.elements.default_operations
+                if op.type in op_burnable_nodes
+            ]
+
     def GenerateControls(self, parent, panelidx, identifier, context):
         def size_it(ctrl, dimen_x, dimen_y):
             ctrl.SetMinSize(wx.Size(dimen_x, dimen_y))
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
-        
         super().GenerateControls(parent, panelidx, identifier, context)
         display_mode = self.context.elements.setting(int, "default_ops_display_mode", 1)
         size = dip_size(self.parent, 32, 32)
@@ -118,9 +128,11 @@ class DefaultOperationWidget(StatusBarWidget):
         self.assign_buttons.clear()
         self.assign_operations.clear()
         self.assign_labels.clear()
-        op_order = ("op cut", "op engrave", "op raster", "op image", "op dots")
+        op_order = DEFAULT_SORT_ORDER
         oplist = []
-        self.is_sync_mode = self.context.elements.setting(bool, "default_ops_sync", False)
+        self.is_sync_mode = self.context.elements.setting(
+            bool, "default_ops_sync", False
+        )
         source_ops = self.source_ops()
         for op in source_ops:
             if hasattr(op, "type") and op.type in op_order:
@@ -134,13 +146,22 @@ class DefaultOperationWidget(StatusBarWidget):
                     if other.id is not None and other.type == op.type:
                         seen_ids.add(other.id)
                 newid = 1
-                optype_prefix = "OP" if len(op.type) < 4 else op.type[3].upper() # They all start with "op "
+                optype_prefix = (
+                    "OP" if len(op.type) < 4 else op.type[3].upper()
+                )  # They all start with "op "
                 while f"{optype_prefix}{newid}" in seen_ids:
                     newid += 1
                 op.id = f"{optype_prefix}{newid}"
         if display_mode == 1:
             # Group according to type CC EE RR - then sort alphabetically within type
-            oplist.sort(key=lambda o: (op_order.index(o.type) if hasattr(o, "type") and o.type in op_order else 99, o.id if hasattr(o, "id") and o.id is not None else ""))
+            oplist.sort(
+                key=lambda o: (
+                    op_order.index(o.type)
+                    if hasattr(o, "type") and o.type in op_order
+                    else 99,
+                    o.id if hasattr(o, "id") and o.id is not None else "",
+                )
+            )
 
         for op in oplist:
             btn = wxStaticBitmap(
@@ -266,14 +287,14 @@ class DefaultOperationWidget(StatusBarWidget):
             self.is_sync_mode = not self.is_sync_mode
             self.context.elements.default_ops_sync = self.is_sync_mode
             self.Signal("default_operations")
-        
+
         def on_order_mode(mode):
             def handler(event):
                 self.context.elements.default_ops_display_mode = mode
                 self.Signal("default_operations")
-            
+
             return handler
-            
+
         # def on_update_button_from_tree(idx, operation):
         #     def handler(*args):
         #         self.assign_operations[stored_idx] = self.context.elements.create_usable_copy(stored_op)
@@ -377,7 +398,7 @@ class DefaultOperationWidget(StatusBarWidget):
                     on_menu_material(material),
                     menu_secondary.Append(wx.ID_ANY, mat[2], ""),
                 )
-        
+
         menu.AppendSeparator()
         item = menu.AppendCheckItem(wx.ID_ANY, _("Sync to tree operations"))
         item.Check(self.is_sync_mode)
@@ -388,7 +409,7 @@ class DefaultOperationWidget(StatusBarWidget):
         item.Check(display_mode == 0)
         self.parent.Bind(wx.EVT_MENU, on_order_mode(0), item)
         item = menu.AppendRadioItem(wx.ID_ANY, _("Group by type (CCEERRII)"))
-        item.Check(display_mode == 1)   
+        item.Check(display_mode == 1)
         self.parent.Bind(wx.EVT_MENU, on_order_mode(1), item)
 
         self.parent.PopupMenu(menu)
@@ -518,10 +539,17 @@ class DefaultOperationWidget(StatusBarWidget):
         # First reset all tooltips
         # We may have reloaded operations
         source_ops = self.source_ops()
-        display_mode = self.context.elements.setting(int, "default_ops_display_mode", 1)    
+        display_mode = self.context.elements.setting(int, "default_ops_display_mode", 1)
         if display_mode == 1:
             # Group according to type CC EE RR - then sort alphabetically within type
-            source_ops.sort(key=lambda o: (("op cut", "op engrave", "op raster", "op image", "op dots").index(o.type) if hasattr(o, "type") and o.type in ("op cut", "op engrave", "op raster", "op image", "op dots") else 99, o.id if hasattr(o, "id") and o.id is not None else "")) 
+            source_ops.sort(
+                key=lambda o: (
+                    DEFAULT_SORT_ORDER.index(o.type)
+                    if hasattr(o, "type") and o.type in DEFAULT_SORT_ORDER
+                    else 99,
+                    o.id if hasattr(o, "id") and o.id is not None else "",
+                )
+            )
         for idx, node in enumerate(source_ops):
             opid = node.id
             if opid is None:
@@ -578,7 +606,9 @@ class DefaultOperationWidget(StatusBarWidget):
             # Something changed - could be color or id
             if len(args):
                 self.reset_tooltips()
-        elif (signal == "default_operations") or (signal == "updateop_tree" and self.is_sync_mode):
+        elif (signal == "default_operations") or (
+            signal == "updateop_tree" and self.is_sync_mode
+        ):
             # New default operations!
             self.GenerateControls(
                 self.parent, self.panelidx, self.identifier, self.context
