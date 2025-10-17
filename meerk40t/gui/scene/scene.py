@@ -218,6 +218,10 @@ class Scene(Module, Job):
         self.widget_root = None
         self.push_stack(SceneSpaceWidget(self))
 
+        # Matrix cache for performance optimization
+        self._matrix_cache = {}
+        self._matrix_cache_valid = True
+
         self.interval = 1.0 / 60.0  # 60fps
         self.last_window_pos = None  # Store last 2-tuple window position
         self._down_start_time = None
@@ -663,22 +667,53 @@ class Scene(Module, Job):
             )
         return False
 
+    def _get_cached_inverse_matrix(self, current_matrix):
+        """Get cached inverse matrix or compute and cache it."""
+        if current_matrix is None or current_matrix.is_identity():
+            return None
+        
+        # Use matrix object id as cache key
+        matrix_id = id(current_matrix)
+        
+        # Check if cache is valid and matrix is cached
+        if self._matrix_cache_valid and matrix_id in self._matrix_cache:
+            return self._matrix_cache[matrix_id]
+        
+        # Compute inverse and cache it
+        try:
+            inverse_matrix = Matrix(current_matrix)
+            inverse_matrix.inverse()
+            self._matrix_cache[matrix_id] = inverse_matrix
+            return inverse_matrix
+        except ZeroDivisionError:
+            # Matrix is not invertible
+            return None
+
+    def _invalidate_matrix_cache(self):
+        """Invalidate the matrix cache when viewport changes."""
+        self._matrix_cache.clear()
+        self._matrix_cache_valid = False
+
     def _calculate_space_position(self, window_pos, current_matrix):
-        """Calculate space position from window position using matrix transformation."""
+        """Calculate space position from window position using cached matrix transformation."""
         space_pos = window_pos
         if current_matrix is not None and not current_matrix.is_identity():
-            space_cur = current_matrix.point_in_inverse_space(window_pos[:2])
-            space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
-            sdx = space_cur[0] - space_last[0]
-            sdy = space_cur[1] - space_last[1]
-            space_pos = (
-                space_cur[0],
-                space_cur[1],
-                space_last[0],
-                space_last[1],
-                sdx,
-                sdy,
-            )
+            # Use cached inverse matrix for better performance
+            inverse_matrix = self._get_cached_inverse_matrix(current_matrix)
+            if inverse_matrix is not None:
+                # transform_point modifies in-place, so we need to pass lists, not tuples
+                space_cur = inverse_matrix.transform_point([window_pos[0], window_pos[1]])
+                space_last = inverse_matrix.transform_point([window_pos[2], window_pos[3]])
+                sdx = space_cur[0] - space_last[0]
+                sdy = space_cur[1] - space_last[1]
+                space_pos = (
+                    space_cur[0],
+                    space_cur[1],
+                    space_last[0],
+                    space_last[1],
+                    sdx,
+                    sdy,
+                )
         return space_pos
 
     def _handle_keyboard_events(
@@ -887,6 +922,12 @@ class Scene(Module, Job):
         previous_top_element,
     ):
         """Handle mouse events by processing the hit chain."""
+        # Invalidate matrix cache on viewport-changing events
+        if event_type in ("wheeldown", "wheelup", "middledown", "middleup"):
+            self._invalidate_matrix_cache()
+            # Re-validate after this event cycle
+            self._matrix_cache_valid = True
+        
         if event_type in (
             "leftdown",
             "middledown",
@@ -1147,9 +1188,16 @@ class Scene(Module, Job):
     def _get_elements_hash(self):
         """
         Generate a simple hash of the elements to detect changes.
+        Uses the elements tree modification counter for O(1) complexity.
         """
-        # Simple hash based on element count
         try:
+            # Use the tree's built-in modification tracking if available
+            if hasattr(self.context.elements, '_tree_changed'):
+                return self.context.elements._tree_changed
+            # Fallback to timestamp-based detection
+            if hasattr(self.context.elements, 'time'):
+                return hash(self.context.elements.time)
+            # Last resort: count elements (expensive)
             element_count = sum(1 for _ in self.context.elements.flat(types=elem_nodes))
             return hash(element_count)
         except Exception:
