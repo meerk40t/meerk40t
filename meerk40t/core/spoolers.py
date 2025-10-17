@@ -5,7 +5,7 @@ from threading import Condition
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
-
+from meerk40t.core.planner import STAGE_PLAN_BLOB
 """
 This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home,
 unlock rail commands. And it provides the the spooler class which should be provided by each driver.
@@ -32,9 +32,24 @@ def plugin(kernel, lifecycle):
             spooler = device.spooler
             # Do we have a filename to use as label?
             label = kernel.elements.basename
-
+       
             if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
+                planner = kernel.planner
+                try:
+                    stage, info = planner.get_plan_stage(data.name)
+                except AttributeError:
+                    stage = None
+                    info = ""
+                # print (data.name, stage, info)
+                if stage is None or STAGE_PLAN_BLOB not in stage:
+                    channel(
+                        _(
+                            "Invalid plan - no 'blob' plan stage found. Please generate a valid plan before spooling."
+                        )
+                    )
+                    return "spooler", spooler
+                    
+                # If plan data is in data, then we copy that and move on to next step.                   
                 data.final()
                 loops = 1
                 elements = kernel.elements
