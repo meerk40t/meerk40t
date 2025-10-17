@@ -49,6 +49,9 @@ NEARLY_ZERO = 1.0e-6
 ROTATION_THRESHOLD = 0.001
 POSITION_THRESHOLD = 0.0001
 
+TOOL_RESULT_ABORT = -1
+TOOL_RESULT_MOVE = 0
+TOOL_RESULT_END = 1
 
 def calculate_handle_offsets_and_deltas(
     half, handle_outside, inner_wd_half, inner_ht_half
@@ -122,6 +125,8 @@ def process_event(
         return None  # Not a hover event
 
     def _handle_mouse_events():
+        nonlocal nearest_snap
+        nonlocal event_type
         if space_pos is None:
             return RESPONSE_CHAIN
         elements = widget.scene.context.elements
@@ -137,6 +142,21 @@ def process_event(
             and len(modifiers) == 1
             and ("shift" in modifiers or "ctrl" in modifiers)
         )
+           
+        if event_type == "leftdown":
+            widget._last_win_x = window_pos[0]
+            widget._last_win_y = window_pos[1]
+        if event_type == "leftup":
+            if widget_identifier=="move" and hasattr(widget, "_last_win_x") and window_pos[0] == widget._last_win_x and window_pos[1] == widget._last_win_y:
+                # No movement occurred
+                dx = 0
+                dy = 0
+                nearest_snap = None
+                widget.was_lb_raised = False
+                event_type = "leftclick"
+                del widget._last_win_x
+                del widget._last_win_y
+
         if event_type == "leftdown":
             # We want to establish that we don't have a singular Shift key or a singular ctrl-key
             # as these will extend / reduce the selection
@@ -158,7 +178,7 @@ def process_event(
                 widget.master.tool_running = optimize_drawing
                 widget.master.invalidate_rot_center()
                 widget.master.check_rot_center()
-                widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
+                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers)
                 return RESPONSE_CONSUME
         # elif event_type == "middledown":
         #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
@@ -169,11 +189,11 @@ def process_event(
         #     widget.master.total_delta_x = dx
         #     widget.master.total_delta_y = dy
         #     widget.master.tool_running = optimize_drawing
-        #     widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
+        #     widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers)
         #     return RESPONSE_CONSUME
         elif event_type == "leftup":
             if widget.was_lb_raised:
-                widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
+                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_END, modifiers)
                 widget.scene.context.elements.ensure_positive_bounds()
                 widget.was_lb_raised = False
                 widget.master.show_border = True
@@ -181,7 +201,7 @@ def process_event(
                 return RESPONSE_CONSUME
         elif event_type in ("middleup", "lost"):
             if widget.was_lb_raised:
-                widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
+                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_END, modifiers)
                 widget.was_lb_raised = False
                 widget.master.show_border = True
                 widget.master.tool_running = False
@@ -196,13 +216,18 @@ def process_event(
                     widget.save_height = widget.height
                 widget.master.total_delta_x += dx
                 widget.master.total_delta_y += dy
-                widget.tool(space_pos, nearest_snap, dx, dy, 0, modifiers)
+                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_MOVE, modifiers)
                 return RESPONSE_CONSUME
         elif event_type == "leftclick":
             if widget.was_lb_raised:
-                widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
+                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_END, modifiers)
                 widget.scene.context.elements.ensure_positive_bounds()
                 widget.was_lb_raised = False
+                widget.master.tool_running = False
+                widget.master.show_border = True
+                return RESPONSE_CONSUME
+            else:
+                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers)
                 widget.master.tool_running = False
                 widget.master.show_border = True
                 return RESPONSE_CONSUME
@@ -652,12 +677,12 @@ class RotationWidget(Widget):
             # dy = position[5]
 
         elements = self.scene.context.elements
-        if event == 1:
+        if event == TOOL_RESULT_END:
             update_elements(self.scene)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-        elif event == -1:
+        elif event == TOOL_RESULT_ABORT:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
@@ -665,7 +690,7 @@ class RotationWidget(Widget):
             # Hint for translate check: _("Element rotated")
             elements.undo.mark("Element rotated")
             return
-        elif event == 0:
+        elif event == TOOL_RESULT_MOVE:
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
             if self.rotate_cy is None:
@@ -935,9 +960,9 @@ class CornerWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1:  # End
+        if event == TOOL_RESULT_END:  # End
             update_elements(self.scene)
-        elif event == -1:
+        elif event == TOOL_RESULT_ABORT:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
@@ -945,7 +970,7 @@ class CornerWidget(Widget):
             # Hint for translate check: _("Element scaled")
             elements.undo.mark("Element scaled")
             return
-        elif event == 0:
+        elif event == TOOL_RESULT_MOVE:
             # Establish scales
             scalex = 1
             scaley = 1
@@ -1162,9 +1187,9 @@ class SideWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1:
+        if event == TOOL_RESULT_END:
             update_elements(self.scene)
-        elif event == -1:
+        elif event == TOOL_RESULT_ABORT:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
@@ -1172,7 +1197,7 @@ class SideWidget(Widget):
             # Hint for translate check: _("Element scaled")
             elements.undo.mark("Element scaled")
             return
-        elif event == 0:
+        elif event == TOOL_RESULT_MOVE:
             # Establish scales
             scalex = 1
             scaley = 1
@@ -1368,12 +1393,12 @@ class SkewWidget(Widget):
             # dx = position[4]
             # dy = position[5]
 
-        if event == 1:  # end
+        if event == TOOL_RESULT_END:  # end
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
             update_elements(self.scene)
-        elif event == -1:
+        elif event == TOOL_RESULT_ABORT:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
@@ -1381,7 +1406,7 @@ class SkewWidget(Widget):
             # Hint for translate check: _("Element skewed")
             elements.undo.mark("Element skewed")
             return
-        elif event == 0:  # move
+        elif event == TOOL_RESULT_MOVE:  # move
             if self.is_x:
                 this_side = self.master.total_delta_x
                 other_side = self.master.height
@@ -1711,7 +1736,7 @@ class MoveWidget(Widget):
         # to move a defined reference and not an arbitrary point on the
         # Widget area.
         # nearest_snap = None
-        if nearest_snap is not None and event != -1:
+        if nearest_snap is not None and event != TOOL_RESULT_ABORT:
             # Position is space_pos:
             # 0, 1: current x, y
             # 2, 3: last pos x, y
@@ -1737,7 +1762,7 @@ class MoveWidget(Widget):
             #     + f"dx={position[4]:.2f}, dy={position[5]:.2f}"
             # )
 
-        if event == 1:  # end
+        if event == TOOL_RESULT_END:  # end
             # Cleanup - we check for:
             # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
             # b) Use the distance of the 4 corners and the center to a grid point -> take the smallest distance
@@ -1938,7 +1963,7 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
             update_elements(self.scene)
-        elif event == -1:  # start
+        elif event == TOOL_RESULT_ABORT:  # abort
             if modifiers and "alt" in modifiers:
                 self.create_duplicate()
             self.scene.pane.modif_active = True
@@ -1949,7 +1974,7 @@ class MoveWidget(Widget):
             elements.undo.mark("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
-        elif event == 0:  # move
+        elif event == TOOL_RESULT_MOVE:  # move
             move_to(dx, dy, interim=True)
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
@@ -2064,15 +2089,15 @@ class MoveRotationOriginWidget(Widget):
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
 
-        if event == 1:  # end
+        if event == TOOL_RESULT_END:  # end
             self.master.rotation_cx += lastdx - self.master.offset_x
             self.master.rotation_cy += lastdy - self.master.offset_y
             self.master.invalidate_rot_center()
             self.scene.pane.modif_active = False
-        elif event == -1:  # start
+        elif event == TOOL_RESULT_ABORT:  # abort
             self.scene.pane.modif_active = True
             return
-        elif event == 0:  # move
+        elif event == TOOL_RESULT_MOVE:  # move
             self.master.rotation_cx += dx
             self.master.rotation_cy += dy
             self.master.invalidate_rot_center()
@@ -2215,10 +2240,10 @@ class ReferenceWidget(Widget):
         Toggle the Reference Status of the selected elements
         """
         elements = self.scene.context.elements
-        if event == -1:  # leftdown
+        if event == TOOL_RESULT_ABORT:  # abort
             # Nothing to do...
             return
-        elif event == 1:  # leftup, leftclick
+        elif event == TOOL_RESULT_END:  # leftup, leftclick
             if self.is_reference_object:
                 self.scene.pane.reference_object = None
             else:
@@ -2348,10 +2373,10 @@ class LockWidget(Widget):
         Toggle the Reference Status of the selected elements
         """
         elements = self.scene.context.elements
-        if event == -1:  # leftdown
+        if event == TOOL_RESULT_ABORT:  # abort
             # Nothing to do...
             return
-        elif event == 1:  # leftup, leftclick
+        elif event == TOOL_RESULT_END:  # leftup, leftclick
             data = list(elements.flat(types=elem_nodes, emphasized=True))
             for e in data:
                 e.lock = False
