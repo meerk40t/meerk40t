@@ -1491,8 +1491,8 @@ class Elemental(Service):
         for i, op in enumerate(oplist):
             if hasattr(op, "allow_save") and not op.allow_save():
                 continue
-            if op.type == "reference":
-                # We do not save references.
+            if op.type == "reference" or op.type.startswith("effect "):
+                # We do not save references or effects - effects will be stored as an operation information
                 continue
 
             section = f"{name} {i:06d}"
@@ -1508,6 +1508,7 @@ class Elemental(Service):
             )
             if effects:
                 op.settings["effects"] = effects
+                # print (f"{op.type}.{op.display_label()} - effect={effects}")
             op.save(settings, section)
             # We will save the effect information, ie whether an operation does contain a hatch/wobble/warp
 
@@ -2035,6 +2036,7 @@ class Elemental(Service):
     def create_basic_op_list(self):
         oplist = []
         pwr = 1000
+        spd = 140
         spd = 140
         node = Node().create(
             type="op image",
@@ -2679,7 +2681,6 @@ class Elemental(Service):
 
     def center(self):
         bounds = self._emphasized_bounds
-        return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
 
     def ensure_positive_bounds(self):
         b = self._emphasized_bounds
