@@ -160,6 +160,14 @@ class PropertyWindow(MWindow):
                     ):
                         pages_in_node.append((property_sheet, node))
                         found = True
+                if not found:
+                    # We try the more generic property sheets
+                    for property_sheet in self.context.lookup_all("property/Any/.*"):
+                        if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                            node
+                        ):
+                            pages_in_node.append((property_sheet, node))
+                            found = True
                 # If we did not have any hits and the node is a reference
                 # then we fall back to the master. So if in the future we
                 # would have a property panel dealing with reference-nodes
