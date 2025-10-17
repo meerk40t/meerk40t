@@ -38,6 +38,7 @@ class AttractionWidget(Widget):
         self._cached_pens = {}
         self._cached_brushes = {}
         self._cached_matrix_scale = None
+        self._cached_scale_value = None
         self._cached_attraction_lengths = {}
 
         self.visible_pen = wx.Pen()
@@ -89,13 +90,13 @@ class AttractionWidget(Widget):
         # Create a simple hash of the matrix for caching
         matrix_hash = hash((matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f))
         if self._cached_matrix_scale != matrix_hash:
+            self._cached_matrix_scale = matrix_hash
             try:
-                self._cached_matrix_scale = matrix_hash
-                return get_matrix_scale(matrix)
+                self._cached_scale_value = get_matrix_scale(matrix)
             except ZeroDivisionError:
                 matrix.reset()
-                return 1.0
-        return get_matrix_scale(matrix)
+                self._cached_scale_value = 1.0
+        return self._cached_scale_value
 
     def _get_attraction_lengths(self, matrix):
         """Cache attraction length calculations."""
@@ -203,9 +204,9 @@ class AttractionWidget(Widget):
         elif closeup == 1:  # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
-        else:
+        else:  # visible but not in snap range
             pen = self.visible_pen
-            sym_size = 0.5 * self.symbol_size
+            sym_size = 0.75 * self.symbol_size
         return pen, sym_size
 
     def _draw_caret(self, gc, x, y, closeup):
@@ -347,6 +348,7 @@ class AttractionWidget(Widget):
         self._cached_pens.clear()
         self._cached_brushes.clear()
         self._cached_matrix_scale = None
+        self._cached_scale_value = None
         self._cached_attraction_lengths.clear()
 
     def signal(self, signal, *args, **kwargs):
