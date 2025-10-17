@@ -164,12 +164,17 @@ class GenericOpPropertyPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        return node.type in SUPPORTED
-
+        return (  
+            node is not None  
+            and hasattr(node, "type")  
+            and node.type in SUPPORTED  
+        )  
+        
     def get_choices(self):
         if self.operation is None:
             return []
-        choices = list(SUPPORTED.get(self.operation.type, []))
+        
+        choices = [choice.copy() for choice in SUPPORTED.get(self.operation.type, [])]  
         for choice in choices:
             choice["object"] = self.operation
             choice["signals"] = "opupdate"
@@ -191,7 +196,8 @@ class GenericOpPropertyPanel(wx.Panel):
             # we need to unload the old panel first
             self.main_sizer.Detach(self.panel)
             # self.panel.Close()
-            # self.panel.Destroy()
+            self.panel.pane_hide() # This will remove signal listeners
+            self.panel.Destroy()
         self.choices = self.get_choices()
         self.panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=self.get_choices()
@@ -201,5 +207,6 @@ class GenericOpPropertyPanel(wx.Panel):
 
     @signal_listener("opupdate")
     def on_operation_update(self, *args, **kwargs):
-        self.context.elements.signal("element_property_update", self.operation)
+        if self.operation is not None:
+            self.context.elements.signal("element_property_update", self.operation)
         
