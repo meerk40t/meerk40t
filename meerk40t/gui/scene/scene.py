@@ -216,7 +216,6 @@ class Scene(Module, Job):
         self.hittable_elements = []
         self.hit_chain = []
         self.widget_root = None
-        self._hittable_chain_dirty = True  # Initially dirty, needs rebuild
         self.push_stack(SceneSpaceWidget(self))
 
         self.interval = 1.0 / 60.0  # 60fps
@@ -241,10 +240,6 @@ class Scene(Module, Job):
         self._backgrounds = {}
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
-        
-        # Cached matrix and scale for snap calculations
-        self._cached_matrix = None
-        self._cached_scale = None
 
         self._animating = []
         self._animate_lock = threading.Lock()
@@ -517,37 +512,32 @@ class Scene(Module, Job):
     def notify_added_child(self, child):
         """
         Called when a child is added to the tree. Notifies scene as a whole.
-        Marks hittable chain as dirty since widget structure changed.
         """
         try:
             child.init(self.context)
         except AttributeError:
             pass
-        self._hittable_chain_dirty = True
 
     def notify_removed_from_parent(self, parent):
         """
         Called when a widget is removed from its parent. Notifies scene as a whole.
         """
-        self._hittable_chain_dirty = True
+        pass
 
     def notify_removed_child(self, child):
         """
         Called when a widget's child is removed. Notifies scene as a whole.
-        Marks hittable chain as dirty since widget structure changed.
         """
         try:
             child.final(self.context)
         except AttributeError:
             pass
-        self._hittable_chain_dirty = True
 
     def notify_moved_child(self, child):
         """
         Called when a widget is moved from one widget parent to another.
-        Marks hittable chain as dirty since widget structure changed.
         """
-        self._hittable_chain_dirty = True
+        pass
 
     def draw(self, canvas):
         """
@@ -579,14 +569,10 @@ class Scene(Module, Job):
     def rebuild_hittable_chain(self):
         """
         Iterates through the tree and adds all hittable elements to the hittable_elements list.
-        Only rebuilds if the chain is marked as dirty, otherwise uses cached elements.
+        This is dynamically rebuilt on the mouse event.
         """
-        if not self._hittable_chain_dirty:
-            return  # Use cached hittable_elements
-        
         self.hittable_elements.clear()
         self.rebuild_hit_chain(self.widget_root, _reused_identity_widget)
-        self._hittable_chain_dirty = False  # Mark as clean after rebuild
 
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
         """
@@ -1059,8 +1045,6 @@ class Scene(Module, Job):
     @signal_listener("element_property_reload")
     @signal_listener("rebuild_tree")
     @signal_listener("modified_by_tool")
-    @signal_listener("element_added")
-    @signal_listener("element_removed")
     def on_external_element_change(self, *args, **kwargs):
         """
         Listens to element changes and resets the attraction point cache.
@@ -1072,6 +1056,8 @@ class Scene(Module, Job):
         Resets the cached attraction points forcing a recalculation on next use.
         """
         self.snap_attraction_points = None
+        if hasattr(self, "_last_elements_hash"):
+            del self._last_elements_hash
 
     def _calculate_attraction_points(self):
         """
@@ -1079,11 +1065,14 @@ class Scene(Module, Job):
         """
         self.context.elements.set_start_time("attr_calc_points")
 
-        # Cache is only used if snap_attraction_points is not None
-        # Signal listeners reset it to None on any element change
-        if self.snap_attraction_points is not None:
+        # Check if we need to recalculate (cache invalidation)
+        current_elements_hash = self._get_elements_hash()
+        if (
+            hasattr(self, "_last_elements_hash")
+            and self._last_elements_hash == current_elements_hash
+        ):
             # Elements haven't changed, reuse cached points
-            # print (f"Cached attraction points used: {len(self.snap_attraction_points)} points.")
+            # print (f"Cached attraction points used: {len(self.snap_attraction_points) if self.snap_attraction_points else 0} points.")
             self.context.elements.set_end_time("attr_calc_points", message="cached")
             return
 
@@ -1110,52 +1099,62 @@ class Scene(Module, Job):
         # Minimum distance of 2 scaled pixels (spx) - provides appropriate snap tolerance 
         # that scales with zoom level, ensuring consistent snap behavior across different view scales
         minimum_distance = float(Length("2spx"))
-        
-        # Protect element tree access with scene lock to prevent race conditions
-        with self.scene_lock:
-            for node in self.context.elements.flat(types=elem_nodes):
-                # print(f"Debug: Processing node {node.type}")
-                if hasattr(node, "as_geometry"):
-                    geom = node.as_geometry()
-                    # Let's take all start and end points of lines and curves
-                    # but only if they are further away than a small epsilon to avoid duplicates
-                    lastpt = None
-                    for idx, seg in enumerate(geom.segments[: geom.index]):
-                        segtype = geom._segtype(seg)
-                        if segtype == TYPE_END:
-                            lastpt = None
-                        if segtype in NON_GEOMETRY_TYPES:
-                            continue
-                        pt0 = seg[0]  # Start point
-                        pt1 = geom.position(idx, 0.5)
-                        pt2 = seg[-1]  # End point
+        for node in self.context.elements.flat(types=elem_nodes):
+            # print(f"Debug: Processing node {node.type}")
+            if hasattr(node, "as_geometry"):
+                geom = node.as_geometry()
+                # Let's take all start and end points of lines and curves
+                # but only if they are further away than a small epsilon to avoid duplicates
+                lastpt = None
+                for idx, seg in enumerate(geom.segments[: geom.index]):
+                    segtype = geom._segtype(seg)
+                    if segtype == TYPE_END:
+                        lastpt = None
+                    if segtype in NON_GEOMETRY_TYPES:
+                        continue
+                    pt0 = seg[0]  # Start point
+                    pt1 = geom.position(idx, 0.5)
+                    pt2 = seg[-1]  # End point
 
-                        def added(pt, lastpt, pt_type):
-                            if lastpt is None or abs(pt - lastpt) > minimum_distance:
-                                points_list.append(
-                                    [pt.real, pt.imag, pt_type, node.emphasized]
-                                )
-                                lastpt = pt
-                            return lastpt
+                    def added(pt, lastpt, pt_type):
+                        if lastpt is None or abs(pt - lastpt) > minimum_distance:
+                            points_list.append(
+                                [pt.real, pt.imag, pt_type, node.emphasized]
+                            )
+                            lastpt = pt
+                        return lastpt
 
-                        lastpt = added(pt0, lastpt, TYPE_POINT)
-                        lastpt = added(pt1, lastpt, TYPE_MIDDLE_SMALL)
-                        lastpt = added(pt2, lastpt, TYPE_POINT)
-                    # Other element types can be added here as needed
-                elif hasattr(node, "points"):
-                    emph = node.emphasized
-                    # Extend the list instead of appending one by one for better performance
-                    for pt in node.points:
-                        if len(pt) >= 3:
-                            pt_type = translation_table.get(pt[2], TYPE_POINT)
-                            points_list.append([pt[0], pt[1], pt_type, emph])
+                    lastpt = added(pt0, lastpt, TYPE_POINT)
+                    lastpt = added(pt1, lastpt, TYPE_MIDDLE_SMALL)
+                    lastpt = added(pt2, lastpt, TYPE_POINT)
+                # Other element types can be added here as needed
+            elif hasattr(node, "points"):
+                emph = node.emphasized
+                # Extend the list instead of appending one by one for better performance
+                for pt in node.points:
+                    if len(pt) >= 3:
+                        pt_type = translation_table.get(pt[2], TYPE_POINT)
+                        points_list.append([pt[0], pt[1], pt_type, emph])
 
         self.snap_attraction_points = points_list
+        self._last_elements_hash = current_elements_hash
 
         self.context.elements.set_end_time(
             "attr_calc_points",
             message=f"points added={len(self.snap_attraction_points)}",
         )
+
+    def _get_elements_hash(self):
+        """
+        Generate a simple hash of the elements to detect changes.
+        """
+        # Simple hash based on element count
+        try:
+            element_count = sum(1 for _ in self.context.elements.flat(types=elem_nodes))
+            return hash(element_count)
+        except Exception:
+            # Fallback if hashing fails
+            return None
 
     def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
         """
@@ -1176,14 +1175,9 @@ class Scene(Module, Job):
             self._calculate_attraction_points()
             # print(f"Calculated {len(self.snap_attraction_points) if self.snap_attraction_points else 0} attraction points.")
 
-        # Use cached matrix and scale if available, otherwise calculate
-        if self._cached_matrix is None:
-            matrix = self.widget_root.scene_widget.matrix
-            scale = get_matrix_scale(matrix)
-        else:
-            matrix = self._cached_matrix
-            scale = self._cached_scale
-            
+        # Cache matrix and scale calculations
+        matrix = self.widget_root.scene_widget.matrix
+        scale = get_matrix_scale(matrix)
         if scale == 0:
             return
 
@@ -1202,7 +1196,6 @@ class Scene(Module, Job):
     def calculate_snap(self, my_x, my_y):
         """
         Calculates the nearest_snap with optimized distance calculations.
-        Uses cached matrix and scale if available.
         """
         res_x = None
         res_y = None
@@ -1210,17 +1203,11 @@ class Scene(Module, Job):
         if not self.snap_display_points or my_x is None:
             return res_x, res_y
 
-        # Use cached matrix scale if available
-        if self._cached_scale is None or self._cached_scale == 0:
-            if self._cached_matrix is None:
-                matrix = self.widget_root.scene_widget.matrix
-                scale = get_matrix_scale(matrix)
-            else:
-                scale = self._cached_scale
-            if scale == 0:
-                return res_x, res_y
-        else:
-            scale = self._cached_scale
+        # Cache matrix scale calculation
+        matrix = self.widget_root.scene_widget.matrix
+        scale = get_matrix_scale(matrix)
+        if scale == 0:
+            return res_x, res_y
 
         # Pre-calculate action threshold
         action_threshold_sq = (self.context.action_attract_len / scale) ** 2
@@ -1250,20 +1237,9 @@ class Scene(Module, Job):
     def get_snap_point(self, sx, sy, modifiers):
         """
         Get the snap point for given coordinates with optimized logic.
-        Caches matrix and scale calculations for reuse.
         """
         if not self.needs_snap:
             return None, None
-            
-        # Cache matrix and scale at the start of snap point calculation
-        if self._cached_matrix is None:
-            try:
-                self._cached_matrix = self.widget_root.scene_widget.matrix
-                self._cached_scale = get_matrix_scale(self._cached_matrix)
-            except (AttributeError, ZeroDivisionError):
-                self._cached_scale = 0
-                return sx, sy
-        
         resx = sx
         resy = sy
 
@@ -1277,7 +1253,6 @@ class Scene(Module, Job):
 
         # Early exit if no snapping needed
         if not sgrid and not spoints:
-            self._clear_snap_cache()
             return resx, resy
 
         # Reset attraction points if shift is pressed (inverting snap behavior)
@@ -1296,17 +1271,8 @@ class Scene(Module, Job):
         # Reset attraction points again if shift was pressed
         if needs_reset:
             self.reset_snap_attraction()
-        
-        # Clear cached matrix/scale after calculation
-        self._clear_snap_cache()
 
         return resx, resy
 
     def reset_snap_attraction(self):
         self.snap_attraction_points = None
-    
-    def _clear_snap_cache(self):
-        """Clear the cached matrix and scale after snap calculation."""
-        self._cached_matrix = None
-        self._cached_scale = None
-
