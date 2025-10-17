@@ -2161,9 +2161,14 @@ class ShadowTree:
                             "This will send the laser back to its logical start position"
                         )
                     elif node.type == "util home":
-                        ttip = _(
-                            "This will send the laser back to its physical start position"
-                        )
+                        if node.physical:
+                            ttip = _(
+                                "This will send the laser back to its physical start position engaging the endstops"
+                            )
+                        else:
+                            ttip = _(
+                                "This will send the laser back to its start position"
+                            )
                     elif node.type == "util input":
                         ttip = _(
                             "This will wait for active IO bits on the laser (mainly fibre laser for now)"

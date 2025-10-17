@@ -894,7 +894,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if has_display:
                     control.Bind(wx.EVT_TEXT, real_handler)
                 else:
-                    control.Bind(wx.EVT_TEXT, handler_factory())
+                    handler = self._make_combosmall_text_handler(control, choice)
+                    control.Bind(wx.EVT_TEXT, handler)
 
         return control, control_sizer
 
