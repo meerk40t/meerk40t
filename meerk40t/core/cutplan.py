@@ -721,9 +721,10 @@ class CutPlan:
 
         if context.opt_effect_combine:
             self.commands.append(self.combine_effects)
-        # if self.channel:
-        #     self.channel("Dumping scenarios:")
-        #     self.commands.append(self._dump_scenario)
+        if self.channel:
+            pass  # Channel available but nothing to do right now
+            # self.channel("Dumping scenarios:")
+            # self.commands.append(self._dump_scenario)
 
         if context.opt_inner_first:
             # Inner-first optimization takes priority and includes travel optimization
@@ -2488,12 +2489,48 @@ def short_travel_cutcode_legacy(
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
+    
+    # CRITICAL FIX FOR HATCHED GEOMETRIES (matching short_travel_cutcode_optimized):
+    # When hatch_optimize=True, extract skip groups for separate handling.
+    # But only if there are non-skip groups to optimize first.
+    # If ALL items are skip-marked, keep them for optimization (don't empty context).
     unordered = []
-    for idx in range(len(context) - 1, -1, -1):
-        c = context[idx]
-        if isinstance(c, CutGroup) and c.skip:
-            unordered.append(c)
-            context.pop(idx)
+    if hatch_optimize:
+        # Check what we have
+        skip_groups = []
+        non_skip_groups = []
+        
+        for c in context:
+            if isinstance(c, CutGroup) and c.skip:
+                skip_groups.append(c)
+            else:
+                non_skip_groups.append(c)
+        
+        # Only remove skip groups if there are non-skip groups
+        if non_skip_groups:
+            # CRITICAL: Before removing skip groups, filter containment hierarchy
+            # to prevent outer groups from referencing removed inner groups.
+            # This is important for algorithms that respect inner-first constraints.
+            # 
+            # This filtering is REQUIRED and intentional: we're removing skip groups
+            # from context and their references MUST be updated to maintain consistency.
+            # Not doing this would leave broken references that cause incorrect behavior
+            # in hierarchy-aware optimization algorithms.
+            for group in non_skip_groups:
+                if hasattr(group, "contains") and group.contains:
+                    # Filter .contains to only include groups that remain in context
+                    group.contains = [
+                        inner for inner in group.contains
+                        if not (isinstance(inner, CutGroup) and inner.skip)
+                    ]
+            
+            context.clear()
+            context.extend(non_skip_groups)
+            unordered = skip_groups
+        # else: ALL items are skip-marked, keep them in context for optimization
+    else:
+        # When hatch_optimize=False, don't remove skip groups at all
+        pass
 
     curr = context.start
     curr = 0 if curr is None else complex(curr[0], curr[1])
@@ -2709,12 +2746,63 @@ def short_travel_cutcode_optimized(
         channel("Executing adaptive short-travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
 
-    unordered = []
-    for idx in range(len(context) - 1, -1, -1):
-        c = context[idx]
-        if isinstance(c, CutGroup) and c.skip:
-            unordered.append(c)
-            context.pop(idx)
+    # CRITICAL FIX FOR HATCHED GEOMETRIES:
+    # When hatch_optimize=True, skip groups represent hatch patterns that should be
+    # processed separately from regular shapes. Extract them for separate handling.
+    # When hatch_optimize=False, skip groups should be included in regular optimization.
+    #
+    # The key insight: if ALL items are skip-marked, we still need to optimize them.
+    # Don't remove them if it would leave an empty context for optimization.
+    
+    unordered = []  # Will hold skip-marked groups for separate processing when hatch_optimize=True
+    
+    if hatch_optimize:
+        # When optimizing hatch patterns separately:
+        # 1. Extract skip groups for later processing
+        # 2. Optimize remaining non-skip groups first
+        # 3. If nothing remains, we have only hatch patterns - optimize them anyway
+        
+        skip_groups = []
+        non_skip_groups = []
+        
+        for c in context:
+            if isinstance(c, CutGroup) and c.skip:
+                skip_groups.append(c)
+            else:
+                non_skip_groups.append(c)
+        
+        # Remove skip groups from context for first optimization pass
+        # But only if there are non-skip groups to optimize
+        if non_skip_groups:
+            # We have regular shapes, so remove hatch patterns for this pass
+            # CRITICAL: Before removing skip groups, filter containment hierarchy
+            # to prevent outer groups from referencing removed inner groups.
+            # This is important for _group_preserving_selection which expects
+            # all referenced groups to be in the context.
+            # 
+            # This filtering is REQUIRED and intentional: we're removing skip groups
+            # from context and their references MUST be updated to maintain consistency.
+            # Not doing this would leave broken references that cause incorrect behavior
+            # in hierarchy-aware optimization algorithms.
+            for group in non_skip_groups:
+                if hasattr(group, "contains") and group.contains:
+                    # Filter .contains to only include groups that remain in context
+                    group.contains = [
+                        inner for inner in group.contains
+                        if not (isinstance(inner, CutGroup) and inner.skip)
+                    ]
+            
+            context.clear()
+            context.extend(non_skip_groups)
+            unordered = skip_groups
+        else:
+            # All items are skip-marked (hatches only), keep them for optimization
+            # They'll be optimized as regular cuts
+            unordered = []
+    else:
+        # When hatch_optimize=False, include skip groups in regular optimization
+        # Don't remove them
+        unordered = []
 
     # Initialize burns_done for all cuts BEFORE getting candidates
     for c in context.flat():
@@ -2731,7 +2819,30 @@ def short_travel_cutcode_optimized(
         channel(f"Dataset size: {dataset_size} cuts")
 
     if not all_candidates:
-        # No candidates, return empty CutCode
+        # No candidates from regular shapes
+        if unordered and hatch_optimize:
+            # We have skip-marked hatch patterns to process
+            ordered = CutCode()
+            for idx, c in enumerate(unordered):
+                if isinstance(c, CutGroup):
+                    unordered[idx] = short_travel_cutcode_optimized(
+                        context=c,
+                        kernel=kernel,
+                        complete_path=False,
+                        grouped_inner=False,
+                        channel=channel,
+                        hatch_optimize=False,  # Don't recursively apply hatch_optimize
+                    )
+            
+            ordered.extend(unordered)
+            if context.start is not None:
+                ordered._start_x, ordered._start_y = context.start
+            else:
+                ordered._start_x = 0
+                ordered._start_y = 0
+            return ordered
+        
+        # No candidates at all, return empty CutCode
         ordered = CutCode()
         if context.start is not None:
             ordered._start_x, ordered._start_y = context.start
@@ -2746,53 +2857,53 @@ def short_travel_cutcode_optimized(
         if channel:
             channel("Using group-aware optimization for inner-first hierarchy")
         return _group_aware_selection(context, all_candidates, complete_path, channel)
+    
+    # Check if we have inner-first hierarchy that should be preserved
+    has_containment_hierarchy = any(
+        hasattr(group, "contains") and group.contains
+        for group in context
+        if hasattr(group, "contains")
+    )
+
+    if has_containment_hierarchy:
+        # Use group-preserving optimization that respects inner-first without grouping pieces
+        if channel:
+            channel("Using group-preserving optimization for inner-first hierarchy")
+        return _group_preserving_selection(context, complete_path, channel)
+    
+    # Use standard travel optimization on individual cuts
+    start_pos = context.start or (0, 0)
+    
+    if dataset_size < 50:
+        # Very small dataset: Use simple greedy algorithm
+        if channel:
+            channel("Using simple greedy algorithm for small dataset")
+        ordered_cuts = _simple_greedy_selection(all_candidates, start_pos)
+
+    elif dataset_size < 100:
+        # Small-medium dataset: Use improved greedy with active set optimization
+        if channel:
+            channel("Using improved greedy algorithm for medium dataset")
+        ordered_cuts = _improved_greedy_selection(all_candidates, start_pos)
+
+    elif dataset_size <= 500:
+        # Medium-large dataset: Use spatial-indexed algorithm
+        if channel:
+            channel("Using spatial-indexed algorithm for large dataset")
+        ordered_cuts = _spatial_optimized_selection(all_candidates, start_pos)
+
     else:
-        # Check if we have inner-first hierarchy that should be preserved
-        has_containment_hierarchy = any(
-            hasattr(group, "contains") and group.contains
-            for group in context
-            if hasattr(group, "contains")
+        # Very large dataset: Use legacy algorithm
+        if channel:
+            channel("Using legacy algorithm for very large dataset")
+        return short_travel_cutcode_legacy(
+            context=context,
+            kernel=kernel,
+            channel=channel,
+            complete_path=complete_path,
+            grouped_inner=grouped_inner,
+            hatch_optimize=hatch_optimize,
         )
-
-        if has_containment_hierarchy:
-            # Use group-preserving optimization that respects inner-first without grouping pieces
-            if channel:
-                channel("Using group-preserving optimization for inner-first hierarchy")
-            return _group_preserving_selection(context, complete_path, channel)
-        else:
-            # Use standard travel optimization on individual cuts
-            start_pos = context.start or (0, 0)
-
-        if dataset_size < 50:
-            # Very small dataset: Use simple greedy algorithm
-            if channel:
-                channel("Using simple greedy algorithm for small dataset")
-            ordered_cuts = _simple_greedy_selection(all_candidates, start_pos)
-
-        elif dataset_size < 100:
-            # Small-medium dataset: Use improved greedy with active set optimization
-            if channel:
-                channel("Using improved greedy algorithm for medium dataset")
-            ordered_cuts = _improved_greedy_selection(all_candidates, start_pos)
-
-        elif dataset_size <= 500:
-            # Medium-large dataset: Use spatial-indexed algorithm
-            if channel:
-                channel("Using spatial-indexed algorithm for large dataset")
-            ordered_cuts = _spatial_optimized_selection(all_candidates, start_pos)
-
-        else:
-            # Very large dataset: Use legacy algorithm
-            if channel:
-                channel("Using legacy algorithm for very large dataset")
-            return short_travel_cutcode_legacy(
-                context=context,
-                kernel=kernel,
-                channel=channel,
-                complete_path=complete_path,
-                grouped_inner=grouped_inner,
-                hatch_optimize=hatch_optimize,
-            )
 
     # Create ordered CutCode from selected cuts
     ordered = CutCode()

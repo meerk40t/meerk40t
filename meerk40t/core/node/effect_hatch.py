@@ -38,6 +38,7 @@ class HatchEffectNode(Node, Suppressable):
         self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.include_outlines = False
 
         self.output = True
         self.hatch_distance = None
@@ -99,7 +100,7 @@ class HatchEffectNode(Node, Suppressable):
         Returns:
             str: A descriptor string in the format "<type>|<hatch_type>|<hatch_distance>|<hatch_angle>|<hatch_angle_delta>|<loops>".
         """
-        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}"
+        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}|{1 if self.include_outlines else 0}"
 
     def set_effect_descriptor(self, descriptor):
         """
@@ -119,8 +120,11 @@ class HatchEffectNode(Node, Suppressable):
         """
         try:
             pattern = descriptor.split("|")
-            if len(pattern) == 6:  # Old format
-                pattern.append("0")  # Default unidirectional to False
+            # Make sure we have enough parts, check get_effect_descriptor for format    
+            targetlen = len(self.get_effect_descriptor().split("|"))
+            while len(pattern) < targetlen:
+                # add default values for missing parameters
+                pattern.append("0")  # Default unidirectional / include_outlines to False
             (
                 typeinfo,
                 hatchtype,
@@ -444,6 +448,8 @@ class HatchEffectNode(Node, Suppressable):
             self.recalculate()
         for p in range(self.loops):
             for o in outlines:
+                if self.include_outlines:
+                    yield o
                 yield Geomstr.hatch(
                     o,
                     distance=self._distance,
