@@ -2511,6 +2511,11 @@ def short_travel_cutcode_legacy(
             # CRITICAL: Before removing skip groups, filter containment hierarchy
             # to prevent outer groups from referencing removed inner groups.
             # This is important for algorithms that respect inner-first constraints.
+            # 
+            # This filtering is REQUIRED and intentional: we're removing skip groups
+            # from context and their references MUST be updated to maintain consistency.
+            # Not doing this would leave broken references that cause incorrect behavior
+            # in hierarchy-aware optimization algorithms.
             for group in non_skip_groups:
                 if hasattr(group, "contains") and group.contains:
                     # Filter .contains to only include groups that remain in context
@@ -2774,6 +2779,11 @@ def short_travel_cutcode_optimized(
             # to prevent outer groups from referencing removed inner groups.
             # This is important for _group_preserving_selection which expects
             # all referenced groups to be in the context.
+            # 
+            # This filtering is REQUIRED and intentional: we're removing skip groups
+            # from context and their references MUST be updated to maintain consistency.
+            # Not doing this would leave broken references that cause incorrect behavior
+            # in hierarchy-aware optimization algorithms.
             for group in non_skip_groups:
                 if hasattr(group, "contains") and group.contains:
                     # Filter .contains to only include groups that remain in context

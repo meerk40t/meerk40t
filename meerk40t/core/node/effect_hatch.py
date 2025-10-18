@@ -100,7 +100,7 @@ class HatchEffectNode(Node, Suppressable):
         Returns:
             str: A descriptor string in the format "<type>|<hatch_type>|<hatch_distance>|<hatch_angle>|<hatch_angle_delta>|<loops>".
         """
-        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}|{1 if self.include_outlines else 0 }"
+        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}|{1 if self.include_outlines else 0}"
 
     def set_effect_descriptor(self, descriptor):
         """
