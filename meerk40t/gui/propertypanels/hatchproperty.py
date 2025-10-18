@@ -88,7 +88,7 @@ class HatchPropertyPanel(ScrolledPanel):
         #     node=self.node,
         # )
         # main_sizer.Add(panel_fill, 1, wx.EXPAND, 0)
-
+        option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_loops = StaticBoxSizer(self, wx.ID_ANY, _("Loops"), wx.HORIZONTAL)
         self.text_loops = TextCtrl(
             self,
@@ -101,7 +101,10 @@ class HatchPropertyPanel(ScrolledPanel):
         sizer_loops.Add(self.text_loops, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_loops = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
         sizer_loops.Add(self.slider_loops, 3, wx.EXPAND, 0)
-        main_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
+        option_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
+        self.check_include_outline = wx.CheckBox(self, wx.ID_ANY, _("Include Outline"))
+        option_sizer.Add(self.check_include_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        main_sizer.Add(option_sizer, 1, wx.EXPAND, 0)
 
         sizer_distance = StaticBoxSizer(
             self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
@@ -207,6 +210,7 @@ class HatchPropertyPanel(ScrolledPanel):
             wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta
         )
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
+        self.check_include_outline.Bind(wx.EVT_CHECKBOX, self.on_check_outline)
         self.check_directional.Bind(wx.EVT_CHECKBOX, self.on_check_directional)
         self.combo_algorithm.Bind(wx.EVT_COMBOBOX, self.on_combo_algorithm)
         # end wxGlade
@@ -292,10 +296,16 @@ class HatchPropertyPanel(ScrolledPanel):
             pass
         flag = bool(self.node.unidirectional)
         self.check_directional.SetValue(flag)
+        flag = bool(self.node.include_outlines)
+        self.check_include_outline.SetValue(flag)
         self.Show()
 
     def on_check_directional(self, event):
         self.node.unidirectional = self.check_directional.GetValue()
+        self.update()
+
+    def on_check_outline(self, event):
+        self.node.include_outlines = self.check_include_outline.GetValue()
         self.update()
 
     def on_combo_algorithm(self, event):
@@ -801,7 +811,10 @@ class HatchPropertyPanel(ScrolledPanel):
             if self.outline_lines is not None:
                 starts, ends = self.outline_lines
                 if len(starts):
-                    gc.SetPen(self.outline_pen)
+                    if self.node.include_outlines:
+                        gc.SetPen(self.raster_pen)
+                    else:
+                        gc.SetPen(self.outline_pen)
                     gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
