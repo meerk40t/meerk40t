@@ -31,7 +31,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..tools.geomstr import Geomstr
+from ..core.geomstr import Geomstr
 from .builder import MoshiBuilder
 
 

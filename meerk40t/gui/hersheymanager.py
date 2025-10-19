@@ -34,7 +34,7 @@ from meerk40t.gui.wxutils import (
     wxToggleButton,
 )
 from meerk40t.kernel.kernel import signal_listener
-from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
+from meerk40t.core.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 _ = wx.GetTranslation
 

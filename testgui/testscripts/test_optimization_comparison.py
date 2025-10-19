@@ -64,7 +64,7 @@ if meerk40t_path:
 
 try:
     from meerk40t.core.elements.manual_optimize import _calculate_total_travel_distance, _optimize_path_order_greedy_optimized, _optimize_path_order_greedy
-    from meerk40t.tools.geomstr import Geomstr
+    from meerk40t.core.geomstr import Geomstr
     EARLY_TERMINATION_AVAILABLE = True
     PRODUCTION_OPTIMIZATION_AVAILABLE = True
 except ImportError:

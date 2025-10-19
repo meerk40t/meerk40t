@@ -28,7 +28,7 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
 from meerk40t.kernel import Job, Module, signal_listener
 from meerk40t.svgelements import Matrix, Point
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES, TYPE_END
 
 _reused_identity_widget = Matrix()
 XCELLS = 15

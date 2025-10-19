@@ -14,7 +14,7 @@ from meerk40t.svgelements import (
     Point,
     Rect,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class RectNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):

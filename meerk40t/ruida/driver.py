@@ -19,7 +19,7 @@ from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_S
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.ruida.controller import RuidaController
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class RuidaDriver(Parameters):

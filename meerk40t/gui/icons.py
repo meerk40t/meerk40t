@@ -4,7 +4,7 @@ from functools import lru_cache
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
-from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
+from meerk40t.core.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 """
 icons serves as a central repository for icons and other assets. These come in two flavors:

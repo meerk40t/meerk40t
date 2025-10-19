@@ -38,7 +38,7 @@ from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.node.node import Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Matrix
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 # from pprint import pprint
 

@@ -7,7 +7,7 @@ from os.path import basename, exists, join, realpath, splitext
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.tools.geomstr import BeamTable, Geomstr
+from meerk40t.core.geomstr import BeamTable, Geomstr
 from meerk40t.tools.jhfparser import JhfFont, SimplexFont, STD_FONT_FILE
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont, TTFParsingError

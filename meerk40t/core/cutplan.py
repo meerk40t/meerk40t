@@ -24,7 +24,7 @@ from typing import Optional
 import numpy as np
 
 from ..svgelements import Group, Matrix
-from ..tools.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
+from .geomstr import Geomstr, stitch_geometries, stitcheable_nodes
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
 from .cutcode.cutobject import CutObject
@@ -1460,7 +1460,7 @@ class CutPlan:
             if hasattr(first_cut, "parent_path_d"):
                 try:
                     from ..svgelements import Path
-                    from ..tools.geomstr import Geomstr
+                    from .geomstr import Geomstr
 
                     path_obj = Path(first_cut.parent_path_d)
                     setattr(group, "path", path_obj)
@@ -1473,7 +1473,7 @@ class CutPlan:
             if not path_restored and len(group_cuts) > 0:
                 try:
                     from ..svgelements import Close, Line, Move, Path
-                    from ..tools.geomstr import Geomstr
+                    from .geomstr import Geomstr
 
                     path_segments = []
                     path_segments.append(Move(group_cuts[0].start))
@@ -1749,7 +1749,7 @@ class CutPlan:
             if hasattr(first_cut, "_parent_path_d"):
                 try:
                     from ..svgelements import Path
-                    from ..tools.geomstr import Geomstr
+                    from .geomstr import Geomstr
 
                     path_obj = Path(first_cut._parent_path_d)
                     setattr(group, "path", path_obj)
@@ -1788,7 +1788,7 @@ class CutPlan:
         """
         try:
             from ..svgelements import Close, Line, Move, Path
-            from ..tools.geomstr import Geomstr
+            from .geomstr import Geomstr
 
             path_segments = []
             if group_cuts:
@@ -2085,8 +2085,8 @@ def is_inside(inner, outer, tolerance=0, debug=False):
         Uses advanced sweep-line algorithm for O(log n) point-in-polygon testing.
         """
         try:
-            from ..tools.geomstr import Polygon as Gpoly
-            from ..tools.geomstr import Scanbeam
+            from .geomstr import Polygon as Gpoly
+            from .geomstr import Scanbeam
 
             # Use existing ._geometry properties - no conversion needed!
             outer_geom = getattr(outer, "_geometry", None)

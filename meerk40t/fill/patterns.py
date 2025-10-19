@@ -2,7 +2,7 @@ import math
 from copy import copy
 
 from meerk40t.svgelements import Matrix, Path, Polyline
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 _FACTOR = 1000
 
@@ -181,7 +181,7 @@ class LivingHinges:
             return
         if self.outershape is None:
             return
-        from meerk40t.tools.geomstr import Clip, Pattern
+        from meerk40t.core.geomstr import Clip, Pattern
 
         # print (f"Generation with {self.cell_width} x {self.cell_height}")
         p = Pattern()

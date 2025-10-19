@@ -3,7 +3,7 @@ import numpy as np
 import wx
 
 from meerk40t.core.units import UNITS_PER_MM, Length
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,

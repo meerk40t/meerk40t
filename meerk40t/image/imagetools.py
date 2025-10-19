@@ -13,7 +13,7 @@ from meerk40t.core.node.node import Linejoin
 from meerk40t.core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix, Path
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 from .dither import dither
 

@@ -1,7 +1,7 @@
 import unittest
 
 from meerk40t.core.node.elem_polyline import PolylineNode
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class TestGeomstr(unittest.TestCase):

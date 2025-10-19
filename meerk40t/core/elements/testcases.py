@@ -18,7 +18,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle=None):

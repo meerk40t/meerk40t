@@ -1217,7 +1217,7 @@ class HingePanel(wx.Panel):
 
             if algorithm_type == "direct" and pattern_name in ["line", "simple"]:
                 # Use Direct Grid Fill for simple patterns like "line"
-                from meerk40t.tools.geomstr import Geomstr
+                from meerk40t.core.geomstr import Geomstr
 
                 # Create boundary rectangle if no specific shape
                 if boundary_shape is None:
@@ -1244,7 +1244,7 @@ class HingePanel(wx.Panel):
             elif algorithm_type == "pattern" or True:  # Fallback
                 # Use enhanced pattern-based generation
                 if pattern_name in LivingHingeOptimizer.PATTERN_TYPES:
-                    from meerk40t.tools.geomstr import Geomstr
+                    from meerk40t.core.geomstr import Geomstr
 
                     # Create boundary rectangle if no specific shape
                     if boundary_shape is None:
@@ -1291,7 +1291,7 @@ class HingePanel(wx.Panel):
 
     def _convert_to_geomstr(self, shape):
         """Convert shape to Geomstr format for optimization algorithms."""
-        from meerk40t.tools.geomstr import Geomstr
+        from meerk40t.core.geomstr import Geomstr
 
         try:
             if hasattr(shape, "as_path"):

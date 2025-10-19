@@ -17,7 +17,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import dip_size, get_gc_full_scale, get_matrix_scale
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES
 
 
 class RectSelectWidget(Widget):

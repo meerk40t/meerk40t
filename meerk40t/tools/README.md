@@ -44,7 +44,7 @@ Utility for converting device-specific driver commands into geometric path repre
 
 ## Geomstr
 
-High-performance geometric data structure for storing and manipulating complex geometric primitives.
+High-performance geometric data structure for storing and manipulating complex geometric primitives. **Note: As of recent refactoring, Geomstr has been moved to `meerk40t.core.geomstr` to reflect its central importance to the MeerK40t solution.**
 
 ### Architecture
 Geomstr uses aligned numpy arrays to store geometric primitives (lines, quads, cubics, arcs, points) in a memory-efficient format. The structure supports efficient operations like reversing, transforming, and path traversal.
