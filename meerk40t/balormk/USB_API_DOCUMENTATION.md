@@ -50,13 +50,13 @@ Connection Hierarchy:
 
 ```python
 class MockConnection:
-    def __init__(self, channel)
-    def open(self, index=0) -> int
-    def close(self, index=0) -> None
-    def write(self, index=0, packet=None) -> None
-    def read(self, index=0) -> bytes
-    def is_open(self, index=0) -> bool
-    def set_implied_response(self, data) -> None
+    def __init__(self, channel) -> None
+    def open(self, index: int = 0) -> int
+    def close(self, index: int = 0) -> None
+    def write(self, index: int = 0, packet: Optional[bytes] = None) -> None
+    def read(self, index: int = 0) -> bytes
+    def is_open(self, index: int = 0) -> bool
+    def set_implied_response(self, data: Optional[Union[str, bytes]]) -> None
 ```
 
 **Example Usage**:
@@ -98,17 +98,17 @@ mock.close(0)
 
 ```python
 class DirectUSBConnection:
-    def __init__(self, channel)
-    def open(self, index=0) -> int
-    def close(self, index=0) -> None
-    def write(self, index=0, packet=None, attempt=0) -> None
-    def read(self, index=0, attempt=0) -> bytes
-    def is_open(self, index=0) -> bool
-    def bus(self, index) -> int
-    def address(self, index) -> int
-    def find_device(self, index=0) -> str
+    def __init__(self, channel) -> None
+    def open(self, index: int = 0) -> int
+    def close(self, index: int = 0) -> None
+    def write(self, index: int = 0, packet: Optional[bytes] = None, attempt: int = 0) -> None
+    def read(self, index: int = 0, attempt: int = 0) -> bytes
+    def is_open(self, index: int = 0) -> bool
+    def bus(self, index: int) -> int
+    def address(self, index: int) -> int
+    def find_device(self, index: int = 0) -> str
     def _discover_devices(self) -> list[str]
-    def _initialize_device(self, index=0) -> bool
+    def _initialize_device(self, index: int = 0) -> bool
 ```
 
 **Example Usage**:
@@ -155,15 +155,15 @@ if conn.open(0) >= 0:
 
 ```python
 class USBConnection:
-    def __init__(self, channel)
-    def open(self, index=0) -> int
-    def close(self, index=0) -> None
-    def write(self, index=0, packet=None, attempt=0) -> None
-    def read(self, index=0, attempt=0) -> bytes
-    def is_open(self, index=0) -> bool
-    def bus(self, index) -> int
-    def address(self, index) -> int
-    def find_device(self, index=0) -> usb.core.Device
+    def __init__(self, channel) -> None
+    def open(self, index: int = 0) -> int
+    def close(self, index: int = 0) -> None
+    def write(self, index: int = 0, packet: Optional[bytes] = None, attempt: int = 0) -> None
+    def read(self, index: int = 0, attempt: int = 0) -> bytes
+    def is_open(self, index: int = 0) -> bool
+    def bus(self, index: int) -> int
+    def address(self, index: int) -> int
+    def find_device(self, index: int = 0) -> usb.core.Device
     def detach_kernel(self, device, interface) -> None
     def get_active_config(self, device) -> usb.core.Interface
     def set_config(self, device) -> None
@@ -232,12 +232,12 @@ def create_usb_connection(channel) -> Union[WindowsNativeUSBConnection, LibUSBCo
 
 # WindowsNativeUSBConnection (similar to DirectUSBConnection)
 class WindowsNativeUSBConnection:
-    def __init__(self, channel)
-    def open(self, index=0) -> int
-    def close(self, index=0) -> None
-    def write(self, index=0, packet=None, attempt=0) -> None
-    def read(self, index=0, attempt=0) -> bytes
-    def is_open(self, index=0) -> bool
+    def __init__(self, channel) -> None
+    def open(self, index: int = 0) -> int
+    def close(self, index: int = 0) -> None
+    def write(self, index: int = 0, packet: Optional[bytes] = None, attempt: int = 0) -> None
+    def read(self, index: int = 0, attempt: int = 0) -> bytes
+    def is_open(self, index: int = 0) -> bool
     def find_device_path(self) -> Optional[str]
 
 # LibUSBConnection (wrapper around USBConnection)
@@ -626,9 +626,9 @@ print(f"Average command time: {avg_time*1000:.2f}ms")
 ## References
 
 ### Related Documentation
-- [README.md](README.md) - Module overview and architecture
-- [DIRECT_CONNECTION_GUIDE.md](DIRECT_CONNECTION_GUIDE.md) - Windows driver setup guide
-- [controller.py](controller.py) - GalvoController implementation
+- `README.md` (in this directory) - Module overview and architecture
+- `DIRECT_CONNECTION_GUIDE.md` (in this directory) - Windows driver setup guide
+- `controller.py` (in this directory) - GalvoController implementation
 - [MeerK40t Wiki](https://github.com/meerk40t/meerk40t/wiki) - General installation and usage
 
 ### External Resources
