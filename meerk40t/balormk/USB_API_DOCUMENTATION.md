@@ -50,7 +50,7 @@ Connection Hierarchy:
 
 ```python
 class MockConnection:
-    def __init__(self, channel) -> None
+    def __init__(self, channel: Any) -> None
     def open(self, index: int = 0) -> int
     def close(self, index: int = 0) -> None
     def write(self, index: int = 0, packet: Optional[bytes] = None) -> None
@@ -98,7 +98,7 @@ mock.close(0)
 
 ```python
 class DirectUSBConnection:
-    def __init__(self, channel) -> None
+    def __init__(self, channel: Any) -> None
     def open(self, index: int = 0) -> int
     def close(self, index: int = 0) -> None
     def write(self, index: int = 0, packet: Optional[bytes] = None, attempt: int = 0) -> None
@@ -155,7 +155,7 @@ if conn.open(0) >= 0:
 
 ```python
 class USBConnection:
-    def __init__(self, channel) -> None
+    def __init__(self, channel: Any) -> None
     def open(self, index: int = 0) -> int
     def close(self, index: int = 0) -> None
     def write(self, index: int = 0, packet: Optional[bytes] = None, attempt: int = 0) -> None
@@ -232,7 +232,7 @@ def create_usb_connection(channel) -> Union[WindowsNativeUSBConnection, LibUSBCo
 
 # WindowsNativeUSBConnection (similar to DirectUSBConnection)
 class WindowsNativeUSBConnection:
-    def __init__(self, channel) -> None
+    def __init__(self, channel: Any) -> None
     def open(self, index: int = 0) -> int
     def close(self, index: int = 0) -> None
     def write(self, index: int = 0, packet: Optional[bytes] = None, attempt: int = 0) -> None
