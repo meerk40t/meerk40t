@@ -24,39 +24,80 @@ Plugins are classified as follows:
 
 Core modules are largely tools and classes that define Meerk40t specific ecosystem requirements within the kernel.
 
-## Devices
+## Device Drivers
 
-Device modules are specific to laser cutting and the lower level interactions with laser cutter drivers.
+Device driver modules provide hardware-specific implementations for different laser controllers and cutting systems.
 
-## DXF
+### balormk
+JCZ controllers for galvo-based laser systems.
 
-DXF modules deal with Digital Exchange Format files.
+### grbl
+GRBL-compatible devices including popular brands like Ortur, Atomstack, and Creality.
 
-## Extra
+### lihuiyu
+Lihuiyu M2/M3-Nano controllers (K40 laser systems).
 
-Extra modules provide non-core functionality.
+### moshi
+Moshiboard laser controllers.
 
-## Gui
+### newly
+NewlyDraw System 8.1 laser controllers.
 
-The Gui modules require wxPython and deal with the graphical interactions between the user and the software.
+### ruida
+Ruida laser controllers and emulators.
 
-## Image
+## Hardware Abstraction
 
-Image modules are tools dealing with Pillow (Python Image Library).
+### camera
+Camera integration and image capture functionality.
 
-## Tools
+### ch341
+CH341 USB interface chip support for hardware communication.
 
-Tools are simple stand-alone datastructure/algorithms that perform non-kernel operations
-which may be considerably useful to many modules, or which simply do not require any ecosystem functionality.
+### device
+Hardware abstraction layer providing unified interfaces for device management.
+
+## Specialized Features
+
+### cylinder
+Galvo correction and coordinate transformation for cylindrical engraving.
+
+### fill
+Hatch fill patterns, wobble effects, and living hinge generation.
+
+### rotary
+Rotary engraving support for cylindrical objects.
+
+## File Formats
+
+### dxf
+Digital Exchange Format (DXF) file processing and conversion.
+
+## User Interface
+
+### gui
+Graphical user interface modules using wxPython and AUI framework for highly configurable UI.
+
+## Image Processing
+
+### image
+Image processing tools using Pillow (Python Image Library) for laser engraving preparation.
 
 ## Network
 
-The Server governs interactions within TCP and UDP sockets.
+Network modules handle TCP and UDP socket communications for remote access and control.
+
+## Utilities
+
+### extra
+Additional non-core functionality and extended features.
+
+### tools
+Standalone data structures and algorithms for geometric operations, font processing, and optimization.
 
 ## Main
 
-The main file deals with the CLI for Meerk40t as well as loading and processing of different plugins, both internal and
-external.
+The main file handles the command line interface for Meerk40t as well as loading and processing of different plugins, both internal and external.
 
 ## svgelements
 

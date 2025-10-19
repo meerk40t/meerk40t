@@ -1,83 +1,530 @@
-# Core
+# MeerK40t Core Module
 
-Core modules are classes that define Meerk40t-specific ecosystem within the kernel.
+## Overview
 
-## Bind/Alias
+The Core Module forms the heart of MeerK40t's laser cutting ecosystem, providing the fundamental data structures, services, and processing pipeline that transform user designs into laser operations. This module implements the complete laser workflow from element storage through optimization to hardware control.
 
-Controls the Bind and Alias routines within the kernel-console controls their loading and saving.
+## Architecture
 
-## Cutcode
+```
+meerk40t/core/
+├── core.py                 # Main plugin registrar for all core services
+├── drivers.py              # Driver abstraction layer for laser hardware
+├── parameters.py           # Laser parameter definitions and validation (710 lines)
+├── exceptions.py           # MeerK40t-specific exception hierarchy
+├── logging.py              # Job execution logging and event tracking
+├── laserjob.py             # Spooler job execution system
+├── bindalias.py            # Bind/alias system for kernel commands
+├── cutcode/                # Laser operation data structures
+├── cutplan.py              # Cut planning and optimization algorithms
+├── elements/               # Element tree and node management
+├── laserjob.py             # Laser job execution framework
+├── node/                   # Node type definitions and hierarchy
+├── planner.py              # Job planning and cutcode generation
+├── plotplanner.py          # Pulse-level laser control algorithms
+├── space.py                # Coordinate system conversions
+├── spoolers.py             # Job queue management system
+├── svg_io.py               # SVG file input/output operations
+├── treeop.py               # Tree operation decorators and utilities
+├── undos.py                # Undo/redo system for tree state
+├── units.py                # Unit conversion and management
+├── view.py                 # Viewport transformation matrices
+├── webhelp.py              # Web-based help system
+└── wordlist.py             # Dynamic text replacement system
+```
 
-Cutcode is a hybrid datatype of shapes combined with speeds, power, and other laser specific settings.
+### Core Data Flow Pipeline
 
-## Planning
+```
+Elements → Operations → Planning → CutCode → LaserJob → Spooler → Driver → Hardware
+    ↓         ↓           ↓         ↓         ↓         ↓         ↓         ↓
+  Storage  Processing  Optimization  Execution  Queueing  Hardware  Control  Laser
+```
 
-The planning module defines a number of `plan` commands and helps define the job being run. The conversion from the
-operations with referenced elements to cutcode, optimization of cutcode, and arrangement of things to be added to a
-LaserJob. The LaserJob is then added to the Spooler which is then passed the driver.
+## Core Services & Components
 
-### LaserJob
+### Plugin Registration System (`core.py`)
+The central orchestrator that registers all core services with the MeerK40t kernel:
 
-Planning is effectively a method of making a LaserJob which is a type of SpoolerJob. This is simply a list of cutcode
-and utility objects which when the job is spooled, are given a driver to control. This abstraction permits complex code
-to also serve as SpoolerJob, even if infinite, dynamic, or driver-specific.
+```python
+def plugin(kernel, lifecycle=None):
+    if lifecycle == "plugins":
+        return [
+            spoolers.plugin,      # Job queue management
+            space.plugin,         # Coordinate transformations
+            elements.plugin,      # Element tree service
+            penbox.plugin,        # Penbox operations
+            logging.plugin,       # Event logging
+            bindalias.plugin,     # Command binding
+            webhelp.plugin,       # Help system
+            planner.plugin,       # Job planning
+            svg_io.plugin         # File I/O
+        ]
+```
 
-## PlotPlanner
+### Driver Abstraction Layer (`drivers.py`)
+Hardware-independent interface for laser control:
 
-The plot planner module define algorithms and functions that plan the pulse plotting of the laser. These do things like
-convert orthogonal and diagonal moves into single step moves, control PPI, perform pulse grouping, etc. This class
-controls any modifications or algorithms needed to modify the laser independent laser movements. Plotplanning deals with
-the arrangement of the individual laser pulses either controlling the interactions of ppi power modulation, dashes,
-ordering modifications, grouping and other changes to the dynamic firing of the laser. This is *mostly* for the lihuiyu
-device which doesn't have a direct line function.
+```python
+class Driver:
+    """Base driver class providing common laser control interface"""
 
-## Space
+    def hold_work(self, priority):  # Required by spooler
+        """Pause job execution"""
 
-The space service controls the conversion of scene positions to user space positions. Devices likewise control the
-conversion from scene to device space.
+    def move_abs(self, x, y):       # Absolute positioning
+        """Move laser head to absolute coordinates"""
 
-## Spoolers
+    def move_rel(self, dx, dy):     # Relative positioning
+        """Move laser head relative to current position"""
 
-Spoolers contain a list of SpoolerJob objects, which can be cleared, stopped, added and removed. The spooler calls
-`execute(driver)` on the SpoolerJob and the job will optionally call functions on the provided driver (provided that the
-driver supports that particular command).
+    def laser_on(self, power):      # Laser activation
+        """Enable laser with specified power"""
 
-### SpoolerJob
+    def laser_off(self):            # Laser deactivation
+        """Disable laser output"""
+```
 
-SpoolerJobs provide an execution functionality and some basic spooler-required bits of information like priority,
-run-state, and time-estimate.
+**Key Features:**
+- Hardware abstraction for different laser types
+- State management (rapid, program, raster modes)
+- Settings storage and retrieval
+- Error handling and status reporting
 
-## SVG IO
+### Parameter Management System (`parameters.py`)
+Comprehensive parameter definitions for laser operations (710 lines):
 
-The SVG_IO module defines the saving and loading of svg files.
+```python
+INT_PARAMETERS = (
+    "power", "passes", "loops", "acceleration",
+    "dot_length", "jog_distance", "coolant"
+)
 
-## Treeop
+FLOAT_PARAMETERS = (
+    "speed", "rapid_speed", "dpi", "dratio",
+    "dwell_time", "frequency", "kerf"
+)
 
-The tree operations provides decorators for implementing tree-ops. These functions are largely node specific functions
-specifically intended for the popupmenu associated with particular types.
+BOOL_PARAMETERS = (
+    "laser_enabled", "job_enabled", "bidirectional",
+    "ppi_enabled", "shift_enabled", "advanced"
+)
+```
 
-## Undos
+**Features:**
+- Type-safe parameter validation
+- Unit conversion support
+- Driver-specific parameter mapping
+- Settings inheritance and override
 
-The undo provides for undo and redo methods for copying and recreating the node tree. This permits earlier versions of
-the tree state to be restored and unrestored to help with editing.
+### Exception Hierarchy (`exceptions.py`)
+MeerK40t-specific error handling:
 
-## Units
+```python
+class Meerk40tError(Exception):
+    """Root exception for all MeerK40t errors"""
 
-The units files provides core units to be used throughout the program. This is done for things like Length and Angle
-which need meerk40t specific forms of these different unit-types for various amounts of support and conversion.
+class BadFileError(Meerk40tError):
+    """File loading/parsing errors"""
+```
 
-## View
+### Logging Service (`logging.py`)
+Comprehensive job execution tracking:
 
-View provides functionality for a 4 point -> 4 point conversion matrix. This allows manipulations for the space service
-and for the devices to convert from one coordinate system to a different coordinate system.
+```python
+class Logging(Service):
+    """Event logging and job execution tracking"""
 
-## Webhelp
+    def event(self, event_dict):
+        """Log structured event data"""
 
-The Webhelp module defines simple URIs within registered kernel address `webhelp/*` these are URIs that may need to be
-launched to help the user. These are opened with console command `webhelp <help>`
+    def matching_events(self, prefix, **filters):
+        """Query logged events with filtering"""
+```
 
-## Wordlist
+**Capabilities:**
+- Job completion logging
+- Performance metrics tracking
+- Error event recording
+- Persistent storage with settings system
 
-Wordlist provides basic data structure and functions for define sets of words which may need to be changed dynamically
-during the execution of some jobs. This provides the datastructure of the `.wordlist` object found in the `elements`
-service
+### LaserJob Execution Framework (`laserjob.py`)
+Spooler job implementation with advanced features:
+
+```python
+class LaserJob:
+    def __init__(self, label, items, driver=None, priority=0, loops=1):
+        self.items = items          # CutCode objects to execute
+        self.loops = loops          # Number of execution passes
+        self.priority = priority    # Queue priority
+        self.runtime = 0            # Execution time tracking
+        self.steps_done = 0         # Progress tracking
+        self._estimate = 0          # Time estimation
+```
+
+**Features:**
+- Multi-pass job execution
+- Progress tracking and statistics
+- Time estimation from CutCode analysis
+- Loop management (including infinite loops)
+- Priority-based queue ordering
+
+## Major Subsystems
+
+### CutCode System (`cutcode/`)
+Hierarchical laser operation data structures (see `cutcode/README.md` for details):
+
+**Cut Types:**
+- **Vector Cuts**: LineCut, QuadCut, CubicCut for geometric shapes
+- **Raster Operations**: RasterCut, PlotCut for image engraving
+- **Control Operations**: DwellCut, GotoCut, WaitCut for laser control
+- **Hierarchical**: CutGroup, CutCode for organization and optimization
+
+**Key Features:**
+- Inner-first optimization algorithms
+- Multi-pass support with burn tracking
+- Travel distance minimization
+- Settings inheritance and sharing
+
+### Elements System (`elements/`)
+Complete element tree management (see `elements/README.md` for details):
+
+**Functional Areas:**
+- **Tree Operations**: Node manipulation, clipboard, undo/redo
+- **Shape Management**: Creation, editing, alignment of geometric elements
+- **Operations**: Laser operation definitions and management
+- **Materials**: Material database and operation presets
+- **Penbox**: Per-loop command modifications
+
+### Node Hierarchy (`node/`)
+Type system for all tree elements (see `node/README.md` for details):
+
+**Node Categories:**
+- **Structural**: RootNode, branch nodes (operations, elements, regmarks)
+- **Operations**: op_cut, op_engrave, op_raster, op_image, op_dots
+- **Elements**: elem_path, elem_rect, elem_ellipse, elem_text, elem_image
+- **Effects**: effect_hatch, effect_warp, effect_wobble
+- **Utilities**: util_wait, util_home, util_goto, util_input, util_output
+
+### Planning & Optimization (`planner.py`, `cutplan.py`)
+Job planning and cutcode generation:
+
+```python
+# Convert operations + elements to optimized cutcode
+def plan_cutcode(elements_branch, operations_branch):
+    """Generate optimized CutCode from scene elements"""
+    # 1. Associate elements with operations
+    # 2. Generate cutcode for each operation
+    # 3. Apply optimization algorithms
+    # 4. Return optimized CutCode sequence
+```
+
+**Optimization Features:**
+- Travel minimization algorithms
+- Inner-first processing
+- Group optimization for related cuts
+- Speed and power optimization
+
+### Plot Planning (`plotplanner.py`)
+Low-level pulse control for laser hardware:
+
+**Algorithms:**
+- Pulse plotting for vector cuts
+- PPI (Pulses Per Inch) control
+- Step direction optimization
+- Power modulation for curves
+- Dashing and pulsing patterns
+
+**Hardware-Specific:**
+- Optimized for Lihuiyu devices (limited line functions)
+- Step-by-step movement generation
+- Quality vs. speed tradeoffs
+
+### Spooler System (`spoolers.py`)
+Job queue management and execution:
+
+```python
+class Spooler(Service):
+    """Job queue management service"""
+
+    def queue(self, job):
+        """Add job to execution queue"""
+
+    def unqueue(self, job):
+        """Remove job from queue"""
+
+    def execute_next(self):
+        """Execute next job in queue"""
+```
+
+**Features:**
+- Priority-based job ordering
+- Concurrent job execution
+- Pause/resume capabilities
+- Job status tracking and reporting
+
+### Coordinate Systems (`space.py`)
+Scene-to-device coordinate transformations:
+
+```python
+class Space(Service):
+    """Coordinate system management"""
+
+    def scene_to_device(self, x, y):
+        """Convert scene coordinates to device coordinates"""
+
+    def device_to_scene(self, x, y):
+        """Convert device coordinates to scene coordinates"""
+```
+
+### Units Management (`units.py`)
+Comprehensive unit conversion system:
+
+```python
+class Length:
+    """Length with unit conversion"""
+    def __init__(self, value, unit='mm'):
+        self.value = value
+        self.unit = unit
+
+    def mm(self): return convert_to_mm(self.value, self.unit)
+    def inch(self): return convert_to_inch(self.value, self.unit)
+```
+
+### View Transformations (`view.py`)
+4-point to 4-point coordinate transformations:
+
+```python
+class View:
+    """Viewport transformation matrix"""
+
+    def transform(self, x, y):
+        """Apply perspective transformation"""
+```
+
+### Undo/Redo System (`undos.py`)
+Tree state management for editing operations:
+
+```python
+class Undo:
+    """Undo/redo stack management"""
+
+    def undo(self):
+        """Revert to previous tree state"""
+
+    def redo(self):
+        """Restore previously undone state"""
+
+    def save(self, description):
+        """Save current state to undo stack"""
+```
+
+### Bind/Alias System (`bindalias.py`)
+Dynamic command binding and aliasing:
+
+```python
+# Bind commands to keys or events
+kernel.bind("command", "F1", "help")
+kernel.alias("quit", "shutdown")
+```
+
+### Web Help System (`webhelp.py`)
+Integrated help system with web-based documentation:
+
+```python
+# Register help URIs
+kernel.register("webhelp/tutorial", "https://meerk40t.org/tutorial")
+```
+
+### Wordlist System (`wordlist.py`)
+Dynamic text replacement for job customization:
+
+```python
+# Define replacement variables
+wordlist = {"NAME": "John Doe", "DATE": "2025-10-19"}
+
+# Use in text elements
+text = "Hello {NAME}, today is {DATE}"
+```
+
+## Integration Patterns
+
+### Service Registration
+All core components register as services with the kernel:
+
+```python
+kernel.add_service("elements", Elemental(kernel))
+kernel.add_service("spooler", Spooler(kernel))
+kernel.activate("elements", service)
+```
+
+### Channel Communication
+Components communicate through typed channels:
+
+```python
+# Create communication channels
+status_channel = kernel.channel("status")
+error_channel = kernel.channel("error")
+
+# Send/receive messages
+status_channel("Job completed")
+error_channel.watch(error_handler)
+```
+
+### Settings Management
+Hierarchical settings with inheritance:
+
+```python
+# Global settings
+kernel.setting(str, "units", "mm")
+
+# Device-specific overrides
+device.setting(float, "bed_width", 300.0)
+
+# Operation-specific parameters
+operation.setting(int, "power", 1000)
+```
+
+## Usage Examples
+
+### Basic Laser Job Creation
+```python
+from meerk40t.core.elements import Elemental
+from meerk40t.core.planner import Planner
+
+# Get services
+elements = kernel.elements
+planner = kernel.planner
+
+# Create elements
+rect = elements.add_rect(0, 0, 100, 100)
+
+# Create operation
+cut_op = elements.add_operation("Cut", speed=100, power=1000)
+cut_op.add_reference(rect)
+
+# Plan and execute
+cutcode = planner.plan_cutcode()
+job = LaserJob("Test Job", [cutcode])
+kernel.spooler.queue(job)
+```
+
+### Custom Driver Implementation
+```python
+from meerk40t.core.drivers import Driver
+
+class MyLaserDriver(Driver):
+    def __init__(self, context):
+        super().__init__(context, "my-laser")
+
+    def move_abs(self, x, y):
+        # Hardware-specific movement command
+        self.send_command(f"MOVE {x},{y}")
+
+    def laser_on(self, power):
+        # Power control implementation
+        self.send_command(f"LASER ON {power}")
+```
+
+### Parameter Validation
+```python
+from meerk40t.core.parameters import validate_parameter
+
+# Validate laser parameters
+power = validate_parameter("power", 1000, int)  # Returns validated int
+speed = validate_parameter("speed", 50.0, float)  # Returns validated float
+enabled = validate_parameter("laser_enabled", True, bool)  # Returns validated bool
+```
+
+## Performance & Optimization
+
+### Cut Planning Optimizations
+- **Travel Minimization**: Shortest path algorithms for laser head movement
+- **Inner-First Processing**: Burn contained shapes before outer shapes
+- **Group Optimization**: Process related operations together
+- **Speed Optimization**: Adjust parameters for quality vs. speed tradeoffs
+
+### Memory Management
+- **Lazy Evaluation**: Expensive operations calculated on-demand
+- **Reference Counting**: Efficient node sharing and cleanup
+- **Streaming Processing**: Large jobs processed in chunks
+- **Cache Management**: Frequently used data cached in memory
+
+### Execution Optimization
+- **Threading**: Concurrent job processing where possible
+- **Priority Queues**: High-priority jobs executed first
+- **Resource Pooling**: Connection and buffer reuse
+- **Statistics Tracking**: Performance monitoring and optimization
+
+## Error Handling & Validation
+
+### Comprehensive Validation
+- **Parameter Bounds Checking**: Prevent invalid laser settings
+- **Geometry Validation**: Ensure valid cut paths
+- **Resource Checking**: Verify hardware availability
+- **State Validation**: Confirm system readiness
+
+### Graceful Degradation
+- **Fallback Modes**: Continue operation with reduced functionality
+- **Error Recovery**: Automatic retry for transient failures
+- **Logging**: Comprehensive error tracking and reporting
+- **User Feedback**: Clear error messages through channels
+
+## Testing & Quality Assurance
+
+### Unit Testing
+- Individual component testing
+- Parameter validation testing
+- Algorithm correctness verification
+- Performance benchmarking
+
+### Integration Testing
+- End-to-end job execution testing
+- Multi-device compatibility testing
+- File format round-trip testing
+- Network protocol testing
+
+### Performance Testing
+- Large job processing benchmarks
+- Memory usage profiling
+- CPU utilization monitoring
+- Hardware interface latency testing
+
+## Future Enhancements
+
+### Planned Improvements
+- **Advanced Optimization**: Machine learning-based path optimization
+- **Real-time Processing**: Live parameter adjustment during execution
+- **Cloud Integration**: Remote job processing and storage
+- **Multi-head Support**: Coordinated multi-laser operations
+- **Material Recognition**: Automatic parameter selection based on material
+- **Quality Prediction**: AI-based quality assessment and correction
+
+### Extension Points
+- **Custom Drivers**: Hardware-specific driver implementations
+- **New Operations**: Custom laser operation types
+- **Optimization Plugins**: Third-party optimization algorithms
+- **Import/Export**: Additional file format support
+- **UI Extensions**: Custom control panels and tools
+
+## Contributing
+
+When contributing to the core module:
+
+1. **Maintain Compatibility**: Ensure changes don't break existing APIs
+2. **Add Tests**: Comprehensive test coverage for new functionality
+3. **Document Changes**: Update relevant README files
+4. **Performance Conscious**: Consider impact on large jobs and slow hardware
+5. **Thread Safety**: Ensure thread-safe operation in multi-threaded environment
+6. **Error Handling**: Robust error handling with clear user feedback
+7. **Code Style**: Follow established patterns and conventions
+
+## Related Modules
+
+- **kernel**: Core service management and channel system
+- **device**: Hardware-specific implementations and drivers
+- **gui**: Graphical user interface components
+- **tools**: Command-line utilities and batch processing
+- **test**: Comprehensive test suite and validation tools
+
+This core module provides the foundation for MeerK40t's laser cutting capabilities, implementing a sophisticated pipeline from design to hardware control with extensive optimization and error handling features.
