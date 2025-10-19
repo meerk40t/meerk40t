@@ -38,6 +38,7 @@ The BalorMK module provides comprehensive support for JCZ Technologies galvo las
 - **`balor_params.py`** - Hardware parameter definitions and calibration data
 - **`galvo_commands.py`** - LMC command structure definitions
 - **`usb_connection.py`** - USB communication layer using pyusb
+- **`direct_usb_connection.py`** - Direct Windows driver communication (New)
 - **`mock_connection.py`** - Simulation interface for testing
 - **`livelightjob.py`** - Real-time light operations and preview
 - **`clone_loader.py`** - Device configuration loading utilities
@@ -67,9 +68,49 @@ The BalorMK module provides comprehensive support for JCZ Technologies galvo las
 
 ### Interface Protocols
 
+- **Direct Windows Driver**: Native Lmcv4u.sys communication (Windows)
 - **USB Communication**: High-speed USB interface using pyusb/libusb
 - **EPP 1.9 Protocol**: Enhanced Parallel Port protocol for legacy support
 - **Real-time Control**: Low-latency command processing for precise timing
+
+## Connection Methods
+
+### 1. Direct Windows Driver (New)
+
+The module now supports direct communication with the Windows Lmcv4u.sys driver, eliminating the need for Zadig driver replacement on Windows systems.
+
+**Features:**
+- **Native Driver Access**: Uses Windows Setup API for device discovery
+- **EzCAD2 Compatibility**: Works alongside EzCAD2 without driver conflicts
+- **No Zadig Required**: Preserves original Windows driver installation
+- **Automatic Fallback**: Falls back to libusb if direct connection fails
+
+**Technical Implementation:**
+- Uses `DirectUSBConnection` class in `direct_usb_connection.py`
+- Windows Setup API device enumeration with GUID `{8bc4c1e1-1dc9-11d9-a23c-000b6a23dc28}`
+- DeviceIoControl communication using IOCTL codes:
+  - `0x99982028`: Device initialization 
+  - `0x99982014`: Command transmission
+- Platform-specific connection logic in `controller.py`
+
+**Connection Flow:**
+```
+Windows:    Mock → Direct Driver → LibUSB (fallback)
+Linux/macOS: Mock → LibUSB
+```
+
+### 2. LibUSB Communication (Traditional)
+
+Standard USB communication using pyusb library with libusb backend.
+
+**Requirements:**
+- **Windows**: Zadig driver replacement required
+- **Linux/macOS**: Native libusb support
+- **Cross-platform**: Consistent behavior across all platforms
+
+### 3. Mock Connection (Testing)
+
+Simulation interface for development and testing without hardware.
 
 ## Technical Features
 
@@ -145,6 +186,40 @@ kernel.register("provider/device/balor", BalorDevice)
 kernel.activate("balor", balor_device)
 ```
 
+### Connection Management
+
+```python
+# Windows: Automatic connection with Direct Driver first, LibUSB fallback
+controller.connect_if_needed()
+
+# Check connection type
+if hasattr(controller.connection, 'is_direct_connection'):
+    if controller.connection.is_direct_connection:
+        print("Using Direct Windows Driver")
+    else:
+        print("Using LibUSB Connection")
+```
+
+### Direct Driver Testing (Windows)
+
+```python
+# Test direct Windows driver communication
+from meerk40t.balormk.direct_usb_connection import DirectUSBConnection
+
+try:
+    connection = DirectUSBConnection()
+    if connection.find_device():
+        print("Direct driver connection successful")
+        # Send test command
+        test_data = bytes([0x1B, 0x00, 0x01, 0x02, 0x03, 0x04])
+        response = connection.write(test_data)
+        print(f"Response: {response}")
+    else:
+        print("Device not found via direct driver")
+except Exception as e:
+    print(f"Direct connection failed: {e}")
+```
+
 ### Console Commands
 
 ```bash
@@ -176,6 +251,81 @@ The module provides several GUI panels:
 - **Controller Panel**: Real-time status monitoring and control
 - **Operation Properties**: Laser-specific operation settings
 - **Coordinate Scene**: Visual coordinate system calibration
+
+## Troubleshooting
+
+### Connection Issues
+
+#### Direct Windows Driver Problems
+
+**Symptom**: Direct connection fails, falls back to LibUSB
+```
+Possible causes:
+1. EzCAD2 currently running and has exclusive device access
+2. Windows Setup API cannot find device
+3. Lmcv4u.sys driver not properly installed
+4. Device not recognized by Windows
+```
+
+**Solutions**:
+1. **Close EzCAD2**: Ensure EzCAD2 is completely closed before connecting
+2. **Device Manager Check**: Verify device appears in Device Manager without errors
+3. **Driver Reinstall**: Reinstall original manufacturer drivers if needed
+4. **USB Port**: Try different USB port or cable
+
+#### LibUSB Connection Problems
+
+**Symptom**: Both direct and LibUSB connections fail
+```
+Common issues:
+1. Driver conflicts between Zadig and original drivers
+2. Device permissions on Linux/macOS
+3. USB enumeration problems
+```
+
+**Solutions**:
+1. **Windows**: Use Zadig to replace driver with libusb-win32
+2. **Linux**: Check udev rules for device permissions
+3. **macOS**: Verify System Integrity Protection settings
+
+### Performance Issues
+
+#### Slow Communication
+
+**Check connection type first**:
+```python
+# In MeerK40t console
+balor status
+```
+
+**Direct Connection**: Should show minimal latency
+**LibUSB Connection**: May have higher latency but should be stable
+
+#### Command Timeouts
+
+**Increase timeout values** in device settings:
+- USB Read Timeout
+- Command Response Timeout
+- Device Initialize Timeout
+
+### Platform-Specific Notes
+
+#### Windows
+
+- **Direct driver** provides best performance and EzCAD2 compatibility
+- **LibUSB fallback** requires Zadig driver replacement
+- **Mixed environments** work seamlessly with automatic detection
+
+#### Linux
+
+- Only LibUSB connection available
+- Requires proper udev rules for device access
+- No driver replacement needed
+
+#### macOS
+
+- LibUSB connection with potential permission requirements
+- May require disabling System Integrity Protection for some operations
 
 ## Development Notes
 
