@@ -30,6 +30,7 @@ class USBConnection:
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 100
+        self.is_direct_connection = False  # Flag to identify connection type
 
     def find_device(self, index=0):
         _ = self.channel._

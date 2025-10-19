@@ -18,6 +18,7 @@ class MockConnection:
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 500
+        self.is_direct_connection = False  # Flag to identify connection type
         self._implied_response = None
 
     def is_open(self, index=0):
