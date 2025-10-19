@@ -32,7 +32,7 @@ from meerk40t.svgelements import (
     Polyline,
     Viewbox,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class DxfLoader:

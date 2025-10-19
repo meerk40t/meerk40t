@@ -17,7 +17,7 @@ To use it we need to have the python interface in place: pip install vtracer
 Not needed left here for reference purposes
 
 def simplified_load(source : str, bbox : tuple) -> list:
-    from meerk40t.tools.geomstr import Geomstr
+    from meerk40t.core.geomstr import Geomstr
     from meerk40t.svgelements import Matrix, Color
     from meerk40t.core.node.elem_path import PathNode
     from time import perf_counter

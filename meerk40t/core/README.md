@@ -10,6 +10,7 @@ The Core Module forms the heart of MeerK40t's laser cutting ecosystem, providing
 meerk40t/core/
 ├── core.py                 # Main plugin registrar for all core services
 ├── drivers.py              # Driver abstraction layer for laser hardware
+├── geomstr.py              # High-performance geometric data structures (9003 lines)
 ├── parameters.py           # Laser parameter definitions and validation (710 lines)
 ├── exceptions.py           # MeerK40t-specific exception hierarchy
 ├── logging.py              # Job execution logging and event tracking
@@ -117,16 +118,48 @@ BOOL_PARAMETERS = (
 - Driver-specific parameter mapping
 - Settings inheritance and override
 
-### Exception Hierarchy (`exceptions.py`)
-MeerK40t-specific error handling:
+### Geomstr Geometric Data Structure (`geomstr.py`)
+High-performance geometric processing library (9003 lines) providing the foundation for all geometric operations in MeerK40t:
 
 ```python
-class Meerk40tError(Exception):
-    """Root exception for all MeerK40t errors"""
+class Geomstr:
+    """High-performance geometric data structure using aligned numpy arrays"""
 
-class BadFileError(Meerk40tError):
-    """File loading/parsing errors"""
+    def line(self, start, end):
+        """Add line segment from start to end point"""
+
+    def quad(self, start, control, end):
+        """Add quadratic Bezier curve"""
+
+    def cubic(self, start, control1, control2, end):
+        """Add cubic Bezier curve"""
+
+    def arc(self, start, control, end):
+        """Add circular arc segment"""
+
+    def transform(self, matrix):
+        """Apply affine transformation to all geometry"""
 ```
+
+**Key Features:**
+- **Memory Efficient**: Aligned numpy arrays store geometric primitives in compact format
+- **Primitive Types**: Lines, quadratic/cubic Bezier curves, arcs, points with complex number representation
+- **Path Operations**: Run-based geometry with implicit connections between adjacent segments
+- **Transformation Support**: Matrix-based affine transformations and coordinate system conversions
+- **Performance Optimized**: Numba JIT compilation for critical geometric operations
+- **Geometric Analysis**: Intersection detection, bounding box calculations, path simplification
+
+**Core Architecture:**
+- **Complex Number Storage**: Uses 5-element complex arrays per primitive: `[start, control1, type_info, control2, end]`
+- **Type System**: 16 distinct geometric types (lines, curves, arcs, structural elements)
+- **Vertex Topology**: Graph-based vertex relationships for complex path structures
+- **Run Optimization**: Connected geometry segments processed as efficient runs
+
+**Advanced Operations:**
+- **Stitching**: Automatic geometry connection with tolerance-based endpoint matching
+- **Scanbeam Processing**: Efficient polygon filling and clipping algorithms
+- **Path Simplification**: Visvalingam-Wyatt algorithm for curve optimization
+- **Intersection Detection**: Fast line-line and curve-curve intersection calculations
 
 ### Logging Service (`logging.py`)
 Comprehensive job execution tracking:

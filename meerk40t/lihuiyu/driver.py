@@ -37,7 +37,7 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from ..tools.geomstr import Geomstr
+from ..core.geomstr import Geomstr
 from .laserspeed import LaserSpeed
 
 distance_lookup = [

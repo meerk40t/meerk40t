@@ -66,7 +66,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
+from meerk40t.core.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
 
 
 def plugin(kernel, lifecycle=None):

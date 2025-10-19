@@ -29,7 +29,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.refnode import ReferenceNode
 from meerk40t.svgelements import Matrix, Path
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class TestNodeBackupRestore(unittest.TestCase):

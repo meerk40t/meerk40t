@@ -1,4 +1,4 @@
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.units import Length
 from meerk40t.core.elements.element_types import (
     op_burnable_nodes,
@@ -6,7 +6,7 @@ from meerk40t.core.elements.element_types import (
 import numpy as np
 
 # Import TYPE constants for geometric operations
-from meerk40t.tools.geomstr import TYPE_QUAD, TYPE_CUBIC, TYPE_ARC
+from meerk40t.core.geomstr import TYPE_QUAD, TYPE_CUBIC, TYPE_ARC
 
 # Import for caching and additional utilities
 from functools import lru_cache

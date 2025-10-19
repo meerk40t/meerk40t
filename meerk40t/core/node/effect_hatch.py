@@ -5,7 +5,7 @@ from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Point
-from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
+from meerk40t.core.geomstr import Geomstr  # ,  Scanbeam
 
 
 class HatchEffectNode(Node, Suppressable):

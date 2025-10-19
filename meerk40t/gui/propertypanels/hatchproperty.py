@@ -584,7 +584,7 @@ class HatchPropertyPanel(ScrolledPanel):
             ]
 
             # Convert to Geomstr
-            from meerk40t.tools.geomstr import Geomstr
+            from meerk40t.core.geomstr import Geomstr
 
             outline_geom = Geomstr()
             last = None

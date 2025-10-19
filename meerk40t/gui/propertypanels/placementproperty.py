@@ -20,7 +20,7 @@ from meerk40t.gui.wxutils import (
 )
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 _ = wx.GetTranslation
 

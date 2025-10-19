@@ -5,7 +5,7 @@ import wx
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.gui.wxutils import dip_size, get_matrix_scale, get_gc_scale
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES
 
 _ = wx.GetTranslation
 

@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Tuple
 
 # Import all three CAG implementations
 try:
-    from meerk40t.tools.geomstr import TYPE_LINE, BeamTable, Geomstr
+    from meerk40t.core.geomstr import TYPE_LINE, BeamTable, Geomstr
 
     GEOMSTR_AVAILABLE = True
 except ImportError:

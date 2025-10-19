@@ -9,7 +9,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 def plugin(service, lifecycle):

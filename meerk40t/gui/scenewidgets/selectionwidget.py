@@ -40,7 +40,7 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
 )
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES, TYPE_END
 
 # from time import perf_counter
 

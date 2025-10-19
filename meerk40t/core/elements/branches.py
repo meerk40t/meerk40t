@@ -154,7 +154,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES
 
 
 def plugin(kernel, lifecycle=None):

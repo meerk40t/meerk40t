@@ -10,7 +10,7 @@ import numpy as np
 from meerk40t.fill.fills import scanline_fill
 from meerk40t.fill.patterns import set_diamond1, set_line
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
-from meerk40t.tools.geomstr import (
+from meerk40t.core.geomstr import (
     TYPE_LINE,
     TYPE_POINT,
     BeamTable,
@@ -3789,7 +3789,7 @@ class TestGeomstr(unittest.TestCase):
 
     def test_bbox_performance_threshold_validation(self):
         """Test that bbox performance thresholds work as expected."""
-        from meerk40t.tools.geomstr import THRESHOLD_BBOX
+        from meerk40t.core.geomstr import THRESHOLD_BBOX
         
         # Test just below threshold (should use standard method)
         geom_small = Geomstr()

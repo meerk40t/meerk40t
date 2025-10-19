@@ -55,7 +55,7 @@ else:
 
 
 from meerk40t.core.elements.manual_optimize import _optimize_path_order_greedy, _calculate_total_travel_distance
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 def create_test_channel():
     """Create a mock channel for debugging output"""

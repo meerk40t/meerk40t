@@ -15,7 +15,7 @@ from meerk40t.svgelements import (
     Matrix,
     Point,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):

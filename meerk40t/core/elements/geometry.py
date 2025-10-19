@@ -140,7 +140,7 @@ Functions:
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix
-from meerk40t.tools.geomstr import BeamTable, Geomstr
+from meerk40t.core.geomstr import BeamTable, Geomstr
 
 
 def plugin(kernel, lifecycle=None):
