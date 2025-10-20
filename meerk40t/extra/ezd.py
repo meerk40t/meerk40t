@@ -931,21 +931,25 @@ class EZHatch(list, EZObject):
             synthetic_text = SyntheticText(text, x_pos, y_pos, label=self.label)
             self.append(synthetic_text)
             
-            # Create an empty visual group following the text, matching the pattern
-            # seen with other text elements (DEPRESSURIZE AFTER USE! + Group(21), IN + Group(2))
-            visual_group = EZGroup.__new__(EZGroup)
-            list.__init__(visual_group)
-            # Initialize with empty group attributes (will inherit from EZObject but we'll keep minimal)
-            visual_group.type = 15  # EZGroup type
-            visual_group.pen = self.pen
-            visual_group.state = 0
-            visual_group.selected = False
-            visual_group.hidden = False
-            visual_group.locked = False
-            visual_group.label = self.label  # Preserve the hatch label
-            visual_group.position = (x_pos, y_pos)
-            
-            self.append(visual_group)
+            # Create visual groups for each character, matching the pattern seen in other text elements
+            # Each character gets its own labeled group (e.g., "DEPRESSURIZE AFTER USE!" has 21 char groups)
+            # This preserves character-level labeling in the visual representation
+            for char in text:
+                char_group = EZGroup.__new__(EZGroup)
+                list.__init__(char_group)
+                # Initialize with group attributes
+                char_group.type = 15  # EZGroup type
+                char_group.pen = self.pen
+                char_group.state = 0
+                char_group.selected = False
+                char_group.hidden = False
+                char_group.locked = False
+                char_group.label = char  # Label each group with its character
+                char_group.position = (x_pos, y_pos)
+                # We don't have cached paths for unsupported format, so group remains empty
+                # But the character label is preserved for identification in MeerK40t UI
+                
+                self.append(char_group)
     
     def _calculate_operands_bounds(self):
         """Calculate bounding box from all non-group operands in this hatch
@@ -1177,6 +1181,7 @@ class EZProcessor:
                     type="elem path",
                     path=path,
                     stroke_width=self.elements.default_strokewidth,
+                    label=element.label,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZPolygon):
@@ -1200,6 +1205,7 @@ class EZProcessor:
                     type="elem polyline",
                     shape=polyline,
                     stroke_width=self.elements.default_strokewidth,
+                    label=element.label,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZCircle):
@@ -1216,6 +1222,7 @@ class EZProcessor:
                     matrix=mx,
                     stroke_width=self.elements.default_strokewidth,
                     type="elem ellipse",
+                    label=element.label,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZEllipse):
@@ -1234,6 +1241,7 @@ class EZProcessor:
                     stroke=Color("black"),
                     stroke_width=self.elements.default_strokewidth,
                     type="elem ellipse",
+                    label=element.label,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZRect):
@@ -1252,6 +1260,7 @@ class EZProcessor:
                     stroke=Color("black"),
                     stroke_width=self.elements.default_strokewidth,
                     type="elem rect",
+                    label=element.label,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZTimer):
@@ -1308,7 +1317,7 @@ class EZProcessor:
             )
             matrix.post_translate(left, top)
             with self.elements.node_lock:
-                node = elem.add(type="elem image", image=image, matrix=matrix, dpi=_dpi)
+                node = elem.add(type="elem image", image=image, matrix=matrix, dpi=_dpi, label=element.label)
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op image")
         elif isinstance(element, EZVectorFile):
             elem = elem.add(type="group", label=element.label)
@@ -1341,6 +1350,7 @@ class EZProcessor:
                         type="elem path",
                         path=path,
                         stroke_width=self.elements.default_strokewidth,
+                        label=element.label,
                     )
                     op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, (EZGroup, EZCombine)):
