@@ -154,7 +154,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES
 
 
 def plugin(kernel, lifecycle=None):
@@ -205,34 +205,34 @@ def init_commands(kernel):
         self(".operation* list\n")
 
     @self.console_command(
-        "operation.*", help=_("operation.*: selected operations"), output_type="ops"
+        "operation.*", help="operation.* : " + _("selected operations"), output_type="ops"
     )
     def operation_select(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
-        "operation*", help=_("operation*: all operations"), output_type="ops"
+        "operation*", help="operation* : " + _("all operations"), output_type="ops"
     )
     def operation_all(**kwargs):
         return "ops", list(self.ops())
 
     @self.console_command(
         "operation~",
-        help=_("operation~: non selected operations."),
+        help="operation~ : " + _("non selected operations."),
         output_type="ops",
     )
     def operation_invert(**kwargs):
         return "ops", list(self.ops(emphasized=False))
 
     @self.console_command(
-        "operation", help=_("operation: selected operations."), output_type="ops"
+        "operation", help="operation : " + _("selected operations."), output_type="ops"
     )
     def operation_base(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
         r"operation([0-9]+,?)+",
-        help=_("operation0,2: operation #0 and #2"),
+        help="operation0,2 : " + _("operation #0 and #2"),
         regex=True,
         output_type="ops",
     )
@@ -253,7 +253,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "select",
-        help=_("Set these values as the selection."),
+        help="select : " + _("Set these values as the selection."),
         input_type="ops",
         output_type="ops",
     )
@@ -263,7 +263,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "select+",
-        help=_("Add the input to the selection"),
+        help="select+ : " + _("Add the input to the selection"),
         input_type="ops",
         output_type="ops",
     )
@@ -275,7 +275,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "select-",
-        help=_("Remove the input data from the selection"),
+        help="select- : " + _("Remove the input data from the selection"),
         input_type="ops",
         output_type="ops",
     )
@@ -291,7 +291,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "select^",
-        help=_("Toggle the input data in the selection"),
+        help="select^ : " + _("Toggle the input data in the selection"),
         input_type="ops",
         output_type="ops",
     )
@@ -514,7 +514,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "id",
-        help=_("id <id>"),
+        help="id <id> : " + _("set or get the id of the elements"),
         input_type=("ops", "elements"),
         output_type=("elements", "ops"),
     )
@@ -548,7 +548,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "label",
-        help=_("label <label>"),
+        help="label <label> : " + _("set or get the label of the elements"),
         input_type=("ops", "elements"),
         output_type=("elements", "ops"),
     )
@@ -925,7 +925,7 @@ def init_commands(kernel):
     )
     @self.console_argument("speed", type=str, help=_("operation speed in mm/s"))
     @self.console_command(
-        "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
+        "speed", help="speed <speed> : " + _("set the operation speed"), input_type="ops", output_type="ops"
     )
     def op_speed(
         command,
@@ -1000,7 +1000,7 @@ def init_commands(kernel):
         help=_("Change power for each item in order"),
     )
     @self.console_command(
-        "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
+        "power", help="power <ppi> : " + _("set the operation power"), input_type="ops", output_type="ops"
     )
     def op_power(
         command,
@@ -1062,7 +1062,7 @@ def init_commands(kernel):
         help=_("Change speed for each item in order"),
     )
     @self.console_command(
-        "frequency", help=_("frequency <kHz>"), input_type="ops", output_type="ops"
+        "frequency", help="frequency <kHz> : " + _("set the operation frequency"), input_type="ops", output_type="ops"
     )
     def op_frequency(
         command,
@@ -1106,7 +1106,7 @@ def init_commands(kernel):
 
     @self.console_argument("passes", type=int, help=_("Set operation passes"))
     @self.console_command(
-        "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
+        "passes", help="passes <passes> : " + _("set the operation passes"), input_type="ops", output_type="ops"
     )
     def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
         if passes is None:
@@ -1150,7 +1150,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "hatch-distance",
-        help=_("hatch-distance <distance>"),
+        help="hatch-distance <distance> : " + _("set the hatch distance of the hatch operation"),
         input_type="ops",
         output_type="ops",
     )
@@ -1166,6 +1166,8 @@ def init_commands(kernel):
     ):
         if distance is None:
             for op in data:
+                if not hasattr(op, "hatch_distance"):
+                    continue
                 old = op.hatch_distance
                 channel(
                     _("Hatch Distance for '{name}' is currently: {distance}").format(
@@ -1175,6 +1177,8 @@ def init_commands(kernel):
             return
         delta = 0
         for op in data:
+            if not hasattr(op, "hatch_distance"):
+                continue
             old = Length(op.hatch_distance)
             if progress:
                 s = float(old) + delta
@@ -1211,7 +1215,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "hatch-angle",
-        help=_("hatch-angle <angle>"),
+        help="hatch-angle <angle> : " + _("set the hatch angle of the hatch operation"),
         input_type="ops",
         output_type="ops",
     )
@@ -1227,6 +1231,8 @@ def init_commands(kernel):
     ):
         if angle is None:
             for op in data:
+                if not hasattr(op, "hatch_angle"):
+                    continue
                 old = Angle(op.hatch_angle, digits=4).angle_turns
                 old_hatch_angle_deg = Angle(op.hatch_angle, digits=4).angle_degrees
                 channel(
@@ -1237,6 +1243,8 @@ def init_commands(kernel):
             return
         delta = 0
         for op in data:
+            if not hasattr(op, "hatch_angle"):
+                continue
             try:
                 old = Angle(op.hatch_angle)
             except AttributeError:

@@ -741,6 +741,7 @@ class Elemental(Service):
         self._timing_stack = {}
 
         self.default_operations = []
+        self.default_operations_title = ""
         self.init_default_operations_nodes()
 
     @property
@@ -1154,91 +1155,99 @@ class Elemental(Service):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    def condense_elements(self, data, expand_at_end=True):
-        """
-        This routine looks at a given dataset and will condense
-        it in the sense that if all elements of a given hierarchy
-        (i.e. group or file) are in this set, then they will be
-        replaced and represented by this parent element
-        NB: we will set the emphasized_time of the parent element
-        to the minimum time of all children
-        """
+    def condense_elements(self, data, expand_single_group_at_end: bool = False):
+        """Return a minimal node selection by recursively collapsing fully covered branches.
+
+        Every node in ``data`` is checked. Whenever all children of a ``group``/``file`` are
+        present they are replaced by that parent, and the search continues upward so that an
+        entire subtree can resolve to the highest qualifying ancestor. The promoted parent
+        inherits the earliest ``_emphasized_time`` of its descendants, and the relative order is
+        maintained based on the original child positions. When ``expand_single_group_at_end`` is
+        ``True`` the final result collapses only during processing; if the output would be just a
+        single group/file the routine returns its children instead."""
         if not data:
             return []
 
-        # Use a set for O(1) lookups
-        parent_map = {}
+        condensible_types = {"file", "group"}
+        selection = set(data)
+        order_map = {node: idx for idx, node in enumerate(data)}
 
-        # Build map of selected children per parent
-        for node in data:
-            if node.parent and node.parent.type in ("file", "group"):
-                parent_map.setdefault(node.parent, []).append(node)
+        def node_depth(node):
+            depth = 0
+            parent = node.parent
+            while parent is not None:
+                depth += 1
+                parent = parent.parent
+            return depth
 
-        condensed_data = []
+        def set_parent_emphasized_time(parent):
+            min_time = None
+            for child in parent.children:
+                child_time = getattr(child, "_emphasized_time", None)
+                if child_time is not None and (min_time is None or child_time < min_time):
+                    min_time = child_time
+            if min_time is not None:
+                parent._emphasized_time = min_time
 
-        for node in data:
-            # If this node is a group/file itself, include it directly
-            if node.type in ("file", "group"):
-                condensed_data.append(node)
-                # Set emphasized_time to minimum of children
-                min_time = None
-                for child in node.children:
-                    if (
-                        hasattr(child, "_emphasized_time")
-                        and child._emphasized_time is not None
-                    ):
-                        if min_time is None or child._emphasized_time < min_time:
-                            min_time = child._emphasized_time
-                if min_time is not None:
-                    node._emphasized_time = min_time
+        # Process deepest nodes first so children collapse before ancestors
+        nodes_to_process = sorted(selection, key=node_depth, reverse=True)
+
+        for node in nodes_to_process:
+            if node not in selection:
                 continue
 
-            # Check if all siblings are selected - if so, use parent instead
-            parent = node.parent
-            if parent and parent.type in ("file", "group"):
-                selected_siblings = parent_map.get(parent, [])
-                if len(selected_siblings) == len(parent.children):
-                    # All children selected, use parent instead
-                    if parent not in condensed_data:
-                        condensed_data.append(parent)
-                        # Set emphasized_time to minimum of children
-                        min_time = None
-                        for child in parent.children:
-                            if (
-                                hasattr(child, "_emphasized_time")
-                                and child._emphasized_time is not None
-                            ):
-                                if (
-                                    min_time is None
-                                    or child._emphasized_time < min_time
-                                ):
-                                    min_time = child._emphasized_time
-                        if min_time is not None:
-                            parent._emphasized_time = min_time
-                    # Don't add the individual node when parent is used
-                    continue
-
-            # Either no condensable parent, or not all siblings selected
-            condensed_data.append(node)
-
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_condensed = []
-        for node in condensed_data:
-            if node not in seen:
-                seen.add(node)
-                unique_condensed.append(node)
-
-        # Handle expand_at_end logic
-        if expand_at_end:
-            while len(unique_condensed) == 1:
-                node = unique_condensed[0]
-                if node is not None and node.type in ("file", "group"):
-                    unique_condensed = list(node.children)
-                else:
+            # If any ancestor already represents this branch, skip the node
+            ancestor = node.parent
+            remove_node = False
+            while ancestor is not None:
+                if ancestor in selection:
+                    selection.discard(node)
+                    remove_node = True
                     break
+                if ancestor.type not in condensible_types:
+                    break
+                ancestor = ancestor.parent
+            if remove_node:
+                continue
 
-        return unique_condensed
+            current = node
+            parent = current.parent
+            while parent is not None and parent.type in condensible_types:
+                children = tuple(parent.children)
+                if all(child in selection for child in children):
+                    for child in children:
+                        selection.discard(child)
+                    selection.add(parent)
+
+                    child_orders = [order_map.get(child) for child in children if child in order_map]
+                    if child_orders:
+                        order_map[parent] = min(child_orders)
+                    else:
+                        order_map.setdefault(parent, len(order_map))
+
+                    set_parent_emphasized_time(parent)
+
+                    current = parent
+                    parent = current.parent
+                    continue
+                break
+
+        # Prepare ordered result
+        def sort_key(node):
+            base = order_map.get(node)
+            if base is None:
+                base = len(order_map)
+            return (base, node_depth(node))
+
+        result = sorted(selection, key=sort_key)
+        while len(result) == 1 and expand_single_group_at_end and result[0].type in condensible_types:
+            # If we have just one group at the end then we expand the result to the children
+            node = result[0]
+            if len(node.children) == 0:
+                break
+            result = list(node.children)
+
+        return result
 
     def translate_node(self, node, dx, dy):
         if not node.can_move(self.lock_allows_move):
@@ -1482,8 +1491,8 @@ class Elemental(Service):
         for i, op in enumerate(oplist):
             if hasattr(op, "allow_save") and not op.allow_save():
                 continue
-            if op.type == "reference":
-                # We do not save references.
+            if op.type == "reference" or op.type.startswith("effect "):
+                # We do not save references or effects - effects will be stored as an operation information
                 continue
 
             section = f"{name} {i:06d}"
@@ -1499,6 +1508,7 @@ class Elemental(Service):
             )
             if effects:
                 op.settings["effects"] = effects
+                # print (f"{op.type}.{op.display_label()} - effect={effects}")
             op.save(settings, section)
             # We will save the effect information, ie whether an operation does contain a hatch/wobble/warp
 
@@ -1569,7 +1579,9 @@ class Elemental(Service):
         settings = self.op_data if use_settings is None else use_settings
         op_tree = {}
         op_info = {}
-        for section in list(settings.derivable(name)):
+        seclist = list(settings.derivable(name))
+        seclist.sort() # Make sure we load in the right order
+        for section in seclist:
             if section.endswith("info"):
                 for key in settings.keylist(section):
                     content = settings.read_persistent(str, section, key)
@@ -1650,6 +1662,18 @@ class Elemental(Service):
         self.signal("updateop_tree")
 
     # --------------- Default Operations logic
+
+    def _get_default_list_title(self, opinfo):
+        parts = []
+        if "material" in opinfo and opinfo["material"]:
+            parts.append(opinfo["material"])
+        if "thickness" in opinfo and opinfo["thickness"]:
+            parts.append(opinfo["thickness"])
+        if "title" in opinfo and opinfo["title"]:
+            parts.append(opinfo["title"])
+        mat_title = "-".join(parts)
+        return mat_title
+
     def init_default_operations_nodes(self):
         def next_color(primary, secondary, tertiary, delta=32):
             secondary += delta
@@ -1741,6 +1765,7 @@ class Elemental(Service):
         needs_signal = len(self.default_operations) != 0
         oplist = []
         opinfo = {}
+        _ = self.kernel.translation
         if hasattr(self, "device"):
             std_list = f"_default_{self.device.label}"
             # We need to replace all ' ' by an underscore
@@ -1748,10 +1773,16 @@ class Elemental(Service):
                 std_list = std_list.replace(forbidden, "_")
             # print(f"Try to load '{std_list}'")
             oplist, opinfo = self.load_persistent_op_list(std_list)
+            if not opinfo.get("title", ""):
+                opinfo["title"] = _("Default operations for {dev}").format(
+                    dev=self.device.label
+                )
         if len(oplist) == 0:
             std_list = "_default"
             # print(f"Try to load '{std_list}'")
             oplist, opinfo = self.load_persistent_op_list(std_list)
+            if not opinfo.get("title", ""):
+                opinfo["title"] = _("Default operations")
 
         if len(oplist) == 0:
             # Then let's create something useful
@@ -1770,8 +1801,9 @@ class Elemental(Service):
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
             )
-
+        title = self._get_default_list_title(opinfo)
         self.default_operations = oplist
+        self.default_operations_title = title
         if needs_signal:
             self.signal("default_operations")
 
@@ -2004,6 +2036,7 @@ class Elemental(Service):
     def create_basic_op_list(self):
         oplist = []
         pwr = 1000
+        spd = 140
         spd = 140
         node = Node().create(
             type="op image",
@@ -2470,6 +2503,8 @@ class Elemental(Service):
         self.set_end_time("remove_nodes")
         if fastmode:
             self.signal("rebuild_tree", "all")
+        else:
+            self.signal("element_removed")
 
     def remove_elements(self, element_node_list):
         with self._node_lock:
@@ -2477,6 +2512,7 @@ class Elemental(Service):
                 if hasattr(elem, "can_remove") and not elem.can_remove:
                     continue
                 elem.remove_node(references=True)
+        self.signal("element_removed")
         self.validate_selected_area()
 
     def remove_operations(self, operations_list):
@@ -2645,7 +2681,6 @@ class Elemental(Service):
 
     def center(self):
         bounds = self._emphasized_bounds
-        return (bounds[2] + bounds[0]) / 2.0, (bounds[3] + bounds[1]) / 2.0
 
     def ensure_positive_bounds(self):
         b = self._emphasized_bounds

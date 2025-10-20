@@ -141,3 +141,6 @@ mk40t.py
 
 # Local test files
 local_workspace/
+
+# VS Code settings
+.vscode/

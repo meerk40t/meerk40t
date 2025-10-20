@@ -140,7 +140,7 @@ Functions:
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix
-from meerk40t.tools.geomstr import BeamTable, Geomstr
+from meerk40t.core.geomstr import BeamTable, Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -225,7 +225,7 @@ def init_commands(kernel):
     @self.console_argument("r_pos", type=str, help=_("Radius for circle."))
     @self.console_command(
         "circle",
-        help=_("circle <x> <y> <r>"),
+        help="circle <x> <y> <r> : " + _("adds circle with radius <r> around (<x>, <y>)"),
         input_type="geometry",
         output_type="geometry",
         all_arguments_required=True,

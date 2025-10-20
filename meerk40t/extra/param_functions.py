@@ -8,7 +8,7 @@ import math
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle):
@@ -61,7 +61,7 @@ def plugin(kernel, lifecycle):
         @self.console_argument("id", type=str)
         @self.console_option("dx", "x", type=Length, help=_("Horizontal delta"))
         @self.console_option("dy", "y", type=Length, help=_("Vertical delta"))
-        @context.console_command("pgrid", help=_("pgrid sx, sy, cols, rows, id"))
+        @context.console_command("pgrid", help="pgrid sx, sy, cols, rows, id : " + _("create a grid of copies of an element"), output_type="elements")
         def param_grid(
             command,
             channel,
@@ -250,7 +250,7 @@ def plugin(kernel, lifecycle):
         )
         @context.console_command(
             "tfractal",
-            help=_("tfractal iterations"),
+            help="tfractal iterations : " + _("Number of iterations for the turtle fractal"),
             output_type="geometry",
             hidden=True,
         )
@@ -436,7 +436,7 @@ def plugin(kernel, lifecycle):
         @self.console_argument("inversions", nargs="*", type=int)
         @context.console_command(
             "ffractal",
-            help=_("fractal iterations"),
+            help="ffractal iterations : " + _("Number of iterations for the fractal"),
             output_type="geometry",
             hidden=True,
         )
@@ -457,7 +457,7 @@ def plugin(kernel, lifecycle):
         @self.console_argument("branch", type=Length)
         @self.console_argument("iterations", type=int)
         @context.console_command(
-            "fractal_tree", help=_("fractal_tree sx, sy, branch, iterations")
+            "fractal_tree", help="fractal_tree sx, sy, branch, iterations : " + _("create a fractal tree")
         )
         def fractal_tree(
             command,
@@ -1344,7 +1344,7 @@ def plugin(kernel, lifecycle):
             "gap", "g", type=int, help=_("Delta angle between moves in degrees")
         )
         @context.console_command(
-            "growingshape", help=_("growingshape sx sy sides iterations")
+            "growingshape", help="growingshape sx sy sides iterations : " + _("create a growing shape")
         )
         def growing_shape(
             command,

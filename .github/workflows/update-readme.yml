@@ -1,0 +1,52 @@
+name: Update README with Latest Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get latest release info
+      id: get-release
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const release = await github.rest.repos.getLatestRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo
+          });
+          
+          const version = release.data.tag_name;
+          const releaseUrl = release.data.html_url;
+          const publishedAt = new Date(release.data.published_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          });
+          
+          core.setOutput('version', version);
+          core.setOutput('url', releaseUrl);
+          core.setOutput('date', publishedAt);
+
+    - name: Update README.md
+      run: |
+        # Copy template to README.md and replace placeholders with actual values
+        cp README.template.md README.md
+        sed -i "s/LATEST_VERSION/${{ steps.get-release.outputs.version }}/g" README.md
+        sed -i "s|LATEST_URL|${{ steps.get-release.outputs.url }}|g" README.md
+        sed -i "s/LATEST_DATE/${{ steps.get-release.outputs.date }}/g" README.md
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add README.md
+        git commit -m "docs: Update README with latest release ${{ steps.get-release.outputs.version }}"
+        git push

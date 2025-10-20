@@ -33,7 +33,7 @@ def init_commands(kernel):
     @self.console_option("name", "n", type=str)
     @self.console_command(
         "clipboard",
-        help=_("clipboard"),
+        help="clipboard : " + _("manage clipboard contents"),
         input_type=(None, "elements"),
         output_type="clipboard",
     )
@@ -54,7 +54,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "copy",
-        help=_("clipboard copy"),
+        help="clipboard copy : " + _("copy selected elements to clipboard"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -81,7 +81,7 @@ def init_commands(kernel):
     @self.console_option("dy", "y", help=_("paste offset y"), type=str, default=0)
     @self.console_command(
         "paste",
-        help=_("clipboard paste"),
+        help="clipboard paste : " + _("paste elements from clipboard"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -161,7 +161,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "cut",
-        help=_("clipboard cut"),
+        help="clipboard cut : " + _("cut selected elements to clipboard"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -187,7 +187,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "clear",
-        help=_("clipboard clear"),
+        help="clipboard clear : " + _("clear clipboard contents"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -202,7 +202,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "contents",
-        help=_("clipboard contents"),
+        help="clipboard contents : " + _("show clipboard contents"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -212,7 +212,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "list",
-        help=_("clipboard list"),
+        help="clipboard list : " + _("list clipboard contents"),
         input_type="clipboard",
     )
     def clipboard_list(command, channel, _, **kwargs):

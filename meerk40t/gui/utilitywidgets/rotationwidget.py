@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CONSUME
 from meerk40t.gui.utilitywidgets.handlewidget import HandleWidget
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class RotationWidget(HandleWidget):

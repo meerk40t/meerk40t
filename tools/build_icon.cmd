@@ -30,6 +30,8 @@ magick mk_big.png ^
 ( -clone 0 -fill red -gravity SouthEast -pointsize 96 -annotate 0 %ver% -resize 128x128 -extent 128x128 -background transparent ) ^
 ( -clone 0 -fill red -gravity SouthEast -pointsize 96 -annotate 0 %ver% -resize 256x256 -extent 256x256 -background transparent ) ^
 -delete 0 .github\workflows\mac\meerk40t.icns
+echo Also create the 256x256 PNG version for AppImage
+magick mk_big.png -fill red -gravity SouthEast -pointsize 96 -annotate 0 %ver% -resize 256x256 -extent 256x256 -background transparent meerk40t.png
 
 del mk_big.png
 del mk_small.png

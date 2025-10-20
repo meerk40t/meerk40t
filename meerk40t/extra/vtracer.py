@@ -17,7 +17,7 @@ To use it we need to have the python interface in place: pip install vtracer
 Not needed left here for reference purposes
 
 def simplified_load(source : str, bbox : tuple) -> list:
-    from meerk40t.tools.geomstr import Geomstr
+    from meerk40t.core.geomstr import Geomstr
     from meerk40t.svgelements import Matrix, Color
     from meerk40t.core.node.elem_path import PathNode
     from time import perf_counter
@@ -203,8 +203,6 @@ def plugin(kernel, lifecycle=None):
                     try:
                         os.remove(input_file)
                         os.remove(output_file)
-                    except (PermissionError, OSError):
-                        pass
                     except Exception as e:
                         channel(f"Could not remove temporary files: {e}")
                     # kernel.root.signal("freeze_tree", False)

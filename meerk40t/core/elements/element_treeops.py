@@ -110,7 +110,7 @@ from meerk40t.core.treeop import (
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 from .element_types import (
     effect_nodes,
@@ -1674,6 +1674,7 @@ def init_tree(kernel):
         with self.undoscope("Delete group"):
             with self.node_lock:
                 node.remove_node()
+        self.signal("element_removed")
 
     @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
@@ -1711,6 +1712,7 @@ def init_tree(kernel):
             with self.node_lock:
                 for e in to_be_removed:
                     e.remove_node()
+        self.signal("element_removed")
         self.set_emphasis(None)
 
     @tree_conditional(lambda node: not is_regmark(node))
@@ -2315,6 +2317,8 @@ def init_tree(kernel):
             if len(op_list) == 0:
                 return
             self.default_operations = list(op_list)
+            self.default_operations_title = self._get_default_list_title(op_info)
+            self.default_operation_info = dict(op_info)
             self.signal("default_operations")
 
     def load_for_statusbar(node, **kwargs):
@@ -3820,7 +3824,7 @@ def init_tree(kernel):
                 if justonegroup:
                     minimaldata = alldata
                 else:
-                    minimaldata = self.condense_elements(alldata, expand_at_end=False)
+                    minimaldata = self.condense_elements(alldata)
                 for e in minimaldata:
                     parent = e.parent
                     copy_single_node(e, parent, copies, _dx, _dy)
@@ -4821,6 +4825,18 @@ def init_tree(kernel):
         # Language hint "Split image"
         with self.undoscope("Split image"):
             self("image innerwhite -w -o -m 2\n")
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Image"))
+    @tree_operation(
+        _("Split image into subimages"),
+        node_type="elem image",
+        help=_("Split image into rectangular subimages of connected non-white regions (not lossless)"),
+        grouping="70_ELEM_IMAGES",
+    )
+    def image_split_subimages(node, **kwargs):
+        # Language hint "Split image"
+        self("split_subimages --morphology\n")
 
     @tree_submenu(_("Image"))
     ## @tree_separator_before()

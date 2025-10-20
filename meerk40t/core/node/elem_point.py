@@ -3,7 +3,7 @@ from copy import copy
 from meerk40t.core.node.mixins import FunctionalParameter, LabelDisplay, Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Matrix, Point
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class PointNode(Node, FunctionalParameter, LabelDisplay, Suppressable):

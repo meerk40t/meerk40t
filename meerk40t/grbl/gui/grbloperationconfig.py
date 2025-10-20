@@ -7,6 +7,14 @@ _ = wx.GetTranslation
 
 
 class GRBLAdvancedPanel(wx.Panel):
+    """GRBLAdvancedPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for grbladvanced functionality. Features checkbox controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for grbladvanced functionality. Key controls include "Set Z-Axis value" (checkbox)."""
+
+    """GRBLAdvancedPanel - User interface panel for laser cutting operations"""
+
     name = "Advanced"
 
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -50,7 +58,11 @@ class GRBLAdvancedPanel(wx.Panel):
         sizer_commands = StaticBoxSizer(self, wx.ID_ANY, _("Custom Code:"))
         advanced_sizer.Add(sizer_commands, 1, wx.EXPAND, 0)
         self.text_commands = TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
-        self.text_commands.SetToolTip(_("Any custom GRBL code that will be executed at the start of the operation"))
+        self.text_commands.SetToolTip(
+            _(
+                "Any custom GRBL code that will be executed at the start of the operation"
+            )
+        )
         sizer_commands.Add(self.text_commands, 1, wx.EXPAND, 0)
         self.SetSizer(extras_sizer)
 

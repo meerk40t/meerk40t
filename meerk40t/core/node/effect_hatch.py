@@ -5,24 +5,24 @@ from meerk40t.core.node.mixins import Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Point
-from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
+from meerk40t.core.geomstr import Geomstr  # ,  Scanbeam
 
 
 class HatchEffectNode(Node, Suppressable):
     """
     Effect node performing a hatch with multiple algorithm options for optimal performance.
-    
+
     Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
-    
+
     Hatch Algorithm Selection:
     - 'auto': Automatically selects the best algorithm based on geometry complexity and parameters
     - 'scanbeam': Traditional scanbeam algorithm (reliable for all geometry types)
     - 'direct_grid': High-performance Direct Grid algorithm (3-6x faster for simple shapes)
-    
+
     The auto-selection logic uses Direct Grid for simple shapes with reasonable line spacing
     (distance > 0.5mm) and falls back to scanbeam for complex shapes or very fine hatching.
-    
+
     Properties:
     - hatch_distance: Distance between hatch lines
     - hatch_angle: Angle of hatch lines in degrees or radians
@@ -38,6 +38,7 @@ class HatchEffectNode(Node, Suppressable):
         self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.include_outlines = False
 
         self.output = True
         self.hatch_distance = None
@@ -46,7 +47,9 @@ class HatchEffectNode(Node, Suppressable):
         self.hatch_type = None
         self.unidirectional = False
         self.loops = None
-        self.hatch_algorithm = None  # Algorithm selection: 'auto', 'scanbeam', 'direct_grid'
+        self.hatch_algorithm = (
+            None  # Algorithm selection: 'auto', 'scanbeam', 'direct_grid'
+        )
         self._interim = False
         super().__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
@@ -97,7 +100,7 @@ class HatchEffectNode(Node, Suppressable):
         Returns:
             str: A descriptor string in the format "<type>|<hatch_type>|<hatch_distance>|<hatch_angle>|<hatch_angle_delta>|<loops>".
         """
-        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}"
+        return f"{self.type}|{self.hatch_type}|{self.hatch_distance}|{self.hatch_angle}|{self.hatch_angle_delta}|{self.loops}|{'1' if self.unidirectional else '0'}|{1 if self.include_outlines else 0}"
 
     def set_effect_descriptor(self, descriptor):
         """
@@ -117,8 +120,11 @@ class HatchEffectNode(Node, Suppressable):
         """
         try:
             pattern = descriptor.split("|")
-            if len(pattern) == 6:  # Old format
-                pattern.append("0")  # Default unidirectional to False
+            # Make sure we have enough parts, check get_effect_descriptor for format    
+            targetlen = len(self.get_effect_descriptor().split("|"))
+            while len(pattern) < targetlen:
+                # add default values for missing parameters
+                pattern.append("0")  # Default unidirectional / include_outlines to False
             (
                 typeinfo,
                 hatchtype,
@@ -225,7 +231,11 @@ class HatchEffectNode(Node, Suppressable):
         distance_y = float(Length(h_dist))
 
         self._angle = h_angle if isinstance(h_angle, float) else Angle(h_angle).radians
-        self._angle_delta = h_angle_delta if isinstance(h_angle_delta, float) else Angle(h_angle_delta).radians
+        self._angle_delta = (
+            h_angle_delta
+            if isinstance(h_angle_delta, float)
+            else Angle(h_angle_delta).radians
+        )
 
         # transformed_vector = self.matrix.transform_vector([0, distance_y])
         transformed_vector = [0, distance_y]
@@ -375,6 +385,9 @@ class HatchEffectNode(Node, Suppressable):
                         unidirectional=self.unidirectional,
                     )
                 )
+        # Mark hatch effect geometry to prevent stitching
+        # Hatch lines are closely-spaced parallel lines that should not be stitched together
+        path.no_stitch = True
         return path
 
     def _should_use_direct_grid(self) -> bool:
@@ -386,22 +399,35 @@ class HatchEffectNode(Node, Suppressable):
         elif self.hatch_algorithm == "auto":
             # Auto-selection logic
             # For simple shapes and reasonable distances, prefer Direct Grid
-            return self._distance and self._distance > 0.5  # Use direct grid for reasonable spacing
+            return (
+                self._distance and self._distance > 0.5
+            )  # Use direct grid for reasonable spacing
         return False
-    
-    def _direct_grid_hatch(self, outlines: Geomstr, distance: float, angle: float, unidirectional: bool = False) -> Geomstr:
+
+    def _direct_grid_hatch(
+        self,
+        outlines: Geomstr,
+        distance: float,
+        angle: float,
+        unidirectional: bool = False,
+    ) -> Geomstr:
         """Use the optimized Direct Grid Fill algorithm for hatching."""
         try:
             # Import our optimized algorithm
-            import sys
             import os
-            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            import sys
+
+            sys.path.insert(
+                0, os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            )
             from direct_grid_fill import direct_grid_fill
-            
+
             return direct_grid_fill(outlines, angle, distance, unidirectional)
         except ImportError:
             # Fallback to original algorithm if direct_grid_fill not available
-            return Geomstr.hatch(outlines, distance=distance, angle=angle, unidirectional=unidirectional)
+            return Geomstr.hatch(
+                outlines, distance=distance, angle=angle, unidirectional=unidirectional
+            )
 
     def as_geometries(self, **kws):
         """
@@ -422,6 +448,8 @@ class HatchEffectNode(Node, Suppressable):
             self.recalculate()
         for p in range(self.loops):
             for o in outlines:
+                if self.include_outlines:
+                    yield o
                 yield Geomstr.hatch(
                     o,
                     distance=self._distance,
@@ -445,10 +473,7 @@ class HatchEffectNode(Node, Suppressable):
             (
                 hasattr(drag_node, "as_geometry")
                 or drag_node.type in ("effect", "file", "group", "reference")
-                or (
-                    drag_node.type.startswith("op ")
-                    and drag_node.type != "op dots"
-                )
+                or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
             )
         )
 

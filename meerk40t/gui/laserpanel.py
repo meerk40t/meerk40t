@@ -141,7 +141,23 @@ def register_panel_laser(window, context):
 
 class LaserPanel(wx.Panel):
     """
-    Contains all elements to control the execution of the job
+    Main laser job execution and control interface providing comprehensive device management, job execution controls, safety systems, and real-time parameter adjustment.
+
+    **Technical Details:**
+    - Purpose: Central control panel for laser operations including device selection, job execution, safety arming, parameter adjustment, and optimization controls with real-time device state synchronization
+    - Signals: Multiple listeners including "optimize", "pwm_mode_changed", "device;modified", "device;renamed", "device;connected", "pause", "laser_armed", "laserpane_arm", "plan" for comprehensive device and job state management
+    - Help Section: laserpanel
+
+    **User Interface:**
+    - Device selection dropdown with configuration access button for multi-device management
+    - Primary execution controls (Start/Pause/Stop) with safety arm/disarm system to prevent accidental firing
+    - Secondary operation buttons (Outline/Simulate) for job preview and testing with background processing options
+    - Real-time power and speed adjustment sliders with override controls for running jobs
+    - Optimization toggle with dynamic enable/disable based on device capabilities
+    - Rotary active status indicator for rotary engraving operations
+    - Comprehensive tooltip system explaining all control functions and safety warnings
+    - Settings persistence for control states and user preferences across sessions
+    - Dynamic UI adaptation based on device capabilities and current job state
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -716,8 +732,10 @@ class LaserPanel(wx.Panel):
         elif self.checkbox_optimize.GetValue():
             new_plan = self.context.planner.get_free_plan()
             self.context(
-                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\nwindow open ThreadInfo\n"
+                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
             )
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
         else:
             new_plan = self.context.planner.get_free_plan()
             self.context(
@@ -957,7 +975,9 @@ class JobPanel(wx.Panel):
         else:
             cmd = f"plan{plan_name} clear copy preprocess validate blob finish\n"
         if background:
-            self.context(f"threaded {cmd}window open ThreadInfo\n")
+            self.context(f"threaded {cmd}")
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
         else:
             self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
             self.context(cmd)

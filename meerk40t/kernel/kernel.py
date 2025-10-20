@@ -902,6 +902,11 @@ class Kernel(Settings):
                     channel(f"kernel-premain: {str(k)}")
                 if hasattr(k, "premain"):
                     k.premain()
+                    if self._shutdown:
+                        # Quit the program if shutdown was requested during premain
+                        # print (f"Shutdown requested during premain of {str(k)}: start was {KERNEL_LIFECYCLE_NAMES[start]}, end={KERNEL_LIFECYCLE_NAMES[end]}.")
+                        start = LIFECYCLE_KERNEL_PRESHUTDOWN
+                        end = LIFECYCLE_KERNEL_SHUTDOWN
         if start < LIFECYCLE_KERNEL_PREMAIN <= end:
             if channel:
                 channel("(plugin) kernel-premain")
@@ -1290,7 +1295,8 @@ class Kernel(Settings):
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
                     if line in ("quit", "shutdown", "exit", "restart"):
-                        self._quit = True
+                        print (f"Will shut down due to '{line}' command.")
+                        self._shutdown = True
                         if line == "restart":
                             self._restart = True
                         break
@@ -1299,7 +1305,6 @@ class Kernel(Settings):
                         break
 
             import asyncio
-
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
@@ -2586,7 +2591,7 @@ class Kernel(Settings):
         @self.console_option("output", "o", help=_("Output type to match"), type=str)
         @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
-        @self.console_command(("help", "?"), hidden=True, help=_("help <help>"))
+        @self.console_command(("help", "?"), hidden=True, help="help <help> : " + _("get help on a command"))
         def help_command(channel, _, extended_help, output=None, input=None, **kwargs):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
@@ -2682,7 +2687,7 @@ class Kernel(Settings):
                 else:
                     channel(command_name.split("/")[-1])
 
-        @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
+        @self.console_command(("find", "??"), hidden=False, help="find <substr> : " + _("display the list of accepted commands that contain a given substring"))
         def find_command(channel, _, remainder=None, **kwargs):
             """
             'find' will display the list of accepted commands that contain a given substr.
@@ -3171,7 +3176,7 @@ class Kernel(Settings):
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("module", help=_("module [(open|close) <module_name>]"))
+        @self.console_command("module", help="module [(open|close) <module_name>] : " + _("open/closes modules"))
         def module(channel, _, path=None, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
@@ -3463,7 +3468,7 @@ class Kernel(Settings):
 
         @self.console_command(
             "channel",
-            help=_("channel (open|close|save|list|print) <channel_name>"),
+            help="channel (open|close|save|list|print) <channel_name> : " + _("manage channels"),
             output_type="channel",
         )
         def channel(channel, _, remainder=None, **kwargs):
@@ -3647,7 +3652,7 @@ class Kernel(Settings):
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("set", help=_("set [<key> <value>]"))
+        @self.console_command("set", help="set [<key> <value>] : " + _("set or list variables"))
         def set_command(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = self.get_context(path) if path is not None else self.root
             if len(args) == 0:

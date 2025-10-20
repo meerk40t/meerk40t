@@ -23,6 +23,7 @@ from meerk40t.gui.wxutils import (
 try:
     from meerk40t.tools.dual_algorithm_strategy import DualAlgorithmStrategy
     from meerk40t.tools.living_hinge_optimizer import LivingHingeOptimizer
+
     OPTIMIZATION_AVAILABLE = True
 except ImportError:
     # Fallback if optimization modules are not available
@@ -40,9 +41,11 @@ _FACTOR = 1000
 
 
 class HingePanel(wx.Panel):
-    """
-    UI for LivingHinges, allows setting of parameters including preview of the expected result
-    """
+    """HingePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for hinge functionality. Features button, checkbox controls for user interaction. Integrates with emphasized, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for hinge functionality. Key controls include "Generate" (button), "Close" (button), "Preview Shape" (checkbox)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
@@ -79,16 +82,15 @@ class HingePanel(wx.Panel):
         self.text_origin_y = TextCtrl(self, wx.ID_ANY, "")
         self.text_width = TextCtrl(self, wx.ID_ANY, "")
         self.text_height = TextCtrl(self, wx.ID_ANY, "")
-        self.combo_style = wxComboBox(
-            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
-        )
+        self.combo_style = wxComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
         self.button_default = wxButton(self, wx.ID_ANY, "D")
-        
+
         # Algorithm selection
         self.combo_algorithm = wxComboBox(
-            self, wx.ID_ANY, 
-            choices=["Pattern-Based (Complex)", "Direct Grid (Simple)", "Auto-Select"], 
-            style=wx.CB_READONLY
+            self,
+            wx.ID_ANY,
+            choices=["Pattern-Based (Complex)", "Direct Grid (Simple)", "Auto-Select"],
+            style=wx.CB_READONLY,
         )
         self.combo_algorithm.SetSelection(0)  # Default to Pattern-Based
 
@@ -104,9 +106,7 @@ class HingePanel(wx.Panel):
         self.slider_rotate_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_rotate = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
+        self.text_rotate = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         _default = 200
         self.slider_width = wx.Slider(
@@ -123,9 +123,7 @@ class HingePanel(wx.Panel):
         self.slider_width_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_cell_width = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
+        self.text_cell_width = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.slider_height = wx.Slider(
             self,
             wx.ID_ANY,
@@ -140,9 +138,7 @@ class HingePanel(wx.Panel):
         self.slider_height_label.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.text_cell_height = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
-        )
+        self.text_cell_height = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.slider_offset_x = wx.Slider(
             self,
             wx.ID_ANY,
@@ -569,12 +565,16 @@ class HingePanel(wx.Panel):
                         gc.StrokePath(gcpath)
             if self.check_preview_show_pattern.GetValue():
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
-                
+
                 # Use the selected algorithm for preview as well
                 algorithm_choice = self.combo_algorithm.GetSelection()
                 algorithm_names = ["pattern", "direct", "auto"]
-                selected_algorithm = algorithm_names[algorithm_choice] if algorithm_choice < len(algorithm_names) else "pattern"
-                
+                selected_algorithm = (
+                    algorithm_names[algorithm_choice]
+                    if algorithm_choice < len(algorithm_names)
+                    else "pattern"
+                )
+
                 if OPTIMIZATION_AVAILABLE and selected_algorithm != "pattern":
                     # Generate preview using selected optimization algorithm
                     preview_path = self._generate_with_optimization(selected_algorithm)
@@ -588,7 +588,7 @@ class HingePanel(wx.Panel):
                     # Use original pattern-based generation for preview
                     self.hinge_generator.generate(show_outline=False, final=False)
                     gspath = self.hinge_generator.preview_path
-                
+
                 gc.SetPen(mypen_path)
                 if gspath is not None and self.hinge_generator.outershape is not None:
                     if isinstance(gspath, Path):
@@ -674,15 +674,19 @@ class HingePanel(wx.Panel):
         # Use dual algorithm approach based on user selection
         algorithm_choice = self.combo_algorithm.GetSelection()
         algorithm_names = ["pattern", "direct", "auto"]
-        selected_algorithm = algorithm_names[algorithm_choice] if algorithm_choice < len(algorithm_names) else "pattern"
-        
+        selected_algorithm = (
+            algorithm_names[algorithm_choice]
+            if algorithm_choice < len(algorithm_names)
+            else "pattern"
+        )
+
         if OPTIMIZATION_AVAILABLE and selected_algorithm != "pattern":
             path = self._generate_with_optimization(selected_algorithm)
         else:
             # Use original pattern-based generation
             self.hinge_generator.generate(show_outline=False, final=True)
             path = copy(self.hinge_generator.path)
-            
+
         if path is None:
             # print ("Invalid path")
             self.button_generate.Enable(True)
@@ -742,9 +746,15 @@ class HingePanel(wx.Panel):
             # _("Auto-Select: Automatically chooses best algorithm based on pattern complexity")
 
             algorithm_names = [
-                _("Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed patterns"),
-                _("Direct Grid (Simple): Fast grid-based generation for simple parallel patterns"),
-                _("Auto-Select: Automatically chooses best algorithm based on pattern complexity")
+                _(
+                    "Pattern-Based (Complex): Uses Pattern class for complex shapes and detailed patterns"
+                ),
+                _(
+                    "Direct Grid (Simple): Fast grid-based generation for simple parallel patterns"
+                ),
+                _(
+                    "Auto-Select: Automatically chooses best algorithm based on pattern complexity"
+                ),
             ]
             if algorithm_idx < len(algorithm_names):
                 self.combo_algorithm.SetToolTip(_(algorithm_names[algorithm_idx]))
@@ -962,7 +972,6 @@ class HingePanel(wx.Panel):
         self.hinge_rotate = self.slider_rotate.GetValue()
         self.slider_rotate_label.SetLabel(f"{self.hinge_rotate}°")
 
-
         p_a = self.slider_param_a.GetValue() / 10.0
         p_b = self.slider_param_b.GetValue() / 10.0
         self.hinge_param_a = p_a
@@ -1007,7 +1016,7 @@ class HingePanel(wx.Panel):
         setattr(self.context, f"hinge_{pattern}", default)
         # print (f"Stored defaults for {pattern}: {default}")
 
-    def apply_generator_values(self, source:str):
+    def apply_generator_values(self, source: str):
         # print (f"Application of values from {source}")
         try:
             x = float(Length(self.hinge_origin_x))
@@ -1178,10 +1187,10 @@ class HingePanel(wx.Panel):
     def _generate_with_optimization(self, algorithm_type):
         """
         Generate hinge pattern using optimized algorithms.
-        
+
         Args:
             algorithm_type: "direct", "auto", or fallback to pattern-based
-            
+
         Returns:
             Generated path or None if generation fails
         """
@@ -1190,13 +1199,13 @@ class HingePanel(wx.Panel):
             pattern_name = self.patterns[self.combo_style.GetSelection()]
             cell_width = self.hinge_generator.width / self.hinge_cells_x * _FACTOR
             cell_height = self.hinge_generator.height / self.hinge_cells_y * _FACTOR
-            
+
             # Create boundary shape if we have one
             boundary_shape = None
             if self.hinge_generator.outershape is not None:
                 # Convert to format compatible with optimizer
                 boundary_shape = self.hinge_generator.outershape
-            
+
             # Choose algorithm based on selection
             if algorithm_type == "auto":
                 # Analyze complexity and choose automatically
@@ -1205,104 +1214,106 @@ class HingePanel(wx.Panel):
                     algorithm_type = "direct"
                 else:
                     algorithm_type = "pattern"
-            
+
             if algorithm_type == "direct" and pattern_name in ["line", "simple"]:
                 # Use Direct Grid Fill for simple patterns like "line"
-                from meerk40t.tools.geomstr import Geomstr
-                
+                from meerk40t.core.geomstr import Geomstr
+
                 # Create boundary rectangle if no specific shape
                 if boundary_shape is None:
                     boundary_geom = Geomstr.rect(
                         self.hinge_generator.start_x,
                         self.hinge_generator.start_y,
                         self.hinge_generator.width,
-                        self.hinge_generator.height
+                        self.hinge_generator.height,
                     )
                 else:
                     # Convert boundary shape to Geomstr
                     boundary_geom = self._convert_to_geomstr(boundary_shape)
-                
+
                 # Generate using Direct Grid Fill
                 angle = self.hinge_rotate * 3.14159 / 180.0  # Convert to radians
                 distance = min(cell_width, cell_height)
-                
+
                 result = DualAlgorithmStrategy.simple_parallel_hatch(
                     boundary_geom, angle, distance, unidirectional=True
                 )
-                
+
                 return result
-                
+
             elif algorithm_type == "pattern" or True:  # Fallback
                 # Use enhanced pattern-based generation
                 if pattern_name in LivingHingeOptimizer.PATTERN_TYPES:
-                    from meerk40t.tools.geomstr import Geomstr
-                    
+                    from meerk40t.core.geomstr import Geomstr
+
                     # Create boundary rectangle if no specific shape
                     if boundary_shape is None:
                         boundary_geom = Geomstr.rect(
                             self.hinge_generator.start_x,
                             self.hinge_generator.start_y,
                             self.hinge_generator.width,
-                            self.hinge_generator.height
+                            self.hinge_generator.height,
                         )
                     else:
                         boundary_geom = self._convert_to_geomstr(boundary_shape)
-                    
+
                     result = LivingHingeOptimizer.generate_optimized_hinge(
                         boundary_geom,
                         pattern_name,
                         cell_width,
                         cell_height,
                         cut_width=0.1,
-                        margin=0.5
+                        margin=0.5,
                     )
-                    
+
                     return result
                 else:
                     # Fallback to original generation
                     return None
-                    
+
         except Exception as e:
             # If optimization fails, return None to trigger fallback
             print(f"Optimization failed: {e}")
             return None
-    
+
     def _calculate_pattern_complexity(self, pattern_name):
         """Calculate complexity metric for pattern selection."""
         complexity_map = {
-            "line": 1.0,           # Simple parallel lines - use Direct Grid
-            "simple": 1.0,         # Simple patterns - use Direct Grid  
-            "fishbone": 4.0,       # Fishbone pattern - use Pattern-based
-            "diagonal": 3.0,       # Diagonal pattern - moderate complexity
-            "zigzag": 3.0,         # Zigzag pattern - moderate complexity
-            "honeycomb": 6.0,      # Honeycomb cells - complex
-            "spiral": 8.0,         # Spiral cuts - very complex
+            "line": 1.0,  # Simple parallel lines - use Direct Grid
+            "simple": 1.0,  # Simple patterns - use Direct Grid
+            "fishbone": 4.0,  # Fishbone pattern - use Pattern-based
+            "diagonal": 3.0,  # Diagonal pattern - moderate complexity
+            "zigzag": 3.0,  # Zigzag pattern - moderate complexity
+            "honeycomb": 6.0,  # Honeycomb cells - complex
+            "spiral": 8.0,  # Spiral cuts - very complex
         }
         return complexity_map.get(pattern_name, 5.0)
-    
+
     def _convert_to_geomstr(self, shape):
         """Convert shape to Geomstr format for optimization algorithms."""
-        from meerk40t.tools.geomstr import Geomstr
-        
+        from meerk40t.core.geomstr import Geomstr
+
         try:
-            if hasattr(shape, 'as_path'):
+            if hasattr(shape, "as_path"):
                 path = shape.as_path()
                 result = Geomstr(path)
                 return result
-            elif hasattr(shape, 'bbox'):
+            elif hasattr(shape, "bbox"):
                 # Create rectangle from bounding box
                 bbox = shape.bbox()
                 if bbox:
-                    return Geomstr.rect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
+                    return Geomstr.rect(
+                        bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]
+                    )
         except Exception:
             pass
-        
+
         # Fallback: create rectangle from hinge area
         return Geomstr.rect(
             self.hinge_generator.start_x,
             self.hinge_generator.start_y,
             self.hinge_generator.width,
-            self.hinge_generator.height
+            self.hinge_generator.height,
         )
 
 

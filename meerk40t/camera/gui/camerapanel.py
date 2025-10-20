@@ -67,6 +67,12 @@ def register_panel_camera(window, context):
 
 
 class CameraPanel(wx.Panel, Job):
+    """CameraPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for camera functionality. Features checkbox, button controls for user interaction. Integrates with camera_uri_changed, refresh_scene for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for camera functionality. Key controls include "Correct Fisheye" (checkbox), "Add URI" (button)."""
+
     def __init__(
         self, *args, context=None, gui=None, index: int = 0, pane=False, **kwds
     ):
@@ -1084,13 +1090,13 @@ class CameraInterface(MWindow):
 
         @kernel.console_argument("index", type=int)
         @kernel.console_command(
-            "camwin", help=_("camwin <index>: Open camera window at index")
+            "camwin", help="camwin <index> : " + _("Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
             kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
         @kernel.console_command(
-            "camdetect", help=_("camdetect: Tries to detect cameras on the system")
+            "camdetect", help="camdetect : " + _("Tries to detect cameras on the system")
         )
         def cam_detect(**kwargs):
             try:

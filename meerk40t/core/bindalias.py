@@ -303,7 +303,7 @@ class Bind(Service):
 
         _ = self._
 
-        @self.console_command("bind", help=_("bind <key> <console command>"))
+        @self.console_command("bind", help="bind <key> <console command> - " + _("Binds a key to a given keyboard keystroke"))
         def bind(command, channel, _, args=tuple(), **kwgs):
             """
             Binds a key to a given keyboard keystroke.
@@ -444,7 +444,7 @@ class Alias(Service):
 
         @self.console_argument("alias", type=str, help=_("alias command"))
         @self.console_command(
-            "alias", help=_("alias <alias> <console commands[;console command]*>")
+            "alias", help="alias <alias> <console commands[;console command]*> - " + _("Sets or shows command aliases"),
         )
         def alias_command(command, channel, _, alias=None, remainder=None, **kwgs):
             _ = self._

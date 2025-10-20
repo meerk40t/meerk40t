@@ -26,6 +26,14 @@ _default_height = 389
 
 
 class MoshiControllerPanel(wx.Panel):
+    """MoshiControllerPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for moshicontroller functionality. Features button, checkbox, label controls for user interaction. Integrates with moshi_controller_update for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for moshicontroller functionality. Key controls include "Connection" (button), "Show USB Log" (checkbox), "Byte 0" (label)."""
+
+    """MoshiControllerPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -42,15 +50,11 @@ class MoshiControllerPanel(wx.Panel):
         )
         self.text_device_index = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
-        self.text_device_address = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
+        self.text_device_address = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
         self.text_device_bus = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
-        self.text_device_version = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
+        self.text_device_version = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1)
         self.text_byte_0 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_1 = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)

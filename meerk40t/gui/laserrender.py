@@ -30,7 +30,7 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import (  # , TYPE_RAMP
+from ..core.geomstr import (  # , TYPE_RAMP
     TYPE_ARC,
     TYPE_CUBIC,
     TYPE_LINE,
@@ -89,10 +89,35 @@ def as_wx_color(c):
 
 def svgfont_to_wx(textnode):
     """
-    Translates all svg-text-properties to their wxfont-equivalents
-    @param textnode:
+    Translates all svg-text-properties to their wxfont-equivalents.
+    
+    Uses caching to avoid redundant conversions - checks if the text node's
+    font properties have changed since last conversion.
+    
+    @param textnode: Text node to convert
     @return:
     """
+    # Check if conversion is already done and properties haven't changed
+    try:
+        if (hasattr(textnode, '_svg_font_cached') and 
+            textnode._svg_font_cached and
+            hasattr(textnode, '_cached_font_size') and
+            textnode._cached_font_size == textnode.font_size and
+            hasattr(textnode, '_cached_font_weight') and
+            textnode._cached_font_weight == textnode.font_weight and
+            hasattr(textnode, '_cached_font_style') and
+            textnode._cached_font_style == textnode.font_style and
+            hasattr(textnode, '_cached_font_family') and
+            textnode._cached_font_family == textnode.font_family and
+            hasattr(textnode, '_cached_font_underline') and
+            textnode._cached_font_underline == textnode.underline and
+            hasattr(textnode, '_cached_font_strikethrough') and
+            textnode._cached_font_strikethrough == textnode.strikethrough):
+            # Cache is valid, skip conversion
+            return
+    except (AttributeError, TypeError):
+        pass  # Properties not set or invalid, proceed with conversion
+    
     if not hasattr(textnode, "wxfont"):
         textnode.wxfont = wx.Font()
     if textnode.font_weight is not None:
@@ -135,6 +160,15 @@ def svgfont_to_wx(textnode):
         wxfont.SetPointSize(integer_font_size)
     wxfont.SetUnderlined(textnode.underline)
     wxfont.SetStrikethrough(textnode.strikethrough)
+    
+    # Cache the conversion results
+    textnode._svg_font_cached = True
+    textnode._cached_font_size = textnode.font_size
+    textnode._cached_font_weight = textnode.font_weight
+    textnode._cached_font_style = textnode.font_style
+    textnode._cached_font_family = textnode.font_family
+    textnode._cached_font_underline = textnode.underline
+    textnode._cached_font_strikethrough = textnode.strikethrough
 
 
 def svg_to_wx_family(textnode, wxfont):
@@ -199,9 +233,138 @@ class LaserRender:
         self._visible_area = None
         self.suppress_it = False
         self.simplify_it = False
+        # Cache TTL management: track timestamp and size of image caches
+        self._cache_timestamps = {}  # {id(cache): timestamp}
+        self._cache_ttl_seconds = 300  # 5 minute TTL for image caches
+        self._max_cache_size_mb = 100  # Maximum total cache size in MB
+
+    def _create_font_safe(self, font_size, family=wx.FONTFAMILY_SWISS, style=wx.FONTSTYLE_NORMAL, weight=wx.FONTWEIGHT_NORMAL):
+        """
+        Create a wx.Font with automatic int fallback for older wx versions.
+        This prevents repeated try-except blocks throughout the code.
+        """
+        # Validate font_size is numeric before attempting font creation
+        if not isinstance(font_size, (int, float)):
+            raise TypeError(f"font_size must be int or float, got {type(font_size).__name__}")
+        
+        try:
+            return wx.Font(font_size, family, style, weight)
+        except TypeError:
+            # Older wxPython versions don't support fractional font sizes
+            # This specific TypeError from wx.Font means font_size type is not supported
+            return wx.Font(int(font_size), family, style, weight)
+
+    def _validate_cache_ttl(self, cache):
+        """
+        Check if cache has exceeded TTL and validate it's still valid.
+        Returns True if cache should be kept, False if it should be cleared.
+        """
+        import time
+        if cache is None:
+            return False
+        cache_id = id(cache)
+        current_time = time.time()
+        # Check if cache timestamp exists and is still within TTL
+        if cache_id not in self._cache_timestamps:
+            # New cache - record timestamp
+            self._cache_timestamps[cache_id] = current_time
+            return True
+        cache_age = current_time - self._cache_timestamps[cache_id]
+        if cache_age > self._cache_ttl_seconds:
+            # Cache has expired - clean up timestamp
+            del self._cache_timestamps[cache_id]
+            return False
+        return True
 
     def set_visible_area(self, box):
         self._visible_area = box
+
+    def _process_rastercut_as_image(self, cut, gc, x, y, highlight_pen, gcscale):
+        """Process RasterCut by rendering as image."""
+        image = cut.image
+        gc.PushState()
+        matrix = Matrix.scale(cut.step_x, cut.step_y)
+        matrix.post_translate(cut.offset_x + x, cut.offset_y + y)
+        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        _gcscale = get_gc_scale(gc)
+        try:
+            cache = cut._cache
+        except AttributeError:
+            cache = None
+        # Validate cache TTL and image identity - if expired or image changed, clear it
+        current_image_id = id(image)
+        if cache is not None:
+            # Check both TTL and image identity
+            image_changed = (hasattr(cut, '_cache_id') and cut._cache_id != current_image_id)
+            cache_expired = not self._validate_cache_ttl(cache)
+            if image_changed or cache_expired:
+                cut._cache = None
+                cache = None
+        if cache is None:
+            cut._cache_width, cut._cache_height = image.size
+            try:
+                cut._cache = self.make_thumbnail(image, maximum=5000)
+            except (MemoryError, RuntimeError):
+                cut._cache = None
+            cut._cache_id = current_image_id
+        if cut._cache is not None:
+            gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
+            if cut.highlighted:
+                self._penwidth(highlight_pen, 3 / gcscale)
+                gc.SetPen(highlight_pen)
+                gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+        else:
+            gc.SetBrush(wx.RED_BRUSH)
+            gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+            gc.DrawBitmap(icons8_image.GetBitmap(), 0, 0, cut._cache_width, cut._cache_height)
+        gc.PopState()
+
+    def _process_rastercut_as_raster(self, cut, gc, p, x, y, residual):
+        """Process RasterCut by rendering as raster path."""
+        try:
+            cache = cut._plotcache
+        except AttributeError:
+            cache = None
+        if cache is None:
+            self._process_rastercut_as_image(cut, gc, x, y, None, 1.0)
+            return
+        start = cut.start
+        p.MoveToPoint(start[0] + x, start[1] + y)
+        todraw = cache
+        maxcount = -1 if residual is None else int(len(todraw) * residual)
+        count = 0
+        for px, py, pon in todraw:
+            if px is None or py is None:
+                continue
+            if pon == 0:
+                p.MoveToPoint(px + x, py + y)
+            else:
+                p.AddLineToPoint(px + x, py + y)
+            count += 1
+            if 0 < maxcount < count:
+                break
+
+    def _process_plotcut_as_path(self, cut, p, x, y, residual):
+        """Process PlotCut by rendering as path."""
+        start = cut.start
+        p.MoveToPoint(start[0] + x, start[1] + y)
+        try:
+            cache = cut._plotcache
+        except AttributeError:
+            cache = None
+        if cache is None:
+            return
+        todraw = cache
+        maxcount = -1 if residual is None else int(len(todraw) * residual)
+        count = 0
+        for ox, oy, pon, px, py in todraw:
+            if pon == 0:
+                p.MoveToPoint(px + x, py + y)
+            else:
+                p.AddLineToPoint(px + x, py + y)
+            count += 1
+            if 0 < maxcount < count:
+                break
 
     def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         if not self.render_node(
@@ -606,151 +769,12 @@ class LaserRender:
             # wouldn't show up under Linux/Darwin
             return max(default_pix, pixelwidth)
 
-        def process_cut(cut, p, last_point):
-            def process_as_image():
-                image = cut.image
-                gc.PushState()
-                matrix = Matrix.scale(cut.step_x, cut.step_y)
-                matrix.post_translate(
-                    cut.offset_x + x, cut.offset_y + y
-                )  # Adjust image xy
-                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-                _gcscale = get_gc_scale(gc)
-                try:
-                    cache = cut._cache
-                except AttributeError:
-                    cache = None
-                if cache is None:
-                    # No valid cache. Generate.
-                    cut._cache_width, cut._cache_height = image.size
-                    try:
-                        cut._cache = self.make_thumbnail(image, maximum=5000)
-                    except (MemoryError, RuntimeError):
-                        cut._cache = None
-                    cut._cache_id = id(image)
-                if cut._cache is not None:
-                    # Cache exists and is valid.
-                    gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
-                    if cut.highlighted:
-                        # gc.SetBrush(wx.RED_BRUSH)
-                        self._penwidth(highlight_pen, 3 / gcscale)
-                        gc.SetPen(highlight_pen)
-                        gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
-                else:
-                    # Image was too large to cache, draw a red rectangle instead.
-                    gc.SetBrush(wx.RED_BRUSH)
-                    gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
-                    gc.DrawBitmap(
-                        icons8_image.GetBitmap(),
-                        0,
-                        0,
-                        cut._cache_width,
-                        cut._cache_height,
-                    )
-                gc.PopState()
-
-            def process_as_raster():
-                try:
-                    cache = cut._plotcache
-                except AttributeError:
-                    cache = None
-                if cache is None:
-                    process_as_image()
-                    return
-                p.MoveToPoint(start[0] + x, start[1] + y)
-                todraw = cache
-                if residual is None:
-                    maxcount = -1
-                else:
-                    maxcount = int(len(todraw) * residual)
-                count = 0
-                for px, py, pon in todraw:
-                    if px is None or py is None:
-                        # Passthrough
-                        continue
-                    if pon == 0:
-                        p.MoveToPoint(px + x, py + y)
-                    else:
-                        p.AddLineToPoint(px + x, py + y)
-                    count += 1
-                    if 0 < maxcount < count:
-                        break
-
-            def process_as_plot():
-                p.MoveToPoint(start[0] + x, start[1] + y)
-                try:
-                    cache = cut._plotcache
-                except AttributeError:
-                    cache = None
-                if cache is None:
-                    return
-                todraw = cache
-                if residual is None:
-                    maxcount = -1
-                else:
-                    maxcount = int(len(todraw) * residual)
-                count = 0
-                for ox, oy, pon, px, py in todraw:
-                    if pon == 0:
-                        p.MoveToPoint(px + x, py + y)
-                    else:
-                        p.AddLineToPoint(px + x, py + y)
-                    count += 1
-                    if 0 < maxcount < count:
-                        break
-
-            start = cut.start
-            end = cut.end
-            if last_point != start:
-                p.MoveToPoint(start[0] + x, start[1] + y)
-
-            if isinstance(cut, LineCut):
-                # Standard line cut. Applies to path object.
-                p.AddLineToPoint(end[0] + x, end[1] + y)
-            elif isinstance(cut, QuadCut):
-                # Standard quadratic bezier cut
-                p.AddQuadCurveToPoint(
-                    cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y
-                )
-            elif isinstance(cut, CubicCut):
-                # Standard cubic bezier cut
-                p.AddCurveToPoint(
-                    cut.c1()[0] + x,
-                    cut.c1()[1] + y,
-                    cut.c2()[0] + x,
-                    cut.c2()[1] + y,
-                    end[0] + x,
-                    end[1] + y,
-                )
-            elif isinstance(cut, RasterCut):
-                # Rastercut object.
-                if raster_as_image:
-                    process_as_image()
-                else:
-                    process_as_raster()
-
-            elif isinstance(cut, PlotCut):
-                process_as_plot()
-            elif isinstance(cut, DwellCut):
-                pass
-            elif isinstance(cut, WaitCut):
-                pass
-            elif isinstance(cut, HomeCut):
-                p.MoveToPoint(0, 0)
-            elif isinstance(cut, GotoCut):
-                p.MoveToPoint(start[0] + x, start[1] + y)
-            elif isinstance(cut, InputCut):
-                pass
-            elif isinstance(cut, OutputCut):
-                pass
-            return end
-
+        # Main cutcode rendering loop
         gcscale = get_gc_scale(gc)
         pixelwidth = establish_linewidth(gcscale, laserspot_width)
         defaultwidth = 1 / gcscale
         if defaultwidth > 0.25 * pixelwidth:
             defaultwidth = 0
-        # print (f"Scale: {gcscale} - {mat_param}")
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
         highlight_pen = wx.Pen(wx_color)
@@ -785,7 +809,39 @@ class LaserRender:
                 self.set_pen(gc, c, alpha=alphavalue)
             if p is None:
                 p = gc.CreatePath()
-            last_point = process_cut(cut, p, last_point)
+            
+            # Process the cut using type-based dispatch
+            start = cut.start
+            end = cut.end
+            if last_point != start:
+                p.MoveToPoint(start[0] + x, start[1] + y)
+
+            if isinstance(cut, LineCut):
+                p.AddLineToPoint(end[0] + x, end[1] + y)
+            elif isinstance(cut, QuadCut):
+                p.AddQuadCurveToPoint(cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y)
+            elif isinstance(cut, CubicCut):
+                p.AddCurveToPoint(
+                    cut.c1()[0] + x, cut.c1()[1] + y,
+                    cut.c2()[0] + x, cut.c2()[1] + y,
+                    end[0] + x, end[1] + y,
+                )
+            elif isinstance(cut, RasterCut):
+                if raster_as_image:
+                    self._process_rastercut_as_image(cut, gc, x, y, highlight_pen, gcscale)
+                else:
+                    self._process_rastercut_as_raster(cut, gc, p, x, y, residual)
+            elif isinstance(cut, PlotCut):
+                self._process_plotcut_as_path(cut, p, x, y, residual)
+            elif isinstance(cut, (DwellCut, WaitCut, InputCut, OutputCut)):
+                pass  # No path drawing for these cut types
+            elif isinstance(cut, HomeCut):
+                p.MoveToPoint(0, 0)
+            elif isinstance(cut, GotoCut):
+                p.MoveToPoint(start[0] + x, start[1] + y)
+            
+            last_point = end
+        
         if p is not None:
             gc.StrokePath(p)
             if defaultwidth:
@@ -959,20 +1015,7 @@ class LaserRender:
             font_size = 10 * zoomscale
             if font_size < 1.0:
                 font_size = 1.0
-            try:
-                font = wx.Font(
-                    font_size,
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_NORMAL,
-                )
-            except TypeError:
-                font = wx.Font(
-                    int(font_size),
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_NORMAL,
-                )
+            font = self._create_font_safe(font_size)
             gc.SetFont(font, wx.Colour(red=255, green=0, blue=0, alpha=alpha))
             (t_width, t_height) = gc.GetTextExtent(symbol)
             x = (x_from + x_to) / 2 - t_width / 2
@@ -996,20 +1039,7 @@ class LaserRender:
             font_size = 10 * zoomscale
             if font_size < 1.0:
                 font_size = 1.0
-            try:
-                font = wx.Font(
-                    font_size,
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_NORMAL,
-                )
-            except TypeError:
-                font = wx.Font(
-                    int(font_size),
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_NORMAL,
-                )
+            font = self._create_font_safe(font_size)
             gc.SetFont(font, wx.Colour(red=255, green=0, blue=0, alpha=alpha))
             (t_width, t_height) = gc.GetTextExtent(symbol)
             x = x_from + (x_from - (x_from + x_to) / 2) - t_width / 2
@@ -1059,20 +1089,7 @@ class LaserRender:
         font_size = 10 * zoomscale
         if font_size < 1.0:
             font_size = 1.0
-        try:
-            font = wx.Font(
-                font_size,
-                wx.FONTFAMILY_SWISS,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        except TypeError:
-            font = wx.Font(
-                int(font_size),
-                wx.FONTFAMILY_SWISS,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
+        font = self._create_font_safe(font_size)
         c = Color(color)
         gc.SetFont(font, wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=alpha))
         (t_width, t_height) = gc.GetTextExtent(symbol)

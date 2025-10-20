@@ -22,9 +22,7 @@ def plugin(kernel, lifecycle):
     @kernel.console_argument("url", type=str, help=_("Web url to call"))
     @kernel.console_command(
         "call_url",
-        help=_("call_url <url>")
-        + "\n"
-        + _("Opens a webpage or REST-Interface page"),
+        help="call_url <url> : " + _("Opens a webpage or REST-Interface page"),
         input_type=None,
         output_type=None,
     )
@@ -56,9 +54,7 @@ def plugin(kernel, lifecycle):
     @kernel.console_option("relative", "r", type=str, help="Establishes the id of an element that will act as the reference, if none given then reference is the scene")
     @kernel.console_command(
         "xload",
-        help=_("xload <filename> <x> <y> <width> <height>")
-        + "\n"
-        + _("Gets a file and puts it on the screen"),
+        help="xload <filename> <x> <y> <width> <height> : " + _("Gets a file and puts it on the screen"),
         input_type=None,
         output_type=None,
     )
@@ -243,9 +239,7 @@ def plugin(kernel, lifecycle):
         @kernel.console_argument("value", type=int, help=_("Value to set (0/1)"))
         @kernel.console_command(
             "gpio_set",
-            help=_("gpio_set <port> <value>")
-            + "\n"
-            + _("Sets a GPIO port on the RPI to a given value"),
+            help="gpio_set <port> <value> : " + _("Sets a GPIO port on the RPI to a given value"),
             input_type=None,
             output_type=None,
         )

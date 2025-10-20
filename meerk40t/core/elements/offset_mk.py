@@ -16,7 +16,7 @@ from meerk40t.svgelements import (
     Point,
     QuadraticBezier,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 """
 The following routines deal with the offset of an SVG path at a given distance D.

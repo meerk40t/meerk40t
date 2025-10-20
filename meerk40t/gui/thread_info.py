@@ -1,11 +1,14 @@
 import threading
 import time
+
 import wx
 from wx import aui
+
 from meerk40t.gui.icons import icons8_route
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
-    wxListCtrl, wxStaticText,
+    wxListCtrl,
+    wxStaticText,
 )
 from meerk40t.kernel import Job, signal_listener
 
@@ -34,6 +37,14 @@ def register_panel_thread_info(window, context):
 
 
 class ThreadPanel(wx.Panel):
+    """ThreadPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for thread functionality. Features checkbox controls for user interaction. Integrates with thread_update, wxpane/ThreadInfo for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for thread functionality. Key controls include "Auto-show on new task" (checkbox)."""
+
+    """ThreadPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SpoolerPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -43,7 +54,9 @@ class ThreadPanel(wx.Panel):
         self.SetHelpText("threadinfo")
 
         self.sizer_main = wx.BoxSizer(wx.VERTICAL)
-        infomsg = _("Background Tasks are preparatory jobs issued with the 'threaded' command,\nlike burn preparation and others.")
+        infomsg = _(
+            "Background Tasks are preparatory jobs issued with the 'threaded' command,\nlike burn preparation and others."
+        )
         self.info = wxStaticText(self, wx.ID_ANY, infomsg)
 
         self.list_job_threads = wxListCtrl(
@@ -65,10 +78,13 @@ class ThreadPanel(wx.Panel):
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_threads.resize_columns()
-
+        self.check_auto = wx.CheckBox(self, wx.ID_ANY, _("Auto-show on new task"))
         self.sizer_main.Add(self.info, 0, wx.EXPAND)
         self.sizer_main.Add(self.list_job_threads, 1, wx.EXPAND)
-
+        self.sizer_main.Add(self.check_auto, 0, wx.EXPAND)
+        self.check_auto.SetValue(
+            self.context.setting(bool, "autoshow_task_window", True)
+        )
         self.SetSizer(self.sizer_main)
         self.Layout()
 
@@ -85,10 +101,14 @@ class ThreadPanel(wx.Panel):
             run_main=True,
         )
         self.list_job_threads.Bind(wx.EVT_RIGHT_DOWN, self.show_context_menu)
+        self.check_auto.Bind(wx.EVT_CHECKBOX, self.on_check_auto)
 
     def on_show_system_tasks(self, event):
         self.show_system_tasks = not self.show_system_tasks
         self.refresh_thread_list()
+
+    def on_check_auto(self, event):
+        self.context.autoshow_task_window = self.check_auto.GetValue()
 
     def show_context_menu(self, event):
         menu = wx.Menu()
@@ -122,6 +142,9 @@ class ThreadPanel(wx.Panel):
             self.list_job_threads.SetItem(m, 1, info)
             self.list_job_threads.SetItem(m, 2, message)
             self.list_job_threads.SetItem(m, 3, runtime)
+            # print (idx, info, message, runtime)
+        self.list_job_threads.resize_columns()
+        self.list_job_threads.Refresh()
 
     @signal_listener("thread_update")
     def on_thread_signal(self, origin, *args):

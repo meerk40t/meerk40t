@@ -1,11 +1,62 @@
+import os
+import sys
 import unittest
 
 import wx
 
+
+def find_meerk40t_path(start_path=None, max_levels=10):
+    """
+    Find the meerk40t package path by looking for meerk40t.py file.
+    Traverses up the directory tree until found or max_levels reached.
+
+    Args:
+        start_path: Starting directory path (defaults to script directory)
+        max_levels: Maximum directory levels to traverse up
+
+    Returns:
+        str: Path to meerk40t directory containing meerk40t.py, or None if not found
+    """
+    if start_path is None:
+        start_path = os.path.dirname(os.path.abspath(__file__))
+
+    current_path = start_path
+    levels_traversed = 0
+
+    while levels_traversed < max_levels:
+        # Check if meerk40t.py exists in current directory
+        meerk40t_py_path = os.path.join(current_path, "meerk40t.py")
+        if os.path.isfile(meerk40t_py_path):
+            return current_path
+
+        # Move up one directory level
+        parent_path = os.path.dirname(current_path)
+
+        # If we've reached the root directory, stop
+        if parent_path == current_path:
+            break
+
+        current_path = parent_path
+        levels_traversed += 1
+
+    return None
+
+
+# Find and add meerk40t path
+meerk40t_path = find_meerk40t_path()
+if meerk40t_path:
+    sys.path.insert(0, meerk40t_path)
+else:
+    print(
+        "Warning: Could not find meerk40t.py in directory tree. Using system-installed version."
+    )
+    print(
+        "This may cause import errors if the local development version has different constants."
+    )
+
+from mock_context import MockContext
+
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from testgui import (
-    mock_context,  # Assuming you have a mock_context.py with the MockContext class
-)
 
 
 class DummyObject:
@@ -21,7 +72,7 @@ class ChoicePropertyPanelTestCase(unittest.TestCase):
         self.app = wx.App(False)
         self.frame = wx.Frame(None)
         self.obj = DummyObject()
-        self.context = mock_context.MockContext()
+        self.context = MockContext()
 
     def tearDown(self):
         self.frame.Destroy()

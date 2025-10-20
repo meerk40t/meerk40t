@@ -9,7 +9,7 @@ specific optimization algorithms and edge cases.
 
 import random
 import math
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.units import Length
 
 # ==========

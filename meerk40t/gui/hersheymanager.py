@@ -34,7 +34,7 @@ from meerk40t.gui.wxutils import (
     wxToggleButton,
 )
 from meerk40t.kernel.kernel import signal_listener
-from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
+from meerk40t.core.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 _ = wx.GetTranslation
 
@@ -986,9 +986,11 @@ class HersheyFontSelector(MWindow):
 
 
 class PanelFontManager(wx.Panel):
-    """
-    Vector Font Manager
-    """
+    """PanelFontManager - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for fontmanager functionality. Features button controls for user interaction. Integrates with linetext, icons for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for fontmanager functionality. Key controls include "OK" (button), "Cancel" (button), "Import" (button)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__

@@ -20,15 +20,19 @@ from meerk40t.gui.wxutils import (
 )
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 _ = wx.GetTranslation
 
 
 class PlacementPanel(wx.Panel):
-    """
-    Display and Editing of the properties of 'place current', 'place point'
-    """
+    """PlacementPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for placement functionality. Features checkbox, label controls for user interaction. Integrates with element_property_reload for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for placement functionality. Key controls include "Enable" (checkbox), "Loops:" (label), "X:" (label)."""
+
+    """PlacementPanel - User interface panel for laser cutting operations"""
 
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__

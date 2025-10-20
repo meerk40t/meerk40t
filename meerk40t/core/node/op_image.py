@@ -597,7 +597,7 @@ class ImageOpNode(Node, Parameters):
                         settings=cutsettings,
                         passes=passes,
                         post_filter=image_filter,
-                        label=f"Pass {gray}: cutoff={skip_pixel}",
+                        label=f"Pass {gray}: cutoff={skip_pixel} {'h' if horizontal else 'v'}",
                         laserspot=dotwidth,
                         special=self._instructions,
                     )
@@ -635,13 +635,14 @@ class ImageOpNode(Node, Parameters):
                             settings=cutsettings,
                             passes=passes,
                             post_filter=image_filter,
-                            label=f"Pass {gray}.2: cutoff={skip_pixel}",
+                            label=f"Pass {gray}.2: cutoff={skip_pixel} {'h' if horizontal else 'v'}",
                             laserspot=dotwidth,
                             special=self._instructions,
                         )
                         cut.path = path
                         cut.original_op = self.type
                         cutcodes.append(cut)
+                        horizontal = not horizontal # revert back for next main pass
             else:
                 # Create Cut Object for regular image
                 image_filter = None

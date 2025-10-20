@@ -16,7 +16,7 @@ from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.newly.controller import NewlyController
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class NewlyDriver:

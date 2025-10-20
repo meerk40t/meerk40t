@@ -27,7 +27,7 @@ def init_commands(kernel):
 
     from meerk40t.core.node.node import Linejoin, Node
     from meerk40t.core.units import UNITS_PER_PIXEL, Length
-    from meerk40t.tools.geomstr import Geomstr
+    from meerk40t.core.geomstr import Geomstr
 
     self = kernel.elements
 

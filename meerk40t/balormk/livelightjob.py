@@ -17,7 +17,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel.jobs import Job
 from meerk40t.svgelements import Matrix
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class LiveLightJob:
@@ -499,12 +499,13 @@ class LiveLightJob:
         """
         # draw_geometry.debug_me()
         geometry = Geomstr(draw_geometry)
-        # print (f"Entered with {geometry.bbox()} ({geometry.index} segments [{source}])")
-        if adjust:
-            geometry.transform(self.service.view.matrix)
-            # print (f"Adjusted to {geometry.bbox()}")
+        # print(f"Entered with {geometry.bbox()} ({geometry.index} segments [{source}])")
         rotate = self._redlight_adjust_matrix()
         geometry.transform(rotate)
+        # print(f"After redlight: {geometry.bbox()}")
+        if adjust:
+            geometry.transform(self.service.view.matrix)
+            # print(f"Adjusted to {geometry.bbox()}")
         self.points = list(
             geometry.as_equal_interpolated_points(
                 distance=self.quantization,  # expand_lines=True

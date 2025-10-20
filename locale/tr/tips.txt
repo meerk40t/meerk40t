@@ -1,0 +1,84 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t bir öğenin etrafında dış hat oluşturabilir.
+Sadece öğeyi seçin, üzerine sağ tıklayın ve "Dış hat öğeleri" menüsünden seçin...
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t, çok sayıda betiklenebilir işlem sağlayan kapsamlı bir komut setine sahiptir.
+Sadece konsol penceresini açın ve 'help' yazın.
+cmd=pane show console\nhelp
+
+tip=Bir öğe oluşturma aracı seçili iken fareyi hareket ettirdiğinizde, ilgi noktalarının gösterildiğini ve bir yakalama hedefi olabileceklerin vurgulandığını göreceksiniz.\nNot: Shift tuşuna basarsanız yakalama davranışı yok sayılır, bu durumda mevcut fare konumu dikkate alınır
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=Simülasyon penceresi, lazerinizin davranışını önizlemenize olanak tanımakla kalmaz, aynı zamanda farklı optimizasyon seçenekleriyle oynayabilir ve bunların sonucu nasıl etkilediğini görebilirsiniz.\n Sadece sağdaki '<' simgesine tıklayın ve hesapla'ya basın.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t'ta seçebileceğiniz birden fazla ızgara türü vardır, bunlar arasında dairesel olan da bulunur...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+tip=Nesneleri hizalamaktan yoruldunuz mu? Mıknatıs özelliğini kullanın, X veya Y eksenine çift tıklayın ve bir mıknatıs çizgisi oluşturun.
+Bir öğeyi o çizgiye yaklaştırın ve ne olduğunu görün...
+Daha fazla seçenek ayarlamak için eksene sağ tıklayın.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=Bir öğenin hızlı bir kopyasına mı ihtiyacınız var? İşte bazı seçenekler:
+a) Bir nesneyi seçin, Alt tuşunu basılı tutun ve nesneyi hareket ettirin: ve kopyanız hazır
+b) Sağ tıklayın: Bağlam menüsünden öğeleri çoğalt'ı seçin
+c) Araç çubuğundaki kopyala ve yapıştır düğmelerini kullanın
+
+tip=MeerK40t'ta lazer kontrolü veya işlemler & öğe ağacı gibi sıkça ihtiyaç duyulan pencereler (paneller) vardır.
+Bu panelleri ekranda özgürce hareket ettirebilirsiniz, ayrıca kenarlara da sabitleyebilirsiniz: Bir paneli MeerK40t penceresinin kenarına taşıyın, pencerenin kullanıcı arayüzüne sabitlenebileceğini gösteren gölgeli bir alan belirecektir.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=En üst işlemler düğümüne sağ tıklayın - işlemler ağacının en üst düğümünde özel bir bağlam menüsü vardır, bu menü işlemlerin genel özelliklerine erişmenizi/ayarlamanızı sağlar
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t'ta regmark'lar vardır, bunlar yakılmayacak ancak nesne yerleşimi için görsel bir kılavuz görevi görecek özel bir öğe kategorisidir.
+Öğeleri regmark bölgesine sürükleyerek veya bölgeden çıkararak regmark alanına taşıyabilirsiniz.
+Regmark alanındaki öğeler arka plan olarak davranır, artık sahnede doğrudan etkileşimde bulunamazsınız.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=Lazer yatağınızda bir nesneyi düzgün bir şekilde hizalamak mı istiyorsunuz? Neden kurulumunuza bir kamera eklemiyorsunuz.
+MeerK40t, sahne arka planında canlı resmi göstermek için o kamerayı kullanabilir, hizalamayı büyük ölçüde kolaylaştırır.
+Araç çubuğundaki kamera düğmesine tıklayın ve kamera resminizi kalibre edin.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Gravür, kesim vb. için ayarları bir malzeme (örneğin 4mm kontrplak veya akrilik) için saklayabilir ve yeniden kullanabilirsiniz.
+Kullandığınız malzemeler için bireysel ayarları yönetmek için Malzeme Yöneticisi'ni kullanın.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=Bir malzeme için mükemmel ayarlarınızı MeerK40t topluluğu ile paylaşabileceğinizi ve başkalarının katkılarından da yararlanabileceğinizi biliyor muydunuz?
+Malzeme Yöneticisi'ni kullanarak ayarları global MeerK40t Kütüphanesi'nden paylaşın ve alın.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0
+
+tip=Bir grafiği vektör nesnesine dönüştürmeniz mi gerekiyor? Grafiğe çift tıklayın ve vektörleştirme panelini kullanın...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+
+tip=Yüklediğiniz bir dosyanın içeriğinin otomatik olarak belirli bir noktaya yerleştirilmesini istiyorsanız
+(örneğin köşelere hizalanmış veya yatağın ortasında) dosyayı seçerken Shift tuşunu basılı tutun.
+MeerK40t ardından istediğiniz konumu soracaktır.
+img=https://private-user-images.githubusercontent.com/2670784/342109069-c836febd-3eed-4d5a-931e-c4d654bd2a79.png
+version=0.9.5

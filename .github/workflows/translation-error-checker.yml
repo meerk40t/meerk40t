@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'locale/**/*.po'
   pull_request:
     branches:
       - main
+    paths:
+      - 'locale/**/*.po'
 
 jobs:
   check_translations:
@@ -25,9 +29,6 @@ jobs:
       run: |
         cp .github/workflows/translate-error-check.py translate-error-check.py
         python translate-error-check.py
-
-    - name: Check for script exit code
-      run: |
         if [ $? -ne 0 ]; then
           echo "Error: Flawed translations found."
           exit 1

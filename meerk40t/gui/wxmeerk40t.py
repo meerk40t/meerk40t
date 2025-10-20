@@ -57,8 +57,6 @@ from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.blobproperty import BlobPropertyPanel
-from .propertypanels.consoleproperty import ConsolePropertiesPanel
-from .propertypanels.gotoproperty import GotoPropertyPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.imageproperty import (
@@ -67,10 +65,8 @@ from .propertypanels.imageproperty import (
     ImagePropertyPanel,
     ImageVectorisationPanel,
 )
-from .propertypanels.inputproperty import InputPropertyPanel
 from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.operationpropertymain import ParameterPanel
-from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.placementproperty import PlacementParameterPanel
 from .propertypanels.pointproperty import PointPropertyPanel
@@ -86,7 +82,7 @@ from .propertypanels.rasterwizardpanels import (
 )
 from .propertypanels.regbranchproperties import RegBranchPanel
 from .propertypanels.textproperty import TextPropertyPanel
-from .propertypanels.waitproperty import WaitPropertyPanel
+from .propertypanels.generic_op_property import GenericOpPropertyPanel
 from .propertypanels.warpproperty import WarpPropertyPanel
 from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
@@ -267,7 +263,9 @@ class GoPanel(ActionPanel):
             f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
         )
         if prefer_threaded:
-            self.context(f"window open JobSpooler\nwindow open ThreadInfo\n")
+            self.context("window open JobSpooler\n")
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
         else:
             busy.end()
             self.context(f"window open JobSpooler\n")
@@ -424,6 +422,7 @@ supported_languages = (
     ("ja", "日本", wx.LANGUAGE_JAPANESE),
     ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
     ("ru", "русский", wx.LANGUAGE_RUSSIAN),
+    ("tr", "Türkçe", wx.LANGUAGE_TURKISH),
 )
 
 
@@ -960,7 +959,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/PlaceCurrentNode/OpMain", PlacementParameterPanel)
         kernel.register("property/PlacePointNode/OpMain", PlacementParameterPanel)
 
-        kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/FileNode/Property", FilePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
         kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
@@ -974,12 +972,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
-        kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
-        kernel.register("property/GotoOperation/GotoProperty", GotoPropertyPanel)
-        kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
+        kernel.register("property/Any/GenericProperty", GenericOpPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
         kernel.register("property/BranchRegmarkNode/RegmarkProperty", RegBranchPanel)
-        kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
         kernel.register("property/ImageNode/SharpenProperty", SharpenPanel)

@@ -31,7 +31,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..tools.geomstr import Geomstr
+from ..core.geomstr import Geomstr
 from .builder import MoshiBuilder
 
 
@@ -521,7 +521,7 @@ class MoshiDriver(Parameters):
         if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_MODECHANGE):
             self.rapid_mode()
 
-        if self.state == self.state == DRIVER_STATE_RASTER:
+        if self.state == DRIVER_STATE_RASTER:
             self.pipe_channel("Final Raster Home")
             self.home()
         self.state = DRIVER_STATE_FINISH

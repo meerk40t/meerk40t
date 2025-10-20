@@ -15,7 +15,7 @@ import math
 from typing import Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'meerk40t'))
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 class DualAlgorithmStrategy:
     """

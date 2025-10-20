@@ -151,6 +151,12 @@ class InfoPanel(wx.Panel):
 
 
 class SplitterPanel(wx.Panel):
+    """SplitterPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for splitter functionality. Features button controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for splitter functionality. Key controls include "Create split images" (button), "Create keyhole image" (button)."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -303,6 +309,12 @@ class SplitterPanel(wx.Panel):
 
 
 class KeyholePanel(wx.Panel):
+    """KeyholePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for keyhole functionality. Features button controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for keyhole functionality. Key controls include "Create split images" (button), "Create keyhole image" (button)."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)

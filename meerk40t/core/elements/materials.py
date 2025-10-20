@@ -150,7 +150,9 @@ def init_commands(kernel):
         for section in self.op_data.section_set():
             if section.endswith("info"):
                 continue
-            for subsect in self.op_data.derivable(section):
+            sections = list(self.op_data.derivable(section))
+            sections.sort()
+            for subsect in sections:
                 label = self.op_data.read_persistent(str, subsect, "label", "-")
                 channel(f"{subsect}: {label}")
         channel("----------")

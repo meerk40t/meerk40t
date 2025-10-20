@@ -29,6 +29,14 @@ def register_panel_snapoptions(window, context):
 
 
 class SnapOptionPanel(wx.Panel):
+    """SnapOptionPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for snapoption functionality. Features checkbox, label controls for user interaction. Integrates with action_attract_len, snap_grid for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for snapoption functionality. Key controls include "Snap to Element" (checkbox), "Snap to Grid" (checkbox), "Overall visibility" (label)."""
+
+    """SnapOptionPanel - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

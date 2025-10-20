@@ -3647,6 +3647,7 @@ class MeerK40t(MWindow):
         context = self.context
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "print_shutdown", False)
+        context.setting(bool, "clear_on_load_recent", False)
 
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
@@ -4673,8 +4674,8 @@ class MeerK40t(MWindow):
                         win = win.GetParent()
             if section is None or section == "":
                 section = "GUI"
-            section = section.upper()
-            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
+            section = section.lower()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help-{section}"
             import webbrowser
 
             webbrowser.open(url, new=0, autoraise=True)
@@ -5287,6 +5288,8 @@ class MeerK40t(MWindow):
         """
         if os.path.exists(filename):
             try:
+                if self.context.clear_on_load_recent:
+                    self.clear_project(ops_too=True)
                 self.load(filename, execution=True)
                 self.set_working_file_name(filename)
             except PermissionError:
@@ -5359,15 +5362,27 @@ class MeerK40t(MWindow):
                     id=menuitem.GetId(),
                 )
 
+        def set_clear_flag(event):
+            self.context.clear_on_load_recent = not self.context.clear_on_load_recent
+
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu_item.Enable(True)
             self.recent_file_menu.AppendSeparator()
-            menuitem = self.recent_file_menu.Append(
+            item_clear_on_load = self.recent_file_menu.Append(
+                wx.ID_ANY,
+                _("Clear project on load"),
+                _("Clear the project before loading a recent file"),
+                wx.ITEM_CHECK,
+            )
+            item_clear_on_load.Check(self.context.clear_on_load_recent)
+            self.Bind(wx.EVT_MENU, set_clear_flag, id=item_clear_on_load.GetId())
+            self.recent_file_menu.AppendSeparator()
+            item_clear_history = self.recent_file_menu.Append(
                 wx.ID_ANY,
                 _("Clear Recent"),
                 _("Delete the list of recent projects"),
             )
-            self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=menuitem.GetId())
+            self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=item_clear_history.GetId())
         else:
             self.recent_file_menu_item.Enable(False)
 

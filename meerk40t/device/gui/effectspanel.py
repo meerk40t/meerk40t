@@ -1,20 +1,22 @@
 import wx
 
-#from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
-#from meerk40t.core.node.image_raster import ImageRasterNode
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.wxutils import dip_size
 from meerk40t.core.units import Angle
 from meerk40t.device.devicechoices import get_effect_choices
+
+# from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
+# from meerk40t.core.node.image_raster import ImageRasterNode
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.gui.wxutils import dip_size
 
 _ = wx.GetTranslation
 
 
 class EffectsPanel(wx.Panel):
-    """
-    EffectsPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define default settings for effects for a device
-    """
+    """EffectsPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for effects functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for effects functionality in MeerK40t."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
@@ -30,17 +32,20 @@ class EffectsPanel(wx.Panel):
         for choice in get_effect_choices(self.context):
             self.context.setting(choice["type"], choice["attr"], choice["default"])
 
-        #self.context.setting(str, "effect_hatch_default_distance", "1.0mm")
-        #self.context.setting(str, "effect_hatch_default_angle", "0deg")
+        # self.context.setting(str, "effect_hatch_default_distance", "1.0mm")
+        # self.context.setting(str, "effect_hatch_default_angle", "0deg")
 
-        #self.context.setting(str, "effect_wobble_default_radius", "0.5mm")
-        #self.context.setting(str, "effect_wobble_default_interval", "0.05mm")
-        #self.context.setting(str, "effect_wobble_default_speed", "50")
+        # self.context.setting(str, "effect_wobble_default_radius", "0.5mm")
+        # self.context.setting(str, "effect_wobble_default_interval", "0.05mm")
+        # self.context.setting(str, "effect_wobble_default_speed", "50")
 
         testsize = dip_size(self, 20, 20)
         imgsize = testsize[1]
         epanel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=get_effect_choices(self.context)
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices=get_effect_choices(self.context),
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)

@@ -5,7 +5,7 @@ from threading import Condition
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
-
+from meerk40t.core.planner import STAGE_PLAN_BLOB
 """
 This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home,
 unlock rail commands. And it provides the the spooler class which should be provided by each driver.
@@ -21,7 +21,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "spool",
-            help=_("spool <command>"),
+            help="spool <command> : " + _("Send a command to the spooler"),
             regex=True,
             input_type=(None, "plan"),
             output_type="spooler",
@@ -32,9 +32,24 @@ def plugin(kernel, lifecycle):
             spooler = device.spooler
             # Do we have a filename to use as label?
             label = kernel.elements.basename
-
+       
             if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
+                planner = kernel.planner
+                try:
+                    stage, info = planner.get_plan_stage(data.name)
+                except AttributeError:
+                    stage = None
+                    info = ""
+                # print (data.name, stage, info)
+                if stage is None or STAGE_PLAN_BLOB not in stage:
+                    channel(
+                        _(
+                            "Invalid plan - no 'blob' plan stage found. Please generate a valid plan before spooling."
+                        )
+                    )
+                    return "spooler", spooler
+                    
+                # If plan data is in data, then we copy that and move on to next step.                   
                 data.final()
                 loops = 1
                 elements = kernel.elements
@@ -89,7 +104,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "list",
-            help=_("spool<?> list"),
+            help="spool<?> list : " + _("List all spooled jobs"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -110,7 +125,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "clear",
-            help=_("spooler<?> clear"),
+            help="spooler<?> clear : " + _("clear the spooler queue"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -154,7 +169,7 @@ def plugin(kernel, lifecycle):
             ("left", "right", "up", "down"),
             input_type=("spooler", None),
             output_type="spooler",
-            help=_("cmd <amount>"),
+            help="<left/right/up/down> <amount> : " + _("Move the laser in the specified direction."),
         )
         def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
@@ -239,7 +254,7 @@ def plugin(kernel, lifecycle):
             "move_relative",
             input_type=("spooler", None),
             output_type="spooler",
-            help=_("move_relative <dx> <dy>"),
+            help="move_relative <dx> <dy> : " + _("Move the laser relative to its current position."),
         )
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:

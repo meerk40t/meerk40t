@@ -28,7 +28,7 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
 from meerk40t.kernel import Job, Module, signal_listener
 from meerk40t.svgelements import Matrix, Point
-from meerk40t.tools.geomstr import NON_GEOMETRY_TYPES, TYPE_END
+from meerk40t.core.geomstr import NON_GEOMETRY_TYPES, TYPE_END
 
 _reused_identity_widget = Matrix()
 XCELLS = 15
@@ -537,6 +537,10 @@ class Scene(Module, Job):
         """
         Called when a widget is moved from one widget parent to another.
         """
+        pass
+    
+    def notify_tree_changed(self):
+        # Called when the widget tree has changed (e.g. a widget was added/removed)
         pass
 
     def draw(self, canvas):
@@ -1056,25 +1060,12 @@ class Scene(Module, Job):
         Resets the cached attraction points forcing a recalculation on next use.
         """
         self.snap_attraction_points = None
-        if hasattr(self, "_last_elements_hash"):
-            del self._last_elements_hash
 
     def _calculate_attraction_points(self):
         """
         Looks at all elements and identifies all attraction points with optimized processing.
         """
         self.context.elements.set_start_time("attr_calc_points")
-
-        # Check if we need to recalculate (cache invalidation)
-        current_elements_hash = self._get_elements_hash()
-        if (
-            hasattr(self, "_last_elements_hash")
-            and self._last_elements_hash == current_elements_hash
-        ):
-            # Elements haven't changed, reuse cached points
-            # print (f"Cached attraction points used: {len(self.snap_attraction_points) if self.snap_attraction_points else 0} points.")
-            self.context.elements.set_end_time("attr_calc_points", message="cached")
-            return
 
         self.snap_attraction_points = []  # Clear all
 
@@ -1137,24 +1128,11 @@ class Scene(Module, Job):
                         points_list.append([pt[0], pt[1], pt_type, emph])
 
         self.snap_attraction_points = points_list
-        self._last_elements_hash = current_elements_hash
 
         self.context.elements.set_end_time(
             "attr_calc_points",
             message=f"points added={len(self.snap_attraction_points)}",
         )
-
-    def _get_elements_hash(self):
-        """
-        Generate a simple hash of the elements to detect changes.
-        """
-        # Simple hash based on element count
-        try:
-            element_count = sum(1 for _ in self.context.elements.flat(types=elem_nodes))
-            return hash(element_count)
-        except Exception:
-            # Fallback if hashing fails
-            return None
 
     def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
         """

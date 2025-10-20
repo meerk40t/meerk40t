@@ -22,7 +22,7 @@ from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, Length
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
-from ..tools.geomstr import Geomstr
+from ..core.geomstr import Geomstr
 
 
 class GRBLDriver(Parameters):
