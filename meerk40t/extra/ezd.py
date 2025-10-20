@@ -724,6 +724,7 @@ class EZText(EZObject):
             extradata2 = _parse_struct(file)
             _construct(extradata2)
         (unk,) = struct.unpack("<i", file.read(4))
+        # print (f"EZText: '{self.text}'\nHeight: {self.height} Font: '{self.font}' Extra Count: {count} Unk: {unk}")
 
 
 class EZImage(EZObject):
@@ -776,8 +777,16 @@ class EZHatch(list, EZObject):
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
+        self.unsupported_format = False
         args = _parse_struct(file)
         _construct(args)
+        self.group = None
+        if len(args) < 42:  # old formats - Not supported
+            # print (f"EZHatch: Unsupported old format with only {len(args)} args. Unclear content")
+            # print (args)
+
+            self.unsupported_format = True
+            return
         self.mark_contours = args[0]
         self.mark_contours_type = args[41]
 
@@ -836,9 +845,7 @@ class EZHatch(list, EZObject):
         file.seek(tell, 0)
         if check == 15:
             self.group = EZGroup(file)
-        else:
-            self.group = None
-
+    
 
 object_map = {
     1: EZCurve,
@@ -862,7 +869,10 @@ object_map = {
 
 
 def parse_object(file, objects):
-    object_type = struct.unpack("<i", file.read(4))[0]  # 0
+    try:
+        object_type = struct.unpack("<i", file.read(4))[0]  # 0
+    except struct.error:
+        return False
     if object_type == 0:
         return False
     ez_class = object_map.get(object_type)
@@ -886,7 +896,7 @@ class EZDLoader:
         except struct.error:
             raise BadFileError(
                 "Unseen sequence, object, or formatting.\n"
-                "File format was only partially unrecognized.\n"
+                "File format was only partially recognized.\n"
                 "Please raise an github issue and submit this file for review.\n"
             )
         elements_service._loading_cleared = True
@@ -905,7 +915,7 @@ class EZProcessor:
         self.regmark = self.elements.reg_branch
         self.op_branch = elements.op_branch
         self.elem_branch = elements.elem_branch
-
+        self.operations = {}
         self.width = elements.device.view.unit_width
         self.height = elements.device.view.unit_height
         self.cx = self.width / 2.0
@@ -926,8 +936,13 @@ class EZProcessor:
     def _add_pen_reference(self, ez, element, op, node, op_add, op_type):
         p = ez.pens[element.pen]
         if op_add is None:
+            op_add = self.operations.get(element.pen, None)
+        if op_add is None:
             op_add = op.add(type=op_type, **p.__dict__)
+            self.operations[element.pen] = op_add
         op_add.add_reference(node)
+        if hasattr(node, "stroke"):
+            node.stroke = op_add.color
         return op_add
 
     def parse(self, ez, element, elem, op, op_add=None, path=None):
@@ -1121,13 +1136,14 @@ class EZProcessor:
                 self.parse(ez, child, elem, op, op_add=op_add, path=path)
         elif isinstance(element, EZHatch):
             p = dict(ez.pens[element.pen].__dict__)
-
             with self.elements.node_lock:
                 op_add = op.add(type="op engrave", **p)
                 if "label" in p:
                     # Both pen and hatch have a label, we shall use the hatch-label for hatch; pen for op.
                     del p["label"]
-                op_add.add(type="effect hatch", **p, label=element.label)
+                if not element.unsupported_format:
+                    # Cannot process old-format hatch.
+                    op_add.add(type="effect hatch", **p, label=element.label)
             for child in element:
                 # Operands for the hatch.
                 self.parse(ez, child, elem, op, op_add=op_add)
