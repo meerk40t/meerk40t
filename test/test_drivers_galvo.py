@@ -1,13 +1,28 @@
 import os
 import unittest
 from test import bootstrap
-
+# 20.10.25 Update: reversed the sequence of qswitchperiod and markcurrernt in the LMC output.
 lmc_rect = """listReadyMark        0000 0000 0000 0000 0000
 listDelayTime        0320 0000 0000 0000 0000
 listWritePort        0001 0000 0000 0000 0000
 listJumpSpeed        04a7 0000 0000 0000 0000
-listMarkCurrent      0fff 0000 0000 0000 0000
 listQSwitchPeriod    03e8 0000 0000 0000 0000
+listMarkCurrent      0fff 0000 0000 0000 0000
+listMarkSpeed        0008 0000 0000 0000 0000
+listLaserOnDelay     0064 0000 0000 0000 0000
+listLaserOffDelay    0064 0000 0000 0000 0000
+listPolygonDelay     000a 0000 0000 0000 0000
+listJumpTo           d174 2e8b 0000 7331 0000
+listMarkTo           d174 45d1 0000 1746 0000
+listMarkTo           ba2e 45d1 0000 1746 0000
+listMarkTo           ba2e 2e8b 0000 1746 0000
+listMarkTo           d174 2e8b 0000 1746 0000
+listDelayTime        001e 0000 0000 0000 0000
+listEndOfList        0000 0000 0000 0000 0000
+"""
+lmc_rect_uv_inverted = """listReadyMark        0000 0000 0000 0000 0000
+listWritePort        0001 0000 0000 0000 0000
+listJumpSpeed        04a7 0000 0000 0000 0000
 listMarkSpeed        0008 0000 0000 0000 0000
 listLaserOnDelay     0064 0000 0000 0000 0000
 listLaserOffDelay    0064 0000 0000 0000 0000
@@ -25,8 +40,8 @@ lmc_rect_rotary = """listReadyMark        0000 0000 0000 0000 0000
 listDelayTime        0320 0000 0000 0000 0000
 listWritePort        0001 0000 0000 0000 0000
 listJumpSpeed        04a7 0000 0000 0000 0000
-listMarkCurrent      0fff 0000 0000 0000 0000
 listQSwitchPeriod    03e8 0000 0000 0000 0000
+listMarkCurrent      0fff 0000 0000 0000 0000
 listMarkSpeed        0008 0000 0000 0000 0000
 listLaserOnDelay     0064 0000 0000 0000 0000
 listLaserOffDelay    0064 0000 0000 0000 0000
@@ -43,7 +58,7 @@ listEndOfList        0000 0000 0000 0000 0000
 lmc_blank = ""
 
 
-class TestDriverGRBL(unittest.TestCase):
+class TestDriverGalvo(unittest.TestCase):
     def test_reload_devices_galvo(self):
         """
         We start a new bootstrap, delete any services that would have existed previously. Add several galvo services.
@@ -88,7 +103,7 @@ class TestDriverGRBL(unittest.TestCase):
             kernel()
         with open(file1) as f:
             data = f.read()
-        # print (f"Received:\n{data}")
+        # print (f"Engrave received:\n{data}")
         self.assertEqual(lmc_rect, data)
 
     def test_driver_basic_rect_cut(self):
@@ -133,6 +148,30 @@ class TestDriverGRBL(unittest.TestCase):
             data = f.read()
         self.assertEqual(data, lmc_blank)
 
+    def test_driver_basic_rect_engrave_uv_power_inverted(self):
+        """
+        @return:
+        """
+        file1 = "te.lmc"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("service device start -i balor 0\n")
+            device = kernel.device
+            dev_path = device.path
+            device(f"set -p {dev_path} source 'uv'")
+            device(f"set -p {dev_path} power_invert True")
+            kernel.console("operation* remove\n")
+            kernel.console(
+                f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
+        finally:
+            kernel()
+        with open(file1) as f:
+            data = f.read()
+        print (f"Engrave with inverted data:\n{data}")
+        self.assertEqual(lmc_rect_uv_inverted, data)
 
 class TestDriverGalvoRotary(unittest.TestCase):
     def test_driver_rotary_engrave(self):

@@ -167,6 +167,19 @@ class BalorDevice(Service, Status):
                 "nonzero": True,
             },
             {
+                "attr": "power_invert",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Invert Power"),
+                "tip": _("UV lasers might require inverted power levels"),
+                # Hint for translation _("General")
+                "section": "_00_General",
+                "subsection": "_00_",
+                "priority": "20",
+                "conditional": (self, "source", "uv"),
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
