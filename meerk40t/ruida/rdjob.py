@@ -515,6 +515,8 @@ class RDJob:
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
+        self.first_move = True
+
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
@@ -1440,6 +1442,10 @@ class RDJob:
         # self.encoder.array_even_distance(0)  # Unknown.
         self.array_repeat(1, 1, 0, 1123, -3328, 4, 3480)  # Unknown.
         # Layer and cut information.
+        self.first_move = True  # Force the first move in the file to be ABS.
+                                # TODO: This is a workaround for a problem
+                                # which occurs when the first move is a
+                                # move relative (less than 8.192mm).
 
     def write_settings(self, current_settings):
         part = current_settings.get("part", 0)
@@ -1476,9 +1482,10 @@ class RDJob:
             # We are not moving.
             return
 
-        if abs(dx) > 8192 or abs(dy) > 8192:
+        if abs(dx) > 8192 or abs(dy) > 8192 or self.first_move:
             # Exceeds encoding limit, use abs.
             self.move_abs_xy(x, y)
+            self.first_move = False
             return
 
         if dx == 0:
