@@ -772,79 +772,255 @@ class EZHatch(list, EZObject):
     Hatch is a modification group. All three hatch elements are given properties for each hatch. The hatch contains
     the actual elements that were to be given a hatch. As well as a cache-group of curve items that actually are the
     given hatch properly rendered.
+    
+    The structure is:
+    - EZObject header (15 fields, including children count which populates this list)
+    - Hatch properties struct (variable size: 42+ fields)
+    - Cached group for visual representation
     """
 
     def __init__(self, file):
         list.__init__(self)
-        EZObject.__init__(self, file)
+        EZObject.__init__(self, file)  # This parses header and children into self (list)
         self.unsupported_format = False
+        self.group = None
+        
+        # Now parse hatch-specific properties
         args = _parse_struct(file)
         _construct(args)
-        self.group = None
+        
         if len(args) < 42:  # old formats - Not supported
-            # print (f"EZHatch: Unsupported old format with only {len(args)} args. Unclear content")
-            # print (args)
-
             self.unsupported_format = True
-            return
-        self.mark_contours = args[0]
-        self.mark_contours_type = args[41]
+            # In unsupported formats, extract embedded text strings from binary data
+            self._extract_embedded_text_from_args(args)
+        else:
+            # Parse hatch properties for supported formats
+            self.mark_contours = args[0]
+            self.mark_contours_type = args[41]
 
-        self.hatch1_enabled = args[1]
-        self.hatch1_type = args[3]
-        # Includes average distribute line, allcalc, follow edge, crosshatch
-        # spiral = 0x50
-        self.hatch1_type_all_calc = self.hatch1_type & 0x1
-        self.hatch1_type_follow_edge = self.hatch1_type & 0x2
-        self.hatch1_type_crosshatch = self.hatch1_type & 0x400
-        self.hatch1_angle = args[8]
-        self.hatch1_pen = args[2]
-        self.hatch1_line_space = args[5]
-        self.hatch1_edge_offset = args[4]
-        self.hatch1_start_offset = args[6]
-        self.hatch1_end_offset = args[7]
-        self.hatch1_line_reduction = args[29]
-        self.hatch1_number_of_loops = args[32]
-        self.hatch1_loop_distance = args[35]
-        self.hatch1_angle_inc = args[18]
+            self.hatch1_enabled = args[1]
+            self.hatch1_type = args[3]
+            # Includes average distribute line, allcalc, follow edge, crosshatch
+            # spiral = 0x50
+            self.hatch1_type_all_calc = self.hatch1_type & 0x1
+            self.hatch1_type_follow_edge = self.hatch1_type & 0x2
+            self.hatch1_type_crosshatch = self.hatch1_type & 0x400
+            self.hatch1_angle = args[8]
+            self.hatch1_pen = args[2]
+            self.hatch1_line_space = args[5]
+            self.hatch1_edge_offset = args[4]
+            self.hatch1_start_offset = args[6]
+            self.hatch1_end_offset = args[7]
+            self.hatch1_line_reduction = args[29]
+            self.hatch1_number_of_loops = args[32]
+            self.hatch1_loop_distance = args[35]
+            self.hatch1_angle_inc = args[18]
 
-        self.hatch2_enabled = args[9]
-        self.hatch2_type = args[11]
-        self.hatch2_angle = args[16]
-        self.hatch2_pen = args[10]
-        self.hatch2_line_space = args[13]
-        self.hatch2_edge_offset = args[12]
-        self.hatch2_start_offset = args[14]
-        self.hatch2_end_offset = args[15]
-        self.hatch2_line_reduction = args[30]
-        self.hatch2_number_of_loops = args[33]
-        self.hatch2_loop_distance = args[36]
-        self.hatch2_angle_inc = args[19]
+            self.hatch2_enabled = args[9]
+            self.hatch2_type = args[11]
+            self.hatch2_angle = args[16]
+            self.hatch2_pen = args[10]
+            self.hatch2_line_space = args[13]
+            self.hatch2_edge_offset = args[12]
+            self.hatch2_start_offset = args[14]
+            self.hatch2_end_offset = args[15]
+            self.hatch2_line_reduction = args[30]
+            self.hatch2_number_of_loops = args[33]
+            self.hatch2_loop_distance = args[36]
+            self.hatch2_angle_inc = args[19]
 
-        self.hatch3_enabled = args[20]
-        self.hatch3_type = args[22]
-        self.hatch3_angle = args[27]
-        self.hatch3_pen = args[21]
-        self.hatch3_line_space = args[24]
-        self.hatch3_edge_offset = args[23]
-        self.hatch3_start_offset = args[25]
-        self.hatch3_end_offset = args[26]
-        self.hatch3_line_reduction = args[31]
-        self.hatch3_number_of_loops = args[34]
-        self.hatch3_loop_distance = args[37]
-        self.hatch3_angle_inc = args[28]
-        try:
-            self.hatch1_count = args[42]
-            self.hatch2_count = args[43]
-            self.hatch3_count = args[44]
-        except IndexError:
-            # Older Version without count values.
-            pass
+            self.hatch3_enabled = args[20]
+            self.hatch3_type = args[22]
+            self.hatch3_angle = args[27]
+            self.hatch3_pen = args[21]
+            self.hatch3_line_space = args[24]
+            self.hatch3_edge_offset = args[23]
+            self.hatch3_start_offset = args[25]
+            self.hatch3_end_offset = args[26]
+            self.hatch3_line_reduction = args[31]
+            self.hatch3_number_of_loops = args[34]
+            self.hatch3_loop_distance = args[37]
+            self.hatch3_angle_inc = args[28]
+            try:
+                self.hatch1_count = args[42]
+                self.hatch2_count = args[43]
+                self.hatch3_count = args[44]
+            except IndexError:
+                # Older Version without count values.
+                pass
+        
+        # Try to parse the cached group that represents the hatch output
         tell = file.tell()
-        (check,) = struct.unpack("<i", file.read(4))
-        file.seek(tell, 0)
-        if check == 15:
-            self.group = EZGroup(file)
+        try:
+            (check,) = struct.unpack("<i", file.read(4))
+            file.seek(tell, 0)
+            if check == 15:  # 15 is the type for EZGroup
+                self.group = EZGroup(file)
+        except struct.error:
+            pass
+    
+    def _extract_embedded_text_from_args(self, args):
+        """Extract UTF-16 text strings embedded in binary args for unsupported format hatches"""
+        extracted_texts = []
+        
+        # Scan through all binary arguments for UTF-16 encoded text
+        for arg_index, arg in enumerate(args):
+            if isinstance(arg, bytes) and len(arg) > 10:
+                # Scan for UTF-16 encoded strings (pattern: non-zero, zero, non-zero, zero...)
+                i = 0
+                while i < len(arg) - 2:
+                    if arg[i+1] == 0 and arg[i] != 0:  # Potential UTF-16 start
+                        # Find the extent of the UTF-16 string
+                        start = i
+                        while i < len(arg) - 1 and arg[i+1] == 0 and arg[i] != 0:
+                            i += 2
+                        if i > start + 2:  # At least 2 characters
+                            try:
+                                text_bytes = arg[start:i]
+                                if len(text_bytes) % 2 == 0:
+                                    text = text_bytes.decode('utf-16').rstrip('\x00')
+                                    # Keep text if it's not empty, not a font name, and not already extracted
+                                    if text and len(text) > 0 and text.lower() not in ("arial", ""):
+                                        if text not in extracted_texts:
+                                            extracted_texts.append(text)
+                                            print(f"Extracted text from EZHatch args[{arg_index}]: '{text}'")
+                            except UnicodeDecodeError:
+                                pass
+                    i += 1
+        
+        # Calculate position from hatch operands bounds
+        x_pos, y_pos = 0.0, 0.0
+        if len(self) > 0:
+            # Calculate bounds from all operands
+            bounds = self._calculate_operands_bounds()
+            if bounds:
+                x_min, y_min, x_max, y_max = bounds
+                x_pos = (x_min + x_max) / 2.0
+                y_pos = (y_min + y_max) / 2.0
+        
+        # Add extracted text as synthetic EZText objects to this hatch
+        # (appended after operands, so they don't interfere with hatch properties)
+        # Following the pattern: EZText followed by EZGroup for visual representation
+        for text in extracted_texts:
+            class SyntheticText:
+                """Synthetic text object created from extracted binary data"""
+                def __init__(self, text_str, x, y, label=None):
+                    self.text = text_str
+                    self.x = x
+                    self.y = y
+                    self.height = 5.0
+                    self.font = "Arial"
+                    self.font_angle = 0.0
+                    self.text_space_setting = 0  # auto
+                    self.text_space = 0.0
+                    self.char_space = 0.0
+                    self.line_space = 0.0
+                    self.pen = 2  # Use hatch pen
+                    self.circle_text_enable = False
+                    self.circle_text_diameter = 0.0
+                    self.circle_text_base_angle = 0.0
+                    self.circle_text_range_limit_enable = False
+                    self.circle_text_range_limit_angle = 0.0
+                    self.save_options = 0
+                    self.save_filename = ""
+                    self.circle_text_button_flags = 0
+                    self.font2 = "Arial"
+                    self.hatch_loop_distance = 0.0
+                    self.label = label  # Preserve the hatch label
+            
+            synthetic_text = SyntheticText(text, x_pos, y_pos, label=self.label)
+            self.append(synthetic_text)
+            
+            # Create an empty visual group following the text, matching the pattern
+            # seen with other text elements (DEPRESSURIZE AFTER USE! + Group(21), IN + Group(2))
+            visual_group = EZGroup.__new__(EZGroup)
+            list.__init__(visual_group)
+            # Initialize with empty group attributes (will inherit from EZObject but we'll keep minimal)
+            visual_group.type = 15  # EZGroup type
+            visual_group.pen = self.pen
+            visual_group.state = 0
+            visual_group.selected = False
+            visual_group.hidden = False
+            visual_group.locked = False
+            visual_group.label = self.label  # Preserve the hatch label
+            visual_group.position = (x_pos, y_pos)
+            
+            self.append(visual_group)
+    
+    def _calculate_operands_bounds(self):
+        """Calculate bounding box from all non-group operands in this hatch
+        
+        This positions extracted text at the center of all primary operands.
+        """
+        if not self:
+            return None
+        
+        min_x = float('inf')
+        min_y = float('inf')
+        max_x = float('-inf')
+        max_y = float('-inf')
+        found_any = False
+        
+        def update_bounds_from_curve(obj):
+            """Update bounds from curve point data"""
+            nonlocal min_x, min_y, max_x, max_y, found_any
+            
+            if hasattr(obj, 'points') and obj.points:
+                for point in obj.points:
+                    if isinstance(point, (tuple, list)) and len(point) >= 2:
+                        x, y = point[0], point[1]
+                        min_x = min(min_x, x)
+                        min_y = min(min_y, y)
+                        max_x = max(max_x, x)
+                        max_y = max(max_y, y)
+                        found_any = True
+        
+        # Only look at direct children that are operands (not groups)
+        # Groups are visual representations, skip them
+        for i, child in enumerate(self):
+            if isinstance(child, EZGroup) or isinstance(child, list):
+                # Skip groups and visual representations
+                continue
+            
+            # For text items that are not extracted, use their coordinates
+            if hasattr(child, 'x') and hasattr(child, 'y') and hasattr(child, 'text'):
+                if not (type(child).__name__ == 'SyntheticText'):
+                    x = getattr(child, 'x', None)
+                    y = getattr(child, 'y', None)
+                    if x is not None and y is not None:
+                        min_x = min(min_x, x)
+                        min_y = min(min_y, y)
+                        max_x = max(max_x, x)
+                        max_y = max(max_y, y)
+                        found_any = True
+            
+            # For curves, use point data
+            if hasattr(child, 'type') and child.type == 1:  # EZCurve
+                update_bounds_from_curve(child)
+            
+            # For rectangles
+            if hasattr(child, 'x1') and hasattr(child, 'y1'):
+                min_x = min(min_x, child.x1)
+                min_y = min(min_y, child.y1)
+                found_any = True
+            if hasattr(child, 'x2') and hasattr(child, 'y2'):
+                max_x = max(max_x, child.x2)
+                max_y = max(max_y, child.y2)
+                found_any = True
+            
+            # For circles
+            if hasattr(child, 'cx') and hasattr(child, 'cy'):
+                r = getattr(child, 'r', 0)
+                min_x = min(min_x, child.cx - r)
+                min_y = min(min_y, child.cy - r)
+                max_x = max(max_x, child.cx + r)
+                max_y = max(max_y, child.cy + r)
+                found_any = True
+        
+        # Return bounds if we found any valid coordinates
+        if found_any and min_x != float('inf'):
+            return (min_x, min_y, max_x, max_y)
+        return None
     
 
 object_map = {
@@ -957,7 +1133,12 @@ class EZProcessor:
         @param path: Path we should append to rather than create.
         @return:
         """
-        if isinstance(element, EZText):
+        # Handle SyntheticText (extracted from unsupported hatch formats)
+        if type(element).__name__ == 'SyntheticText':
+            with self.elements.node_lock:
+                node = elem.add(type="elem text", text=element.text, transform=self.matrix)
+                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+        elif isinstance(element, EZText):
             with self.elements.node_lock:
                 node = elem.add(type="elem text", text=element.text, transform=self.matrix)
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
@@ -1145,7 +1326,7 @@ class EZProcessor:
                     # Cannot process old-format hatch.
                     op_add.add(type="effect hatch", **p, label=element.label)
             for child in element:
-                # Operands for the hatch.
+                # Operands for the hatch (including extracted text for unsupported formats).
                 self.parse(ez, child, elem, op, op_add=op_add)
 
             if element.group:
