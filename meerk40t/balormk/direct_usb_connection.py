@@ -1,3 +1,4 @@
+# TODO: - read is dummy, write only for 12 bytes packets
 """
 Direct Windows USB Connection for Balor Laser Controllers
 
@@ -181,6 +182,7 @@ class DirectUSBConnection:
         # Load Windows APIs
         self.kernel32 = ctypes.windll.kernel32
         self.setupapi = ctypes.windll.setupapi
+        self.last_response = bytes(8)
         
         # Setup API function signatures
         self._setup_api_signatures()
@@ -578,31 +580,32 @@ class DirectUSBConnection:
         
         try:
             # For 12-byte packets, use command IOCTL
-            if packet_length == 0xC:
-                output_buffer = ctypes.create_string_buffer(6)
-                bytes_returned = wintypes.DWORD()
-                
-                result = self.kernel32.DeviceIoControl(
-                    handle, IOCTL_COMMAND, packet, 12,
-                    output_buffer, 6, byref(bytes_returned), None
-                )
-                
-                if not result:
-                    error = self.kernel32.GetLastError()
-                    if attempt <= 3:
-                        # Retry with re-initialization
-                        self.close(index)
-                        time.sleep(0.1)
-                        if self.open(index) >= 0:
-                            self.write(index, packet, attempt + 1)
-                            return
-                    raise ConnectionError(f"DeviceIoControl failed: Error {error}")
+            output_bufferLen = 8
+            output_buffer = ctypes.create_string_buffer(output_bufferLen)
+            bytes_returned = wintypes.DWORD()
             
-            # For larger packets (0xC00), we might need a different approach
-            # This would need investigation if such packets are used
-            else:
-                raise NotImplementedError("Large packet support not yet implemented")
-                
+            result = self.kernel32.DeviceIoControl(
+                handle, IOCTL_COMMAND, packet, packet_length,
+                output_buffer, output_bufferLen, byref(bytes_returned), None
+            )
+            
+            if not result:
+                error = self.kernel32.GetLastError()
+                if attempt <= 3:
+                    # Retry with re-initialization
+                    self.close(index)
+                    time.sleep(0.1)
+                    if self.open(index) >= 0:
+                        self.write(index, packet, attempt + 1)
+                        return
+                raise ConnectionError(f"DeviceIoControl failed: Error {error}")
+        
+            # Store last response for read()
+            self.last_response = output_buffer.raw[:bytes_returned.value]   
+            # make sure it's 8 bytes
+            if len(self.last_response) < 8:
+                self.last_response += bytes(8 - len(self.last_response))
+
         except Exception as e:
             if attempt <= 3:
                 try:
@@ -621,12 +624,9 @@ class DirectUSBConnection:
             raise ConnectionError("Device not open")
         
         # For direct communication, the response is received in the write operation
-        # This method exists for compatibility with the USBConnection interface
-        # but may not be used in the same way
-        
-        # Return dummy data for now - actual responses come from DeviceIoControl in write()
-        # This may need adjustment based on how the controller uses read()
-        return bytes(8)  # Return 8 bytes like original USB connection
+        # We take the last response stored during the write
+
+        return self.last_response  # Return 8 bytes like original USB connection
 
 
 def test_direct_connection():
