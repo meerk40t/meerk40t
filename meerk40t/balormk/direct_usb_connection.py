@@ -1,4 +1,4 @@
-# TODO: - read is dummy, write only for 12 bytes packets
+# TODO: - read is just using the last response from write. This is acceptable for now but may need refinement.
 """
 Direct Windows USB Connection for Balor Laser Controllers
 
