@@ -666,8 +666,8 @@ class GalvoController:
         fpk = float(settings.get("fpk", self.service.default_fpk))
         # print (f"Set settings: power={power}, frequency={frequency}, fpk={fpk}")
         if self.source == "fiber":
-            self.power(power)
             self.frequency(frequency)
+            self.power(power)
         elif self.source == "co2":
             self.frequency(frequency)
             self.fpk(fpk)
@@ -933,16 +933,21 @@ class GalvoController:
         @param power:
         @return:
         """
-        if self._power == power or self._frequency is None:
+        if self._power == power:
             return
+        power = max(0, min(100, power)) # make sure it is in 0-100 range
         self._power = power
         if self.source == "co2":
+            if self._frequency is None or self._frequency == 0:
+                self.frequency(self.service.default_frequency)
             power_ratio = int(round(200 * power / self._frequency))
             self.list_mark_power_ratio(power_ratio)
         elif self.source == "fiber":
             self.list_mark_current(self._convert_power(power))
         elif self.source == "uv":
             uv_power = 100 - power if self.service.power_invert else power
+            if self._frequency is None or self._frequency == 0:
+                self.frequency(self.service.default_frequency)
             power_ratio = int(round(200 * uv_power / self._frequency))
             # print (f"Power ratio for UV: {power_ratio}   (from power {power} and frequency {self._frequency}) -> calculated {uv_power}")
             self.list_mark_power_ratio(power_ratio)
