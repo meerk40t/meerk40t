@@ -295,7 +295,7 @@ def encode_time(time):
 
 
 def encode_frequency(freq_hz):
-    return encode32(freq_hz)
+    return encode32(freq_hz * 1000)
 
 
 def signed35(v):
@@ -1478,14 +1478,14 @@ class RDJob:
         self.end_of_file()
 
     def jump(self, x, y, dx, dy):
-        if dx == 0 and dy == 0:
-            # We are not moving.
-            return
-
         if abs(dx) > 8192 or abs(dy) > 8192 or self.first_move:
             # Exceeds encoding limit, use abs.
             self.move_abs_xy(x, y)
             self.first_move = False
+            return
+
+        if dx == 0 and dy == 0:
+            # We are not moving.
             return
 
         if dx == 0:
@@ -1668,6 +1668,7 @@ class RDJob:
         self(THROUGH_POWER_4, encode_power(power), output=output)
 
     def frequency_part(self, laser, part, frequency, output=None):
+        # Hack -- see what happens if this is not used.
         self(
             FREQUENCY_PART,
             encode_index(laser),
