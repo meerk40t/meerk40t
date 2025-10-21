@@ -133,6 +133,7 @@ class HatchEffectNode(Node, Suppressable):
                 hatchangledelta,
                 loops,
                 unidirectional,
+                include_outlines,
             ) = pattern
             if typeinfo == self.type:
                 self.hatch_type = hatchtype
@@ -141,6 +142,7 @@ class HatchEffectNode(Node, Suppressable):
                 self.hatch_angle_delta = hatchangledelta
                 self.loops = loops
                 self.unidirectional = unidirectional == "1"
+                self.include_outlines = include_outlines == "1"
                 self.recalculate()
         except ValueError:
             pass
