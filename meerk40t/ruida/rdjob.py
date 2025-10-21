@@ -1677,7 +1677,7 @@ class RDJob:
         #     encode_part(part),
         #     encode_frequency(frequency),
         #     output=output,
-        )
+        # )
 
     def speed_laser_1(self, speed, output=None):
         self(SPEED_LASER_1, encode_speed(speed), output=output)
