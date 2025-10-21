@@ -1668,13 +1668,15 @@ class RDJob:
         self(THROUGH_POWER_4, encode_power(power), output=output)
 
     def frequency_part(self, laser, part, frequency, output=None):
-        # Hack -- see what happens if this is not used.
-        self(
-            FREQUENCY_PART,
-            encode_index(laser),
-            encode_part(part),
-            encode_frequency(frequency),
-            output=output,
+        # Disabled -- This is not necessary and the frequency was not
+        # correct for the laser being used.
+        return
+        # self(
+        #     FREQUENCY_PART,
+        #     encode_index(laser),
+        #     encode_part(part),
+        #     encode_frequency(frequency),
+        #     output=output,
         )
 
     def speed_laser_1(self, speed, output=None):
