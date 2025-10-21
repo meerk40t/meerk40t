@@ -2469,6 +2469,68 @@ def short_travel_cutcode(
     )
 
 
+def _sequence_skip_groups(unordered, hatch_optimize, kernel=None, channel=None):
+    """
+    Helper function to sequence skip-marked groups (hatches) separately from main optimization.
+    
+    When hatch_optimize=True: applies travel optimization to skip groups.
+    When hatch_optimize=False: applies basic cutcode sequencing without travel optimization.
+    
+    Args:
+        unordered: List of skip-marked CutGroups to sequence
+        hatch_optimize: Whether to apply travel optimization to skip groups
+        kernel: Optional kernel for progress reporting
+        channel: Optional logging channel
+    
+    Returns:
+        Tuple of (ordered_skip_cutcode, unordered_list) where ordered_skip contains
+        all sequenced cuts from skip groups, and unordered_list is reset for final assembly.
+    """
+    ordered_skip = CutCode()
+    
+    if hatch_optimize:
+        # When hatch_optimize=True, apply travel optimization to skip groups
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                unordered[idx] = short_travel_cutcode(
+                    context=c,
+                    kernel=kernel,
+                    complete_path=False,
+                    grouped_inner=False,
+                    channel=channel,
+                )
+    else:
+        # When hatch_optimize=False, apply basic cutcode sequencing without travel optimization
+        for c in unordered:
+            if isinstance(c, CutGroup):
+                c.skip = False
+                # Initialize burns_done for all cuts in this group
+                for cut in c.flat():
+                    cut.burns_done = 0
+                
+                # Apply basic cutcode sequencing
+                ordered_group = CutCode()
+                while True:
+                    candidates = list(c.candidate(grouped_inner=False))
+                    if not candidates:
+                        break
+                    for cut in candidates:
+                        cut.burns_done += 1
+                    ordered_group.extend(copy(candidates))
+                
+                # Set start position if available
+                if c.start is not None:
+                    ordered_group._start_x, ordered_group._start_y = c.start
+                else:
+                    ordered_group._start_x = 0
+                    ordered_group._start_y = 0
+                
+                ordered_skip.extend(ordered_group)
+    
+    return ordered_skip, unordered
+
+
 def short_travel_cutcode_legacy(
     context: CutCode,
     kernel=None,
@@ -2671,45 +2733,14 @@ def short_travel_cutcode_legacy(
         curr = complex(end[0], end[1])
         ordered.append(c)
     # print (f"Now we have {len(ordered)} items in list")
-    if hatch_optimize:
-        # When hatch_optimize=True, apply travel optimization to skip groups
-        for idx, c in enumerate(unordered):
-            if isinstance(c, CutGroup):
-                c.skip = False
-                unordered[idx] = short_travel_cutcode(
-                    context=c,
-                    kernel=kernel,
-                    complete_path=False,
-                    grouped_inner=False,
-                    channel=channel,
-                )
-    else:
-        # When hatch_optimize=False, skip groups are NOT optimized at all
-        # Reset skip flag and add them as-is (basic cutcode sequencing only)
-        for idx, c in enumerate(unordered):
-            if isinstance(c, CutGroup):
-                c.skip = False
-                # Apply basic cutcode sequencing without travel optimization
-                ordered_skip = CutCode()
-                for cut in c.flat():
-                    cut.burns_done = 0
-                
-                while True:
-                    candidates = list(c.candidate(grouped_inner=False))
-                    if not candidates:
-                        break
-                    for cut in candidates:
-                        cut.burns_done += 1
-                    ordered_skip.extend(copy(candidates))
-                
-                if c.start is not None:
-                    ordered_skip._start_x, ordered_skip._start_y = c.start
-                else:
-                    ordered_skip._start_x = 0
-                    ordered_skip._start_y = 0
-                unordered[idx] = ordered_skip
-    # As these are reversed, we reverse again...
-    ordered.extend(reversed(unordered))
+    if unordered:
+        # Sequence skip groups using helper function
+        ordered_skip_groups, unordered = _sequence_skip_groups(
+            unordered, hatch_optimize, kernel=kernel, channel=channel
+        )
+        # As these are reversed, we reverse again...
+        ordered.extend(reversed(unordered))
+        ordered.extend(ordered_skip_groups)
     # print (f"And after extension {len(ordered)} items in list")
     # for c in ordered:
     #     print (f"{type(c).__name__} - {len(c) if isinstance(c, (list, tuple)) else '-childless-'}")

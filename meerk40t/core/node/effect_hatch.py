@@ -142,7 +142,7 @@ class HatchEffectNode(Node, Suppressable):
                 self.hatch_angle_delta = hatchangledelta
                 self.loops = loops
                 self.unidirectional = unidirectional == "1"
-                self.include_outlines = include_outlines == "1"
+                self.include_outlines = str(include_outlines).strip().lower() in ("1", "true", "yes", "on")
                 self.recalculate()
         except ValueError:
             pass
