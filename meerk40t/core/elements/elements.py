@@ -1639,6 +1639,8 @@ class Elemental(Service):
                         continue
                     effects = op.settings.get("effects", "")
                     del op.settings["effects"]
+                    if hasattr(op, "effects"):
+                        del op.effects
                     if effects:
                         parts = effects.split("|")
                         if len(parts) > 1:
