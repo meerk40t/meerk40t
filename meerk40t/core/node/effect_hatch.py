@@ -133,6 +133,7 @@ class HatchEffectNode(Node, Suppressable):
                 hatchangledelta,
                 loops,
                 unidirectional,
+                include_outlines,
             ) = pattern
             if typeinfo == self.type:
                 self.hatch_type = hatchtype
@@ -141,6 +142,7 @@ class HatchEffectNode(Node, Suppressable):
                 self.hatch_angle_delta = hatchangledelta
                 self.loops = loops
                 self.unidirectional = unidirectional == "1"
+                self.include_outlines = str(include_outlines).strip().lower() in ("1", "true", "yes", "on")
                 self.recalculate()
         except ValueError:
             pass
@@ -446,10 +448,10 @@ class HatchEffectNode(Node, Suppressable):
         ]
         if self._distance is None:
             self.recalculate()
-        for p in range(self.loops):
-            for o in outlines:
-                if self.include_outlines:
-                    yield o
+        for o in outlines:
+            if self.include_outlines:
+                yield o
+            for p in range(self.loops):
                 yield Geomstr.hatch(
                     o,
                     distance=self._distance,

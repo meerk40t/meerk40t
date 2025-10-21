@@ -258,9 +258,9 @@ class GoPanel(ActionPanel):
         busy = self.context.kernel.busyinfo
         if not prefer_threaded:
             busy.start(msg=_("Preparing Laserjob..."))
-
+        optstr = "preopt optimize " if self.context.kernel.planner.do_optimization else ""
         self.context(
-            f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
+            f"{prefix}plan{new_plan} clear copy preprocess validate blob {optstr}spool\n"
         )
         if prefer_threaded:
             self.context("window open JobSpooler\n")
