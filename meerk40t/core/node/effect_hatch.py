@@ -446,10 +446,10 @@ class HatchEffectNode(Node, Suppressable):
         ]
         if self._distance is None:
             self.recalculate()
-        for p in range(self.loops):
-            for o in outlines:
-                if self.include_outlines:
-                    yield o
+        for o in outlines:
+            if self.include_outlines:
+                yield o
+            for p in range(self.loops):
                 yield Geomstr.hatch(
                     o,
                     distance=self._distance,
