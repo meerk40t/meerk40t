@@ -726,7 +726,12 @@ class CutPlan:
             # self.channel("Dumping scenarios:")
             # self.commands.append(self._dump_scenario)
 
-        if context.opt_inner_first:
+        # When effect_combine is True but effect_optimize is False, skip travel optimization
+        # and use basic sequencing to prevent skip-marked groups from being optimized
+        if context.opt_effect_combine and not context.opt_effect_optimize:
+            # Skip all travel optimization for effect-combined groups
+            self.commands.append(self.basic_cutcode_sequencing)
+        elif context.opt_inner_first:
             # Inner-first optimization takes priority and includes travel optimization
             self.commands.append(self.optimize_cuts)
         elif context.opt_reduce_travel and (
@@ -2490,32 +2495,32 @@ def short_travel_cutcode_legacy(
         channel("Executing Greedy Short-Travel optimization")
         channel(f"Length at start: {start_length:.0f} steps")
     
-    # CRITICAL FIX FOR HATCHED GEOMETRIES (matching short_travel_cutcode_optimized):
-    # When hatch_optimize=True, extract skip groups for separate handling.
-    # But only if there are non-skip groups to optimize first.
-    # If ALL items are skip-marked, keep them for optimization (don't empty context).
+    # CRITICAL FIX FOR HATCHED GEOMETRIES:
+    # When hatch_optimize=True, extract skip groups for separate travel optimization.
+    # When hatch_optimize=False, extract skip groups for unoptimized processing.
+    # In both cases, skip groups (marked during combine_effects) must be handled separately.
     unordered = []
-    if hatch_optimize:
-        # Check what we have
-        skip_groups = []
-        non_skip_groups = []
-        
-        for c in context:
-            if isinstance(c, CutGroup) and c.skip:
-                skip_groups.append(c)
-            else:
-                non_skip_groups.append(c)
-        
-        # Only remove skip groups if there are non-skip groups
+    skip_groups = []
+    non_skip_groups = []
+    
+    # Separate skip and non-skip groups
+    for c in context:
+        if isinstance(c, CutGroup) and c.skip:
+            skip_groups.append(c)
+        else:
+            non_skip_groups.append(c)
+    
+    # Extract skip groups when:
+    # 1. hatch_optimize=True: always (for travel optimization), OR
+    # 2. hatch_optimize=False: always (to avoid any optimization via greedy loop)
+    # This ensures skip-marked groups are never mixed with optimization logic
+    if skip_groups:
+        if channel:
+            channel(f"Found {len(skip_groups)} skip groups, {len(non_skip_groups)} non-skip groups, hatch_optimize={hatch_optimize}")
         if non_skip_groups:
             # CRITICAL: Before removing skip groups, filter containment hierarchy
             # to prevent outer groups from referencing removed inner groups.
             # This is important for algorithms that respect inner-first constraints.
-            # 
-            # This filtering is REQUIRED and intentional: we're removing skip groups
-            # from context and their references MUST be updated to maintain consistency.
-            # Not doing this would leave broken references that cause incorrect behavior
-            # in hierarchy-aware optimization algorithms.
             for group in non_skip_groups:
                 if hasattr(group, "contains") and group.contains:
                     # Filter .contains to only include groups that remain in context
@@ -2527,10 +2532,13 @@ def short_travel_cutcode_legacy(
             context.clear()
             context.extend(non_skip_groups)
             unordered = skip_groups
-        # else: ALL items are skip-marked, keep them in context for optimization
-    else:
-        # When hatch_optimize=False, don't remove skip groups at all
-        pass
+        else:
+            # ALL items are skip-marked: move them to unordered for non-optimized processing
+            if channel:
+                channel("All groups are skip-marked, moving to unordered for basic processing")
+            unordered = skip_groups
+            context.clear()
+    # else: No skip groups, keep context as-is
 
     curr = context.start
     curr = 0 if curr is None else complex(curr[0], curr[1])
@@ -2664,6 +2672,7 @@ def short_travel_cutcode_legacy(
         ordered.append(c)
     # print (f"Now we have {len(ordered)} items in list")
     if hatch_optimize:
+        # When hatch_optimize=True, apply travel optimization to skip groups
         for idx, c in enumerate(unordered):
             if isinstance(c, CutGroup):
                 c.skip = False
@@ -2674,6 +2683,31 @@ def short_travel_cutcode_legacy(
                     grouped_inner=False,
                     channel=channel,
                 )
+    else:
+        # When hatch_optimize=False, skip groups are NOT optimized at all
+        # Reset skip flag and add them as-is (basic cutcode sequencing only)
+        for idx, c in enumerate(unordered):
+            if isinstance(c, CutGroup):
+                c.skip = False
+                # Apply basic cutcode sequencing without travel optimization
+                ordered_skip = CutCode()
+                for cut in c.flat():
+                    cut.burns_done = 0
+                
+                while True:
+                    candidates = list(c.candidate(grouped_inner=False))
+                    if not candidates:
+                        break
+                    for cut in candidates:
+                        cut.burns_done += 1
+                    ordered_skip.extend(copy(candidates))
+                
+                if c.start is not None:
+                    ordered_skip._start_x, ordered_skip._start_y = c.start
+                else:
+                    ordered_skip._start_x = 0
+                    ordered_skip._start_y = 0
+                unordered[idx] = ordered_skip
     # As these are reversed, we reverse again...
     ordered.extend(reversed(unordered))
     # print (f"And after extension {len(ordered)} items in list")
