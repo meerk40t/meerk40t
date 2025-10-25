@@ -783,16 +783,32 @@ class EZHatch(list, EZObject):
         list.__init__(self)
         EZObject.__init__(self, file)  # This parses header and children into self (list)
         self.unsupported_format = False
+        self.format_version = None
         self.group = None
         
         # Now parse hatch-specific properties
         args = _parse_struct(file)
+        self.raw_args = args  # STORE RAW ARGS FOR ANALYSIS
         _construct(args)
         
-        if len(args) < 42:  # old formats - Not supported
-            self.unsupported_format = True
-            # In unsupported formats, extract embedded text strings from binary data
+        if len(args) == 5:
+            # Old hatch format (V1) - used in earlier EZD file versions
+            # This format has basic hatch properties in 5 args:
+            # - args[0]: 15 bytes of basic settings
+            # - args[1]: None
+            # - args[2]: 512 bytes of operand/pattern data with embedded text strings
+            # - args[3]: None
+            # - args[4]: None
+            # Note: This format is known to load correctly in EzCAD2, so it's not corrupted
+            self.format_version = 1
+            self.mark_contours = args[0][0] if (isinstance(args[0], (bytes, bytearray)) and len(args[0]) > 0) else 0
+            
+            # Extract embedded text strings from V1 format binary data
             self._extract_embedded_text_from_args(args)
+        elif len(args) < 42:
+            # Unknown hatch format - not old V1, and not new V2
+            self.unsupported_format = True
+            self.format_version = None
         else:
             # Parse hatch properties for supported formats
             self.mark_contours = args[0]
@@ -862,7 +878,7 @@ class EZHatch(list, EZObject):
     def _extract_embedded_text_from_args(self, args):
         """Extract UTF-16 text strings embedded in binary args for unsupported format hatches"""
         extracted_texts = []
-        
+
         # Scan through all binary arguments for UTF-16 encoded text
         for arg_index, arg in enumerate(args):
             if isinstance(arg, bytes) and len(arg) > 10:
@@ -887,7 +903,7 @@ class EZHatch(list, EZObject):
                             except UnicodeDecodeError:
                                 pass
                     i += 1
-        
+
         # Calculate position from hatch operands bounds
         x_pos, y_pos = 0.0, 0.0
         if len(self) > 0:
@@ -897,7 +913,7 @@ class EZHatch(list, EZObject):
                 x_min, y_min, x_max, y_max = bounds
                 x_pos = (x_min + x_max) / 2.0
                 y_pos = (y_min + y_max) / 2.0
-        
+
         # Add extracted text as synthetic EZText objects to this hatch
         # (appended after operands, so they don't interfere with hatch properties)
         # Following the pattern: EZText followed by EZGroup for visual representation
@@ -927,10 +943,10 @@ class EZHatch(list, EZObject):
                     self.font2 = "Arial"
                     self.hatch_loop_distance = 0.0
                     self.label = label  # Preserve the hatch label
-            
+
             synthetic_text = SyntheticText(text, x_pos, y_pos, label=self.label)
             self.append(synthetic_text)
-            
+
             # Create visual groups for each character, matching the pattern seen in other text elements
             # Each character gets its own labeled group (e.g., "DEPRESSURIZE AFTER USE!" has 21 char groups)
             # This preserves character-level labeling in the visual representation
@@ -948,27 +964,27 @@ class EZHatch(list, EZObject):
                 char_group.position = (x_pos, y_pos)
                 # We don't have cached paths for unsupported format, so group remains empty
                 # But the character label is preserved for identification in MeerK40t UI
-                
+
                 self.append(char_group)
-    
+
     def _calculate_operands_bounds(self):
         """Calculate bounding box from all non-group operands in this hatch
-        
+
         This positions extracted text at the center of all primary operands.
         """
         if not self:
             return None
-        
+
         min_x = float('inf')
         min_y = float('inf')
         max_x = float('-inf')
         max_y = float('-inf')
         found_any = False
-        
+
         def update_bounds_from_curve(obj):
             """Update bounds from curve point data"""
             nonlocal min_x, min_y, max_x, max_y, found_any
-            
+
             if hasattr(obj, 'points') and obj.points:
                 for point in obj.points:
                     if isinstance(point, (tuple, list)) and len(point) >= 2:
@@ -978,14 +994,14 @@ class EZHatch(list, EZObject):
                         max_x = max(max_x, x)
                         max_y = max(max_y, y)
                         found_any = True
-        
+
         # Only look at direct children that are operands (not groups)
         # Groups are visual representations, skip them
         for i, child in enumerate(self):
             if isinstance(child, EZGroup) or isinstance(child, list):
                 # Skip groups and visual representations
                 continue
-            
+
             # For text items that are not extracted, use their coordinates
             if hasattr(child, 'x') and hasattr(child, 'y') and hasattr(child, 'text'):
                 if not (type(child).__name__ == 'SyntheticText'):
@@ -997,11 +1013,11 @@ class EZHatch(list, EZObject):
                         max_x = max(max_x, x)
                         max_y = max(max_y, y)
                         found_any = True
-            
+
             # For curves, use point data
             if hasattr(child, 'type') and child.type == 1:  # EZCurve
                 update_bounds_from_curve(child)
-            
+
             # For rectangles
             if hasattr(child, 'x1') and hasattr(child, 'y1'):
                 min_x = min(min_x, child.x1)
@@ -1011,7 +1027,7 @@ class EZHatch(list, EZObject):
                 max_x = max(max_x, child.x2)
                 max_y = max(max_y, child.y2)
                 found_any = True
-            
+
             # For circles
             if hasattr(child, 'cx') and hasattr(child, 'cy'):
                 r = getattr(child, 'r', 0)
@@ -1020,12 +1036,12 @@ class EZHatch(list, EZObject):
                 max_x = max(max_x, child.cx + r)
                 max_y = max(max_y, child.cy + r)
                 found_any = True
-        
+
         # Return bounds if we found any valid coordinates
         if found_any and min_x != float('inf'):
             return (min_x, min_y, max_x, max_y)
         return None
-    
+
 
 object_map = {
     1: EZCurve,
