@@ -969,6 +969,10 @@ class EZHatch(list, EZObject):
         loaded as operands. We extract them and add as text objects to the hatch.
 
         Only non-empty strings containing printable characters are kept.
+        
+        Binary structure: [marker: int32] [text: UTF-16-LE] [height: int32]
+        Example: 08 00 00 00 | 4f 00 55 00 54 00 00 00 | 04 00 00 00
+                 (8)        | "OUT" in UTF-16          | (4 = height)
         """
         if not (
             len(args) > 2
@@ -1005,7 +1009,26 @@ class EZHatch(list, EZObject):
                                     has_printable
                                     and text not in extracted_texts.values()
                                 ):
-                                    extracted_texts[start] = text
+                                    # Try to extract height that follows the text
+                                    height = 0
+                                    # After UTF-16 text, look for height (int32)
+                                    height_offset = i  # i points to after the text
+                                    # Skip any null padding
+                                    while height_offset < len(data) - 4:
+                                        if data[height_offset:height_offset+4] != b'\x00\x00\x00\x00':
+                                            try:
+                                                potential_height = struct.unpack(
+                                                    '<i', data[height_offset:height_offset+4]
+                                                )[0]
+                                                # Height should be a reasonable value (1-100)
+                                                if 0 < potential_height < 1000:
+                                                    height = potential_height
+                                                    break
+                                            except struct.error:
+                                                pass
+                                        height_offset += 4
+                                    
+                                    extracted_texts[start] = (text, height)
                     except Exception:
                         pass
             i += 1
@@ -1015,18 +1038,20 @@ class EZHatch(list, EZObject):
             getattr(child, "text", "") for child in self if hasattr(child, "text")
         }
 
-        for offset, text in sorted(extracted_texts.items()):
+        for offset, text_data in sorted(extracted_texts.items()):
+            text, height = text_data if isinstance(text_data, tuple) else (text_data, 0)
             if text and text not in existing_texts:  # Double-check text is non-empty
                 # Create a simple text object and append it
                 class ExtractedText:
-                    def __init__(self, text_str):
+                    def __init__(self, text_str, height_val=0):
                         self.text = text_str
                         self.label = text_str
+                        self.height = height_val
                         self.x = 0.0
                         self.y = 0.0
                         self.pen = 0
 
-                extracted = ExtractedText(text)
+                extracted = ExtractedText(text, height)
                 self.append(extracted)
 
 
@@ -1148,9 +1173,9 @@ class EZProcessor:
         @param path: Path we should append to rather than create.
         @return:
         """
-        # Handle ExtractedText and SyntheticText (extracted from hatch binary data)
+        # Handle ExtractedText (extracted from V1 hatch binary data)
         text_conversion_factor = 0.8  # Convert EZD text height to MK fontsize
-        if type(element).__name__ in ("ExtractedText", "SyntheticText"):
+        if type(element).__name__ == "ExtractedText":
             with self.elements.node_lock:
                 mx = Matrix.scale(UNITS_PER_MM, UNITS_PER_MM)
                 mx.post_translate(self.cx, -self.cy)
