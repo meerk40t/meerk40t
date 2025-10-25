@@ -148,6 +148,8 @@ ERROR_SUCCESS = 0
 ERROR_INSUFFICIENT_BUFFER = 122
 ERROR_STILL_ACTIVE = 259
 
+INVALID_HANDLE_VALUE = -1
+
 GENERIC_READ = 0x80000000
 GENERIC_WRITE = 0x40000000
 GENERIC_EXECUTE = 0x20000000
@@ -400,26 +402,32 @@ def _get_prop(handle, key, dev_info):
     @param handle:
     @param key:
     @param dev_info:
-    @return:
+    @return: Property value as string, or None if not available
     """
-    prop_type = ctypes.c_ulong()
-    required_size = _get_required_size(handle, key, dev_info)
-    value_buffer = ctypes.create_string_buffer(required_size.value)
-    if SetupDiGetDeviceProperty(
-        handle,
-        ctypes.byref(dev_info),
-        ctypes.byref(key),
-        ctypes.byref(prop_type),
-        ctypes.byref(value_buffer),
-        required_size.value,
-        ctypes.byref(required_size),
-        0,
-    ):
-        return bytes(value_buffer).decode("utf-16").split("\0", 1)[0]
+    try:
+        prop_type = ctypes.c_ulong()
+        required_size = _get_required_size(handle, key, dev_info)
+        value_buffer = ctypes.create_string_buffer(required_size.value)
+        if SetupDiGetDeviceProperty(
+            handle,
+            ctypes.byref(dev_info),
+            ctypes.byref(key),
+            ctypes.byref(prop_type),
+            ctypes.byref(value_buffer),
+            required_size.value,
+            ctypes.byref(required_size),
+            0,
+        ):
+            return bytes(value_buffer).decode("utf-16").split("\0", 1)[0]
+    except (OSError, UnicodeDecodeError):
+        pass
+    return None
 
 
 class CH341Device:
     def __init__(self, pdo_name, desc):
+        if pdo_name is None or desc is None:
+            raise ValueError("Device name and description are required")
         self._handle = None
         self._buffer = (ctypes.c_char * 0x28)()
         self._pointer_buffer = ctypes.pointer(self._buffer)
@@ -456,7 +464,8 @@ class CH341Device:
                     DEVPROP_KEY("{a45c254e-df1c-4efd-8020-67d146a850e0}", 2),
                     devinfo,
                 )
-                yield CH341Device(pdo_name, desc)
+                if pdo_name is not None and desc is not None:
+                    yield CH341Device(pdo_name, desc)
 
             err_no = GetLastError()
             if err_no not in (ERROR_STILL_ACTIVE, ERROR_SUCCESS):
@@ -490,6 +499,8 @@ class CH341Device:
             FILE_ATTRIBUTE_NORMAL,
             0,
         )
+        if self._handle == INVALID_HANDLE_VALUE:
+            raise OSError(GetLastError(), "Failed to open device")
 
     def close(self):
         if self._handle is not None:
@@ -525,10 +536,11 @@ class CH341Device:
     def CH341WriteData(self, buffer, cmd=0x07):
         if buffer is None:
             return True
+        bulk_out = BULK_OUT(bytes(buffer), cmd=cmd)
         return self.ioctl(
             CH341_DEVICE_IO,
-            ctypes.pointer(BULK_OUT(bytes(buffer), cmd=cmd)),
-            len(buffer) + 8,
+            ctypes.pointer(bulk_out),
+            ctypes.sizeof(bulk_out),
             self._pointer_buffer,
             0x8,
         )
@@ -597,7 +609,8 @@ class CH341Device:
             self._pointer_buffer,
             0x28,
         )
-        return struct.unpack("<h", self.buffer)[0]
+        buffer_data = bytes(self.buffer)
+        return struct.unpack("<h", buffer_data)[0]
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
         value = 0x2525
@@ -619,17 +632,44 @@ class CH341Device:
 
 
 if __name__ == "__main__":
-    for device in CH341Device.enumerate_devices():
-        print(device)
-        print(device.name)
-        # device.open()
+    print("CH341 Device Test - This will interact with hardware")
+    print("Available devices:")
+    devices = list(CH341Device.enumerate_devices())
+    if not devices:
+        print("No CH341 devices found.")
+        exit(0)
+
+    for i, device in enumerate(devices):
+        print(f"{i}: {device.name}")
+
+    try:
+        choice = input("Enter device number to test (or 'q' to quit): ")
+        if choice.lower() == 'q':
+            exit(0)
+        device_idx = int(choice)
+        device = devices[device_idx]
+    except (ValueError, IndexError):
+        print("Invalid choice.")
+        exit(1)
+
+    print(f"Testing device: {device.name}")
+    try:
         with device:
+            print("Testing basic read/write...")
             device.CH341WriteData(b"\xA0")
             data = device.CH341ReadData(8)
-            print(data)
+            print(f"Read data: {data}")
+
+            print("Initializing parallel mode...")
             device.CH341InitParallel()
             status = device.CH341GetStatus()
-            print(status)
-            status = device.CH341GetVerIC()
-            print(status)
-            device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
+            print(f"Status: {status}")
+
+            version = device.CH341GetVerIC()
+            print(f"Version: {version}")
+
+            print("Test completed successfully.")
+    except Exception as e:
+        print(f"Test failed: {e}")
+        import traceback
+        traceback.print_exc()
