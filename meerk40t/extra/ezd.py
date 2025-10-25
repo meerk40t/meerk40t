@@ -1,13 +1,167 @@
 """
 Parser for .ezd files.
 
-These are a working type file produced by EZCad2™. They contain several pens and different settings that were used by
-the program when the file was saved. The vector objects consist of a series of laser-ready commands/shapes which refer
-to the required pen. Some modification objects like hatch and spiral work like a group containing other sub-elements
-and also contain the cached curve/path data. The image objects contain a standard 24 bit bitmap image. All elements
-are coordinated relative to the center of the working area and, it is much more common to be given the center point than
-a specific corner. Nearly all coordinates are in mm, and denote the deviation from the center point.
+EZD (EZCad2) files are proprietary binary files produced by EZCad2 laser engraving software.
+These files contain complete laser cutting/engraving projects with vector graphics, text, images,
+hatch patterns, and all associated processing parameters.
 
+FILE FORMAT OVERVIEW:
+====================
+
+EZD files use a complex binary structure with the following main sections:
+
+1. HEADER (176 bytes total):
+   - Magic number: "EZCADUNI" (16 bytes, UTF-16)
+   - Version info: Two int32 values (typically 0, 2001)
+   - Metadata strings: Three 60-byte UTF-16 strings (user info, software version, etc.)
+   - Additional header data: 140 bytes (purpose unknown)
+
+2. SEEK TABLE (28 bytes):
+   - Contains 7 int32 offsets pointing to different data sections:
+     * Preview bitmap location
+     * V1 table (usually unused)
+     * Pen definitions
+     * Font table
+     * V4 table (unknown purpose)
+     * Vector objects (main content)
+     * Pre-vector data (usually empty)
+
+3. UNKNOWN SECTION (96 bytes):
+   - Padding or reserved space between seek table and content
+
+4. DATA TABLES (parsed via seek table offsets):
+   - Preview: RGB bitmap of the design
+   - Pens: Up to 256 laser parameter sets (power, speed, frequency, etc.)
+   - Fonts: Font names used in text objects
+   - Vectors: Huffman-compressed main content containing all design elements
+
+VECTOR DATA STRUCTURE:
+=====================
+
+The main vector section contains Huffman-compressed binary data that expands to a stream
+of EZ objects. Each object follows this structure:
+
+- Object Type (int32): Identifies the object class (1=Curve, 3=Rect, 4=Circle, etc.)
+- Object Header (15 fields): Common properties for all objects
+  * pen: Laser parameter set index (0-255)
+  * type/state: Object flags (selected, hidden, locked)
+  * label: Object name/description
+  * position: X,Y coordinates (relative to design center)
+  * z_pos: Z-axis position
+  * Various other properties (array settings, input/output bits, etc.)
+- Object-specific data: Variable-length data depending on object type
+- Child count (int32): Number of child objects (for groups/containers)
+- Child objects: Recursively nested EZ objects
+
+OBJECT TYPES:
+============
+
+Primitive Shapes:
+- EZCurve (1): Multi-contour paths with line/quadratic/cubic segments
+- EZRect (3): Rectangles with optional corner rounding
+- EZCircle (4): Circles/ellipses with center/radius
+- EZEllipse (5): Ellipses with bounding box and rotation
+- EZPolygon (6): Regular polygons (triangle, square, etc.)
+
+Text and Images:
+- EZText (0x800): Text objects with font, size, position
+- EZImage (0x40): Bitmap images with processing parameters
+
+Groups and Modifications:
+- EZGroup (0x10): Object collections/groups
+- EZCombine (0x30): Combined path operations
+- EZHatch (0x20): Hatch patterns applied to child objects
+- EZSpiral (0x60): Spiral distortions of child objects
+
+Control Objects:
+- EZTimer (0x2000): Wait/delay commands
+- EZInput (0x3000): Wait for external input signals
+- EZOutput (0x4000): Send output signals
+- EZEncoderDistance (0x6000): Rotary encoder movements
+- EZExtendAxis (0x5000): Extended axis control
+
+Special Objects:
+- EZVectorFile (0x50): Imported vector files (SVG, DXF, etc.)
+
+HATCH OBJECTS:
+=============
+
+Hatch objects are complex containers that apply laser fill patterns to child geometry.
+They support up to 3 simultaneous hatch patterns with different angles, spacings, and parameters.
+
+Two main hatch formats exist:
+
+V1 Format (Legacy):
+- Used in older EZD files
+- Properties stored in big-endian binary blob (512 bytes)
+- Limited to basic hatch1 parameters
+- May contain embedded UTF-16 text labels
+- Format version = 1
+
+V2+ Format (Modern):
+- Properties in separate parsed fields (42+ arguments)
+- Support for hatch1, hatch2, hatch3 patterns
+- Advanced parameters (crosshatch, follow-edge, etc.)
+- Format version = None (modern)
+
+Hatch patterns include:
+- Line spacing and angle
+- Edge offsets and loop counts
+- Crosshatching and edge following
+- Multiple pen assignments
+
+COMPRESSION:
+===========
+
+Vector data uses Huffman compression for efficient storage:
+- Header: uncompressed_size (int32) + 4 unknown fields (16 bytes)
+- Huffman table: character->bit mappings
+- Compressed data: bit stream decoded using the table
+- Result: Stream of EZ objects parsed sequentially
+
+COORDINATE SYSTEM:
+=================
+
+- Origin: Center of working area (not corner)
+- Units: Millimeters for all measurements
+- Y-axis: Positive Y = upward (opposite of some graphics formats)
+- Precision: Double-precision floating point (8 bytes per coordinate)
+
+All coordinates are relative to the design center. The working area size determines
+the coordinate bounds, with objects positioned relative to (0,0) at the center.
+
+PEN SYSTEM:
+==========
+
+Up to 256 pen definitions containing complete laser parameters:
+- Color: RGB display color (BGR byte order)
+- Label: Pen name/description
+- Power: Laser power (0-100%, stored as 0-1000)
+- Speed: Movement speed (mm/min)
+- Frequency: Pulse frequency (kHz, stored as Hz/1000)
+- Passes: Number of repetitions
+- Various timing and control parameters
+
+TEXT ENCODING:
+=============
+
+Text uses UTF-16-LE encoding:
+- Character bytes: [low_byte, high_byte] per character
+- Null termination: Double null bytes (0x00 0x00)
+- Example: "OUT" = 4F 00 55 00 54 00 00 00
+
+Some objects embed text directly in binary data streams rather than as separate fields.
+
+COMPATIBILITY NOTES:
+==================
+
+- V1 hatch format is partially supported (basic parameters only)
+- Some advanced EZCad2 features may not be fully implemented
+- File corruption can occur with unknown object types
+- Coordinate transformations may be needed for different laser systems
+
+This parser aims to extract all accessible design data while gracefully handling
+unknown or unsupported elements.
 """
 
 import math
@@ -499,10 +653,8 @@ class EZCurve(EZObject):
             # Unk1 is 2 for a weird node. with t equal 0.
             if curve_type == 0:
                 d = struct.unpack(f"<5d", file.read(40))
-                # print(d)
                 continue
             (pt_count,) = struct.unpack("<i", file.read(4))
-            # print(unk1, curve_type, unk2, unk2, pt_count)
             pts.append(
                 (
                     curve_type,
@@ -726,7 +878,6 @@ class EZText(EZObject):
             extradata2 = _parse_struct(file)
             _construct(extradata2)
         (unk,) = struct.unpack("<i", file.read(4))
-        # print (f"EZText: '{self.text}'\nHeight: {self.height} Font: '{self.font}' Extra Count: {count} Unk: {unk}")
 
 
 class EZImage(EZObject):
@@ -789,10 +940,22 @@ class EZHatch(list, EZObject):
         self.unsupported_format = False
         self.format_version = None
         self.group = None
-
+        self.x = 0
+        self.y = 0
+        self.hatch1_angle_inc = None
+        self.hatch2_angle_inc = None
+        self.hatch3_angle_inc = None
+        self.hatch1_angle = 0
+        self.hatch2_angle = 0
+        self.hatch3_angle = 0
+        self.hatch1_enabled = False
+        self.hatch2_enabled = False 
+        self.hatch3_enabled = False 
+        self.hatch1_number_of_loops = 1
+        self.hatch2_number_of_loops = 1
+        self.hatch3_number_of_loops = 1
         # Now parse hatch-specific properties
         args = _parse_struct(file)
-        self.raw_args = args  # STORE RAW ARGS FOR ANALYSIS
         _construct(args)
 
         if len(args) >= 3 and len(args) < 6:
@@ -816,6 +979,9 @@ class EZHatch(list, EZObject):
             # Extract any additional text strings embedded in V1 binary data
             # These are labels/text that may not be in the operand list
             self._extract_v1_embedded_text(args)
+
+            # DEBUG: Try to decode potential Huffman-encoded vector data in args[2]
+            self._extract_v1_embedded_vectors(args)
         elif len(args) < 42:
             # Unknown hatch format - not old V1, and not new V2
             self.unsupported_format = True
@@ -1052,7 +1218,70 @@ class EZHatch(list, EZObject):
                         self.pen = 0
 
                 extracted = ExtractedText(text, height)
+                extracted.x += self.x
+                extracted.y += self.y
                 self.append(extracted)
+
+    def _extract_v1_embedded_vectors(self, args):
+        """
+        Try to extract Huffman-encoded vector data embedded in V1 hatch binary data.
+
+        V1 format may contain compressed vector data in args[2] that represents
+        the actual hatch pattern geometry. This tries to decode potential Huffman
+        compressed sections and parse them as EZ objects.
+        """
+        if not (
+            len(args) > 2
+            and isinstance(args[2], (bytes, bytearray))
+            and len(args[2]) >= 20  # Minimum size for Huffman header
+        ):
+            return
+
+        data = args[2]
+        extracted_vectors = []
+
+        # Look for potential Huffman headers in the data
+        # Huffman data starts with: uncompressed_length (4 bytes) + 4 unknown ints (16 bytes) = 20 bytes header
+        i = 0
+        while i < len(data) - 20:
+            try:
+                # Check for potential Huffman header
+                uncompressed_length = struct.unpack('<I', data[i:i+4])[0]
+                if uncompressed_length > 0 and uncompressed_length < 100000:  # Reasonable size limit
+                    # Try to decode this as Huffman data
+                    try:
+                        from io import BytesIO
+                        temp_file = BytesIO(data[i:])  # Pass the rest of the data
+                        decoded_data = _huffman_decode_python(temp_file, uncompressed_length)
+                        
+                        if decoded_data:
+                            # Try to parse the decoded data as EZ objects
+                            bio = BytesIO(decoded_data)
+                            temp_objects = []
+                            while parse_object(bio, temp_objects):
+                                pass
+                            
+                            if temp_objects:
+                                # Add the decoded objects to our hatch
+                                extracted_vectors.extend(temp_objects)
+                                break  # Found valid data, stop searching
+                                
+                    except Exception as e:
+                        # Not valid Huffman data, continue searching
+                        pass
+            except struct.error:
+                pass
+            
+            i += 4  # Move to next potential 4-byte boundary
+
+        # Add any extracted vector objects
+        for vector_obj in extracted_vectors:
+            # Adjust position relative to hatch
+            if hasattr(vector_obj, 'x'):
+                vector_obj.x += self.x
+            if hasattr(vector_obj, 'y'):
+                vector_obj.y += self.y
+            self.append(vector_obj)
 
 
 object_map = {
@@ -1152,10 +1381,10 @@ class EZProcessor:
 
         # Otherwise, create or lookup operation based on element's pen
         p = ez.pens[element.pen]
-        op_add = self.operations.get(element.pen, None)
+        op_add = self.operations.get(f"{element.pen}_{op_type}", None)
         if op_add is None:
             op_add = op.add(type=op_type, **p.__dict__)
-            self.operations[element.pen] = op_add
+            self.operations[f"{element.pen}_{op_type}"] = op_add
         op_add.add_reference(node)
         if hasattr(node, "stroke"):
             node.stroke = op_add.color
@@ -1182,34 +1411,33 @@ class EZProcessor:
                 node = elem.add(
                     type="elem text",
                     text=element.text,
+                    label=element.label,
                     x=element.x,
                     y=element.y,
                     matrix=mx,
                     settings={ "font-size": getattr(element, "height", 10) * text_conversion_factor },
                 )
-                op_add = self._add_pen_reference(
-                    ez, element, op, node, op_add, "op engrave"
+                text_op = self._add_pen_reference(
+                    ez, element, op, node, None, "op raster"
                 )
         elif isinstance(element, EZText):
             with self.elements.node_lock:
-                print(
-                    f"Text: '{element.text}' Font: '{element.font}' Height: {element.height}mm, x={element.x} y={element.y}"
-                )
                 # ezcad positive y is top, negative y is down, mk is positive
                 # Standard text size 12pt = 4.233mm height
                 mx = Matrix.scale(UNITS_PER_MM, UNITS_PER_MM)
-                mx.post_translate(self.cx, -self.cy)
+                mx.post_translate(self.cx, self.cy)
                 # 1px = 0.264583mm
                 node = elem.add(
                     type="elem text",
                     text=element.text,
                     x=element.x,
                     y=element.y,
+                    label=element.label,
                     matrix=mx,
                     settings={ "font-size": element.height * text_conversion_factor },
                 )
-                op_add = self._add_pen_reference(
-                    ez, element, op, node, op_add, "op engrave"
+                text_op = self._add_pen_reference(
+                    ez, element, op, node, None, "op raster"
                 )
         elif isinstance(element, EZCurve):
             points = element.points
@@ -1430,9 +1658,28 @@ class EZProcessor:
                     del p["label"]
                 if not element.unsupported_format:
                     # Cannot process old-format hatch.
+                    # Translate a couple of properties.
+                    if element.mark_contours:
+                        p["include_outlines"] = True
+                    if element.hatch1_enabled:
+                        p["hatch_angle"] = f"{element.hatch1_angle}deg"
+                        if element.hatch1_angle_inc:
+                            p["hatch_angle_delta"] = f"{element.hatch1_angle_inc}deg"
+                        if element.hatch1_number_of_loops:
+                            p["loops"] = element.hatch1_number_of_loops
+                    elif element.hatch2_enabled:
+                        p["hatch_angle"] = f"{element.hatch2_angle}deg"
+                        if element.hatch2_angle_inc:
+                            p["hatch_angle_delta"] = f"{element.hatch2_angle_inc}deg"
+                        if element.hatch2_number_of_loops:
+                            p["loops"] = element.hatch2_number_of_loops
+                    elif element.hatch3_enabled:
+                        p["hatch_angle"] = f"{element.hatch3_angle}deg"
+                        if element.hatch3_angle_inc:
+                            p["hatch_angle_delta"] = f"{element.hatch3_angle_inc}deg"
+                        if element.hatch3_number_of_loops:
+                            p["loops"] = element.hatch3_number_of_loops
                     op_add.add(type="effect hatch", **p, label=element.label)
-                # else:
-                #     print (f"Unsupported hatch: {element.raw_args}")
             for child in element:
                 # Operands for the hatch (including extracted text for unsupported formats).
                 # The op_add is passed to ensure child uses hatch's pen/operation
