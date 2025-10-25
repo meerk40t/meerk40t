@@ -14,6 +14,7 @@ import struct
 from io import BytesIO
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.node import Linecap, Linejoin   
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
@@ -899,7 +900,7 @@ class EZHatch(list, EZObject):
                                     if text and len(text) > 0 and text.lower() not in ("arial", ""):
                                         if text not in extracted_texts:
                                             extracted_texts.append(text)
-                                            print(f"Extracted text from EZHatch args[{arg_index}]: '{text}'")
+                                            # print(f"Extracted text from EZHatch args[{arg_index}]: '{text}'")
                             except UnicodeDecodeError:
                                 pass
                     i += 1
@@ -1130,9 +1131,17 @@ class EZProcessor:
             self.parse(ez, f, file_node, self.op_branch)
 
     def _add_pen_reference(self, ez, element, op, node, op_add, op_type):
+        # If op_add is provided (e.g., from a parent hatch), use it directly
+        # without looking up the element's pen
+        if op_add is not None:
+            op_add.add_reference(node)
+            if hasattr(node, "stroke"):
+                node.stroke = op_add.color
+            return op_add
+        
+        # Otherwise, create or lookup operation based on element's pen
         p = ez.pens[element.pen]
-        if op_add is None:
-            op_add = self.operations.get(element.pen, None)
+        op_add = self.operations.get(element.pen, None)
         if op_add is None:
             op_add = op.add(type=op_type, **p.__dict__)
             self.operations[element.pen] = op_add
@@ -1198,6 +1207,8 @@ class EZProcessor:
                     path=path,
                     stroke_width=self.elements.default_strokewidth,
                     label=element.label,
+                    linecap = Linecap.CAP_BUTT,
+                    linejoin = Linejoin.JOIN_BEVEL,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZPolygon):
@@ -1222,6 +1233,8 @@ class EZProcessor:
                     shape=polyline,
                     stroke_width=self.elements.default_strokewidth,
                     label=element.label,
+                    linecap = Linecap.CAP_BUTT,
+                    linejoin = Linejoin.JOIN_BEVEL,
                 )
                 op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, EZCircle):
@@ -1341,7 +1354,15 @@ class EZProcessor:
                 # (self, ez, element, elem, op)
                 self.parse(ez, child, elem, op, op_add=op_add, path=path)
         elif isinstance(element, EZHatch):
-            p = dict(ez.pens[element.pen].__dict__)
+            # Determine the correct pen for this hatch
+            # For V2+ hatches, use hatch1_pen (first hatch pattern's pen)
+            # For V1 hatches or those without hatch1_pen, fall back to element.pen
+            hatch_pen = element.pen
+            if not element.unsupported_format and hasattr(element, 'hatch1_pen'):
+                # Use the hatch's actual pen from hatch properties
+                hatch_pen = element.hatch1_pen
+            
+            p = dict(ez.pens[hatch_pen].__dict__)
             with self.elements.node_lock:
                 op_add = op.add(type="op engrave", **p)
                 if "label" in p:
@@ -1350,14 +1371,18 @@ class EZProcessor:
                 if not element.unsupported_format:
                     # Cannot process old-format hatch.
                     op_add.add(type="effect hatch", **p, label=element.label)
+                # else:
+                #     print (f"Unsupported hatch: {element.raw_args}")
             for child in element:
                 # Operands for the hatch (including extracted text for unsupported formats).
+                # The op_add is passed to ensure child uses hatch's pen/operation
                 self.parse(ez, child, elem, op, op_add=op_add)
 
             if element.group:
                 path = Path(stroke="black", transform=self.matrix)
                 for child in element.group:
                     # Per-completed hatch elements.
+                    # The op_add is passed to ensure child uses hatch's pen/operation
                     self.parse(ez, child, elem, op, op_add=op_add, path=path)
 
                 with self.elements.node_lock:
@@ -1367,6 +1392,8 @@ class EZProcessor:
                         path=path,
                         stroke_width=self.elements.default_strokewidth,
                         label=element.label,
+                        linecap = Linecap.CAP_BUTT,
+                        linejoin = Linejoin.JOIN_BEVEL,
                     )
                     op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, (EZGroup, EZCombine)):
