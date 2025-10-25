@@ -1354,11 +1354,22 @@ class EZProcessor:
                     )
                     op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
         elif isinstance(element, (EZGroup, EZCombine)):
-            with self.elements.node_lock:
-                elem = elem.add(type="group", label=element.label)
-            # recurse to children
-            for child in element:
+            # If group contains only a single element, skip the group and promote the element
+            # The element inherits the group's label if it doesn't have its own
+            if len(element) == 1:
+                child = element[0]
+                # Inherit group label if child has no label
+                if not hasattr(child, 'label') or not child.label:
+                    child.label = element.label
+                # Parse child directly in parent context, skipping group creation
                 self.parse(ez, child, elem, op, op_add=op_add, path=path)
+            else:
+                # Group has multiple children or is empty, create it normally
+                with self.elements.node_lock:
+                    elem = elem.add(type="group", label=element.label)
+                # recurse to children
+                for child in element:
+                    self.parse(ez, child, elem, op, op_add=op_add, path=path)
         elif isinstance(element, EZSpiral):
             with self.elements.node_lock:
                 elem = elem.add(type="group", label=element.label)
