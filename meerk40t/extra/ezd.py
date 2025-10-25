@@ -9,12 +9,13 @@ are coordinated relative to the center of the working area and, it is much more 
 a specific corner. Nearly all coordinates are in mm, and denote the deviation from the center point.
 
 """
+
 import math
 import struct
 from io import BytesIO
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.core.node.node import Linecap, Linejoin   
+from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
@@ -330,7 +331,7 @@ class EZCFile:
 
         # RGB0
         self._preview_bitmap.extend(
-            struct.unpack(f"<{int(width*height)}I", file.read(4 * width * height))
+            struct.unpack(f"<{int(width * height)}I", file.read(4 * width * height))
         )
 
     def parse_font(self, file):
@@ -773,7 +774,7 @@ class EZHatch(list, EZObject):
     Hatch is a modification group. All three hatch elements are given properties for each hatch. The hatch contains
     the actual elements that were to be given a hatch. As well as a cache-group of curve items that actually are the
     given hatch properly rendered.
-    
+
     The structure is:
     - EZObject header (15 fields, including children count which populates this list)
     - Hatch properties struct (variable size: 42+ fields)
@@ -782,30 +783,39 @@ class EZHatch(list, EZObject):
 
     def __init__(self, file):
         list.__init__(self)
-        EZObject.__init__(self, file)  # This parses header and children into self (list)
+        EZObject.__init__(
+            self, file
+        )  # This parses header and children into self (list)
         self.unsupported_format = False
         self.format_version = None
         self.group = None
-        
+
         # Now parse hatch-specific properties
         args = _parse_struct(file)
         self.raw_args = args  # STORE RAW ARGS FOR ANALYSIS
         _construct(args)
-        
-        if len(args) == 5:
-            # Old hatch format (V1) - used in earlier EZD file versions
-            # This format has basic hatch properties in 5 args:
+
+        if len(args) >= 3 and len(args) < 6:
+            # Old hatch format (V1 and variants) - used in earlier EZD file versions
+            # Variants exist with 3, 4, or 5 args, all following the same basic structure:
             # - args[0]: 15 bytes of basic settings
-            # - args[1]: None
-            # - args[2]: 512 bytes of operand/pattern data with embedded text strings
-            # - args[3]: None
-            # - args[4]: None
+            # - args[1]: None (or may vary)
+            # - args[2]: 512 bytes of operand/pattern data with embedded text strings and hatch config
+            # - args[3+]: None or additional padding (variable)
             # Note: This format is known to load correctly in EzCAD2, so it's not corrupted
             self.format_version = 1
-            self.mark_contours = args[0][0] if (isinstance(args[0], (bytes, bytearray)) and len(args[0]) > 0) else 0
-            
-            # Extract embedded text strings from V1 format binary data
-            self._extract_embedded_text_from_args(args)
+            self.mark_contours = (
+                args[0][0]
+                if (isinstance(args[0], (bytes, bytearray)) and len(args[0]) > 0)
+                else 0
+            )
+
+            # Extract V1 hatch configuration properties from args[2]
+            self._extract_v1_properties(args)
+
+            # Extract any additional text strings embedded in V1 binary data
+            # These are labels/text that may not be in the operand list
+            self._extract_v1_embedded_text(args)
         elif len(args) < 42:
             # Unknown hatch format - not old V1, and not new V2
             self.unsupported_format = True
@@ -865,7 +875,7 @@ class EZHatch(list, EZObject):
             except IndexError:
                 # Older Version without count values.
                 pass
-        
+
         # Try to parse the cached group that represents the hatch output
         tell = file.tell()
         try:
@@ -875,173 +885,149 @@ class EZHatch(list, EZObject):
                 self.group = EZGroup(file)
         except struct.error:
             pass
-    
-    def _extract_embedded_text_from_args(self, args):
-        """Extract UTF-16 text strings embedded in binary args for unsupported format hatches"""
-        extracted_texts = []
 
-        # Scan through all binary arguments for UTF-16 encoded text
-        for arg_index, arg in enumerate(args):
-            if isinstance(arg, bytes) and len(arg) > 10:
-                # Scan for UTF-16 encoded strings (pattern: non-zero, zero, non-zero, zero...)
-                i = 0
-                while i < len(arg) - 2:
-                    if arg[i+1] == 0 and arg[i] != 0:  # Potential UTF-16 start
-                        # Find the extent of the UTF-16 string
-                        start = i
-                        while i < len(arg) - 1 and arg[i+1] == 0 and arg[i] != 0:
-                            i += 2
-                        if i > start + 2:  # At least 2 characters
-                            try:
-                                text_bytes = arg[start:i]
-                                if len(text_bytes) % 2 == 0:
-                                    text = text_bytes.decode('utf-16').rstrip('\x00')
-                                    # Keep text if it's not empty, not a font name, and not already extracted
-                                    if text and len(text) > 0 and text.lower() not in ("arial", ""):
-                                        if text not in extracted_texts:
-                                            extracted_texts.append(text)
-                                            # print(f"Extracted text from EZHatch args[{arg_index}]: '{text}'")
-                            except UnicodeDecodeError:
-                                pass
-                    i += 1
-
-        # Calculate position from hatch operands bounds
-        x_pos, y_pos = 0.0, 0.0
-        if len(self) > 0:
-            # Calculate bounds from all operands
-            bounds = self._calculate_operands_bounds()
-            if bounds:
-                x_min, y_min, x_max, y_max = bounds
-                x_pos = (x_min + x_max) / 2.0
-                y_pos = (y_min + y_max) / 2.0
-
-        # Add extracted text as synthetic EZText objects to this hatch
-        # (appended after operands, so they don't interfere with hatch properties)
-        # Following the pattern: EZText followed by EZGroup for visual representation
-        for text in extracted_texts:
-            class SyntheticText:
-                """Synthetic text object created from extracted binary data"""
-                def __init__(self, text_str, x, y, label=None):
-                    self.text = text_str
-                    self.x = x
-                    self.y = y
-                    self.height = 5.0
-                    self.font = "Arial"
-                    self.font_angle = 0.0
-                    self.text_space_setting = 0  # auto
-                    self.text_space = 0.0
-                    self.char_space = 0.0
-                    self.line_space = 0.0
-                    self.pen = 2  # Use hatch pen
-                    self.circle_text_enable = False
-                    self.circle_text_diameter = 0.0
-                    self.circle_text_base_angle = 0.0
-                    self.circle_text_range_limit_enable = False
-                    self.circle_text_range_limit_angle = 0.0
-                    self.save_options = 0
-                    self.save_filename = ""
-                    self.circle_text_button_flags = 0
-                    self.font2 = "Arial"
-                    self.hatch_loop_distance = 0.0
-                    self.label = label  # Preserve the hatch label
-
-            synthetic_text = SyntheticText(text, x_pos, y_pos, label=self.label)
-            self.append(synthetic_text)
-
-            # Create visual groups for each character, matching the pattern seen in other text elements
-            # Each character gets its own labeled group (e.g., "DEPRESSURIZE AFTER USE!" has 21 char groups)
-            # This preserves character-level labeling in the visual representation
-            for char in text:
-                char_group = EZGroup.__new__(EZGroup)
-                list.__init__(char_group)
-                # Initialize with group attributes
-                char_group.type = 15  # EZGroup type
-                char_group.pen = self.pen
-                char_group.state = 0
-                char_group.selected = False
-                char_group.hidden = False
-                char_group.locked = False
-                char_group.label = char  # Label each group with its character
-                char_group.position = (x_pos, y_pos)
-                # We don't have cached paths for unsupported format, so group remains empty
-                # But the character label is preserved for identification in MeerK40t UI
-
-                self.append(char_group)
-
-    def _calculate_operands_bounds(self):
-        """Calculate bounding box from all non-group operands in this hatch
-
-        This positions extracted text at the center of all primary operands.
+    def _extract_v1_properties(self, args):
         """
-        if not self:
-            return None
+        Extract hatch configuration properties from V1 format operand stream.
 
-        min_x = float('inf')
-        min_y = float('inf')
-        max_x = float('-inf')
-        max_y = float('-inf')
-        found_any = False
+        V1 format stores hatch properties in args[2] (512-byte operand/pattern data).
+        The data is big-endian encoded, unlike the V2+ args which are in separate fields.
 
-        def update_bounds_from_curve(obj):
-            """Update bounds from curve point data"""
-            nonlocal min_x, min_y, max_x, max_y, found_any
+        In Ezcad2, only hatch1 (the first hatch) is reliably saved/restored.
+        Hatches 2 and 3 may not have valid data. This implementation extracts hatch1 only.
 
-            if hasattr(obj, 'points') and obj.points:
-                for point in obj.points:
-                    if isinstance(point, (tuple, list)) and len(point) >= 2:
-                        x, y = point[0], point[1]
-                        min_x = min(min_x, x)
-                        min_y = min(min_y, y)
-                        max_x = max(max_x, x)
-                        max_y = max(max_y, y)
-                        found_any = True
+        Hatch1 properties extracted:
+        - pen: int32 BE at offset 4 (0-255)
+        - type: int32 BE at offset 8 (contains flag bits - see below)
+        - angle: int32 BE at offset 112 (0-360)
+        - enabled: always 1 (true) for V1 (enabled hatches are what gets saved)
+        - all_calc: bool extracted from type bits (0x1)
+        - follow_edge: bool extracted from type bits (0x2)
+        - crosshatch: bool extracted from type bits (0x400)
+        - average_distribute: inferred from type configuration (set true for safety)
+        - count, line_space, offsets, line_reduction: Default values matching V2+ format
 
-        # Only look at direct children that are operands (not groups)
-        # Groups are visual representations, skip them
-        for i, child in enumerate(self):
-            if isinstance(child, EZGroup) or isinstance(child, list):
-                # Skip groups and visual representations
-                continue
+        Note: V1 format doesn't reliably store all properties, so some use sensible defaults.
+        """
+        if not (
+            len(args) > 2
+            and isinstance(args[2], (bytes, bytearray))
+            and len(args[2]) >= 116
+        ):
+            # Not enough data to extract hatch1 properties
+            return
 
-            # For text items that are not extracted, use their coordinates
-            if hasattr(child, 'x') and hasattr(child, 'y') and hasattr(child, 'text'):
-                if not (type(child).__name__ == 'SyntheticText'):
-                    x = getattr(child, 'x', None)
-                    y = getattr(child, 'y', None)
-                    if x is not None and y is not None:
-                        min_x = min(min_x, x)
-                        min_y = min(min_y, y)
-                        max_x = max(max_x, x)
-                        max_y = max(max_y, y)
-                        found_any = True
+        data = args[2]
 
-            # For curves, use point data
-            if hasattr(child, 'type') and child.type == 1:  # EZCurve
-                update_bounds_from_curve(child)
+        try:
+            import struct
 
-            # For rectangles
-            if hasattr(child, 'x1') and hasattr(child, 'y1'):
-                min_x = min(min_x, child.x1)
-                min_y = min(min_y, child.y1)
-                found_any = True
-            if hasattr(child, 'x2') and hasattr(child, 'y2'):
-                max_x = max(max_x, child.x2)
-                max_y = max(max_y, child.y2)
-                found_any = True
+            # Extract HATCH 1 - the only reliably valid hatch in V1 format
+            self.hatch1_pen = struct.unpack_from(">I", data, 4)[0]
 
-            # For circles
-            if hasattr(child, 'cx') and hasattr(child, 'cy'):
-                r = getattr(child, 'r', 0)
-                min_x = min(min_x, child.cx - r)
-                min_y = min(min_y, child.cy - r)
-                max_x = max(max_x, child.cx + r)
-                max_y = max(max_y, child.cy + r)
-                found_any = True
+            # Extract type and decode flag bits
+            hatch_type_val = struct.unpack_from(">I", data, 8)[0]
+            self.hatch1_type = hatch_type_val
 
-        # Return bounds if we found any valid coordinates
-        if found_any and min_x != float('inf'):
-            return (min_x, min_y, max_x, max_y)
-        return None
+            # Decode type flag bits (matching V2+ format bit positions)
+            self.hatch1_type_all_calc = bool(hatch_type_val & 0x1)  # Bit 0
+            self.hatch1_type_follow_edge = bool(hatch_type_val & 0x2)  # Bit 1
+            self.hatch1_type_crosshatch = bool(
+                hatch_type_val & 0x400
+            )  # Bit 10 (0x400 = 1024)
+
+            # Extract angle
+            angle_int = struct.unpack_from(">i", data, 112)[0]
+            self.hatch1_angle = float(angle_int)
+
+            # Hatch1 is enabled if it's being saved in V1 format
+            self.hatch1_enabled = 1
+
+            # Set remaining properties using standard V1 defaults
+            # (These match what Ezcad2 typically uses for new hatches)
+            self.hatch1_count = 6
+            self.hatch1_line_space = 0.03
+            self.hatch1_edge_offset = 0.0
+            self.hatch1_start_offset = 0.0
+            self.hatch1_end_offset = 0.0
+            self.hatch1_line_reduction = 0.0
+
+            # average_distribute: typically true for normal hatching
+            # (not in direct args, but set for compatibility with V2+ processing)
+            self.hatch1_average_distribute = 1
+
+        except (struct.error, IndexError, TypeError):
+            # If extraction fails, leave properties unset
+            pass
+
+    def _extract_v1_embedded_text(self, args):
+        """
+        Extract UTF-16 text strings embedded in V1 hatch binary data.
+
+        V1 format stores text labels (like "OUT") in the args[2] binary stream.
+        These are font name references and hatch labels that may not be directly
+        loaded as operands. We extract them and add as text objects to the hatch.
+
+        Only non-empty strings containing printable characters are kept.
+        """
+        if not (
+            len(args) > 2
+            and isinstance(args[2], (bytes, bytearray))
+            and len(args[2]) >= 2
+        ):
+            return
+
+        data = args[2]
+        extracted_texts = {}
+
+        # Scan for UTF-16 encoded strings
+        i = 0
+        while i < len(data) - 2:
+            if data[i + 1] == 0 and data[i] != 0:  # Potential UTF-16 start
+                start = i
+                while i < len(data) - 1 and data[i + 1] == 0 and data[i] != 0:
+                    i += 2
+                if i > start + 2:
+                    try:
+                        text_bytes = data[start:i]
+                        if len(text_bytes) % 2 == 0:
+                            text = text_bytes.decode("utf-16").rstrip("\x00")
+                            # Only keep strings that:
+                            # 1. Are non-empty
+                            # 2. Are not font names
+                            # 3. Contain at least one alphanumeric or visible character
+                            if text and text.lower() not in ("arial", ""):
+                                # Check for at least one printable character
+                                has_printable = any(
+                                    c.isalnum() or c in " -_." for c in text
+                                )
+                                if (
+                                    has_printable
+                                    and text not in extracted_texts.values()
+                                ):
+                                    extracted_texts[start] = text
+                    except Exception:
+                        pass
+            i += 1
+
+        # Add extracted texts that aren't already in operands
+        existing_texts = {
+            getattr(child, "text", "") for child in self if hasattr(child, "text")
+        }
+
+        for offset, text in sorted(extracted_texts.items()):
+            if text and text not in existing_texts:  # Double-check text is non-empty
+                # Create a simple text object and append it
+                class ExtractedText:
+                    def __init__(self, text_str):
+                        self.text = text_str
+                        self.label = text_str
+                        self.x = 0.0
+                        self.y = 0.0
+                        self.pen = 0
+
+                extracted = ExtractedText(text)
+                self.append(extracted)
 
 
 object_map = {
@@ -1138,7 +1124,7 @@ class EZProcessor:
             if hasattr(node, "stroke"):
                 node.stroke = op_add.color
             return op_add
-        
+
         # Otherwise, create or lookup operation based on element's pen
         p = ez.pens[element.pen]
         op_add = self.operations.get(element.pen, None)
@@ -1162,22 +1148,51 @@ class EZProcessor:
         @param path: Path we should append to rather than create.
         @return:
         """
-        # Handle SyntheticText (extracted from unsupported hatch formats)
-        if type(element).__name__ == 'SyntheticText':
+        # Handle ExtractedText and SyntheticText (extracted from hatch binary data)
+        text_conversion_factor = 0.8  # Convert EZD text height to MK fontsize
+        if type(element).__name__ in ("ExtractedText", "SyntheticText"):
             with self.elements.node_lock:
-                node = elem.add(type="elem text", text=element.text, transform=self.matrix)
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                mx = Matrix.scale(UNITS_PER_MM, UNITS_PER_MM)
+                mx.post_translate(self.cx, -self.cy)
+                node = elem.add(
+                    type="elem text",
+                    text=element.text,
+                    x=element.x,
+                    y=element.y,
+                    matrix=mx,
+                    settings={ "font-size": getattr(element, "height", 10) * text_conversion_factor },
+                )
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZText):
             with self.elements.node_lock:
-                node = elem.add(type="elem text", text=element.text, transform=self.matrix)
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                print(
+                    f"Text: '{element.text}' Font: '{element.font}' Height: {element.height}mm, x={element.x} y={element.y}"
+                )
+                # ezcad positive y is top, negative y is down, mk is positive
+                # Standard text size 12pt = 4.233mm height
+                mx = Matrix.scale(UNITS_PER_MM, UNITS_PER_MM)
+                mx.post_translate(self.cx, -self.cy)
+                # 1px = 0.264583mm
+                node = elem.add(
+                    type="elem text",
+                    text=element.text,
+                    x=element.x,
+                    y=element.y,
+                    matrix=mx,
+                    settings={ "font-size": element.height * text_conversion_factor },
+                )
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZCurve):
             points = element.points
             if len(points) == 0:
                 return
             if path is None:
                 append_path = False
-                path = Path(stroke="black", transform=self.matrix)
+                path = Path(stroke="black")
             else:
                 append_path = True
 
@@ -1207,10 +1222,13 @@ class EZProcessor:
                     path=path,
                     stroke_width=self.elements.default_strokewidth,
                     label=element.label,
-                    linecap = Linecap.CAP_BUTT,
-                    linejoin = Linejoin.JOIN_BEVEL,
+                    linecap=Linecap.CAP_BUTT,
+                    linejoin=Linejoin.JOIN_BEVEL,
+                    matrix=self.matrix,
                 )
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZPolygon):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -1226,17 +1244,20 @@ class EZProcessor:
             for i in range(element.sides):
                 pts.append((cx + math.cos(theta) * rx, cy + math.sin(theta) * ry))
                 theta += step
-            polyline = Polygon(points=pts, transform=mx, stroke="black")
+            polyline = Polygon(points=pts, stroke="black")
             with self.elements.node_lock:
                 node = elem.add(
                     type="elem polyline",
                     shape=polyline,
                     stroke_width=self.elements.default_strokewidth,
                     label=element.label,
-                    linecap = Linecap.CAP_BUTT,
-                    linejoin = Linejoin.JOIN_BEVEL,
+                    linecap=Linecap.CAP_BUTT,
+                    linejoin=Linejoin.JOIN_BEVEL,
+                    matrix=mx,
                 )
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZCircle):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -1253,7 +1274,9 @@ class EZProcessor:
                     type="elem ellipse",
                     label=element.label,
                 )
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZEllipse):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -1272,7 +1295,9 @@ class EZProcessor:
                     type="elem ellipse",
                     label=element.label,
                 )
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZRect):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -1291,7 +1316,9 @@ class EZProcessor:
                     type="elem rect",
                     label=element.label,
                 )
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op engrave"
+                )
         elif isinstance(element, EZTimer):
             with self.elements.node_lock:
                 op.add(type="util wait", wait=element.wait_time / 1000.0)
@@ -1346,8 +1373,16 @@ class EZProcessor:
             )
             matrix.post_translate(left, top)
             with self.elements.node_lock:
-                node = elem.add(type="elem image", image=image, matrix=matrix, dpi=_dpi, label=element.label)
-                op_add = self._add_pen_reference(ez, element, op, node, op_add, "op image")
+                node = elem.add(
+                    type="elem image",
+                    image=image,
+                    matrix=matrix,
+                    dpi=_dpi,
+                    label=element.label,
+                )
+                op_add = self._add_pen_reference(
+                    ez, element, op, node, op_add, "op image"
+                )
         elif isinstance(element, EZVectorFile):
             elem = elem.add(type="group", label=element.label)
             for child in element:
@@ -1358,10 +1393,10 @@ class EZProcessor:
             # For V2+ hatches, use hatch1_pen (first hatch pattern's pen)
             # For V1 hatches or those without hatch1_pen, fall back to element.pen
             hatch_pen = element.pen
-            if not element.unsupported_format and hasattr(element, 'hatch1_pen'):
+            if not element.unsupported_format and hasattr(element, "hatch1_pen"):
                 # Use the hatch's actual pen from hatch properties
                 hatch_pen = element.hatch1_pen
-            
+
             p = dict(ez.pens[hatch_pen].__dict__)
             with self.elements.node_lock:
                 op_add = op.add(type="op engrave", **p)
@@ -1379,7 +1414,7 @@ class EZProcessor:
                 self.parse(ez, child, elem, op, op_add=op_add)
 
             if element.group:
-                path = Path(stroke="black", transform=self.matrix)
+                path = Path(stroke="black")
                 for child in element.group:
                     # Per-completed hatch elements.
                     # The op_add is passed to ensure child uses hatch's pen/operation
@@ -1392,17 +1427,20 @@ class EZProcessor:
                         path=path,
                         stroke_width=self.elements.default_strokewidth,
                         label=element.label,
-                        linecap = Linecap.CAP_BUTT,
-                        linejoin = Linejoin.JOIN_BEVEL,
+                        linecap=Linecap.CAP_BUTT,
+                        linejoin=Linejoin.JOIN_BEVEL,
+                        matrix=self.matrix,
                     )
-                    op_add = self._add_pen_reference(ez, element, op, node, op_add, "op engrave")
+                    op_add = self._add_pen_reference(
+                        ez, element, op, node, op_add, "op engrave"
+                    )
         elif isinstance(element, (EZGroup, EZCombine)):
             # If group contains only a single element, skip the group and promote the element
             # The element inherits the group's label if it doesn't have its own
             if len(element) == 1:
                 child = element[0]
                 # Inherit group label if child has no label
-                if not hasattr(child, 'label') or not child.label:
+                if not hasattr(child, "label") or not child.label:
                     child.label = element.label
                 # Parse child directly in parent context, skipping group creation
                 self.parse(ez, child, elem, op, op_add=op_add, path=path)
