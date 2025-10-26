@@ -13,11 +13,11 @@ from math import isinf
 
 import numpy as np
 
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel.jobs import Job
 from meerk40t.svgelements import Matrix
-from meerk40t.core.geomstr import Geomstr
 
 
 class LiveLightJob:
@@ -56,7 +56,7 @@ class LiveLightJob:
         self.started = False
         self.priority = -1
         self.time_submitted = time.time()
-        self.time_started = time.time()
+        self.time_started = None
         self.runtime = 0
 
         # Update logic
@@ -65,6 +65,7 @@ class LiveLightJob:
         self.changed = False
         self.points = None
         self.bounded = False
+        self.uid = None
 
         methods = {
             "full": ("Full Light Job", self.update_full),
@@ -83,6 +84,23 @@ class LiveLightJob:
         self.changed = True
         self._last_bounds = None
         self.source = "elements"
+
+    # Generate a copy of the job for reinsertion after stopping
+    def copy_for_reinsertion(self):
+        copy_job = LiveLightJob(
+            service=self.service,
+            mode=self.mode,
+            geometry=self._geometry,
+            travel_speed=self._travel_speed,
+            jump_delay=self._jump_delay,
+            quantization=self.quantization,
+            listen=self.listen,
+            raw=self.raw,
+        )
+        copy_job.priority = self.priority
+        copy_job.label = self.label
+        copy_job.uid = self.uid
+        return copy_job
 
     @property
     def status(self):
@@ -117,7 +135,7 @@ class LiveLightJob:
         if self.runtime != 0:
             result = self.runtime
         elif self.is_running():
-            result = time.time() - self.time_started
+            result = 0 if self.time_started is None else time.time() - self.time_started
         return result
 
     def estimate_time(self):
@@ -288,6 +306,7 @@ class LiveLightJob:
         driver.service.signal_updates = False
         self.update()
         self.service.kernel.schedule(self.redlight_job)
+        self.service.signal("light_simulate", True)
 
     def post_job(self, driver):
         """Perform post-job cleanup.
