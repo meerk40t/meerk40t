@@ -446,6 +446,9 @@ class Spooler:
 
         self._shutdown = False
         self._thread = None
+        # If True, jobs that are stopped and have priority will be reinserted into the queue.
+        # This can affect job ordering and execution, as stopped priority jobs may be retried or reordered.
+        # Use with caution: enabling this may lead to repeated execution of certain jobs
         self.reinsert_stopped_priority_jobs = kwargs.get(
             "reinsert_stopped_priority_jobs", False
         )
