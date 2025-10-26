@@ -532,12 +532,37 @@ jobs:
         name: meerk40t-minimal-linux
         path: binaries/
 
-    - name: Debug List downloaded binaries
+    - name: Extract device support status from NOTES.md
+      id: extract_device_status
       run: |
-        echo "Contents of binaries directory:"
-        ls -la binaries/
-        echo "Available artifacts:"
-        ls -la
+        # Extract the Device Support Status section from NOTES.md
+        if [ -f "NOTES.md" ]; then
+          # Find the line number where "### Device Support Status" starts
+          start_line=$(grep -n "### Device Support Status" NOTES.md | head -1 | cut -d: -f1)
+          
+          if [ -n "$start_line" ]; then
+            # Extract from that line to the end of the file
+            tail -n +$start_line NOTES.md > device_status_temp.md
+            
+            # Convert to a single line with proper markdown formatting
+            device_status=$(cat device_status_temp.md | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+            
+            # Escape for GitHub Actions output
+            device_status=$(echo "$device_status" | sed 's/%/%25/g' | sed 's/\n/%0A/g' | sed 's/\r/%0D/g')
+            
+            echo "device_status=$device_status" >> $GITHUB_OUTPUT
+            echo "Device support status extracted successfully"
+          else
+            echo "Device Support Status section not found in NOTES.md"
+            echo "device_status=" >> $GITHUB_OUTPUT
+          fi
+          
+          # Clean up
+          rm -f device_status_temp.md
+        else
+          echo "NOTES.md not found"
+          echo "device_status=" >> $GITHUB_OUTPUT
+        fi
 
     - name: Create weekly release
       id: create_release
@@ -559,6 +584,8 @@ jobs:
           - **Branch**: `${{ github.ref_name }}`
 
           ${{ steps.get-prs.outputs.changes }}
+
+          ${{ steps.extract_device_status.outputs.device_status }}
 
           ### 📦 Downloads
 
