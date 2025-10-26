@@ -2,7 +2,7 @@
 
 The current code in the GitHub repository may contain experimental features or other deficits that may not necessarily make it fit for real-world production use. This repository represents ongoing development work and should be approached with caution for critical applications.
 
-### Device Support Status (as of 26/10/2025*)
+### Device Support Status (as of 26/10/2025)
 
 | Device Type | Use Status | Development Status | Notes |
 |-------------|------------|-------------------|--------|
