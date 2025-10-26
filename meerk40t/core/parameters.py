@@ -29,6 +29,7 @@ FLOAT_PARAMETERS = (
     "dwell_time",
     "frequency",
     "kerf",
+    "scanline_delay",
 )
 
 BOOL_PARAMETERS = (
@@ -601,6 +602,15 @@ class Parameters:
     def raster_preference_left(self, value):
         self.settings["raster_preference_left"] = value
         self.__dict__["raster_preference_left"] = value
+
+    @property
+    def scanline_delay(self):
+        return self.settings.get("scanline_delay", 0.0)
+
+    @scanline_delay.setter
+    def scanline_delay(self, value):
+        self.settings["scanline_delay"] = value
+        self.__dict__["scanline_delay"] = value
 
     #####################
     # JOG PROPERTIES

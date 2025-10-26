@@ -1,6 +1,13 @@
 import wx
 
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, wxCheckBox, wxComboBox
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxCheckBox,
+    wxComboBox,
+)
 
 _ = wx.GetTranslation
 
@@ -8,9 +15,11 @@ _ = wx.GetTranslation
 class LhyAdvancedPanel(wx.Panel):
     """LhyAdvancedPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
-    Provides user interface controls for lhyadvanced functionality. Features checkbox controls for user interaction.
+    Provides user interface controls for lihuiyu specific custom settings.
+    Features checkbox controls for user interaction.
     **End-User Perspective:**
-    This panel provides controls for lhyadvanced functionality. Key controls include "Custom D-Ratio" (checkbox), "Acceleration" (checkbox), "Dot Length" (checkbox)."""
+    This panel provides controls for lihuiyu specific custom settings.
+    Key controls include "Custom D-Ratio" (checkbox), "Acceleration" (checkbox), "Dot Length" (checkbox)."""
 
     """LhyAdvancedPanel - User interface panel for laser cutting operations"""
 
@@ -55,6 +64,28 @@ class LhyAdvancedPanel(wx.Panel):
 
         self.text_dratio.SetToolTip(OPERATION_DRATIO_TOOLTIP)
         sizer_11.Add(self.text_dratio, 1, 0, 0)
+
+        self.text_scanline_delay = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "0",
+            limited=True,
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        OPERATION_SCANLINE_DELAY_TOOLTIP = _(
+            "Scanline delay is the time delay in ms between each scanline. (0 default)"
+        )
+        self.sizer_scanline = StaticBoxSizer(
+            self, wx.ID_ANY, _("Raster-Behaviour"), wx.HORIZONTAL
+        )
+        leading = wx.StaticText(self, wx.ID_ANY, _("Scanline Delay:"))
+        self.text_scanline_delay.SetToolTip(OPERATION_SCANLINE_DELAY_TOOLTIP)
+        trailing = wx.StaticText(self, wx.ID_ANY, _("ms"))
+        self.sizer_scanline.Add(leading, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_scanline.Add(self.text_scanline_delay, 1, 0, 0)
+        self.sizer_scanline.Add(trailing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        extras_sizer.Add(self.sizer_scanline, 0, wx.EXPAND, 0)
 
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_sizer.Add(sizer_12, 0, wx.EXPAND, 0)
@@ -169,6 +200,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_shift_enabled, self.check_shift_enabled
         )
+        self.text_scanline_delay.SetActionRoutine(self.on_scanline_delay)
         # end wxGlade
 
     def pane_hide(self):
@@ -194,10 +226,17 @@ class LhyAdvancedPanel(wx.Panel):
             self.text_dot_length.SetValue(str(self.operation.dot_length))
         if self.operation.shift_enabled is not None:
             self.check_shift_enabled.SetValue(self.operation.shift_enabled)
+        self.sizer_scanline.Show(False)
+        self.text_scanline_delay.SetValue("0")
+        if self.operation.type in ("op raster", "op image"):
+            if self.operation.scanline_delay is not None:
+                self.text_scanline_delay.SetValue(str(self.operation.scanline_delay))
+            self.sizer_scanline.Show(True)
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
+        self.GetSizer().Layout()
 
     def on_check_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
@@ -235,6 +274,13 @@ class LhyAdvancedPanel(wx.Panel):
     def on_text_dot_length(self):
         try:
             self.operation.dot_length = int(self.text_dot_length.GetValue())
+        except ValueError:
+            return
+        self.context.elements.signal("element_property_reload", self.operation)
+
+    def on_scanline_delay(self):
+        try:
+            self.operation.scanline_delay = int(self.text_scanline_delay.GetValue())
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)

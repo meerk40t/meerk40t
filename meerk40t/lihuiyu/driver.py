@@ -22,6 +22,7 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.waitcut import WaitCut
+from ..core.geomstr import Geomstr
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..device.basedevice import (
@@ -37,7 +38,6 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from ..core.geomstr import Geomstr
 from .laserspeed import LaserSpeed
 
 distance_lookup = [
@@ -288,6 +288,8 @@ class LihuiyuDriver(Parameters):
             self._set_d_ratio(value)
         elif key == "step":
             self._set_step(*value)
+        elif key == "scanline_delay":
+            self._set_scanline_delay(value)
         else:
             self.settings[key] = value
 
@@ -1127,6 +1129,9 @@ class LihuiyuDriver(Parameters):
         if self.power <= 0:
             self.power = 0.0
 
+    def _set_scanline_delay(self, delay_ms=0):
+        self.scanline_delay = delay_ms
+
     def _set_overscan(self, overscan=None):
         self.overscan = overscan
 
@@ -1358,6 +1363,8 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
+        if self.scanline_delay != 0:
+            self.wait(self.scanline_delay)
         set_step = self._raster_step_g_value
         if isinstance(set_step, tuple):
             set_step = set_step[self._raster_step_swing_index % len(set_step)]
@@ -1404,6 +1411,10 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
+        print(f"V Switch G called with dx: {dx}, delay: {self.scanline_delay}")
+        if self.scanline_delay != 0:
+            self.wait(self.scanline_delay)
+
         set_step = self._raster_step_g_value
         if isinstance(set_step, tuple):
             set_step = set_step[self._raster_step_swing_index % len(set_step)]
