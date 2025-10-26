@@ -332,6 +332,7 @@ class Ch341LibusbDriver:
 
             self.channel(str(e))
             raise ConnectionError
+        print("CH341: Libusb: get_status: ", status[0])
         return status[0]
 
     # pylint: disable=dangerous-default-value
@@ -362,6 +363,7 @@ class Ch341LibusbDriver:
 
             self.channel(str(e))
             raise ConnectionError
+        print("CH341: Libusb: getstatusbulk: ", status[0])
         return status[0]
 
     def CH341GetVerIC(self, index=0):
@@ -438,7 +440,9 @@ class Ch341LibusbDriver:
             data.insert(i, p)
         try:
             # endpoint, data, timeout
-            device.write(endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeoutEPPWrite)
+            device.write(
+                endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeoutEPPWrite
+            )
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 

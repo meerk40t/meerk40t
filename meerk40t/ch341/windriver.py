@@ -144,6 +144,7 @@ class WinCH341Driver:
             data = self.driver.CH341ReadData(8)
             if len(data) != 0:
                 return data
+            print("CH341: Windriver: get_status: Bulk read failed.")
             return [0] * 6
         return self.driver.CH341GetStatus()
 

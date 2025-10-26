@@ -17,6 +17,7 @@ Deals with the sending of data via the registered connection, and processes some
 import threading
 import time
 from enum import IntEnum
+from sys import flags
 
 from meerk40t.ch341 import get_ch341_interface
 
@@ -972,6 +973,24 @@ class LihuiyuController:
                 # Make sure we have a valid status
                 if self._status is not None and len(self._status) > 1:
                     status = self._status[1]
+                    if status == LihuiyuStatus.OK.value:
+                        flags = "OK"
+                    elif status == LihuiyuStatus.BUSY.value:
+                        flags = "BUSY"
+                    elif status == LihuiyuStatus.ERROR.value:
+                        flags = "ERROR"
+                    elif status == LihuiyuStatus.FINISH.value:
+                        flags = "FINISH"
+                    elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
+                        flags = "SERIAL_CORRECT_M3_FINISH"
+                    else:
+                        flags = f"UNK {status:02x}"
+                else:
+                    print(f"[Confirm packet] Invalid status received: {self._status}")
+                    flags = "Invalid"
+                print(
+                    f"[Confirm packet] Status after sending: {self._status}, attempt {attempts + 1}, flags> {flags} "
+                )
                 if attempts > CONFIRMATION_DELAY_START:
                     time.sleep(
                         min(MIN_CONFIRMATION_DELAY * attempts, MAX_CONFIRMATION_DELAY)
@@ -1048,6 +1067,24 @@ class LihuiyuController:
         except AttributeError:
             # self.connection was closed by something.
             raise ConnectionError
+        if self._status is not None and len(self._status) > 1:
+            status = self._status[1]
+            if status == LihuiyuStatus.OK.value:
+                flags = "OK"
+            elif status == LihuiyuStatus.BUSY.value:
+                flags = "BUSY"
+            elif status == LihuiyuStatus.ERROR.value:
+                flags = "ERROR"
+            elif status == LihuiyuStatus.FINISH.value:
+                flags = "FINISH"
+            elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
+                flags = "SERIAL_CORRECT_M3_FINISH"
+            else:
+                flags = f"UNK {status:02x}"
+        else:
+            flags = "Invalid"
+        print(f"[Update status] {self._status}, flags: {flags} ")
+
         if self.context is not None:
             try:
                 self.context.signal(
@@ -1065,6 +1102,8 @@ class LihuiyuController:
         while self.state != "terminate":
             self.update_status()
             if self._status is None:
+                raise ConnectionError
+            if len(self._status) < 2:
                 raise ConnectionError
             status = self._status[1]
             if status == 0:
