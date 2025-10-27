@@ -1447,12 +1447,18 @@ class RDJob:
                                 # which occurs when the first move is a
                                 # move relative (less than 8.192mm).
 
-    def write_settings(self, current_settings):
+    def write_settings(self, current_settings, raster=False):
         part = current_settings.get("part", 0)
         speed = current_settings.get("speed", 0)
         power = current_settings.get("power", 0) / 10.0
         air = current_settings.get("coolant", 0)
-        self.layer_end()
+        if raster:
+            _step_x = current_settings['raster_step_x']
+            _step_y = current_settings['raster_step_y']
+            if _step_x != 0:
+                self.work_mode_3()
+            elif _step_y != 0:
+                self.work_mode_1()
         self.layer_number_part(part)
         self.laser_device_0()
         if air == 1:
