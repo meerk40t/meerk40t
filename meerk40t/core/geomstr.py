@@ -3868,6 +3868,104 @@ class Geomstr:
         return result
 
     @classmethod
+    def hatch_spiral(cls, outer, angle=0, distance=10, center=None):
+        """
+        Create a spiral hatch pattern using a continuous spiral path.
+
+        This creates a single continuous spiral path that winds outward from the center point,
+        providing complete coverage without any intersecting lines.
+        The hatch lines are clipped to stay within the original shape boundaries.
+
+        @param outer: Outer shape to hatch (Geomstr object)
+        @param distance: Distance between spiral windings in units
+        @param center: Center point for spiral (complex). If None, uses shape centroid
+        @param angle: Angle of rotation for the spiral (in radians)
+        @return: Geomstr object containing spiral hatch geometry
+        """
+        if outer is None or outer.index == 0:
+            return cls()
+
+        shape = outer.segmented()
+        shape.rotate(angle)
+
+        spiral = cls()
+
+        # density = min(50, max(1, int(spacing / 2)))
+        # shape = cls()
+        # for sp in outer.as_subpaths():
+        #     for segs in sp.as_interpolated_segments(interpolate=density):
+        #         shape.polyline(segs)
+        #         shape.end()
+        # Calculate bounding box
+        min_x, min_y, max_x, max_y = shape.bbox()
+        if center is None:
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            total = complex(0, 0)
+            count = 0
+            count_start = True
+            found = []
+            for seg in shape.segments[: shape.index]:
+                start = seg[0]
+                end = seg[4]
+                segtype = shape._segtype(seg)
+                if segtype == TYPE_END:
+                    count_start = True
+                    continue
+                if segtype in NON_GEOMETRY_TYPES:
+                    continue
+                if count_start:
+                    count_start = False
+                    if start not in found:
+                        total += start
+                        count += 1
+                        found.append(start)
+                if end not in found:
+                    total += end
+                    count += 1
+                    found.append(end)
+            center = total / count if count > 0 else complex(center_x, center_y)  
+        center_x = center.real
+        center_y = center.imag
+
+        # Create a winding spiral that moves outward from the centerpoint 
+        # until it has reached points both outside the shape and the original boundary box
+        # Factor 1.5 as the thing could be rotated so diagonals count
+        cx = (max_x + min_x) / 2
+        cy = (max_y + min_y) / 2
+        left_x = cx - 1.5 * (max_x - min_x) / 2
+        right_x = cx + 1.5 * (max_x - min_x) / 2
+        top_y = cy - 1.5 * (max_y - min_y) / 2
+        bottom_y = cy + 1.5 * (max_y - min_y) / 2
+
+        x = center_x
+        y = center_y
+        count = 1
+        while x >= left_x and x <= right_x and y >= top_y and y <= bottom_y:
+            for dx, dy in ((-1, 0), (0, -1)):
+                next_x = x + dx * distance * count
+                next_y = y + dy * distance * count
+                spiral.line(complex(x, y), complex(next_x, next_y))
+                x = next_x
+                y = next_y
+            count += 1
+            for dx, dy in ((1, 0), (0, 1)):
+                next_x = x + dx * distance * count
+                next_y = y + dy * distance * count
+                spiral.line(complex(x, y), complex(next_x, next_y))
+                x = next_x
+                y = next_y
+            count += 1
+        # Use proper scanbeam-based clipping to stay within shape boundaries
+        clipper = Clip(shape)
+        result = clipper.clip(spiral)
+
+        result.rotate(-angle)
+
+        return result
+
+
+    @classmethod
     def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
         from meerk40t.fill.fills import Wobble
 
@@ -9000,3 +9098,35 @@ class Geomstr:
                 newgeom.close()
             final.append(newgeom)
         return final
+
+    @staticmethod
+    def _line_intersection(p1, p2, p3, p4):
+        """
+        Find intersection point between two line segments p1-p2 and p3-p4.
+        Returns intersection point as complex number, or None if no intersection.
+        """
+        # Convert to real coordinates
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+        x3, y3 = p3.real, p3.imag
+        x4, y4 = p4.real, p4.imag
+
+        # Calculate denominator
+        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+        # Lines are parallel
+        if abs(denom) < 1e-10:
+            return None
+
+        # Calculate intersection parameters
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+
+        # Check if intersection is within both line segments
+        if 0 <= t <= 1 and 0 <= u <= 1:
+            # Calculate intersection point
+            ix = x1 + t * (x2 - x1)
+            iy = y1 + t * (y2 - y1)
+            return complex(ix, iy)
+
+        return None

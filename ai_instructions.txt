@@ -1,0 +1,12 @@
+Issue this at the start of a copilot session in Windows:
+
+PowerShell Environment Reminder: We're working in Windows PowerShell. 
+Please use native PowerShell cmdlets (e.g., Remove-Item instead of rm, 
+Get-ChildItem instead of ls, Set-Location instead of cd) 
+and proper PowerShell syntax. Avoid Unix-style commands unless explicitly needed.
+For Python testing, create script files rather than inline execution 
+to avoid PowerShell quoting issues. Focus on the Geomstr class for geometric operations, 
+and follow the project's plugin architecture with lifecycle hooks. 
+Prioritize testing with the existing test suite in the test directory.
+
+------------
