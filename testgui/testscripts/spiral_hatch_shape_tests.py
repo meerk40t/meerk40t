@@ -38,7 +38,7 @@ def create_shape_tests():
         x2 = center_x + radius * math.cos(angle2)
         y2 = center_y + radius * math.sin(angle2)
         circle.line(complex(x1, y1), complex(x2, y2))
-        circle.end()
+    circle.close()
     test_shapes.append(("Circle", circle))
 
     # 3. Triangle
@@ -72,18 +72,9 @@ def create_shape_tests():
     # 5. Complex shape (rectangle with cutout)
     complex_shape = Geomstr.rect(0, 0, 100, 100)
     # Add a circular cutout
-    cutout = Geomstr()
-    for i in range(16):
-        angle1 = 2 * math.pi * i / 16
-        angle2 = 2 * math.pi * (i + 1) / 16
-        x1 = 70 + 15 * math.cos(angle1)
-        y1 = 70 + 15 * math.sin(angle1)
-        x2 = 70 + 15 * math.cos(angle2)
-        y2 = 70 + 15 * math.sin(angle2)
-        cutout.line(complex(x1, y1), complex(x2, y2))
-        cutout.end()
+    complex_shape.append(Geomstr.circle(15, 70, 70))
     # For simplicity, just test the rectangle for now
-    test_shapes.append(("Rectangle", complex_shape))
+    test_shapes.append(("Rect with hole", complex_shape))
 
     # 6. Complex shape (Self-overlapping polygon)
     complex_shape = Geomstr()
@@ -99,9 +90,9 @@ def create_shape_tests():
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     axes = axes.flatten()
 
-    for idx, (shape_name, shape) in enumerate(test_shapes[:6]):  # Limit to 6 shapes
+    for idx, (shape_name, orgshape) in enumerate(test_shapes[:6]):  # Limit to 6 shapes
         ax = axes[idx]
-
+        shape = orgshape.segmented(distance=2)
         # Plot shape outline
         for i in range(shape.index):
             segment = shape.segments[i]
@@ -113,7 +104,7 @@ def create_shape_tests():
 
         # Generate spiral hatch
         try:
-            spiral_hatch = Geomstr.hatch_spiral(shape, spacing=8)
+            spiral_hatch = Geomstr.hatch_spiral(shape, angle=math.pi/4, spacing=8)
             print(f"{shape_name}: {spiral_hatch.index} hatch segments")
 
             # Plot spiral hatch lines with different visibility settings for different shapes

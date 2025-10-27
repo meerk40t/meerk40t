@@ -3868,7 +3868,7 @@ class Geomstr:
         return result
 
     @classmethod
-    def hatch_spiral(cls, outer, spacing=10, center=None, direction="clockwise"):
+    def hatch_spiral(cls, outer, angle=0, spacing=10, center=None):
         """
         Create a spiral hatch pattern using a continuous spiral path.
 
@@ -3879,143 +3879,60 @@ class Geomstr:
         @param outer: Outer shape to hatch (Geomstr object)
         @param spacing: Spacing between spiral windings in units
         @param center: Center point for spiral (complex). If None, uses shape centroid
-        @param direction: "clockwise" or "counterclockwise"
+        @param angle: Angle of rotation for the spiral (in radians)
         @return: Geomstr object containing spiral hatch geometry
         """
         if outer is None or outer.index == 0:
             return cls()
 
+        spiral = cls()
+
+        # density = min(50, max(1, int(spacing / 2)))
+        # shape = cls()
+        # for sp in outer.as_subpaths():
+        #     for segs in sp.as_interpolated_segments(interpolate=density):
+        #         shape.polyline(segs)
+        #         shape.end()
+        shape = outer
+        shape.rotate(angle)
+
         # Calculate bounding box
-        min_x, min_y, max_x, max_y = outer.bbox()
-        width = max_x - min_x
-        height = max_y - min_y
+        min_x, min_y, max_x, max_y = shape.bbox()
 
         if center is None:
             center_x = (min_x + max_x) / 2
             center_y = (min_y + max_y) / 2
-            center_point = complex(center_x, center_y)
         else:
-            center_point = center
+            center_x = center.real
+            center_y = center.imag
 
-        result = cls()
-
-        # Calculate spiral parameters
-        max_radius = min(width, height) / 2
-        num_turns = max(1, int(max_radius / spacing))
-
-        # Direction multiplier for clockwise vs counterclockwise
-        dir_mult = 1 if direction == "clockwise" else -1
-
-        # Create spiral path
-        points = []
-        for turn in range(num_turns + 1):
-            radius = max_radius - turn * spacing
-            if radius <= 0:
-                break
-
-            # Calculate points for this turn (rectangle approximation)
-            # Start from top-left and go clockwise
-            points.extend([
-                complex(center_x - radius, center_y - radius),  # Top-left
-                complex(center_x + radius, center_y - radius),  # Top-right
-                complex(center_x + radius, center_y + radius),  # Bottom-right
-                complex(center_x - radius, center_y + radius),  # Bottom-left
-                complex(center_x - radius, center_y - radius),  # Back to top-left
-            ])
-
-        # Create continuous line segments
-        if len(points) >= 2:
-            for i in range(len(points) - 1):
-                start_point = points[i]
-                end_point = points[i + 1]
-                result.line(start_point, end_point)
-                result.end()
-
+        # Create a winding spiral that moves outward from the centerpoint until it has reached points both outside the shape and the original boundary box
+        x = center_x
+        y = center_y
+        count = 1
+        while x >= min_x and x <= max_x and y >= min_y and y <= max_y:
+            for dx, dy in ((-1, 0), (0, -1)):
+                next_x = x + dx * spacing * count
+                next_y = y + dy * spacing * count
+                spiral.line(complex(x, y), complex(next_x, next_y))
+                x = next_x
+                y = next_y
+            count += 1
+            for dx, dy in ((1, 0), (0, 1)):
+                next_x = x + dx * spacing * count
+                next_y = y + dy * spacing * count
+                spiral.line(complex(x, y), complex(next_x, next_y))
+                x = next_x
+                y = next_y
+            count += 1
         # Use proper scanbeam-based clipping to stay within shape boundaries
-        clipper = Clip(outer)
-        result = clipper.clip(result)
+        clipper = Clip(shape)
+        result = clipper.clip(spiral)
+
+        result.rotate(-angle)
 
         return result
 
-    def _filter_lines_inside_shape(self, shape):
-        """
-        Filter this Geomstr to only keep lines that are completely inside the given shape.
-        
-        @param shape: Shape to check against (Geomstr object)
-        @return: New Geomstr with only lines completely inside the shape
-        """
-        filtered = Geomstr()
-        
-        for i in range(self.index):
-            segment = self.segments[i]
-            seg_type = self._segtype(segment)
-            if seg_type == TYPE_LINE:
-                start = segment[0]
-                end = segment[4]
-                
-                # Check if both endpoints are inside the shape
-                start_inside = Geomstr._point_in_polygon(start, shape)
-                end_inside = Geomstr._point_in_polygon(end, shape)
-                
-                if start_inside and end_inside:
-                    filtered.line(start, end)
-                    filtered.end()
-            elif seg_type == TYPE_END:
-                # Copy end segments
-                filtered.append_segment(segment[0], segment[1], segment[2], segment[3], segment[4])
-        
-        return filtered
-
-
-        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-
-        # Lines are parallel
-        if abs(denom) < 1e-10:
-            return None
-
-        # Calculate intersection parameters
-        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
-        u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
-
-        # Check if intersection is within both line segments
-        if 0 <= t <= 1 and 0 <= u <= 1:
-            # Calculate intersection point
-            ix = x1 + t * (x2 - x1)
-            iy = y1 + t * (y2 - y1)
-            return complex(ix, iy)
-
-        return None
-
-    @staticmethod
-    def _point_in_polygon(point, polygon_geomstr):
-        """
-        Determine if a point is inside a polygon using ray casting algorithm.
-        """
-        x, y = point.real, point.imag
-        inside = False
-
-        # Get polygon vertices
-        vertices = []
-        for i in range(polygon_geomstr.index):
-            segment = polygon_geomstr.segments[i]
-            seg_type = polygon_geomstr._segtype(segment)
-            if seg_type == TYPE_LINE:
-                vertices.append((segment[0].real, segment[0].imag))
-
-        # Close the polygon if not already closed
-        if len(vertices) > 0 and vertices[0] != vertices[-1]:
-            vertices.append(vertices[0])
-
-        # Ray casting algorithm
-        n = len(vertices)
-        for i in range(n - 1):
-            x1, y1 = vertices[i]
-            x2, y2 = vertices[i + 1]
-
-            if ((y1 > y) != (y2 > y)) and (x < x1 + (x2 - x1) * (y - y1) / (y2 - y1)):
-                inside = not inside
-
-        return inside
 
     @classmethod
     def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
