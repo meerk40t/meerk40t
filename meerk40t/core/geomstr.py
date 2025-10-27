@@ -3868,34 +3868,28 @@ class Geomstr:
         return result
 
     @classmethod
-    def hatch_spiral(cls, outer, spacing=10, direction="clockwise", center=None):
+    def hatch_spiral(cls, outer, spacing=10, center=None, direction="clockwise"):
         """
-        Create a spiral hatch pattern that fills the shape completely from outside inward.
+        Create a spiral hatch pattern using a continuous spiral path.
 
-        This algorithm generates concentric rings (circles/ovals) at decreasing sizes and
-        creates hatch lines by finding intersections between each ring and the shape boundary.
-        The result is a spiral-like pattern that completely fills the interior of the shape.
+        This creates a single continuous spiral path that winds inward from the
+        outer boundary, providing complete coverage without any intersecting lines.
+        The hatch lines are clipped to stay within the original shape boundaries.
 
         @param outer: Outer shape to hatch (Geomstr object)
-        @param spacing: Distance between concentric rings in units (default: 10)
-        @param direction: "clockwise" or "counterclockwise" spiral direction
-        @param center: Center point of rings as complex number. If None, uses shape centroid
+        @param spacing: Spacing between spiral windings in units
+        @param center: Center point for spiral (complex). If None, uses shape centroid
+        @param direction: "clockwise" or "counterclockwise"
         @return: Geomstr object containing spiral hatch geometry
         """
-        # Handle empty geometry
-        if not outer or outer.index == 0:
+        if outer is None or outer.index == 0:
             return cls()
 
-        # Get bounding box to determine ring parameters
-        bbox = outer.bbox()
-        if not bbox or any(np.isnan(bbox)):
-            return cls()
-
-        min_x, min_y, max_x, max_y = bbox
+        # Calculate bounding box
+        min_x, min_y, max_x, max_y = outer.bbox()
         width = max_x - min_x
         height = max_y - min_y
 
-        # Calculate center point
         if center is None:
             center_x = (min_x + max_x) / 2
             center_y = (min_y + max_y) / 2
@@ -3903,97 +3897,76 @@ class Geomstr:
         else:
             center_point = center
 
-        # Calculate maximum radius needed to cover the entire shape
-        max_radius = max(
-            abs(center_point - complex(min_x, min_y)),
-            abs(center_point - complex(max_x, min_y)),
-            abs(center_point - complex(min_x, max_y)),
-            abs(center_point - complex(max_x, max_y))
-        ) * 1.1  # 10% margin
-
-        # Create segmented version for intersection calculations
-        segmented_shape = outer.segmented()
-
         result = cls()
 
-        # Generate concentric rings from outside inward
-        radius = max_radius
-        direction_multiplier = 1 if direction == "clockwise" else -1
+        # Calculate spiral parameters
+        max_radius = min(width, height) / 2
+        num_turns = max(1, int(max_radius / spacing))
 
-        while radius > 0:
-            # Create points for this ring (oval/circle approximation)
-            # Use multiple points around the circumference
-            num_points = max(16, int(2 * math.pi * radius / spacing))
-            num_points = min(num_points, 64)  # Cap for performance
+        # Direction multiplier for clockwise vs counterclockwise
+        dir_mult = 1 if direction == "clockwise" else -1
 
-            ring_points = []
-            for i in range(num_points):
-                angle = (2 * math.pi * i / num_points) * direction_multiplier
-                # Create oval by scaling x and y differently if needed
-                scale_x = width / max(width, height)
-                scale_y = height / max(width, height)
+        # Create spiral path
+        points = []
+        for turn in range(num_turns + 1):
+            radius = max_radius - turn * spacing
+            if radius <= 0:
+                break
 
-                x = center_point.real + radius * scale_x * math.cos(angle)
-                y = center_point.imag + radius * scale_y * math.sin(angle)
-                ring_points.append(complex(x, y))
+            # Calculate points for this turn (rectangle approximation)
+            # Start from top-left and go clockwise
+            points.extend([
+                complex(center_x - radius, center_y - radius),  # Top-left
+                complex(center_x + radius, center_y - radius),  # Top-right
+                complex(center_x + radius, center_y + radius),  # Bottom-right
+                complex(center_x - radius, center_y + radius),  # Bottom-left
+                complex(center_x - radius, center_y - radius),  # Back to top-left
+            ])
 
-            # Close the ring
-            ring_points.append(ring_points[0])
+        # Create continuous line segments
+        if len(points) >= 2:
+            for i in range(len(points) - 1):
+                start_point = points[i]
+                end_point = points[i + 1]
+                result.line(start_point, end_point)
+                result.end()
 
-            # Find intersections between this ring and the shape boundary
-            intersections = []
-
-            # Check each ring segment against each shape edge
-            for i in range(len(ring_points) - 1):
-                ring_start = ring_points[i]
-                ring_end = ring_points[i + 1]
-
-                # Find intersections with shape edges
-                for j in range(segmented_shape.index):
-                    segment = segmented_shape.segments[j]
-                    seg_type = segmented_shape._segtype(segment)
-
-                    if seg_type == TYPE_LINE:
-                        shape_p1 = segment[0]
-                        shape_p2 = segment[4]
-
-                        intersect = cls._line_intersection(ring_start, ring_end, shape_p1, shape_p2)
-                        if intersect is not None:
-                            intersections.append(intersect)
-
-            # Sort intersections by angle from center
-            if len(intersections) >= 2:
-                intersections.sort(key=lambda p: math.atan2(p.imag - center_point.imag, p.real - center_point.real))
-
-                # Create hatch lines between alternating intersections
-                for k in range(0, len(intersections) - 1, 2):
-                    if k + 1 < len(intersections):
-                        hatch_start = intersections[k]
-                        hatch_end = intersections[k + 1]
-
-                        # Only add if the segment is reasonably long
-                        if abs(hatch_end - hatch_start) > spacing / 20:
-                            result.line(hatch_start, hatch_end)
-                            result.end()
-
-            # Move to next inner ring
-            radius -= spacing
+        # Use proper scanbeam-based clipping to stay within shape boundaries
+        clipper = Clip(outer)
+        result = clipper.clip(result)
 
         return result
 
-    @staticmethod
-    def _line_intersection(p1, p2, p3, p4):
+    def _filter_lines_inside_shape(self, shape):
         """
-        Find intersection point between two line segments p1-p2 and p3-p4.
-        Returns intersection point as complex number, or None if no intersection.
+        Filter this Geomstr to only keep lines that are completely inside the given shape.
+        
+        @param shape: Shape to check against (Geomstr object)
+        @return: New Geomstr with only lines completely inside the shape
         """
-        # Convert to real coordinates
-        x1, y1 = p1.real, p1.imag
-        x2, y2 = p2.real, p2.imag
-        x3, y3 = p3.real, p3.imag
-        x4, y4 = p4.real, p4.imag
+        filtered = Geomstr()
+        
+        for i in range(self.index):
+            segment = self.segments[i]
+            seg_type = self._segtype(segment)
+            if seg_type == TYPE_LINE:
+                start = segment[0]
+                end = segment[4]
+                
+                # Check if both endpoints are inside the shape
+                start_inside = Geomstr._point_in_polygon(start, shape)
+                end_inside = Geomstr._point_in_polygon(end, shape)
+                
+                if start_inside and end_inside:
+                    filtered.line(start, end)
+                    filtered.end()
+            elif seg_type == TYPE_END:
+                # Copy end segments
+                filtered.append_segment(segment[0], segment[1], segment[2], segment[3], segment[4])
+        
+        return filtered
 
-        # Calculate denominator
+
         denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
         # Lines are parallel
@@ -4012,6 +3985,37 @@ class Geomstr:
             return complex(ix, iy)
 
         return None
+
+    @staticmethod
+    def _point_in_polygon(point, polygon_geomstr):
+        """
+        Determine if a point is inside a polygon using ray casting algorithm.
+        """
+        x, y = point.real, point.imag
+        inside = False
+
+        # Get polygon vertices
+        vertices = []
+        for i in range(polygon_geomstr.index):
+            segment = polygon_geomstr.segments[i]
+            seg_type = polygon_geomstr._segtype(segment)
+            if seg_type == TYPE_LINE:
+                vertices.append((segment[0].real, segment[0].imag))
+
+        # Close the polygon if not already closed
+        if len(vertices) > 0 and vertices[0] != vertices[-1]:
+            vertices.append(vertices[0])
+
+        # Ray casting algorithm
+        n = len(vertices)
+        for i in range(n - 1):
+            x1, y1 = vertices[i]
+            x2, y2 = vertices[i + 1]
+
+            if ((y1 > y) != (y2 > y)) and (x < x1 + (x2 - x1) * (y - y1) / (y2 - y1)):
+                inside = not inside
+
+        return inside
 
     @classmethod
     def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
@@ -9146,3 +9150,35 @@ class Geomstr:
                 newgeom.close()
             final.append(newgeom)
         return final
+
+    @staticmethod
+    def _line_intersection(p1, p2, p3, p4):
+        """
+        Find intersection point between two line segments p1-p2 and p3-p4.
+        Returns intersection point as complex number, or None if no intersection.
+        """
+        # Convert to real coordinates
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+        x3, y3 = p3.real, p3.imag
+        x4, y4 = p4.real, p4.imag
+
+        # Calculate denominator
+        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+        # Lines are parallel
+        if abs(denom) < 1e-10:
+            return None
+
+        # Calculate intersection parameters
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+
+        # Check if intersection is within both line segments
+        if 0 <= t <= 1 and 0 <= u <= 1:
+            # Calculate intersection point
+            ix = x1 + t * (x2 - x1)
+            iy = y1 + t * (y2 - y1)
+            return complex(ix, iy)
+
+        return None
