@@ -3868,6 +3868,152 @@ class Geomstr:
         return result
 
     @classmethod
+    def hatch_spiral(cls, outer, spacing=10, direction="clockwise", center=None):
+        """
+        Create a spiral hatch pattern that fills the shape completely from outside inward.
+
+        This algorithm generates concentric rings (circles/ovals) at decreasing sizes and
+        creates hatch lines by finding intersections between each ring and the shape boundary.
+        The result is a spiral-like pattern that completely fills the interior of the shape.
+
+        @param outer: Outer shape to hatch (Geomstr object)
+        @param spacing: Distance between concentric rings in units (default: 10)
+        @param direction: "clockwise" or "counterclockwise" spiral direction
+        @param center: Center point of rings as complex number. If None, uses shape centroid
+        @return: Geomstr object containing spiral hatch geometry
+        """
+        # Handle empty geometry
+        if not outer or outer.index == 0:
+            return cls()
+
+        # Get bounding box to determine ring parameters
+        bbox = outer.bbox()
+        if not bbox or any(np.isnan(bbox)):
+            return cls()
+
+        min_x, min_y, max_x, max_y = bbox
+        width = max_x - min_x
+        height = max_y - min_y
+
+        # Calculate center point
+        if center is None:
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            center_point = complex(center_x, center_y)
+        else:
+            center_point = center
+
+        # Calculate maximum radius needed to cover the entire shape
+        max_radius = max(
+            abs(center_point - complex(min_x, min_y)),
+            abs(center_point - complex(max_x, min_y)),
+            abs(center_point - complex(min_x, max_y)),
+            abs(center_point - complex(max_x, max_y))
+        ) * 1.1  # 10% margin
+
+        # Create segmented version for intersection calculations
+        segmented_shape = outer.segmented()
+
+        result = cls()
+
+        # Generate concentric rings from outside inward
+        radius = max_radius
+        direction_multiplier = 1 if direction == "clockwise" else -1
+
+        while radius > 0:
+            # Create points for this ring (oval/circle approximation)
+            # Use multiple points around the circumference
+            num_points = max(16, int(2 * math.pi * radius / spacing))
+            num_points = min(num_points, 64)  # Cap for performance
+
+            ring_points = []
+            for i in range(num_points):
+                angle = (2 * math.pi * i / num_points) * direction_multiplier
+                # Create oval by scaling x and y differently if needed
+                scale_x = width / max(width, height)
+                scale_y = height / max(width, height)
+
+                x = center_point.real + radius * scale_x * math.cos(angle)
+                y = center_point.imag + radius * scale_y * math.sin(angle)
+                ring_points.append(complex(x, y))
+
+            # Close the ring
+            ring_points.append(ring_points[0])
+
+            # Find intersections between this ring and the shape boundary
+            intersections = []
+
+            # Check each ring segment against each shape edge
+            for i in range(len(ring_points) - 1):
+                ring_start = ring_points[i]
+                ring_end = ring_points[i + 1]
+
+                # Find intersections with shape edges
+                for j in range(segmented_shape.index):
+                    segment = segmented_shape.segments[j]
+                    seg_type = segmented_shape._segtype(segment)
+
+                    if seg_type == TYPE_LINE:
+                        shape_p1 = segment[0]
+                        shape_p2 = segment[4]
+
+                        intersect = cls._line_intersection(ring_start, ring_end, shape_p1, shape_p2)
+                        if intersect is not None:
+                            intersections.append(intersect)
+
+            # Sort intersections by angle from center
+            if len(intersections) >= 2:
+                intersections.sort(key=lambda p: math.atan2(p.imag - center_point.imag, p.real - center_point.real))
+
+                # Create hatch lines between alternating intersections
+                for k in range(0, len(intersections) - 1, 2):
+                    if k + 1 < len(intersections):
+                        hatch_start = intersections[k]
+                        hatch_end = intersections[k + 1]
+
+                        # Only add if the segment is reasonably long
+                        if abs(hatch_end - hatch_start) > spacing / 20:
+                            result.line(hatch_start, hatch_end)
+                            result.end()
+
+            # Move to next inner ring
+            radius -= spacing
+
+        return result
+
+    @staticmethod
+    def _line_intersection(p1, p2, p3, p4):
+        """
+        Find intersection point between two line segments p1-p2 and p3-p4.
+        Returns intersection point as complex number, or None if no intersection.
+        """
+        # Convert to real coordinates
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+        x3, y3 = p3.real, p3.imag
+        x4, y4 = p4.real, p4.imag
+
+        # Calculate denominator
+        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+        # Lines are parallel
+        if abs(denom) < 1e-10:
+            return None
+
+        # Calculate intersection parameters
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+
+        # Check if intersection is within both line segments
+        if 0 <= t <= 1 and 0 <= u <= 1:
+            # Calculate intersection point
+            ix = x1 + t * (x2 - x1)
+            iy = y1 + t * (y2 - y1)
+            return complex(ix, iy)
+
+        return None
+
+    @classmethod
     def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
         from meerk40t.fill.fills import Wobble
 
