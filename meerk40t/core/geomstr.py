@@ -3872,18 +3872,21 @@ class Geomstr:
         """
         Create a spiral hatch pattern using a continuous spiral path.
 
-        This creates a single continuous spiral path that winds inward from the
-        outer boundary, providing complete coverage without any intersecting lines.
+        This creates a single continuous spiral path that winds outward from the center point,
+        providing complete coverage without any intersecting lines.
         The hatch lines are clipped to stay within the original shape boundaries.
 
         @param outer: Outer shape to hatch (Geomstr object)
-        @param spacing: Spacing between spiral windings in units
+        @param distance: Distance between spiral windings in units
         @param center: Center point for spiral (complex). If None, uses shape centroid
         @param angle: Angle of rotation for the spiral (in radians)
         @return: Geomstr object containing spiral hatch geometry
         """
         if outer is None or outer.index == 0:
             return cls()
+
+        shape = outer.segmented()
+        shape.rotate(angle)
 
         spiral = cls()
 
@@ -3893,24 +3896,52 @@ class Geomstr:
         #     for segs in sp.as_interpolated_segments(interpolate=density):
         #         shape.polyline(segs)
         #         shape.end()
-        shape = outer
-        shape.rotate(angle)
-
         # Calculate bounding box
         min_x, min_y, max_x, max_y = shape.bbox()
-
         if center is None:
             center_x = (min_x + max_x) / 2
             center_y = (min_y + max_y) / 2
-        else:
-            center_x = center.real
-            center_y = center.imag
+            total = complex(0, 0)
+            count = 0
+            count_start = True
+            found = []
+            for seg in shape.segments[: shape.index]:
+                start = seg[0]
+                end = seg[4]
+                segtype = shape._segtype(seg)
+                if segtype == TYPE_END:
+                    count_start = True
+                    continue
+                if segtype in NON_GEOMETRY_TYPES:
+                    continue
+                if count_start:
+                    count_start = False
+                    if start not in found:
+                        total += start
+                        count += 1
+                        found.append(start)
+                if end not in found:
+                    total += end
+                    count += 1
+                    found.append(end)
+            center = total / count if count > 0 else complex(center_x, center_y)  
+        center_x = center.real
+        center_y = center.imag
 
-        # Create a winding spiral that moves outward from the centerpoint until it has reached points both outside the shape and the original boundary box
+        # Create a winding spiral that moves outward from the centerpoint 
+        # until it has reached points both outside the shape and the original boundary box
+        # Factor 1.5 as the thing could be rotated so diagonals count
+        cx = (max_x + min_x) / 2
+        cy = (max_y + min_y) / 2
+        left_x = cx - 1.5 * (max_x - min_x) / 2
+        right_x = cx + 1.5 * (max_x - min_x) / 2
+        top_y = cy - 1.5 * (max_y - min_y) / 2
+        bottom_y = cy + 1.5 * (max_y - min_y) / 2
+
         x = center_x
         y = center_y
         count = 1
-        while x >= min_x and x <= max_x and y >= min_y and y <= max_y:
+        while x >= left_x and x <= right_x and y >= top_y and y <= bottom_y:
             for dx, dy in ((-1, 0), (0, -1)):
                 next_x = x + dx * distance * count
                 next_y = y + dy * distance * count
