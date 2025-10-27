@@ -369,24 +369,33 @@ class HatchEffectNode(Node, Suppressable):
             self.recalculate()
         for p in range(self.loops):
             # Choose algorithm based on selection and complexity
-            if self._should_use_direct_grid():
+            if self.hatch_type == "spiral":
                 path.append(
-                    self._direct_grid_hatch(
-                        outlines,
-                        distance=self._distance,
-                        angle=self._angle + p * self._angle_delta,
-                        unidirectional=self.unidirectional,
+                    Geomstr.hatch_spiral(
+                        outlines, 
+                        angle=self._angle + p * self._angle_delta, 
+                        distance=self._distance
                     )
                 )
             else:
-                path.append(
-                    Geomstr.hatch(
-                        outlines,
-                        distance=self._distance,
-                        angle=self._angle + p * self._angle_delta,
-                        unidirectional=self.unidirectional,
+                if self._should_use_direct_grid():
+                    path.append(
+                        self._direct_grid_hatch(
+                            outlines,
+                            distance=self._distance,
+                            angle=self._angle + p * self._angle_delta,
+                            unidirectional=self.unidirectional,
+                        )
                     )
-                )
+                else:
+                    path.append(
+                        Geomstr.hatch(
+                            outlines,
+                            distance=self._distance,
+                            angle=self._angle + p * self._angle_delta,
+                            unidirectional=self.unidirectional,
+                        )
+                    )
         # Mark hatch effect geometry to prevent stitching
         # Hatch lines are closely-spaced parallel lines that should not be stitched together
         path.no_stitch = True
@@ -452,12 +461,19 @@ class HatchEffectNode(Node, Suppressable):
             if self.include_outlines:
                 yield o
             for p in range(self.loops):
-                yield Geomstr.hatch(
-                    o,
-                    distance=self._distance,
-                    angle=self._angle + p * self._angle_delta,
-                    unidirectional=self.unidirectional,
-                )
+                if self.hatch_type == "spiral":
+                    yield Geomstr.hatch_spiral(
+                        o,
+                        angle=self._angle + p * self._angle_delta,
+                        distance=self._distance,
+                    )
+                else:
+                    yield Geomstr.hatch(
+                        o,
+                        distance=self._distance,
+                        angle=self._angle + p * self._angle_delta,
+                        unidirectional=self.unidirectional,
+                    )
 
     def set_interim(self):
         self.empty_cache()

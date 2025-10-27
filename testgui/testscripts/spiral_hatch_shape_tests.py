@@ -104,7 +104,7 @@ def create_shape_tests():
 
         # Generate spiral hatch
         try:
-            spiral_hatch = Geomstr.hatch_spiral(shape, angle=math.pi/4, spacing=8)
+            spiral_hatch = Geomstr.hatch_spiral(shape, angle=math.pi/4, distance=8)
             print(f"{shape_name}: {spiral_hatch.index} hatch segments")
 
             # Plot spiral hatch lines with different visibility settings for different shapes

@@ -3868,7 +3868,7 @@ class Geomstr:
         return result
 
     @classmethod
-    def hatch_spiral(cls, outer, angle=0, spacing=10, center=None):
+    def hatch_spiral(cls, outer, angle=0, distance=10, center=None):
         """
         Create a spiral hatch pattern using a continuous spiral path.
 
@@ -3912,15 +3912,15 @@ class Geomstr:
         count = 1
         while x >= min_x and x <= max_x and y >= min_y and y <= max_y:
             for dx, dy in ((-1, 0), (0, -1)):
-                next_x = x + dx * spacing * count
-                next_y = y + dy * spacing * count
+                next_x = x + dx * distance * count
+                next_y = y + dy * distance * count
                 spiral.line(complex(x, y), complex(next_x, next_y))
                 x = next_x
                 y = next_y
             count += 1
             for dx, dy in ((1, 0), (0, 1)):
-                next_x = x + dx * spacing * count
-                next_y = y + dy * spacing * count
+                next_x = x + dx * distance * count
+                next_y = y + dy * distance * count
                 spiral.line(complex(x, y), complex(next_x, next_y))
                 x = next_x
                 y = next_y
