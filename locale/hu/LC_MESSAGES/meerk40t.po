@@ -24517,3 +24517,126 @@ msgstr "változók beállítása vagy listázása"
 #: meerk40t/lihuiyu/device.py:700
 msgid "move the laser at a specific speed and distance"
 msgstr "lézer mozgatása adott sebességgel és távolsággal"
+
+#: meerk40t/balormk/device.py:174
+msgid "Invert Power"
+msgstr "Teljesítmény invertálása"
+
+#: meerk40t/balormk/device.py:175
+msgid "UV lasers might require inverted power levels"
+msgstr "Az UV lézerek fordított teljesítmény-szinteket igényelhetnek"
+
+#: meerk40t/balormk/device.py:482
+msgid "Restart light jobs"
+msgstr "Piros lézer munkák újraindítása"
+
+#: meerk40t/balormk/device.py:485
+msgid ""
+"If enabled, light jobs will be restarted automatically after a job "
+"completes."
+msgstr ""
+"Ha engedélyezve van, a piros lézer munkák automatikusan újraindulnak egy "
+"munka befejezése után."
+
+#: meerk40t/core/spoolers.py:49
+msgid ""
+"Invalid plan - no 'blob' plan stage found. Please generate a valid plan "
+"before spooling."
+msgstr ""
+"Érvénytelen terv - nincs 'blob' tervszakasz található. Kérjük, hozzon létre "
+"egy érvényes tervet a tekercselés előtt."
+
+#: meerk40t/gui/gui_optypes.py:31
+msgid "Dots"
+msgstr "Pontok"
+
+#: meerk40t/gui/gui_optypes.py:34
+msgid "Warp"
+msgstr "Torzulás"
+
+#: meerk40t/gui/gui_optypes.py:35
+msgid "Jobstart current"
+msgstr "Feladatindítás jelenlegi"
+
+#: meerk40t/gui/gui_optypes.py:36
+msgid "Jobstart at point"
+msgstr "Feladatindítás pontnál"
+
+#: meerk40t/gui/gui_optypes.py:37
+msgid "Wait"
+msgstr "Várakozás"
+
+#: meerk40t/gui/gui_optypes.py:39
+msgid "Goto"
+msgstr "Ugrás"
+
+#: meerk40t/gui/materialtest.py:324
+msgid "Simple"
+msgstr "Egyszerű"
+
+#: meerk40t/gui/materialtest.py:416 meerk40t/gui/materialtest.py:489
+msgid "Subtitle:"
+msgstr "Alcím:"
+
+#: meerk40t/gui/materialtest.py:603
+msgid "Choose the subtitle for the X axis"
+msgstr "Válassza ki az alcímet az X tengelyhez"
+
+#: meerk40t/gui/materialtest.py:604
+msgid "Choose the subtitle for the Y axis"
+msgstr "Válassza ki az alcímet az Y tengelyhez"
+
+#: meerk40t/gui/materialtest.py:647
+msgid "Use vector shapes for labels"
+msgstr "Vektor alakzatok használata címkékhez"
+
+#: meerk40t/gui/wxmmain.py:5373
+msgid "Clear project on load"
+msgstr "Projekt törlése betöltéskor"
+
+#: meerk40t/gui/wxmmain.py:5374
+msgid "Clear the project before loading a recent file"
+msgstr "Törölje a projektet egy friss fájl betöltése előtt"
+
+#: meerk40t/gui/wxmtree.py:2167
+msgid ""
+"This will send the laser back to its physical start position engaging the "
+"endstops"
+msgstr ""
+"Ez visszaküldi a lézert a fizikai kiindulási pozíciójába, aktiválva a "
+"végállásokat"
+
+#: meerk40t/gui/wxmtree.py:2171
+msgid "This will send the laser back to its start position"
+msgstr "Ez visszaküldi a lézert a kiindulási pozíciójába"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:16
+#: meerk40t/gui/propertypanels/generic_op_property.py:32
+#: meerk40t/gui/propertypanels/generic_op_property.py:68
+#: meerk40t/gui/propertypanels/generic_op_property.py:84
+#: meerk40t/gui/propertypanels/generic_op_property.py:103
+#: meerk40t/gui/propertypanels/generic_op_property.py:122
+msgid "This operation will only run if active is checked."
+msgstr "Ez a művelet csak akkor fut, ha az aktív be van jelölve."
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:40
+#: meerk40t/gui/propertypanels/generic_op_property.py:49
+msgid "Laser target position"
+msgstr "Lézer célpozíció"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:75
+msgid "Move the laser to the physical home position (engaging endstops)."
+msgstr ""
+"Mozgassa a lézert a fizikai otthoni pozícióba (végállások aktiválása)."
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:138
+msgid "Console Command"
+msgstr "Konzol Parancs"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:139
+msgid "Console command to execute."
+msgstr "Végrehajtandó konzol parancs."
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:105
+msgid "Include Outline"
+msgstr "Vázlat bevonása"

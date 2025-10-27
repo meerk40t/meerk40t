@@ -24498,3 +24498,125 @@ msgstr "definir ou listar variáveis"
 #: meerk40t/lihuiyu/device.py:700
 msgid "move the laser at a specific speed and distance"
 msgstr "mover o laser a uma velocidade e distância específicas"
+
+#: meerk40t/balormk/device.py:174
+msgid "Invert Power"
+msgstr "Inverter Potência"
+
+#: meerk40t/balormk/device.py:175
+msgid "UV lasers might require inverted power levels"
+msgstr "Lasers UV podem exigir níveis de potência invertidos"
+
+#: meerk40t/balormk/device.py:482
+msgid "Restart light jobs"
+msgstr "Reiniciar trabalhos com laser vermelho"
+
+#: meerk40t/balormk/device.py:485
+msgid ""
+"If enabled, light jobs will be restarted automatically after a job "
+"completes."
+msgstr ""
+"Se habilitado, os trabalhos com laser vermelho serão reiniciados "
+"automaticamente após a conclusão de um trabalho."
+
+#: meerk40t/core/spoolers.py:49
+msgid ""
+"Invalid plan - no 'blob' plan stage found. Please generate a valid plan "
+"before spooling."
+msgstr ""
+"Plano inválido - nenhuma etapa de plano 'blob' encontrada. Por favor, gere "
+"um plano válido antes de bobinar."
+
+#: meerk40t/gui/gui_optypes.py:31
+msgid "Dots"
+msgstr "Pontos"
+
+#: meerk40t/gui/gui_optypes.py:34
+msgid "Warp"
+msgstr "Distorcer"
+
+#: meerk40t/gui/gui_optypes.py:35
+msgid "Jobstart current"
+msgstr "Início do trabalho atual"
+
+#: meerk40t/gui/gui_optypes.py:36
+msgid "Jobstart at point"
+msgstr "Início do trabalho no ponto"
+
+#: meerk40t/gui/gui_optypes.py:37
+msgid "Wait"
+msgstr "Aguardar"
+
+#: meerk40t/gui/gui_optypes.py:39
+msgid "Goto"
+msgstr "Ir para"
+
+#: meerk40t/gui/materialtest.py:324
+msgid "Simple"
+msgstr "Simples"
+
+#: meerk40t/gui/materialtest.py:416 meerk40t/gui/materialtest.py:489
+msgid "Subtitle:"
+msgstr "Subtítulo:"
+
+#: meerk40t/gui/materialtest.py:603
+msgid "Choose the subtitle for the X axis"
+msgstr "Escolha o subtítulo para o eixo X"
+
+#: meerk40t/gui/materialtest.py:604
+msgid "Choose the subtitle for the Y axis"
+msgstr "Escolha o subtítulo para o eixo Y"
+
+#: meerk40t/gui/materialtest.py:647
+msgid "Use vector shapes for labels"
+msgstr "Usar formas vetoriais para rótulos"
+
+#: meerk40t/gui/wxmmain.py:5373
+msgid "Clear project on load"
+msgstr "Limpar projeto ao carregar"
+
+#: meerk40t/gui/wxmmain.py:5374
+msgid "Clear the project before loading a recent file"
+msgstr "Limpe o projeto antes de carregar um arquivo recente"
+
+#: meerk40t/gui/wxmtree.py:2167
+msgid ""
+"This will send the laser back to its physical start position engaging the "
+"endstops"
+msgstr ""
+"Isso enviará o laser de volta à sua posição inicial física ativando os fins "
+"de curso"
+
+#: meerk40t/gui/wxmtree.py:2171
+msgid "This will send the laser back to its start position"
+msgstr "Isso enviará o laser de volta à sua posição inicial"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:16
+#: meerk40t/gui/propertypanels/generic_op_property.py:32
+#: meerk40t/gui/propertypanels/generic_op_property.py:68
+#: meerk40t/gui/propertypanels/generic_op_property.py:84
+#: meerk40t/gui/propertypanels/generic_op_property.py:103
+#: meerk40t/gui/propertypanels/generic_op_property.py:122
+msgid "This operation will only run if active is checked."
+msgstr "Esta operação só será executada se ativo estiver marcado."
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:40
+#: meerk40t/gui/propertypanels/generic_op_property.py:49
+msgid "Laser target position"
+msgstr "Posição alvo do laser"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:75
+msgid "Move the laser to the physical home position (engaging endstops)."
+msgstr "Mover o laser para a posição física inicial (ativando fins de curso)."
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:138
+msgid "Console Command"
+msgstr "Comando do Console"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:139
+msgid "Console command to execute."
+msgstr "Comando do console para executar."
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:105
+msgid "Include Outline"
+msgstr "Incluir Contorno"

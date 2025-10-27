@@ -23751,3 +23751,119 @@ msgstr "设置或列出变量"
 #: meerk40t/lihuiyu/device.py:700
 msgid "move the laser at a specific speed and distance"
 msgstr "以特定速度和距离移动激光器"
+
+#: meerk40t/balormk/device.py:174
+msgid "Invert Power"
+msgstr "反转功率"
+
+#: meerk40t/balormk/device.py:175
+msgid "UV lasers might require inverted power levels"
+msgstr "UV激光器可能需要反转功率水平"
+
+#: meerk40t/balormk/device.py:482
+msgid "Restart light jobs"
+msgstr "重新启动红光激光作业"
+
+#: meerk40t/balormk/device.py:485
+msgid ""
+"If enabled, light jobs will be restarted automatically after a job "
+"completes."
+msgstr "如果启用，红光激光作业将在作业完成后自动重新启动。"
+
+#: meerk40t/core/spoolers.py:49
+msgid ""
+"Invalid plan - no 'blob' plan stage found. Please generate a valid plan "
+"before spooling."
+msgstr "无效计划 - 未找到'blob'计划阶段。请在绕线前生成有效计划。"
+
+#: meerk40t/gui/gui_optypes.py:31
+msgid "Dots"
+msgstr "点"
+
+#: meerk40t/gui/gui_optypes.py:34
+msgid "Warp"
+msgstr "扭曲"
+
+#: meerk40t/gui/gui_optypes.py:35
+msgid "Jobstart current"
+msgstr "作业开始当前"
+
+#: meerk40t/gui/gui_optypes.py:36
+msgid "Jobstart at point"
+msgstr "在点处开始作业"
+
+#: meerk40t/gui/gui_optypes.py:37
+msgid "Wait"
+msgstr "等待"
+
+#: meerk40t/gui/gui_optypes.py:39
+msgid "Goto"
+msgstr "转到"
+
+#: meerk40t/gui/materialtest.py:324
+msgid "Simple"
+msgstr "简单"
+
+#: meerk40t/gui/materialtest.py:416 meerk40t/gui/materialtest.py:489
+msgid "Subtitle:"
+msgstr "副标题："
+
+#: meerk40t/gui/materialtest.py:603
+msgid "Choose the subtitle for the X axis"
+msgstr "选择X轴的副标题"
+
+#: meerk40t/gui/materialtest.py:604
+msgid "Choose the subtitle for the Y axis"
+msgstr "选择Y轴的副标题"
+
+#: meerk40t/gui/materialtest.py:647
+msgid "Use vector shapes for labels"
+msgstr "为标签使用矢量形状"
+
+#: meerk40t/gui/wxmmain.py:5373
+msgid "Clear project on load"
+msgstr "加载时清除项目"
+
+#: meerk40t/gui/wxmmain.py:5374
+msgid "Clear the project before loading a recent file"
+msgstr "加载最近文件前清除项目"
+
+#: meerk40t/gui/wxmtree.py:2167
+msgid ""
+"This will send the laser back to its physical start position engaging the "
+"endstops"
+msgstr "这将使激光器返回其物理起始位置，激活限位开关"
+
+#: meerk40t/gui/wxmtree.py:2171
+msgid "This will send the laser back to its start position"
+msgstr "这将使激光器返回其起始位置"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:16
+#: meerk40t/gui/propertypanels/generic_op_property.py:32
+#: meerk40t/gui/propertypanels/generic_op_property.py:68
+#: meerk40t/gui/propertypanels/generic_op_property.py:84
+#: meerk40t/gui/propertypanels/generic_op_property.py:103
+#: meerk40t/gui/propertypanels/generic_op_property.py:122
+msgid "This operation will only run if active is checked."
+msgstr "只有在选中活动时，此操作才会运行。"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:40
+#: meerk40t/gui/propertypanels/generic_op_property.py:49
+msgid "Laser target position"
+msgstr "激光器目标位置"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:75
+msgid "Move the laser to the physical home position (engaging endstops)."
+msgstr "将激光器移动到物理原位（激活限位开关）。"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:138
+msgid "Console Command"
+msgstr "控制台命令"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:139
+msgid "Console command to execute."
+msgstr "要执行的控制台命令。"
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:105
+msgid "Include Outline"
+msgstr "包含轮廓"

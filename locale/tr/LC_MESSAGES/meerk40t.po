@@ -24317,3 +24317,125 @@ msgid ""
 msgstr ""
 "Bezier eğri segmentlerinin sayısını azaltarak son eğriyi 'basitleştirmeye' "
 "çalışın."
+
+#: meerk40t/balormk/device.py:174
+msgid "Invert Power"
+msgstr "Gücü Ters Çevir"
+
+#: meerk40t/balormk/device.py:175
+msgid "UV lasers might require inverted power levels"
+msgstr "UV lazerler ters çevrilmiş güç seviyeleri gerektirebilir"
+
+#: meerk40t/balormk/device.py:482
+msgid "Restart light jobs"
+msgstr "Kırmızı lazer işlerini yeniden başlat"
+
+#: meerk40t/balormk/device.py:485
+msgid ""
+"If enabled, light jobs will be restarted automatically after a job "
+"completes."
+msgstr ""
+"Etkinleştirilirse, kırmızı lazer işleri bir iş tamamlandıktan sonra otomatik"
+" olarak yeniden başlatılır."
+
+#: meerk40t/core/spoolers.py:49
+msgid ""
+"Invalid plan - no 'blob' plan stage found. Please generate a valid plan "
+"before spooling."
+msgstr ""
+"Geçersiz plan - 'blob' plan aşaması bulunamadı. Lütfen sarma işleminden önce"
+" geçerli bir plan oluşturun."
+
+#: meerk40t/gui/gui_optypes.py:31
+msgid "Dots"
+msgstr "Noktalar"
+
+#: meerk40t/gui/gui_optypes.py:34
+msgid "Warp"
+msgstr "Çarpıtma"
+
+#: meerk40t/gui/gui_optypes.py:35
+msgid "Jobstart current"
+msgstr "İş başlangıç mevcut"
+
+#: meerk40t/gui/gui_optypes.py:36
+msgid "Jobstart at point"
+msgstr "Noktada iş başlangıç"
+
+#: meerk40t/gui/gui_optypes.py:37
+msgid "Wait"
+msgstr "Bekle"
+
+#: meerk40t/gui/gui_optypes.py:39
+msgid "Goto"
+msgstr "Git"
+
+#: meerk40t/gui/materialtest.py:324
+msgid "Simple"
+msgstr "Basit"
+
+#: meerk40t/gui/materialtest.py:416 meerk40t/gui/materialtest.py:489
+msgid "Subtitle:"
+msgstr "Alt başlık:"
+
+#: meerk40t/gui/materialtest.py:603
+msgid "Choose the subtitle for the X axis"
+msgstr "X ekseni için alt başlığı seçin"
+
+#: meerk40t/gui/materialtest.py:604
+msgid "Choose the subtitle for the Y axis"
+msgstr "Y ekseni için alt başlığı seçin"
+
+#: meerk40t/gui/materialtest.py:647
+msgid "Use vector shapes for labels"
+msgstr "Etiketler için vektör şekilleri kullan"
+
+#: meerk40t/gui/wxmmain.py:5373
+msgid "Clear project on load"
+msgstr "Yüklemede projeyi temizle"
+
+#: meerk40t/gui/wxmmain.py:5374
+msgid "Clear the project before loading a recent file"
+msgstr "Son dosyayı yüklemeden önce projeyi temizle"
+
+#: meerk40t/gui/wxmtree.py:2167
+msgid ""
+"This will send the laser back to its physical start position engaging the "
+"endstops"
+msgstr ""
+"Bu, lazeri uç durdurucuları etkinleştirerek fiziksel başlangıç konumuna geri"
+" gönderecektir"
+
+#: meerk40t/gui/wxmtree.py:2171
+msgid "This will send the laser back to its start position"
+msgstr "Bu, lazeri başlangıç konumuna geri gönderecektir"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:16
+#: meerk40t/gui/propertypanels/generic_op_property.py:32
+#: meerk40t/gui/propertypanels/generic_op_property.py:68
+#: meerk40t/gui/propertypanels/generic_op_property.py:84
+#: meerk40t/gui/propertypanels/generic_op_property.py:103
+#: meerk40t/gui/propertypanels/generic_op_property.py:122
+msgid "This operation will only run if active is checked."
+msgstr "Bu işlem yalnızca aktif işaretlenirse çalışacaktır."
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:40
+#: meerk40t/gui/propertypanels/generic_op_property.py:49
+msgid "Laser target position"
+msgstr "Lazer hedef konumu"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:75
+msgid "Move the laser to the physical home position (engaging endstops)."
+msgstr "Lazeri fiziksel ana konuma taşı (uç durdurucuları etkinleştirerek)."
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:138
+msgid "Console Command"
+msgstr "Konsol Komutu"
+
+#: meerk40t/gui/propertypanels/generic_op_property.py:139
+msgid "Console command to execute."
+msgstr "Yürütülecek konsol komutu."
+
+#: meerk40t/gui/propertypanels/hatchproperty.py:105
+msgid "Include Outline"
+msgstr "Anahattı Dahil Et"
