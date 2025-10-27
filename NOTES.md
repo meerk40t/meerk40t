@@ -6,18 +6,18 @@ The current code in the GitHub repository may contain experimental features or o
 
 | Device Type | Use Status | Development Status | Notes |
 |-------------|------------|-------------------|--------|
-| **Lihuiyu** | Minor issues | Under revision | Users report about raster y axis registration issues |
-| **GRBL** | Okay | Stable | No issues known |
-| **Moshi** | Okay | Stable | No issues known |
-| **Newly** | Okay | Stable | No issues known |
-| **Ruida** | Minor Issues | Under Revision | Major rework in progress, not recommended for public use yet |
-| **Balor** | Okay | Stable | No issues known |
+| **Lihuiyu** | ⚠️ Minor issues | Under revision | Users report about raster y axis registration issues |
+| **GRBL** | ✅ Okay | Stable | No issues known |
+| **Moshi** | ✅ Okay | Stable | No issues known |
+| **Newly** | ✅ Okay | Stable | No issues known |
+| **Ruida** | ⚠️ Minor Issues | Under Revision | Major rework in progress, not recommended for public use yet |
+| **Balor** | ✅ Okay | Stable | No issues known |
 
 **Status Legend:**
 - **Use Status:**
-  - *Okay*: Generally reliable for production use
-  - *Minor Issues*: Usable but may have occasional problems
-  - *Broken*: Not recommended for use, major issues present
+  - ✅ *Okay*: Generally reliable for production use
+  - ⚠️ *Minor Issues*: Usable but may have occasional problems
+  - ❌ *Broken*: Not recommended for use, major issues present
 
 - **Development Status:**
   - *Stable*: Core functionality is mature and well-tested

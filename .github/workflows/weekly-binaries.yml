@@ -545,10 +545,7 @@ jobs:
             tail -n +$start_line NOTES.md > device_status_temp.md
             
             # Convert to a single line with proper markdown formatting
-            device_status=$(cat device_status_temp.md | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
-            
-            # Escape for GitHub Actions output
-            device_status=$(echo "$device_status" | sed 's/%/%25/g' | sed 's/\n/%0A/g' | sed 's/\r/%0D/g')
+            device_status=$(cat device_status_temp.md | sed 's/%/%25/g' | sed 's/\n/%0A/g' | sed 's/\r/%0D/g' | tr -d '\n')
             
             echo "device_status=$device_status" >> $GITHUB_OUTPUT
             echo "Device support status extracted successfully"
