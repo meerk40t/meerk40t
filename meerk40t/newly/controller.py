@@ -83,6 +83,8 @@ class NewlyController:
 
     # Bit processing constants
     BITS_PER_BYTE = 8  # Number of bits in a byte for scanline calculations
+    DEFAULT_BIT_DEPTH = 1 
+    DEFAULT_BIT_WIDTH = 1 
 
     # Default power values
     DEFAULT_PULSE_POWER = 1000.0  # Default pulse power in device units
