@@ -8,8 +8,47 @@ import sys
 import os
 import math
 
-# Add the meerk40t directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '.'))
+# Add the meerk40t module to path
+def find_meerk40t_path(start_path=None, max_levels=10):
+    """
+    Find the meerk40t package path by looking for meerk40t.py file.
+    Traverses up the directory tree until found or max_levels reached.
+
+    Args:
+        start_path: Starting directory path (defaults to script directory)
+        max_levels: Maximum directory levels to traverse up
+
+    Returns:
+        str: Path to meerk40t directory containing meerk40t.py, or None if not found
+    """
+    if start_path is None:
+        start_path = os.path.dirname(os.path.abspath(__file__))
+
+    current_path = start_path
+    levels_traversed = 0
+
+    while levels_traversed < max_levels:
+        # Check if meerk40t.py exists in current directory
+        meerk40t_py_path = os.path.join(current_path, "meerk40t.py")
+        if os.path.isfile(meerk40t_py_path):
+            return current_path
+
+        # Move up one directory level
+        parent_path = os.path.dirname(current_path)
+
+        # If we've reached the root directory, stop
+        if parent_path == current_path:
+            break
+
+        current_path = parent_path
+        levels_traversed += 1
+
+    return None
+
+meerk40t_path = find_meerk40t_path()
+if meerk40t_path:
+    sys.path.insert(0, meerk40t_path)
+    sys.path.insert(0, os.path.dirname(meerk40t_path))
 
 from meerk40t.core.geomstr import Geomstr, TYPE_LINE
 
@@ -23,7 +62,7 @@ def create_shape_tests():
 
     # 1. Rectangle
     rect = Geomstr.rect(0, 0, 100, 100)
-    test_shapes.append(("Rectangle", rect))
+    test_shapes.append(("Rectangle", rect, 0))
 
     # 2. Circle (approximated with many segments)
     circle = Geomstr()
@@ -39,7 +78,7 @@ def create_shape_tests():
         y2 = center_y + radius * math.sin(angle2)
         circle.line(complex(x1, y1), complex(x2, y2))
     circle.close()
-    test_shapes.append(("Circle", circle))
+    test_shapes.append(("Circle", circle, math.pi / 3))
 
     # 3. Triangle
     triangle = Geomstr()
@@ -49,7 +88,7 @@ def create_shape_tests():
     triangle.end()
     triangle.line(complex(50, 80), complex(20, 20))
     triangle.end()
-    test_shapes.append(("Triangle", triangle))
+    test_shapes.append(("Triangle", triangle, math.pi / 6))
 
     # 4. Star shape
     star = Geomstr()
@@ -67,14 +106,14 @@ def create_shape_tests():
             center_y + (outer_radius if (i + 1) % 2 == 0 else inner_radius) * math.sin(math.pi / 2 + 2 * math.pi * (i + 1) / (num_points * 2))
         ))
         star.end()
-    test_shapes.append(("Star", star))
+    test_shapes.append(("Star", star, 0))
 
     # 5. Complex shape (rectangle with cutout)
     complex_shape = Geomstr.rect(0, 0, 100, 100)
     # Add a circular cutout
     complex_shape.append(Geomstr.circle(15, 70, 70))
     # For simplicity, just test the rectangle for now
-    test_shapes.append(("Rect with hole", complex_shape))
+    test_shapes.append(("Rect with hole", complex_shape, math.pi / 4))
 
     # 6. Complex shape (Self-overlapping polygon)
     complex_shape = Geomstr()
@@ -83,14 +122,14 @@ def create_shape_tests():
     complex_shape.line(complex(100, 0), complex(0, 66))
     complex_shape.line(complex(0, 66), complex(100, 66))
     complex_shape.line(complex(100, 66), complex(0, 0))
-    test_shapes.append(("Overlapping polygon", complex_shape))
+    test_shapes.append(("Overlapping polygon", complex_shape, 0))
 
 
     # Create visualization
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     axes = axes.flatten()
 
-    for idx, (shape_name, orgshape) in enumerate(test_shapes[:6]):  # Limit to 6 shapes
+    for idx, (shape_name, orgshape, angle) in enumerate(test_shapes[:6]):  # Limit to 6 shapes
         ax = axes[idx]
         shape = orgshape.segmented(distance=2)
         # Plot shape outline
@@ -104,7 +143,7 @@ def create_shape_tests():
 
         # Generate spiral hatch
         try:
-            spiral_hatch = Geomstr.hatch_spiral(shape, angle=math.pi/4, distance=8)
+            spiral_hatch = Geomstr.hatch_spiral(shape, angle=angle, distance=8)
             print(f"{shape_name}: {spiral_hatch.index} hatch segments")
 
             # Plot spiral hatch lines with different visibility settings for different shapes
