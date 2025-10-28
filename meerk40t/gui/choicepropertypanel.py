@@ -2608,6 +2608,16 @@ class ChoicePropertyPanel(ScrolledPanel):
             range_max: The maximum value for range check (None if not a range check)
         """
         def on_conditional_change(origin, value, target=None):
+            def enable_control(enable):
+                if isinstance(control, list):
+                    for ctrl in control:
+                        ctrl.Enable(enable)
+                else:
+                    control.Enable(enable)
+
+            if value is None:
+                enable_control(False)
+                return
             try:
                 if range_max is not None and equals_value is not None:
                     # Range check
@@ -2622,18 +2632,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     # Boolean check
                     enable = bool(value)
                 
-                if isinstance(control, list):
-                    for ctrl in control:
-                        ctrl.Enable(enable)
-                else:
-                    control.Enable(enable)
+                enable_control(enable)
             except (TypeError, ValueError, AttributeError):
                 # If comparison fails, disable control
-                if isinstance(control, list):
-                    for ctrl in control:
-                        ctrl.Enable(False)
-                else:
-                    control.Enable(False)
+                enable_control(False)
 
         # Register the listener with the context system
         if self.context:
