@@ -37,8 +37,9 @@ class ChoicePropertyPanel(ScrolledPanel):
         - Support for complex layouts with pages, sections, and subsections
         - Real-time property synchronization with signal dispatching
         - Extensive customization through choice dictionary configuration
-        - Support for conditional enabling/disabling of controls
+        - Support for conditional enabling/disabling of controls (unified architecture)
         - Optimized parameter architecture with minimal redundancy
+        - Automatic listener management with proper cleanup on pane hide/show
 
     Choice Dictionary Configuration:
         Required Keys:
@@ -54,6 +55,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             "enabled": Whether control is enabled (default: True)
             "signals": Additional signals to emit on value change
             "width": Control width constraint
+            "help": Help text for the control
 
         Layout Keys:
             "page": Top-level grouping (creates labeled sections)
@@ -64,9 +66,22 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         Advanced Keys:
             "dynamic": Function called to update choice before UI creation
-            "conditional": Tuple (obj, attr[, value]) for conditional enabling
+            "conditional": Tuple (obj, attr[, value[, max]]) for conditional enabling
             "hidden": Show only in developer mode
             "ignore": Skip this choice entirely
+
+    Conditional Enabling:
+        The "conditional" key supports four patterns:
+        1. Boolean check (2-tuple):     (obj, "attr")
+           → Enables if getattr(obj, "attr") is truthy
+        2. Value equality (3-tuple):    (obj, "attr", value)
+           → Enables if getattr(obj, "attr") == value
+        3. Multiple values (3-tuple):   (obj, "attr", [v1, v2, v3])
+           → Enables if getattr(obj, "attr") matches any value in list
+        4. Range check (4-tuple):       (obj, "attr", min, max)
+           → Enables if min <= getattr(obj, "attr") <= max
+        
+        Note: Conditional listeners are automatically registered and deregistered with pane_hide/pane_show.
 
     Data Types and Default Controls:
         bool: Checkbox (style="button" creates action button)
@@ -86,14 +101,20 @@ class ChoicePropertyPanel(ScrolledPanel):
             "option": Combo with separate display/value lists
             "power": Power value with percentage/absolute modes
             "speed": Speed value with per-minute/per-second modes
+            "radio": Radio box selection
+            "flat": Flat-style text control
 
         Numeric Styles:
             "slider": Slider control (requires "min"/"max" keys)
             "binary": Bit manipulation checkboxes (requires "bits"/"mask" keys)
+            "info": Static text display (read-only)
 
         Boolean Styles:
             "button": Action button instead of checkbox
             "color": Color picker button (for str type)
+
+        Special Styles:
+            "chart": List/table control for editing complex data
 
     Special Configuration Flags:
         Power Controls:
@@ -132,13 +153,16 @@ class ChoicePropertyPanel(ScrolledPanel):
         - Subsections group controls horizontally with shared space
         - Weight determines relative width allocation within subsections
         - Leading "_sortkey_" in names is removed for display (allows custom sorting)
+        - entries_per_column: Distribute controls across multiple columns
 
     Event System:
         - Automatic signal dispatching on property changes
         - Property name used as signal identifier
         - Additional signals can be specified in "signals" key
         - Real-time synchronization between multiple panels editing same properties
-        - Conditional enabling based on other property values
+        - Conditional enabling automatically updates when conditions change
+        - Listeners automatically reestablished when pane is shown (pane_show)
+        - Listeners safely removed when pane is hidden (pane_hide)
 
     Constraints:
         The constraint parameter allows selective display:
@@ -147,6 +171,13 @@ class ChoicePropertyPanel(ScrolledPanel):
         - ["page1", "page2"]: Show only specified pages
         - ["-page1"]: Show all except specified pages
 
+    Internal Architecture:
+        - _create_control_using_dispatch(): Dispatch table for control creation
+        - _setup_choice_control_properties(): Set up all control properties (tooltips, help, enabling)
+        - _setup_control_enabling(): Unified method for all enabling logic (conditional + simple)
+        - _register_conditional_listener(): Register listeners for dynamic condition checking
+        - Listener management: All listeners stored for proper cleanup on pane_hide/pane_show
+
     Examples:
         Basic usage:
             choices = [
@@ -154,6 +185,31 @@ class ChoicePropertyPanel(ScrolledPanel):
                 {"object": obj, "attr": "enabled", "type": bool, "label": "Enabled"}
             ]
             panel = ChoicePropertyPanel(parent, choices=choices, context=context)
+
+        Conditional enabling (enable "power" only when "laser_active" is True):
+            choices = [
+                {"object": device, "attr": "laser_active", "type": bool, "label": "Laser Active"},
+                {
+                    "object": device, 
+                    "attr": "power", 
+                    "type": float,
+                    "label": "Power",
+                    "conditional": (device, "laser_active"),
+                    "style": "power"
+                }
+            ]
+
+        Conditional enabling with value check (enable "co2_settings" only for CO2 laser):
+            choices = [
+                {"object": device, "attr": "laser_type", "type": str, "style": "combo", 
+                 "choices": ["co2", "fiber", "uv"]},
+                {
+                    "object": device,
+                    "attr": "co2_settings",
+                    "type": str,
+                    "conditional": (device, "laser_type", "co2")
+                }
+            ]
 
         Advanced configuration:
             choice = {
@@ -165,7 +221,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 "percent": lambda: laser.power_mode == "percentage",
                 "tip": "Laser power setting",
                 "page": "Laser Settings",
-                "section": "Power Control"
+                "section": "Power Control",
+                "priority": "10_power"
             }
     """
 
