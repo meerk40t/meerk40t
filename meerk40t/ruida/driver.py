@@ -15,6 +15,7 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
@@ -40,6 +41,8 @@ class RuidaDriver(Parameters):
 
         self.on_value = 0
         self.power_dirty = True
+        self._current_power = -1.0
+
         self.speed_dirty = True
         self.absolute_dirty = True
         self._absolute = True
@@ -165,17 +168,15 @@ class RuidaDriver(Parameters):
             self._set_queue_status(current, total)
             if hasattr(q, "settings"):
                 current_settings = q.settings
+                _raster = isinstance(q, RasterCut)
                 if current_settings is not last_settings:
-                    self.controller.job.write_settings(current_settings)
+                    self.controller.job.write_settings(
+                        current_settings, _raster)
                     last_settings = current_settings
-
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
             if x != start_x or y != start_y or first:
-                self.on_value = 0
-                self.power_dirty = True
-
                 first = False
                 self._move(start_x, start_y, cut=False)
             if self.on_value != 1.0:
@@ -291,8 +292,6 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         out = self.controller.write
         job.speed_laser_1(100.0, output=out)
-        job.min_power_1(0, output=out)
-        job.min_power_2(0, output=out)
 
         x, y = self.service.view.position(x, y)
 
@@ -512,8 +511,16 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         if self.power_dirty:
             if self.power is not None:
-                job.max_power_1(self.power / 10.0 * self.on_value)
-                job.min_power_1(self.power / 10.0 * self.on_value)
+                # Do not allow 0% cut.
+                if self.on_value <= 0:
+                    # Power less than 10% for CO2 won't work.
+                    cut = False
+                else:
+                    # Don't spew power settings.
+                    if self.power != self._current_power:
+                        job.max_power_1(self.power / 10.0 * self.on_value)
+                        job.min_power_1(self.power / 10.0 * self.on_value)
+                        self._current_power = self.power
             self.power_dirty = False
         if self.speed_dirty:
             job.speed_laser_1(self.speed)
