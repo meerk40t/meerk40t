@@ -173,7 +173,6 @@ class RuidaDriver(Parameters):
                     self.controller.job.write_settings(
                         current_settings, _raster)
                     last_settings = current_settings
-
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start

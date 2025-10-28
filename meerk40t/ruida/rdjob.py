@@ -4,6 +4,8 @@ import time
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.units import UNITS_PER_uM
 from meerk40t.svgelements import Color
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 
 from .exceptions import RuidaCommandError
 
@@ -515,6 +517,7 @@ class RDJob:
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
+        self.first_layer = True
         self.first_move = True
 
         self.x = 0.0
@@ -1322,14 +1325,20 @@ class RDJob:
         min_x = float("inf")
         min_y = float("inf")
         for item in layer:
-            try:
-                ny = item.upper()
-                nx = item.left()
+            if isinstance(item, RasterCut):
+                nx = item.offset_x
+                mx = nx + item.image.width * 100
+                ny = item.offset_y
+                my = ny + item.image.height * 100
+            else:
+                try:
+                    ny = item.upper()
+                    nx = item.left()
 
-                my = item.lower()
-                mx = item.right()
-            except AttributeError:
-                continue
+                    my = item.lower()
+                    mx = item.right()
+                except AttributeError:
+                    continue
 
             if mx > max_x:
                 max_x = mx
@@ -1339,11 +1348,13 @@ class RDJob:
                 min_x = nx
             if ny < min_y:
                 min_y = ny
+
         return min_x, min_y, max_x, max_y
 
     def write_header(self, data):
         if not data:
             return
+        self.first_layer = True
         # Optional: Set Tick count.
         self.ref_point_2()  # abs_pos
         self.set_absolute()
@@ -1355,10 +1366,10 @@ class RDJob:
         self.set_feed_auto_pause(0)
         b = self._calculate_layer_bounds(data)
         min_x, min_y, max_x, max_y = b
-        self.process_top_left(min_x, min_y)
-        self.process_bottom_right(max_x, max_y)
-        self.document_min_point(0, 0)  # Unknown
-        self.document_max_point(max_x, max_y)
+        self.process_top_left(max_x, min_y)
+        self.process_bottom_right(min_x, max_y)
+        self.document_min_point(max_x, min_y)  # Unknown
+        self.document_max_point(min_x, max_y)
         self.process_repeat(1, 1, 0, 0, 0, 0, 0)
         self.array_direction(0)
         last_settings = None
@@ -1447,7 +1458,15 @@ class RDJob:
                                 # which occurs when the first move is a
                                 # move relative (less than 8.192mm).
 
+    def write_layer_end(self):
+        # End layer and cut information.
+        self.block_end()
+        self.layer_end()
+        self.en_laser_2_offset_0()
+
     def write_settings(self, current_settings, raster=False):
+        if not self.first_layer:
+            self.write_layer_end()
         part = current_settings.get("part", 0)
         speed = current_settings.get("speed", 0)
         power = current_settings.get("power", 0) / 10.0
@@ -1468,17 +1487,18 @@ class RDJob:
         self.speed_laser_1(speed)
         self.laser_on_delay(0)
         self.laser_off_delay(0)
+        # TODO: Min and max are to reduce power when making direction changes
+        # requiring decel and accel.
         self.min_power_1(power)
         self.max_power_1(power)
         self.min_power_2(power)
         self.max_power_2(power)
         self.en_laser_tube_start(1)
-        self.en_ex_io(0)
+        # self.en_ex_io(0)
+        self.first_layer = False
 
     def write_tail(self):
-        # End layer and cut information.
-        self.array_end()
-        self.block_end()
+        self.write_layer_end()
         # self.encoder.set_setting(0x320, 142, 142)
         self.set_file_sum(self.file_sum() + 0xD7) # Account for the EOF.
         self.end_of_file()
