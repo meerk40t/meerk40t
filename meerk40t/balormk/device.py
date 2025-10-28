@@ -540,7 +540,7 @@ class BalorDevice(Service, Status):
                 "trailer": "%",
                 "label": _("First Pulse Killer"),
                 "subsection": "_50_Miscellaneous",
-                "conditional": (self, "source", "co2"),
+                "conditional": (self, "source", ("co2", "uv")),
                 "tip": _("Percent of First Pulse Killer for co2 source"),
             },
             {
