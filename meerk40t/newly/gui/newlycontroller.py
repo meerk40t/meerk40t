@@ -1,7 +1,7 @@
 import threading
 
 import wx
-
+from meerk40t.core.units import Length  
 from meerk40t.gui.icons import (
     get_default_icon_size,
     icons8_connected,
@@ -87,6 +87,13 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.text_usb_log, 5, wx.EXPAND, 0)
+        hspacer = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_clear = wxButton(self, wx.ID_ANY, _("Clear Log"))  
+        hspacer.Add(self.btn_clear, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.btn_clear.Bind(wx.EVT_BUTTON, lambda evt: self.text_usb_log.Clear())   
+        self.info_label = wx.StaticText(self, wx.ID_ANY, "")
+        hspacer.Add(self.info_label, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 0)  
+        sizer_1.Add(hspacer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
 
@@ -95,6 +102,9 @@ class NewlyControllerPanel(wx.ScrolledWindow):
             self._buffer.append(f"{text}\n")
         self.context.signal("newly_controller_update")
 
+    @signal_listener("driver;position")
+    def on_device_update(self, origin, pos):
+        self.info_label.SetLabel(f"{Length(pos[2], digits=1).length_mm}, {Length(pos[3], digits=1).length_mm}")
     @signal_listener("newly_controller_update")
     def update_text_gui(self, origin):
         with self._buffer_lock:
@@ -131,7 +141,8 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         try:
             if isinstance(status, bytes):
                 status = status.decode("unicode-escape")
-            self.button_device_connect.SetLabel(status)
+            label = f'{_("Connected")}: {_(status)}' if connected else f'{_("Disconnected")}: {_(status)}'
+            self.button_device_connect.SetLabel(label)
             if connected:
                 self.set_button_connected()
             else:

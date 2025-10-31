@@ -112,7 +112,7 @@ class NewlyController:
         self.is_shutdown = False  # Shutdown finished.
 
         self.usb_log = service.channel(f"{service.safe_label}/usb", buffer_size=500)
-        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
+        # self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
         # Load Primary Pens
         self.sp0 = self.service.setting(int, "sp0", 0)
@@ -209,7 +209,9 @@ class NewlyController:
 
     def abort_connect(self):
         self._abort_open = True
+        # Translation hint _("Connect Attempts Aborted")
         self.usb_log("Connect Attempts Aborted")
+        self.service.signal("pipe;usb_status", "Connect Attempts Aborted")  
 
     def disconnect(self):
         try:
@@ -217,6 +219,8 @@ class NewlyController:
         except (ConnectionError, ConnectionRefusedError, AttributeError) as e:
             self.usb_log(f"Error during disconnect: {e}")
         self.connection = None
+        # Translation hint _("Connection closed")
+        self.service.signal("pipe;usb_status", "Connection closed")
         # Reset error to allow another attempt
         self.set_disable_connect(False)
 
@@ -255,6 +259,8 @@ class NewlyController:
             self.set_disable_connect(True)
             self.usb_log("Could not connect to the controller.")
             self.usb_log("Automatic connections disabled.")
+            # Translation hint _("Could not connect to the controller.")    
+            self.service.signal("pipe;usb_status", "Could not connect to the controller.")  
             raise ConnectionRefusedError("Could not connect to the controller.")
 
         self._is_opening = True
@@ -265,6 +271,8 @@ class NewlyController:
                 if self.connection.open(self._machine_index) < 0:
                     raise ConnectionError
                 self.init_laser()
+                # Translation hint _("Connection established")
+                self.service.signal("pipe;usb_status", "Connection established") 
             except (ConnectionError, ConnectionRefusedError):
                 time.sleep(self.CONNECTION_RETRY_DELAY)
                 count += 1
@@ -281,6 +289,8 @@ class NewlyController:
                     self.set_disable_connect(True)
                     self.usb_log("Could not connect to the controller.")
                     self.usb_log("Automatic connections disabled.")
+                    # Translation hint _("Could not connect to the controller.")
+                    self.service.signal("pipe;usb_status", "Could not connect to the controller.")
                     raise ConnectionRefusedError("Could not connect to the controller.")
                 time.sleep(self.CONNECTION_RETRY_DELAY)
                 continue

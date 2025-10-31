@@ -6,6 +6,7 @@ any hardware.
 """
 
 import struct
+from time import sleep
 
 
 class MockConnection:
@@ -76,6 +77,7 @@ class MockConnection:
         self.channel(f"{length_data}")
 
     def _read_confirmation(self, index=0, attempt=0):
+        sleep(0.1)
         self.channel("1")
 
     def _write_bulk(self, index=0, packet: str = None):
