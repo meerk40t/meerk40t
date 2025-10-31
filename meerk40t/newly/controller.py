@@ -90,6 +90,10 @@ class NewlyController:
     DEFAULT_PULSE_POWER = 1000.0  # Default pulse power in device units
     PERCENT_TO_DECIMAL = 100.0  # Convert percentage to decimal
 
+    STATUS_INITIALIZING = None
+    STATUS_NO_USB_FOUND = -1
+    STATUS_NO_MACHINE_FOUND = -2
+
     def __init__(
         self,
         service,
@@ -172,6 +176,7 @@ class NewlyController:
         self._realtime = False
 
         self.mode = "init"
+        self._status_code = self.STATUS_INITIALIZING
         self.paused = False
         self._command_buffer = []
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
@@ -196,6 +201,16 @@ class NewlyController:
         self.is_shutdown = True
 
     @property
+    def status(self):
+        if self._status_code is None or self._status_code == self.STATUS_INITIALIZING:
+            return "Initializing"
+        elif self._status_code == self.STATUS_NO_MACHINE_FOUND:
+            return "No Machine Found (zadig needed?)"
+        elif self._status_code == self.STATUS_NO_USB_FOUND:
+            return "No USB Found"
+        return f"Connected to machine #{self._status_code}"
+    
+    @property
     def connected(self):
         if self.connection is None:
             return False
@@ -219,6 +234,7 @@ class NewlyController:
         except (ConnectionError, ConnectionRefusedError, AttributeError) as e:
             self.usb_log(f"Error during disconnect: {e}")
         self.connection = None
+        self._status_code = self.STATUS_INITIALIZING
         # Translation hint _("Connection closed")
         self.service.signal("pipe;usb_status", "Connection closed")
         # Reset error to allow another attempt
@@ -268,7 +284,8 @@ class NewlyController:
         count = 0
         while not self.connection.is_open(self._machine_index):
             try:
-                if self.connection.open(self._machine_index) < 0:
+                self._status_code = self.connection.open(self._machine_index)
+                if self._status_code < 0:
                     raise ConnectionError
                 self.init_laser()
                 # Translation hint _("Connection established")
