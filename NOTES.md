@@ -9,7 +9,7 @@ The current code in the GitHub repository may contain experimental features or o
 | **Lihuiyu** | ⚠️ Minor issues | Under revision | Users report about raster y axis registration issues |
 | **GRBL** | ✅ Okay | Stable | No issues known |
 | **Moshi** | ✅ Okay | Stable | No issues known |
-| **Newly** | ✅ Okay | Stable | No issues known |
+| **Newly** | ⚠️ Minor issues | Under revision | User report about isseues after running a succesful job |
 | **Ruida** | ⚠️ Minor Issues | Under Revision | Major rework in progress, fit for testing |
 | **Balor** | ✅ Okay | Stable | No issues known |
 
