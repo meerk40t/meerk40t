@@ -10,7 +10,7 @@ The current code in the GitHub repository may contain experimental features or o
 | **GRBL** | ✅ Okay | Stable | No issues known |
 | **Moshi** | ✅ Okay | Stable | No issues known |
 | **Newly** | ✅ Okay | Stable | No issues known |
-| **Ruida** | ⚠️ Minor Issues | Under Revision | Major rework in progress, not recommended for public use yet |
+| **Ruida** | ⚠️ Minor Issues | Under Revision | Major rework in progress, fit for testing |
 | **Balor** | ✅ Okay | Stable | No issues known |
 
 **Status Legend:**
