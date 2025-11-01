@@ -1,4 +1,4 @@
-from math import ceil, cos, floor, sin, sqrt, tan, tau
+from math import atan2, ceil, cos, floor, sin, sqrt, tan, tau
 
 from meerk40t.svgelements import Point
 
@@ -17,7 +17,7 @@ This work is MIT Licensed.
 
 class ZinglPlotter:
     @staticmethod
-    def plot_arc(arc):
+    def plot_arc_old(arc):
         """
         Plots an arc by converting it into a series of cubic Bézier curves and plotting those instead.
 
@@ -82,6 +82,80 @@ class ZinglPlotter:
             )
             p_start = Point(p_end)
             current_t = next_t
+
+    @staticmethod
+    def plot_arc(arc):
+        """
+        Pixel-perfect arc plotting using angular interpolation with deduplication.
+
+        This implements proper pixel-perfect arc plotting as recommended in the TODO comments,
+        avoiding the Bézier curve approximation used in plot_arc().
+
+        @param arc: Arc object with center, rx, ry, start, end, sweep properties
+        @return: yields x, y coordinates along the arc
+        """
+        # Handle degenerate cases
+        if abs(arc.sweep) < 1e-10:
+            # Very small sweep, just plot the start point
+            yield int(arc.start[0]), int(arc.start[1])
+            return
+
+        # Get arc parameters
+        cx = arc.center[0]
+        cy = arc.center[1]
+        rx = abs(arc.rx)
+        ry = abs(arc.ry)
+
+        # Handle zero radius cases
+        if rx < 1e-10 or ry < 1e-10:
+            # Degenerate to line
+            yield from ZinglPlotter.plot_line(
+                arc.start[0], arc.start[1], arc.end[0], arc.end[1]
+            )
+            return
+
+        # Get start angle
+        start_angle = arc.get_start_t()
+
+        # Calculate steps for pixel-perfect plotting
+        # Ensure consecutive points are at most 1 pixel apart
+        max_radius = max(rx, ry)
+        if max_radius > 0:
+            # Angular step size that gives ~1 pixel spacing at maximum radius
+            max_angular_step = 1.0 / max_radius
+            steps = max(16, int(abs(arc.sweep) / max_angular_step) + 1)
+        else:
+            steps = 16  # fallback
+
+        # Use angular interpolation with pixel deduplication for pixel-perfect plotting
+        points = set()  # Use set to avoid duplicate pixels
+
+        for i in range(steps + 1):
+            t = i / steps
+            angle = start_angle + t * arc.sweep
+
+            # Calculate point on ellipse
+            cos_a = cos(angle)
+            sin_a = sin(angle)
+
+            px = cx + rx * cos_a
+            py = cy + ry * sin_a
+
+            # Convert to integer pixel coordinates
+            pix_x = int(px)
+            pix_y = int(py)
+
+            # Add to set to avoid duplicates
+            points.add((pix_x, pix_y))
+
+        # Yield points in angular order from start point
+        if points:
+            # Sort points by angle from center, starting from the start angle
+            sorted_points = sorted(points, key=lambda p: (
+                (atan2(p[1] - cy, p[0] - cx) - start_angle) % tau
+            ))
+            for px, py in sorted_points:
+                yield px, py
 
     @staticmethod
     def plot_line(x0, y0, x1, y1):
