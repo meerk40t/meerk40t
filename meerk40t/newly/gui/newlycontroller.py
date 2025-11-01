@@ -529,6 +529,8 @@ class NewlyControllerPanel(wx.ScrolledWindow):
 
     @signal_listener("driver;position")
     def on_device_update(self, origin, pos):
+        if len(pos) < 4:
+            return
         self.info_label.SetLabel(f"{Length(pos[2], digits=1).length_mm}, {Length(pos[3], digits=1).length_mm}")
     
     @signal_listener("newly_controller_update")
