@@ -86,8 +86,9 @@ class USBConnection:
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 2000
-        self.max_retries = 10  # Maximum retries before attempting recovery
-        self.sleep_between_retries = 0.5  # Sleep time between retries
+        self.max_retries = 3  # Maximum retries before attempting recovery
+        self.max_recovery_attempts = 3  # Limit connection recovery attempts
+        self.sleep_between_retries = 0.25  # Sleep time between retries
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -316,7 +317,6 @@ class USBConnection:
         data_remaining = len(data)
         retries = 0
         recovery_attempts = 0
-        max_recovery_attempts = 3  # Limit connection recovery attempts
         while data_remaining > 0:
             packet_length = min(0x1000, data_remaining)
             packet = data[:packet_length]
@@ -350,9 +350,13 @@ class USBConnection:
                     retries += 1
                     if retries > self.max_retries:
                         recovery_attempts += 1
-                        if recovery_attempts > max_recovery_attempts:
-                            self.channel(f"Too many connection recovery attempts ({recovery_attempts}). Giving up.")
-                            raise ConnectionError(f"Failed to recover connection after {recovery_attempts} attempts")
+                        if recovery_attempts > self.max_recovery_attempts:
+                            self.channel(
+                                f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                            )
+                            raise ConnectionError(
+                                f"Failed to recover connection after {recovery_attempts} attempts"
+                            )
                         self._recover_connection(index)
                         retries = 0  # Start again after reopening.
                     continue  # Try again.
@@ -364,9 +368,13 @@ class USBConnection:
                         retries += 1
                         if retries > self.max_retries:
                             recovery_attempts += 1
-                            if recovery_attempts > max_recovery_attempts:
-                                self.channel(f"Too many connection recovery attempts ({recovery_attempts}). Giving up.")
-                                raise ConnectionError(f"Failed to recover connection after {recovery_attempts} attempts")
+                            if recovery_attempts > self.max_recovery_attempts:
+                                self.channel(
+                                    f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                                )
+                                raise ConnectionError(
+                                    f"Failed to recover connection after {recovery_attempts} attempts"
+                                )
                             self._recover_connection(index)
                             retries = 0  # Start again after reopening.
                         continue  # Try again.
@@ -390,9 +398,13 @@ class USBConnection:
                 self.backend_error_code = e.backend_error_code
                 self.channel(str(e))
                 recovery_attempts += 1
-                if recovery_attempts > max_recovery_attempts:
-                    self.channel(f"Too many connection recovery attempts ({recovery_attempts}). Giving up.")
-                    raise ConnectionError(f"Failed to recover connection after {recovery_attempts} attempts") from e
+                if recovery_attempts > self.max_recovery_attempts:
+                    self.channel(
+                        f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                    )
+                    raise ConnectionError(
+                        f"Failed to recover connection after {recovery_attempts} attempts"
+                    ) from e
                 self._recover_connection(index)
                 retries = 0  # Start again after reopening.
             except KeyError:
@@ -401,9 +413,13 @@ class USBConnection:
                 """
                 self.channel("Not connected.")
                 recovery_attempts += 1
-                if recovery_attempts > max_recovery_attempts:
-                    self.channel(f"Too many connection recovery attempts ({recovery_attempts}). Giving up.")
-                    raise ConnectionError(f"Failed to recover connection after {recovery_attempts} attempts")
+                if recovery_attempts > self.max_recovery_attempts:
+                    self.channel(
+                        f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                    )
+                    raise ConnectionError(
+                        f"Failed to recover connection after {recovery_attempts} attempts"
+                    )
                 self._recover_connection(index)
         return True  # Successfully wrote all data
 
