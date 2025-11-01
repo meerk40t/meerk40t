@@ -1,6 +1,5 @@
 import unittest
 from collections import deque
-from unittest.mock import patch
 from meerk40t.kernel.channel import Channel
 import threading
 import time
@@ -430,25 +429,6 @@ class TestChannelThreading(unittest.TestCase):
         if hasattr(self.channel, 'threaded') and self.channel.threaded:
             self.channel.threaded = False
 
-    def test_threaded_messaging(self):
-        """Test basic threaded message sending."""
-        messages = []
-        def collector(msg):
-            messages.append(msg)
-
-        self.channel.watch(collector)
-
-        # Mock the threaded start method - placeholder for future implementation
-        with patch.object(self.channel, 'start'):
-            self.channel("test", execute_threaded=True)
-            # In real implementation, this would be handled by the thread
-
-    def test_threaded_channel_initialization(self):
-        """Test that threaded channels can be created."""
-        # This is a placeholder - actual threading tests would need
-        # more complex setup with real kernel integration
-        pass
-
     def test_concurrent_threaded_messaging(self):
         """Test that threaded channels handle concurrent messages correctly."""
         import concurrent.futures
@@ -521,7 +501,7 @@ class TestChannelThreading(unittest.TestCase):
                 thread.join(timeout=1.0)
 
     def test_threaded_message_ordering(self):
-        """Test that messages are processed in order within threaded mode."""
+        """Test that messages are processed in threaded mode (order not guaranteed)."""
         messages = []
         lock = threading.Lock()
         
@@ -618,6 +598,7 @@ class TestChannelWeakReferences(unittest.TestCase):
     def test_weak_reference_cleanup(self):
         """Test that dead weak references are cleaned up."""
         import gc
+        import time
         
         messages = []
 
@@ -631,11 +612,13 @@ class TestChannelWeakReferences(unittest.TestCase):
 
         # Delete the watcher and force garbage collection
         del collector
-        gc.collect()
 
-        # Check that the watcher list has been cleaned up
-        # The weak reference should be automatically removed when the object is GC'd
-        # Since we have the _watcher_died callback, dead refs should be removed
+        # Poll for watcher cleanup, up to 10 times with a short sleep
+        for _ in range(10):
+            gc.collect()
+            if len(self.channel.watchers) == 0:
+                break
+            time.sleep(0.01)
         self.assertEqual(len(self.channel.watchers), 0)
 
     def test_weak_reference_unwatch(self):
