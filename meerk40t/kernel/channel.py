@@ -27,7 +27,7 @@ BBCODE_LIST = {
     "bold": "\033[1m",
     "/bold": "\033[22m",
     "italic": "\033[3m",
-    "/italic": "\033[3m",
+    "/italic": "\033[23m",
     "underline": "\033[4m",
     "/underline": "\033[24m",
     "underscore": "\033[4m",
@@ -259,11 +259,20 @@ class Channel:
         for q in self.watchers:
             if q is monitor_function:
                 return  # This is already being watched by that.
+            # Also check for weak references to the same function
+            if isinstance(q, weakref.ref) and q() is monitor_function:
+                return  # Already have a weak reference to this function
         
         if weak:
             # Use weak reference to prevent memory leaks
-            ref = weakref.ref(monitor_function, self._watcher_died)
-            self.watchers.append(ref)
+            try:
+                ref = weakref.ref(monitor_function, self._watcher_died)
+                self.watchers.append(ref)
+            except TypeError:
+                # Some callables (like built-ins, lambdas) don't support weak references
+                # Fall back to strong reference
+                logger.warning(f"Callable {monitor_function} does not support weak references, using strong reference")
+                self.watchers.append(monitor_function)
         else:
             self.watchers.append(monitor_function)
             
@@ -308,7 +317,10 @@ class Channel:
                 watcher_func(message)
         except Exception as e:
             # Log watcher errors but continue processing other watchers
-            logger.warning(f"Watcher error in channel '{self.name}': {e}")
+            import traceback
+            logger.warning(
+                f"Watcher error in channel '{self.name}': {type(e).__name__}: {e}\n{traceback.format_exc()}"
+            )
 
     def _watcher_died(self, ref):
         """Callback when a weak reference watcher is garbage collected."""
@@ -379,8 +391,12 @@ class Channel:
                     # Use timeout to allow checking self.threaded periodically
                     q, a, k = queue.get(timeout=0.1)
                     self(q, *a, **k, execute_threaded=False)
-                except (Empty, Exception):
-                    # Queue.get() timed out or other error, check if we should continue
+                except Empty:
+                    # Queue.get() timed out, check if we should continue
+                    continue
+                except Exception as e:
+                    # Log unexpected errors but continue processing
+                    logger.warning(f"Unexpected error in threaded channel '{self.name}': {e}")
                     continue
 
         def stop():
