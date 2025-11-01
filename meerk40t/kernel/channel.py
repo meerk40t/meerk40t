@@ -139,7 +139,7 @@ class Channel:
         self._ = lambda e: e
         self.timestamp = timestamp
         self.pure = pure
-        self.buffer = None if buffer_size == 0 else deque()
+        self.buffer = None if buffer_size == 0 else deque(maxlen=buffer_size)
         self.ansi = ansi
         self.threaded = False
 
@@ -155,8 +155,6 @@ class Channel:
             self._call_watcher(w, message)
         if self.buffer is not None:
             self.buffer.append(message)
-            while len(self.buffer) > self.buffer_size:
-                self.buffer.popleft()
 
     def __call__(
         self,
@@ -206,8 +204,6 @@ class Channel:
             self._call_watcher(w, message, indent=indent, ansi=ansi, original_msg=original_msg)
         if self.buffer is not None:
             self.buffer.append(message)
-            while len(self.buffer) > self.buffer_size:
-                self.buffer.popleft()
 
     def __len__(self):
         return self.buffer_size
@@ -331,21 +327,15 @@ class Channel:
 
     def unwatch(self, monitor_function: Callable):
         """Remove a watcher function from this channel."""
-        # First try direct removal (for non-weak references)
-        try:
-            self.watchers.remove(monitor_function)
-            return
-        except ValueError:
-            pass
-        
-        # If direct removal failed, check for weak references
-        for w in self.watchers[:]:
-            if isinstance(w, weakref.ref) and w() is monitor_function:
+        # Remove all matching watchers (direct references or weakrefs)
+        removed = False
+        for w in self.watchers[:]:  # Copy to avoid modification during iteration
+            if w is monitor_function or (isinstance(w, weakref.ref) and w() is monitor_function):
                 self.watchers.remove(w)
-                return
+                removed = True
         
-        # If we get here, the function wasn't found
-        raise ValueError(f"Watcher {monitor_function} not found in channel '{self.name}'")
+        if not removed:
+            raise ValueError(f"Watcher {monitor_function} not found in channel '{self.name}'")
 
     def resize_buffer(self, new_size: int):
         """

@@ -638,22 +638,21 @@ class TestChannelWeakReferences(unittest.TestCase):
         # Since we have the _watcher_died callback, dead refs should be removed
         self.assertEqual(len(self.channel.watchers), 0)
 
-    def test_weak_reference_strong_fallback(self):
-        """Test that weak=False still works normally."""
+    def test_weak_reference_unwatch(self):
+        """Test that unwatch works for weak reference watchers."""
         messages = []
-
+        
         def collector(msg):
             messages.append(msg)
-
-        # Register with weak=False (default)
-        self.channel.watch(collector, weak=False)
-        self.channel("test", indent=False)
-        self.assertEqual(messages, ["test"])
-
-        # Function should still be in watchers
-        self.assertEqual(len(self.channel.watchers), 1)
-        self.assertIn(collector, self.channel.watchers)
-
-
+        
+        # Register the watcher with weak=True
+        self.channel.watch(collector, weak=True)
+        self.channel("test1", indent=False)
+        self.assertEqual(messages, ["test1"])
+        
+        # Unwatch should work even though it's stored as a weakref
+        self.channel.unwatch(collector)
+        self.channel("test2", indent=False)
+        self.assertEqual(messages, ["test1"])  # No new message
 if __name__ == '__main__':
     unittest.main()
