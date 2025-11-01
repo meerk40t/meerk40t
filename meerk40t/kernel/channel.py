@@ -1,7 +1,9 @@
 import re
 import threading
+import weakref
 from collections import deque
 from datetime import datetime
+from queue import Queue
 from typing import Callable, Optional, Union
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
@@ -36,9 +38,15 @@ BBCODE_LIST = {
 }
 
 # re for bbcode->ansi
+all_tags = list(BBCODE_LIST.keys())
+# Add closing versions of color tags that don't have explicit closing entries
+color_tags = [k for k in BBCODE_LIST.keys() if not k.startswith('/') and k not in ('normal', 'positive')]
+closing_tags = ['/' + k for k in color_tags]
+all_tags.extend(closing_tags)
+
 RE_ANSI = re.compile(
     r"((?:\[raw\])(.*?)(?:\[/raw\]|$)|"
-    + r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])
+    + r"|".join([r"\[%s\]" % x for x in all_tags])
     + r")",
     re.IGNORECASE,
 )
@@ -67,8 +75,35 @@ def bbcode_to_plain(text):
 
 class Channel:
     """
-    Register and configure the Kernel channel that is used to send and view data within the kernel. Channels can send
-    both string data and binary data. They provide debug information and data such as from a server module.
+    Observer pattern implementation for kernel messaging.
+    
+    Channels provide a publish-subscribe mechanism for distributing messages
+    throughout the MeerK40t kernel. They support both synchronous and 
+    asynchronous (threaded) message delivery, optional buffering, and 
+    text formatting for console output.
+    
+    Key Features:
+    - Observer pattern with watcher registration (supports weak references)
+    - Optional message buffering with configurable size
+    - Threaded message processing for performance
+    - BBCode to ANSI text formatting for console output
+    - Timestamp prefixes for logging
+    - Greeting messages for new watchers
+    - Error isolation (one broken watcher doesn't break others)
+    
+    Thread Safety:
+    - Synchronous mode is thread-safe for single-writer scenarios
+    - Threaded mode uses proper synchronization with Queue
+    
+    Memory Management:
+    - Weak reference support prevents memory leaks
+    - Automatic cleanup of dead weak references
+    
+    Usage:
+        channel = Channel("debug", buffer_size=100, timestamp=True)
+        channel.watch(print)  # Add watcher
+        channel("Hello world!")  # Send message
+        channel.resize_buffer(200)  # Resize buffer
     """
 
     def __init__(
@@ -102,8 +137,26 @@ class Channel:
         self,
         message: Union[str, bytes, bytearray],
     ):
-        for w in self.watchers:
-            w(message)
+        # Create a copy of watchers to avoid modification during iteration
+        for w in self.watchers[:]:
+            try:
+                if isinstance(w, weakref.ref):
+                    # Weak reference - get the actual function
+                    watcher_func = w()
+                    if watcher_func is None:
+                        # Weak reference is dead, remove it
+                        try:
+                            self.watchers.remove(w)
+                        except ValueError:
+                            pass
+                        continue
+                    watcher_func(message)
+                else:
+                    w(message)
+            except Exception:
+                # Log watcher errors but continue processing other watchers
+                # In a real implementation, this might log to a channel
+                pass
         if self.buffer is not None:
             self.buffer.append(message)
             while len(self.buffer) > self.buffer_size:
@@ -149,7 +202,7 @@ class Channel:
             if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
                 console_open_print = True
                 break
-        for w in self.watchers:
+        for w in self.watchers[:]:  # Copy list to avoid modification during iteration
             # Avoid double printing if this channel is "open" and printed
             # and console is also printed
             if w is print and console_open_print:
@@ -158,7 +211,23 @@ class Channel:
             if isinstance(w, Channel):
                 w(original_msg, indent=indent, ansi=ansi)
             else:
-                w(message)
+                try:
+                    if isinstance(w, weakref.ref):
+                        # Weak reference - get the actual function
+                        watcher_func = w()
+                        if watcher_func is None:
+                            # Weak reference is dead, remove it
+                            try:
+                                self.watchers.remove(w)
+                            except ValueError:
+                                pass
+                            continue
+                        watcher_func(message)
+                    else:
+                        w(message)
+                except Exception:
+                    # Log watcher errors but continue processing other watchers
+                    pass
         if self.buffer is not None:
             self.buffer.append(message)
             while len(self.buffer) > self.buffer_size:
@@ -168,10 +237,12 @@ class Channel:
         return self.buffer_size
 
     def __iadd__(self, other):
-        self.watch(monitor_function=other)
+        self.watch(other)
+        return self
 
     def __isub__(self, other):
-        self.unwatch(monitor_function=other)
+        self.unwatch(other)
+        return self
 
     def __bool__(self):
         """
@@ -193,17 +264,36 @@ class Channel:
 
     def bbcode_to_ansi_match(self, m):
         tag = re.sub(r"\].*", "", m[0])[1:].lower()
-        return BBCODE_LIST[tag] if tag != "raw" else m[2]
+        if tag == "raw":
+            return m[2]
+        # For closing tags that don't have explicit entries, return normal
+        return BBCODE_LIST.get(tag, BBCODE_LIST["normal"])
 
     def bbcode_to_plain(self, text):
-        strip = lambda m: m[2]
+        def strip(m):
+            tag = re.sub(r"\].*", "", m[0])[1:].lower()
+            return m[2] if tag == "raw" else ""
         return RE_ANSI.sub(strip, text)
 
-    def watch(self, monitor_function: Callable):
+    def watch(self, monitor_function: Callable, weak: bool = False):
+        """
+        Add a watcher function to this channel.
+        
+        Args:
+            monitor_function: The function to call when messages are sent
+            weak: If True, use a weak reference to prevent memory leaks
+        """
         for q in self.watchers:
             if q is monitor_function:
                 return  # This is already being watched by that.
-        self.watchers.append(monitor_function)
+        
+        if weak:
+            # Use weak reference to prevent memory leaks
+            ref = weakref.ref(monitor_function, self._watcher_died)
+            self.watchers.append(ref)
+        else:
+            self.watchers.append(monitor_function)
+            
         if self.greet is not None:
             if isinstance(self.greet, str):
                 monitor_function(self.greet)
@@ -214,8 +304,33 @@ class Channel:
             for line in list(self.buffer):
                 monitor_function(line)
 
+    def _watcher_died(self, ref):
+        """Callback when a weak reference watcher is garbage collected."""
+        try:
+            self.watchers.remove(ref)
+        except ValueError:
+            pass  # Already removed
+
     def unwatch(self, monitor_function: Callable):
+        """Remove a watcher function from this channel."""
         self.watchers.remove(monitor_function)
+
+    def resize_buffer(self, new_size: int):
+        """
+        Dynamically resize the message buffer.
+        
+        Args:
+            new_size: New buffer size. 0 disables buffering.
+        """
+        if new_size == 0:
+            self.buffer = None
+        else:
+            if self.buffer is None:
+                self.buffer = deque(maxlen=new_size)
+            else:
+                # Create new deque with new maxlen and copy existing items
+                self.buffer = deque(self.buffer, maxlen=new_size)
+        self.buffer_size = new_size
 
     ###########################
     # Threaded Channel Mixins.
@@ -224,14 +339,14 @@ class Channel:
     def start(self, root):
         self.threaded = True
         lock = threading.Condition()
-        queue = []
+        queue = Queue()  # Thread-safe queue
 
         def threaded_call(
             message: Union[str, bytes, bytearray],
             *args,
             **kwargs,
         ):
-            queue.append((message, args, kwargs))
+            queue.put((message, args, kwargs))
             with lock:
                 lock.notify()
 
@@ -239,11 +354,13 @@ class Channel:
 
         def run():
             while self.threaded:
-                while queue:
-                    q, a, k = queue.pop(0)
+                try:
+                    # Use timeout to allow checking self.threaded periodically
+                    q, a, k = queue.get(timeout=0.1)
                     self(q, *a, **k, execute_threaded=False)
-                with lock:
-                    lock.wait()
+                except Exception:
+                    # Queue.get() timed out or other error, check if we should continue
+                    continue
 
         def stop():
             self.threaded = False
