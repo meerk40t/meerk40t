@@ -588,6 +588,10 @@ class EZCFile:
             q = _huffman_decode_bitarray(file, uncompressed_length)
         except ImportError:
             q = _huffman_decode_python(file, uncompressed_length)
+        
+        # Store decompressed data for later use in recovery methods
+        self._decompressed_vectors = q
+        
         data = BytesIO(q)
         
         # Parse objects until we reach end of data
@@ -609,6 +613,185 @@ class EZCFile:
                 # Otherwise, we hit a terminator - skip it and continue parsing next section
                 # The terminator is already consumed by parse_object's read
                 continue
+        
+        # Post-process: Try to recover orphaned groups that belong to extracted text objects
+        self._recover_orphaned_text_outline_groups()
+        
+        # Second post-process: Try to recover character outline groups from binary
+        self._extract_character_outline_groups_from_binary()
+
+    def _recover_orphaned_text_outline_groups(self):
+        """
+        After parsing, some outline groups may be orphaned at the top level when they should
+        be associated with extracted text objects in hatches.
+        
+        This can happen when:
+        1. Text strings are extracted from V1 hatch binary data
+        2. Their outline groups were parsed after the hatch's children count was exhausted
+        3. The groups ended up as top-level objects instead of hatch children
+        
+        This method attempts to detect and fix such associations.
+        """
+        # Find all hatches with ExtractedText objects
+        hatches_with_extracted_text = []
+        for obj_idx, obj in enumerate(self.objects):
+            if not isinstance(obj, EZHatch):
+                continue
+            
+            # Check if this hatch has ExtractedText children
+            for child_idx, child in enumerate(obj):
+                if type(child).__name__ == 'ExtractedText':
+                    hatches_with_extracted_text.append((obj_idx, child_idx, child))
+        
+        if not hatches_with_extracted_text:
+            return  # No extracted text, nothing to recover
+        
+        # For each extracted text, look for a nearby orphaned group
+        for hatch_idx, text_child_idx, extracted_text in hatches_with_extracted_text:
+            text_value = extracted_text.text.strip() if hasattr(extracted_text, 'text') else ''
+            if not text_value:
+                continue
+            
+            # Look for an orphaned group within a few indices after the hatch
+            # The group would typically appear right after the hatch in the object list
+            search_start = hatch_idx + 1
+            search_end = min(search_start + 5, len(self.objects))
+            
+            for search_idx in range(search_start, search_end):
+                candidate = self.objects[search_idx]
+                if not isinstance(candidate, EZGroup):
+                    continue
+                
+                # Check if this group might be the outline for the text
+                # Heuristics:
+                # 1. Group label is often one character (like 'T') - part of larger text
+                # 2. Group has children with character labels matching text characters
+                # 3. Group position is close to hatch position
+                
+                candidate_label = getattr(candidate, 'label', '')
+                
+                # If group label is a single character and it's in the text, might be ours
+                if len(candidate_label) == 1 and candidate_label in text_value:
+                    # Found a likely match - move this group into the hatch
+                    try:
+                        self.objects.pop(search_idx)  # Remove from top level
+                        self.objects[hatch_idx].append(candidate)  # Add to hatch
+                        # Note: Indices shifted, but we're not continuing to search, so it's OK
+                        break
+                    except Exception:
+                        # If something goes wrong, just leave the group where it is
+                        pass
+
+    def _extract_character_outline_groups_from_binary(self):
+        """
+        Extract character outline EZGroup objects that weren't parsed in the normal stream
+        but exist in the decompressed binary data. This handles cases where parser skips
+        certain objects due to corrupted children counts or sectioning.
+        
+        Character outline groups have:
+        - Type: 0x10 (EZGroup)
+        - Label: Single character (e.g., 'O', 'U', 'T')
+        - Children: Usually 1-2 EZCurve objects containing the outline
+        
+        Uses POSITION-BASED MATCHING to ensure we grab the correct outlines for each text
+        and avoid pulling character outlines from other texts (e.g., don't grab DEPRESSURIZE's 'U' for OUT).
+        """
+        if not hasattr(self, '_decompressed_vectors'):
+            return  # No decompressed data available
+        
+        q = self._decompressed_vectors
+        decompressed_stream = BytesIO(q)
+        
+        # First pass: Find all character outline groups in the binary with their positions
+        # This creates a map of {position: {char: [group_objects]}} for fast lookup
+        character_outlines_by_position = {}
+        
+        for offset in range(len(q) - 4):
+            if offset + 4 <= len(q):
+                val = struct.unpack('<I', q[offset:offset+4])[0]
+                if val == 0x10:  # EZGroup type
+                    decompressed_stream.seek(offset)
+                    test_objects = []
+                    try:
+                        if parse_object(decompressed_stream, test_objects, enable_resync=False):
+                            if test_objects:
+                                obj = test_objects[0]
+                                obj_label = getattr(obj, 'label', '')
+                                obj_pos = getattr(obj, 'position', None)
+                                
+                                # Only interested in single-character outline groups
+                                if len(obj_label) == 1 and obj_pos is not None:
+                                    if obj_pos not in character_outlines_by_position:
+                                        character_outlines_by_position[obj_pos] = {}
+                                    if obj_label not in character_outlines_by_position[obj_pos]:
+                                        character_outlines_by_position[obj_pos][obj_label] = []
+                                    
+                                    character_outlines_by_position[obj_pos][obj_label].append(obj)
+                    except Exception:
+                        pass
+        
+        # Second pass: For each text, find character outlines at the same position
+        for hatch_idx, hatch in enumerate(self.objects):
+            if not isinstance(hatch, EZHatch):
+                continue
+            
+            # Find all EZGroup objects in hatch that have a position
+            # These groups likely contain outline information for nearby ExtractedText
+            hatch_group_positions = set()
+            for child in hatch:
+                if isinstance(child, EZGroup):
+                    pos = getattr(child, 'position', None)
+                    if pos is not None:
+                        hatch_group_positions.add(pos)
+            
+            # Check for ExtractedText children that might need character outlines
+            for child_idx, child in enumerate(hatch):
+                if type(child).__name__ == 'ExtractedText':
+                    text_value = child.text.strip() if hasattr(child, 'text') else ''
+                    
+                    if not text_value:
+                        continue
+                    
+                    # For ExtractedText without position, infer it from nearby groups
+                    # Look for character outline groups in the binary that contain
+                    # characters matching this text
+                    text_chars = set(text_value)
+                    
+                    # Find the most likely position by looking for outline groups
+                    # that have multiple characters from this text
+                    best_position = None
+                    best_char_count = 0
+                    
+                    for pos, char_dict in character_outlines_by_position.items():
+                        # Count how many characters of this text are at this position
+                        matching_chars = len(text_chars & set(char_dict.keys()))
+                        if matching_chars > best_char_count:
+                            best_char_count = matching_chars
+                            best_position = pos
+                    
+                    # If we found a likely position, add its character outlines
+                    if best_position is not None and best_position in character_outlines_by_position:
+                        available_chars = character_outlines_by_position[best_position]
+                        
+                        # For each unique character in this text
+                        for char in text_chars:
+                            if char in available_chars:
+                                # Check if we already have this character in the hatch
+                                already_have = False
+                                for existing_child in hatch:
+                                    if (isinstance(existing_child, EZGroup) and 
+                                        getattr(existing_child, 'label', '') == char):
+                                        already_have = True
+                                        break
+                                
+                                # Add the character outline if not already present
+                                if not already_have:
+                                    try:
+                                        # Take the first matching outline for this character
+                                        obj = available_chars[char][0]
+                                        hatch.append(obj)
+                                    except Exception:
+                                        pass
 
 
 class EZObject:
@@ -1213,6 +1396,8 @@ class EZHatch(list, EZObject):
         These are font name references and hatch labels that may not be directly
         loaded as operands. We extract them and add as text objects to the hatch.
 
+        Also attempts to extract outline groups (character shapes) that follow text strings.
+
         Only non-empty strings containing printable characters are kept.
         
         Binary structure: [marker: int32] [text: UTF-16-LE] [height: int32]
@@ -1273,7 +1458,7 @@ class EZHatch(list, EZObject):
                                                 pass
                                         height_offset += 4
                                     
-                                    extracted_texts[start] = (text, height)
+                                    extracted_texts[start] = (text, height, i)  # Store end offset too
                     except Exception:
                         pass
             i += 1
@@ -1284,7 +1469,11 @@ class EZHatch(list, EZObject):
         }
 
         for offset, text_data in sorted(extracted_texts.items()):
-            text, height = text_data if isinstance(text_data, tuple) else (text_data, 0)
+            text_tuple = text_data if isinstance(text_data, tuple) else (text_data, 0, 0)
+            text = text_tuple[0]
+            height = text_tuple[1] if len(text_tuple) > 1 else 0
+            text_end_offset = text_tuple[2] if len(text_tuple) > 2 else 0
+            
             if text and text not in existing_texts:  # Double-check text is non-empty
                 # Create a simple text object and append it
                 class ExtractedText:
@@ -1300,6 +1489,68 @@ class EZHatch(list, EZObject):
                 extracted.x += self.x
                 extracted.y += self.y
                 self.append(extracted)
+                
+                # Try to extract outline group for this text
+                # Look for a following EZGroup in the binary data
+                try:
+                    outline_group = self._try_extract_outline_group(data, text_end_offset, text)
+                    if outline_group:
+                        self.append(outline_group)
+                except Exception:
+                    # If outline extraction fails, continue without it
+                    pass
+
+    def _try_extract_outline_group(self, data, start_offset, text):
+        """
+        Try to extract an outline group that should follow extracted text.
+        
+        When text strings are extracted from V1 hatch binary data, their corresponding
+        outline groups (character shapes) should immediately follow in the binary stream.
+        This method attempts to locate and parse such a group.
+        
+        @param data: Binary data buffer (args[2])
+        @param start_offset: Offset after the text string where the group should start
+        @param text: The text string (for validation - group should have len(text) children)
+        @return: EZGroup if found and validated, None otherwise
+        """
+        if not data or start_offset >= len(data):
+            return None
+        
+        try:
+            from io import BytesIO
+            
+            # Look for an object type marker that indicates an EZGroup (type 0x10 = 16)
+            # Scan forward from start_offset up to 100 bytes for the marker
+            search_limit = min(start_offset + 100, len(data))
+            group_marker = 0x10  # EZGroup type
+            
+            for offset in range(start_offset, search_limit - 4, 1):
+                try:
+                    marker = struct.unpack('<i', data[offset:offset+4])[0]
+                    if marker == group_marker:
+                        # Found a potential EZGroup, try to parse it
+                        bio = BytesIO(data[offset:])
+                        try:
+                            group = EZGroup(bio)
+                            
+                            # Validate: group should have exactly len(text) children
+                            # (one for each character) or be close enough
+                            if len(group) > 0 and len(group) <= len(text) + 2:
+                                # Adjust group position to be relative to hatch
+                                if hasattr(group, 'x'):
+                                    group.x += self.x
+                                if hasattr(group, 'y'):
+                                    group.y += self.y
+                                return group
+                        except Exception:
+                            # Not a valid group at this offset, continue searching
+                            pass
+                except (struct.error, IndexError):
+                    pass
+            
+            return None
+        except Exception:
+            return None
 
     def _extract_v1_embedded_vectors(self, args):
         """
