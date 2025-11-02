@@ -239,7 +239,9 @@ class LihuiyuController:
         self.usb_log = service.channel(f"{name}/usb", buffer_size=USB_LOG_BUFFER_SIZE)
         self.usb_send_channel = service.channel(f"{name}/usb_send")
         self.recv_channel = service.channel(f"{name}/recv")
-        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
+        # Keep reference to prevent garbage collection with weak=True default
+        self._usb_status_handler = lambda e: service.signal("pipe;usb_status", e)
+        self.usb_log.watch(self._usb_status_handler)
         self.reset()
 
     def _acquire_all_buffer_locks(self):

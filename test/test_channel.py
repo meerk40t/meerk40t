@@ -389,7 +389,10 @@ class TestChannel(unittest.TestCase):
         self.assertFalse(self.channel)
 
         # Channel with watchers should be truthy
-        self.channel.watch(lambda x: None)
+        # Keep a reference to prevent garbage collection with weak=True default
+        def watcher_func(x):
+            pass
+        self.channel.watch(watcher_func)
         self.assertTrue(self.channel)
 
         # Channel with buffer should be truthy
@@ -637,5 +640,31 @@ class TestChannelWeakReferences(unittest.TestCase):
         self.channel.unwatch(collector)
         self.channel("test2", indent=False)
         self.assertEqual(messages, ["test1"])  # No new message
+
+    def test_strong_reference_behavior(self):
+        """Test that strong references (weak=False) prevent garbage collection."""
+        import gc
+        
+        messages = []
+        
+        def collector(msg):
+            messages.append(msg)
+        
+        # Register the watcher with weak=False (strong reference)
+        self.channel.watch(collector, weak=False)
+        self.channel("test", indent=False)
+        self.assertEqual(messages, ["test"])
+        
+        # Delete the watcher function
+        del collector
+        
+        # Force garbage collection
+        gc.collect()
+        
+        # Watcher should still exist because it's a strong reference
+        self.assertEqual(len(self.channel.watchers), 1)
+        
+        # Channel should still be truthy
+        self.assertTrue(self.channel)
 if __name__ == '__main__':
     unittest.main()

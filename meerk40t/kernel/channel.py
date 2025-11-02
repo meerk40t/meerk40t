@@ -265,7 +265,7 @@ class Channel:
             return m[2] if tag == "raw" else ""
         return RE_ANSI.sub(strip, text)
 
-    def watch(self, monitor_function: Callable, weak: bool = False):
+    def watch(self, monitor_function: Callable, weak: bool = True):
         """
         Add a watcher function to this channel.
         

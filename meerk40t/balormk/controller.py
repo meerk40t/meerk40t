@@ -246,7 +246,9 @@ class GalvoController:
         self.usb_log = service.channel(
             f"{self.service.safe_label}/usb", buffer_size=500
         )
-        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
+        # Keep reference to prevent garbage collection with weak=True default
+        self._usb_status_handler = lambda e: service.signal("pipe;usb_status", e)
+        self.usb_log.watch(self._usb_status_handler)
 
         self.connection = None
         self._is_opening = False

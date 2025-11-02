@@ -201,6 +201,10 @@ class RuidaControl:
             tcp_recv_channel = root.channel("ruidabridge/recv", pure=True)
             tcp_send_channel = root.channel("ruidabridge/send", pure=True)
 
+            # Store protocol handlers to prevent garbage collection with weak=True default
+            self._lb2rd_protocol = None
+            self._rd2lb_protocol = None
+
             def lb2rd_protocol(line):
                 self.send_buffer += line
                 if len(self.send_buffer) < 3:
@@ -223,6 +227,10 @@ class RuidaControl:
 
             def rd2lb_protocol(line):
                 tcp_send_channel(b"L" + struct.pack(">H", len(line)) + line)
+
+            # Store references to prevent garbage collection
+            self._lb2rd_protocol = lb2rd_protocol
+            self._rd2lb_protocol = rd2lb_protocol
 
             tcp_recv_channel.watch(lb2rd_protocol)
             self.emulator.reply.watch(rd2lb_protocol)
