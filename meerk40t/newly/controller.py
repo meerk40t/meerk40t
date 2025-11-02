@@ -90,6 +90,10 @@ class NewlyController:
     DEFAULT_PULSE_POWER = 1000.0  # Default pulse power in device units
     PERCENT_TO_DECIMAL = 100.0  # Convert percentage to decimal
 
+    STATUS_INITIALIZING = None
+    STATUS_NO_USB_FOUND = -1
+    STATUS_NO_MACHINE_FOUND = -2
+
     def __init__(
         self,
         service,
@@ -174,6 +178,7 @@ class NewlyController:
         self._realtime = False
 
         self.mode = "init"
+        self._status_code = self.STATUS_INITIALIZING
         self.paused = False
         self._command_buffer = []
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
@@ -198,6 +203,16 @@ class NewlyController:
         self.is_shutdown = True
 
     @property
+    def status(self):
+        if self._status_code is None or self._status_code == self.STATUS_INITIALIZING:
+            return "Initializing"
+        elif self._status_code == self.STATUS_NO_MACHINE_FOUND:
+            return "No Machine Found (zadig needed?)"
+        elif self._status_code == self.STATUS_NO_USB_FOUND:
+            return "No USB Found"
+        return f"Connected to machine #{self._status_code}"
+    
+    @property
     def connected(self):
         if self.connection is None:
             return False
@@ -211,7 +226,9 @@ class NewlyController:
 
     def abort_connect(self):
         self._abort_open = True
+        # Translation hint _("Connect Attempts Aborted")
         self.usb_log("Connect Attempts Aborted")
+        self.service.signal("pipe;usb_status", "Connect Attempts Aborted")  
 
     def disconnect(self):
         try:
@@ -219,6 +236,9 @@ class NewlyController:
         except (ConnectionError, ConnectionRefusedError, AttributeError) as e:
             self.usb_log(f"Error during disconnect: {e}")
         self.connection = None
+        self._status_code = self.STATUS_INITIALIZING
+        # Translation hint _("Connection closed")
+        self.service.signal("pipe;usb_status", "Connection closed")
         # Reset error to allow another attempt
         self.set_disable_connect(False)
 
@@ -257,6 +277,8 @@ class NewlyController:
             self.set_disable_connect(True)
             self.usb_log("Could not connect to the controller.")
             self.usb_log("Automatic connections disabled.")
+            # Translation hint _("Could not connect to the controller.")    
+            self.service.signal("pipe;usb_status", "Could not connect to the controller.")  
             raise ConnectionRefusedError("Could not connect to the controller.")
 
         self._is_opening = True
@@ -264,9 +286,12 @@ class NewlyController:
         count = 0
         while not self.connection.is_open(self._machine_index):
             try:
-                if self.connection.open(self._machine_index) < 0:
+                self._status_code = self.connection.open(self._machine_index)
+                if self._status_code < 0:
                     raise ConnectionError
                 self.init_laser()
+                # Translation hint _("Connection established")
+                self.service.signal("pipe;usb_status", "Connection established") 
             except (ConnectionError, ConnectionRefusedError):
                 time.sleep(self.CONNECTION_RETRY_DELAY)
                 count += 1
@@ -283,6 +308,8 @@ class NewlyController:
                     self.set_disable_connect(True)
                     self.usb_log("Could not connect to the controller.")
                     self.usb_log("Automatic connections disabled.")
+                    # Translation hint _("Could not connect to the controller.")
+                    self.service.signal("pipe;usb_status", "Could not connect to the controller.")
                     raise ConnectionRefusedError("Could not connect to the controller.")
                 time.sleep(self.CONNECTION_RETRY_DELAY)
                 continue
