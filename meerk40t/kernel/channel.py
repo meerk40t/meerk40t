@@ -141,6 +141,8 @@ class Channel:
         self.buffer = None if buffer_size == 0 else deque(maxlen=buffer_size)
         self.ansi = ansi
         self.threaded = False
+        self._call_depth = 0  # Recursion guard
+        self._pending_greetings = []  # Deferred greetings
 
     def __repr__(self):
         return f"Channel({repr(self.name)}, buffer_size={str(self.buffer_size)}, line_end={repr(self.line_end)})"
@@ -164,45 +166,58 @@ class Channel:
         execute_threaded=True,
         **kwargs,
     ):
-        if self.threaded and execute_threaded:
-            self._threaded_call(message, *args, indent=indent, ansi=ansi, **kwargs)
+        # Recursion guard - prevent infinite recursion
+        if self._call_depth > 10:
+            logger.warning(f"Channel '{self.name}' recursion limit exceeded, dropping message")
             return
-        if isinstance(message, (bytes, bytearray)) or self.pure:
-            self._call_raw(message)
-            return
+        self._call_depth += 1
+        try:
+            if self.threaded and execute_threaded:
+                if hasattr(self, '_threaded_call'):
+                    self._threaded_call(message, *args, indent=indent, ansi=ansi, **kwargs)
+                    return
+                else:
+                    # Channel is marked as threaded but start() was never called
+                    # Fall back to synchronous processing
+                    pass
+            if isinstance(message, (bytes, bytearray)) or self.pure:
+                self._call_raw(message)
+                return
 
-        original_msg = message
-        if self.line_end is not None:
-            message = message + self.line_end
-        if indent:
-            message = "    " + message.replace("\n", "\n    ")
-        if self.timestamp:
-            ts = datetime.now().strftime("[%H:%M:%S] ")
-            message = ts + message.replace("\n", f"\n{ts}")
-        if ansi:
-            if self.ansi:
-                # Convert bbcode to ansi
-                message = self.bbcode_to_ansi(message)
-            else:
-                # Convert bbcode to stripped
-                message = self.bbcode_to_plain(message)
+            original_msg = message
+            if self.line_end is not None:
+                message = message + self.line_end
+            if indent:
+                message = "    " + message.replace("\n", "\n    ")
+            if self.timestamp:
+                ts = datetime.now().strftime("[%H:%M:%S] ")
+                message = ts + message.replace("\n", f"\n{ts}")
+            if ansi:
+                if self.ansi:
+                    # Convert bbcode to ansi
+                    message = self.bbcode_to_ansi(message)
+                else:
+                    # Convert bbcode to stripped
+                    message = self.bbcode_to_plain(message)
 
-        console_open_print = False
-        # Check if this channel is "open" i.e. being sent to console
-        # and if so whether the console is being sent to print
-        # because if so then we don't want to print ourselves
-        for w in self.watchers:
-            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
-                console_open_print = True
-                break
-        for w in self.watchers[:]:  # Copy list to avoid modification during iteration
-            # Avoid double printing if this channel is "open" and printed
-            # and console is also printed
-            if w is print and console_open_print:
-                continue
-            self._call_watcher(w, message, indent=indent, ansi=ansi, original_msg=original_msg)
-        if self.buffer is not None:
-            self.buffer.append(message)
+            console_open_print = False
+            # Check if this channel is "open" i.e. being sent to console
+            # and if so whether the console is being sent to print
+            # because if so then we don't want to print ourselves
+            for w in self.watchers[:]:  # Make copy to avoid issues if watchers list changes
+                if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
+                    console_open_print = True
+                    break
+            for w in self.watchers[:]:  # Copy list to avoid modification during iteration
+                # Avoid double printing if this channel is "open" and printed
+                # and console is also printed
+                if w is print and console_open_print:
+                    continue
+                self._call_watcher(w, message, indent=indent, ansi=ansi, original_msg=original_msg)
+            if self.buffer is not None:
+                self.buffer.append(message)
+        finally:
+            self._call_depth -= 1
 
     def __len__(self):
         return self.buffer_size
@@ -271,15 +286,44 @@ class Channel:
         else:
             self.watchers.append(monitor_function)
             
+        # Defer greeting sending to avoid re-entrance issues
         if self.greet is not None:
-            if isinstance(self.greet, str):
-                monitor_function(self.greet)
-            else:
-                for g in self.greet():
-                    monitor_function(g)
+            self._pending_greetings.append(monitor_function)
+            
         if self.buffer is not None:
             for line in list(self.buffer):
                 monitor_function(line)
+
+        # Send any pending greetings
+        self._send_pending_greetings()
+
+    def _send_pending_greetings(self):
+        """Send pending greetings to watchers."""
+        if not self._pending_greetings:
+            return
+            
+        # Send greetings to pending watchers
+        for monitor_function in self._pending_greetings[:]:  # Copy to avoid modification
+            try:
+                if isinstance(self.greet, str):
+                    monitor_function(self.greet)
+                elif callable(self.greet):
+                    # Limit greeting iterations to prevent infinite loops
+                    count = 0
+                    for g in self.greet():
+                        if count >= 100:  # Safety limit
+                            logger.warning(f"Greet iteration limit exceeded in channel '{self.name}'")
+                            break
+                        monitor_function(g)
+                        count += 1
+                else:
+                    # greet is neither string nor callable, treat as string
+                    monitor_function(str(self.greet))
+            except Exception as e:
+                # Log greeting errors but don't fail
+                logger.warning(f"Error sending greeting to watcher in channel '{self.name}': {e}")
+        
+        self._pending_greetings.clear()
 
     def _call_watcher(self, watcher, message, indent=None, ansi=None, original_msg=None):
         """
@@ -334,7 +378,9 @@ class Channel:
                 removed = True
         
         if not removed:
-            raise ValueError(f"Watcher {monitor_function} not found in channel '{self.name}'")
+            # During shutdown or cleanup, don't raise an exception if watcher not found
+            # Just log a warning
+            logger.warning(f"Watcher {monitor_function} not found in channel '{self.name}'")
 
     def resize_buffer(self, new_size: int):
         """

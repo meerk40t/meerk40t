@@ -188,6 +188,7 @@ class Kernel(Settings):
         self.scheduler_handles_default_thread_jobs = True
 
         self.state = "init"
+        self._shutdown_requested = False
 
         # Scheduler
         self.jobs = {}
@@ -1232,7 +1233,7 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler", daemon=True)
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -1313,6 +1314,14 @@ class Kernel(Settings):
     def postmain(self):
         pass
 
+    def shutdown(self):
+        """Shutdown the kernel and stop all threads."""
+        self.state = "terminate"
+        self._shutdown = True
+        # Wait for the scheduler thread to finish
+        if hasattr(self, 'scheduler_thread') and self.scheduler_thread.is_alive():
+            self.scheduler_thread.join(timeout=1.0)
+
     def preshutdown(self):
         channel = self.channel("shutdown")
         _ = self.translation
@@ -1366,6 +1375,7 @@ class Kernel(Settings):
         """
         channel = self.channel("shutdown")
         self.state = "end"  # Terminates the Scheduler.
+        self._shutdown_requested = True
 
         _ = self.translation
 
@@ -1510,8 +1520,8 @@ class Kernel(Settings):
         self._last_message = {}
         self.listeners = {}
         if (
-            self.scheduler_thread != threading.current_thread()
-        ):  # Join if not this thread.
+            self.scheduler_thread != threading.current_thread() and not self.scheduler_thread.daemon
+        ):  # Join if not this thread and not daemon.
             self.scheduler_thread.join()
         if channel:
             channel(_("Shutdown."))
@@ -1988,8 +1998,12 @@ class Kernel(Settings):
         Check each job, and if that job is scheduled to run. Executes that job.
         @return:
         """
+        if self._shutdown_requested:
+            return
         self.state = "active"
         while self.state != "end":
+            if self._shutdown_requested:
+                break
             time.sleep(self.delay)
             while self.state == "pause":
                 # The scheduler is paused.
