@@ -1,5 +1,4 @@
 import re
-import threading
 import weakref
 from collections import deque
 from datetime import datetime
@@ -361,7 +360,6 @@ class Channel:
 
     def start(self, root):
         self.threaded = True
-        lock = threading.Condition()
         queue = Queue()  # Thread-safe queue
 
         def threaded_call(
@@ -370,8 +368,6 @@ class Channel:
             **kwargs,
         ):
             queue.put((message, args, kwargs))
-            with lock:
-                lock.notify()
 
         self._threaded_call = threaded_call
 
@@ -380,6 +376,8 @@ class Channel:
                 try:
                     # Use timeout to allow checking self.threaded periodically
                     q, a, k = queue.get(timeout=0.1)
+                    if not self.threaded:  # Check again after getting from queue
+                        break
                     self(q, *a, **k, execute_threaded=False)
                 except Empty:
                     # Queue.get() timed out, check if we should continue
@@ -391,8 +389,6 @@ class Channel:
 
         def stop():
             self.threaded = False
-            with lock:
-                lock.notify()
 
         thread = root.threaded(
             run,
