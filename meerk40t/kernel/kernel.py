@@ -105,6 +105,24 @@ class Kernel(Settings):
 
     The Kernel stores a persistence object, thread interactions, contexts, a translation routine, a run_later operation,
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
+
+    Key Features:
+    - Plugin-based architecture with lifecycle management
+    - Thread-safe job scheduling and execution
+    - Signal-based inter-module communication
+    - Channel-based messaging system
+    - Settings persistence and configuration management
+    - Translation and internationalization support
+    - Graceful shutdown with thread cleanup
+
+    Thread Management:
+    - Daemon scheduler thread for background job processing
+    - Proper thread synchronization and shutdown handling
+    - Job queue management with configurable delays
+
+    Lifecycle:
+    - init → prerun → run → postrun → preshutdown → shutdown → end
+    - Supports restart capability with state preservation
     """
 
     def __init__(
@@ -1315,7 +1333,19 @@ class Kernel(Settings):
         pass
 
     def shutdown(self):
-        """Shutdown the kernel and stop all threads."""
+        """
+        Initiate kernel shutdown and wait for scheduler thread.
+        
+        This is a lightweight shutdown method that signals termination
+        and waits for the scheduler thread to complete. Used for quick
+        shutdowns like settings reset operations.
+        
+        For comprehensive shutdown with full cleanup, use the main
+        shutdown procedure (see below).
+        
+        Sets kernel state to "terminate" and waits up to 1 second
+        for the scheduler thread to finish.
+        """
         self.state = "terminate"
         self._shutdown = True
         # Wait for the scheduler thread to finish
@@ -1361,17 +1391,17 @@ class Kernel(Settings):
 
     def shutdown(self):
         """
-        Starts shutdown procedure.
+        Execute comprehensive kernel shutdown procedure.
 
-        Suspends all signals.
-        Each initialized context is flushed and shutdown.
-        Each opened module within the context is stopped and closed.
+        This is the main shutdown method that performs full cleanup:
+        - Suspends all signals
+        - Flushes and shuts down all contexts
+        - Stops and closes all opened modules
+        - Terminates all threads
+        - Cleans up residual listeners
 
-        All threads are stopped.
-
-        Any residual attached listeners are made warnings.
-
-        @return:
+        This method should be called during normal application shutdown
+        to ensure proper resource cleanup and state persistence.
         """
         channel = self.channel("shutdown")
         self.state = "end"  # Terminates the Scheduler.

@@ -103,8 +103,9 @@ class Channel:
     - Threaded message processing for performance
     - BBCode to ANSI text formatting for console output
     - Timestamp prefixes for logging
-    - Greeting messages for new watchers
+    - Greeting messages for new watchers (with deferred sending)
     - Error isolation (one broken watcher doesn't break others)
+    - Recursion guard to prevent infinite message loops
     
     Thread Safety:
     - Synchronous mode is thread-safe for single-writer scenarios
@@ -114,9 +115,15 @@ class Channel:
     - Weak reference support prevents memory leaks
     - Automatic cleanup of dead weak references
     
+    Reliability:
+    - Recursion depth limiting prevents stack overflow
+    - Deferred greeting system avoids re-entrance issues
+    - Graceful error handling for watcher failures
+    
     Usage:
         channel = Channel("debug", buffer_size=100, timestamp=True)
         channel.watch(print)  # Add watcher
+        channel.watch(my_func, weak=True)  # Add weak reference watcher
         channel("Hello world!")  # Send message
         channel.resize_buffer(200)  # Resize buffer
     """
