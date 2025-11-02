@@ -29,6 +29,11 @@ class RuidaDriver(Parameters):
         self.service = service
         self.native_x = 0
         self.native_y = 0
+        # Coordinates reported by the device. These are set by the
+        # controller updaters.
+        self.device_x = 0
+        self.device_y = 0
+
         self.name = str(self.service)
 
         name = self.service.safe_label
@@ -113,6 +118,7 @@ class RuidaDriver(Parameters):
         @param value:
         @return:
         """
+        pass
 
     def status(self):
         """
@@ -291,7 +297,7 @@ class RuidaDriver(Parameters):
         old_current = self.service.current
         job = self.controller.job
         out = self.controller.write
-        job.speed_laser_1(100.0, output=out)
+        job.speed_laser_1(400.0, output=out)
 
         x, y = self.service.view.position(x, y)
 
@@ -370,6 +376,9 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         out = self.controller.write
         job.home_xy(output=out)
+        self.controller.sync_coords()
+        self.move_abs(10, 10)
+        self.home()
 
     def rapid_mode(self):
         """
