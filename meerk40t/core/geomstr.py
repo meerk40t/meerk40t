@@ -8473,7 +8473,7 @@ class Geomstr:
         def _safe_extract_angle(point, center):
             """Safely extract angle from point relative to center, handling both complex and array types."""
             try:
-                if hasattr(point, "real") and hasattr(point, "imag"):
+                if isinstance(point, complex) and isinstance(center, complex):
                     # Complex number
                     diff = point - center
                     return float(np.arctan2(diff.imag, diff.real))
