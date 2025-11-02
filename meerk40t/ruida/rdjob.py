@@ -124,6 +124,7 @@ U_FILE_ID = b"\xCA\x30"  # file_number(2)
 ZU_MAP = b"\xCA\x40"  # value(1)
 WORK_MODE_PART = b"\xCA\x41"  # part(1), mode(1)
 ACK = b"\xCC"
+NAK = b"\xCF"
 ERR = b"\xCD"
 KEEP_ALIVE = b"\xCE"
 END_OF_FILE = b"\xD7"
@@ -217,7 +218,37 @@ ELEMENT_ARRAY = b"\xF2\x05"  # v0(2), v1(2), v2(2), v3(2), v4(2), v5(2), v6(2)
 ELEMENT_ARRAY_ADD = b"\xF2\x06"  # abscoord(5), abscoord(5)
 ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
-MEM_CARD_ID = 0x02FE
+MEM_CARD_ID = b'\x05\x7E'
+CID_LUT = {
+    0x65106510: 'RDC64425'
+}
+
+MEM_BED_SIZE_X = b'\x00\x26'
+MEM_BED_SIZE_Y = b'\x00\x36'
+MEM_CURRENT_X = b'\x04\x21'
+MEM_CURRENT_Y = b'\x04\x31'
+MEM_CURRENT_Z = b'\x04\x41'
+MEM_CURRENT_U = b'\x04\x51'
+REPLY_LABEL_LUT = {
+    MEM_CARD_ID: 'CardID',
+    MEM_BED_SIZE_X: 'Bed X',
+    MEM_BED_SIZE_Y: 'Bed Y',
+    MEM_CURRENT_X: 'Current X',
+    MEM_CURRENT_Y: 'Current Y',
+    MEM_CURRENT_Z: 'Current Z',
+    MEM_CURRENT_U: 'Current U',
+}
+
+
+STATUS_ADDRESSES = (
+    MEM_CARD_ID,
+    MEM_BED_SIZE_X,
+    MEM_BED_SIZE_Y,
+    MEM_CURRENT_X,
+    MEM_CURRENT_Y,
+#    MEM_CURRENT_Z,
+#    MEM_CURRENT_U,
+    )
 
 def encode_switch(state):
     assert state == 0 or state == 1
@@ -271,10 +302,6 @@ def encode_color(color):
 
 
 def encode_file_number(file_number):
-    return encode14(file_number)
-
-
-def encode_mem(file_number):
     return encode14(file_number)
 
 
@@ -1294,24 +1321,32 @@ class RDJob:
     def decode_reply(self, reply):
         '''Decode a reply which received in response to a command.
 
-        TODO: Migrate this to use the Ruida Protocol Analyzer decode state
-        machine (class RdDecoder).
-        https://github.com/StevenIsaacs/ruida-protocol-analyzer/tree/main
         '''
+        _mem = None
+        _v = None
+        _decoded = None
         if reply[0] == 0xDA:
             if reply[1] == 0x01: # Response to command 0xDA 0x00.
-                if reply[2] == 0x05:
-                    if reply[3] == 0x7E: # CARD ID
-                        _cid_lut = {
-                            0x65106510: 'RDC64425'
-                        }
-                        _cid = decode35(reply[4:9])
-                        if _cid in _cid_lut:
-                            _card = _cid_lut[_cid]
-                        else:
-                            _card = "Unknown card."
-                        return f'CardID: {_cid:08X}: {_card}'
-        return None
+                _mem = reply[2:4]
+                if _mem == MEM_CARD_ID:
+                    _cid = decodeu35(reply[4:9])
+                    if _cid in CID_LUT:
+                        _card = CID_LUT[_cid]
+                    else:
+                        _card = "Unknown card."
+                    _v = _cid
+                    _decoded = f'{REPLY_LABEL_LUT[_mem]}: {_cid:08X}: {_card}'
+                elif _mem in (
+                        MEM_BED_SIZE_X,
+                        MEM_BED_SIZE_Y,
+                        MEM_CURRENT_X,
+                        MEM_CURRENT_Y,
+                        MEM_CURRENT_Z,
+                        MEM_CURRENT_U,
+                        ):
+                    _v = decode35(reply[4:9])
+                    _decoded = f'{REPLY_LABEL_LUT[_mem]}: {_v:08X}'
+        return _mem, _v, _decoded
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
@@ -1961,12 +1996,12 @@ class RDJob:
         )
 
     def get_setting(self, mem, output=None):
-        self(GET_SETTING, encode_mem(mem), output=output)
+        self(GET_SETTING, mem, output=output)
 
     def set_setting(self, mem, value, output=None):
         self(
             SET_SETTING,
-            encode_mem(mem),
+            mem,
             encode_value(value),
             encode_value(value),
             output=output,
