@@ -299,6 +299,7 @@ class LiveLightJob:
         self.setup_listen(True)
         self.time_started = time.time()
         self.started = True
+        self.service.job = self
         self._connection = driver.connection
         self._connection.rapid_mode()
         self._connection.light_mode()
