@@ -375,7 +375,12 @@ class RuidaDriver(Parameters):
         """
         job = self.controller.job
         out = self.controller.write
+        self.controller.gross_timeout()
         job.home_xy(output=out)
+        time.sleep(5)
+        while self.controller.is_busy:
+            time.sleep(0.25)
+        self.controller.normal_timeout()
         self.controller.sync_coords()
         self.move_abs(10, 10)
         self.home()

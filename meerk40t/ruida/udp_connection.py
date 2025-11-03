@@ -26,13 +26,18 @@ class UDPConnection:
         self.unswizzle = None
         self.send_q = queue.Queue(2 ** 18) # Power of 2 for efficiency.
         self._q_to = 0.25 # Queue timeout.
-        self._s_to = 1.0 # UDP socket timeout.
-        self._tries = 40
+        self._s_to = 0.25 # UDP socket timeout.
+        self._tries = 4
+        self._ack_pending = False
+        self._reply_pending = False
 
     # Should verify type is a callable method.
     def set_swizzles(self, swizzle, unswizzle):
         self.swizzle = swizzle
         self.unswizzle = unswizzle
+
+    def set_timeout(self, seconds):
+        self._tries = seconds / self._s_to
 
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
@@ -67,6 +72,10 @@ class UDPConnection:
     @property
     def connected(self):
         return not self.is_shutdown and self.socket is not None
+
+    @property
+    def is_busy(self):
+        return self._reply_pending or self._ack_pending
 
     def abort_connect(self):
         pass
@@ -130,8 +139,7 @@ class UDPConnection:
         self.naks = 0
         self.keep_alives = 0
         self.replies = 0
-        _ack_pending = False
-        _reply_pending = False
+        self._ack_pending = False
         _responding = False
         try:
             while True: # Run forever -- until shutdown externally.
@@ -154,16 +162,16 @@ class UDPConnection:
                 # Check for only KNOWN command expecting a reply.
                 if (_message[0] == 0xDA and
                     _message[1] != 0x01): # 0x01 is a memory set -- no reply.
-                    _reply_pending = True
+                    self._reply_pending = True
                     self.events('Expecting reply data.')
                 _packet = self._package(_message)
                 self.socket.sendto(_packet,
                                    (self.service.address, self.send_port))
-                _ack_pending = True
+                self._ack_pending = True
 
                 # ACK_PENDING
                 _tries = self._tries
-                while _ack_pending:
+                while self._ack_pending:
                     try:
                         _data, _address = self.socket.recvfrom(1024)
                     except (socket.timeout, AttributeError):
@@ -184,8 +192,8 @@ class UDPConnection:
                                     "pipe;usb_status", "Disconnected")
                                 self.events("Disconnected")
                             _responding = False
-                            _ack_pending = False
-                            _reply_pending = False
+                            self._ack_pending = False
+                            self._reply_pending = False
                             break
                     if _address is not None:
                         # TODO: Need to understand how the address can be used
@@ -200,7 +208,7 @@ class UDPConnection:
                     if len(_ack) == 1:
                         if _ack == ACK:
                             # Signal that the next message can be sent.
-                            _ack_pending = False
+                            self._ack_pending = False
                             self.acks += 1
                         elif _ack == NAK:
                             self.socket.sendto(_packet,
@@ -213,18 +221,18 @@ class UDPConnection:
                         # Reply data in response to a command. Forward to be
                         # processed.
                         self.replies += 1
-                        _reply_pending = False
+                        self._reply_pending = False
                         # TODO: May need a way to restore sync.
                         self.recv(_ack) # Just in case
 
                 # REPLY_PENDING
                 _tries = 4
-                while _reply_pending:
+                while self._reply_pending:
                     try:
                         _data, _address = self.socket.recvfrom(1024)
                         self.recv_address = _address
                         # TODO: Add address sanity check?
-                        _reply_pending = False
+                        self._reply_pending = False
                         self.replies += 1
                         _reply = self.unswizzle(_data)
                         self.recv(_reply) # Forward to client.
@@ -234,6 +242,10 @@ class UDPConnection:
                         if _tries:
                             continue
                         else:
+                            _responding = False
+                            self.service.signal(
+                                "pipe;usb_status", "Disconnected")
+                            self.events("Disconnected")
                             self.recv(None) # Inform the upper layer of failure.
                             self.events('Time out when expecting data.')
                             break

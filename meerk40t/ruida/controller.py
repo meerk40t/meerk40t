@@ -35,12 +35,16 @@ class RuidaController:
         self._send_thread = None
         self.events = service.channel(f"{service.safe_label}/events")
         self._status_thread_sleep = 0.25 # Time between polls.
+        self._status_gross_to = 40 # seconds
+        self._status_normal_to = 1 # seconds
+        self._status_tries = self._status_normal_to / self._status_thread_sleep
         self._connected = False
         self._job_lock = threading.Lock() # To allow running a job.
         self._status_thread = threading.Thread(
             target=self._status_monitor, daemon=True)
-        self._status_thread.start()
         self._expect_status = None
+        self._next = 0
+        self._start = False
         self.card_id = b''
         self.bed_x = -1.0
         self.bed_y = -1.0
@@ -76,8 +80,12 @@ class RuidaController:
         if last != len(data):
             self._send_queue.append(self.job.get_contents(last))
 
+    def start(self):
+        '''Start the background threads.'''
+        self._status_thread.start()
+
     @property
-    def busy(self):
+    def is_busy(self):
         return self._expect_status is not None
 
     def sync_coords(self):
@@ -85,10 +93,24 @@ class RuidaController:
         Sync native coordinates with device coordinates.
 
         This is typically used after actions such as physical home.'''
-        while self.busy:
+        while self.is_busy:
             time.sleep(self._status_thread_sleep)
         self.service.driver.native_x = self.service.driver.device_x
         self.service.driver.native_y = self.service.driver.device_y
+
+    def gross_timeout(self):
+        '''Set a gross comms timeout. This is typically used in situations
+        where the Ruida controller is expected to stop communicating for
+        extended periods of time but is still OK.'''
+        self._status_tries = self._status_gross_to / self._status_thread_sleep
+        self.service.set_timeout(self._status_gross_to)
+
+    def normal_timeout(self):
+        '''Set a gross comms timeout. This is typically used in situations
+        where the Ruida controller is expected to stop communicating for
+        extended periods of time but is still OK.'''
+        self._status_tries = self._status_normal_to / self._status_thread_sleep
+        self.service.set_timeout(self._status_normal_to)
 
     def _data_sender(self):
         '''Data send thread.
@@ -105,6 +127,15 @@ class RuidaController:
         self.events("File Sent.")
         self._job_lock.release()
 
+    def _next_status(self):
+        '''The expected status has been received. Advance to the next.
+        '''
+        self._expect_status = None
+        self._next += 1
+        if self._next >= len(STATUS_ADDRESSES):
+            self._next = 0
+
+
     def _status_monitor(self):
         '''Status monitoring thread.
 
@@ -112,22 +143,25 @@ class RuidaController:
         Ruida controller. It also updates the UI when status changes.
 
         NOTE: This thread is blocked while _data_sender is running.'''
-        self._expect_status = None
         _next = 0
+        _tries = self._status_tries
         try:
             while True:
-                if self._expect_status is None:
+                if not self.is_busy and not self.service.is_busy:
                     self._job_lock.acquire() # Wait if running a job.
                     # Step through a series of commands and send/recv each one
                     # by one. When received, recv will update the UI.
-                    _status = STATUS_ADDRESSES[_next]
+                    _status = STATUS_ADDRESSES[self._next]
                     self.job.get_setting(
                         _status, output=self.write)
                     self._expect_status = _status
-                    _next += 1
-                    if _next >= len(STATUS_ADDRESSES):
-                        _next = 0
+                    self._next_status()
                     self._job_lock.release()
+                    _tries = self._status_tries
+                else:
+                    _tries -= 1
+                    if _tries <= 0:
+                        self._expect_status = None
                 time.sleep(self._status_thread_sleep)
         except OSError:
             pass
@@ -135,6 +169,7 @@ class RuidaController:
     def update_card_id(self, card_id):
         if self._expect_status == MEM_CARD_ID:
             self._expect_status = None
+            self._next_status()
         if card_id != self.card_id:
             self.card_id = card_id
             # Signal the GUI update.
@@ -142,6 +177,7 @@ class RuidaController:
     def update_bed_x(self, bed_x):
         if self._expect_status == MEM_BED_SIZE_X:
             self._expect_status = None
+            self._next_status()
         _bed_x = bed_x / 1000
         if _bed_x != self.bed_x:
             self.bed_x = _bed_x
@@ -153,6 +189,7 @@ class RuidaController:
     def update_bed_y(self, bed_y):
         if self._expect_status == MEM_BED_SIZE_Y:
             self._expect_status = None
+            self._next_status()
         _bed_y = bed_y / 1000
         if _bed_y != self.bed_y:
             self.bed_y = _bed_y
@@ -164,6 +201,7 @@ class RuidaController:
     def update_x(self, x):
         if self._expect_status == MEM_CURRENT_X:
             self._expect_status = None
+            self._next_status()
         # TODO: Factor discovered by trial and error -- why necessary?
         # _x = x * 2.58
         _x = (self.bed_x * 1000 - x) * 2.58
@@ -181,6 +219,7 @@ class RuidaController:
     def update_y(self, y):
         if self._expect_status == MEM_CURRENT_Y:
             self._expect_status = None
+            self._next_status()
         # TODO: Factor discovered by trial and error -- why necessary?
         _y = y * 2.58
         if True or _y != self.y:
@@ -197,6 +236,7 @@ class RuidaController:
     def update_z(self, z):
         if self._expect_status == MEM_CURRENT_Z:
             self._expect_status = None
+            self._next_status()
         if z != self.z:
             self.z = z
             # Signal the GUI update.
@@ -204,6 +244,7 @@ class RuidaController:
     def update_u(self, u):
         if self._expect_status == MEM_CURRENT_U:
             self._expect_status = None
+            self._next_status()
         if u != self.u:
             self.u = u
             # Signal the GUI update.
