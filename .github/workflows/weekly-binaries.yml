@@ -544,10 +544,16 @@ jobs:
             # Extract from that line to the end of the file
             tail -n +$start_line NOTES.md > device_status_temp.md
             
-            # Convert to a single line with proper markdown formatting
-            device_status=$(cat device_status_temp.md | sed 's/%/%25/g' | sed 's/\n/%0A/g' | sed 's/\r/%0D/g' | tr -d '\n')
+            # Convert to a multi-line string with proper escaping for GitHub Actions
+            # Use printf to handle newlines correctly
+            device_status=$(printf '%s\n' "$(cat device_status_temp.md)")
             
-            echo "device_status=$device_status" >> $GITHUB_OUTPUT
+            # Escape any % characters that might interfere with GitHub Actions
+            device_status=$(echo "$device_status" | sed 's/%/%25/g')
+            
+            echo "device_status<<EOF" >> $GITHUB_OUTPUT
+            echo "$device_status" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
             echo "Device support status extracted successfully"
           else
             echo "Device Support Status section not found in NOTES.md"
