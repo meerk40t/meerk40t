@@ -359,3 +359,30 @@ class TestSignalSystem(unittest.TestCase):
             self.assertEqual(received_signals[0][0], 'good')
         finally:
             kernel()
+
+    def test_unlisten_unregistered_listener(self):
+        """Test that unlistening an unregistered listener does not cause errors"""
+        kernel = bootstrap.bootstrap()
+        try:
+            def never_registered_listener(origin, *message):
+                pass
+
+            # Try to unlisten a listener that was never registered
+            # This should not raise an exception
+            kernel.unlisten('nonexistent_signal', never_registered_listener)
+            kernel.process_queue()
+
+            # Also test unlistening from a signal that exists but doesn't have this listener
+            kernel.listen('existing_signal', lambda origin, *message: None)
+            kernel.process_queue()
+
+            # Try to unlisten a different listener from the existing signal
+            kernel.unlisten('existing_signal', never_registered_listener)
+            kernel.process_queue()
+
+            # System should still function normally
+            kernel.signal('existing_signal', 'path', 'data')
+            kernel.process_queue()
+
+        finally:
+            kernel()
