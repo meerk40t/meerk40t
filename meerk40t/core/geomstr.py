@@ -9313,11 +9313,11 @@ class Geomstr:
         self.line(offset_start, offset_end, settings=settings.real)
 
     def _fix_joins(self, distance, join_type, miter_limit):
-        """Fix joins between offset segments by finding intersections."""
+        """Fix joins between offset segments by finding intersections or applying joins."""
         if self.index < 2:
             return  # Need at least 2 segments to have joins
 
-        # Process each pair of adjacent segments
+        # Process each pair of adjacent segments once
         i = 0
         while i < self.index - 1:
             seg1 = self.segments[i]
@@ -9348,11 +9348,28 @@ class Geomstr:
             if intersection:
                 # Trim both segments to meet at the intersection point
                 self._trim_segments_to_intersection(i, i + 1, intersection)
-                i += 1  # Move to next pair
             else:
                 # No intersection found - apply join type
                 self._apply_join_type(i, i + 1, join_type, miter_limit, distance)
-                i += 1  # Move to next pair
+                # Since we inserted segments, skip ahead
+                i += 1  # Skip the inserted segment(s)
+
+            i += 1
+
+        # Handle closing the loop if it's a closed shape
+        if self.index >= 3:  # Need at least 3 segments for a meaningful closed shape
+            first_seg = self.segments[0]
+            last_seg = self.segments[self.index - 1]
+
+        # Handle closing the loop if it's a closed shape
+        if self.index >= 3:  # Need at least 3 segments for a meaningful closed shape
+            first_seg = self.segments[0]
+            last_seg = self.segments[self.index - 1]
+
+        # Handle closing the loop if it's a closed shape
+        if self.index >= 3:  # Need at least 3 segments for a meaningful closed shape
+            first_seg = self.segments[0]
+            last_seg = self.segments[self.index - 1]
 
         # Handle closing the loop if it's a closed shape
         if self.index >= 3:  # Need at least 3 segments for a meaningful closed shape
@@ -9729,27 +9746,33 @@ class Geomstr:
             self._apply_bevel_join(idx1, idx2, distance)
 
     def _apply_miter_join(self, idx1, idx2, miter_limit, distance):
-        """Apply miter join by extending segments to their intersection."""
+        """Apply miter join by extending segments along their tangent directions."""
         seg1 = self.segments[idx1]
         seg2 = self.segments[idx2]
 
-        # For miter join, extend the segments and find their intersection
-        extended_intersection = self._find_extended_line_intersection(seg1, seg2)
-        if extended_intersection:
-            # Check miter length
-            end1 = seg1[4]
-            start2 = seg2[0]
-            miter_length = abs(extended_intersection - end1)
+        # Get tangent directions at the connection points
+        dir1 = self._get_segment_direction_at_end(seg1)
+        dir2 = self._get_segment_direction_at_start(seg2)
 
+        end1 = seg1[4]
+        start2 = seg2[0]
+
+        # Find intersection of extended tangent lines
+        intersection = self._line_line_intersection(end1, end1 + dir1, start2, start2 + dir2)
+
+        if intersection:
+            # Check miter length (distance from corner to intersection)
+            corner_point = (end1 + start2) / 2
+            miter_length = abs(intersection - corner_point)
             if miter_length <= miter_limit * abs(distance):
-                # Use miter join
-                self._trim_segments_to_intersection(idx1, idx2, extended_intersection)
-            else:
-                # Miter too long, fall back to bevel
-                self._apply_bevel_join(idx1, idx2, distance)
-        else:
-            # No intersection found, fall back to bevel
-            self._apply_bevel_join(idx1, idx2, distance)
+                # Use miter join - insert line to intersection
+                settings = seg1[2]
+                self.insert(idx2, [(end1, 0, complex(TYPE_LINE, settings.imag), 0, intersection),
+                                   (intersection, 0, complex(TYPE_LINE, settings.imag), 0, start2)])
+                return
+
+        # Fall back to bevel if miter join fails
+        self._apply_bevel_join(idx1, idx2, distance)
 
     def _find_extended_line_intersection(self, seg1, seg2):
         """Find intersection of extended line segments."""
@@ -9772,23 +9795,41 @@ class Geomstr:
         return self._line_line_intersection(start1, extended_end1, extended_start2, end2)
 
     def _apply_bevel_join(self, idx1, idx2, distance):
-        """Apply bevel join by connecting endpoints with a straight line."""
+        """Apply bevel join by inserting a straight line segment between the two segments."""
         seg1 = self.segments[idx1]
         seg2 = self.segments[idx2]
+
         end1 = seg1[4]
         start2 = seg2[0]
 
-        # For offset curves, connect the segments at their current endpoints
-        # by moving them to meet at the midpoint. This ensures continuity.
-        join_point = (end1 + start2) / 2
+        # Use settings from the first segment
+        settings = seg1[2]
 
-        # Trim segments to meet at the join point
-        self.segments[idx1][4] = join_point
-        self.segments[idx2][0] = join_point
+        # Insert a line segment connecting the two points
+        # This creates a sharp corner (bevel join)
+        self.insert(idx2, [(end1, 0, complex(TYPE_LINE, settings.imag), 0, start2)])
 
     def _apply_round_join(self, idx1, idx2, distance):
-        """Apply round join by adding an arc segment."""
-        # For round join, calculate the arc that connects the two segments
-        # This is complex and would require calculating the arc center and radius
-        # For now, fall back to bevel
-        self._apply_bevel_join(idx1, idx2, distance)
+        """Apply round join by inserting a cubic Bézier curve with control points at tangent intersections."""
+        seg1 = self.segments[idx1]
+        seg2 = self.segments[idx2]
+
+        end1 = seg1[4]
+        start2 = seg2[0]
+
+        # Get tangent directions
+        dir1 = self._get_segment_direction_at_end(seg1)
+        dir2 = self._get_segment_direction_at_start(seg2)
+
+        # Use settings from the first segment
+        settings = seg1[2]
+
+        # For round join, create a cubic Bézier curve
+        # The control points are positioned along the extended tangent lines
+        # from each endpoint, at a distance proportional to the offset distance
+
+        # Position control points along the tangents at distance |distance|
+        control1 = end1 + dir1 * abs(distance)
+        control2 = start2 - dir2 * abs(distance)
+
+        self.insert(idx2, [(end1, control1, complex(TYPE_CUBIC, settings.imag), control2, start2)])
