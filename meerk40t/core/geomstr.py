@@ -66,6 +66,7 @@ Function
 """
 
 import math
+import cmath
 import re
 from contextlib import contextmanager
 from copy import copy
@@ -9130,3 +9131,664 @@ class Geomstr:
             return complex(ix, iy)
 
         return None
+
+    @classmethod
+    def offset(cls, geom, distance, join_type="miter", miter_limit=10.0):
+        """
+        Create an offset (parallel curve) of the given Geomstr at the specified distance.
+
+        @param geom: Geomstr object to offset
+        @param distance: Distance to offset (positive = right, negative = left)
+        @param join_type: Type of join for corners ("miter", "bevel", "round")
+        @param miter_limit: Maximum miter length for miter joins
+        @return: New Geomstr with offset geometry
+        """
+        if geom.index == 0:
+            return cls()
+
+        result = cls()
+        result._settings.update(geom._settings)
+
+        # Process each segment
+        for i in range(geom.index):
+            seg = geom.segments[i]
+            seg_type = geom._segtype(seg)
+
+            if seg_type == TYPE_LINE:
+                result._offset_line(seg, distance)
+            elif seg_type == TYPE_ARC:
+                result._offset_arc(seg, distance)
+            elif seg_type == TYPE_QUAD:
+                result._offset_quad(seg, distance)
+            elif seg_type == TYPE_CUBIC:
+                result._offset_cubic(seg, distance)
+            # Skip other types (points, etc.)
+
+        # Handle joins between segments
+        if result.index > 1:
+            result._fix_joins(distance, join_type, miter_limit)
+
+        return result
+
+    def _offset_line(self, seg, distance):
+        """Offset a line segment."""
+        start = seg[0]
+        end = seg[4]
+        settings = seg[2]
+
+        # Calculate direction vector
+        dx = end.real - start.real
+        dy = end.imag - start.imag
+        length = (dx**2 + dy**2)**0.5
+
+        if length < 1e-10:
+            # Degenerate line, just add the point
+            self.point(start, settings=settings.real)
+            return
+
+        # Unit vector perpendicular to line direction
+        # Rotate 90 degrees: (x,y) -> (-y,x) for right offset
+        perp_x = -dy / length
+        perp_y = dx / length
+
+        # Offset the line
+        offset_start = complex(start.real + perp_x * distance, start.imag + perp_y * distance)
+        offset_end = complex(end.real + perp_x * distance, end.imag + perp_y * distance)
+
+        self.line(offset_start, offset_end, settings=settings.real)
+
+    def _offset_arc(self, seg, distance):
+        """Offset an arc segment."""
+        start = seg[0]
+        control = seg[1]  # Arc control point
+        end = seg[4]
+        settings = seg[2]
+
+        # Calculate center and radius from arc parameters
+        # For MeerK40t arcs, the control point is on the arc and represents the bulge
+        # The center can be calculated from start, control, end points
+
+        # Vector from start to control
+        v1 = control - start
+        # Vector from end to control
+        v2 = control - end
+
+        # Bisector of angle at control point
+        bisector = v1 + v2
+        bisector_len = abs(bisector)
+
+        if bisector_len < 1e-10:
+            # Degenerate case, treat as line
+            self._offset_line(seg, distance)
+            return
+
+        # Distance from control point to center along bisector
+        dist_to_center = abs(v1)**2 / (2 * bisector_len)
+
+        # Center point
+        center_dir = bisector / bisector_len
+        center = control + center_dir * dist_to_center
+
+        # Original radius
+        radius = abs(start - center)
+
+        # New radius (offset distance can be positive or negative)
+        new_radius = radius + distance
+
+        if abs(new_radius) < 1e-10:
+            # Degenerate to point
+            self.point(center, settings=settings.real)
+            return
+
+        # Calculate new start and end points on the offset circle
+        start_vec = start - center
+        end_vec = end - center
+
+        start_angle = cmath.phase(start_vec)
+        end_angle = cmath.phase(end_vec)
+
+        # Ensure correct arc direction
+        if abs(end_angle - start_angle) > cmath.pi:
+            if end_angle < start_angle:
+                end_angle += 2 * cmath.pi
+            else:
+                start_angle += 2 * cmath.pi
+
+        new_start = center + cmath.rect(new_radius, start_angle)
+        new_end = center + cmath.rect(new_radius, end_angle)
+
+        # Calculate new control point (midpoint on arc)
+        mid_angle = (start_angle + end_angle) / 2
+        new_control = center + cmath.rect(new_radius, mid_angle)
+
+        self.arc(new_start, new_control, new_end, settings=settings.real)
+
+    def _offset_quad(self, seg, distance):
+        """Offset a quadratic bezier curve. For simplicity, approximate with line."""
+        # For now, just offset the start and end points and create a line
+        # A full implementation would require proper bezier offsetting
+        start = seg[0]
+        end = seg[4]
+        settings = seg[2]
+
+        # Simple approximation: offset endpoints and connect with line
+        dx = end.real - start.real
+        dy = end.imag - start.imag
+        length = (dx**2 + dy**2)**0.5
+
+        if length < 1e-10:
+            self.point(start, settings=settings.real)
+            return
+
+        perp_x = -dy / length
+        perp_y = dx / length
+
+        offset_start = complex(start.real + perp_x * distance, start.imag + perp_y * distance)
+        offset_end = complex(end.real + perp_x * distance, end.imag + perp_y * distance)
+
+        self.line(offset_start, offset_end, settings=settings.real)
+
+    def _offset_cubic(self, seg, distance):
+        """Offset a cubic bezier curve. For simplicity, approximate with line."""
+        # For now, just offset the start and end points and create a line
+        # A full implementation would require proper bezier offsetting
+        start = seg[0]
+        end = seg[4]
+        settings = seg[2]
+
+        dx = end.real - start.real
+        dy = end.imag - start.imag
+        length = (dx**2 + dy**2)**0.5
+
+        if length < 1e-10:
+            self.point(start, settings=settings.real)
+            return
+
+        perp_x = -dy / length
+        perp_y = dx / length
+
+        offset_start = complex(start.real + perp_x * distance, start.imag + perp_y * distance)
+        offset_end = complex(end.real + perp_x * distance, end.imag + perp_y * distance)
+
+        self.line(offset_start, offset_end, settings=settings.real)
+
+    def _fix_joins(self, distance, join_type, miter_limit):
+        """Fix joins between offset segments by finding intersections."""
+        if self.index < 2:
+            return  # Need at least 2 segments to have joins
+
+        # Process each pair of adjacent segments
+        i = 0
+        while i < self.index - 1:
+            seg1 = self.segments[i]
+            seg2 = self.segments[i + 1]
+
+            seg1_type = self._segtype(seg1)
+            seg2_type = self._segtype(seg2)
+
+            # Find intersection based on segment types
+            intersection = None
+
+            if seg1_type == TYPE_LINE and seg2_type == TYPE_LINE:
+                intersection = self._find_line_intersection(seg1, seg2)
+            elif seg1_type == TYPE_LINE and seg2_type == TYPE_ARC:
+                intersection = self._find_line_arc_intersection(seg1, seg2)
+            elif seg1_type == TYPE_ARC and seg2_type == TYPE_LINE:
+                intersection = self._find_arc_line_intersection(seg1, seg2)
+            elif seg1_type == TYPE_ARC and seg2_type == TYPE_ARC:
+                intersection = self._find_arc_arc_intersection(seg1, seg2)
+            # For curves, fall back to endpoint matching for now
+            elif seg1_type in (TYPE_QUAD, TYPE_CUBIC) or seg2_type in (TYPE_QUAD, TYPE_CUBIC):
+                # For curves, just ensure endpoints match
+                end1 = seg1[4]
+                start2 = seg2[0]
+                if abs(end1 - start2) < 1e-10:
+                    intersection = end1
+
+            if intersection:
+                # Trim both segments to meet at the intersection point
+                self._trim_segments_to_intersection(i, i + 1, intersection)
+                i += 1  # Move to next pair
+            else:
+                # No intersection found - apply join type
+                self._apply_join_type(i, i + 1, join_type, miter_limit, distance)
+                i += 1  # Move to next pair
+
+        # Handle closing the loop if it's a closed shape
+        if self.index >= 3:  # Need at least 3 segments for a meaningful closed shape
+            first_seg = self.segments[0]
+            last_seg = self.segments[self.index - 1]
+
+            # For offset curves, just ensure the last connects to the first
+            # Don't force intersections as that can break valid offset connections
+            last_end = last_seg[4]
+            first_start = first_seg[0]
+
+            # If they're not already connected, connect them directly
+            if abs(last_end - first_start) > 1e-10:
+                # Connect them at the midpoint for offset curves
+                connect_point = (last_end + first_start) / 2
+                self.segments[self.index - 1][4] = connect_point
+                self.segments[0][0] = connect_point
+
+    def _trim_segments_to_intersection(self, idx1, idx2, intersection):
+        """Trim two segments to meet at the intersection point."""
+        # Set the end of the first segment to the intersection
+        self.segments[idx1][4] = intersection
+        # Set the start of the second segment to the intersection
+        self.segments[idx2][0] = intersection
+
+    def _apply_join_type(self, idx1, idx2, join_type, miter_limit, distance):
+        """Apply the specified join type when segments don't intersect."""
+        if join_type == "miter":
+            self._apply_miter_join(idx1, idx2, miter_limit, distance)
+        elif join_type == "bevel":
+            self._apply_bevel_join(idx1, idx2, distance)
+        elif join_type == "round":
+            self._apply_round_join(idx1, idx2, distance)
+        # For now, default to bevel if unknown type
+        else:
+            self._apply_bevel_join(idx1, idx2, distance)
+
+    def _apply_miter_join(self, idx1, idx2, miter_limit):
+        """Apply miter join by extending segments to their intersection."""
+        seg1 = self.segments[idx1]
+        seg2 = self.segments[idx2]
+
+        # For miter join, find the intersection of extended segments
+        intersection = None
+        seg1_type = self._segtype(seg1)
+        seg2_type = self._segtype(seg2)
+
+        if seg1_type == TYPE_LINE and seg2_type == TYPE_LINE:
+            intersection = self._line_line_intersection(seg1[0], seg1[4], seg2[0], seg2[4])
+        # For other combinations, fall back to bevel for now
+        # TODO: Implement proper miter joins for arc-line and arc-arc combinations
+
+        if intersection:
+            print(f"DEBUG: Miter intersection found at {intersection}")
+            # Check miter limit
+            miter_length = abs(intersection - seg1[4])
+            if miter_length <= miter_limit:
+                self._trim_segments_to_intersection(idx1, idx2, intersection)
+            else:
+                print(f"DEBUG: Miter limit exceeded ({miter_length} > {miter_limit}), falling back to bevel")
+                # Fall back to bevel if miter limit exceeded
+                self._apply_bevel_join(idx1, idx2)
+        else:
+            print(f"DEBUG: No miter intersection, applying bevel join")
+            self._apply_bevel_join(idx1, idx2)
+
+    def _apply_bevel_join(self, idx1, idx2):
+        """Apply bevel join by connecting endpoints with a straight line."""
+        print(f"DEBUG: Applying bevel join to segments {idx1} and {idx2}")
+        seg1 = self.segments[idx1]
+        seg2 = self.segments[idx2]
+        end1 = seg1[4]
+        start2 = seg2[0]
+
+        # For offset curves, simply connect the segments at their current endpoints
+        # by moving them to meet at the midpoint. This ensures continuity.
+        join_point = (end1 + start2) / 2
+
+        print(f"DEBUG: Connecting {end1} and {start2} at {join_point}")
+        # Trim segments to meet at the join point
+        self.segments[idx1][4] = join_point
+        self.segments[idx2][0] = join_point
+
+    def _apply_round_join(self, idx1, idx2, distance):
+        """Apply round join by adding an arc segment."""
+        # For round join, we'd need to add an arc segment connecting the two endpoints
+        # This is complex and for now we'll fall back to bevel
+        self._apply_bevel_join(idx1, idx2)
+
+    def _get_segment_direction_at_end(self, seg):
+        """Get the direction vector at the end of a segment."""
+        seg_type = self._segtype(seg)
+        end = seg[4]
+
+        if seg_type == TYPE_LINE:
+            start = seg[0]
+            direction = end - start
+            length = abs(direction)
+            if length > 0:
+                return direction / length
+            else:
+                return 1 + 0j  # Default direction
+        elif seg_type == TYPE_ARC:
+            # For arcs, the tangent direction at the end
+            center = self.arc_center(line=seg)
+            radius_vec = end - center
+            # Tangent is perpendicular to radius
+            tangent = radius_vec * 1j  # Rotate 90 degrees
+            length = abs(tangent)
+            if length > 0:
+                return tangent / length
+            else:
+                return 1 + 0j
+        else:
+            # For other types, use a default direction
+            return 1 + 0j
+
+    def _get_segment_direction_at_start(self, seg):
+        """Get the direction vector at the start of a segment."""
+        seg_type = self._segtype(seg)
+        start = seg[0]
+
+        if seg_type == TYPE_LINE:
+            end = seg[4]
+            direction = end - start
+            length = abs(direction)
+            if length > 0:
+                return direction / length
+            else:
+                return 1 + 0j
+        elif seg_type == TYPE_ARC:
+            # For arcs, the tangent direction at the start
+            center = self.arc_center(line=seg)
+            radius_vec = start - center
+            # Tangent is perpendicular to radius
+            tangent = radius_vec * 1j  # Rotate 90 degrees
+            length = abs(tangent)
+            if length > 0:
+                return tangent / length
+            else:
+                return 1 + 0j
+        else:
+            return 1 + 0j
+
+    def _find_line_intersection(self, seg1, seg2):
+        """Find intersection point between two line segments."""
+        # Extract line endpoints
+        start1 = seg1[0]
+        end1 = seg1[4]
+        start2 = seg2[0]
+        end2 = seg2[4]
+
+        return self._line_line_intersection(start1, end1, start2, end2)
+
+    def _find_line_arc_intersection(self, line_seg, arc_seg):
+        """Find intersection between a line segment and an arc segment."""
+        # Extract line endpoints
+        line_start = line_seg[0]
+        line_end = line_seg[4]
+
+        # Extract arc parameters
+        arc_start = arc_seg[0]
+        arc_control = arc_seg[1]
+        arc_end = arc_seg[4]
+
+        # Get arc center and radius
+        arc_center = self.arc_center(line=arc_seg)
+        arc_radius = self.arc_radius(line=arc_seg)
+
+        # Find line-circle intersections
+        intersections = self._line_circle_intersections(line_start, line_end, arc_center, arc_radius)
+
+        if not intersections:
+            return None
+
+        # Filter intersections that are on both the line segment and arc segment
+        valid_intersections = []
+        for intersection in intersections:
+            # Check if intersection is on the line segment
+            if self._point_on_line_segment(intersection, line_start, line_end):
+                # Check if intersection is on the arc segment
+                if self._point_on_arc_segment(intersection, arc_start, arc_control, arc_end, arc_center):
+                    valid_intersections.append(intersection)
+
+        # Return the intersection closest to the line start (arbitrary choice)
+        if valid_intersections:
+            return min(valid_intersections, key=lambda p: abs(p - line_start))
+
+        return None
+
+    def _find_arc_line_intersection(self, arc_seg, line_seg):
+        """Find intersection between an arc segment and a line segment."""
+        # Just swap the arguments and call the line-arc method
+        return self._find_line_arc_intersection(line_seg, arc_seg)
+
+    def _find_arc_arc_intersection(self, arc1_seg, arc2_seg):
+        """Find intersection between two arc segments."""
+        # Get arc parameters
+        center1 = self.arc_center(line=arc1_seg)
+        radius1 = self.arc_radius(line=arc1_seg)
+        center2 = self.arc_center(line=arc2_seg)
+        radius2 = self.arc_radius(line=arc2_seg)
+
+        # Find circle-circle intersections
+        intersections = self._circle_circle_intersections(center1, radius1, center2, radius2)
+
+        if not intersections:
+            return None
+
+        # Filter intersections that are on both arc segments
+        valid_intersections = []
+        for intersection in intersections:
+            # Check if intersection is on arc1
+            if self._point_on_arc_segment(intersection, arc1_seg[0], arc1_seg[1], arc1_seg[4], center1):
+                # Check if intersection is on arc2
+                if self._point_on_arc_segment(intersection, arc2_seg[0], arc2_seg[1], arc2_seg[4], center2):
+                    valid_intersections.append(intersection)
+
+        # Return the intersection closest to arc1 start
+        if valid_intersections:
+            return min(valid_intersections, key=lambda p: abs(p - arc1_seg[0]))
+
+        return None
+
+    def _line_circle_intersections(self, line_start, line_end, circle_center, circle_radius):
+        """Find intersections between a line and a circle."""
+        # Vector from line_start to line_end
+        d = line_end - line_start
+        # Vector from line_start to circle_center
+        f = line_start - circle_center
+
+        a = d.real**2 + d.imag**2
+        b = 2 * (f.real * d.real + f.imag * d.imag)
+        c = f.real**2 + f.imag**2 - circle_radius**2
+
+        discriminant = b**2 - 4 * a * c
+
+        if discriminant < 0:
+            return []  # No intersection
+        elif discriminant == 0:
+            # One intersection
+            t = -b / (2 * a)
+            intersection = line_start + t * d
+            return [intersection]
+        else:
+            # Two intersections
+            t1 = (-b + discriminant**0.5) / (2 * a)
+            t2 = (-b - discriminant**0.5) / (2 * a)
+            intersection1 = line_start + t1 * d
+            intersection2 = line_start + t2 * d
+            return [intersection1, intersection2]
+
+    def _circle_circle_intersections(self, center1, radius1, center2, radius2):
+        """Find intersections between two circles."""
+        d = abs(center2 - center1)
+
+        # Check for no intersection
+        if d > radius1 + radius2 or d < abs(radius1 - radius2) or d == 0:
+            return []
+
+        # Calculate intersection points
+        a = (radius1**2 - radius2**2 + d**2) / (2 * d)
+        h = (radius1**2 - a**2)**0.5
+
+        # Point midway between centers
+        p_mid = center1 + a * (center2 - center1) / d
+
+        # Perpendicular vector
+        perp = complex(-(center2 - center1).imag, (center2 - center1).real) / d * h
+
+        intersection1 = p_mid + perp
+        intersection2 = p_mid - perp
+
+        if abs(perp) < 1e-10:
+            # Circles touch at one point
+            return [intersection1]
+        else:
+            return [intersection1, intersection2]
+
+    def _point_on_line_segment(self, point, line_start, line_end, tolerance=1e-10):
+        """Check if a point lies on a line segment."""
+        # Check if point is colinear with line_start and line_end
+        cross = (point.imag - line_start.imag) * (line_end.real - line_start.real) - \
+                (point.real - line_start.real) * (line_end.imag - line_start.imag)
+        if abs(cross) > tolerance:
+            return False
+
+        # Check if point is within the bounding box of the segment
+        min_x = min(line_start.real, line_end.real)
+        max_x = max(line_start.real, line_end.real)
+        min_y = min(line_start.imag, line_end.imag)
+        max_y = max(line_start.imag, line_end.imag)
+
+        return min_x - tolerance <= point.real <= max_x + tolerance and \
+               min_y - tolerance <= point.imag <= max_y + tolerance
+
+    def _point_on_arc_segment(self, point, arc_start, arc_control, arc_end, arc_center, tolerance=1e-10):
+        """Check if a point lies on an arc segment."""
+        # Check if point is on the circle
+        radius = abs(arc_start - arc_center)
+        point_radius = abs(point - arc_center)
+        if abs(point_radius - radius) > tolerance:
+            return False
+
+        # Get angles
+        start_angle = cmath.phase(arc_start - arc_center)
+        end_angle = cmath.phase(arc_end - arc_center)
+        point_angle = cmath.phase(point - arc_center)
+
+        # Normalize angles to [0, 2π)
+        def normalize_angle(angle):
+            while angle < 0:
+                angle += 2 * cmath.pi
+            while angle >= 2 * cmath.pi:
+                angle -= 2 * cmath.pi
+            return angle
+
+        start_angle = normalize_angle(start_angle)
+        end_angle = normalize_angle(end_angle)
+        point_angle = normalize_angle(point_angle)
+
+        # Check if point angle is between start and end angles
+        if start_angle <= end_angle:
+            return start_angle <= point_angle <= end_angle
+        else:
+            # Arc crosses the 0/2π boundary
+            return point_angle >= start_angle or point_angle <= end_angle
+
+    def _line_line_intersection(self, p1, p2, p3, p4):
+        """Find intersection of two lines defined by points p1-p2 and p3-p4."""
+        # Convert to coordinates
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+        x3, y3 = p3.real, p3.imag
+        x4, y4 = p4.real, p4.imag
+
+        # Calculate denominator
+        denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
+
+        if abs(denom) < 1e-10:
+            return None  # Parallel lines
+
+        # Calculate intersection parameters
+        ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom
+        ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom
+
+        # Check if intersection is within both line segments
+        if 0 <= ua <= 1 and 0 <= ub <= 1:
+            # Calculate intersection point
+            ix = x1 + ua * (x2 - x1)
+            iy = y1 + ua * (y2 - y1)
+            return complex(ix, iy)
+
+        return None
+
+    def _trim_segments_to_intersection(self, idx1, idx2, intersection_point):
+        """Trim two adjacent segments to meet at the intersection point."""
+        # Update the end of segment 1 to the intersection
+        self.segments[idx1][4] = intersection_point
+
+        # Update the start of segment 2 to the intersection
+        self.segments[idx2][0] = intersection_point
+
+    def _apply_join_type(self, idx1, idx2, join_type, miter_limit, distance):
+        """Apply the specified join type when segments don't intersect."""
+        if join_type == "miter":
+            self._apply_miter_join(idx1, idx2, miter_limit, distance)
+        elif join_type == "bevel":
+            self._apply_bevel_join(idx1, idx2, distance)
+        elif join_type == "round":
+            self._apply_round_join(idx1, idx2, distance)
+        # For now, default to bevel if unknown type
+        else:
+            self._apply_bevel_join(idx1, idx2, distance)
+
+    def _apply_miter_join(self, idx1, idx2, miter_limit, distance):
+        """Apply miter join by extending segments to their intersection."""
+        seg1 = self.segments[idx1]
+        seg2 = self.segments[idx2]
+
+        # For miter join, extend the segments and find their intersection
+        extended_intersection = self._find_extended_line_intersection(seg1, seg2)
+        if extended_intersection:
+            # Check miter length
+            end1 = seg1[4]
+            start2 = seg2[0]
+            miter_length = abs(extended_intersection - end1)
+
+            if miter_length <= miter_limit * abs(distance):
+                # Use miter join
+                self._trim_segments_to_intersection(idx1, idx2, extended_intersection)
+            else:
+                # Miter too long, fall back to bevel
+                self._apply_bevel_join(idx1, idx2, distance)
+        else:
+            # No intersection found, fall back to bevel
+            self._apply_bevel_join(idx1, idx2, distance)
+
+    def _find_extended_line_intersection(self, seg1, seg2):
+        """Find intersection of extended line segments."""
+        start1 = seg1[0]
+        end1 = seg1[4]
+        start2 = seg2[0]
+        end2 = seg2[4]
+
+        # Extend the segments by a large factor
+        extend_factor = 1000.0
+
+        # Extend seg1 beyond end1
+        dir1 = end1 - start1
+        extended_end1 = end1 + dir1 * extend_factor
+
+        # Extend seg2 beyond start2 (in the opposite direction)
+        dir2 = end2 - start2
+        extended_start2 = start2 - dir2 * extend_factor
+
+        return self._line_line_intersection(start1, extended_end1, extended_start2, end2)
+
+    def _apply_bevel_join(self, idx1, idx2, distance):
+        """Apply bevel join by connecting endpoints with a straight line."""
+        seg1 = self.segments[idx1]
+        seg2 = self.segments[idx2]
+        end1 = seg1[4]
+        start2 = seg2[0]
+
+        # For offset curves, connect the segments at their current endpoints
+        # by moving them to meet at the midpoint. This ensures continuity.
+        join_point = (end1 + start2) / 2
+
+        # Trim segments to meet at the join point
+        self.segments[idx1][4] = join_point
+        self.segments[idx2][0] = join_point
+
+    def _apply_round_join(self, idx1, idx2, distance):
+        """Apply round join by adding an arc segment."""
+        # For round join, calculate the arc that connects the two segments
+        # This is complex and would require calculating the arc center and radius
+        # For now, fall back to bevel
+        self._apply_bevel_join(idx1, idx2, distance)
