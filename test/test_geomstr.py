@@ -3291,6 +3291,7 @@ class TestGeomstr(unittest.TestCase):
                 pass
 
     def test_scan_table_random_brute(self):
+        random.seed(42)  # Fixed seed for deterministic testing
         print("\n\n")
         for _c in range(3):  # Reduced iterations but increased complexity
             g = Geomstr()
