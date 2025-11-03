@@ -55,18 +55,22 @@ RE_ANSI = re.compile(
 )
 
 class SimpleLogger:
-    def __init__(self, name: str):
+    def __init__(self, name: str, loglevel: Optional[tuple] = None):
         self.name = name
+        self.loglevel = loglevel if loglevel is not None else ("error", )
 
     def log(self, message: str):
-        print(f"[{self.name}-Info] {message}")
+        if "info" in self.loglevel:
+            print(f"[{self.name}-Info] {message}")
 
     def warning(self, message: str):
-        print(f"[{self.name}-Warning] {message}")
+        if "warning" in self.loglevel:
+            print(f"[{self.name}-Warning] {message}")
 
-    def error(self, message: str):  
-        print(f"[{self.name}-Error] {message}")
-        
+    def error(self, message: str):
+        if "error" in self.loglevel:
+            print(f"[{self.name}-Error] {message}")
+
 def bbcode_to_ansi(text):
     return "".join(
         [
