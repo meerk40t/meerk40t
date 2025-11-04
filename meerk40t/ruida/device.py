@@ -658,6 +658,12 @@ class RuidaDevice(Service, Status):
             return self.active_interface.is_connecting
         return False
 
+    def connect(self):
+        '''
+        WARNING: this will not return until connected. Call from a thread.'''
+        if self.active_interface:
+            self.active_interface.connect()
+
     def abort_connect(self):
         if self.active_interface:
             self.active_interface.abort_connect()

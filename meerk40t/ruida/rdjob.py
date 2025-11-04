@@ -567,7 +567,11 @@ class RDJob:
         if output is None:
             self.write_command(e)
         else:
-            output(e)
+            try:
+                output(e)
+            except ConnectionError:
+                # Drop when not connected.
+                pass
 
     @property
     def status(self):

@@ -42,7 +42,7 @@ class RuidaController:
         self._job_lock = threading.Lock() # To allow running a job.
         self._status_thread = threading.Thread(
             target=self._status_monitor, daemon=True)
-        self._expect_status = None
+        self._expected_status = None
         self._next = 0
         self._start = False
         self.card_id = b''
@@ -86,7 +86,7 @@ class RuidaController:
 
     @property
     def is_busy(self):
-        return self._expect_status is not None
+        return self._expected_status is not None
 
     def sync_coords(self):
         '''
@@ -130,11 +130,10 @@ class RuidaController:
     def _next_status(self):
         '''The expected status has been received. Advance to the next.
         '''
-        self._expect_status = None
         self._next += 1
         if self._next >= len(STATUS_ADDRESSES):
             self._next = 0
-
+        self._expected_status = None
 
     def _status_monitor(self):
         '''Status monitoring thread.
@@ -143,41 +142,39 @@ class RuidaController:
         Ruida controller. It also updates the UI when status changes.
 
         NOTE: This thread is blocked while _data_sender is running.'''
-        _next = 0
-        _tries = self._status_tries
+        _tries = 0
+        self.service.connect()
         try:
             while True:
-                if not self.is_busy and not self.service.is_busy:
-                    self._job_lock.acquire() # Wait if running a job.
-                    # Step through a series of commands and send/recv each one
-                    # by one. When received, recv will update the UI.
-                    _status = STATUS_ADDRESSES[self._next]
-                    self.job.get_setting(
-                        _status, output=self.write)
-                    self._expect_status = _status
-                    self._next_status()
-                    self._job_lock.release()
-                    _tries = self._status_tries
-                else:
-                    _tries -= 1
-                    if _tries <= 0:
-                        self._expect_status = None
+                # if not self.is_busy and not self.service.is_busy:
+                if self.service.connected:
+                    if not self.service.is_busy:
+                        self._job_lock.acquire() # Wait if running a job.
+                        # Step through a series of commands and send/recv each one
+                        # by one. When received, recv will update the UI.
+                        _status = STATUS_ADDRESSES[self._next]
+                        self.job.get_setting(
+                            _status, output=self.write)
+                        self._expected_status = _status
+                        self._job_lock.release()
+                        _tries = 0
+                    else:
+                        _tries += 1
+                        if _tries > self._status_tries:
+                            self.job.get_setting(
+                                self._expected_status, output=self.write)
+                            _tries = 0
+                            # self._expected_status = None
                 time.sleep(self._status_thread_sleep)
         except OSError:
             pass
 
     def update_card_id(self, card_id):
-        if self._expect_status == MEM_CARD_ID:
-            self._expect_status = None
-            self._next_status()
         if card_id != self.card_id:
             self.card_id = card_id
             # Signal the GUI update.
 
     def update_bed_x(self, bed_x):
-        if self._expect_status == MEM_BED_SIZE_X:
-            self._expect_status = None
-            self._next_status()
         _bed_x = bed_x / 1000
         if _bed_x != self.bed_x:
             self.bed_x = _bed_x
@@ -187,9 +184,6 @@ class RuidaController:
             self.service.signal('bedwidth', self.service.bedwidth)
 
     def update_bed_y(self, bed_y):
-        if self._expect_status == MEM_BED_SIZE_Y:
-            self._expect_status = None
-            self._next_status()
         _bed_y = bed_y / 1000
         if _bed_y != self.bed_y:
             self.bed_y = _bed_y
@@ -199,9 +193,6 @@ class RuidaController:
             self.service.signal('bedheight', self.service.bedheight)
 
     def update_x(self, x):
-        if self._expect_status == MEM_CURRENT_X:
-            self._expect_status = None
-            self._next_status()
         # TODO: Factor discovered by trial and error -- why necessary?
         # _x = x * 2.58
         _x = (self.bed_x * 1000 - x) * 2.58
@@ -217,9 +208,6 @@ class RuidaController:
             self.service.driver.device_x = x
 
     def update_y(self, y):
-        if self._expect_status == MEM_CURRENT_Y:
-            self._expect_status = None
-            self._next_status()
         # TODO: Factor discovered by trial and error -- why necessary?
         _y = y * 2.58
         if True or _y != self.y:
@@ -234,17 +222,11 @@ class RuidaController:
             self.service.driver.device_y = y
 
     def update_z(self, z):
-        if self._expect_status == MEM_CURRENT_Z:
-            self._expect_status = None
-            self._next_status()
         if z != self.z:
             self.z = z
             # Signal the GUI update.
 
     def update_u(self, u):
-        if self._expect_status == MEM_CURRENT_U:
-            self._expect_status = None
-            self._next_status()
         if u != self.u:
             self.u = u
             # Signal the GUI update.
@@ -271,9 +253,9 @@ class RuidaController:
                 if _mem in self._dispatch_lut:
                     # Dispatch to the corresponding updater.
                     self._dispatch_lut[_mem](self, _value)
-                self.events(
-                    f"-->:Addr: {int.from_bytes(_mem):04X}={_value:08X}: {_decoded}")
                 self._connected = True
+                if _mem == self._expected_status:
+                    self._next_status()
         else:
             # Comm failure -- timeout.
             self._connected = False

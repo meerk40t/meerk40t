@@ -5,6 +5,8 @@ UDP Connection handles Ruida UDP data sending and receiving and the Ruida protoc
 import socket
 import queue
 import struct
+import time
+import threading
 
 from meerk40t.ruida.rdjob import ACK, NAK, KEEP_ALIVE, ERR
 
@@ -15,7 +17,8 @@ class UDPConnection:
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.send = service.channel(f"{name}/send", pure=True)
         self.events = service.channel(f"{name}/events", pure=True)
-        self.is_shutdown = False
+        self.is_shutdown = True
+        self._responding = False
         self.recv_address = None
         self.send_port = 50200
         self.listen_port = 40200
@@ -30,6 +33,14 @@ class UDPConnection:
         self._tries = 4
         self._ack_pending = False
         self._reply_pending = False
+        # Stats
+        self.sends = 0
+        self.acks = 0
+        self.naks = 0
+        self.replies = 0
+        self.keep_alives = 0
+        self.dropped_packets = 0
+        self._handshake_thread = None
 
     # Should verify type is a callable method.
     def set_swizzles(self, swizzle, unswizzle):
@@ -39,39 +50,51 @@ class UDPConnection:
     def set_timeout(self, seconds):
         self._tries = seconds / self._s_to
 
-    def shutdown(self, *args, **kwargs):
-        self.is_shutdown = True
-
     def open(self):
-        if self.connected:
+        if self.is_open:
             return
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # TODO: Want non-blocking. Handling send/rcv using states and blocking
         # on the send queue.
         self.socket.settimeout(self._s_to)
         self.socket.bind(("", self.listen_port))
+        if self._handshake_thread is None:
+            self._handshake_thread = threading.Thread(
+                    target=self._ruida_handshaker, daemon=True)
+            self._handshake_thread.start()
 
-        name = self.service.safe_label
-        self.service.threaded(
-            self._ruida_handshaker, thread_name=f"thread-{name}", daemon=True
-        )
         # TODO: usb_status is a misnomer.
         self.service.signal("pipe;usb_status", "Opened")
         self.events("Disconnected")
 
     def close(self):
-        if not self.connected:
+        if not self.is_open:
             return
         self.socket.close()
         self.socket = None
 
+    def shutdown(self, *args, **kwargs):
+        if not self.is_shutdown:
+            self.is_shutdown = True # Causes the handshaker to exit.
+            self._handshake_thread.join()
+            self.close()
+            self.service.signal(
+                "pipe;usb_status", "Disconnected")
+            self.events("Disconnected")
+
+    @property
+    def is_open(self):
+        return self.socket is not None
+
     @property
     def is_connecting(self):
-        return False
+        return not self._responding
 
     @property
     def connected(self):
-        return not self.is_shutdown and self.socket is not None
+        return (self._responding
+                and not self.is_shutdown
+                and self.socket is not None)
 
     @property
     def is_busy(self):
@@ -93,6 +116,11 @@ class UDPConnection:
         # Blocks when queue is full.
         _tries = 12 # Approximately 4 seconds.
         while _tries:
+            if not self.connected:
+                # Callers of this method should be ready for this and retry
+                # if necessary. Don't want to wait here for a connection to
+                # be established -- the controller could be powered down.
+                raise ConnectionError('Not connected to the Ruida controller.')
             try:
                 self.send_q.put(data, timeout=self._q_to)
                 break
@@ -101,11 +129,69 @@ class UDPConnection:
                 if _tries == 0:
                     self.service.signal("warning", "Ruida", "Send queue FULL")
                 continue
-        self.send(data) # TODO: Where this goes is not known at this time.
+        # self.send(data) # TODO: Where this goes is not known at this time.
 
     def _package(self, data):
         _data = self.swizzle(data)
         return struct.pack(">H", sum(_data) & 0xFFFF) + _data
+
+    def connect(self):
+        '''Initiate or restore comms with the controller.
+
+        This happens during startup and when a comms failure occurs. All
+        other comms stop until the connection has been verified.
+
+        NOTE: This is intended to run only in the context of the handshaker
+         or status monitor threads.
+        '''
+        # Wait for init to complete. Need the swizzle method from RDJob.
+        while self.swizzle is None:
+            time.sleep(0.25)
+        if not self.connected:
+            self.service.signal(
+                "pipe;usb_status", "Connecting")
+            self.events("Connecting")
+            self.open()
+            _enq = self._package(KEEP_ALIVE)
+            while not self.connected:
+                self._ack_pending = True
+                self.socket.sendto(
+                    _enq, (self.service.address, self.send_port))
+                self.keep_alives += 1
+                # When the controller is running it should respond immediately.
+                try:
+                    _data, _address = self.socket.recvfrom(1024)
+                    _reply = self.unswizzle(_data)
+                    if len(_reply) == 1:
+                        if _reply == ACK:
+                            self._ack_pending = False
+                            self._reply_pending = False
+                            self._responding = True
+                        elif _reply == NAK:
+                            pass # Ignore this -- controller confused?
+                        elif _reply == KEEP_ALIVE:
+                            pass # At least it's talking.
+                except (socket.timeout, AttributeError):
+                    # Still not responding.
+                    time.sleep(1)
+                    continue
+                # Drop any replies the controller had been saving to confuse
+                # drivers with.
+                _spewing = True
+                while _spewing:
+                    try:
+                        _data, _address = self.socket.recvfrom(1024)
+                        self.dropped_packets += 1
+                    except (socket.timeout):
+                        _spewing = False
+            # Prime the pump to get things rolling.
+            self.send_q.put(KEEP_ALIVE, timeout=self._q_to)
+            # TODO: The controller may spew a bunch of ACKs for messages
+            # it received but hadn't yet responded to. Add a receive until
+            # exception loop to drop the spew packets?
+            self.service.signal(
+                "pipe;usb_status", "Connected")
+            self.events("Connected")
 
     def _ruida_handshaker(self):
         '''This is a thread which handles the SEND - ACK - REPLY handshake.
@@ -134,18 +220,14 @@ class UDPConnection:
             naks    The number of NAKs triggering a resend of a message.
             replies The number of reply data packets received.
         '''
-        self.sends = 0
-        self.acks = 0
-        self.naks = 0
-        self.keep_alives = 0
-        self.replies = 0
         self._ack_pending = False
-        _responding = False
+        self._responding = False
+        self.is_shutdown = False
         try:
-            while True: # Run forever -- until shutdown externally.
+            while not self.is_shutdown:
                 # Be sure to allow context switching so the GUI remains
                 # responsive.
-
+                self.connect()
                 # IDLE
                 while True: # Block here for IDLE state.
                     try: # NOTE: The queue will be empty if not opened.
@@ -163,10 +245,10 @@ class UDPConnection:
                 if (_message[0] == 0xDA and
                     _message[1] != 0x01): # 0x01 is a memory set -- no reply.
                     self._reply_pending = True
-                    self.events('Expecting reply data.')
                 _packet = self._package(_message)
                 self.socket.sendto(_packet,
                                    (self.service.address, self.send_port))
+                self.sends += 1
                 self._ack_pending = True
 
                 # ACK_PENDING
@@ -181,17 +263,10 @@ class UDPConnection:
                         # a physical home.
                         _tries -= 1
                         if _tries:
-                            _enq = self._package(KEEP_ALIVE)
-                            # self.socket.sendto(_enq,
-                            #        (self.service.address, self.send_port))
                             continue
                         else:
                             # Comms failure.
-                            if _responding: # If was responding.
-                                self.service.signal(
-                                    "pipe;usb_status", "Disconnected")
-                                self.events("Disconnected")
-                            _responding = False
+                            self._responding = False
                             self._ack_pending = False
                             self._reply_pending = False
                             break
@@ -199,11 +274,7 @@ class UDPConnection:
                         # TODO: Need to understand how the address can be used
                         # further connection sanity checking.
                         self.recv_address = _address
-                    if not _responding:
-                        self.service.signal(
-                            "pipe;usb_status", "Connected")
-                        self.events("Connected")
-                    _responding = True
+                    self._responding = True
                     _ack = self.unswizzle(_data)
                     if len(_ack) == 1:
                         if _ack == ACK:
@@ -237,17 +308,16 @@ class UDPConnection:
                         _reply = self.unswizzle(_data)
                         self.recv(_reply) # Forward to client.
                     except socket.error as e:
-                        if e.errno in [socket.EWOULDBLOCK, socket.EAGAIN]:
+                        if (_tries >= 0
+                            and e.errno in [socket.EWOULDBLOCK, socket.EAGAIN]):
                             _tries -= 1
-                        if _tries:
-                            continue
                         else:
-                            _responding = False
-                            self.service.signal(
-                                "pipe;usb_status", "Disconnected")
-                            self.events("Disconnected")
+                            self._responding = False
                             self.recv(None) # Inform the upper layer of failure.
                             self.events('Time out when expecting data.')
                             break
         except OSError:
-            pass
+            self.service.signal(
+                "pipe;usb_status", "Ruida comms ERROR")
+            self.events("Ruida comms error.")
+            self.shutdown()
