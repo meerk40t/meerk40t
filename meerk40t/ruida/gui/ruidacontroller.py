@@ -45,6 +45,12 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         # end wxGlade
         self.max = 0
         self.state = None
+        self.disconnected_color = '#dfdf00'
+        self.idle_color = '#00ff00'
+        self.moving_color = '#008000'
+        self.busy_color = '#ff8000'
+        self.color = self.disconnected_color
+        self.busy = False
 
     def __set_properties(self):
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
@@ -83,7 +89,25 @@ class RuidaControllerPanel(wx.ScrolledWindow):
 
     def update_text(self, text):
         with self._buffer_lock:
-            self._buffer += f"{text}\n"
+            # Ignore the binary spew.
+            # Instead, use tshark and the protocol analyzer.
+            if type(text) is str:
+                self._buffer += f"{text}\n"
+                _color_change = False
+                if 'Moving' in text:
+                    self.busy = True
+                    self.color = self.moving_color
+                    _color_change = True
+                elif 'running' in text:
+                    self.busy = True
+                    self.color = self.busy_color
+                    _color_change = True
+                elif 'Idle' in text:
+                    self.busy = False
+                    self.color = self.idle_color
+                    _color_change = True
+                if _color_change:
+                    self.button_device_connect.SetBackgroundColour(self.color)
         self.context.signal("ruida_controller_update")
 
     @signal_listener("ruida_controller_update")
@@ -94,14 +118,15 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         self.text_usb_log.AppendText(buffer)
 
     def set_button_connected(self):
-        self.button_device_connect.SetBackgroundColour("#00ff00")
+        self.button_device_connect.SetBackgroundColour(self.color)
         self.button_device_connect.SetBitmap(
             icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size(self.context))
         )
         self.button_device_connect.Enable()
 
     def set_button_disconnected(self):
-        self.button_device_connect.SetBackgroundColour("#dfdf00")
+        self.color = self.disconnected_color
+        self.button_device_connect.SetBackgroundColour(self.color)
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
                 use_theme=False, resize=get_default_icon_size(self.context)
@@ -120,10 +145,12 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             self.button_device_connect.SetLabel(_("Connected"))
         if status == "disconnected":
             self.button_device_connect.SetLabel(_("Disconnected"))
-        if connected:
-            self.set_button_connected()
-        else:
-            self.set_button_disconnected()
+        if not self.busy:
+            if connected:
+                self.color = self.idle_color
+                self.set_button_connected()
+            else:
+                self.set_button_disconnected()
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         connected = self.service.connected

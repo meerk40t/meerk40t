@@ -8,6 +8,7 @@ import time
 
 from meerk40t.ruida.rdjob import (
     MEM_CARD_ID,
+    MEM_MACHINE_STATUS,
     MEM_BED_SIZE_X,
     MEM_BED_SIZE_Y,
     MEM_CURRENT_X,
@@ -46,6 +47,7 @@ class RuidaController:
         self._next = 0
         self._start = False
         self.card_id = b''
+        self.machine_status = None
         self.bed_x = -1.0
         self.bed_y = -1.0
         self.x = -1.0
@@ -174,6 +176,23 @@ class RuidaController:
             self.card_id = card_id
             # Signal the GUI update.
 
+    def update_machine_status(self, status):
+        if status != self.machine_status:
+            self.machine_status = status
+            # WARNING: These strings are checked by the Ruida Controller
+            # window (ruidacontroller.py).
+            if status & 0x01000000:
+                _msg = 'Moving'
+            elif status & 0x00000002:
+                _msg = 'Part end'
+            elif status & 0x00000001:
+                _msg = 'Job running'
+            else:
+                _msg = 'Idle'
+            # Signal the GUI update.
+            self.service.signal('pipe;usb_status', _msg)
+            self.events(_msg)
+
     def update_bed_x(self, bed_x):
         _bed_x = bed_x / 1000
         if _bed_x != self.bed_x:
@@ -194,7 +213,6 @@ class RuidaController:
 
     def update_x(self, x):
         # TODO: Factor discovered by trial and error -- why necessary?
-        # _x = x * 2.58
         _x = (self.bed_x * 1000 - x) * 2.58
         if True or _x != self.x:
             self.x = _x
@@ -206,6 +224,7 @@ class RuidaController:
             # TODO: Updating native_x here causes intermittent move
             # behavior.
             self.service.driver.device_x = x
+            self.service.driver.native_x = x
 
     def update_y(self, y):
         # TODO: Factor discovered by trial and error -- why necessary?
@@ -220,6 +239,7 @@ class RuidaController:
             # TODO: Updating native_y here causes intermittent move
             # behavior.
             self.service.driver.device_y = y
+            self.service.driver.native_y = y
 
     def update_z(self, z):
         if z != self.z:
@@ -233,6 +253,7 @@ class RuidaController:
 
     _dispatch_lut = {
         MEM_CARD_ID: update_card_id,
+        MEM_MACHINE_STATUS: update_machine_status,
         MEM_BED_SIZE_X: update_bed_x,
         MEM_BED_SIZE_Y: update_bed_y,
         MEM_CURRENT_X: update_x,

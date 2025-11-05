@@ -225,12 +225,14 @@ CID_LUT = {
 
 MEM_BED_SIZE_X = b'\x00\x26'
 MEM_BED_SIZE_Y = b'\x00\x36'
+MEM_MACHINE_STATUS = b'\x04\x00'
 MEM_CURRENT_X = b'\x04\x21'
 MEM_CURRENT_Y = b'\x04\x31'
 MEM_CURRENT_Z = b'\x04\x41'
 MEM_CURRENT_U = b'\x04\x51'
 REPLY_LABEL_LUT = {
     MEM_CARD_ID: 'CardID',
+    MEM_MACHINE_STATUS: 'Status',
     MEM_BED_SIZE_X: 'Bed X',
     MEM_BED_SIZE_Y: 'Bed Y',
     MEM_CURRENT_X: 'Current X',
@@ -242,6 +244,7 @@ REPLY_LABEL_LUT = {
 
 STATUS_ADDRESSES = (
     MEM_CARD_ID,
+    MEM_MACHINE_STATUS,
     MEM_BED_SIZE_X,
     MEM_BED_SIZE_Y,
     MEM_CURRENT_X,
@@ -1341,6 +1344,7 @@ class RDJob:
                     _v = _cid
                     _decoded = f'{REPLY_LABEL_LUT[_mem]}: {_cid:08X}: {_card}'
                 elif _mem in (
+                        MEM_MACHINE_STATUS,
                         MEM_BED_SIZE_X,
                         MEM_BED_SIZE_Y,
                         MEM_CURRENT_X,

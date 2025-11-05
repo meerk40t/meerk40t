@@ -186,9 +186,6 @@ class UDPConnection:
                         _spewing = False
             # Prime the pump to get things rolling.
             self.send_q.put(KEEP_ALIVE, timeout=self._q_to)
-            # TODO: The controller may spew a bunch of ACKs for messages
-            # it received but hadn't yet responded to. Add a receive until
-            # exception loop to drop the spew packets?
             self.service.signal(
                 "pipe;usb_status", "Connected")
             self.events("Connected")
@@ -297,7 +294,7 @@ class UDPConnection:
                         self.recv(_ack) # Just in case
 
                 # REPLY_PENDING
-                _tries = 4
+                _tries = self._tries
                 while self._reply_pending:
                     try:
                         _data, _address = self.socket.recvfrom(1024)
