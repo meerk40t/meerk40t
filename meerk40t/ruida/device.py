@@ -400,22 +400,30 @@ class RuidaDevice(Service, Status):
             help=_("Updates interface state for the device."),
         )
         def interface_update(command, channel, _, data=None, **kwargs):
+            # Stop any existing protocol handler
+            self.driver.controller.stop_protocol_handler()
+
             if self.interface == "mock":
                 self.active_interface = self.interface_mock
-                self.driver.controller.write = self.interface_mock.write
+                self.driver.controller.connection = self.interface_mock
             elif self.interface == "udp":
                 self.active_interface = self.interface_udp
-                self.driver.controller.write = self.interface_udp.write
+                self.driver.controller.connection = self.interface_udp
             elif self.interface == "tcp":
                 # Special tcp out to lightburn bridge et al.
                 self.active_interface = self.interface_tcp
-                self.driver.controller.write = self.interface_tcp.write
+                self.driver.controller.connection = self.interface_tcp
             elif self.interface == "usb":
                 self.active_interface = self.interface_usb
-                self.driver.controller.write = self.interface_usb.write
+                self.driver.controller.connection = self.interface_usb
+
+            # Set swizzles on the connection for controller use
             _swizzle = self.driver.controller.job.swizzle
             _unswizzle = self.driver.controller.job.unswizzle
             self.active_interface.set_swizzles(_swizzle, _unswizzle)
+
+            # Start the protocol handler for reliable communication
+            self.driver.controller.start_protocol_handler()
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(command, channel, _, data=None, **kwargs):

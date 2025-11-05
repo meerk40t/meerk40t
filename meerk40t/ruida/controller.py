@@ -3,32 +3,48 @@ Ruida Encoder
 
 The Ruida Encoder is responsible for turning function calls into binary ruida data.
 """
+import queue
+import socket
+import struct
 import threading
 import time
 
 from meerk40t.ruida.rdjob import (
-    MEM_CARD_ID,
+    ACK,
+    KEEP_ALIVE,
     MEM_BED_SIZE_X,
     MEM_BED_SIZE_Y,
+    MEM_CARD_ID,
     MEM_CURRENT_X,
     MEM_CURRENT_Y,
     MEM_CURRENT_Z,
     MEM_CURRENT_U,
+    NAK,
+    RDJob,
     STATUS_ADDRESSES,
-    RDJob)
+)
 
 
 class RuidaController:
     """
-    Implements the Ruida protocol data sending.
+    Implements the Ruida protocol data sending with connection-agnostic protocol handling.
     """
 
-    def __init__(self, service, pipe, magic=-1):
+    def __init__(self, service, connection=None, magic=-1):
         self.service = service
+        self.connection = connection
         self.mode = "init"
         self.paused = False
 
-        self.write = pipe
+        # Legacy write pipe for backward compatibility with swizzle application
+        if connection:
+            def _swizzled_write(data):
+                if self.job.swizzle:
+                    data = self.job.swizzle(data)
+                return connection.write(data)
+            self.write = _swizzled_write
+        else:
+            self.write = None
 
         self.job = RDJob()
         self._send_queue = []
@@ -48,6 +64,189 @@ class RuidaController:
         self.y = -1.0
         self.z = -1.0
         self.u = -1.0
+
+        # Protocol handling state (moved from UDP connection)
+        self.send_q = queue.Queue(2 ** 18)  # Power of 2 for efficiency.
+        self._q_to = 0.25  # Queue timeout.
+        self._s_to = 1.0   # Socket timeout.
+        self._tries = 40
+        self._protocol_thread = None
+        self._shutdown = False
+
+    def start_protocol_handler(self):
+        """Start the protocol handler thread for reliable communication."""
+        if self._protocol_thread is None:
+            self._shutdown = False
+            self._protocol_thread = threading.Thread(
+                target=self._ruida_protocol_handler, daemon=True
+            )
+            self._protocol_thread.start()
+
+    def stop_protocol_handler(self):
+        """Stop the protocol handler thread."""
+        self._shutdown = True
+        if self._protocol_thread:
+            self._protocol_thread.join(timeout=1.0)
+            self._protocol_thread = None
+
+    def _package_data(self, data):
+        """Package data with checksum and swizzle for transmission."""
+        if self.job.swizzle:
+            data = self.job.swizzle(data)
+        return struct.pack(">H", sum(data) & 0xFFFF) + data
+
+    def _ruida_protocol_handler(self):
+        """
+        Connection-agnostic Ruida protocol handler.
+
+        This handles the SEND - ACK - REPLY handshake for reliable communication
+        across all connection types. The protocol ensures message sync and
+        graceful failure handling.
+
+        State machine with 3 states:
+            IDLE: Waiting for data to be sent
+            ACK_PENDING: Data sent, waiting for acknowledge
+            REPLY_PENDING: Command sent which requires reply from controller
+        """
+        self.sends = 0
+        self.acks = 0
+        self.naks = 0
+        self.keep_alives = 0
+        self.replies = 0
+        _ack_pending = False
+        _reply_pending = False
+        _responding = False
+
+        try:
+            while not self._shutdown:
+                # IDLE - Wait for data to send
+                while not self._shutdown:
+                    try:
+                        _message = self.send_q.get(timeout=self._q_to)
+                        break
+                    except queue.Empty:
+                        continue
+
+                if self._shutdown:
+                    break
+
+                # Check if this command expects a reply
+                if (_message[0] == 0xDA and _message[1] != 0x01):  # 0x01 is memory set
+                    _reply_pending = True
+                    self.events('Expecting reply data.')
+
+                # Send the packaged data
+                _packet = self._package_data(_message)
+                if self.connection:
+                    self.connection.send(_packet)
+                _ack_pending = True
+
+                # ACK_PENDING - Wait for acknowledgment
+                _tries = self._tries
+                while _ack_pending and not self._shutdown:
+                    try:
+                        # For different connection types, this will behave differently
+                        if self.connection and hasattr(self.connection, 'recv'):
+                            _data = self.connection.recv()
+                        else:
+                            # Fallback for connections without recv or no connection
+                            time.sleep(0.1)
+                            continue
+
+                        if _data is None:
+                            continue
+
+                    except (socket.timeout, AttributeError, OSError):
+                        # Handle timeout - may indicate controller is busy (e.g., homing)
+                        _tries -= 1
+                        if _tries:
+                            # Send keep-alive to maintain connection
+                            if self.connection and hasattr(self.connection, 'send'):
+                                _enq = self._package_data(KEEP_ALIVE)
+                                self.connection.send(_enq)
+                            continue
+                        else:
+                            # Communication failure
+                            if _responding:
+                                self.service.signal("pipe;usb_status", "disconnected")
+                                self.events("Disconnected")
+                            _responding = False
+                            _ack_pending = False
+                            _reply_pending = False
+                            break
+
+                    # Process received data
+                    if not _responding:
+                        self.service.signal("pipe;usb_status", "connected")
+                        self.events("Connected")
+                    _responding = True
+
+                    if self.job.unswizzle:
+                        _ack = self.job.unswizzle(_data)
+                    else:
+                        _ack = _data
+
+                    if len(_ack) == 1:
+                        if _ack == ACK:
+                            _ack_pending = False
+                            self.acks += 1
+                        elif _ack == NAK:
+                            # Resend the packet
+                            if self.connection and hasattr(self.connection, 'send'):
+                                self.connection.send(_packet)
+                            self.naks += 1
+                        elif _ack == KEEP_ALIVE:
+                            self.keep_alives += 1
+                    else:
+                        # Reply data when expecting ACK
+                        self.events('Reply data when expecting ACK.')
+                        self.replies += 1
+                        _reply_pending = False
+                        # Forward reply data
+                        if hasattr(self.connection, 'recv_channel'):
+                            self.connection.recv_channel(_ack)
+
+                # REPLY_PENDING - Wait for reply data
+                _tries = 4
+                while _reply_pending and not self._shutdown:
+                    try:
+                        if self.connection and hasattr(self.connection, 'recv'):
+                            _data = self.connection.recv()
+                        else:
+                            time.sleep(0.1)
+                            continue
+
+                        if _data is None:
+                            continue
+
+                        self.recv_address = getattr(self.connection, 'recv_address', None)
+                        _reply_pending = False
+                        self.replies += 1
+
+                        if self.job.unswizzle:
+                            _reply = self.job.unswizzle(_data)
+                        else:
+                            _reply = _data
+
+                        # Forward reply to client
+                        if hasattr(self.connection, 'recv_channel'):
+                            self.connection.recv_channel(_reply)
+                        break
+
+                    except (socket.error, OSError) as e:
+                        if hasattr(e, 'errno') and e.errno in [socket.EWOULDBLOCK, socket.EAGAIN]:
+                            _tries -= 1
+                        if _tries:
+                            continue
+                        else:
+                            # Inform upper layer of failure
+                            if hasattr(self.connection, 'recv_channel'):
+                                self.connection.recv_channel(None)
+                            self.events('Timeout when expecting data.')
+                            break
+
+        except OSError:
+            pass
         self._last_card_id = b''
         self._last_bed_x = -1.0
         self._last_bed_y = -1.0
@@ -95,11 +294,21 @@ class RuidaController:
 
         This is a transient thread which is created after job data has been
         queued. This runs until the queue is empty at which point it
-        terminates.'''
+        terminates. Now uses the protocol handler for reliable transmission.'''
         self._job_lock.acquire()
         while self._send_queue:
             data = self._send_queue.pop(0)
-            self.write(data)
+            # Queue data for protocol handler instead of direct write
+            _tries = 12  # Approximately 4 seconds
+            while _tries:
+                try:
+                    self.send_q.put(data, timeout=self._q_to)
+                    break
+                except queue.Full:
+                    _tries -= 1
+                    if _tries == 0:
+                        self.service.signal("warning", "Ruida", "Send queue FULL")
+                    continue
         self._send_queue.clear()
         self._send_thread = None
         self.events("File Sent.")

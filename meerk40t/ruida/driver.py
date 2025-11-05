@@ -38,7 +38,8 @@ class RuidaDriver(Parameters):
 
         name = self.service.safe_label
         send = service.channel(f"{name}/send")
-        self.controller = RuidaController(self.service, send)
+        # Controller will be initialized with connection later in device.py
+        self.controller = RuidaController(self.service)
         self.controller.job.set_magic(service.magic)
 
         self.recv = service.channel(f"{name}/recv", pure=True)

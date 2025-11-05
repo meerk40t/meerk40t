@@ -3,6 +3,7 @@ TCP Connection handles Ruida TCP data sending and receiving and the Ruida Bridge
 
 """
 
+import queue
 import socket
 import struct
 import threading
@@ -24,16 +25,17 @@ class TCPConnection:
         self._send_lock = threading.Condition()
         self.buffer = bytearray()
         self.thread = None
+        self.swizzle = None
+        self.unswizzle = None
+        
+        # Receive buffer for synchronous protocol handler compatibility
+        self._recv_buffer = queue.Queue()
+        self._recv_lock = threading.Lock()
 
-    @property
-    def port(self):
-        return self.service.tcp_port
-
-    def address(self):
-        return self.service.tcp_address
-
-    def shutdown(self, *args, **kwargs):
-        self.is_shutdown = True
+    def set_swizzles(self, swizzle, unswizzle):
+        """Set swizzle functions for use by the controller."""
+        self.swizzle = swizzle
+        self.unswizzle = unswizzle
 
     def open(self):
         if self.connected:
@@ -153,6 +155,23 @@ class TCPConnection:
                     message, address = self.socket.recv(1024)
                 except (socket.timeout, AttributeError):
                     continue
+                
+                # Put data in buffer for synchronous protocol handler
+                self._recv_buffer.put(message)
+                
+                # Also send to channel for backward compatibility
                 self.recv_channel(message)
         except OSError:
             pass
+
+    def send(self, data):
+        """Send data directly via TCP."""
+        self.write(data)
+
+    def recv(self):
+        """Receive data - supports both synchronous protocol handler and async channels."""
+        try:
+            # Try to get data from buffer with timeout for protocol handler compatibility
+            return self._recv_buffer.get(timeout=0.1)
+        except queue.Empty:
+            return None  # No data available
