@@ -145,6 +145,7 @@ class RuidaController:
 
         NOTE: This thread is blocked while _data_sender is running.'''
         _tries = 0
+        time.sleep(3) # Wait for controller window to init.
         self.service.connect()
         try:
             while True:
@@ -167,6 +168,8 @@ class RuidaController:
                                 self._expected_status, output=self.write)
                             _tries = 0
                             # self._expected_status = None
+                else:
+                    self.card_id = ''
                 time.sleep(self._status_thread_sleep)
         except OSError:
             pass
@@ -175,6 +178,9 @@ class RuidaController:
         if card_id != self.card_id:
             self.card_id = card_id
             # Signal the GUI update.
+            _msg = f'Card ID:{card_id}'
+            self.service.signal('pipe;usb_status', _msg)
+            self.events(_msg)
 
     def update_machine_status(self, status):
         if status != self.machine_status:
@@ -211,9 +217,12 @@ class RuidaController:
             self.service.bedheight = f'{_bed_y:.1f}mm'
             self.service.signal('bedheight', self.service.bedheight)
 
+    # TODO: Factor discovered by trial and error -- why necessary?
+    # The precise value was discovered in a project file.
+    COORD_SCALE_FACTOR = 2.5801195035
+
     def update_x(self, x):
-        # TODO: Factor discovered by trial and error -- why necessary?
-        _x = (self.bed_x * 1000 - x) * 2.58
+        _x = (self.bed_x * 1000 - x) * self.COORD_SCALE_FACTOR
         if True or _x != self.x:
             self.x = _x
             # Signal the GUI update.
@@ -227,8 +236,7 @@ class RuidaController:
             self.service.driver.native_x = x
 
     def update_y(self, y):
-        # TODO: Factor discovered by trial and error -- why necessary?
-        _y = y * 2.58
+        _y = y * self.COORD_SCALE_FACTOR
         if True or _y != self.y:
             self.y = _y
             # Signal the GUI update.

@@ -1341,7 +1341,7 @@ class RDJob:
                         _card = CID_LUT[_cid]
                     else:
                         _card = "Unknown card."
-                    _v = _cid
+                    _v = f'{_card}: (0x{_cid:08X})'
                     _decoded = f'{REPLY_LABEL_LUT[_mem]}: {_cid:08X}: {_card}'
                 elif _mem in (
                         MEM_MACHINE_STATUS,

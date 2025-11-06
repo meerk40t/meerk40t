@@ -41,6 +41,7 @@ class UDPConnection:
         self.keep_alives = 0
         self.dropped_packets = 0
         self._handshake_thread = None
+        self._shutdown = True
 
     # Should verify type is a callable method.
     def set_swizzles(self, swizzle, unswizzle):
@@ -48,7 +49,7 @@ class UDPConnection:
         self.unswizzle = unswizzle
 
     def set_timeout(self, seconds):
-        self._tries = seconds / self._s_to
+        self._tries = int(seconds / self._s_to)
 
     def open(self):
         if self.is_open:
@@ -58,10 +59,12 @@ class UDPConnection:
         # on the send queue.
         self.socket.settimeout(self._s_to)
         self.socket.bind(("", self.listen_port))
+        self._shutdown = False
         if self._handshake_thread is None:
             self._handshake_thread = threading.Thread(
-                    target=self._ruida_handshaker, daemon=True)
-            self._handshake_thread.start()
+                    target=self._ruida_handshaker,
+                    daemon=True)
+        self._handshake_thread.start()
 
         # TODO: usb_status is a misnomer.
         self.service.signal("pipe;usb_status", "Opened")
@@ -70,17 +73,21 @@ class UDPConnection:
     def close(self):
         if not self.is_open:
             return
+        self._shutdown = True
+        while not self.is_shutdown:
+            continue
+        self._handshake_thread.join()
+        self._handshake_thread = None
+        self.is_shutdown = True # Causes the handshaker to exit.
         self.socket.close()
         self.socket = None
+        self.service.signal(
+            "pipe;usb_status", "Disconnected")
+        self.events("Disconnected")
 
     def shutdown(self, *args, **kwargs):
         if not self.is_shutdown:
-            self.is_shutdown = True # Causes the handshaker to exit.
-            self._handshake_thread.join()
             self.close()
-            self.service.signal(
-                "pipe;usb_status", "Disconnected")
-            self.events("Disconnected")
 
     @property
     def is_open(self):
@@ -153,7 +160,7 @@ class UDPConnection:
             self.events("Connecting")
             self.open()
             _enq = self._package(KEEP_ALIVE)
-            while not self.connected:
+            while not self.connected and not self._shutdown:
                 self._ack_pending = True
                 self.socket.sendto(
                     _enq, (self.service.address, self.send_port))
@@ -221,7 +228,7 @@ class UDPConnection:
         self._responding = False
         self.is_shutdown = False
         try:
-            while not self.is_shutdown:
+            while not self._shutdown:
                 # Be sure to allow context switching so the GUI remains
                 # responsive.
                 self.connect()
@@ -313,6 +320,7 @@ class UDPConnection:
                             self.recv(None) # Inform the upper layer of failure.
                             self.events('Time out when expecting data.')
                             break
+            self.is_shutdown = True
         except OSError:
             self.service.signal(
                 "pipe;usb_status", "Ruida comms ERROR")
