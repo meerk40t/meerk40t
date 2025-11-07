@@ -101,6 +101,9 @@ class TCPConnection:
     def abort_connect(self):
         pass
 
+    def set_swizzles(self, *args, **kwargs):
+        pass
+
     def write(self, data):
         """
         Process not only the checksum for UDP but the `L<length>` preamble for the TCP.

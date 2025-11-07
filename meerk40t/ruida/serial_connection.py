@@ -24,6 +24,9 @@ class SerialConnection:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
+    def set_swizzles(self, *args, **kwargs):
+        pass
+
     def open(self):
         if self.connected:
             return

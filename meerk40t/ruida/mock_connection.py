@@ -26,6 +26,9 @@ class MockConnection:
     def is_connecting(self):
         return False
 
+    def set_swizzles(self, *args, **kwargs):
+        return
+
     def is_open(self, index=0):
         try:
             dev = self.devices[index]
