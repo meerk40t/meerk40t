@@ -406,6 +406,7 @@ class RuidaDevice(Service, Status):
             elif self.interface == "udp":
                 self.active_interface = self.interface_udp
                 self.driver.controller.write = self.interface_udp.write
+                self.driver.controller.start()
             elif self.interface == "tcp":
                 # Special tcp out to lightburn bridge et al.
                 self.active_interface = self.interface_tcp
@@ -657,12 +658,28 @@ class RuidaDevice(Service, Status):
             return self.active_interface.is_connecting
         return False
 
+    def connect(self):
+        '''
+        WARNING: this will not return until connected. Call from a thread.'''
+        if self.active_interface:
+            self.active_interface.connect()
+
     def abort_connect(self):
         if self.active_interface:
             self.active_interface.abort_connect()
 
     def set_disable_connect(self, should_disable):
         pass
+
+    def set_timeout(self, seconds):
+        '''Set the interface timeout.
+
+        Currently only the UDP interface supports this.'''
+        self.interface_udp.set_timeout(seconds)
+
+    @property
+    def is_busy(self):
+        return self.interface_udp.is_busy
 
     def service_attach(self, *args, **kwargs):
         self.realize()
@@ -729,7 +746,6 @@ class RuidaDevice(Service, Status):
         if inspect.stack()[1].function == 'on_label_dclick':
             return self.view.iposition(self.driver.device_x, self.driver.device_y)
         return self.view.iposition(self.driver.native_x, self.driver.native_y)
-        # return self.view.iposition(self.driver.device_x, self.driver.device_y)
 
     @property
     def native(self):
