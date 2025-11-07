@@ -450,12 +450,15 @@ class Wordlist:
         return result
 
     @staticmethod
-    def wordlist_datestr(format=None):
+    def wordlist_datestr(date_format=None):
         time = datetime.now()
-        if format is None:
-            format = "%x"
+        if date_format is None:
+            date_format = "%x"
         try:
-            result = time.strftime(format)
+            result = time.strftime(date_format)
+            if "%" in result:
+                # Seems invalid!
+                result = "invalid"
         except:
             result = "invalid"
         return result
@@ -467,8 +470,12 @@ class Wordlist:
             time_format = "%X"
         try:
             result = time.strftime(time_format)
-        except ValueError:
+            if "%" in result:
+                # Seems invalid!
+                result = "invalid"
+        except:
             result = "invalid"
+
         return result
 
     def get_variable_list(self):
