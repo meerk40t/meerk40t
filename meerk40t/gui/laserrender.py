@@ -4,8 +4,21 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.cutcode.dwellcut import DwellCut
+from meerk40t.core.cutcode.gotocut import GotoCut
+from meerk40t.core.cutcode.homecut import HomeCut
+from meerk40t.core.cutcode.inputcut import InputCut
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
+from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.cutcode.rastercut import RasterCut
+from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.elements.element_types import place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.gui.wxutils import get_gc_scale
 from meerk40t.svgelements import (
     Arc,
@@ -37,6 +50,7 @@ from ..core.geomstr import (  # , TYPE_RAMP
     TYPE_QUAD,
     Geomstr,
 )
+
 from .fonts import wxfont_to_svg
 from .icons import icons8_image
 from .zmatrix import ZMatrix
@@ -82,9 +96,12 @@ def swizzlecolor(c):
 def as_wx_color(c):
     if c is None:
         return None
+    if isinstance(c, Color) and c.value is None:
+        return None
     if isinstance(c, int):
         c = Color(argb=c)
-    return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+    res = wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+    return res
 
 
 def svgfont_to_wx(textnode):
@@ -224,6 +241,7 @@ class LaserRender:
     def __init__(self, context):
         self.context = context
         self.context.setting(int, "draw_mode", 0)
+        self.context.setting(int, "min_text_magnifier", 1)
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
@@ -1100,65 +1118,38 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
-        if node is None:
-            return
-        text = node.text
-        if text is None or text == "":
-            return
+        gc.PushState()
+        image = None
 
         try:
-            matrix = node.matrix
+            image = node.active_image
+            matrix = node.active_matrix
+            bounds = 0, 0, image.width, image.height
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         except AttributeError:
-            matrix = None
+            pass
+        if image is None:
+            return
 
-        svgfont_to_wx(node)
-        font = node.wxfont
-
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        #
-        # sw = node.implied_stroke_width
-        # if draw_mode & DRAW_MODE_LINEWIDTH:
-        #     # No stroke rendering.
-        #     sw = 1000
-        # self._set_penwidth(sw)
-        # self.set_pen(
-        #     gc,
-        #     node.stroke,
-        #     alpha=alpha,
-        # )
-        # self.set_brush(gc, node.fill, alpha=255)
-
-        if node.fill is None or node.fill == "none":
-            fill_color = wx.BLACK
-        else:
-            fill_color = as_wx_color(node.fill)
-        gc.SetFont(font, fill_color)
-
-        if draw_mode & DRAW_MODE_VARIABLES:
-            # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(
-                text, elemnode=node, increment=False
+        cache = None
+        try:
+            cache = node._cache
+        except AttributeError:
+            pass
+        if cache is None:
+            node._cache_width, node._cache_height = image.size
+            node._cache = self.make_thumbnail(
+                image,
+                alphablack=False,
             )
-        if node.texttransform is not None:
-            ttf = node.texttransform.lower()
-            if ttf == "capitalize":
-                text = text.capitalize()
-            elif ttf == "uppercase":
-                text = text.upper()
-            if ttf == "lowercase":
-                text = text.lower()
-        xmin, ymin, xmax, ymax = node.bbox(transformed=False)
-        height = ymax - ymin
-        width = xmax - xmin
-        dy = 0
-        dx = 0
-        if node.anchor == "middle":
-            dx -= width / 2
-        elif node.anchor == "end":
-            dx -= width
-        gc.DrawText(text, dx, dy)
+        node._cache_width, node._cache_height = image.size
+        try:
+            cache = self.make_thumbnail(image, alphablack=False)
+            min_x, min_y, max_x, max_y = bounds
+            gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
+        except MemoryError:
+            pass
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -1213,9 +1204,9 @@ class LaserRender:
                 gc.DrawText(txt, 30, 30)
                 gc.PopState()
 
-    def measure_text(self, node):
+    def create_text_image(self, node):
         """
-        Use default measure text routines to calculate height etc.
+        This routine creates the internal image representation of the text.
 
         Use the real draw of the font to calculate actual size.
         A 'real' height routine needs to draw the string on an
@@ -1225,17 +1216,9 @@ class LaserRender:
         @param node:
         @return:
         """
-        dimension_x = 1000
-        dimension_y = 500
-        scaling = 1
-        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
-        dc = wx.MemoryDC()
-        dc.SelectObject(bmp)
-        dc.SetBackground(wx.BLACK_BRUSH)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-
+        self.context.elements.set_start_time("create_text_image")
         draw_mode = self.context.draw_mode
+        # print (f"DrawMode: {draw_mode}, would show variables: {draw_mode & DRAW_MODE_VARIABLES}")
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.wordlist_translate(
@@ -1254,99 +1237,154 @@ class LaserRender:
             if ttf == "lowercase":
                 text = text.lower()
         svgfont_to_wx(node)
-        use_font = node.wxfont
-        gc.SetFont(use_font, wx.WHITE)
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        needs_revision = False
-        revision_factor = 3
-        if revision_factor * f_width >= dimension_x:
-            dimension_x = revision_factor * f_width
-            needs_revision = True
-        if revision_factor * f_height > dimension_y:
-            dimension_y = revision_factor * f_height
-            needs_revision = True
-        if needs_revision:
-            # We need to create an independent instance of the font
-            # as we may to need to change the font_size temporarily
-            fontdesc = node.wxfont.GetNativeFontInfoDesc()
-            use_font = wx.Font(fontdesc)
-            while True:
-                try:
-                    fsize = use_font.GetFractionalPointSize()
-                except AttributeError:
-                    fsize = use_font.GetPointSize()
-                # print (f"Revised bounds: {dimension_x} x {dimension_y}, font_size={fsize} (original={fsize_org}")
-                if fsize < 100 or dimension_x < 2000 or dimension_y < 1000:
-                    break
-                # We consume an enormous amount of time and memory to create insanely big
-                # temporary canvasses, so we intentionally reduce the resolution and accept
-                # smaller deviations...
-                scaling *= 10
-                fsize /= 10
-                dimension_x /= 10
-                dimension_y /= 10
-                try:
-                    use_font.SetFractionalPointSize(fsize)
-                except AttributeError:
-                    use_font.SetPointSize(int(fsize))
-
-            gc.Destroy()
-            dc.SelectObject(wx.NullBitmap)
-            dc.Destroy()
-            del dc
-            bmp = wx.Bitmap(int(dimension_x), int(dimension_y), 32)
-            dc = wx.MemoryDC()
-            dc.SelectObject(bmp)
-            dc.SetBackground(wx.BLACK_BRUSH)
-            dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            gc.SetFont(use_font, wx.WHITE)
-
-        gc.DrawText(text, 0, 0)
+        # There is an 'awful' font that completely ignores the
+        # given font boundaries: GoogleFonts - AlexBrush-Regular,
+        # where we need to extend the boundaries significantly..
+        overreach = 2.5
+        textlines = text.split("\n")
+        dimension_x = 10
+        dimension_y = 10
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetFont(node.wxfont, wx.WHITE)
+        f_width = 0
+        f_height = 0
         try:
-            img = bmp.ConvertToImage()
-            buf = img.GetData()
-            image = Image.frombuffer(
-                "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+            fsize_org = node.wxfont.GetFractionalPointSize()
+        except AttributeError:
+            fsize_org = node.wxfont.GetPointSize()
+        if node.mklinegap is None:
+            node.mklinegap = 1.1
+        line_step = node.mklinegap - 1.0
+        for line in textlines:
+            dummy = "T" + line + "p"
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(
+                dummy
             )
-            node.text_cache = image
-            img_bb = image.getbbox()
-            if img_bb is None:
-                node.raw_bbox = None
-            else:
-                newbb = (
-                    scaling * img_bb[0],
-                    scaling * img_bb[1],
-                    scaling * img_bb[2],
-                    scaling * img_bb[3],
-                )
-                node.raw_bbox = newbb
-        except Exception:
-            node.text_cache = None
-            node.raw_bbox = None
-        node.ascent = f_height - f_descent
-        if node.baseline != "hanging":
-            node.matrix.pre_translate(0, -node.ascent)
-            if node.baseline == "middle":
-                node.matrix.pre_translate(0, node.ascent / 2)
-            node.baseline = "hanging"
+            f_width = max(f_width, t_width + t_external_leading)
+            if f_height != 0:
+                # spacing
+                f_height += line_step * fsize_org
+            f_height += t_height
+        # print (f"w={f_width}, h={f_height}")
+        gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
 
+        # We need to create an independent instance of the font
+        # as we need to change the font_size
+        fontdesc = node.wxfont.GetNativeFontInfoDesc()
+        use_font = wx.Font(fontdesc)
+        # we need to scale this according to the node magnification setting
+        factor = node._magnification
+        try:
+            fsize = use_font.GetFractionalPointSize() * factor
+            use_font.SetFractionalPointSize(fsize)
+        except AttributeError:
+            fsize = int(use_font.GetPointSize() * factor)
+            use_font.SetPointSize(fsize)
+        dimension_x = max(1, int(overreach * factor * f_width))
+        dimension_y = max(1, int(overreach * factor * f_height))
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+
+        msg = f"Revised bounds: {dimension_x} x {dimension_y}, factor={factor}, font_size={fsize} (original={fsize_org})"
+        col = as_wx_color(node.fill)
+        if col is None:
+            col = wx.BLACK
+        gc.SetFont(use_font, col)
+        offset = overreach / 2 * fsize
+        y = offset
+        for line in textlines:
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(
+                line
+            )
+            if node.anchor == "middle":
+                x = (dimension_x - t_width) / 2
+            elif node.anchor == "end":
+                x = dimension_x - t_width - offset
+            else:
+                x = offset
+            gc.DrawText(line, int(x), int(y))
+            y += line_step * fsize
+            y += t_height
+        try:
+            img = bmp.ConvertToImage()
+            image = Image.new("RGB", (img.GetWidth(), img.GetHeight()))
+            image.frombytes(img.GetData())
+            try:
+                img_bb = image.point(lambda e: 255 - e).getbbox()
+            except ValueError:
+                img_bb = None
+            if img_bb is not None:
+                image = image.crop(img_bb)
+            node.update_image(image)
+            width = image.width
+            height = image.height
+        except MemoryError:
+            width = 0
+            height = 0
+            node.update_image(None)
+        # Align the imagebox relative to X and Y
+        if node.mkleading is None:
+            node.mkleading = 0
+        dx = -1.0 * node.mkleading
+        if node.anchor == "middle":
+            node.mkleading = -0.5 * width / factor
+        elif node.anchor == "end":
+            node.mkleading = -1.0 * width / factor
+        else:
+            node.mkleading = 0
+        dx += node.mkleading
+
+        if node.mkascent is None:
+            node.mkascent = 0
+        dy = -1 * node.mkascent
+        if node.baseline == "top":
+            node.mkascent = -1.0 * height / factor
+        elif node.baseline == "middle":
+            node.mkascent = -0.5 * height / factor
+        elif node.anchor == "hanging":
+            node.mkascent = -1.0 * f_descent / factor
+        else:
+            node.mkascent = 0
+        dy += node.mkascent
+        # Pretranslate as we are still in pixels...
+        node.matrix.pre_translate(dx, dy)
+
+        dc.SelectObject(wx.NullBitmap)
+        dc.Destroy()
+        del dc
+        self.context.elements.set_end_time(
+            "create_text_image", display=True, message=msg
+        )
+
     def validate_text_nodes(self, nodes, translate_variables):
-        self.context.elements.set_start_time("validate_text_nodes")
+        # self.context.elements.set_start_time("validate_text_nodes")
+        minim = self.context.min_text_magnifier
+        if minim is None or minim < 1:
+            minim = 1
         for item in nodes:
             if item.type == "elem text" and (
                 item._bounds_dirty
                 or item._paint_bounds_dirty
                 or item.bounds_with_variables_translated != translate_variables
             ):
-                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
-                self.measure_text(item)
+                # We never drew this cleanly; our initial bounds calculations
+                # will be off if we don't premeasure
+                item.set_generator(self.create_text_image, minim)
                 item.set_dirty_bounds()
                 dummy = item.bounds
-        self.context.elements.set_end_time("validate_text_nodes")
+        # self.context.elements.set_end_time("validate_text_nodes")
 
     def make_raster(
         self,

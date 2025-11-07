@@ -1,6 +1,8 @@
 import re
 from copy import copy
-from math import tau
+from math import ceil, floor, tau
+
+from PIL import Image
 
 from meerk40t.core.node.mixins import (
     FunctionalParameter,
@@ -9,7 +11,7 @@ from meerk40t.core.node.mixins import (
     Suppressable,
 )
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import UNITS_PER_POINT, Length
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_POINT, Length
 from meerk40t.svgelements import (
     SVG_ATTR_FONT_FAMILY,
     SVG_ATTR_FONT_SIZE,
@@ -44,6 +46,8 @@ REGEX_CSS_FONT_FAMILY = re.compile(
     r"\s*'[^']+'|\s*\"[^\"]+\"|[^,\s]+"
 )
 
+DEFAULT_RES = 96
+
 
 class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
@@ -68,7 +72,6 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.width = None
         self.height = None
         self.descent = None
-        self.leading = None
         self.raw_bbox = None
         self.path = None
         self.font_style = "normal"
@@ -78,6 +81,19 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
+        self.mklinegap = 1.1
+        self.mkleading = 0
+        self.mkascent = 0
+        # We store the bitmap representation of the text
+        # The magnification value establishes a finer resolution at the cost of the internal image size
+        self._magnification = 2
+        self._image = None
+        self._processed_image = None
+        self._processed_matrix = None
+        self._process_image_failed = False
+        self._generator = None
+        self._minimal_magnification = 1
+
         # Offset values to allow fixing the drawing of slanted fonts. Without GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
@@ -95,7 +111,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
                     kwargs["hidden"] = False
             self.hidden = kwargs["hidden"]
 
-        # We might have relevant forn-information hidden inside settings...
+        # We might have relevant font-information hidden inside settings...
         rotangle = 0
         if "settings" in kwargs:
             kwa = kwargs["settings"]
@@ -158,7 +174,27 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         nd["stroke"] = copy(self.stroke)
         nd["stroke_width"] = copy(self.stroke_width)
         nd["fill"] = copy(self.fill)
-        return TextNode(**nd)
+        newnode = TextNode(**nd)
+        newnode._generator = self._generator
+        newnode._magnification = self._magnification
+        newnode._image = self._image
+        newnode._minimal_magnification = self._minimal_magnification
+        newnode.mkleading = self.mkleading
+        newnode.mklinegap = self.mklinegap
+        newnode.mkascent = self.mkascent
+        return newnode
+
+    def set_magnification(self, value):
+        if self._magnification != value:
+            self._magnification = value
+            self._image = None
+            self._processed_image = None
+            if self._generator is not None:
+                self._generator(self)
+
+    @property
+    def _dpi(self):
+        return DEFAULT_RES * self._magnification
 
     @property
     def font(self):
@@ -174,17 +210,236 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     def font(self, value):
         self.parse_font(value)
 
+    def update_image(self, image):
+        # if image is None:
+        #     s = "None"
+        # else:
+        #     s = f"{image.width}x{image.height} ({image.mode})"
+        # print (f"update image {s}")
+        self._image = image
+        self._processed_image = None
+        self._cache = None
+        self.set_dirty_bounds()
+
+    def _get_crop_box(self, image):
+        """
+        Get the bbox cutting off the reject edges.
+        @param image: Image to get crop box for.
+        @return:
+        """
+        try:
+            return image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            return None
+
+    def _process_image(self, step_x, step_y):
+        """
+        This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
+        a post-processed form with resulting post-process matrix.
+
+        @param crop: Should the unneeded edges be cropped as part of this process. The need for the edge is determined
+            by the color and the state of the self.invert attribute.
+        @return:
+        """
+
+        try:
+            from PIL.Image import Transform
+
+            AFFINE = Transform.AFFINE
+        except ImportError:
+            AFFINE = Image.AFFINE
+
+        try:
+            from PIL.Image import Resampling
+
+            BICUBIC = Resampling.BICUBIC
+        except ImportError:
+            BICUBIC = Image.BICUBIC
+
+        image = self._image.convert("RGBA")
+
+        # Calculate image box.
+        box = None
+        box = self._get_crop_box(image)
+        if box is None:
+            # If box is entirely white, bbox caused value error, or crop not set.
+            box = (0, 0, image.width, image.height)
+        orgbox = (box[0], box[1], box[2], box[3])
+
+        transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
+        transform_matrix.pre_scale(1 / self._magnification)
+        # Find the boundary points of the rotated box edges.
+        boundary_points = [
+            transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
+            transform_matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
+            transform_matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
+            transform_matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
+        ]
+        xs = [e[0] for e in boundary_points]
+        ys = [e[1] for e in boundary_points]
+
+        # bbox here is expanded matrix size of box.
+        step_scale_x = 1 / float(step_x)
+        step_scale_y = 1 / float(step_y)
+
+        bbox = min(xs), min(ys), max(xs), max(ys)
+
+        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
+        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
+        tx = bbox[0]
+        ty = bbox[1]
+        # Caveat: we move the picture backward, so that the non-white
+        # image content aligns at 0 , 0 - but we don't crop the image
+        transform_matrix.post_translate(-tx, -ty)
+        transform_matrix.post_scale(step_scale_x, step_scale_y)
+        if step_y < 0:
+            # If step_y is negative, translate
+            transform_matrix.post_translate(0, image_height)
+        if step_x < 0:
+            # If step_x is negative, translate
+            transform_matrix.post_translate(image_width, 0)
+
+        try:
+            transform_matrix.inverse()
+        except ZeroDivisionError:
+            # malformed matrix, scale=0 or something.
+            transform_matrix.reset()
+
+        # Perform image transform if needed.
+        if (
+            self.matrix.a != step_x
+            or self.matrix.b != 0.0
+            or self.matrix.c != 0.0
+            or self.matrix.d != step_y
+        ):
+            if image_height <= 0:
+                image_height = 1
+            if image_width <= 0:
+                image_width = 1
+            image = image.transform(
+                (image_width, image_height),
+                AFFINE,
+                (
+                    transform_matrix.a,
+                    transform_matrix.c,
+                    transform_matrix.e,
+                    transform_matrix.b,
+                    transform_matrix.d,
+                    transform_matrix.f,
+                ),
+                resample=BICUBIC,
+                fillcolor="white",
+            )
+        actualized_matrix = Matrix()
+
+        if step_y < 0:
+            # if step_y is negative, translate.
+            actualized_matrix.post_translate(0, -image_height)
+        if step_x < 0:
+            # if step_x is negative, translate.
+            actualized_matrix.post_translate(-image_width, 0)
+
+        # If crop applies, apply crop.
+        cbox = self._get_crop_box(image)
+        if cbox is not None:
+            width = cbox[2] - cbox[0]
+            height = cbox[3] - cbox[1]
+            if width != image.width or height != image.height:
+                image = image.crop(cbox)
+                # We did not crop the image so far, but we already applied
+                # the cropped transformation! That may be faulty, and needs to
+                # be corrected at a later stage, but this logic, even if clumsy
+                # is good enough: don't shift things twice!
+                if orgbox[0] == 0 and orgbox[1] == 0:
+                    actualized_matrix.post_translate(cbox[0], cbox[1])
+
+        actualized_matrix.post_scale(step_x, step_y)
+        actualized_matrix.post_translate(tx, ty)
+        # # make white transparent
+        import numpy as np
+
+        x = np.asarray(image.convert("RGBA")).copy()
+        x[:, :, 3] = (255 * (x[:, :, :3] != 255).any(axis=2)).astype(np.uint8)
+        image = Image.fromarray(x)
+        return actualized_matrix, image
+
+    def process_image(self, step_x, step_y):
+        """
+        SVG matrices are defined as follows.
+        [a c e]
+        [b d f]
+
+        Pil requires a, c, e, b, d, f accordingly.
+
+        There is a small amount of slop at the edge of converted images sometimes, so it's essential
+        to mark the image as inverted if black should be treated as empty pixels. The scaled down image
+        cannot lose the edge pixels since they could be important, but also dim may not be a multiple
+        of step level which requires an introduced empty edge pixel to be added.
+        """
+
+        from PIL import Image
+
+        try:
+            actualized_matrix, image = self._process_image(step_x, step_y)
+            inverted_main_matrix = Matrix(self.matrix).inverse()
+            self._processed_matrix = actualized_matrix * inverted_main_matrix
+            self._processed_image = image
+            self._process_image_failed = False
+            bb = self.bbox()
+            self._bounds = bb
+            self._paint_bounds = bb
+        except (
+            MemoryError,
+            Image.DecompressionBombError,
+            ValueError,
+            ZeroDivisionError,
+        ) as e:
+            # Memory error if creating requires too much memory.
+            # DecompressionBomb if over 272 megapixels.
+            # ValueError if bounds are NaN.
+            # ZeroDivide if inverting the processed matrix cannot happen because image is a line
+            # print (f"Error: {e}")
+            self._process_image_failed = True
+
+    @property
+    def active_image(self):
+        if self._image is None and self._generator is not None:
+            # print ("Generation needed")
+            # Let's update the image...
+            self._generator(self)
+
+        if self._processed_image is None:
+            # print ("Processing needed")
+            step = UNITS_PER_INCH / self._dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
+        if self._processed_image is not None:
+            return self._processed_image
+        else:
+            return self._image
+
+    @property
+    def active_matrix(self):
+        if self._processed_matrix is None:
+            return self.matrix
+        return self._processed_matrix * self.matrix
+
     def preprocess(self, context, matrix, plan):
+        """
+        Preprocess step during the cut planning stages.
+
+        We require a context to calculate the correct step values relative to the device
+        """
         commands = plan.commands
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
             return
         self.text = context.elements.wordlist_translate(self.text, self)
-        self.stroke_scaled = False
-        self.stroke_scaled = True
+        step_x, step_y = context.device.view.dpi_to_steps(self._dpi)
         self.matrix *= matrix
-        self.stroke_scaled = False
         self.set_dirty_bounds()
+        self.process_image(step_x, step_y)
 
     def remove_text(self):
         self.remove_node()
@@ -295,6 +550,23 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.font_family = match.group(7)
         self.validate_font()
 
+    def establish_magification(self):
+        # We evaluate the estimated image size and decide our resolution...
+        magnificent = 5  # 480 dpi should be enough
+        # We have an overreach factor established of 2.5
+        overreach = 2.5
+        if self.font_size:
+            while magnificent > self._minimal_magnification:
+                char_pixel = magnificent * self.font_size * overreach
+                pixels = len(self.text) * char_pixel * char_pixel
+                # print (f"Magn: {magnificent}, pixels={pixels} ({pixels // 1024})")
+                # More than 4 MB?
+                if pixels > 4 * 1024 * 1024:
+                    magnificent -= 1
+                else:
+                    break
+        self.set_magnification(magnificent)
+
     def validate_font(self):
         if self.line_height is None:
             self.line_height = "12pt" if self.font_size is None else "100%"
@@ -320,6 +592,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
                     self.line_height = height
             except ValueError:
                 pass
+        self.establish_magification()
 
     @property
     def font_list(self):
@@ -371,81 +644,39 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         To perform this action one of two things should be true. Path should exist, or we should have
         defined width, height, offset_x and offset_y values.
         """
-        if self.path is not None:
-            return (self.path * self.matrix).bbox(
-                transformed=True,
-                with_stroke=with_stroke,
-            )
-        if self.raw_bbox is None:
-            self.raw_bbox = [0, 0, 0, 0]
-        left, upper, right, lower = self.raw_bbox
-        xmin = left - 2
-        ymin = upper - 2
-        xmax = right + 2
-        ymax = lower + 2
-        width = xmax - xmin
-        if self.anchor == "middle":
-            xmin -= width / 2
-            xmax -= width / 2
-        elif self.anchor == "end":
-            xmin -= width
-            xmax -= width
-        if transformed:
-            p0 = self.matrix.transform_point([xmin, ymin])
-            p1 = self.matrix.transform_point([xmin, ymax])
-            p2 = self.matrix.transform_point([xmax, ymin])
-            p3 = self.matrix.transform_point([xmax, ymax])
-            xmin = min(p0[0], p1[0], p2[0], p3[0])
-            ymin = min(p0[1], p1[1], p2[1], p3[1])
-            xmax = max(p0[0], p1[0], p2[0], p3[0])
-            ymax = max(p0[1], p1[1], p2[1], p3[1])
-
-        delta = 0.0
-        # if (
-        #     with_stroke
-        #     and self.stroke_width is not None
-        #     and not (self.stroke is None or self.stroke.value is None)
-        # ):
-        #     delta = (
-        #         float(self.implied_stroke_width)
-        #         if transformed
-        #         else float(self.stroke_width)
-        #     ) / 2.0
+        image = self.active_image
+        image_width, image_height = image.size
+        matrix = self.active_matrix
+        xoffs = 0
+        yoffs = 0
+        x0, y0 = matrix.point_in_matrix_space((0 + xoffs, 0 + yoffs))
+        x1, y1 = matrix.point_in_matrix_space(
+            (image_width + xoffs, image_height + yoffs)
+        )
+        x2, y2 = matrix.point_in_matrix_space((0 + xoffs, image_height + yoffs))
+        x3, y3 = matrix.point_in_matrix_space((image_width + xoffs, 0 + yoffs))
         return (
-            xmin - delta,
-            ymin - delta,
-            xmax + delta,
-            ymax + delta,
+            min(x0, x1, x2, x3),
+            min(y0, y1, y2, y3),
+            max(x0, x1, x2, x3),
+            max(y0, y1, y2, y3),
         )
 
-    """
-    A text node has no paint_bounds that is different to bounds,
-    so we overload the standard functions to acknowledge that and
-    always sync paint_bounds to bounds.
-    """
+    def updated(self):
+        self.establish_magification()
+        self.update_image(None)
+        super().updated()
+
+    def modified(self):
+        self.establish_magification()
+        self.update_image(None)
+        super().modified()
+
+    def set_generator(self, routine, minimal_magnifier):
+        if minimal_magnifier >= 1:
+            self._minimal_magnification = minimal_magnifier
+        self._generator = routine
 
     @property
     def paint_bounds(self):
-        # Make sure that bounds is valid
-        if self._paint_bounds_dirty:
-            self._paint_bounds_dirty = False
-            self._paint_bounds = self.bounds
-        return self._paint_bounds
-
-    @property
-    def bounds(self):
-        # Make sure that bounds is valid
-        if not self._bounds_dirty:
-            if self._paint_bounds_dirty:
-                self._paint_bounds_dirty = False
-                self._paint_bounds = self._bounds
-            return self._bounds
-
-        try:
-            self._bounds = self.bbox(with_stroke=False)
-        except AttributeError:
-            self._bounds = None
-        self._paint_bounds = self._bounds
-        self._bounds_dirty = False
-        self._paint_bounds_dirty = False
-        return self._bounds
+        return self.bounds
