@@ -100,8 +100,7 @@ def as_wx_color(c):
         return None
     if isinstance(c, int):
         c = Color(argb=c)
-    res = wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
-    return res
+    return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
 
 
 def svgfont_to_wx(textnode):
@@ -1218,7 +1217,35 @@ class LaserRender:
         """
         self.context.elements.set_start_time("create_text_image")
         draw_mode = self.context.draw_mode
-        # print (f"DrawMode: {draw_mode}, would show variables: {draw_mode & DRAW_MODE_VARIABLES}")
+        
+        # Prepare text content
+        text = self._prepare_text_content(node, draw_mode)
+        
+        # Calculate dimensions
+        textlines, f_width, f_height, fsize_org, overreach, line_step, f_descent = self._calculate_text_dimensions(node, text)
+        
+        # Create bitmap and draw text
+        bmp, dc, gc, dimension_x, dimension_y, factor, fsize, msg, f_descent = self._create_text_bitmap(
+            node, textlines, f_width, f_height, fsize_org, overreach, line_step, f_descent
+        )
+        
+        # Convert to PIL image
+        width, height = self._convert_to_pil_image(node, bmp)
+        
+        # Calculate positioning
+        self._calculate_positioning(node, width, height, factor, f_descent)
+
+        # Cleanup
+        dc.SelectObject(wx.NullBitmap)
+        dc.Destroy()
+        del dc
+        
+        self.context.elements.set_end_time(
+            "create_text_image", display=True, message=msg
+        )
+
+    def _prepare_text_content(self, node, draw_mode):
+        """Prepare text content with variable translation and transformations."""
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.wordlist_translate(
@@ -1228,20 +1255,25 @@ class LaserRender:
         else:
             text = node.text
             node.bounds_with_variables_translated = False
+        
         if node.texttransform:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
                 text = text.capitalize()
             elif ttf == "uppercase":
                 text = text.upper()
-            if ttf == "lowercase":
+            elif ttf == "lowercase":
                 text = text.lower()
+        
+        return text
+
+    def _calculate_text_dimensions(self, node, text):
+        """Calculate text dimensions using wxPython graphics context."""
         svgfont_to_wx(node)
-        # There is an 'awful' font that completely ignores the
-        # given font boundaries: GoogleFonts - AlexBrush-Regular,
-        # where we need to extend the boundaries significantly..
         overreach = 2.5
         textlines = text.split("\n")
+        
+        # Create temporary bitmap for measurement
         dimension_x = 10
         dimension_y = 10
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
@@ -1251,36 +1283,42 @@ class LaserRender:
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.SetFont(node.wxfont, wx.WHITE)
-        f_width = 0
-        f_height = 0
+        
         try:
             fsize_org = node.wxfont.GetFractionalPointSize()
         except AttributeError:
             fsize_org = node.wxfont.GetPointSize()
+        
         if node.mklinegap is None:
             node.mklinegap = 1.1
         line_step = node.mklinegap - 1.0
+        
+        f_width = 0
+        f_height = 0
         for line in textlines:
             dummy = "T" + line + "p"
-            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(
-                dummy
-            )
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(dummy)
             f_width = max(f_width, t_width + t_external_leading)
             if f_height != 0:
                 # spacing
                 f_height += line_step * fsize_org
             f_height += t_height
-        # print (f"w={f_width}, h={f_height}")
+        
+        # Cleanup
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
+        
+        return textlines, f_width, f_height, fsize_org, overreach, line_step, f_descent
 
-        # We need to create an independent instance of the font
-        # as we need to change the font_size
+    def _create_text_bitmap(self, node, textlines, f_width, f_height, fsize_org, overreach, line_step, f_descent):
+        """Create bitmap and draw text on it."""
+        # Create independent font instance
         fontdesc = node.wxfont.GetNativeFontInfoDesc()
         use_font = wx.Font(fontdesc)
-        # we need to scale this according to the node magnification setting
+        
+        # Scale according to magnification
         factor = node._magnification
         try:
             fsize = use_font.GetFractionalPointSize() * factor
@@ -1288,8 +1326,10 @@ class LaserRender:
         except AttributeError:
             fsize = int(use_font.GetPointSize() * factor)
             use_font.SetPointSize(fsize)
+        
         dimension_x = max(1, int(overreach * factor * f_width))
         dimension_y = max(1, int(overreach * factor * f_height))
+        
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -1298,16 +1338,16 @@ class LaserRender:
         gc = wx.GraphicsContext.Create(dc)
 
         msg = f"Revised bounds: {dimension_x} x {dimension_y}, factor={factor}, font_size={fsize} (original={fsize_org})"
+        
         col = as_wx_color(node.fill)
         if col is None:
             col = wx.BLACK
         gc.SetFont(use_font, col)
+        
         offset = overreach / 2 * fsize
         y = offset
         for line in textlines:
-            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(
-                line
-            )
+            t_width, t_height, _, _ = gc.GetFullTextExtent(line)
             if node.anchor == "middle":
                 x = (dimension_x - t_width) / 2
             elif node.anchor == "end":
@@ -1317,6 +1357,11 @@ class LaserRender:
             gc.DrawText(line, int(x), int(y))
             y += line_step * fsize
             y += t_height
+        
+        return bmp, dc, gc, dimension_x, dimension_y, factor, fsize, msg, f_descent
+
+    def _convert_to_pil_image(self, node, bmp):
+        """Convert wx bitmap to PIL image and crop."""
         try:
             img = bmp.ConvertToImage()
             image = Image.new("RGB", (img.GetWidth(), img.GetHeight()))
@@ -1328,12 +1373,13 @@ class LaserRender:
             if img_bb is not None:
                 image = image.crop(img_bb)
             node.update_image(image)
-            width = image.width
-            height = image.height
+            return image.width, image.height
         except MemoryError:
-            width = 0
-            height = 0
             node.update_image(None)
+            return 0, 0
+
+    def _calculate_positioning(self, node, width, height, factor, f_descent):
+        """Calculate positioning offsets and apply matrix transformations."""
         # Align the imagebox relative to X and Y
         if node.mkleading is None:
             node.mkleading = 0
@@ -1358,15 +1404,9 @@ class LaserRender:
         else:
             node.mkascent = 0
         dy += node.mkascent
+        
         # Pretranslate as we are still in pixels...
         node.matrix.pre_translate(dx, dy)
-
-        dc.SelectObject(wx.NullBitmap)
-        dc.Destroy()
-        del dc
-        self.context.elements.set_end_time(
-            "create_text_image", display=True, message=msg
-        )
 
     def validate_text_nodes(self, nodes, translate_variables):
         # self.context.elements.set_start_time("validate_text_nodes")
@@ -1383,7 +1423,7 @@ class LaserRender:
                 # will be off if we don't premeasure
                 item.set_generator(self.create_text_image, minim)
                 item.set_dirty_bounds()
-                dummy = item.bounds
+                item.bounds
         # self.context.elements.set_end_time("validate_text_nodes")
 
     def make_raster(

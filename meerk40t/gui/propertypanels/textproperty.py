@@ -672,9 +672,6 @@ class TextPropertyPanel(ScrolledPanel):
             self.node.mklinegap = 1.1
         else:
             self.node.mklinegap -= gap
-            # Enforce a minimum positive value to prevent rendering issues
-            if self.node.mklinegap < 0.01:
-                self.node.mklinegap = 0.01
         self.refresh()
 
     def on_button_smaller(self, event):

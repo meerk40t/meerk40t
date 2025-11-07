@@ -456,10 +456,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             step_x = step
             step_y = step
             self.process_image(step_x, step_y)
-        if self._processed_image is not None:
-            return self._processed_image
-        else:
-            return self._image
+        return self._image if self._processed_image is None else self._processed_image
 
     @property
     def active_matrix(self):
@@ -595,9 +592,9 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     def establish_magnification(self):
         # We evaluate the estimated image size and decide our resolution...
         magnificent = 5  # 480 dpi should be enough
-        # We have an overreach factor established of 2.5
-        overreach = 2.5
         if self.font_size:
+            # We have an overreach factor established of 2.5
+            overreach = 2.5
             while magnificent > self._minimal_magnification:
                 char_pixel = magnificent * self.font_size * overreach
                 pixels = len(self.text) * char_pixel * char_pixel
