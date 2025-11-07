@@ -285,7 +285,15 @@ def init_commands(kernel):
         node_list, channel=None, debug_channel=None, start_position=0j
     ):
         if len(node_list) < 2:
-            return node_list
+            # Return consistent tuple format even when no optimization is needed
+            return node_list, {
+                "optimized": False,
+                "original_distance": 0.0,
+                "optimized_distance": 0.0,
+                "improvement": 0.0,
+                "improvement_percent": 0.0,
+                "path_count": 0,
+            }
 
         if debug_channel:
             debug_channel(
@@ -337,7 +345,15 @@ def init_commands(kernel):
                 debug_channel(
                     "Not enough geomstr nodes to optimize, returning original order"
                 )
-            return node_list
+            # Return consistent tuple format
+            return node_list, {
+                "optimized": False,
+                "original_distance": 0.0,
+                "optimized_distance": 0.0,
+                "improvement": 0.0,
+                "improvement_percent": 0.0,
+                "path_count": len(geomstr_nodes),
+            }
 
         # Extract path information for each geomstr node
         path_info = []
@@ -429,7 +445,7 @@ def init_commands(kernel):
 
             if not operations:
                 channel(_("No operations selected for workflow optimization"))
-                return
+                return "ops", []
 
             # Convert to workflow format
             workflow_ops = []
