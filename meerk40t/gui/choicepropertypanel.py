@@ -2671,6 +2671,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                         ctrl.Enable(enable)
                 else:
                     control.Enable(enable)
+                if self.context.kernel.is_shutdown:
+                    return
+
+            if target is None or target is not sourceobj:
+                return
 
             if value is None:
                 enable_control(False)
@@ -2696,6 +2701,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         # Register the listener with the context system
         if self.context:
+            sourceobj = cond_obj    
             self.context.listen(cond_attr, on_conditional_change)
             self.listeners.append((cond_attr, on_conditional_change, cond_obj))
 
