@@ -156,12 +156,25 @@ class TrueTypeFont:
                     decoded = string.decode("UTF8") if string is not None else ""
                     # Check if the decoded string looks like binary garbage
                     # If it contains non-printable characters or looks like raw bytes, use fallback
-                    if (len(decoded) > 0 and 
-                        (any(ord(c) < 32 or ord(c) > 126 for c in decoded) or  # Non-printable ASCII
-                         decoded.count('\\x') > len(decoded) * 0.5)):  # Too many hex escapes
-                        # Return file basename as fallback to help identify problematic files
-                        import os
-                        return f"<{os.path.basename(filename)}>"
+                    # Heuristic for detecting binary garbage, but allow valid non-Latin scripts
+                    # Only reject if we have clear signs of corrupted data:
+                    # - Contains null bytes
+                    # - Majority of characters are control characters (excluding common whitespace)
+                    # - String is suspiciously short with only control characters
+                    if len(decoded) > 0:
+                        control_char_count = sum(1 for c in decoded if ord(c) < 32 and c not in '\t\n\r')
+                        null_byte_count = decoded.count('\x00')
+                        
+                        # Reject if:
+                        # 1. Contains null bytes (clear sign of corruption)
+                        # 2. More than 50% control characters (excluding tabs/newlines)
+                        # 3. Very short string (< 3 chars) that's all control characters
+                        if (null_byte_count > 0 or
+                            (len(decoded) > 0 and control_char_count / len(decoded) > 0.5) or
+                            (len(decoded) < 3 and control_char_count == len(decoded))):
+                            # Return file basename as fallback to help identify problematic files
+                            import os
+                            return f"<{os.path.basename(filename)}>"
                     return decoded
                 except UnicodeDecodeError:
                     # Return file basename as fallback to help identify problematic files
