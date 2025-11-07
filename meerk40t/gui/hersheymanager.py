@@ -614,6 +614,7 @@ class LineTextPropertyPanel(wx.Panel):
     def load_directory(self):
         self.list_fonts.Clear()
         self.fonts = self.context.fonts.available_fonts()
+        # print ("Fonts loaded:", len(self.fonts), self.fonts)
         font_desc = [e[1] for e in self.fonts]
         self.list_fonts.SetItems(font_desc)
         # index = -1
@@ -916,7 +917,7 @@ class PanelFontSelect(wx.Panel):
         self.fonts.clear()
         font_desc = []
         for entry in self.all_fonts:
-            # 0 basename, 1 full_path, 2 facename
+            # entry format: (full_path, display_name, family, subfamily, is_system)
             parts = os.path.splitext(entry[0])
             if len(parts) > 1:
                 extension = parts[1][1:].lower()
@@ -924,8 +925,8 @@ class PanelFontSelect(wx.Panel):
                     if not self.font_checks[extension][1]:
                         entry = None
             if entry is not None:
-                self.fonts.append(entry[0])
-                font_desc.append(entry[1])
+                self.fonts.append(entry[0])  # full_path
+                font_desc.append(entry[1])  # display_name
 
         self.list_fonts.SetItems(font_desc)
 
