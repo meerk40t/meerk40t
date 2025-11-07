@@ -1,6 +1,26 @@
 """
-Base wordlist class that holds some wordlist logic. Most of the interactions with wordlists are done in the
-elements service.
+Wordlist System for MeerK40t
+
+This module provides the core Wordlist class that manages dynamic variable substitution
+for text elements in laser cutting operations. The wordlist system allows users to define
+variables that can be referenced in text using {variable_name} syntax, enabling dynamic
+content generation during laser operations.
+
+The wordlist system supports:
+- Static text variables
+- CSV file-based variable arrays
+- Numeric counters with auto-increment
+- Date and time formatting
+- Operation-specific parameters (speed, power, passes, etc.)
+- Persistent storage in JSON format
+
+Typical usage involves creating text elements with patterns like:
+- "Hello {first} {second}!"
+- "{date} - Job #{counter}"
+- "Power: {op_power}, Speed: {op_speed}"
+
+The elements service integrates with this class to provide wordlist_translate() functionality
+for text rendering during laser operations.
 """
 
 import csv
@@ -14,12 +34,56 @@ from ..extra.encode_detect import EncodingDetectFile
 
 class Wordlist:
     """
-    The Wordlist class provides some logic to hold, update and maintain a set of
-    variables for text-fields (and later on for other stuff) to allow for
-    on-the-fly recalculation / repopulation
+    Dynamic variable substitution system for text elements.
+
+    The Wordlist class manages a collection of named variables that can be used for
+    dynamic text generation in laser cutting operations. Variables are referenced
+    using {variable_name} syntax and can contain static text, arrays from CSV files,
+    or auto-incrementing counters.
+
+    Data Structure:
+        Each variable is stored as a list with the format:
+        [type, current_index, value1, value2, ...]
+
+        Type codes:
+        - 0: Static text entry (single value)
+        - 1: Text array from CSV file
+        - 2: Numeric counter (auto-incrementing)
+
+        The current_index points to the active value within the list.
+
+    Built-in Variables:
+        - version: Software version string
+        - date: Current date (formatted)
+        - time: Current time (formatted)
+        - op_device: Device label
+        - op_speed: Operation speed setting
+        - op_power: Operation power setting
+        - op_passes: Operation passes setting
+        - op_dpi: Operation DPI setting
+
+    Example:
+        >>> wl = Wordlist("1.0.0")
+        >>> wl.add("name", "John Doe")
+        >>> wl.translate("Hello {name}!")
+        'Hello John Doe!'
+
+        >>> wl.add("counter", 1, wtype=2)  # Counter type
+        >>> wl.translate("Job #{counter}")
+        'Job #1'
+        >>> wl.translate("Job #{counter}")  # Auto-increments
+        'Job #2'
     """
 
     def __init__(self, versionstr, directory=None):
+        """
+        Initialize a new Wordlist instance.
+
+        Args:
+            versionstr (str): Version string for the {version} variable
+            directory (str, optional): Directory for wordlist.json persistence.
+                                      Defaults to current working directory.
+        """
         # The content-dictionary contains an array per entry
         # index 0 indicates the type:
         #   0 (static) text entry
@@ -56,13 +120,40 @@ class Wordlist:
         self.load_data(self.default_filename)
 
     def add(self, key, value, wtype=None):
+        """
+        Add a value to the wordlist (alias for add_value).
+
+        Args:
+            key (str): Variable name (case-insensitive)
+            value: Value to store
+            wtype (int, optional): Variable type (0=static, 1=csv, 2=counter)
+        """
         self.add_value(key, value, wtype)
 
     def fetch(self, key):
+        """
+        Fetch the current value for a variable.
+
+        Args:
+            key (str): Variable name to fetch
+
+        Returns:
+            str or None: Current value of the variable, or None if not found
+        """
         result = self.fetch_value(key, None)
         return result
 
     def fetch_value(self, skey, idx):
+        """
+        Fetch a value from the wordlist with optional index.
+
+        Args:
+            skey (str): Variable name (case-insensitive)
+            idx (int, optional): Specific index to fetch, uses current index if None
+
+        Returns:
+            str or None: Value at the specified index, or None if not found
+        """
         skey = skey.lower()
         result = None
         try:
@@ -85,6 +176,18 @@ class Wordlist:
         return result
 
     def add_value(self, skey, value, wtype=None):
+        """
+        Add a value to a wordlist variable.
+
+        Args:
+            skey (str): Variable name (case-insensitive)
+            value: Value to add (string, number, or list for CSV data)
+            wtype (int, optional): Variable type:
+                0 = static text (single value)
+                1 = CSV/array data (multiple values)
+                2 = counter (numeric value that increments)
+                If None, defaults to 0 for new variables
+        """
         skey = skey.lower()
         if skey not in self.content:
             if wtype is None:
@@ -96,6 +199,13 @@ class Wordlist:
         self.content[skey].append(value)
 
     def delete_value(self, skey, idx):
+        """
+        Delete a value from a wordlist variable at the specified index.
+
+        Args:
+            skey (str): Variable name (case-insensitive)
+            idx (int): Zero-based index of the value to delete
+        """
         skey = skey.lower()
         if not skey in self.content:
             return
@@ -163,7 +273,10 @@ class Wordlist:
 
         if isinstance(idx, str):
             relative = idx.startswith("+") or idx.startswith("-")
-            index = int(idx)
+            try:
+                index = int(idx)
+            except ValueError:
+                index = 0  # Default to 0 for invalid input
         else:
             relative = False
             index = idx
@@ -188,15 +301,59 @@ class Wordlist:
                     self.content[wkey][1] = min(index + 2, last_index)
 
     def reset(self, skey=None):
+        """
+        Reset the current index position for wordlist variables.
+
+        For array-type variables, resets the current index to the first item.
+        For counter-type variables, this method doesn't apply.
+
+        Args:
+            skey (str, optional): Specific variable to reset, or None to reset all
+        """
         # Resets position
-        skey = skey.lower()
         if skey is None:
-            for skey in self.content:
-                self.content[skey][1] = 2
+            for key in self.content:
+                self.content[key][1] = 2
         else:
+            skey = skey.lower()
             self.content[skey][1] = 2
 
     def translate(self, pattern, increment=True):
+        """
+        Translate a pattern string by replacing {variable} placeholders with values.
+
+        This method performs variable substitution using the wordlist data. Variables
+        are referenced using {variable_name} syntax. Supports various modifiers:
+
+        - {variable#n} - Get specific index n (0-based)
+        - {variable#+n} - Get current index + n
+        - {variable#-n} - Get current index - n
+        - {date@format} - Date with custom format string
+        - {time@format} - Time with custom format string
+
+        For array variables, the current index is incremented after access unless
+        increment=False or a specific index is requested.
+
+        Args:
+            pattern (str): String containing {variable} placeholders to replace
+            increment (bool): Whether to increment counters after fetching values
+
+        Returns:
+            str: Pattern with all variables replaced by their values
+
+        Examples:
+            >>> wordlist.add("name", "John")
+            >>> wordlist.translate("Hello {name}")
+            'Hello John'
+
+            >>> wordlist.add("names", ["Alice", "Bob", "Charlie"], 1)
+            >>> wordlist.translate("Hi {names}")  # Gets current value and increments
+            'Hi Alice'
+            >>> wordlist.translate("Hi {names}")  # Gets next value
+            'Hi Bob'
+            >>> wordlist.translate("Hi {names#0}")  # Gets first value, no increment
+            'Hi Alice'
+        """
         if pattern is None:
             return ""
         result = str(pattern)
@@ -263,29 +420,29 @@ class Wordlist:
             else:
                 # Must be a wordlist type.
                 if key not in self.content:
-                    # This is not a wordlist name.
-                    continue
-                wordlist = self.content[key]
-
-                if wordlist[0] == 2:  # Counter-type
-                    # Counter index is the value.
-                    value = wordlist[2] if not reset else 0
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        value = 0
-                    value += relative
-                    if autoincrement and increment:
-                        # autoincrement of counter means value + 1
-                        wordlist[2] = value + 1
+                    # This is not a wordlist name - replace with empty string
+                    value = ""
                 else:
-                    # This is a variable wordlist.
-                    current_index = wordlist[1] if not reset else 2  # 2 as 2 based
-                    current_index += relative
-                    value = self.fetch_value(key, current_index)
-                    if autoincrement and increment:
-                        # Index set to current index + 1
-                        wordlist[1] = current_index + 1
+                    wordlist = self.content[key]
+
+                    if wordlist[0] == 2:  # Counter-type
+                        # Counter index is the value.
+                        value = wordlist[2]  # Always use current value for counters
+                        try:
+                            value = int(value)
+                        except ValueError:
+                            value = 0
+                        value += relative
+                        if increment:  # Counters always increment when accessed (unless specific index)
+                            wordlist[2] = value + 1
+                    else:
+                        # This is a variable wordlist.
+                        current_index = wordlist[1] if not reset else 2  # 2 as 2 based
+                        current_index += relative
+                        value = self.fetch_value(key, current_index)
+                        if autoincrement and increment:
+                            # Index set to current index + 1
+                            wordlist[1] = current_index + 1
 
             if value is not None:
                 result = result.replace(bracketed_key, str(value))
@@ -345,6 +502,12 @@ class Wordlist:
             self.content_backup = {}
 
     def load_data(self, filename):
+        """
+        Load wordlist data from a JSON file.
+
+        Args:
+            filename (str, optional): File path to load from. If None, uses default filename.
+        """
         if filename is None:
             filename = self.default_filename
         try:
@@ -355,6 +518,12 @@ class Wordlist:
         self.transaction_open = False
 
     def save_data(self, filename):
+        """
+        Save the wordlist data to a JSON file.
+
+        Args:
+            filename (str, optional): File path to save to. If None, uses default filename.
+        """
         if filename is None:
             filename = self.default_filename
         with open(filename, "w") as f:
@@ -413,6 +582,8 @@ class Wordlist:
                     csvfile.seek(0)
                     reader = csv.reader(csvfile, dialect)
                     headers = next(reader)
+                    # Clean BOM characters from headers
+                    headers = [h.lstrip('\ufeff') for h in headers]
                     if not has_header:
                         # Use Line as Data and set some default names
                         for idx, entry in enumerate(headers):
@@ -422,13 +593,15 @@ class Wordlist:
                         ct = 1
                     else:
                         ct = 0
+                        # Lowercase headers for return value
+                        headers = [h.lower() for h in headers]
                     for row in reader:
                         for idx, entry in enumerate(row):
-                            skey = headers[idx].lower()
-                            if skey.startswith("\\ufeff"):
-                                skey = skey[7:]
+                            skey = headers[idx].lower().lstrip('\ufeff')
+                            # Clean BOM from data values too
+                            clean_entry = entry.lstrip('\ufeff')
                             # Append...
-                            self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                            self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=1)
                         ct += 1
             except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
                 ct = 0
