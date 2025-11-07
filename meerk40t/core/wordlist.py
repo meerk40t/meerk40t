@@ -31,6 +31,16 @@ from copy import copy
 from datetime import datetime
 from ..extra.encode_detect import EncodingDetectFile
 
+# Type constants
+TYPE_STATIC = 0
+TYPE_CSV = 1
+TYPE_COUNTER = 2
+
+# Index constants
+IDX_TYPE = 0
+IDX_POSITION = 1
+IDX_DATA_START = 2
+
 
 class Wordlist:
     """
@@ -92,14 +102,14 @@ class Wordlist:
         # index 1 indicates the position of the current array (always 2 for type 0 and 2)
         # index 2 and onwards contain the actual data
         self.content = {
-            "version": [0, 2, versionstr],
-            "date": [0, 2, self.wordlist_datestr()],
-            "time": [0, 2, self.wordlist_timestr()],
-            "op_device": [0, 2, "<device>"],
-            "op_speed": [0, 2, "<speed>"],
-            "op_power": [0, 2, "<power>"],
-            "op_passes": [0, 2, "<passes>"],
-            "op_dpi": [0, 2, "<dpi>"],
+            "version": [TYPE_STATIC, IDX_DATA_START, versionstr],
+            "date": [TYPE_STATIC, IDX_DATA_START, self.wordlist_datestr()],
+            "time": [TYPE_STATIC, IDX_DATA_START, self.wordlist_timestr()],
+            "op_device": [TYPE_STATIC, IDX_DATA_START, "<device>"],
+            "op_speed": [TYPE_STATIC, IDX_DATA_START, "<speed>"],
+            "op_power": [TYPE_STATIC, IDX_DATA_START, "<power>"],
+            "op_passes": [TYPE_STATIC, IDX_DATA_START, "<passes>"],
+            "op_dpi": [TYPE_STATIC, IDX_DATA_START, "<dpi>"],
         }
         self.prohibited = (
             "version",
@@ -166,7 +176,7 @@ class Wordlist:
             return self.wordlist_timestr(None)
         # print (f"Retrieve {wordlist} for {skey}")
         if idx is None or idx < 0:  # Default
-            idx = wordlist[1]
+            idx = wordlist[IDX_POSITION]
 
         if idx <= len(wordlist):
             try:
@@ -191,10 +201,10 @@ class Wordlist:
         skey = skey.lower()
         if skey not in self.content:
             if wtype is None:
-                wtype = 0
+                wtype = TYPE_STATIC
             self.content[skey] = [
                 wtype,
-                2,
+                IDX_DATA_START,
             ]  # incomplete, as it will be appended right after this
         self.content[skey].append(value)
 
@@ -213,7 +223,7 @@ class Wordlist:
             return
 
         # Zerobased outside + 2 inside
-        idx += 2
+        idx += IDX_DATA_START
         if idx >= len(self.content[skey]):
             return
         self.content[skey].pop(idx)
@@ -223,22 +233,22 @@ class Wordlist:
             wordlist = self.content[wkey]
             if wkey in self.prohibited:
                 continue
-            if wordlist[0] in (0, 1):  # Text or csv
+            if wordlist[IDX_TYPE] in (TYPE_STATIC, TYPE_CSV):  # Text or csv
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
-                newidx = min(wordlist[1] + delta, last_index)
-                if newidx < 2:
-                    newidx = 2
-                wordlist[1] = newidx
-            elif wordlist[0] == 2:  # Counter-type
-                value = wordlist[2]
+                newidx = min(wordlist[IDX_POSITION] + delta, last_index)
+                if newidx < IDX_DATA_START:
+                    newidx = IDX_DATA_START
+                wordlist[IDX_POSITION] = newidx
+            elif wordlist[IDX_TYPE] == TYPE_COUNTER:  # Counter-type
+                value = wordlist[IDX_DATA_START]
                 try:
                     value = int(value) + delta
                 except ValueError:
                     value = 0
                 if value < 0:
                     value = 0
-                wordlist[2] = value
+                wordlist[IDX_DATA_START] = value
 
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:
@@ -248,12 +258,12 @@ class Wordlist:
         if skey not in self.content:
             # hasn't been there, so establish it
             if wtype is None:
-                wtype = 0
-            self.content[skey] = [wtype, 2, value]
+                wtype = TYPE_STATIC
+            self.content[skey] = [wtype, IDX_DATA_START, value]
         else:
             if idx is None:
                 # use current position
-                idx = self.content[skey][1]
+                idx = self.content[skey][IDX_POSITION]
                 try:
                     idx = int(idx)
                 except ValueError:
@@ -262,7 +272,7 @@ class Wordlist:
                 # append
                 self.content[skey].append(value)
             else:  # Zerobased outside + 2 inside
-                idx += 2
+                idx += IDX_DATA_START
 
             if idx >= len(self.content[skey]):
                 idx = len(self.content[skey]) - 1
@@ -291,14 +301,19 @@ class Wordlist:
                 continue
             wordlist = self.content[wkey]
             if (
-                wordlist[0] in (0, 1) and wkey not in self.prohibited
+                wordlist[IDX_TYPE] in (TYPE_STATIC, TYPE_CSV)
+                and wkey not in self.prohibited
             ):  # Variable Wordlist type.
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
                 if relative:
-                    self.content[wkey][1] = min(wordlist[1] + index, last_index)
+                    self.content[wkey][IDX_POSITION] = min(
+                        wordlist[IDX_POSITION] + index, last_index
+                    )
                 else:
-                    self.content[wkey][1] = min(index + 2, last_index)
+                    self.content[wkey][IDX_POSITION] = min(
+                        index + IDX_DATA_START, last_index
+                    )
 
     def reset(self, skey=None):
         """
@@ -313,10 +328,10 @@ class Wordlist:
         # Resets position
         if skey is None:
             for key in self.content:
-                self.content[key][1] = 2
+                self.content[key][IDX_POSITION] = IDX_DATA_START
         else:
             skey = skey.lower()
-            self.content[skey][1] = 2
+            self.content[skey][IDX_POSITION] = IDX_DATA_START
 
     def translate(self, pattern, increment=True):
         """
@@ -393,7 +408,7 @@ class Wordlist:
                 # Do we have a format str?
                 sformat = None
                 if key in self.content:
-                    value = self.fetch_value(key, 2)
+                    value = self.fetch_value(key, IDX_DATA_START)
                     if value is not None and isinstance(value, str) and len(value) > 0:
                         if "%" in value:
                             # Seems to be a format string, so let's try it...
@@ -403,7 +418,7 @@ class Wordlist:
                 # Do we have a format str?
                 sformat = None
                 if key in self.content:
-                    value = self.fetch_value(key, 2)
+                    value = self.fetch_value(key, IDX_DATA_START)
                     if value is not None and isinstance(value, str) and len(value) > 0:
                         if "%" in value:
                             # Seems to be a format string, so let's try it...
@@ -425,24 +440,28 @@ class Wordlist:
                 else:
                     wordlist = self.content[key]
 
-                    if wordlist[0] == 2:  # Counter-type
+                    if wordlist[IDX_TYPE] == TYPE_COUNTER:  # Counter-type
                         # Counter index is the value.
-                        value = wordlist[2]  # Always use current value for counters
+                        value = wordlist[
+                            IDX_DATA_START
+                        ]  # Always use current value for counters
                         try:
                             value = int(value)
                         except ValueError:
                             value = 0
                         value += relative
                         if increment:  # Counters always increment when accessed (unless specific index)
-                            wordlist[2] = value + 1
+                            wordlist[IDX_DATA_START] = value + 1
                     else:
                         # This is a variable wordlist.
-                        current_index = 2 if reset else wordlist[1]  # 2 as 2 based
+                        current_index = (
+                            IDX_DATA_START if reset else wordlist[IDX_POSITION]
+                        )  # 2 as 2 based
                         current_index += relative
                         value = self.fetch_value(key, current_index)
                         if autoincrement and increment:
                             # Index set to current index + 1
-                            wordlist[1] = current_index + 1
+                            wordlist[IDX_POSITION] = current_index + 1
 
             if value is not None:
                 result = result.replace(bracketed_key, str(value))
@@ -561,7 +580,9 @@ class Wordlist:
 
     def empty_csv(self):
         # remove all traces of the previous csv file
-        names = [skey for skey in self.content if self.content[skey][0] == 1]
+        names = [
+            skey for skey in self.content if self.content[skey][IDX_TYPE] == TYPE_CSV
+        ]
         for skey in names:
             self.delete(skey)
 
@@ -577,7 +598,17 @@ class Wordlist:
             try:
                 # Use the already BOM-stripped content from EncodingDetectFile
                 from io import StringIO
-                buffer = file_content[:1024]  # Use first 1024 chars for sniffer
+
+                # Find a safe buffer that ends with a complete line
+                # Look for the last newline within the first ~1024 characters
+                buffer_limit = min(1024, len(file_content))
+                last_newline = file_content.rfind("\n", 0, buffer_limit)
+                if last_newline > 0:
+                    buffer = file_content[: last_newline + 1]  # Include the newline
+                else:
+                    # Fallback to original behavior if no newline found
+                    buffer = file_content[:buffer_limit]
+
                 if force_header is None:
                     has_header = csv.Sniffer().has_header(buffer)
                 else:
@@ -587,12 +618,12 @@ class Wordlist:
                 reader = csv.reader(StringIO(file_content), dialect)
                 headers = next(reader)
                 # Clean BOM characters from headers
-                headers = [h.lstrip('\ufeff') for h in headers]
+                headers = [h.lstrip("\ufeff") for h in headers]
                 if not has_header:
                     # Use Line as Data and set some default names
                     for idx, entry in enumerate(headers):
                         skey = f"Column_{idx + 1}"
-                        self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                        self.set_value(skey=skey, value=entry, idx=-1, wtype=TYPE_CSV)
                         headers[idx] = skey.lower()
                     ct = 1
                 else:
@@ -601,11 +632,13 @@ class Wordlist:
                     headers = [h.lower() for h in headers]
                 for row in reader:
                     for idx, entry in enumerate(row):
-                        skey = headers[idx].lower().lstrip('\ufeff')
+                        skey = headers[idx].lower().lstrip("\ufeff")
                         # Clean BOM from data values too
-                        clean_entry = entry.lstrip('\ufeff')
+                        clean_entry = entry.lstrip("\ufeff")
                         # Append...
-                        self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=1)
+                        self.set_value(
+                            skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV
+                        )
                     ct += 1
             except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
                 ct = 0
