@@ -91,6 +91,8 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         with self._buffer_lock:
             # Ignore the binary spew.
             # Instead, use tshark and the protocol analyzer.
+            # TODO: Having dependencies on text strings is risky. A single
+            # definition is needed.
             if isinstance(text, str):
                 self._buffer += f"{text}\n"
                 _color_change = False
@@ -102,7 +104,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
                     self.busy = True
                     self.color = self.busy_color
                     _color_change = True
-                elif 'Idle' in text:
+                elif 'Idle' in text or 'Connected' in text:
                     self.busy = False
                     self.color = self.idle_color
                     _color_change = True
@@ -140,14 +142,11 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             return
         if status is None:
             status = "Unknown"
-        connected = self.service.connected
-        if status == "Connected":
-            self.button_device_connect.SetLabel(_("Connected"))
-        if status == "Disconnected":
-            self.button_device_connect.SetLabel(_("Disconnected"))
+        if status in ['Connecting', 'Connected', 'Disconnected']:
+            self.button_device_connect.SetLabel(_(status))
         if not self.busy:
-            if connected:
-                self.color = self.idle_color
+            if self.service.connected:
+                # self.color = self.idle_color
                 self.set_button_connected()
             else:
                 self.set_button_disconnected()

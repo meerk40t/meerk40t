@@ -27,6 +27,7 @@ class RuidaDriver(Parameters):
     def __init__(self, service, **kwargs):
         super().__init__(**kwargs)
         self.service = service
+        self.events = service.channel(f"{service.safe_label}/events")
         self.native_x = 0
         self.native_y = 0
         # Coordinates reported by the device. These are set by the
@@ -376,6 +377,7 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         out = self.controller.write
         self.controller.gross_timeout()
+        self.events('Moving')
         job.home_xy(output=out)
         time.sleep(5)
         while self.controller.is_busy:

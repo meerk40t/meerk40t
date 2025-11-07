@@ -9,6 +9,9 @@ import time
 from meerk40t.ruida.rdjob import (
     MEM_CARD_ID,
     MEM_MACHINE_STATUS,
+    MACHINE_STATUS_MOVING,
+    MACHINE_STATUS_PART_END,
+    MACHINE_STATUS_JOB_RUNNING,
     MEM_BED_SIZE_X,
     MEM_BED_SIZE_Y,
     MEM_CURRENT_X,
@@ -164,8 +167,9 @@ class RuidaController:
                     else:
                         _tries += 1
                         if _tries > self._status_tries:
-                            self.job.get_setting(
-                                self._expected_status, output=self.write)
+                            if self._expected_status is not None:
+                                self.job.get_setting(
+                                    self._expected_status, output=self.write)
                             _tries = 0
                             # self._expected_status = None
                 else:
@@ -187,17 +191,19 @@ class RuidaController:
             self.machine_status = status
             # WARNING: These strings are checked by the Ruida Controller
             # window (ruidacontroller.py).
-            if status & 0x01000000:
+            # TODO: Having dependencies on text strings is risky. A single
+            # definition is needed.
+            if status & MACHINE_STATUS_MOVING:
                 _msg = 'Moving'
-            elif status & 0x00000002:
+            elif status & MACHINE_STATUS_PART_END:
                 _msg = 'Part end'
-            elif status & 0x00000001:
+            elif status & MACHINE_STATUS_JOB_RUNNING:
                 _msg = 'Job running'
             else:
                 _msg = 'Idle'
             # Signal the GUI update.
-            self.service.signal('pipe;usb_status', _msg)
             self.events(_msg)
+            self.service.signal('pipe;usb_status', _msg)
 
     def update_bed_x(self, bed_x):
         _bed_x = bed_x / 1000
