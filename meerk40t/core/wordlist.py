@@ -111,7 +111,7 @@ class Wordlist:
             "op_passes",
             "op_dpi",
         )
-        self._stack = list()
+        self._stack = []
         self.transaction_open = False
         self.content_backup = {}
         if directory is None:
@@ -165,7 +165,7 @@ class Wordlist:
         elif skey == "time":
             return self.wordlist_timestr(None)
         # print (f"Retrieve {wordlist} for {skey}")
-        if idx is None:  # Default
+        if idx is None or idx < 0:  # Default
             idx = wordlist[1]
 
         if idx <= len(wordlist):
@@ -207,7 +207,7 @@ class Wordlist:
             idx (int): Zero-based index of the value to delete
         """
         skey = skey.lower()
-        if not skey in self.content:
+        if skey not in self.content:
             return
         if idx is None or idx < 0:
             return
@@ -245,7 +245,7 @@ class Wordlist:
         # Index = None - use current
         # Index < 0 append
         skey = skey.lower()
-        if not skey in self.content:
+        if skey not in self.content:
             # hasn't been there, so establish it
             if wtype is None:
                 wtype = 0
@@ -437,7 +437,7 @@ class Wordlist:
                             wordlist[2] = value + 1
                     else:
                         # This is a variable wordlist.
-                        current_index = wordlist[1] if not reset else 2  # 2 as 2 based
+                        current_index = 2 if reset else wordlist[1]  # 2 as 2 based
                         current_index += relative
                         value = self.fetch_value(key, current_index)
                         if autoincrement and increment:
@@ -461,12 +461,12 @@ class Wordlist:
         return result
 
     @staticmethod
-    def wordlist_timestr(format=None):
+    def wordlist_timestr(time_format=None):
         time = datetime.now()
-        if format is None:
-            format = "%X"
+        if time_format is None:
+            time_format = "%X"
         try:
-            result = time.strftime(format)
+            result = time.strftime(time_format)
         except ValueError:
             result = "invalid"
         return result
@@ -554,10 +554,7 @@ class Wordlist:
 
     def empty_csv(self):
         # remove all traces of the previous csv file
-        names = []
-        for skey in self.content:
-            if self.content[skey][0] == 1:  # csv
-                names.append(skey)
+        names = [skey for skey in self.content if self.content[skey][0] == 1]
         for skey in names:
             self.delete(skey)
 
@@ -571,38 +568,38 @@ class Wordlist:
             encoding, bom_marker, file_content = result
 
             try:
-                with open(filename, newline="", encoding=encoding) as csvfile:
-                    buffer = csvfile.read(1024)
-                    if force_header is None:
-                        has_header = csv.Sniffer().has_header(buffer)
-                    else:
-                        has_header = force_header
-                    # print (f"Header={has_header}, Force={force_header}")
-                    dialect = csv.Sniffer().sniff(buffer)
-                    csvfile.seek(0)
-                    reader = csv.reader(csvfile, dialect)
-                    headers = next(reader)
-                    # Clean BOM characters from headers
-                    headers = [h.lstrip('\ufeff') for h in headers]
-                    if not has_header:
-                        # Use Line as Data and set some default names
-                        for idx, entry in enumerate(headers):
-                            skey = f"Column_{idx + 1}"
-                            self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
-                            headers[idx] = skey.lower()
-                        ct = 1
-                    else:
-                        ct = 0
-                        # Lowercase headers for return value
-                        headers = [h.lower() for h in headers]
-                    for row in reader:
-                        for idx, entry in enumerate(row):
-                            skey = headers[idx].lower().lstrip('\ufeff')
-                            # Clean BOM from data values too
-                            clean_entry = entry.lstrip('\ufeff')
-                            # Append...
-                            self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=1)
-                        ct += 1
+                # Use the already BOM-stripped content from EncodingDetectFile
+                from io import StringIO
+                buffer = file_content[:1024]  # Use first 1024 chars for sniffer
+                if force_header is None:
+                    has_header = csv.Sniffer().has_header(buffer)
+                else:
+                    has_header = force_header
+                # print (f"Header={has_header}, Force={force_header}")
+                dialect = csv.Sniffer().sniff(buffer)
+                reader = csv.reader(StringIO(file_content), dialect)
+                headers = next(reader)
+                # Clean BOM characters from headers
+                headers = [h.lstrip('\ufeff') for h in headers]
+                if not has_header:
+                    # Use Line as Data and set some default names
+                    for idx, entry in enumerate(headers):
+                        skey = f"Column_{idx + 1}"
+                        self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                        headers[idx] = skey.lower()
+                    ct = 1
+                else:
+                    ct = 0
+                    # Lowercase headers for return value
+                    headers = [h.lower() for h in headers]
+                for row in reader:
+                    for idx, entry in enumerate(row):
+                        skey = headers[idx].lower().lstrip('\ufeff')
+                        # Clean BOM from data values too
+                        clean_entry = entry.lstrip('\ufeff')
+                        # Append...
+                        self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=1)
+                    ct += 1
             except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
                 ct = 0
                 headers = []
@@ -636,12 +633,11 @@ class Wordlist:
                     relative = int(index_string)
                 except ValueError:
                     relative = 0
-            else:
-                # it's the unmodified key...
-                if key.startswith("time@"):
-                    key = "time"
-                elif key.startswith("date@"):
-                    key = "date"
+            # it's the unmodified key...
+            elif key.startswith("time@"):
+                key = "time"
+            elif key.startswith("date@"):
+                key = "date"
             if key not in self.content:
                 continue
             if key in self.prohibited:
@@ -670,11 +666,8 @@ class Wordlist:
 
     def push(self):
         """Stores the current content on the stack"""
-        copied_content = {}
-        for key, entry in self.content.items():
-            copied_content[key] = copy(entry)
+        copied_content = {key: copy(entry) for key, entry in self.content.items()}
         self._stack.append(copied_content)
-        # print (f"push was called, when name was: '{self.content['name']}'")
 
     def pop(self):
         """Restores the last added stack entry"""
