@@ -226,7 +226,11 @@ class GcodeJob:
 
     def write_blob(self, data):
         self.write_all(
-            [r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()]
+            [
+                r
+                for r in re.split("[\n|\r]", data.decode("utf-8", errors="ignore"))
+                if r.strip()
+            ]
         )
 
     def execute(self, driver=None):
@@ -359,18 +363,30 @@ class GcodeJob:
                     self.program_mode = False
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
-                    pass
+                    try:
+                        self._driver.service.kernel.root.coolant.coolant_on(
+                            self._driver.service
+                        )
+                    except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
+                        pass
                 elif v == 8:
                     # Coolant Control: Flood coolant On
                     try:
-                        self._driver.signal("coolant", True)
+                        self._driver.service.kernel.root.coolant.coolant_on(
+                            self._driver.service
+                        )
                     except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
                         pass
                 elif v == 9:
                     # Coolant Control: Flood coolant Off
                     try:
-                        self._driver.signal("coolant", False)
+                        self._driver.service.kernel.root.coolant.coolant_off(
+                            self._driver.service
+                        )
                     except AttributeError:
+                        # Eg in a mock connection we dont have a driver...
                         pass
                 elif v == 56:
                     # Parking motion override control.
@@ -558,8 +574,10 @@ class GcodeJob:
                     # Numeric value format is not valid or missing an expected value.
                     return ERROR_NUMERIC_VALUE_INVALID
                 if 0.0 < v <= 1.0:
-                    v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+                    v *= 1000  # numbers between 0-1 are taken to be in range 0-1000.
                 if self.power != v:
+                    # print(f"Setting power to {v}")
+                    self.plot_commit()  # Power change means plot change
                     try:
                         self._driver.set("power", v)
                     except AttributeError:
@@ -688,13 +706,21 @@ class GcodeJob:
         if matrix is None:
             # Using job for something other than point plotting
             return
+        if power is None:
+            power = 1000
         power = min(1000, power)
+        # print (f"Plotting location: ({x}, {y}) with power {power} (self.power={self.power})")
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])
-            self.plotcut = PlotCut(settings={"speed": self.speed})
+            p = power if power else self.power
+            if p is None:
+                p = 1000
+            settings = {"speed": self.speed, "power": p}
+            self.plotcut = PlotCut(settings=settings)
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(int(round(tx)), int(round(ty)), (power / 1000.0))
+        on = power / self.power if self.power else 0
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), on)
         if not self.program_mode:
             self.plot_commit()
         self.x = x

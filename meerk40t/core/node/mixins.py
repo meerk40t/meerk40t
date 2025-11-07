@@ -18,6 +18,7 @@ class Stroked(ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
+        self._acts_as_keyhole = False
 
     @property
     def stroke_scaled(self):
@@ -87,7 +88,16 @@ class Stroked(ABC):
         matrix = self.matrix
         self._stroke_zero = sqrt(abs(matrix.determinant))
 
-
+    def set_geometry(self, geom):
+        # We have been given a new geometry. 
+        # If we have a "geometry" property then we need to set it
+        # This method needs to be overridden in subclasses 
+        # if a special handling is required, eg. node type change.
+        if hasattr(self, "geometry"):
+            self.geometry = geom
+            self.altered()
+        return self
+    
 class FunctionalParameter(ABC):
     """
     Functional Parameters mixin allows the use and utility of functional parameters for this node type.
@@ -105,3 +115,30 @@ class FunctionalParameter(ABC):
     def functional_parameter(self, value):
         if isinstance(value, (list, tuple)):
             self.mkparam = value
+
+
+class LabelDisplay(ABC):
+    """
+    Any node inheriting this allow the display of the label on the scene
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.label_display = False
+        super().__init__()
+
+
+class Suppressable(ABC):
+    """
+    Any node inheriting this can be suppressed
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.hidden = False
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
+        super().__init__()

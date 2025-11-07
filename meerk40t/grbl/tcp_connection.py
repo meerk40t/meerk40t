@@ -24,7 +24,23 @@ class TCPOutput:
         try:
             self.controller.log("Attempting to Connect...", type="connection")
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._stream.connect((self.service.address, self.service.port))
+            # Enable TCP keep-alive to prevent connection timeouts
+            self._stream.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            # Set keep-alive parameters (platform-dependent)
+            try:
+                # TCP_KEEPIDLE: Time before sending keep-alive probes
+                self._stream.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+                # TCP_KEEPINTVL: Interval between keep-alive probes
+                self._stream.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
+                # TCP_KEEPCNT: Number of failed probes before connection is closed
+                self._stream.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3)
+            except (AttributeError, OSError):
+                # TCP keep-alive parameters may not be available on all platforms
+                # Basic SO_KEEPALIVE should still work
+                pass
+            # Make sure port is in a valid range...
+            port = min(65535, max(0, self.service.port))
+            self._stream.connect((self.service.address, port))
             self.service.signal("grbl;status", "connected")
         except TimeoutError:
             self.disconnect()
@@ -32,15 +48,18 @@ class TCPOutput:
         except ConnectionError:
             self.disconnect()
             self.service.signal("grbl;status", "connection error")
-        except socket.gaierror as e:
+        except (socket.gaierror, OverflowError) as e:
             self.disconnect()
-            self.service.signal("grbl;status", "address resolve error")
+            self.service.signal("grbl;status", f"address resolve error: {str(e)}")
         except socket.herror as e:
             self.disconnect()
             self.service.signal("grbl;status", f"herror: {str(e)}")
         except OSError as e:
             self.disconnect()
             self.service.signal("grbl;status", f"Host down {str(e)}")
+        except Exception as e:
+            self.disconnect()
+            self.service.signal("grbl;status", f"unknown error on connect: {str(e)}")
 
     def disconnect(self):
         self.controller.log("Disconnected", type="connection")
@@ -53,7 +72,12 @@ class TCPOutput:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
         while data:
-            sent = self._stream.send(data)
+            try:
+                sent = self._stream.send(data)
+            except Exception as e:
+                self.disconnect()
+                self.service.signal("grbl;status", f"unknown error on write: {str(e)}")
+                return
             if sent == len(data):
                 return
             data = data[sent:]
@@ -63,7 +87,12 @@ class TCPOutput:
     def read(self):
         f = self.read_buffer.find(b"\n")
         if f == -1:
-            self.read_buffer += self._stream.recv(self._read_buffer_size)
+            try:
+                self.read_buffer += self._stream.recv(self._read_buffer_size)
+            except Exception as e:
+                self.disconnect()
+                self.service.signal("grbl;status", f"unknown error on read: {str(e)}")
+                return
             f = self.read_buffer.find(b"\n")
             if f == -1:
                 return

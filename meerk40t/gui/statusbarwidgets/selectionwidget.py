@@ -1,5 +1,6 @@
 import wx
 
+from ..wxutils import wxCheckBox
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -20,10 +21,10 @@ class SelectionOptionWidget(StatusBarWidget):
         FONT_SIZE = 7
 
         # These will fall into the last field
-        self.cb_move = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Move"))
-        self.cb_handle = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Resize"))
-        self.cb_rotate = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Rotate"))
-        self.cb_skew = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Skew"))
+        self.cb_move = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Move"))
+        self.cb_handle = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Resize"))
+        self.cb_rotate = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Rotate"))
+        self.cb_skew = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Skew"))
         self.cb_move.SetFont(
             wx.Font(
                 FONT_SIZE,
@@ -117,8 +118,8 @@ class SnapOptionsWidget(StatusBarWidget):
         FONT_SIZE = 7
 
         # These will fall into the last field
-        self.cb_grid = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Snap to Grid"))
-        self.cb_points = wx.CheckBox(
+        self.cb_grid = wxCheckBox(self.parent, id=wx.ID_ANY, label=_("Snap to Grid"))
+        self.cb_points = wxCheckBox(
             self.parent, id=wx.ID_ANY, label=_("Snap to Element")
         )
         self.cb_grid.SetFont(

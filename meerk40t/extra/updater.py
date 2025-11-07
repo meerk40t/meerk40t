@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle):
                 "choices": (0, 1, 2),
                 "tip": _("Check for available updates on startup."),
                 "page": "Options",
+                # Hint for translation _("Check for updates on startup")
                 "section": "Check for updates on startup",
             },
             {
@@ -44,6 +45,7 @@ def plugin(kernel, lifecycle):
                 "choices": (0, 1, 2),
                 "tip": _("How often should MeerK40t look for new versions"),
                 "page": "Options",
+                # Hint for translation _("Check for updates on startup")
                 "section": "Check for updates on startup",
                 "conditional": (kernel.root, "update_check", 1, 2),
             },
@@ -131,7 +133,7 @@ def plugin(kernel, lifecycle):
                         src = True
                     elif "src" in ending:
                         src = True
-
+            
                     result = list(map(int, version.split(".")))
                     if len(result) > 3:
                         result = result[0:2]
@@ -148,7 +150,11 @@ def plugin(kernel, lifecycle):
             def extract_from_json(response):
                 # print (response)
                 tag = response["tag_name"]
-                version = comparable_version(tag)
+                try:
+                    version = comparable_version(tag)
+                except Exception as e:
+                    print(f"Error parsing version from tag '{tag}': {e}")
+                    return None, None, None, None, None, None
                 if response["prerelease"]:
                     version[3] = True
                 url = response["html_url"]
@@ -320,9 +326,9 @@ def plugin(kernel, lifecycle):
                     try:
                         req = urlopen(req)
                         response = json.loads(req.read())
-                    except (HTTPError, URLError, http.client.IncompleteRead):
+                    except Exception as e:
                         if verbosity_level > 0:
-                            channel(ERROR_MESSAGE)
+                            channel(ERROR_MESSAGE + f"\n{e}")
                         return
 
                     tag_full = tag_beta = None
@@ -337,6 +343,9 @@ def plugin(kernel, lifecycle):
                         for resp in response:
                             if resp["draft"]:
                                 continue
+                            if resp["tag_name"].lower().startswith("weekly"):
+                                # print(f"Found weekly build: {resp['tag_name']}")
+                                continue
                             (
                                 tag,
                                 version,
@@ -345,6 +354,9 @@ def plugin(kernel, lifecycle):
                                 assets,
                                 rel_info,
                             ) = extract_from_json(resp)
+                            if tag is None:
+                                continue
+
                             # What is the newest beta
                             if resp["prerelease"]:
                                 if newer_version(
@@ -490,7 +502,7 @@ def plugin(kernel, lifecycle):
                         import wx
 
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-                        from meerk40t.gui.wxutils import dip_size
+                        from meerk40t.gui.wxutils import dip_size, wxButton, wxStaticText, TextCtrl
 
                         has_wx = True
                     except ImportError:
@@ -509,22 +521,24 @@ def plugin(kernel, lifecycle):
                                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                             )
                             # contents
+                            kernel.themes.set_window_colors(dlg)
+
                             sizer = wx.BoxSizer(wx.VERTICAL)
 
-                            label = wx.StaticText(dlg, wx.ID_ANY, header)
+                            label = wxStaticText(dlg, wx.ID_ANY, header)
                             sizer.Add(label, 0, wx.EXPAND, 0)
-                            info = wx.TextCtrl(
+                            info = TextCtrl(
                                 dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
                             )
                             info.SetValue(content)
                             sizer.Add(info, 1, wx.EXPAND, 0)
-                            label = wx.StaticText(dlg, wx.ID_ANY, footer)
+                            label = wxStaticText(dlg, wx.ID_ANY, footer)
                             sizer.Add(label, 0, wx.EXPAND, 0)
                             btnsizer = wx.StdDialogButtonSizer()
-                            btn = wx.Button(dlg, wx.ID_OK)
+                            btn = wxButton(dlg, wx.ID_OK)
                             btn.SetDefault()
                             btnsizer.AddButton(btn)
-                            btn = wx.Button(dlg, wx.ID_CANCEL)
+                            btn = wxButton(dlg, wx.ID_CANCEL)
                             btnsizer.AddButton(btn)
                             btnsizer.Realize()
                             sizer.Add(btnsizer, 0, wx.EXPAND, 0)
@@ -537,6 +551,8 @@ def plugin(kernel, lifecycle):
                             dlg.SetSize(dip_size(dlg, 620, 400))
                             dlg.CenterOnScreen()
                             answer = dlg.ShowModal()
+                            # Unlisten
+                            panel.module_close()
                             dlg.Destroy()
                             response = bool(answer in (wx.YES, wx.ID_YES, wx.ID_OK))
                         else:

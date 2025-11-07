@@ -182,7 +182,9 @@ class PointListTool(ToolWidget):
                 response = RESPONSE_CONSUME
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if len(self.point_series) > 0:
+                response = RESPONSE_CONSUME
         return response
 
     def end_tool(self):
@@ -193,6 +195,10 @@ class PointListTool(ToolWidget):
         self.scene.request_refresh()
         if followup:
             self.scene.context(f"{followup}\n")
+        elif self.scene.context.just_a_single_element:
+            self.scene.pane.tool_active = False
+            self.scene.context.signal("statusmsg", "")
+            self.scene.context("tool none\n")
 
     # Routines that can be overloaded -------------------
 

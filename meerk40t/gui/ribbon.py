@@ -58,11 +58,11 @@ COLOR_MODE_DARK = 2
 
 
 class DropDown:
-    """
-    Dropdowns are the triangle click addons that expand the button list to having other functions.
-
-    This primarily stores the position of the given dropdown.
-    """
+    """DropDown - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for dropdown functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for dropdown functionality in MeerK40t."""
 
     def __init__(self):
         self.position = None
@@ -84,11 +84,11 @@ class DropDown:
 
 
 class Button:
-    """
-    Buttons store most of the relevant data as to how to display the current aspect of the given button. This
-    includes things like tool-tip, the drop-down if needed, whether its in the overflow, the pressed and unpressed
-    aspects of the buttons and enable/disable rules.
-    """
+    """Button - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for button functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for button functionality in MeerK40t."""
 
     def __init__(self, context, parent, button_id, kind, description):
         self.context = context
@@ -128,6 +128,7 @@ class Button:
         self.state_unpressed = None
         self.group = None
         self.toggle_attr = None
+        self.multi_autoexec = None
         self.identifier = None
         self.action = None
         self.action_right = None
@@ -137,6 +138,14 @@ class Button:
         self.min_height = 0
         self.default_width = int(self.max_size / 2)
         self.icon_size = self.default_width
+
+        # Button drawing cache for static visual states
+        self._drawing_cache = {}  # Cache bitmaps by (state, size) key
+        self._last_position = None
+        self._last_enabled = None
+        self._last_visible = None
+        self._last_toggle = None
+        self._last_icon_size = None
 
         self.set_aspect(**description)
         self.apply_enable_rules()
@@ -155,6 +164,7 @@ class Button:
         rule_enabled=None,
         rule_visible=None,
         object=None,
+        multi_autoexec=None,
         **kwargs,
     ):
         """
@@ -205,6 +215,8 @@ class Button:
         self.action_right = action_right
         self.rule_enabled = rule_enabled
         self.rule_visible = rule_visible
+        self.multi_autoexec = multi_autoexec
+
         if object is not None:
             self.object = object
         else:
@@ -220,9 +232,16 @@ class Button:
             point_size = self.min_size
         if point_size > self.max_size:
             point_size = self.max_size
-        self.icon_size = int(point_size)
+
+        new_icon_size = int(point_size)
+        if hasattr(self, "icon_size") and self.icon_size != new_icon_size:
+            self.invalidate_drawing_cache()  # Cache invalidation when icon size changes
+        self.icon_size = new_icon_size
+
         edge = int(point_size / 25.0) + 1
         key = str(self.icon_size)
+
+        # Icon bitmaps are cached externally, so we can safely recreate if needed
         if key not in self.available_bitmaps:
             self.available_bitmaps[key] = self.icon.GetBitmap(
                 resize=self.icon_size,
@@ -272,6 +291,11 @@ class Button:
             "help": self.help,
             "icon": self.icon,
             "client_data": self.client_data,
+            "rule_enabled": self.rule_enabled,
+            "rule_visible": self.rule_visible,
+            "toggle_attr": self.toggle_attr,
+            "object": self.object,
+            "multi_autoexec": self.multi_autoexec,
         }
         self._update_button_aspect(key, **kwargs)
 
@@ -291,29 +315,70 @@ class Button:
 
     def apply_enable_rules(self):
         """
-        Calls rule_enabled() and returns whether the given rule enables the button.
-
-        @return:
+        Calls rule_enabled() and rule_visible() and updates button state only if changed.
+        Rules are evaluated every time, but redraws only occur on actual state changes.
         """
+        # Always evaluate enabled rule - don't cache the rule result
         if self.rule_enabled is not None:
             try:
-                v = self.rule_enabled(0)
-                if v != self.enabled:
-                    self.enabled = v
-                    self.modified()
+                new_enabled = self.rule_enabled(0)
+                if new_enabled != self.enabled:
+                    self.enabled = new_enabled
+                    self.modified()  # Only redraw when state actually changes
             except (AttributeError, TypeError):
                 pass
+
+        # Always evaluate visible rule - don't cache the rule result
         if self.rule_visible is not None:
-            v = self.rule_visible(0)
-            if v != self.visible:
-                self.visible = v
+            new_visible = self.rule_visible(0)
+            if new_visible != self.visible:
+                self.visible = new_visible
                 if not self.visible:
                     self.position = None
-                self.modified()
+                self.modified()  # Only redraw when state actually changes
         else:
             if not self.visible:
                 self.visible = True
-                self.modified()
+                self.modified()  # Only redraw when state actually changes
+
+    def invalidate_drawing_cache(self):
+        """Invalidate drawing cache when button visual state changes."""
+        self._drawing_cache.clear()
+
+    def is_drawing_cache_valid(self):
+        """Check if current button visual state matches cached state."""
+        return (
+            self._last_position == self.position
+            and self._last_enabled == self.enabled
+            and self._last_visible == self.visible
+            and self._last_toggle == self.toggle
+            and self._last_icon_size == self.icon_size
+        )
+
+    def update_cached_state(self):
+        """Update cached visual state after drawing."""
+        self._last_position = self.position
+        self._last_enabled = self.enabled
+        self._last_visible = self.visible
+        self._last_toggle = self.toggle
+        self._last_icon_size = self.icon_size
+
+    def get_cached_drawing(self, cache_key):
+        """Get cached button drawing if available and still valid."""
+        if not self.is_drawing_cache_valid():
+            self._drawing_cache.clear()
+            self.update_cached_state()
+            return None
+        return self._drawing_cache.get(cache_key)
+
+    def cache_drawing(self, cache_key, bitmap):
+        """Cache a button drawing bitmap."""
+        # Limit cache size to prevent memory growth
+        if len(self._drawing_cache) >= 10:  # Reasonable limit per button
+            # Remove oldest entry
+            oldest_key = next(iter(self._drawing_cache))
+            del self._drawing_cache[oldest_key]
+        self._drawing_cache[cache_key] = bitmap
 
     def contains(self, pos):
         """
@@ -338,7 +403,12 @@ class Button:
         """
         if self.group:
             # Toggle radio buttons
-            self.toggle = not self.toggle
+            if self.state_pressed is None:
+                # Regular button
+                self.toggle = True
+            else:
+                # Real toggle button
+                self.toggle = not self.toggle
             if self.toggle:  # got toggled
                 button_group = self.parent.group_lookup.get(self.group, [])
 
@@ -390,7 +460,7 @@ class Button:
         menu = wx.Menu()
         item = menu.Append(wx.ID_ANY, "...")
         item.Enable(False)
-        for v in self.button_dict["multi"]:
+        for v in self.button_dict.get("multi", []):
             item = menu.Append(wx.ID_ANY, v.get("label"))
             tip = v.get("tip")
             if tip:
@@ -428,6 +498,29 @@ class Button:
             self.state_unpressed = key_id
             self._restore_button_aspect(key_id)
             # self.ensure_realize()
+            # And now execute it, provided it would be enabled...
+            auto_execute = False if self.multi_autoexec is None else self.multi_autoexec
+            auto_execute = auto_execute and self.context.setting(
+                bool, "button_multi_menu_execute", True
+            )
+            if auto_execute:
+                is_visible = True
+                is_enabled = True
+                if self.rule_visible:
+                    try:
+                        is_visible = self.rule_visible(0)
+                    except (AttributeError, TypeError):
+                        is_visible = False
+                if self.rule_enabled:
+                    try:
+                        is_enabled = self.rule_enabled(0)
+                    except (AttributeError, TypeError):
+                        is_enabled = False
+                if is_visible and is_enabled:
+                    try:
+                        self.action(None)
+                    except AttributeError:
+                        pass
 
         return menu_item_click
 
@@ -447,6 +540,12 @@ class Button:
             # This is not a context, we tried.
             pass
         initial_value = getattr(self.object, self.save_id, "default")
+        if "signal" in self.button_dict and "attr" in self.button_dict:
+            self._create_generic_signal_for_multi(
+                self.object,
+                self.button_dict.get("attr"),
+                self.button_dict.get("signal"),
+            )
 
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
@@ -467,7 +566,26 @@ class Button:
         @return:
         """
 
-        def multi_click(origin, set_value):
+        def multi_click(origin, *args):
+            self._restore_button_aspect(key)
+
+        self.context.listen(signal, multi_click)
+        self.parent._registered_signals.append((signal, multi_click))
+
+    def _create_generic_signal_for_multi(self, q_object, q_attr, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def multi_click(origin, *args):
+            try:
+                key = getattr(q_object, q_attr)
+            except AttributeError:
+                return
             self._restore_button_aspect(key)
 
         self.context.listen(signal, multi_click)
@@ -512,7 +630,15 @@ class Button:
         @return:
         """
 
-        def toggle_click(origin, set_value, *args):
+        def toggle_click(origin, *args):
+            # Whats the value to set?
+            set_value = args[0] if args else not self.toggle
+            # But if we have a toggle_attr then this has precedence
+            set_value = (
+                getattr(self.object, self.toggle_attr)
+                if self.toggle_attr
+                else set_value
+            )
             self.set_button_toggle(set_value)
 
         self.context.listen(signal, toggle_click)
@@ -525,7 +651,9 @@ class Button:
         @param toggle_state:
         @return:
         """
-        self.toggle = toggle_state
+        if self.toggle != toggle_state:
+            self.toggle = toggle_state
+            self.invalidate_drawing_cache()  # Cache invalidation when toggle changes
         if toggle_state:
             self._restore_button_aspect(self.state_pressed)
         else:
@@ -534,15 +662,20 @@ class Button:
     def modified(self):
         """
         This button was modified and should be redrawn.
+        Invalidate drawing cache and mark as dirty.
         @return:
         """
+        # Invalidate caches when button state changes
+        self.invalidate_drawing_cache()
         self.parent.modified()
 
 
 class RibbonPanel:
-    """
-    Ribbon Panel is a panel of buttons within the page.
-    """
+    """RibbonPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribbon functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for ribbon functionality in MeerK40t."""
 
     def __init__(self, context, parent, id, label, icon):
         self.context = context
@@ -632,7 +765,6 @@ class RibbonPanel:
         @param desc:
         @return:
         """
-        show_tip = not self.context.disable_tool_tips
         # NewIdRef is only available after 4.1
         try:
             new_id = wx.NewIdRef()
@@ -696,7 +828,10 @@ class RibbonPanel:
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
             item.Enable(v.enabled)
-            item.SetHelp(v.tip)
+            if callable(v.tip):
+                item.SetHelp(v.tip())
+            else:
+                item.SetHelp(v.tip)
             if v.icon:
                 item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2, buffer=2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
@@ -704,11 +839,13 @@ class RibbonPanel:
 
 
 class RibbonPage:
-    """
-    Ribbon Page is a page of buttons this is the series of ribbon panels as triggered by the different tags.
-    """
+    """RibbonPage - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribbonpage functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for ribbonpage functionality in MeerK40t."""
 
-    def __init__(self, context, parent, id, label, icon):
+    def __init__(self, context, parent, id, label, icon, reference):
         self.context = context
         self.parent = parent
         self.id = id
@@ -718,6 +855,7 @@ class RibbonPage:
         self.position = None
         self.tab_position = None
         self.visible = True
+        self.reference = reference
 
     def add_panel(self, panel, ref):
         """
@@ -755,6 +893,12 @@ class RibbonPage:
 
 
 class RibbonBarPanel(wx.Control):
+    """RibbonBarPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for ribbonbar functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for ribbonbar functionality in MeerK40t."""
+
     def __init__(self, parent, id, context=None, pane=None, **kwds):
         super().__init__(parent, id, **kwds)
         self.context = context
@@ -765,7 +909,7 @@ class RibbonBarPanel(wx.Control):
         self._redraw_job = Job(
             process=self._paint_main_on_buffer,
             job_name=jobname,
-            interval=0.1,
+            interval=0,
             times=1,
             run_main=True,
         )
@@ -791,6 +935,22 @@ class RibbonBarPanel(wx.Control):
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
+
+        # Tooltip logic - as we do have a single control,
+        # this will prevent wxPython from resetting the timer
+        # when hovering to a different button
+        self._tooltip = ""
+        jobname = f"tooltip_ribbon_bar_{self.GetId()}"
+        #  print (f"Requesting job with name: '{jobname}'")
+        tooltip_delay = self.context.setting(int, "tooltip_delay", 100)
+        interval = tooltip_delay / 1000.0
+        self._tooltip_job = Job(
+            process=self._exec_tooltip_job,
+            job_name=jobname,
+            interval=interval,
+            times=1,
+            run_main=True,
+        )
 
     # Preparation for individual page visibility
     def visible_pages(self):
@@ -840,6 +1000,34 @@ class RibbonBarPanel(wx.Control):
         self.art.hover_button = None
         self.art.hover_dropdown = None
         self.redrawn()
+
+    def stop_tooltip_job(self):
+        self._tooltip_job.cancel()
+
+    def start_tooltip_job(self):
+        # print (f"Schedule a job with {self._tooltip_job.interval:.2f}sec")
+        self.context.schedule(self._tooltip_job)
+
+    def _exec_tooltip_job(self):
+        # print (f"Executed with {self._tooltip}")
+        try:
+            super().SetToolTip(self._tooltip)
+        except RuntimeError:
+            # Could happen on a shutdown...
+            return
+
+    def SetToolTip(self, message):
+        if callable(message):
+            self._tooltip = message()
+        else:
+            self._tooltip = message
+        if message == "":
+            self.stop_tooltip_job()
+            super().SetToolTip(message)
+        else:
+            # we restart the job and delete the tooltip in the meantime
+            super().SetToolTip("")
+            self.start_tooltip_job()
 
     def _check_hover_dropdown(self, drop, pos):
         if drop is not None and not drop.contains(pos):
@@ -901,24 +1089,28 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
+        if self._redraw_lock.acquire(timeout=0.2):
+            try:
+                buf = self._set_buffer()
+                dc = wx.MemoryDC()
+                dc.SelectObject(buf)
+                if self._layout_dirty:
+                    self.art.layout(dc, self)
+                    self._layout_dirty = False
+                self.art.paint_main(dc, self)
+                dc.SelectObject(wx.NullBitmap)
+                del dc
+                self._paint_dirty = False
+            except (RuntimeError, AssertionError):
+                pass
+                # Shutdown error
+            finally:
+                self._redraw_lock.release()
         try:
-            buf = self._set_buffer()
-            dc = wx.MemoryDC()
+            self.Refresh()  # Paint buffer on screen.
         except RuntimeError:
             # Shutdown error
-            return
-        dc.SelectObject(buf)
-        if self._redraw_lock.acquire(timeout=0.2):
-            if self._layout_dirty:
-                self.art.layout(dc, self)
-                self._layout_dirty = False
-            self.art.paint_main(dc, self)
-            self._redraw_lock.release()
-            self._paint_dirty = False
-        dc.SelectObject(wx.NullBitmap)
-        del dc
-
-        self.Refresh()  # Paint buffer on screen.
+            pass
 
     def prefer_horizontal(self):
         result = None
@@ -974,7 +1166,11 @@ class RibbonBarPanel(wx.Control):
         return self._ribbon_buffer
 
     def toggle_show_labels(self, v):
-        self.art.show_labels = v
+        if self.art.show_labels != v:
+            self.art.show_labels = v
+            # Invalidate all button caches when show_labels changes
+            for button in self._all_buttons():
+                button.invalidate_drawing_cache()
         self.modified()
 
     def _overflow_at_position(self, pos):
@@ -1134,9 +1330,12 @@ class RibbonBarPanel(wx.Control):
     def apply_enable_rules(self):
         """
         Applies all enable rules for all buttons that are currently seen.
+        Batch process for better performance.
         @return:
         """
-        for button in self._all_buttons():
+        # Batch process all buttons to avoid repeated iterations
+        buttons_to_check = list(self._all_buttons())
+        for button in buttons_to_check:
             button.apply_enable_rules()
 
     def add_page(self, ref, id, label, icon):
@@ -1154,6 +1353,7 @@ class RibbonBarPanel(wx.Control):
             id,
             label,
             icon,
+            ref,
         )
         if ref is not None:
             # print(f"Setattr in add_page: {ref} = {page}")
@@ -1209,6 +1409,12 @@ class RibbonBarPanel(wx.Control):
 
 
 class Art:
+    """Art - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for art functionality. Integrates with tracing, preferences for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for art functionality in MeerK40t."""
+
     def __init__(self, parent):
         self.RIBBON_ORIENTATION_AUTO = 0
         self.RIBBON_ORIENTATION_HORIZONTAL = 1
@@ -1227,6 +1433,12 @@ class Art:
         self.tab_text_buffer = 2
         self.edge_page_buffer = 4
         self.rounded_radius = 3
+        self.font_sizes = {}
+
+        # Font cache for performance optimization
+        self._font_cache = {}
+        self._text_extent_cache = {}
+        self._cache_max_size = 200
 
         self.bitmap_text_buffer = 5
         self.dropdown_height = 20
@@ -1240,6 +1452,60 @@ class Art:
         self.hover_tab = None
         self.hover_button = None
         self.hover_dropdown = None
+
+    def get_cached_font(self, ptsize):
+        """
+        Get a font from cache or create and cache it.
+        """
+        if ptsize in self._font_cache:
+            return self._font_cache[ptsize]
+
+        font = wx.Font(
+            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+
+        # Limit cache size to prevent memory growth
+        if len(self._font_cache) >= self._cache_max_size:
+            # Remove oldest entry (simple FIFO)
+            oldest_key = next(iter(self._font_cache))
+            del self._font_cache[oldest_key]
+
+        self._font_cache[ptsize] = font
+        return font
+
+    def get_cached_text_extent(self, dc, text, ptsize):
+        """
+        Get text extent from cache or calculate and cache it.
+        """
+        cache_key = (text, ptsize)
+        if cache_key in self._text_extent_cache:
+            return self._text_extent_cache[cache_key]
+
+        font = self.get_cached_font(ptsize)
+        dc.SetFont(font)
+        extent = dc.GetTextExtent(text)
+
+        # Limit cache size to prevent memory growth
+        if len(self._text_extent_cache) >= self._cache_max_size:
+            # Remove oldest entry (simple FIFO)
+            oldest_key = next(iter(self._text_extent_cache))
+            del self._text_extent_cache[oldest_key]
+
+        self._text_extent_cache[cache_key] = extent
+        return extent
+
+    def clear_all_caches(self):
+        """Clear all font and text extent caches to free memory."""
+        self._font_cache.clear()
+        self._text_extent_cache.clear()
+
+    def get_cache_stats(self):
+        """Get cache usage statistics for monitoring."""
+        return {
+            "font_cache_size": len(self._font_cache),
+            "text_extent_cache_size": len(self._text_extent_cache),
+            "max_cache_size": self._cache_max_size,
+        }
 
     def establish_colors(self):
         self.text_color = copy.copy(
@@ -1288,7 +1554,7 @@ class Art:
             c_mode = COLOR_MODE_DEFAULT
         if (
             c_mode == COLOR_MODE_DEFAULT
-            and wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+            and self.parent.context.themes.dark  # wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         ):
             c_mode = COLOR_MODE_DARK  # dark mode
         self.color_mode = c_mode
@@ -1361,6 +1627,7 @@ class Art:
             dc.DrawRoundedRectangle(
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
             )
+            self.look_at_button_font_sizes(dc, page)
             for panel in page.panels:
                 # We suppress empty panels
                 if panel is None or panel.visible_button_count == 0:
@@ -1368,6 +1635,91 @@ class Art:
                 self._paint_panel(dc, panel)
                 for button in panel.visible_buttons():
                     self._paint_button(dc, button)
+
+    def look_at_button_font_sizes(self, dc, page):
+        self.font_sizes = {}
+        for panel in page.panels:
+            # We suppress empty panels
+            if panel is None or panel.visible_button_count == 0:
+                continue
+            for button in panel.visible_buttons():
+                x, y, x1, y1 = button.position
+                w = int(round(x1 - x))
+                h = int(round(y1 - y))
+                img_h = h
+                # do we have text? if yes let's reduce the available space in y
+                if self.show_labels:  # Regardless whether we have a label or not...
+                    img_h -= self.bitmap_text_buffer
+                    ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
+                    img_h -= int(ptsize * 1.35)
+
+                button.get_bitmaps(min(w, img_h))
+                if button.enabled:
+                    bitmap = button.bitmap
+                else:
+                    bitmap = button.bitmap_disabled
+
+                bitmap_width, bitmap_height = bitmap.Size
+                bs = min(bitmap_width, bitmap_height)
+                ptsize = self.get_font_size(bs)
+                y += bitmap_height
+
+                text_edge = self.bitmap_text_buffer
+                if button.label and self.show_labels:
+                    label_text = button.label.split(" ")
+                    # Pre-calculate font and test for efficiency
+                    wouldfit = False
+                    while not wouldfit:
+                        # Use cached font instead of creating new one each time
+                        font = self.get_cached_font(ptsize)
+                        dc.SetFont(font)
+                        wouldfit = True
+                        test_y = y + text_edge
+                        i = 0
+                        while i < len(label_text):
+                            # We know by definition that all single words
+                            # are okay for drawing, now we check whether
+                            # we can draw multiple in one line
+                            word = label_text[i]
+                            cont = True
+                            while cont:
+                                cont = False
+                                if i < len(label_text) - 1:
+                                    nextword = label_text[i + 1]
+                                    test = word + " " + nextword
+                                    # Use cached text extent
+                                    tw, th = self.get_cached_text_extent(
+                                        dc, test, ptsize
+                                    )
+                                    if tw < w:
+                                        word = test
+                                        i += 1
+                                        cont = True
+
+                            text_width, text_height = self.get_cached_text_extent(
+                                dc, word, ptsize
+                            )
+                            if text_width > w:
+                                wouldfit = False
+                                break
+                            test_y += text_height
+                            if test_y > y1:
+                                wouldfit = False
+                                text_edge = 0
+                                break
+                            i += 1
+
+                        if wouldfit:
+                            # Let's see how much we have...
+                            if ptsize in self.font_sizes:
+                                self.font_sizes[ptsize] += 1
+                            else:
+                                self.font_sizes[ptsize] = 1
+                            break
+
+                        ptsize -= 2
+                        if ptsize < 6:  # too small
+                            break
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         """
@@ -1454,9 +1806,11 @@ class Art:
         dc.DrawRoundedRectangle(
             int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
         )
-        r = min((y1 - y) / 2, (x1 - x) / 2) - 2
-        cx = (x + x1) / 2
-        cy = -r / 2 + (y + y1) / 2
+        # Commented out unused radius calculation
+        # r = min((y1 - y) / 2, (x1 - x) / 2) - 2
+        # Commented out unused center calculation
+        # cx = (x + x1) / 2
+        # cy = -r / 2 + (y + y1) / 2
         # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
         # points = [
         #     (
@@ -1465,13 +1819,20 @@ class Art:
         #     )
         #     for angle in (0, 90, 180)
         # ]
-        lp_x = int(cx - r)
-        lp_y = int(cy)
-        dp_x = int(cx)
-        dp_y = int(cy + r)
+        lx = x + (x1 - x) / 8
+        rx = x1 - (x1 - x) / 8
+        mx = x + (x1 - x) / 2
+        ty = y + (y1 - y) * 2 / 8
+        by = y1 - (y1 - y) * 2 / 8
+        points = [
+            (int(lx), int(ty)),
+            (int(rx), int(ty)),
+            (int(mx), int(by)),
+            (int(lx), int(ty)),
+        ]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
-        dc.DrawRectangle(lp_x, lp_y, dp_x, dp_y)
+        dc.DrawPolygon(points)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
         """
@@ -1506,23 +1867,47 @@ class Art:
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
-    def _paint_button(self, dc: wx.DC, button: Button):
+    def _render_button_content(
+        self,
+        dc,
+        button,
+        x,
+        y,
+        w,
+        h,
+        bitmap,
+        bitmap_width,
+        bitmap_height,
+        show_text,
+        label_text,
+        font,
+        ptsize,
+        text_edge,
+    ):
         """
-        Paint the given button on the screen.
+        Helper method to render button content. This is shared between direct rendering and caching.
 
-        @param dc:
-        @param button:
-        @return:
+        @param dc: Device context to draw to
+        @param button: Button to render
+        @param x, y: Top-left position (0,0 for cache bitmap)
+        @param w, h: Button dimensions
+        @param bitmap: Icon bitmap to draw
+        @param bitmap_width, bitmap_height: Icon dimensions
+        @param show_text: Whether to show text labels
+        @param label_text: Text labels to render
+        @param font: Font to use for text
+        @param ptsize: Font point size
+        @param text_edge: Text edge buffer
         """
-        if button.overflow or not button.visible or button.position is None:
-            return
-
+        # Set up drawing context
         dc.SetBrush(wx.Brush(self.button_face))
-        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.SetPen(wx.Pen(self.button_face, 1))  # Subtle border matching button face
         dc.SetTextForeground(self.text_color)
         if not button.enabled:
             dc.SetBrush(wx.Brush(self.inactive_background))
-            dc.SetPen(wx.TRANSPARENT_PEN)
+            dc.SetPen(
+                wx.Pen(self.inactive_background, 1)
+            )  # Subtle border matching background
             dc.SetTextForeground(self.text_color_disabled)
         if button.toggle:
             dc.SetBrush(wx.Brush(self.highlight))
@@ -1531,9 +1916,91 @@ class Art:
             dc.SetBrush(wx.Brush(self.button_face_hover))
             dc.SetPen(wx.Pen(self.black_color))
 
+        # Draw background
+        dc.DrawRoundedRectangle(int(x), int(y), w, h, self.rounded_radius)
+
+        # Draw icon (centered in button area)
+        icon_x = int(x + (w - bitmap_width) / 2)
+        icon_y = int(y)
+        dc.DrawBitmap(bitmap, icon_x, icon_y)
+
+        # Draw text if needed
+        if show_text and font is not None:
+            text_y = y + bitmap_height + text_edge
+            dc.SetFont(font)
+            i = 0
+            while i < len(label_text):
+                word = label_text[i]
+                cont = True
+                while cont:
+                    cont = False
+                    if i < len(label_text) - 1:
+                        nextword = label_text[i + 1]
+                        test = word + " " + nextword
+                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
+                        if tw < w:
+                            word = test
+                            i += 1
+                            cont = True
+
+                text_width, text_height = self.get_cached_text_extent(dc, word, ptsize)
+                dc.DrawText(
+                    word,
+                    int(x + (w / 2.0) - (text_width / 2)),  # Center in button width
+                    int(text_y),
+                )
+                text_y += text_height
+                i += 1
+
+    def _paint_button(self, dc: wx.DC, button: Button):
+        """
+        Paint the given button on the screen with caching support.
+
+        @param dc:
+        @param button:
+        @return:
+        """
+        if button.overflow or not button.visible or button.position is None:
+            return
+
         x, y, x1, y1 = button.position
-        w = int(round(x1 - x, 2))
-        h = int(round(y1 - y, 2))
+        w = int(round(x1 - x))
+        h = int(round(y1 - y))
+
+        # Define practical minimum button size
+        MIN_BUTTON_SIZE = 12
+
+        # if w < MIN_BUTTON_SIZE or h < MIN_BUTTON_SIZE:
+        #     # Optionally log a warning for extremely small buttons
+        #     return
+
+        # Ensure minimum size to avoid zero-size bitmaps
+        w = max(1, w)
+        h = max(1, h)
+
+        # Create cache key based on visual state that affects rendering
+        cache_key = (
+            w,
+            h,  # Button size
+            button.enabled,  # Enabled state affects colors/bitmap
+            button.toggle,  # Toggle state affects colors
+            self.hover_button is button and self.hover_dropdown is None,  # Hover state
+            self.show_labels,  # Whether labels are shown
+            button.icon_size,  # Icon size affects rendering
+        )
+
+        # Try to get cached rendering
+        cached_bitmap = button.get_cached_drawing(cache_key)
+        if cached_bitmap is not None:
+            # Use cached rendering - just draw it
+            dc.DrawBitmap(cached_bitmap, int(x), int(y))
+            # Still need to paint dropdown if it exists
+            if button.dropdown is not None and button.dropdown.position is not None:
+                self._paint_dropdown(dc, button.dropdown)
+            return
+
+        # No cached version - calculate text layout and render using helper
+        start_y = y
         img_h = h
         # do we have text? if yes let's reduce the available space in y
         if self.show_labels:  # Regardless whether we have a label or not...
@@ -1547,40 +2014,27 @@ class Art:
         else:
             bitmap = button.bitmap_disabled
 
-        # Let's clip the output
-        dc.SetClippingRegion(int(x), int(y), int(w), int(h))
-
-        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
-        # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
-        #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
         bs = min(bitmap_width, bitmap_height)
-        ptsize = self.get_font_size(bs)
-        font = wx.Font(
-            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-
-        dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
-        y += bitmap_height
+        ptsize = self.get_best_font_size(bs)
+        # Use cached font instead of creating new one
+        font = self.get_cached_font(ptsize)
 
         text_edge = self.bitmap_text_buffer
-
         if button.label and self.show_labels:
             show_text = True
-            label_text = list(button.label.split(" "))
+            label_text = button.label.split(" ")
             # We try to establish whether this would fit properly.
             # We allow a small oversize of 25% to the button,
             # before we try to reduce the fontsize
             wouldfit = False
+            font = None  # Initialize font variable
             while not wouldfit:
-                testfont = wx.Font(
-                    ptsize,
-                    wx.FONTFAMILY_SWISS,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_NORMAL,
-                )
-                test_y = y + text_edge
-                dc.SetFont(testfont)
+                total_text_height = 0
+                # Use cached font instead of creating new one each time
+                font = self.get_cached_font(ptsize)
+                test_y = y + bitmap_height + text_edge
+                dc.SetFont(font)
                 wouldfit = True
                 i = 0
                 while i < len(label_text):
@@ -1594,25 +2048,33 @@ class Art:
                         if i < len(label_text) - 1:
                             nextword = label_text[i + 1]
                             test = word + " " + nextword
-                            tw, th = dc.GetTextExtent(test)
-                            if tw < w:
+                            # Use cached text extent
+                            tw, th = self.get_cached_text_extent(dc, test, ptsize)
+                            if tw < w:  # Use full button width for text fitting
                                 word = test
                                 i += 1
                                 cont = True
 
-                    text_width, text_height = dc.GetTextExtent(word)
+                    text_width, text_height = self.get_cached_text_extent(
+                        dc, word, ptsize
+                    )
                     if text_width > w:
                         wouldfit = False
                         break
                     test_y += text_height
-                    if test_y > y1:
+                    total_text_height += text_height
+                    if test_y > y + h:
                         wouldfit = False
                         text_edge = 0
                         break
                     i += 1
 
                 if wouldfit:
-                    font = testfont
+                    # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
+                    text_edge = min(
+                        max(0, start_y + h - (y + bitmap_height) - total_text_height),
+                        self.bitmap_text_buffer,
+                    )
                     break
 
                 ptsize -= 2
@@ -1620,42 +2082,71 @@ class Art:
                     break
             if not wouldfit:
                 show_text = False
-                label_text = list()
+                label_text = []
         else:
             show_text = False
-            label_text = list()
-        if show_text:
-            y += text_edge
-            dc.SetFont(font)
-            i = 0
-            while i < len(label_text):
-                # We know by definition that all single words
-                # are okay for drawing, now we check whether
-                # we can draw multiple in one line
-                word = label_text[i]
-                cont = True
-                while cont:
-                    cont = False
-                    if i < len(label_text) - 1:
-                        nextword = label_text[i + 1]
-                        test = word + " " + nextword
-                        tw, th = dc.GetTextExtent(test)
-                        if tw < w:
-                            word = test
-                            i += 1
-                            cont = True
+            label_text = []
 
-                text_width, text_height = dc.GetTextExtent(word)
-                dc.DrawText(
-                    word,
-                    int(x + (w / 2.0) - (text_width / 2)),
-                    int(y),
-                )
-                y += text_height
-                i += 1
+        # Render button content using helper method
+        self._render_button_content(
+            dc,
+            button,
+            x,
+            y,
+            w,
+            h,
+            bitmap,
+            bitmap_width,
+            bitmap_height,
+            show_text,
+            label_text,
+            font,
+            ptsize,
+            text_edge,
+        )
+
+        # Now create a cached version for future use
+        # Only cache if the button is in a stable state (not being hovered or actively changing)
+        if self.hover_button is not button:
+            temp_bitmap = wx.Bitmap(w, h)
+            temp_dc = wx.MemoryDC()
+            temp_dc.SelectObject(temp_bitmap)
+
+            # IMPORTANT: Clear the bitmap background first to avoid garbage pixels
+            # Ensure cached bitmap background matches current rendering context
+            current_bg = getattr(
+                self.parent, "GetBackgroundColour", lambda: self.ribbon_background
+            )()
+            temp_dc.SetBackground(wx.Brush(current_bg))
+            temp_dc.Clear()
+
+            # Render the same content to the cache bitmap using helper method
+            self._render_button_content(
+                temp_dc,
+                button,
+                0,
+                0,
+                w,
+                h,
+                bitmap,
+                bitmap_width,
+                bitmap_height,
+                show_text,
+                label_text,
+                font,
+                ptsize,
+                text_edge,
+            )
+
+            temp_dc.SelectObject(wx.NullBitmap)
+            del temp_dc
+
+            # Cache the rendered button
+            button.cache_drawing(cache_key, temp_bitmap)
+
+        # Dropdown is not cached since it's interactive and changes frequently
         if button.dropdown is not None and button.dropdown.position is not None:
             self._paint_dropdown(dc, button.dropdown)
-        dc.DestroyClippingRegion()
 
     def layout(self, dc: wx.DC, ribbon):
         """
@@ -1859,7 +2350,7 @@ class Art:
         1) We calculate the required button dimensions for all
         combinations of tiny/small/regular icons plus with/without labels
         2) We get the minimum amount of columns required to display
-        the buttons (taking the vertical extent ie the amount
+        the buttons (taking the vertical extent i.e. the amount
         of available rows into account).
         This will provide us with a solution that would need
         the least horizontal space.
@@ -1879,7 +2370,11 @@ class Art:
         # Now that we have gathered all information we can assign
         # the space...
         available_space = 0
-        for p, panel in enumerate(page.panels):
+        p = -1
+        for panel in page.panels:
+            if panel.visible_button_count == 0:
+                continue
+            p += 1
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
@@ -1912,11 +2407,14 @@ class Art:
                 sy = available_space
             panel_width += sx
             panel_height += sy
+            # print (f"{panel.label} was {panel.position} will be {x}, {y}, {x + panel_width}, {y + panel_height}")
             panel.position = x, y, x + panel_width, y + panel_height
             panel_max_x, panel_max_y = self.panel_layout(dc, panel)
+            # print (f"Max values: {panel_max_x}, {panel_max_y}")
             # Do we have more space than needed?
             available_space = 0
             if panel._overflow_position is None:
+                recalc = False
                 # print (f"({x}, {y}) - ({x + panel_width},  {y+panel_height}), sx={sx}, sy={sy}")
                 if is_horizontal:
                     available_space = max(
@@ -1925,6 +2423,7 @@ class Art:
                     # print (f"x={x + panel_width}, {panel_max_x} will become: {panel_max_x + self.panel_button_buffer}, available={available_space}")
                     if available_space != 0:
                         panel_width = panel_max_x + self.panel_button_buffer - x
+                        recalc = True
                 else:
                     available_space = max(
                         0, y + panel_height - panel_max_y - self.panel_button_buffer
@@ -1932,7 +2431,10 @@ class Art:
                     # print (f"y={y + panel_height}, {panel_max_y} will become: {panel_max_y + self.panel_button_buffer}, available={available_space}")
                     if available_space != 0:
                         panel_height = panel_max_y + self.panel_button_buffer - y
-                panel.position = x, y, x + panel_width, y + panel_height
+                        recalc = True
+                if recalc:
+                    panel.position = x, y, x + panel_width, y + panel_height
+                    self.panel_layout(dc, panel)
 
             if is_horizontal:
                 x += panel_width
@@ -1982,7 +2484,6 @@ class Art:
         y += self.panel_button_buffer
         panel._overflow.clear()
         panel._overflow_position = None
-        lastbutton = None
         for b, button in enumerate(list(panel.visible_buttons())):
             bitmapsize = button.max_size
             while bitmapsize > button.min_size:
@@ -2002,7 +2503,6 @@ class Art:
         target_width = button_width
         # print(f"Target: {panel.label} - {target_width}x{target_height}")
         for b, button in enumerate(list(panel.visible_buttons())):
-            button.overflow = False
             this_width = target_width
             this_height = target_height
             local_width = 1.25 * button.min_width
@@ -2046,20 +2546,9 @@ class Art:
                         x = panel.position[0] + self.panel_button_buffer
                         y += max_height + self.panel_button_buffer
                         button.position = x, y, x + this_width, y + max_height
-                if is_overflow:
-                    button.overflow = True
-                    panel._overflow.append(button)
-                    if panel._overflow_position is None:
-                        ppx, ppy, ppx1, ppy1 = panel.position
-                        panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
-                        if (
-                            lastbutton is not None
-                            and lastbutton.position[2] >= ppx1 - 15
-                        ):
-                            # That overlaps, not good, so add this button
-                            # to the overflow area too
-                            lastbutton.overflow = True
-                            panel._overflow.insert(0, lastbutton)
+                if is_overflow and panel._overflow_position is None:
+                    ppx, ppy, ppx1, ppy1 = panel.position
+                    panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
             else:
                 is_overflow = False
                 if y + this_height > panel.position[3]:
@@ -2084,39 +2573,57 @@ class Art:
                         y = panel.position[1] + self.panel_button_buffer
                         x += max_width + self.panel_button_buffer
                         button.position = x, y, x + max_width, y + this_height
-                if is_overflow:
-                    button.overflow = True
-                    panel._overflow.append(button)
-                    if panel._overflow_position is None:
-                        ppx, ppy, ppx1, ppy1 = panel.position
-                        panel._overflow_position = (ppx, ppy1 - 15, ppx1, ppy1)
-                        if (
-                            lastbutton is not None
-                            and lastbutton.position[3] >= ppy1 - 15
-                        ):
-                            # That overlaps, not good, so add this button
-                            # to the overflow area too
-                            lastbutton.overflow = True
-                            panel._overflow.insert(0, lastbutton)
+                if is_overflow and panel._overflow_position is None:
+                    ppx, ppy, ppx1, ppy1 = panel.position
+                    panel._overflow_position = (ppx, ppy1 - 15, ppx1, ppy1)
 
             # print(f"button: {button.position}")
-            self.button_layout(dc, button)
 
             if is_horizontal:
                 x += this_width
             else:
                 y += this_height
-            lastbutton = button
+        x = 0
+        y = 0
+        for button in panel.visible_buttons():
+            button.overflow = False
+            if button.position[2] > panel.position[2]:
+                button.overflow = True
+            elif button.position[3] > panel.position[3]:
+                button.overflow = True
+            elif (
+                is_horizontal
+                and panel._overflow_position is not None
+                and button.position[2] > panel._overflow_position[0]
+            ):
+                button.overflow = True
+            elif (
+                not is_horizontal
+                and panel._overflow_position is not None
+                and button.position[3] > panel._overflow_position[1]
+            ):
+                button.overflow = True
+            # if panel.label == "Create":
+            #     print (f"{button.label}: {button.overflow}, {button.position}, {panel.position}, {panel._overflow_position}")
+            if button.overflow:
+                panel._overflow.append(button)
+            else:
+                x = max(x, button.position[2])
+                y = max(y, button.position[3])
+            self.button_layout(dc, button)
+        if panel._overflow_position is not None:
+            x = max(x, panel._overflow_position[2])
+            y = max(y, panel._overflow_position[3])
+
         return min(x, panel.position[2]), min(y, panel.position[3])
 
     def button_calc(self, dc: wx.DC, button):
         bitmap = button.bitmap
         ptsize = self.get_font_size(button.icon_size)
-        font = wx.Font(
-            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-
+        # Use cached font instead of creating new one
+        font = self.get_cached_font(ptsize)
         dc.SetFont(font)
+
         bitmap_width, bitmap_height = bitmap.Size
         bitmap_height = max(bitmap_height, button.icon_size)
         bitmap_width = max(bitmap_width, button.icon_size)
@@ -2125,7 +2632,7 @@ class Art:
         text_width = 0
         text_height = 0
         if button.label and self.show_labels:
-            label_text = list(button.label.split(" "))
+            label_text = button.label.split(" ")
             i = 0
             while i < len(label_text):
                 # We know by definition that all single words
@@ -2138,12 +2645,14 @@ class Art:
                     if i < len(label_text) - 1:
                         nextword = label_text[i + 1]
                         test = word + " " + nextword
-                        tw, th = dc.GetTextExtent(test)
+                        # Use cached text extent
+                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
                         if tw < bitmap_width:
                             word = test
                             i += 1
                             cont = True
-                line_width, line_height = dc.GetTextExtent(word)
+                # Use cached text extent
+                line_width, line_height = self.get_cached_text_extent(dc, word, ptsize)
                 text_width = max(text_width, line_width)
                 text_height += line_height
                 i += 1
@@ -2183,9 +2692,9 @@ class Art:
             exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
-            gap = 5
+            gap = 15
             if bitmap_height < 30:
-                gap = 1
+                gap = 3
 
             # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
             button.dropdown.position = (
@@ -2218,4 +2727,16 @@ class Art:
             ptsize = 14
         else:
             ptsize = 16
+        return ptsize
+
+    def get_best_font_size(self, imgsize):
+        sizes = [(pt, amount) for pt, amount in self.font_sizes.items()]
+        sizes.sort(key=lambda e: e[1], reverse=True)
+        best = 32768
+        if len(sizes):
+            # Take the one where we have most...
+            best = sizes[0][0]
+        ptsize = self.get_font_size(imgsize)
+        if ptsize > best:
+            ptsize = best
         return ptsize

@@ -33,9 +33,6 @@ class BlobNode(Node):
         default_map["length"] = d
         return default_map
 
-    def drop(self, drag_node, modify=True):
-        return False
-
     def allow_save(self):
         """
         Returns false to prevent saving of blob types into operations.
@@ -44,8 +41,15 @@ class BlobNode(Node):
         return False
 
     @staticmethod
-    def hex_view(data, data_type):
-        header1 = f"Data-Type: {data_type}, Length={len(data)}\n"
+    def hex_view(data, data_type, info=''):
+        """
+        Render a hex dump with an optional info header.
+
+        data: bytes to display
+        data_type: mime type
+        info: an arbitrary string to append to the end of first line of header
+        """
+        header1 = f"Data-Type: {data_type}, Length={len(data)}{info}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
         if isinstance(data, str):
@@ -73,8 +77,16 @@ class BlobNode(Node):
         return header1 + header2 + "".join(hex_data)
 
     @staticmethod
-    def ascii_view(data, data_type):
-        header1 = f"Data-Type: {data_type}, Length={len(data)}\n"
+    def ascii_view(data, data_type, info=''):
+        """
+        Render an ascii view with an optional info header.
+
+        data: bytes to display
+        data_type: mime type
+        info: an arbitrary string to append to the end of first line of header
+        """
+
+        header1 = f"Data-Type: {data_type}, Length={len(data)}{info}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
         if isinstance(data, str):

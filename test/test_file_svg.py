@@ -1,9 +1,9 @@
 import os
 import unittest
-from test import bootstrap
 
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import Length
+from test import bootstrap
 
 
 class TestFileSVG(unittest.TestCase):

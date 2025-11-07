@@ -1,13 +1,40 @@
 import os
+import platform
 
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    get_default_icon_size,
+    icon_kerning_bigger,
+    icon_kerning_smaller,
+    icon_linegap_bigger,
+    icon_linegap_smaller,
+    icon_textalign_center,
+    icon_textalign_left,
+    icon_textalign_right,
+    icon_textsize_down,
+    icon_textsize_up,
+    icons8_choose_font,
+)
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxComboBox,
+    wxListBox,
+    wxListCtrl,
+    wxStaticBitmap,
+    wxStaticText,
+    wxToggleButton,
+)
 from meerk40t.kernel.kernel import signal_listener
-from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
+from meerk40t.core.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 _ = wx.GetTranslation
 
@@ -36,13 +63,16 @@ class FontGlyphPicker(wx.Dialog):
         )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.font = font
         self.icon_size = 32
         mainsizer = wx.BoxSizer(wx.VERTICAL)
-        self.list_glyphs = wx.ListCtrl(
+        self.list_glyphs = wxListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            context=self.context,
+            list_name="list_glyphpicker",
         )
         self.list_glyphs.AppendColumn("UC", format=wx.LIST_FORMAT_LEFT, width=75)
         self.list_glyphs.AppendColumn("ASCII", format=wx.LIST_FORMAT_LEFT, width=75)
@@ -51,12 +81,12 @@ class FontGlyphPicker(wx.Dialog):
         self.images = wx.ImageList()
         self.images.Create(width=self.icon_size, height=self.icon_size)
         self.list_glyphs.AssignImageList(self.images, wx.IMAGE_LIST_SMALL)
-        self.txt_result = wx.TextCtrl(self, wx.ID_ANY)
+        self.txt_result = TextCtrl(self, wx.ID_ANY)
         mainsizer.Add(self.list_glyphs, 1, wx.EXPAND, 0)
         mainsizer.Add(self.txt_result, 0, wx.EXPAND, 0)
 
-        self.btn_ok = wx.Button(self, wx.ID_OK, _("OK"))
-        self.btn_cancel = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
+        self.btn_ok = wxButton(self, wx.ID_OK, _("OK"))
+        self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
         box_sizer = wx.BoxSizer(wx.HORIZONTAL)
         box_sizer.Add(self.btn_ok, 0, 0, 0)
         box_sizer.Add(self.btn_cancel, 0, 0, 0)
@@ -64,7 +94,7 @@ class FontGlyphPicker(wx.Dialog):
 
         self.list_glyphs.Bind(wx.EVT_LEFT_DCLICK, self.on_dbl_click)
         self.SetSizer(mainsizer)
-
+        self.list_glyphs.load_column_widths()
         self.Layout()
         # end wxGlade
         self.load_font()
@@ -136,11 +166,8 @@ class FontGlyphPicker(wx.Dialog):
         def prepare_bitmap(geom, final_icon_width, final_icon_height, as_stroke=False):
             edge = 1
             strokewidth = 1
-            wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-            if self.context.themes.dark:
-                strcol = wx.WHITE
-            else:
-                strcol = wx.BLACK
+            wincol = self.context.themes.get("win_bg")
+            strcol = self.context.themes.get("win_fg")
 
             spen = wx.Pen()
             sbrush = wx.Brush()
@@ -258,9 +285,19 @@ class FontGlyphPicker(wx.Dialog):
             return
         as_stroke = getattr(cfont, "STROKE_BASED", False)
         for c in cfont.glyphs:
-            if ord(c) == 65535:
+            if isinstance(c, str):
+                if len(c) > 1:
+                    # print (f"Strange: {c}, use {idx} instead")
+                    continue
+                if ord(c) == 65535:
+                    continue
+                cstr = str(c)
+            elif isinstance(c, int):
+                if c == 65535:
+                    continue
+                cstr = chr(c)
+            else:
                 continue
-            cstr = str(c)
             hexa = cstr.encode("utf-8")
             item = self.list_glyphs.InsertItem(self.list_glyphs.ItemCount, hexa)
             self.list_glyphs.SetItem(item, 1, str(ord(cstr)))
@@ -269,7 +306,7 @@ class FontGlyphPicker(wx.Dialog):
             try:
                 cfont.render(
                     path,
-                    c,
+                    cstr,
                     True,
                     12.0,
                     1.0,
@@ -314,6 +351,35 @@ class FontGlyphPicker(wx.Dialog):
         return self.txt_result.GetValue()
 
 
+class TextVariables(wx.Panel):
+    def __init__(self, *args, context=None, textbox=None, **kwds):
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.textbox = textbox
+        self.context.themes.set_window_colors(self)
+        # populate listbox
+        choices = self.context.elements.mywordlist.get_variable_list()
+        self.lb_variables = wxListBox(self, wx.ID_ANY, choices=choices)
+        self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
+        sizer_h_variables = StaticBoxSizer(
+            self,
+            wx.ID_ANY,
+            _("Available Variables (double click to use)"),
+            wx.HORIZONTAL,
+        )
+        sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_h_variables)
+        self.Layout()
+        self.lb_variables.Bind(wx.EVT_LISTBOX_DCLICK, self.on_variable_dclick)
+
+    def on_variable_dclick(self, event):
+        svalue = event.GetString()
+        svalue = svalue[0 : svalue.find(" (")]
+        svalue = self.textbox.GetValue() + " {" + svalue + "}"
+        self.textbox.SetValue(svalue.strip(" "))
+
+
 class LineTextPropertyPanel(wx.Panel):
     """
     Panel for post-creation text property editing
@@ -330,41 +396,50 @@ class LineTextPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
+        self.context.setting(float, "last_font_size", float(Length("20px")))
+        self.context.setting(str, "last_font", "")
+
         self.node = node
         self.fonts = []
+
+        # We neeed this to avoid a crash under Linux when textselection is called too quickly
+        self._islinux = platform.system() == "Linux"
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
         sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
-        self.text_text = wx.TextCtrl(
+        self.text_text = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
         )
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
 
-        text_all_options = wx.BoxSizer(wx.HORIZONTAL)
-
-        align_options = [_("Left"), _("Center"), _("Right")]
-        self.rb_align = wx.RadioBox(
-            self,
-            wx.ID_ANY,
-            "",
-            wx.DefaultPosition,
-            wx.DefaultSize,
-            align_options,
-            len(align_options),
-            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
-        )
-        self.rb_align.SetToolTip(_("Textalignment for multi-lines"))
-        text_all_options.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
-        text_all_options.Add(text_options, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        iconsize = dip_size(self, 25, 25)[0]
+
+        align_options = (_("Left"), _("Center"), _("Right"))
+        align_icons = (icon_textalign_left, icon_textalign_center, icon_textalign_right)
+        self.rb_align = []
+        ttip_main = _("Textalignment for multi-lines")
+        for ttip_sub, icon in zip(align_options, align_icons):
+            btn = wxToggleButton(self, wx.ID_ANY)
+            btn.SetToolTip(f"{ttip_main}: {ttip_sub}")
+            btn.SetValue(False)
+            btn.SetBitmap(icon.GetBitmap(resize=iconsize))
+            self.rb_align.append(btn)
+            text_options.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        text_options.AddSpacer(25)
+
+        self.btn_bigger = wxButton(self, wx.ID_ANY)
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=iconsize))
         text_options.Add(self.btn_bigger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller = wxButton(self, wx.ID_ANY)
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=iconsize))
         text_options.Add(self.btn_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
@@ -376,29 +451,44 @@ class LineTextPropertyPanel(wx.Panel):
             + _("- Right click will reset value to default")
         )
 
-        self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
+        self.btn_bigger_spacing = wxButton(self, wx.ID_ANY)
         self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap") + msg)
+        self.btn_bigger_spacing.SetBitmap(
+            icon_kerning_bigger.GetBitmap(resize=iconsize)
+        )
         text_options.Add(self.btn_bigger_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
+        self.btn_smaller_spacing = wxButton(self, wx.ID_ANY)
         self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap") + msg)
+        self.btn_smaller_spacing.SetBitmap(
+            icon_kerning_smaller.GetBitmap(resize=iconsize)
+        )
         text_options.Add(self.btn_smaller_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
 
-        self.btn_attrib_lineplus = wx.Button(self, id=wx.ID_ANY, label="v")
-        self.btn_attrib_lineminus = wx.Button(self, id=wx.ID_ANY, label="^")
+        self.btn_attrib_lineplus = wxButton(self, id=wx.ID_ANY)
+        self.btn_attrib_lineminus = wxButton(self, id=wx.ID_ANY)
         text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
-        self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
+        self.btn_attrib_lineplus.SetBitmap(
+            icon_linegap_bigger.GetBitmap(resize=iconsize)
+        )
+        self.btn_attrib_lineminus.SetBitmap(
+            icon_linegap_smaller.GetBitmap(resize=iconsize)
+        )
+        self.check_weld = wxCheckBox(self, wx.ID_ANY, "")
         self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
         text_options.AddSpacer(25)
         text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         for btn in (
+            self.rb_align[0],
+            self.rb_align[1],
+            self.rb_align[2],
             self.btn_bigger,
             self.btn_smaller,
             self.btn_bigger_spacing,
@@ -407,25 +497,40 @@ class LineTextPropertyPanel(wx.Panel):
             self.btn_attrib_lineplus,
         ):
             btn.SetMinSize(dip_size(self, 35, 35))
-
-        sizer_fonts = StaticBoxSizer(
-            self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
+        self.notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self.context.themes.set_window_colors(self.notebook)
+        self.panel_variables = TextVariables(
+            self.notebook, wx.ID_ANY, context=self.context, textbox=self.text_text
         )
-
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        page_main = wx.Panel(self.notebook, id=wx.ID_ANY)
+        sizer_fonts = StaticBoxSizer(
+            page_main, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
+        )
+        self.warning_label = wxStaticText(page_main, wx.ID_ANY, "")
+        self.warning_label.Show(False)
+        self.warning_label.SetForegroundColour(wx.Colour(255, 0, 0))
+        self.warning_label.SetBackgroundColour(self.context.themes.get("win_bg"))
+        self.list_fonts = wxListBox(page_main, wx.ID_ANY)
         self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
-        sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
-
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(page_main, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
-        sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
+        sizer_fonts.Add(self.warning_label, 0, wx.EXPAND, 0)
+        sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
+        sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
+        page_main.SetSizer(sizer_fonts)
+        page_main.Layout()
+        page_main.Reparent(self.notebook)
+        self.panel_variables.Reparent(self.notebook)
+        self.notebook.AddPage(page_main, _("Fonts"))
+        self.notebook.AddPage(self.panel_variables, _("Text-Variables"))
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
-        main_sizer.Add(text_all_options, 0, wx.EXPAND, 0)
-        main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
+        main_sizer.Add(text_options, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.notebook, 0, wx.EXPAND, 0)
+        # main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
         self.btn_bigger.Bind(wx.EVT_BUTTON, self.on_button_bigger)
@@ -440,7 +545,8 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.btn_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
-        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+        for btn in self.rb_align:
+            btn.Bind(wx.EVT_TOGGLEBUTTON, self.on_radio_box)
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.text_text.Bind(wx.EVT_RIGHT_DOWN, self.on_context_menu)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
@@ -472,6 +578,18 @@ class LineTextPropertyPanel(wx.Panel):
         if self.node is None or not self.accepts(node):
             self.Hide()
             return
+        font_name = getattr(self.node, "mkfont", None)
+        font_info = self.context.fonts.full_name(font_name)
+        existing_font = font_info is not None
+
+        if not existing_font:
+            self.warning_label.SetLabel(
+                _("Font missing: {fontname}").format(fontname=font_name)
+            )
+            self.warning_label.Show(True)
+        else:
+            self.warning_label.SetLabel("")
+            self.warning_label.Show(False)
         if not hasattr(self.node, "mkfontspacing") or self.node.mkfontspacing is None:
             self.node.mkfontspacing = 1.0
         if not hasattr(self.node, "mklinegap") or self.node.mklinegap is None:
@@ -486,7 +604,8 @@ class LineTextPropertyPanel(wx.Panel):
             idx = vals.index(self.node.mkalign)
         except IndexError:
             idx = 0
-        self.rb_align.SetSelection(idx)
+        for b_idx, btn in enumerate(self.rb_align):
+            btn.SetValue(bool(idx == b_idx))
 
         self.load_directory()
         self.text_text.ChangeValue(str(node.mktext))
@@ -505,6 +624,8 @@ class LineTextPropertyPanel(wx.Panel):
         self.context.fonts.update_linetext(self.node, vtext)
         self.context.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+        self.context.last_font = self.node.mkfont
+        self.context.last_font_size = self.node.mkfontsize
 
     def on_linegap_reset(self, event):
         if self.node is None:
@@ -543,7 +664,13 @@ class LineTextPropertyPanel(wx.Panel):
         self.update_node()
 
     def on_radio_box(self, event):
-        new_anchor = event.GetInt()
+        evt_btn = event.GetEventObject()
+        for idx, btn in enumerate(self.rb_align):
+            if btn is evt_btn:
+                new_anchor = idx
+                btn.SetValue(True)
+            else:
+                btn.SetValue(False)
         if new_anchor == 0:
             self.node.mkalign = "start"
         elif new_anchor == 1:
@@ -626,7 +753,11 @@ class LineTextPropertyPanel(wx.Panel):
 
     def on_context_menu(self, event):
         def on_paste(event):
-            self.text_text.Paste()
+            # Seems to crash under Linux in certain situations
+            try:
+                self.text_text.Paste()
+            except Exception as e:
+                print(f"Paste failed: {e}")
 
         def on_glyph(event):
             mydlg = FontGlyphPicker(
@@ -657,6 +788,15 @@ class LineTextPropertyPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
+    def signal(self, signalstr, myargs):
+        if signalstr == "textselect" and self.IsShown():
+            # This can crash for completely unknown reasons under Linux!
+            # Hypothesis: you can't focus / SelectStuff if the control is not yet shown.
+            if self._islinux:
+                return
+            self.text_text.SelectAll()
+            self.text_text.SetFocus()
+
 
 class PanelFontSelect(wx.Panel):
     """
@@ -668,6 +808,7 @@ class PanelFontSelect(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -679,7 +820,7 @@ class PanelFontSelect(wx.Panel):
         sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
         for extension in fontinfo:
             info = fontinfo[extension]
-            checker = wx.CheckBox(self, wx.ID_ANY, info[0])
+            checker = wxCheckBox(self, wx.ID_ANY, info[0])
             checker.SetValue(True)
             checker.Bind(wx.EVT_CHECKBOX, self.on_checker(extension))
             checker.SetToolTip(
@@ -693,39 +834,48 @@ class PanelFontSelect(wx.Panel):
         )
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
         sizer_fonts.Add(sizer_checker, 0, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_fonts.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
-        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        picsize = dip_size(self, 32, 32)
+        icon_size = picsize[0]
+        bsize = icon_size * self.context.root.bitmap_correction_scale
+
+        self.btn_bigger = wxButton(self, wx.ID_ANY)
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=bsize))
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
         sizer_buttons.Add(self.btn_bigger, 0, wx.EXPAND, 0)
 
-        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller = wxButton(self, wx.ID_ANY)
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=bsize))
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_buttons.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
         sizer_buttons.AddSpacer(25)
 
-        self.btn_align_left = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_left = wxButton(self, wx.ID_ANY)
+        self.btn_align_left.SetBitmap(icon_textalign_left.GetBitmap(resize=bsize))
         self.btn_align_left.SetToolTip(_("Align text on the left side"))
         sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
 
-        self.btn_align_center = wx.Button(self, wx.ID_ANY, "|")
+        self.btn_align_center = wxButton(self, wx.ID_ANY)
+        self.btn_align_center.SetBitmap(icon_textalign_center.GetBitmap(resize=bsize))
         self.btn_align_center.SetToolTip(_("Align text around the center"))
         sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
 
-        self.btn_align_right = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_right = wxButton(self, wx.ID_ANY)
+        self.btn_align_right.SetBitmap(icon_textalign_right.GetBitmap(resize=bsize))
         self.btn_align_right.SetToolTip(_("Align text on the right side"))
         sizer_buttons.Add(self.btn_align_right, 0, wx.EXPAND, 0)
 
@@ -736,9 +886,9 @@ class PanelFontSelect(wx.Panel):
             self.btn_bigger,
             self.btn_smaller,
         ):
-            btn.SetMaxSize(dip_size(self, 32, -1))
+            btn.SetMaxSize(dip_size(self, icon_size + 4, -1))
 
-        lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
+        lbl_spacer = wxStaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
         self.SetSizer(mainsizer)
@@ -831,7 +981,9 @@ class HersheyFontSelector(MWindow):
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(
-            icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_choose_font.GetBitmap(
+                resize=0.5 * get_default_icon_size(self.context)
+            )
         )
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
@@ -853,6 +1005,10 @@ class HersheyFontSelector(MWindow):
         # Suppress = True
         return "", "Font-Selector", True
 
+    @staticmethod
+    def helptext():
+        return _("Pick a font to use for vector text")
+
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
         # Signal provides a tuple with (togglegroup, id)
@@ -870,22 +1026,25 @@ class HersheyFontSelector(MWindow):
 
 
 class PanelFontManager(wx.Panel):
-    """
-    Vector Font Manager
-    """
+    """PanelFontManager - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for fontmanager functionality. Features button controls for user interaction. Integrates with linetext, icons for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for fontmanager functionality. Key controls include "OK" (button), "Cancel" (button), "Import" (button)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("vectortext")
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
         self.font_infos = []
 
-        self.text_info = wx.TextCtrl(
+        self.text_info = TextCtrl(
             self,
             wx.ID_ANY,
             _(
@@ -907,7 +1066,7 @@ class PanelFontManager(wx.Panel):
         )
         mainsizer.Add(sizer_directory, 0, wx.EXPAND, 0)
 
-        self.text_fontdir = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_fontdir = TextCtrl(self, wx.ID_ANY, "")
         sizer_directory.Add(self.text_fontdir, 1, wx.EXPAND, 0)
         self.text_fontdir.SetToolTip(
             _(
@@ -915,7 +1074,7 @@ class PanelFontManager(wx.Panel):
             )
         )
 
-        self.btn_dirselect = wx.Button(self, wx.ID_ANY, "...")
+        self.btn_dirselect = wxButton(self, wx.ID_ANY, "...")
         sizer_directory.Add(self.btn_dirselect, 0, wx.EXPAND, 0)
 
         choices = []
@@ -934,26 +1093,26 @@ class PanelFontManager(wx.Panel):
         sizer_fonts = StaticBoxSizer(self, wx.ID_ANY, _("Fonts"), wx.VERTICAL)
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
-        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(self, wx.ID_ANY)
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
-        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_fonts.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
-        self.btn_add = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.btn_add = wxButton(self, wx.ID_ANY, _("Import"))
         sizer_buttons.Add(self.btn_add, 0, wx.EXPAND, 0)
 
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         sizer_buttons.Add(self.btn_delete, 0, wx.EXPAND, 0)
 
-        lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
+        lbl_spacer = wxStaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
-        self.btn_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
+        self.btn_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))
         sizer_buttons.Add(self.btn_refresh, 0, wx.EXPAND, 0)
 
         self.webresources = [
@@ -967,7 +1126,7 @@ class PanelFontManager(wx.Panel):
             _("Hershey Fonts - #2"),
             _("Autocad-SHX-Fonts"),
         ]
-        self.combo_webget = wx.ComboBox(
+        self.combo_webget = wxComboBox(
             self,
             wx.ID_ANY,
             choices=choices,
@@ -1036,7 +1195,7 @@ class PanelFontManager(wx.Panel):
             None,
             _("Choose font directory"),
             fontdir,
-            style=wx.DD_DEFAULT_STYLE
+            style=wx.DD_DEFAULT_STYLE,
             # | wx.DD_DIR_MUST_EXIST
         )
         if dlg.ShowModal() == wx.ID_OK:
@@ -1117,7 +1276,7 @@ class PanelFontManager(wx.Panel):
             defaultDir=defdir,
             defaultFile="",
             wildcard=wildcard,
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_PREVIEW
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_PREVIEW,
             #            | wx.FD_SHOW_HIDDEN,
         )
         try:
@@ -1286,6 +1445,9 @@ class PanelFontManager(wx.Panel):
         # Reload....
         self.on_text_directory(None)
 
+    def pane_hide(self):
+        self.sysdirs.pane_hide()
+
 
 # end of class FontManager
 
@@ -1320,6 +1482,10 @@ class HersheyFontManager(MWindow):
     def submenu():
         # suppress in tool-menu
         return "", "Font-Manager", True
+
+    @staticmethod
+    def helptext():
+        return _("Manage the fonts available to MeerK40t")
 
 
 def register_hershey_stuff(kernel):

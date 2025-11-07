@@ -1,11 +1,18 @@
 import wx
 
-from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
+from meerk40t.core.elements.element_types import (
+    effect_nodes,
+    elem_group_nodes,
+    elem_nodes,
+    op_nodes,
+    place_nodes,
+)
 from meerk40t.core.node.image_raster import ImageRasterNode
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     EmptyIcon,
     icon_console,
+    icon_distort,
     icon_effect_hatch,
     icon_effect_wobble,
     icon_external,
@@ -32,10 +39,11 @@ _ = wx.GetTranslation
 
 
 class FormatterPanel(wx.Panel):
-    """
-    FormtterPanel is a panel that should work for all devices (hence in its own directory)
-    It allows to define default formatting strings per operation
-    """
+    """FormatterPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for formatter functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for formatter functionality in MeerK40t."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
@@ -43,6 +51,7 @@ class FormatterPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("formatter")
 
         self.data = {}
@@ -60,7 +69,7 @@ class FormatterPanel(wx.Panel):
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
-            "effect warp": icon_effect_wobble,
+            "effect warp": icon_distort,
             "file": icons8_file,
             "group": icons8_group_objects,
             "elem point": icon_points,
@@ -98,8 +107,9 @@ class FormatterPanel(wx.Panel):
                     + "\n"
                     + "Inactive: Full power will be shown as 1000 ppi"
                 ),
+                # Hint for translation _("General")
                 "subsection": "_10_General",
-                "signals": ("rebuild_tree", "power_percent"),
+                "signals": ("rebuild_tree", "power_percent", "restart"),
             },
             {
                 "attr": "use_mm_min_for_speed_display",
@@ -112,12 +122,13 @@ class FormatterPanel(wx.Panel):
                     + "\n"
                     + "Inactive: Speed will be shown in mm/s"
                 ),
+                # Hint for translation _("General")
                 "subsection": "_10_General",
-                "signals": ("rebuild_tree", "speed_min"),
+                "signals": ("rebuild_tree", "speed_min", "restart"),
             },
         ]
         testsize = dip_size(self, 20, 20)
-        imgsize = testsize[1]
+        imgsize = testsize[1] * self.context.root.bitmap_correction_scale
         for node in self.node_list:
             if node in images:
                 image = images[node].GetBitmap(
@@ -127,18 +138,27 @@ class FormatterPanel(wx.Panel):
                 # print (f"Did not find {node}")
                 continue
                 # image = EmptyIcon(size=imgsize, color=None, msg="??").GetBitmap()
-            if node.startswith("effect"):
-                sectname = "Elements (Effects)"
+            if node in effect_nodes:
+                sectname = "_30_Elements (Effects)"
+            elif node in place_nodes:
+                sectname = "_50_Placements"
+            elif node in elem_nodes:
+                sectname = "_10_Elements"
             elif node in elem_group_nodes:
-                sectname = "Elements"
-            elif node in elem_group_nodes:
-                sectname = "Grouping + Files"
+                sectname = "_20_Grouping + Files"
             elif node.startswith("util"):
-                sectname = "Operations (Special)"
+                sectname = "_50_Operations (Special)"
             elif node in op_nodes:
-                sectname = "Operations"
+                sectname = "_40_Operations"
             else:
                 sectname = ""
+            # Hint for translation
+            # _("Elements")
+            # _("Operations")
+            # _("Grouping + Files")
+            # _("Operations (Special)")
+            # _("Elements (Effects)")
+            # _("Placements")
             lbl = node.replace(" ", "_")
             default = self.context.elements.lookup(f"format/{node}")
             if default is None:
@@ -191,54 +211,9 @@ class FormatterPanel(wx.Panel):
     def get_node_patterns(self, nodetype):
         from PIL import Image
 
-        from meerk40t.core.node.elem_ellipse import EllipseNode
-        from meerk40t.core.node.elem_image import ImageNode
-        from meerk40t.core.node.elem_line import LineNode
-        from meerk40t.core.node.elem_path import PathNode
-        from meerk40t.core.node.elem_point import PointNode
-        from meerk40t.core.node.elem_polyline import PolylineNode
-        from meerk40t.core.node.elem_rect import RectNode
-        from meerk40t.core.node.elem_text import TextNode
-        from meerk40t.core.node.filenode import FileNode
-        from meerk40t.core.node.groupnode import GroupNode
-        from meerk40t.core.node.op_cut import CutOpNode
-        from meerk40t.core.node.op_dots import DotsOpNode
-        from meerk40t.core.node.op_engrave import EngraveOpNode
-        from meerk40t.core.node.op_image import ImageOpNode
-        from meerk40t.core.node.op_raster import RasterOpNode
-        from meerk40t.core.node.refnode import ReferenceNode
-        from meerk40t.core.node.util_console import ConsoleOperation
-        from meerk40t.core.node.util_goto import GotoOperation
-        from meerk40t.core.node.util_home import HomeOperation
-        from meerk40t.core.node.util_input import InputOperation
-        from meerk40t.core.node.util_output import OutputOperation
-        from meerk40t.core.node.util_wait import WaitOperation
+        # Get dictionary with all nodetypes
+        from meerk40t.core.node.bootstrap import bootstrap
 
-        bootstrap = {
-            "op cut": CutOpNode,
-            "op engrave": EngraveOpNode,
-            "op raster": RasterOpNode,
-            "op image": ImageOpNode,
-            "op dots": DotsOpNode,
-            "util console": ConsoleOperation,
-            "util wait": WaitOperation,
-            "util home": HomeOperation,
-            "util goto": GotoOperation,
-            "util input": InputOperation,
-            "util output": OutputOperation,
-            "group": GroupNode,
-            "elem ellipse": EllipseNode,
-            "elem line": LineNode,
-            "elem rect": RectNode,
-            "elem path": PathNode,
-            "elem point": PointNode,
-            "elem polyline": PolylineNode,
-            "elem image": ImageNode,
-            "elem text": TextNode,
-            # "image raster": ImageRasterNode,
-            "reference": ReferenceNode,
-            "file": FileNode,
-        }
         node = None
         available = ""
         if nodetype in bootstrap:

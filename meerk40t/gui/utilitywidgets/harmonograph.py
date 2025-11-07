@@ -190,7 +190,7 @@ class HarmonographWidget(Widget):
             size * -2,
             size * 0.5,
             size * -1,
-            icons.icons8_circled_right.GetBitmap(use_theme=False, resize=50),
+            icons.icons8_circled_right.GetBitmap(use_theme=False, resize=icons.get_default_icon_size(self.context)),
             self.set_random_harmonograph,
         )
         random_widget.background_brush = wx.WHITE_BRUSH
@@ -324,9 +324,12 @@ class HarmonographWidget(Widget):
                 t.line((m[0], m[1]))
             self.process_matrix()
             t *= self.shape_matrix
-            node = elements.elem_branch.add(path=abs(t), type="elem path")
-            node.stroke_width = elements.default_strokewidth
-            elements.classify([node])
+            # _("Create path")
+            with elements.undoscope("Create path"):
+                node = elements.elem_branch.add(path=abs(t), type="elem path")
+                node.stroke_width = elements.default_strokewidth
+                if elements.classify_new:
+                    elements.classify([node])
             self.parent.remove_widget(self)
         except IndexError:
             pass

@@ -25,10 +25,9 @@ def plugin(kernel, lifecycle=None):
             {
                 "provider": "provider/device/ruida",
                 "friendly_name": _("K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"),
-                "extended_info": _("This driver is incomplete. Use at your own risk."),
+                "extended_info": _("This driver is incomplete. Use at your own risk.") + "\n" + _("Please use udp_connection for now!"),
                 "priority": -1,
-                "family": _("CO2-Laser"),
-                "family_priority": 0,
+                "family": _("K-Series CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -94,6 +93,7 @@ def plugin(kernel, lifecycle=None):
             jogless=False,
             man_in_the_middle=None,
             bridge=False,
+            remainder=None,
             **kwargs,
         ):
             """
@@ -102,10 +102,14 @@ def plugin(kernel, lifecycle=None):
             controls that type of device. This would then be sent to the device in a
             somewhat agnostic fashion.
             """
+            if remainder and remainder.lower() in ("stop", "quit"):
+                quit = True
+
             root = kernel.root
             ruidacontrol = root.device.lookup("ruidacontrol")
             if ruidacontrol is None:
                 if quit:
+                    channel(_("No control instance to stop."))
                     return
                 ruidacontrol = RuidaControl(root)
                 root.device.register("ruidacontrol", ruidacontrol)

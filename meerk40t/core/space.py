@@ -96,7 +96,10 @@ class CoordinateSystem(Service):
 
     @signal_listener("view;realized")
     def update_realize(self, origin, *args):
-        self.update_bounds(0, 0, self.device.view.width, self.device.view.height)
+        try:
+            self.update_bounds(0, 0, self.device.view.width, self.device.view.height)
+        except AttributeError:
+            pass
 
     def origin_zero(self):
         return self.origin_x * self.width, self.origin_y * self.height

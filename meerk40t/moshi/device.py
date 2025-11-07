@@ -5,7 +5,9 @@ Moshiboard Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+import meerk40t.constants as mkconst
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -48,6 +50,16 @@ class MoshiDevice(Service, Status):
         self.setting(int, "rejected_count", 0)
         self.setting(int, "rapid_speed", 40)
 
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
+
         _ = self._
         choices = [
             {
@@ -57,6 +69,7 @@ class MoshiDevice(Service, Status):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                # Hint for translation _("General")
                 "section": "_00_General",
                 "signals": "device;renamed",
             },
@@ -67,8 +80,10 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "section": "_10_Dimensions",
-                "subsection": "Bed",
+                # Hint for translation _("General")
+                "section": "_00_General",
+                # Hint for translation _("Dimensions")
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -78,8 +93,23 @@ class MoshiDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "section": "_10_Dimensions",
-                "subsection": "Bed",
+                # Hint for translation _("General")
+                "section": "_00_General",
+                # Hint for translation _("Dimensions")
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                # Hint for translation _("General")
+                "section": "_00_General",
+                # Hint for translation _("Dimensions")
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -91,7 +121,9 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Scale")
                 "subsection": "_05_Scale",
             },
             {
@@ -103,8 +135,38 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
+                # Hint for translation _("Scale")
                 "subsection": "_05_Scale",
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                # Hint for translation _("Laser Parameters")
+                "section": "_40_Laser Parameters",
+                # Hint for translation _("User Offset")
+                "subsection": "_20_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                # Hint for translation _("Laser Parameters")
+                "section": "_40_Laser Parameters",
+                # Hint for translation _("User Offset")
+                "subsection": "_20_User Offset",
             },
             {
                 "attr": "flip_x",
@@ -113,8 +175,10 @@ class MoshiDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
-                "subsection": "_10_Flip Axis",
+                # Hint for translation _("Flip Axis")
+                "subsection": "_30_Flip Axis",
             },
             {
                 "attr": "flip_y",
@@ -123,8 +187,10 @@ class MoshiDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
-                "subsection": "_10_Flip Axis",
+                # Hint for translation _("Flip Axis")
+                "subsection": "_30_Flip Axis",
             },
             {
                 "attr": "swap_xy",
@@ -135,8 +201,10 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
-                "subsection": "_10_Flip Axis",
+                # Hint for translation _("Flip Axis")
+                "subsection": "_30_Flip Axis",
             },
             {
                 "attr": "home_corner",
@@ -154,8 +222,9 @@ class MoshiDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
+                # Hint for translation _("Laser Parameters")
                 "section": "_40_Laser Parameters",
-                "subsection": "_30_" + _("Home position"),
+                "subsection": "_40_" + _("Home position"),
             },
             {
                 "attr": "interp",
@@ -164,6 +233,25 @@ class MoshiDevice(Service, Status):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+                # Hint for translation _("Behaviour")
+                "section": "_20_Behaviour",
+            },
+            {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _(
+                        "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
+                    )
+                    + "\n"
+                    + _(
+                        "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
+                    )
+                ),
+                # Hint for translation _("Behaviour")
                 "section": "_20_Behaviour",
             },
             {
@@ -175,10 +263,52 @@ class MoshiDevice(Service, Status):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                # Hint for translation _("Interface")
                 "section": "_30_Interface",
+            },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
             },
         ]
         self.register_choices("bed_dim", choices)
+
+        choices = [
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed",
+            },
+        ]
+        self.register_choices("coolant", choices)
+
+        self.register_choices("moshi-effects", get_effect_choices(self))
+        self.register_choices(
+            "moshi-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -214,6 +344,9 @@ class MoshiDevice(Service, Status):
 
         self.driver.out_pipe = self.controller.write
         self.driver.out_real = self.controller.realtime
+
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
+
         _ = self.kernel.translation
 
         @self.console_command("usb_connect", help=_("Connect USB"))
@@ -358,6 +491,8 @@ class MoshiDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     @signal_listener("home_corner")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -382,6 +517,7 @@ class MoshiDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
@@ -393,3 +529,34 @@ class MoshiDevice(Service, Status):
         )
         self.view.realize()
         self.signal("view;realized")
+
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (
+                mkconst.RASTER_GREEDY_H,
+                mkconst.RASTER_GREEDY_V,
+                mkconst.RASTER_SPIRAL,
+                mkconst.RASTER_DIAGONAL,
+            ),  # Greedy loses registration way too often to be reliable
+            "gantry": True,
+            "legacy": self.legacy_raster,
+        }
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        return (
+            "mock"
+            if self.mock
+            else f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
+        )
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

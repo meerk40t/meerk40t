@@ -10,7 +10,7 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class RibbonNode:
@@ -582,15 +582,17 @@ class RibbonTool(ToolWidget):
             if not t:
                 return RESPONSE_CONSUME
             elements = self.scene.context.elements
-            node = elements.elem_branch.add(
-                geometry=t,
-                type="elem path",
-                stroke_width=elements.default_strokewidth,
-                stroke=elements.default_stroke,
-                fill=elements.default_fill,
-            )
-            if elements.classify_new:
-                elements.classify([node])
+            # _("Create path")
+            with elements.undoscope("Create path"):
+                node = elements.elem_branch.add(
+                    geometry=t,
+                    type="elem path",
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
+                )
+                if elements.classify_new:
+                    elements.classify([node])
             self.ribbon.clear()
             response = RESPONSE_CONSUME
         return response

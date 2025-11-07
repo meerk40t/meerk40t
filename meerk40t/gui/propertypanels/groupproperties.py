@@ -3,7 +3,7 @@ import time
 
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
 
 # from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects
@@ -22,9 +22,10 @@ class ElemcountPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.node = node
         # Shall we display id / label?
-        self.text_elements = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_elements = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer_id = StaticBoxSizer(self, wx.ID_ANY, _("Elements:"), wx.VERTICAL)
@@ -60,6 +61,7 @@ class GroupPropertiesPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         self.node = node
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=node)
@@ -121,12 +123,13 @@ class FilePropertiesPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
 
         self.node = node
-        self.text_filename = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_path = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_datetime = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        self.text_size = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_filename = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_path = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_datetime = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_size = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.panel_ct = ElemcountPanel(
             self, id=wx.ID_ANY, context=self.context, node=node
         )

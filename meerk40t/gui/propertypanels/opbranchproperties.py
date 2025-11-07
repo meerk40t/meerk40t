@@ -7,12 +7,21 @@ _ = wx.GetTranslation
 
 
 class OpBranchPanel(wx.Panel):
+    """OpBranchPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for opbranch functionality. Integrates with loop_continuous, loop_n for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for opbranch functionality in MeerK40t."""
+
+    """OpBranchPanel - User interface panel for laser cutting operations"""
+
     name = "Loop Properties"
 
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("opbranchproperty")
 
         self.operation = node

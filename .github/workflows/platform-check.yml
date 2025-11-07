@@ -30,7 +30,7 @@ jobs:
         system_profiler -detailLevel full | tee artifacts/${{ matrix.os }}_system_profile_full.txt
 
     - name: Upload analysis results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: System-Information
         path: artifacts/
@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-22.04]
 
 
     steps:
@@ -55,7 +55,7 @@ jobs:
         sudo lshw -html > artifacts/${{ matrix.os }}-lshw.html
 
     - name: Upload analysis results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: System-Information
         path: artifacts/
@@ -67,7 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2016, windows-2019, windows-2022]
+        os: [windows-2022, windows-latest]
 
 
     steps:
@@ -80,7 +80,7 @@ jobs:
         systeminfo > artifacts/${{ matrix.os }}-systeminfo.txt
 
     - name: Upload analysis results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: System-Information
         path: artifacts/

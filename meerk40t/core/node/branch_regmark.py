@@ -13,7 +13,7 @@ class BranchRegmarkNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Regmarks"
+        default_map["element_type"] = "Regmarks" if self.label is None else self.label
         return default_map
 
     def remove_references(self, node):
@@ -24,7 +24,18 @@ class BranchRegmarkNode(Node):
         for ref in list(node.children):
             self.remove_references(ref)
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type == "group"
+        ):
+            return True
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
+        if not self.can_drop(drag_node):
+            return False
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.remove_references(drag_node)

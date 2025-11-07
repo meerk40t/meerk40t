@@ -1,5 +1,49 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains a collection of console commands that manage and implement the elements system within the application.
+It provides functionalities for creating, modifying, and classifying various geometric shapes and elements.
+
+Functions:
+- plugin: Initializes the console commands for the elements system.
+- init_commands: Sets up the console commands related to shapes and elements.
+- element_circle: Creates a circle element at specified coordinates with a given radius.
+- element_circle_r: Creates a circle element at the origin with a specified radius.
+- element_ellipse: Creates an ellipse element with specified center and radii.
+- element_rect: Draws a rectangle with optional rounded corners.
+- element_line: Draws a line between two specified points.
+- effect_remove: Removes effects from selected elements.
+- effect_hatch: Adds a hatch effect to selected elements.
+- effect_wobble: Adds a wobble effect to selected elements.
+- element_text: Creates a text element with specified content and font size.
+- element_text_anchor: Sets the text anchor for a text element.
+- element_text_edit: Edits the text content of a text element.
+- element_property_set: Sets a specified property to a new value for selected elements.
+- recalc: Recalculates the bounds of selected elements.
+- simplify_path: Simplifies the geometry of selected paths.
+- create_pattern: Creates a pattern from selected elements.
+- element_poly: Creates a polygon or polyline from specified points.
+- element_pathd_info: Lists the path data of recognized paths.
+- element_path: Creates a path element from SVG path syntax.
+- element_stroke_width: Adjusts the stroke width of selected elements.
+- element_cap: Sets the line cap style for selected paths.
+- element_join: Sets the line join style for selected paths.
+- element_rule: Sets the fill rule for selected paths.
+- element_stroke: Sets the stroke color for selected elements.
+- element_fill: Sets the fill color for selected elements.
+- element_frame: Draws a frame around the currently selected elements.
+- element_rotate: Rotates selected elements by a specified angle.
+- element_scale: Scales selected elements by specified factors.
+- element_area: Provides information about or changes the area of selected elements.
+- element_translate: Translates selected elements by specified offsets.
+- element_position: Sets the position of selected elements to specified coordinates.
+- element_move_to_laser: Moves selected elements to the current position of the laser head.
+- element_resize: Resizes selected elements to specified dimensions.
+- element_matrix: Sets the transformation matrix for selected elements.
+- reset: Resets affine transformations for selected elements.
+- element_reify: Reifies affine transformations for selected elements.
+- element_circ_arc_path: Converts paths to use circular arcs.
+- element_classify: Classifies selected elements into operations.
+- declassify: Declassifies selected elements.
+
 """
 
 from math import sqrt
@@ -22,7 +66,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr, stitch_geometries, stitcheable_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -41,27 +85,37 @@ def init_commands(kernel):
     # ==========
     # ELEMENT/SHAPE COMMANDS
     # ==========
-    @self.console_argument("x_pos", type=Length)
-    @self.console_argument("y_pos", type=Length)
-    @self.console_argument("r_pos", type=Length)
+    @self.console_argument("x_pos", type=str, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=str, help=_("Y-coordinate of center"))
+    @self.console_argument("r_pos", type=str, help=_("Radius of the circle"))
     @self.console_command(
         "circle",
-        help=_("circle <x> <y> <r>"),
+        help="circle <x> <y> <r> : " + _("create a circle element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
-        node = self.elem_branch.add(
-            cx=float(x_pos),
-            cy=float(y_pos),
-            rx=float(r_pos),
-            ry=float(r_pos),
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rp = float(Length(r_pos, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        with self.node_lock:
+            node = self.elem_branch.add(
+                cx=xp,
+                cy=yp,
+                rx=rp,
+                ry=rp,  # Secondary radius equal to primary radius for circle
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem ellipse",
+            )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -71,94 +125,156 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("r_pos", type=Length)
-    @self.console_command(
-        "circle_r",
-        help=_("circle_r <r>"),
-        input_type=("elements", None),
-        output_type="elements",
-        all_arguments_required=True,
+    @self.console_argument("x_pos", type=str, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=str, help=_("Y-coordinate of center"))
+    @self.console_argument("rx", type=str, help=_("Primary radius of ellipse"))
+    @self.console_argument(
+        "ry",
+        type=str,
+        help=_("Secondary radius of ellipse (default equal to primary radius=circle)"),
     )
-    def element_circle_r(channel, _, r_pos, data=None, post=None, **kwargs):
-        node = self.elem_branch.add(
-            cx=0,
-            cy=0,
-            rx=float(r_pos),
-            ry=float(r_pos),
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
-        node.altered()
-        self.set_emphasis([node])
-        node.focus()
-        if data is None:
-            data = list()
-        data.append(node)
-        # Newly created! Classification needed?
-        post.append(classify_new(data))
-        return "elements", data
-
-    @self.console_argument("x_pos", type=Length)
-    @self.console_argument("y_pos", type=Length)
-    @self.console_argument("rx_pos", type=Length)
-    @self.console_argument("ry_pos", type=Length)
     @self.console_command(
         "ellipse",
-        help=_("ellipse <cx> <cy> <rx> <ry>"),
+        help="ellipse <cx> <cy> <rx> <ry> : " + _("create an ellipse element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
     )
     def element_ellipse(
-        channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs
+        channel, _, x_pos, y_pos, rx, ry, data=None, post=None, **kwargs
     ):
-        node = self.elem_branch.add(
-            cx=float(x_pos),
-            cy=float(y_pos),
-            rx=float(rx_pos),
-            ry=float(ry_pos),
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem ellipse",
-        )
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            xp = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            yp = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett))
+            # If ry is not provided, use rx as the secondary radius
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        with self.node_lock:
+            node = self.elem_branch.add(
+                cx=xp,
+                cy=yp,
+                rx=rx,
+                ry=ry,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem ellipse",
+            )
         node.altered()
         self.set_emphasis([node])
         node.focus()
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        post.append(classify_new(data))
+        return "elements", data
+
+    @self.console_argument("x_pos", type=str, help=_("X-coordinate of center"))
+    @self.console_argument("y_pos", type=str, help=_("Y-coordinate of center"))
+    @self.console_argument("rx", type=str, help=_("Primary radius of ellipse"))
+    @self.console_argument(
+        "ry",
+        type=str,
+        help=_("Secondary radius of ellipse (default equal to primary radius=circle)"),
+    )
+    @self.console_argument(
+        "start_angle", type=Angle, help=_("Start angle of arc (default 0°)")
+    )
+    @self.console_argument(
+        "end_angle", type=Angle, help=_("End angle of arc (default 360°)")
+    )
+    @self.console_option("rotation", "r", type=Angle, help=_("Rotation of arc"))
+    @self.console_command(
+        "arc",
+        help="arc <cx> <cy> <rx> <ry> <start> <end> : " + _("create an arc element"),
+        input_type=("elements", None),
+        output_type="elements",
+        all_arguments_required=True,
+    )
+    def element_arc(
+        channel,
+        _,
+        x_pos,
+        y_pos,
+        rx,
+        ry=None,
+        start_angle=None,
+        end_angle=None,
+        rotation=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett))
+            # If ry is not provided, use rx as the secondary radius
+            ry = rx if ry is None else float(Length(ry, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        if start_angle is None:
+            start_angle = Angle("0deg")
+        if end_angle is None:
+            end_angle = Angle("360deg")
+        if rotation is None:
+            rotation = Angle("0deg")
+        geom = Geomstr()
+        geom.arc_as_cubics(
+            start_t=start_angle.radians,
+            end_t=end_angle.radians,
+            rx=rx,
+            ry=ry,
+            cx=x_pos,
+            cy=y_pos,
+            rotation=rotation.radians,
+        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                label="Arc",
+                geometry=geom,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem path",
+            )
+        node.altered()
+        self.set_emphasis([node])
+        node.focus()
+        if data is None:
+            data = list()
+        data.append(node)
+
         # Newly created! Classification needed?
         post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument(
         "x_pos",
-        type=self.length_x,
+        type=str,
         help=_("x position for top left corner of rectangle."),
     )
     @self.console_argument(
         "y_pos",
-        type=self.length_y,
+        type=str,
         help=_("y position for top left corner of rectangle."),
     )
-    @self.console_argument(
-        "width", type=self.length_x, help=_("width of the rectangle.")
-    )
-    @self.console_argument(
-        "height", type=self.length_y, help=_("height of the rectangle.")
-    )
-    @self.console_option(
-        "rx", "x", type=self.length_x, help=_("rounded rx corner value.")
-    )
-    @self.console_option(
-        "ry", "y", type=self.length_y, help=_("rounded ry corner value.")
-    )
+    @self.console_argument("width", type=str, help=_("width of the rectangle."))
+    @self.console_argument("height", type=str, help=_("height of the rectangle."))
+    @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
+    @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
     @self.console_command(
         "rect",
-        help=_("adds rectangle to scene"),
+        help="rect <x> <y> <width> <height> : " + _("adds rectangle to scene"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -179,18 +295,31 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
-        node = self.elem_branch.add(
-            x=x_pos,
-            y=y_pos,
-            width=width,
-            height=height,
-            rx=rx,
-            ry=ry,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            fill=self.default_fill,
-            type="elem rect",
-        )
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            rx = float(Length(rx, relative_length=self.device.view.width, settings=lensett)) if rx else 0
+            ry = float(Length(ry, relative_length=self.device.view.height, settings=lensett)) if ry else rx
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        with self.node_lock:
+            node = self.elem_branch.add(
+                x=x_pos,
+                y=y_pos,
+                width=width,
+                height=height,
+                rx=rx,
+                ry=ry,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                fill=self.default_fill,
+                type="elem rect",
+            )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -200,13 +329,13 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("x0", type=self.length_x, help=_("start x position"))
-    @self.console_argument("y0", type=self.length_y, help=_("start y position"))
-    @self.console_argument("x1", type=self.length_x, help=_("end x position"))
-    @self.console_argument("y1", type=self.length_y, help=_("end y position"))
+    @self.console_argument("x0", type=str, help=_("start x position"))
+    @self.console_argument("y0", type=str, help=_("start y position"))
+    @self.console_argument("x1", type=str, help=_("end x position"))
+    @self.console_argument("y1", type=str, help=_("end y position"))
     @self.console_command(
         "line",
-        help=_("adds line to scene"),
+        help="line <x0> <y0> <x1> <y1> : " + _("adds line to scene"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -215,15 +344,26 @@ def init_commands(kernel):
         """
         Draws a svg line in the scene.
         """
-        node = self.elem_branch.add(
-            x1=x0,
-            y1=y0,
-            x2=x1,
-            y2=y1,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            type="elem line",
-        )
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            ax = float(Length(x0, relative_length=self.device.view.width, settings=lensett))
+            ay = float(Length(y0, relative_length=self.device.view.height, settings=lensett))
+            bx = float(Length(x1, relative_length=self.device.view.width, settings=lensett))
+            by = float(Length(y1, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        with self.node_lock:
+            node = self.elem_branch.add(
+                x1=ax,
+                y1=ay,
+                x2=bx,
+                y2=by,
+                stroke=self.default_stroke,
+                stroke_width=self.default_strokewidth,
+                type="elem line",
+            )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -251,6 +391,7 @@ def init_commands(kernel):
             data = list(self.elems(emphasized=True))
 
         if len(data) == 0:
+            channel(_("No selected elements."))
             return
         for node in data:
             eparent = node.parent
@@ -275,18 +416,19 @@ def init_commands(kernel):
                     eparent._children.pop(idx)
             except IndexError:
                 pass
-            nparent.parent.add_node(node)
-            if len(nparent.children) == 0:
-                nparent.remove_node()
-            else:
-                nparent.altered()
-                node.emphasized = was_emphasized
+            with self.node_lock:
+                nparent.parent.add_node(node)
+                if len(nparent.children) == 0:
+                    nparent.remove_node()
+                else:
+                    nparent.altered()
+                    node.emphasized = was_emphasized
         self.signal("refresh_scene", "Scene")
 
     @self.console_option("etype", "e", type=str, default="scanline")
-    @self.console_option("distance", "d", type=Length, default="1mm")
-    @self.console_option("angle", "a", type=Angle, default="0deg")
-    @self.console_option("angle_delta", "b", type=Angle, default="0deg")
+    @self.console_option("distance", "d", type=str, default=None)
+    @self.console_option("angle", "a", type=Angle, default=None)
+    @self.console_option("angle_delta", "b", type=Angle, default=None)
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
@@ -307,25 +449,51 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
+        lensett = self.length_settings()
+        try:
+            distance = Length(distance, settings=lensett) if distance else None
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+
+        if distance is None and hasattr(self.device, "effect_hatch_default_distance"):
+            distance = getattr(self.device, "effect_hatch_default_distance")
+        elif distance is None:
+            distance = "1mm"
+
+        if angle is None and hasattr(self.device, "effect_hatch_default_angle"):
+            angle = Angle(getattr(self.device, "effect_hatch_default_angle"))
+        elif angle is None:
+            angle = Angle("0deg")
+
+        if angle_delta is None and hasattr(
+            self.device, "effect_hatch_default_angle_delta"
+        ):
+            angle_delta = Angle(
+                getattr(self.device, "effect_hatch_default_angle_delta")
+            )
+        elif angle_delta is None:
+            angle_delta = Angle("0deg")
+
         if etype is None:
             etype = "scanline"
         first_node = data[0]
-
-        node = first_node.parent.add(
-            type="effect hatch",
-            label="Hatch Effect",
-            hatch_type=etype,
-            hatch_angle=angle.radians,
-            hatch_angle_delta=angle_delta.radians,
-            hatch_distance=distance,
-        )
-        for n in data:
-            node.append_child(n)
+        with self.node_lock:
+            node = first_node.parent.add(
+                type="effect hatch",
+                label="Hatch Effect",
+                hatch_type=etype,
+                hatch_angle=angle.radians,
+                hatch_angle_delta=angle_delta.radians,
+                hatch_distance=distance,
+            )
+            for n in data:
+                node.append_child(n)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
@@ -334,8 +502,8 @@ def init_commands(kernel):
         node.focus()
 
     @self.console_option("wtype", "w", type=str, default="circle")
-    @self.console_option("radius", "r", type=Length, default="0.5mm")
-    @self.console_option("interval", "i", type=Length, default="0.05mm")
+    @self.console_option("radius", "r", type=str, default=None)
+    @self.console_option("interval", "i", type=str, default=None)
     @self.console_command(
         "effect-wobble",
         help=_("adds wobble-effect to selected elements"),
@@ -355,50 +523,50 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
+        lensett = self.length_settings()
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             return
         if wtype is None:
             wtype = "circle"
+
+        if radius is None and hasattr(self.device, "effect_wobble_default_radius"):
+            radius = getattr(self.device, "effect_wobble_default_radius")
+        elif radius is None:
+            radius = "0.5mm"
+
+        if interval is None and hasattr(self.device, "effect_wobble_default_interval"):
+            interval = getattr(self.device, "effect_wobble_default_interval")
+        elif interval is None:
+            interval = "0.5mm"
+
         wtype = wtype.lower()
-        allowed = (
-            "circle",
-            "circle_right",
-            "circle_left",
-            "sinewave",
-            "sawtooth",
-            "jigsaw",
-            "gear",
-            "slowtooth",
-        )
+        allowed = list(self.kernel.root.match("wobble", suffix=True))
         if wtype not in allowed:
             channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
-        if radius is None:
-            radius = "0.5mm"
-        if interval is None:
-            interval = "0.05mm"
         try:
-            rlen = Length(radius)
+            rlen = Length(radius, settings=lensett)
         except ValueError:
-            channel("Invalid value for radius")
+            channel(_("Invalid length value."))
             return
         try:
-            ilen = Length(interval)
+            ilen = Length(interval, settings=lensett) if interval else None
         except ValueError:
-            channel("Invalid value for interval")
+            channel(_("Invalid length value."))
             return
         first_node = data[0]
-        node = first_node.parent.add(
-            type="effect wobble",
-            label="Wobble Effect",
-            wobble_type=wtype,
-            wobble_radius=rlen.length_mm,
-            wobble_interval=ilen.length_mm,
-        )
-        for n in data:
-            node.append_child(n)
+        with self.node_lock:
+            node = first_node.parent.add(
+                type="effect wobble",
+                label="Wobble Effect",
+                wobble_type=wtype,
+                wobble_radius=rlen.length_mm,
+                wobble_interval=ilen.length_mm,
+            )
+            for n in data:
+                node.append_child(n)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
@@ -412,7 +580,7 @@ def init_commands(kernel):
     @self.console_argument("text", type=str, help=_("quoted string of text"))
     @self.console_command(
         "text",
-        help=_("text <text>"),
+        help="text <text> : " + _("create a (bitmap) text element"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -422,9 +590,10 @@ def init_commands(kernel):
         if text is None:
             channel(_("No text specified"))
             return
-        node = self.elem_branch.add(
-            text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
+            )
         node.font_size = size
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
@@ -524,12 +693,91 @@ def init_commands(kernel):
             e.set_dirty_bounds()
         # arbitrary bounds...
         bounds = (0, 0, float(Length("5cm")), float(Length("5cm")))
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=500,
-            height=500,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=500,
+                height=500,
+            )
+        except Exception:
+            pass  # Not relevant...
+
+    @self.console_argument("prop", type=str, help=_("property to get"))
+    @self.console_command(
+        "property-get",
+        help=_("get property value"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+    )
+    def element_property_get(command, channel, _, data, post=None, prop=None, **kwargs):
+        def possible_representation(node, prop) -> str:
+            def simple_rep(prop, value):
+                if isinstance(value, (float, int)) and prop in (
+                    "x",
+                    "y",
+                    "cx",
+                    "cy",
+                    "r",
+                    "rx",
+                    "ry",
+                ):
+                    try:
+                        s = Length(value).length_mm
+                        return s
+                    except ValueError:
+                        pass
+                elif isinstance(value, Length):
+                    return value.length_mm
+                elif isinstance(value, Angle):
+                    return value.angle_degrees
+                elif isinstance(value, str):
+                    return f"'{value}'"
+                return repr(value)
+
+            value = getattr(node, prop, None)
+            if isinstance(value, (str, float, int)):
+                return simple_rep(prop, value)
+            elif isinstance(value, (tuple, list)):
+                stuff = []
+                for v in value:
+                    stuff.append(simple_rep("x", v))
+                return ",".join(stuff)
+            return simple_rep(prop, value)
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        if prop is None or (prop == "?"):
+            channel(_("You need to provide the property to get."))
+            identified = []
+            for op in data:
+                if op.type in identified:
+                    continue
+                identified.append(op.type)
+                prop_str = f"{op.type} has the following properties:"
+                first = True
+                for d in op.__dict__:
+                    if d.startswith("_"):
+                        continue
+                    prop_str = f"{prop_str}{'' if first else ','} {d}"
+                    first = False
+                channel(prop_str)
+            return
+        for d in data:
+            if not hasattr(d, prop):
+                channel(
+                    f"Node: {d.display_label()} (Type: {d.type}) has no property called '{prop}'"
+                )
+            else:
+                channel(
+                    f"Node: {d.display_label()} (Type: {d.type}): {prop}={getattr(d, prop, '')} ({possible_representation(d, prop)})"
+                )
 
     @self.console_argument("prop", type=str, help=_("property to set"))
     @self.console_argument("new_value", type=str, help=_("new property value"))
@@ -554,8 +802,25 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        if prop is None:
+        if prop is None or (prop == "?" and new_value == "?"):
             channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties:"
+                    first = True
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}{'' if first else ','} {d}"
+                        first = False
+                    channel(prop_str)
+                channel(
+                    "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
+                )
             return
         classify_required = False
         prop = prop.lower()
@@ -582,7 +847,16 @@ def init_commands(kernel):
                 return
             else:
                 try:
-                    new_value = float(Length(new_value))
+                    lensett = self.length_settings()
+                    if prop in ("x", "width"):
+                        rlen = self.device.view.width
+                    elif prop in ("y", "height"):
+                        rlen = self.device.view.height
+                    else:
+                        rlen = None
+                    new_value = float(
+                        Length(new_value, relative_length=rlen, settings=lensett)
+                    )
                     prevalidated = True
                 except ValueError:
                     channel(_("Invalid length: {value}").format(value=new_value))
@@ -612,59 +886,249 @@ def init_commands(kernel):
                     e.lock = setval
                     changed.append(e)
         else:
+            # _("Update property")
+            with self.undoscope("Update property"):
+                for e in data:
+                    # dbg = ""
+                    # if hasattr(e, "bounds"):
+                    #     bb = e.bounds
+                    #     dbg += (
+                    #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                    #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                    #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                    #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                    #     )
+                    # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                    # print (f"Before: {dbg}")
+                    if prop in ("x", "y"):
+                        if not e.can_move(self.lock_allows_move):
+                            channel(
+                                _("Element can not be moved: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        # We need to adjust the matrix
+                        if hasattr(e, "bounds") and hasattr(e, "matrix"):
+                            dx = 0
+                            dy = 0
+                            bb = e.bounds
+                            if prop == "x":
+                                dx = new_value - bb[0]
+                            else:
+                                dy = new_value - bb[1]
+                            e.matrix.post_translate(dx, dy)
+                        else:
+                            channel(
+                                _("Element has no matrix to modify: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                    elif prop in ("width", "height"):
+                        if new_value == 0:
+                            channel(_("Can't set {field} to zero").format(field=prop))
+                            continue
+                        if hasattr(e, "can_scale") and not e.can_scale:
+                            channel(
+                                _("Element can not be scaled: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        if hasattr(e, "matrix") and hasattr(e, "bounds"):
+                            bb = e.bounds
+                            sx = 1.0
+                            sy = 1.0
+                            wd = bb[2] - bb[0]
+                            ht = bb[3] - bb[1]
+                            if prop == "width":
+                                sx = new_value / wd
+                            else:
+                                sy = new_value / ht
+                            e.matrix.post_scale(sx, sy)
+                        else:
+                            channel(
+                                _("Element has no matrix to modify: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                    elif hasattr(e, prop):
+                        if hasattr(e, "can_modify") and not e.can_modify:
+                            channel(
+                                _("Can't modify a locked element: {name}").format(
+                                    name=str(e)
+                                )
+                            )
+                            continue
+                        try:
+                            oldval = getattr(e, prop)
+                            if prevalidated:
+                                setval = new_value
+                            else:
+                                if oldval is not None:
+                                    proptype = type(oldval)
+                                    setval = proptype(new_value)
+                                    if isinstance(oldval, bool):
+                                        if new_value.lower() in ("1", "true"):
+                                            setval = True
+                                        elif new_value.lower() in ("0", "false"):
+                                            setval = False
+                                else:
+                                    setval = new_value
+                            setattr(e, prop, setval)
+                        except TypeError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+                        except ValueError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+                        except AttributeError:
+                            channel(
+                                _(
+                                    "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                                ).format(val=new_value, field=prop, oldval=oldval)
+                            )
+
+                        if "font" in prop:
+                            # We need to force a recalculation of the underlying wxfont property
+                            if hasattr(e, "wxfont"):
+                                delattr(e, "wxfont")
+                                text_elems.append(e)
+                        if prop in ("mktext", "mkfont"):
+                            for property_op in self.kernel.lookup_all(
+                                "path_updater/.*"
+                            ):
+                                property_op(self.kernel.root, e)
+                        if prop in (
+                            "dpi",
+                            "dither",
+                            "dither_type",
+                            "invert",
+                            "red",
+                            "green",
+                            "blue",
+                            "lightness",
+                        ):
+                            # Images require some recalculation too
+                            self.do_image_update(e)
+
+                    else:
+                        channel(
+                            _("Element {name} has no property {field}").format(
+                                name=str(e), field=prop
+                            )
+                        )
+                        continue
+                    e.altered()
+                    # dbg = ""
+                    # if hasattr(e, "bounds"):
+                    #     bb = e.bounds
+                    #     dbg += (
+                    #         f"x:{Length(bb[0], digits=2).length_mm}, "
+                    #         + f"y:{Length(bb[1], digits=2).length_mm}, "
+                    #         + f"w:{Length(bb[2]-bb[0], digits=2).length_mm}, "
+                    #         + f"h:{Length(bb[3]-bb[1], digits=2).length_mm}, "
+                    #     )
+                    # dbg += f"{prop}:{str(getattr(e, prop)) if hasattr(e, prop) else '--'}"
+                    # print (f"After: {dbg}")
+                    changed.append(e)
+        if len(changed) > 0:
+            if len(text_elems) > 0:
+                # Recalculate bounds
+                calculate_text_bounds(text_elems)
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_update", changed)
+            self.validate_selected_area()
+            if classify_required:
+                post.append(classify_new(changed))
+
+        return "elements", data
+
+    @self.console_argument("prop", type=str, help=_("property to set"))
+    @self.console_argument("new_value", type=str, help=_("new property value"))
+    @self.console_command(
+        "op-property-set",
+        help=_("set operation property to new value"),
+        input_type=(
+            None,
+            "ops",
+        ),
+        output_type="ops",
+        all_arguments_required=True,
+    )
+    def operation_property_set(
+        command, channel, _, data, post=None, prop=None, new_value=None, **kwargs
+    ):
+        """
+        Generic node manipulation routine, use with care
+        """
+        if data is None:
+            data = list(self.ops(selected=True))
+        if not data:
+            channel(_("No selected operations."))
+            return
+        if prop is None or (prop == "?" and new_value == "?"):
+            channel(_("You need to provide the property to set."))
+            if prop == "?":
+                identified = []
+                for op in data:
+                    if op.type in identified:
+                        continue
+                    identified.append(op.type)
+                    prop_str = f"{op.type} has the following properties: "
+                    for d in op.__dict__:
+                        if d.startswith("_"):
+                            continue
+                        prop_str = f"{prop_str}, {d}"
+                    channel(prop_str)
+                channel(
+                    "Be careful what you do - this is a failsafe method to crash MeerK40t, burn down your house or whatever..."
+                )
+            return
+        prop = prop.lower()
+        if len(new_value) == 0:
+            new_value = None
+        # Let's distinguish a couple of special cases...
+        prevalidated = False
+        if prop == "color":
+            if new_value is not None:
+                if new_value.lower() == "none":
+                    # The text...
+                    new_value = None
+                try:
+                    new_value = Color(new_value)
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid color value: {value}").format(value=new_value))
+                    return
+        if prop in ("power", "speed", "dpi"):
+            try:
+                testval = float(new_value)
+            except ValueError:
+                channel(f"Invalid value: {new_value}")
+                return
+            if testval < 0:
+                channel(f"Invalid value: {new_value}")
+                return
+            if prop == "power" and testval > 1000:
+                channel(f"Invalid value: {new_value}")
+                return
+            new_value = testval
+            prevalidated = True
+
+        changed = []
+        # _("Update property")
+        with self.undoscope("Update property"):
             for e in data:
-                if prop in ("x", "y"):
-                    if not e.can_move(self.lock_allows_move):
-                        channel(
-                            _("Element can not be moved: {name}").format(name=str(e))
-                        )
-                        continue
-                    # We need to adjust the matrix
-                    if hasattr(e, "matrix"):
-                        dx = 0
-                        dy = 0
-                        otx = e.matrix.value_trans_x()
-                        oty = e.matrix.value_trans_y()
-                        if prop == "x":
-                            dx = new_value - otx
-                        else:
-                            dy = new_value - oty
-                        e.matrix.post_translate(dx, dy)
-                    else:
-                        channel(
-                            _("Element has no matrix to modify: {name}").format(
-                                name=str(e)
-                            )
-                        )
-                        continue
-                elif prop in ("width", "height"):
-                    if new_value == 0:
-                        channel(_("Can't set {field} to zero").format(field=prop))
-                        continue
-                    if hasattr(e, "can_scale") and not e.can_scale:
-                        channel(
-                            _("Element can not be scaled: {name}").format(name=str(e))
-                        )
-                        continue
-                    if hasattr(e, "matrix") and hasattr(e, "bounds"):
-                        bb = e.bounds
-                        sx = 1.0
-                        sy = 1.0
-                        wd = bb[2] - bb[0]
-                        ht = bb[3] - bb[1]
-                        if prop == "width":
-                            sx = new_value / wd
-                        else:
-                            sy = new_value / ht
-                        e.matrix.post_scale(sx, sy)
-                    else:
-                        channel(
-                            _("Element has no matrix to modify: {name}").format(
-                                name=str(e)
-                            )
-                        )
-                        continue
-                elif hasattr(e, prop):
+                if hasattr(e, prop):
                     if hasattr(e, "can_modify") and not e.can_modify:
                         channel(
                             _("Can't modify a locked element: {name}").format(
@@ -700,18 +1164,16 @@ def init_commands(kernel):
                                 "Can't set '{val}' for {field} (invalid value, old={oldval})."
                             ).format(val=new_value, field=prop, oldval=oldval)
                         )
+                    except AttributeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (incompatible attribute, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
 
-                    if "font" in prop:
-                        # We need to force a recalculation of the underlying wxfont property
-                        if hasattr(e, "wxfont"):
-                            delattr(e, "wxfont")
-                            text_elems.append(e)
-                    if prop in ("mktext", "mkfont"):
-                        for property_op in self.kernel.lookup_all("path_updater/.*"):
-                            property_op(self.kernel.root, e)
                 else:
                     channel(
-                        _("Element {name} has no property {field}").format(
+                        _("Operation {name} has no property {field}").format(
                             name=str(e), field=prop
                         )
                     )
@@ -719,16 +1181,10 @@ def init_commands(kernel):
                 e.altered()
                 changed.append(e)
         if len(changed) > 0:
-            if len(text_elems) > 0:
-                # Recalculate bounds
-                calculate_text_bounds(text_elems)
             self.signal("refresh_scene", "Scene")
             self.signal("element_property_update", changed)
-            self.validate_selected_area()
-            if classify_required:
-                post.append(classify_new(changed))
 
-        return "elements", data
+        return "ops", data
 
     @self.console_command(
         "recalc", input_type=("elements", None), output_type="elements"
@@ -744,6 +1200,10 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         self.validate_selected_area()
 
+    @self.console_option("douglas", "d", type=bool, action="store_true", default=False)
+    @self.console_option(
+        "visvalingam", "v", type=bool, action="store_true", default=False
+    )
     @self.console_option(
         "tolerance",
         "t",
@@ -754,7 +1214,15 @@ def init_commands(kernel):
         "simplify", input_type=("elements", None), output_type="elements"
     )
     def simplify_path(
-        command, channel, _, data=None, tolerance=None, post=None, **kwargs
+        command,
+        channel,
+        _,
+        data=None,
+        tolerance=None,
+        douglas=None,
+        visvalingam=None,
+        post=None,
+        **kwargs,
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -762,35 +1230,48 @@ def init_commands(kernel):
         if len(data) == 0:
             channel("Requires a selected polygon")
             return None
+        method = "douglaspeucker"
+        if douglas:
+            method = "douglaspeucker"
+        if visvalingam:
+            method = "visvalingam"
         if tolerance is None:
             tolerance = 25  # About 1/1000 mil
-        for node in data:
-            try:
-                sub_before = len(list(node.as_geometry().as_subpaths()))
-            except AttributeError:
-                sub_before = 0
-            if hasattr(node, "geometry"):
-                geom = node.geometry
-                seg_before = node.geometry.index
-                node.geometry = geom.simplify(tolerance)
-                node.altered()
-                seg_after = node.geometry.index
+        # _("Simplify")
+        with self.undoscope("Simplify"):
+            for node in data:
                 try:
-                    sub_after = len(list(node.as_geometry().as_subpaths()))
+                    sub_before = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
-                    sub_after = 0
-                channel(
-                    f"Simplified {node.type} ({node.label}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
-                )
-                if seg_before:
-                    saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                    sub_before = 0
+                if hasattr(node, "geometry"):
+                    geom = node.geometry
+                    seg_before = node.geometry.index
+                    if method == "douglaspeucker":
+                        node.geometry = geom.simplify(tolerance)
+                    else:
+                        # Let's try Visvalingam line simplification
+                        node.geometry = geom.simplify_geometry(threshold=tolerance)
+                    node.altered()
+                    seg_after = node.geometry.index
+                    try:
+                        sub_after = len(list(node.as_geometry().as_subpaths()))
+                    except AttributeError:
+                        sub_after = 0
+                    channel(
+                        f"Simplified {node.type} ({node.display_label()}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
+                    )
+                    if seg_before:
+                        saving = f"({(seg_before - seg_after) / seg_before * 100:.1f}%)"
+                    else:
+                        saving = ""
+                    channel(f"Subpaths before: {sub_before} to {sub_after}")
+                    channel(f"Segments before: {seg_before} to {seg_after} {saving}")
+                    data_changed.append(node)
                 else:
-                    saving = ""
-                channel(f"Subpaths before: {sub_before} to {sub_after}")
-                channel(f"Segments before: {seg_before} to {seg_after} {saving}")
-                data_changed.append(node)
-            else:
-                channel(f"Invalid node for simplify {node.type} ({node.label})")
+                    channel(
+                        f"Invalid node for simplify {node.type} ({node.display_label()})"
+                    )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
@@ -812,7 +1293,8 @@ def init_commands(kernel):
         except AttributeError:
             # elem text does not have an as_path() object
             return "elements", data
-        data[1].remove_node()
+        with self.node_lock:
+            data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
 
@@ -830,27 +1312,30 @@ def init_commands(kernel):
                 if not vm.is_point_inside(pt[0], pt[1]):
                     del pts_sub[i]
             path += Path(Polyline(pts_sub))
-        node = self.elem_branch.add(path=path, type="elem path")
+        with self.node_lock:
+            node = self.elem_branch.add(path=path, type="elem path")
         data.append(node)
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
+        self.set_emphasis([node])
         node.focus()
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
+    @self.console_argument("mlist", type=str, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
-        help=_("poly(gon|line) (Length Length)*"),
+        help="poly(gon|line) (Length Length)* : " + _("create a polygon or polyline element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
     )
     def element_poly(command, channel, _, mlist, data=None, post=None, **kwargs):
+        lensett = self.length_settings()
         try:
-            pts = [float(Length(p)) for p in mlist]
+            pts = [float(Length(p, settings=lensett)) for p in mlist]
             if command == "polygon":
                 shape = Polygon(pts)
             else:
@@ -862,7 +1347,8 @@ def init_commands(kernel):
         if shape.is_degenerate():
             channel(_("Shape is degenerate."))
             return "elements", data
-        node = self.elem_branch.add(shape=shape, type="elem polyline")
+        with self.node_lock:
+            node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
@@ -903,7 +1389,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "path",
-        help=_("path <svg path>"),
+        help="path <svg path> : " + _("create a path element from svg path syntax"),
         output_type="elements",
     )
     def element_path(path_d, data, post=None, **kwargs):
@@ -914,8 +1400,8 @@ def init_commands(kernel):
             path *= f"Scale({UNITS_PER_PIXEL})"
         except (ValueError, AttributeError):
             raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
-
-        node = self.elem_branch.add(path=path, type="elem path")
+        with self.node_lock:
+            node = self.elem_branch.add(path=path, type="elem path")
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
@@ -936,7 +1422,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "stroke-width",
-        help=_("stroke-width <length>"),
+        help="stroke-width <length> : " + _("set the stroke width of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1017,25 +1503,28 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
-                continue
-            e.stroke_width = stroke_width
-            try:
-                e.stroke_width_zero()
-            except AttributeError:
-                pass
-            # No full modified required, we are effectively only adjusting
-            # the painted_bounds
-            e.translated(0, 0)
+        # _("Set stroke-width")
+        with self.undoscope("Set stroke-width"):
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
+                    continue
+                e.stroke_width = stroke_width
+                try:
+                    e.stroke_width_zero()
+                except AttributeError:
+                    pass
+                # No full modified required, we are effectively only adjusting
+                # the painted_bounds
+                e.translated(0, 0)
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
         ("enable_stroke_scale", "disable_stroke_scale"),
-        help=_("stroke-width <length>"),
         input_type=(
             None,
             "elements",
@@ -1049,12 +1538,16 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
-                continue
-            e.stroke_scaled = command == "enable_stroke_scale"
-            e.altered()
+        # _("Update stroke-scale")
+        with self.undoscope("Update stroke-scale"):
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
+                    continue
+                e.stroke_scaled = command == "enable_stroke_scale"
+                e.altered()
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return "elements", data
@@ -1067,7 +1560,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "linecap",
-        help=_("linecap <cap>"),
+        help="linecap <cap> : " + _("set the line cap style of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1144,7 +1637,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "linejoin",
-        help=_("linejoin <join>"),
+        help="linejoin <join> : " + _("set the line join style of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1229,7 +1722,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "fillrule",
-        help=_("fillrule <rule>"),
+        help="fillrule <rule> : " + _("set the fill rule of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1301,7 +1794,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "stroke",
-        help=_("stroke <svg color>"),
+        help="stroke <svg color> : " + _("set the stroke color of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1348,51 +1841,57 @@ def init_commands(kernel):
             channel("----------")
             return
         self.set_start_time("full_load")
-        if color == "none":
-            self.set_start_time("stroke")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.stroke = None
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("stroke")
-        else:
-            self.set_start_time("stroke")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.stroke = Color(color)
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("stroke")
-        if classify is None:
-            classify = False
-        if classify:
-            self.set_start_time("classify")
-            self.remove_elements_from_operations(apply)
-            self.classify(apply)
-            if was_emphasized:
+        # _("Set stroke")
+        with self.undoscope("Set stroke"):
+            if color == "none":
+                self.set_start_time("stroke")
                 for e in apply:
-                    e.emphasized = True
-                if len(apply) == 1:
-                    apply[0].focus()
-            if old_first is not None and old_first in apply:
-                self.first_emphasized = old_first
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                    e.stroke = None
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("stroke")
             else:
-                self.first_emphasized = None
-            self.set_end_time("classify")
-            # self.signal("rebuild_tree")
-            self.signal("refresh_tree", apply)
-        else:
-            self.signal("element_property_update", apply)
-            self.signal("refresh_scene", "Scene")
+                self.set_start_time("stroke")
+                for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                    e.stroke = Color(color)
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("stroke")
+            if classify is None:
+                classify = False
+            if classify:
+                self.set_start_time("classify")
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
+                if old_first is not None and old_first in apply:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
+                self.set_end_time("classify")
+                # self.signal("rebuild_tree")
+                self.signal("refresh_tree", apply)
+            else:
+                self.signal("element_property_reload", apply)
+                self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option(
@@ -1402,7 +1901,7 @@ def init_commands(kernel):
     @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
     @self.console_command(
         "fill",
-        help=_("fill <svg color>"),
+        help="fill <svg color> : " + _("set the fill color of selected elements"),
         input_type=(
             None,
             "elements",
@@ -1454,62 +1953,64 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return "elements", data
-        elif color == "none":
-            self.set_start_time("fill")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.fill = None
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("fill")
-        else:
-            self.set_start_time("fill")
-            for e in apply:
-                if hasattr(e, "lock") and e.lock:
-                    channel(
-                        _("Can't modify a locked element: {name}").format(name=str(e))
-                    )
-                    continue
-                e.fill = Color(color)
-                e.translated(0, 0)
-                # e.altered()
-            self.set_end_time("fill")
-        if classify is None:
-            classify = False
-        if classify:
-            self.set_start_time("classify")
-            self.remove_elements_from_operations(apply)
-            self.classify(apply)
-            if was_emphasized:
+        # _("Set fill")
+        with self.undoscope("Set fill"):
+            if color == "none":
+                self.set_start_time("fill")
                 for e in apply:
-                    e.emphasized = True
-                if len(apply) == 1:
-                    apply[0].focus()
-            if old_first is not None and old_first in apply:
-                self.first_emphasized = old_first
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                    e.fill = None
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("fill")
             else:
-                self.first_emphasized = None
-            self.signal("refresh_tree", apply)
-            #                self.signal("rebuild_tree")
-            self.set_end_time("classify")
-        else:
-            self.signal("element_property_update", apply)
-            self.signal("refresh_scene", "Scene")
+                self.set_start_time("fill")
+                for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                    e.fill = Color(color)
+                    e.translated(0, 0)
+                    # e.altered()
+                self.set_end_time("fill")
+            if classify is None:
+                classify = False
+            if classify:
+                self.set_start_time("classify")
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
+                if old_first is not None and old_first in apply:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
+                self.signal("refresh_tree", apply)
+                #                self.signal("rebuild_tree")
+                self.set_end_time("classify")
+            else:
+                self.signal("element_property_update", apply)
+                self.signal("refresh_scene", "Scene")
         return "elements", data
 
-    @self.console_argument(
-        "x_offset", type=self.length_x, help=_("x offset."), default="0"
-    )
-    @self.console_argument(
-        "y_offset", type=self.length_y, help=_("y offset"), default="0"
-    )
+    @self.console_argument("x_offset", type=str, help=_("x offset."), default="0")
+    @self.console_argument("y_offset", type=str, help=_("y offset"), default="0")
     @self.console_command(
         "frame",
-        help=_("Draws a frame the current selected elements"),
+        help=_("Draws a frame around the currently selected elements"),
         input_type=(
             None,
             "elements",
@@ -1529,10 +2030,21 @@ def init_commands(kernel):
         """
         Draws an outline of the current shape.
         """
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            x_offset = float(Length(x_offset, relative_length=self.device.view.width, settings=lensett))
+            y_offset = float(Length(y_offset, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         bounds = self.selected_area()
         if bounds is None:
             channel(_("Nothing Selected"))
             return
+        selected = list(self.elems(emphasized=True))
+        frame_info = selected[0].display_label() if len(selected) == 1 else f"{len(selected)} elements"
+        
         x_pos = bounds[0]
         y_pos = bounds[1]
         width = bounds[2] - bounds[0]
@@ -1541,14 +2053,16 @@ def init_commands(kernel):
         y_pos -= y_offset
         width += x_offset * 2
         height += y_offset * 2
-        node = self.elem_branch.add(
-            x=x_pos,
-            y=y_pos,
-            width=width,
-            height=height,
-            stroke=Color("red"),
-            type="elem rect",
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                x=x_pos,
+                y=y_pos,
+                width=width,
+                height=height,
+                stroke=Color("red"),
+                type="elem rect",
+                label = f"Frame around {frame_info}"
+            )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -1559,8 +2073,8 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument("angle", type=Angle, help=_("angle to rotate by"))
-    @self.console_option("cx", "x", type=self.length_x, help=_("center x"))
-    @self.console_option("cy", "y", type=self.length_y, help=_("center y"))
+    @self.console_option("cx", "x", type=str, help=_("center x"))
+    @self.console_option("cy", "y", type=str, help=_("center y"))
     @self.console_option(
         "absolute",
         "a",
@@ -1570,7 +2084,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "rotate",
-        help=_("rotate <angle>"),
+        help="rotate <angle> : " + _("rotate selected elements"),
         input_type=(
             None,
             "elements",
@@ -1616,41 +2130,49 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("No selected elements."))
             return
-
+        lensett = self.length_settings()
+        try:
+            cx = float(Length(cx, settings=lensett)) if cx is not None else None
+            cy = float(Length(cy, settings=lensett)) if cy is not None else None
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         if cx is None:
             cx = (bounds[2] + bounds[0]) / 2.0
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
         images = []
-        try:
-            if not absolute:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    node.matrix.post_rotate(angle, cx, cy)
-                    node.modified()
-                    if hasattr(node, "update"):
-                        images.append(node)
-            else:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    start_angle = node.matrix.rotation
-                    node.matrix.post_rotate(angle - start_angle, cx, cy)
-                    node.modified()
-                    if hasattr(node, "update"):
-                        images.append(node)
-        except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            node.update(None)
+        # _("Rotate")
+        with self.undoscope("Rotate"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        node.matrix.post_rotate(angle, cx, cy)
+                        node.modified()
+                        if hasattr(node, "update"):
+                            images.append(node)
+                else:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        start_angle = node.matrix.rotation
+                        node.matrix.post_rotate(angle - start_angle, cx, cy)
+                        node.modified()
+                        if hasattr(node, "update"):
+                            images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
+
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
     @self.console_argument("scale_y", type=str, help=_("scale_y value"))
-    @self.console_option("px", "x", type=self.length_x, help=_("scale x origin point"))
-    @self.console_option("py", "y", type=self.length_y, help=_("scale y origin point"))
+    @self.console_option("px", "x", type=str, help=_("scale x origin point"))
+    @self.console_option("py", "y", type=str, help=_("scale y origin point"))
     @self.console_option(
         "absolute",
         "a",
@@ -1660,7 +2182,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "scale",
-        help=_("scale <scale> [<scale-y>]?"),
+        help="scale <scale> [<scale-y>]? : " + _("scale selected elements (optionally different in y, and optionally from a point (default center of selection))"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -1696,6 +2218,12 @@ def init_commands(kernel):
             channel(_("No selected elements."))
             return
         # print (f"Start: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+        lensett = self.length_settings()
+        try:
+            px = float(Length(px, settings=lensett)) if px is not None else None
+            py = float(Length(py, settings=lensett)) if py is not None else None
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         factor = 1
         if scale_x.endswith("%"):
             factor = 0.01
@@ -1727,33 +2255,36 @@ def init_commands(kernel):
             return
         matrix = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
         images = []
-        try:
-            if not absolute:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    node.matrix *= matrix
-                    node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
-                    if hasattr(node, "update"):
-                        images.append(node)
-            else:
-                for node in data:
-                    if hasattr(node, "lock") and node.lock:
-                        continue
-                    osx = node.matrix.value_scale_x()
-                    osy = node.matrix.value_scale_y()
-                    nsx = scale_x / osx
-                    nsy = scale_y / osy
-                    matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
-                    node.matrix *= matrix
-                    node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
-                    if hasattr(node, "update"):
-                        images.append(node)
-        except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            node.update(None)
+        with self.undoscope("Scale"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        node.matrix *= matrix
+                        node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
+                        if hasattr(node, "update"):
+                            images.append(node)
+                else:
+                    for node in data:
+                        if hasattr(node, "lock") and node.lock:
+                            continue
+                        osx = node.matrix.value_scale_x()
+                        osy = node.matrix.value_scale_y()
+                        nsx = scale_x / osx
+                        nsy = scale_y / osy
+                        matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
+                        node.matrix *= matrix
+                        node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
+                        if hasattr(node, "update"):
+                            images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
+            self.process_keyhole_updates(None)
         self.signal("refresh_scene", "Scene")
+        self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_option(
@@ -1838,8 +2369,8 @@ def init_commands(kernel):
         return "elements", data
         # Do we have a new value to set? If yes scale by sqrt(of the fraction)
 
-    @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
+    @self.console_argument("tx", type=str, help=_("translate x value"))
+    @self.console_argument("ty", type=str, help=_("translate y value"))
     @self.console_option(
         "absolute",
         "a",
@@ -1849,7 +2380,7 @@ def init_commands(kernel):
     )
     @self.console_command(
         "translate",
-        help=_("translate <tx> <ty>"),
+        help="translate <tx> <ty> : " + _("translate selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -1875,45 +2406,52 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+        lensett = self.length_settings()
+        try:
+            tx = float(Length(tx, settings=lensett)) if tx is not None else None
+            ty = float(Length(ty, settings=lensett)) if ty is not None else None
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
         if tx is None:
             tx = 0
         if ty is None:
             ty = 0
         changes = False
         matrix = Matrix.translate(tx, ty)
-        try:
-            if not absolute:
-                for node in data:
-                    if not node.can_move(self.lock_allows_move):
-                        continue
+        with self.undoscope("Translate"):
+            try:
+                if not absolute:
+                    for node in data:
+                        if not node.can_move(self.lock_allows_move):
+                            continue
 
-                    node.matrix *= matrix
-                    node.translated(tx, ty)
-                    changes = True
-            else:
-                for node in data:
-                    if not node.can_move(self.lock_allows_move):
-                        continue
-                    otx = node.matrix.value_trans_x()
-                    oty = node.matrix.value_trans_y()
-                    ntx = tx - otx
-                    nty = ty - oty
-                    matrix = Matrix.translate(ntx, nty)
-                    node.matrix *= matrix
-                    node.translated(ntx, nty)
-                    changes = True
-        except ValueError:
-            raise CommandSyntaxError
+                        node.matrix *= matrix
+                        node.translated(tx, ty)
+                        changes = True
+                else:
+                    for node in data:
+                        if not node.can_move(self.lock_allows_move):
+                            continue
+                        otx = node.matrix.value_trans_x()
+                        oty = node.matrix.value_trans_y()
+                        ntx = tx - otx
+                        nty = ty - oty
+                        matrix = Matrix.translate(ntx, nty)
+                        node.matrix *= matrix
+                        node.translated(ntx, nty)
+                        changes = True
+            except ValueError:
+                raise CommandSyntaxError
         if changes:
             self.signal("refresh_scene", "Scene")
             self.signal("modified_by_tool")
         return "elements", data
 
-    @self.console_argument("tx", type=self.length_x, help=_("New x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+    @self.console_argument("tx", type=str, help=_("New x value"))
+    @self.console_argument("ty", type=str, help=_("New y value"))
     @self.console_command(
         "position",
-        help=_("position <tx> <ty>"),
+        help="position <tx> <ty> : " + _("set the position of selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -1928,22 +2466,32 @@ def init_commands(kernel):
         if tx is None or ty is None:
             channel(_("You need to provide a new position."))
             return
-        changes = False
-        dbounds = Node.union_bounds(data)
-        for node in data:
-            if not node.can_move(self.lock_allows_move):
-                continue
-            nbounds = node.bounds
-            dx = tx - dbounds[0]
-            dy = ty - dbounds[1]
-            if dx != 0 or dy != 0:
-                node.matrix.post_translate(dx, dy)
-                # node.modified()
-                node.translated(dx, dy)
-                changes = True
-        if changes:
-            self.signal("refresh_scene", "Scene")
-            self.signal("modified_by_tool")
+        lensett = self.length_settings()
+        try:
+            # fmt:off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett))
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        with self.undoscope("Position"):
+            changes = False
+            dbounds = Node.union_bounds(data)
+            for node in data:
+                if not node.can_move(self.lock_allows_move):
+                    continue
+                nbounds = node.bounds
+                dx = tx - dbounds[0]
+                dy = ty - dbounds[1]
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                    # node.modified()
+                    node.translated(dx, dy)
+                    changes = True
+            if changes:
+                self.process_keyhole_updates(None)
+                self.signal("refresh_scene", "Scene")
+                self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_command(
@@ -1959,32 +2507,27 @@ def init_commands(kernel):
             channel(_("No selected elements."))
             return
         tx, ty = self.device.current
-        try:
-            bounds = Node.union_bounds(data)
-            otx = bounds[0]
-            oty = bounds[1]
-            ntx = tx - otx
-            nty = ty - oty
-            for node in data:
-                if not node.can_move(self.lock_allows_move):
-                    continue
-                node.matrix.post_translate(ntx, nty)
-                # node.modified()
-                node.translated(ntx, nty)
-        except ValueError:
-            raise CommandSyntaxError
+        with self.undoscope("Translate to laser"):
+            try:
+                bounds = Node.union_bounds(data)
+                otx = bounds[0]
+                oty = bounds[1]
+                ntx = tx - otx
+                nty = ty - oty
+                for node in data:
+                    if not node.can_move(self.lock_allows_move):
+                        continue
+                    node.matrix.post_translate(ntx, nty)
+                    # node.modified()
+                    node.translated(ntx, nty)
+            except ValueError:
+                raise CommandSyntaxError
         return "elements", data
 
-    @self.console_argument(
-        "x_pos", type=self.length_x, help=_("x position for top left corner")
-    )
-    @self.console_argument(
-        "y_pos", type=self.length_y, help=_("y position for top left corner")
-    )
-    @self.console_argument("width", type=self.length_x, help=_("new width of selected"))
-    @self.console_argument(
-        "height", type=self.length_y, help=_("new height of selected")
-    )
+    @self.console_argument("x_pos", type=str, help=_("x position for top left corner"))
+    @self.console_argument("y_pos", type=str, help=_("y position for top left corner"))
+    @self.console_argument("width", type=str, help=_("new width of selected"))
+    @self.console_argument("height", type=str, help=_("new height of selected"))
     @self.console_command(
         "resize",
         help=_("resize <x-pos> <y-pos> <width> <height>"),
@@ -1996,60 +2539,81 @@ def init_commands(kernel):
     ):
         if height is None:
             raise CommandSyntaxError
+        lensett = self.length_settings()
         try:
-            area = self.selected_area()
-            if area is None:
-                channel(_("resize: nothing selected"))
-                return
-            x, y, x1, y1 = area
-            w, h = x1 - x, y1 - y
-            if w == 0 or h == 0:  # dot
-                channel(_("resize: cannot resize a dot"))
-                return
-            sx = width / w
-            sy = height / h
-            # Don't do anything if scale is 1
-            if sx == 1.0 and sy == 1.0:
-                scale_str = ""
-            else:
-                scale_str = f"scale({sx},{sy})"
-            if x_pos == x and y_pos == y and scale_str == "":
-                return
-            #     trans1_str = ""
-            #     trans2_str = ""
-            # else:
-            trans1_str = f"translate({round(x_pos, 7)},{round(y_pos, 7)})"
-            trans2_str = f"translate({round(-x, 7)},{round(-y, 7)})"
-            matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
-            # channel(f"{matrixstr}")
-            matrix = Matrix(matrixstr)
-            if data is None:
-                data = list(self.elems(emphasized=True))
+            # fmt:off
+            x_pos = float(Length(x_pos, relative_length=self.device.view.width, settings=lensett))
+            y_pos = float(Length(y_pos, relative_length=self.device.view.height, settings=lensett))
+            width = float(Length(width, relative_length=self.device.view.width, settings=lensett))
+            height = float(Length(height, relative_length=self.device.view.height, settings=lensett))
+            # fmt:on
+        except ValueError:
+            raise CommandSyntaxError(_("Invalid length value."))
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        area = Node.union_bounds(data)
+        if area is None:
+            channel(_("resize: nothing selected"))
+            return
+
+        x, y, x1, y1 = area
+        w, h = x1 - x, y1 - y
+        if w == 0 or h == 0:  # dot
+            channel(_("resize: cannot resize a dot"))
+            return
+        sx = width / w
+        sy = height / h
+        if sx == 0 or sy == 0:
+            channel(_("Invalid width/height"))
+            return
+        px = area[0]
+        py = area[2]
+        matrix = Matrix(f"scale({sx},{sy},{px},{py})")
+        with self.undoscope("Resize"):
             images = []
-            for node in data:
-                if hasattr(node, "lock") and node.lock:
-                    channel(_("resize: cannot resize a locked element"))
-                    continue
-                node.matrix *= matrix
-                node.modified()
-                if hasattr(node, "update"):
-                    images.append(node)
+            if sx != 1.0 or sy != 1.0:
+                # Don't do anything if scale is 1
+                for node in data:
+                    if not hasattr(node, "matrix"):
+                        continue
+                    if hasattr(node, "lock") and node.lock:
+                        continue
+                    node.matrix *= matrix
+                    node.modified()
+                    if hasattr(node, "update") and node not in images:
+                        images.append(node)
+
+            # Calculate again
+            area = Node.union_bounds(data)
+            dx = x_pos - area[0]
+            dy = y_pos - area[1]
+            if dx != 0.0 or dy != 0.0:
+                # Don't do anything if scale is 1
+                for node in data:
+                    if not hasattr(node, "matrix"):
+                        continue
+                    node.matrix.post_translate(dx, dy)
+                    node.modified()
+                    if hasattr(node, "update") and node not in images:
+                        images.append(node)
+
             for node in images:
-                node.update(None)
-            self.signal("refresh_scene", "Scene")
-            return "elements", data
-        except (ValueError, ZeroDivisionError, TypeError):
-            raise CommandSyntaxError
+                self.do_image_update(node)
+        self.signal("refresh_scene", "Scene")
+        return "elements", data
 
     @self.console_argument("sx", type=float, help=_("scale_x value"))
     @self.console_argument("kx", type=float, help=_("skew_x value"))
     @self.console_argument("ky", type=float, help=_("skew_y value"))
     @self.console_argument("sy", type=float, help=_("scale_y value"))
-    @self.console_argument("tx", type=self.length_x, help=_("translate_x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("translate_y value"))
+    @self.console_argument("tx", type=str, help=_("translate_x value"))
+    @self.console_argument("ty", type=str, help=_("translate_y value"))
     @self.console_command(
         "matrix",
-        help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
+        help="matrix <sx> <kx> <ky> <sy> <tx> <ty> : " + _("set the transformation matrix of selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -2073,30 +2637,39 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        images = []
+        lensett = self.length_settings()
         try:
-            # SVG 7.15.3 defines the matrix form as:
-            # [a c  e]
-            # [b d  f]
-            m = Matrix(
-                sx,
-                kx,
-                ky,
-                sy,
-                tx,
-                ty,
-            )
-            for node in data:
-                if hasattr(node, "lock") and node.lock:
-                    continue
-                node.matrix = Matrix(m)
-                node.modified()
-                if hasattr(node, "update"):
-                    images.append(node)
+            # fmt: off
+            tx = float(Length(tx, relative_length=self.device.view.width, settings=lensett)) if tx is not None else 0.0
+            ty = float(Length(ty, relative_length=self.device.view.height, settings=lensett)) if ty is not None else 0.0
+            # fmt: on
         except ValueError:
-            raise CommandSyntaxError
-        for node in images:
-            node.update(None)
+            raise CommandSyntaxError(_("Invalid length value."))
+        with self.undoscope("Matrix"):
+            images = []
+            try:
+                # SVG 7.15.3 defines the matrix form as:
+                # [a c  e]
+                # [b d  f]
+                m = Matrix(
+                    sx,
+                    kx,
+                    ky,
+                    sy,
+                    tx,
+                    ty,
+                )
+                for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        continue
+                    node.matrix = Matrix(m)
+                    node.modified()
+                    if hasattr(node, "update"):
+                        images.append(node)
+            except ValueError:
+                raise CommandSyntaxError
+            for node in images:
+                self.do_image_update(node)
         self.signal("refresh_scene", "Scene")
         return
 
@@ -2109,20 +2682,21 @@ def init_commands(kernel):
     def reset(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        images = []
-        for e in data:
-            if hasattr(e, "lock") and e.lock:
-                continue
-            name = str(e)
-            if len(name) > 50:
-                name = name[:50] + "…"
-            channel(_("reset - {name}").format(name=name))
-            e.matrix.reset()
-            e.modified()
-            if hasattr(e, "update"):
-                images.append(e)
-        for e in images:
-            e.update(None)
+        with self.undoscope("Reset"):
+            images = []
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    continue
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                channel(_("reset - {name}").format(name=name))
+                e.matrix.reset()
+                e.modified()
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                self.do_image_update(e)
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -2135,35 +2709,36 @@ def init_commands(kernel):
     def element_reify(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        for e in data:
-            try:
-                if e.lock:
-                    continue
-            except AttributeError:
-                pass
-
-            name = str(e)
-            if len(name) > 50:
-                name = name[:50] + "…"
-            try:
-                e.stroke_reify()
-            except AttributeError:
-                pass
-
-            try:
-                e.shape.reify()
-            except AttributeError as err:
+        with self.undoscope("Reify"):
+            for e in data:
                 try:
-                    e.path.reify()
+                    if e.lock:
+                        continue
                 except AttributeError:
-                    channel(_("Couldn't reify - %s - %s") % (name, err))
-                    return "elements", data
-            try:
-                e.stroke_width_zero()
-            except AttributeError:
-                pass
-            e.altered()
-            channel(_("reified - %s") % name)
+                    pass
+
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                try:
+                    e.stroke_reify()
+                except AttributeError:
+                    pass
+
+                try:
+                    e.shape.reify()
+                except AttributeError as err:
+                    try:
+                        e.path.reify()
+                    except AttributeError:
+                        channel(_("Couldn't reify - %s - %s") % (name, err))
+                        return "elements", data
+                try:
+                    e.stroke_width_zero()
+                except AttributeError:
+                    pass
+                e.altered()
+                channel(_("reified - %s") % name)
         return "elements", data
 
     @self.console_command(
@@ -2175,18 +2750,20 @@ def init_commands(kernel):
     def element_circ_arc_path(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        for e in data:
-            try:
-                if e.lock:
-                    continue
-            except AttributeError:
-                pass
-            if e.type == "elem path":
-                g = e.geometry
-                path = g.as_path()
-                path.approximate_bezier_with_circular_arcs()
-                e.geometry = Geomstr.svg(path)
-                e.altered()
+        # _("Convert paths")
+        with self.undoscope("Convert paths"):
+            for e in data:
+                try:
+                    if e.lock:
+                        continue
+                except AttributeError:
+                    pass
+                if e.type == "elem path":
+                    g = e.geometry
+                    path = g.as_path()
+                    path.approximate_bezier_with_circular_arcs()
+                    e.geometry = Geomstr.svg(path)
+                    e.altered()
 
         return "elements", data
 
@@ -2207,7 +2784,8 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
-        self.classify(data)
+        with self.undoscope("Classify"):
+            self.classify(data)
         if was_emphasized:
             for e in data:
                 e.emphasized = True
@@ -2248,6 +2826,197 @@ def init_commands(kernel):
                 self.first_emphasized = old_first
             else:
                 self.first_emphasized = None
+        return "elements", data
+
+    @self.console_argument(
+        "tolerance", type=str, help=_("Tolerance to stitch paths together")
+    )
+    @self.console_option(
+        "keep",
+        "k",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Keep original paths"),
+    )
+    @self.console_command(
+        "stitch",
+        help=_("stitch selected elements"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def stitched(
+        command, channel, _, data=None, tolerance=None, keep=None, post=None, **kwargs
+    ):
+        def _prepare_stitching_params(channel, data, tolerance, keep):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel("There is nothing to be stitched together")
+                return data, tolerance, keep, False
+            if keep is None:
+                keep = False
+            if tolerance is None:
+                tolerance_val = 0
+            else:
+                try:
+                    tolerance_val = float(
+                        Length(tolerance, settings=self.length_settings())
+                    )
+                except ValueError as e:
+                    channel(f"Invalid tolerance value: {tolerance}")
+                    return data, tolerance, keep, False
+            return data, tolerance_val, keep, True
+
+        data, tolerance, keep, valid = _prepare_stitching_params(
+            channel, data, tolerance, keep
+        )
+        if not valid:
+            return
+        s_data = stitcheable_nodes(data, tolerance)
+        if not s_data:
+            channel("No stitcheable nodes found")
+            return
+
+        geoms = []
+        data_out = []
+        to_be_deleted = []
+        # _("Stitch paths")
+        with self.undoscope("Stitch paths"):
+            default_stroke = None
+            default_strokewidth = None
+            default_fill = None
+            for node in s_data:
+                geom: Geomstr = node.as_geometry()
+                geoms.extend(iter(geom.as_contiguous()))
+                if default_stroke is None and hasattr(node, "stroke"):
+                    default_stroke = node.stroke
+                if default_strokewidth is None and hasattr(node, "stroke_width"):
+                    default_strokewidth = node.stroke_width
+                to_be_deleted.append(node)
+            prev_len = len(geoms)
+            if geoms:
+                result = stitch_geometries(geoms, tolerance)
+                if result is None:
+                    channel("Could not stitch anything")
+                    return
+                with self.node_lock:
+                    if not keep:
+                        for node in to_be_deleted:
+                            node.remove_node()
+                    for idx, g in enumerate(result):
+                        node = self.elem_branch.add(
+                            label=f"Stitch # {idx + 1}",
+                            stroke=default_stroke,
+                            stroke_width=default_strokewidth,
+                            fill=default_fill,
+                            geometry=g,
+                            type="elem path",
+                        )
+                        data_out.append(node)
+            new_len = len(data_out)
+            channel(
+                f"Sub-Paths before: {prev_len} -> consolidated to {new_len} sub-paths"
+            )
+
+        post.append(classify_new(data_out))
+        self.set_emphasis(data_out)
+        return "elements", data_out
+
+    @self.console_argument("xpos", type=str, help=_("X-Position of cross center"))
+    @self.console_argument("ypos", type=str, help=_("Y-Position of cross center"))
+    @self.console_argument("diameter", type=str, help=_("Diameter of cross"))
+    @self.console_option(
+        "circle",
+        "c",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw a circle around cross"),
+    )
+    @self.console_option(
+        "diagonal",
+        "d",
+        type=bool,
+        action="store_true",
+        default=False,
+        help=_("Draw the cross diagonally"),
+    )
+    @self.console_command(
+        "cross",
+        help=_("Create a small cross at the given position"),
+        input_type=None,
+        output_type="elements",
+    )
+    def cross(
+        command,
+        channel,
+        _,
+        data=None,
+        xpos=None,
+        ypos=None,
+        diameter=None,
+        circle=None,
+        diagonal=None,
+        post=None,
+        **kwargs,
+    ):
+        if xpos is None or ypos is None or diameter is None:
+            channel(_("You need to provide center-point and diameter: cross x y d"))
+            return
+        try:
+            # fmt:off
+            lensettings = self.length_settings()
+            xpos = float(Length(xpos, relative_length=self.device.view.width, settings=lensettings))
+            ypos = float(Length(ypos, relative_length=self.device.view.height, settings=lensettings))
+            diameter = float(Length(diameter, settings=lensettings))
+            # fmt:on
+        except ValueError:
+            channel(_("Invalid values given"))
+            return
+        xp = float(xpos)
+        yp = float(ypos)
+        dia = float(diameter)
+        if circle is None:
+            circle = False
+        if diagonal is None:
+            diagonal = False
+        geom = Geomstr()
+        if diagonal:
+            sincos45 = dia / 2 * sqrt(2) / 2
+            geom.line(
+                complex(xp - sincos45, yp - sincos45),
+                complex(xp + sincos45, yp + sincos45),
+            )
+            geom.line(
+                complex(xp + sincos45, yp - sincos45),
+                complex(xp - sincos45, yp + sincos45),
+            )
+        else:
+            geom.line(complex(xp - dia / 2, yp), complex(xp + dia / 2, yp))
+            geom.line(complex(xp, yp - dia / 2), complex(xp, yp + dia / 2))
+        if circle:
+            geom.append(Geomstr.circle(dia / 2, xp, yp))
+        # _("Create cross") - hint for translator
+        with self.undoscope("Create cross"):
+            with self.node_lock:
+                node = self.elem_branch.add(
+                    label=_("Cross at ({xp}, {yp})").format(
+                        xp=Length(xpos).length_mm, yp=Length(ypos).length_mm
+                    ),
+                    geometry=geom,
+                    stroke=self.default_stroke,
+                    stroke_width=self.default_strokewidth,
+                    fill=None,
+                    type="elem path",
+                )
+            if data is None:
+                data = []
+            data.append(node)
+
+            # Newly created! Classification needed?
+            post.append(classify_new(data))
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------

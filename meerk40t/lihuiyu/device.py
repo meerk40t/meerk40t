@@ -5,15 +5,18 @@ Registers the Device service for M2 Nano (and family), registering the relevant 
 the given device type.
 """
 
+import platform
 from hashlib import md5
 
+import meerk40t.constants as mkconst
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.units import UNITS_PER_MIL, Length
 from meerk40t.core.view import View
+from meerk40t.device.devicechoices import get_effect_choices, get_operation_choices
+from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from ..core.units import UNITS_PER_MIL, Length
-from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
@@ -36,6 +39,17 @@ class LihuiyuDevice(Service, Status):
                 default = c.get("default")
                 if attr is not None and default is not None:
                     setattr(self, attr, default)
+
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
+        self.setting(bool, "use_minute_for_speed_display", False)
+
+        def _use_percent_for_power():
+            return getattr(self, "use_percent_for_power_display", True)
+
+        def _use_minute_for_speed():
+            return getattr(self, "use_minute_for_speed_display", False)
+
         choices = [
             {
                 "attr": "bedwidth",
@@ -46,7 +60,9 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Width of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
+                # _("Bed Dimensions")
+                # Hint for translation _("Dimensions")
+                "subsection": "_10_Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -57,7 +73,20 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
+                # Hint for translation _("Dimensions")
+                "subsection": "_10_Dimensions",
+            },
+            {
+                "attr": "laserspot",
+                "object": self,
+                "default": "0.3mm",
+                "type": Length,
+                "label": _("Laserspot"),
+                "tip": _("Laser spot size"),
+                "section": "_30_" + _("Laser Parameters"),
+                # Hint for translation _("Dimensions")
+                "subsection": "_10_Dimensions",
+                "nonzero": True,
             },
             {
                 "attr": "user_scale_x",
@@ -69,7 +98,9 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                # _("User Scale Factor")
+                # Hint for translation _("User Scale Factor")
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
             },
             {
@@ -82,11 +113,48 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                # Hint for translation _("User Scale Factor")
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                # _("User Offset")
+                # Hint for translation _("User Offset")
+                "subsection": "_30_User Offset",
+                "ignore": True,  # Does not work yet, so don't show
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                # Hint for translation _("User Offset")
+                "subsection": "_30_User Offset",
+                "ignore": True,  # Does not work yet, so don't show
             },
         ]
         self.register_choices("bed_dim", choices)
+
+        def get_max_range():
+            """
+            Returns the maximum range of the device.
+            """
+            dev_mode = getattr(self.kernel.root, "developer_mode", False)
+            return 100 if dev_mode else 50
 
         choices = [
             {
@@ -108,11 +176,55 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Board"),
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
-                "tip": _(
-                    "Select the board to use. This has an effects the speedcodes used."
-                ),
+                "tip": _("Select the board to use. This affects the speedcodes used."),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
+            },
+            {
+                "attr": "supports_pwm",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Hardware-PWM"),
+                "tip": _(
+                    "Does the board support Hardware-PWM. Only M3 and fireware >= 2024.01.18g support PWM. Earlier M3 revisions are just M2+."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "board", "M3"),
+                "signals": "pwm_mode_changed",
+            },
+            {
+                "attr": "pwm_speedcode",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Use PWM-Speedcode"),
+                "tip": _("PWM Method: set power as well in LHY-speedcodes."),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "supports_pwm"),
+                "hidden": True,
+            },
+            {
+                "attr": "power_scale",
+                "object": self,
+                "default": 30,
+                "type": int,
+                "style": "slider",
+                "min": 1,
+                "max": get_max_range,
+                "label": _("Maximum Laser strength"),
+                "trailer": "%",
+                "tip": _(
+                    "Set the maximum laser power level, any operation power will be a fraction of this"
+                )
+                + "\n"
+                + _("Setting this too high may cause damage to your laser tube!"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Hardware-Laser-Power"),
+                "conditional": (self, "supports_pwm"),
+                "signals": "pwm_mode_changed",
             },
             {
                 "attr": "flip_x",
@@ -122,6 +234,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -132,6 +245,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
+                # Hint for translation _("Axis corrections")
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -165,8 +279,37 @@ class LihuiyuDevice(Service, Status):
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_50_" + _("Home position"),
             },
+            {
+                "attr": "signal_updates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Device Position"),
+                "tip": _(
+                    "Do you want to see some indicator about the current device position?"
+                ),
+                "section": "_95_" + _("Screen updates"),
+                "signals": "restart",
+            },
         ]
         self.register_choices("bed_orientation", choices)
+        choices = [
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed",
+            },
+        ]
+        self.register_choices("coolant", choices)
 
         choices = [
             {
@@ -275,9 +418,10 @@ class LihuiyuDevice(Service, Status):
                 "default": 140,
                 "type": float,
                 "label": _("Max vector speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_00_" + _("General Options"),
@@ -289,7 +433,8 @@ class LihuiyuDevice(Service, Status):
                 "default": 750,
                 "type": float,
                 "label": _("Max raster speed"),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "tip": _(
                     "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
@@ -297,8 +442,37 @@ class LihuiyuDevice(Service, Status):
                 "section": "_00_" + _("General Options"),
                 "subsection": "_10_",
             },
+            {
+                "attr": "legacy_raster",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Use legacy raster method"),
+                "tip": (
+                    _(
+                        "Active: Use legacy method (seems to work better at higher speeds, but has some artifacts)"
+                    )
+                    + "\n"
+                    + _(
+                        "Inactive: Use regular method (no artifacts but apparently more prone to stuttering at high speeds)"
+                    )
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_20_",
+            },
         ]
         self.register_choices("lhy-general", choices)
+
+        self.register_choices("lhy-effects", get_effect_choices(self))
+        self.register_choices(
+            "lhy-defaults",
+            get_operation_choices(
+                self,
+                default_cut_speed=5,
+                default_engrave_speed=25,
+                default_raster_speed=250,
+            ),
+        )
 
         choices = [
             {
@@ -354,7 +528,8 @@ class LihuiyuDevice(Service, Status):
                 "type": float,
                 "label": _("X Travel Speed:"),
                 "tip": _("Minimum travel distance before invoking a rapid jog move."),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
                 "subsection": "_10_",
@@ -366,7 +541,8 @@ class LihuiyuDevice(Service, Status):
                 "type": float,
                 "label": _("Y Travel Speed:"),
                 "tip": _("Minimum travel distance before invoking a rapid jog move."),
-                "trailer": "mm/s",
+                "style": "speed",
+                "perminute": _use_minute_for_speed,
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
                 "subsection": "_10_",
@@ -388,9 +564,6 @@ class LihuiyuDevice(Service, Status):
             },
         ]
         self.register_choices("lhy-speed", choices)
-
-        # This device prefers to display power level in ppi
-        self.setting(bool, "use_percent_for_power_display", False)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -431,7 +604,10 @@ class LihuiyuDevice(Service, Status):
         self.setting(str, "serial", None)
         self.setting(bool, "serial_enable", False)
 
-        self.setting(int, "port", 1022)
+        # Linux prevents ports below 1024 to be used in an non-root context
+        def_port = 1022 if platform.system() == "Windows" else "1025"
+
+        self.setting(int, "port", def_port)
         self.setting(str, "address", "localhost")
 
         self.driver = LihuiyuDriver(self)
@@ -446,6 +622,8 @@ class LihuiyuDevice(Service, Status):
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
+
         _ = self.kernel.translation
 
         @self.console_option(
@@ -454,12 +632,15 @@ class LihuiyuDevice(Service, Status):
             action="store_true",
             help=_("override one second laser fire pulse duration"),
         )
+        @self.console_option("power", "p", type=str, help=_("Power level"))
         @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
         @self.console_command(
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
+        def pulse(
+            command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwgs
+        ):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -475,16 +656,33 @@ class LihuiyuDevice(Service, Status):
                 except IndexError:
                     return
 
-            def timed_fire():
+            def timed_fire(withpower=None):
                 yield "wait_finish"
-                yield "laser_on"
+                if withpower is not None:
+                    yield "laser_on", withpower
+                else:
+                    yield "laser_on"
                 yield "wait", time
                 yield "laser_off"
+
+            if power is not None:
+                try:
+                    if power.endswith("%"):
+                        power = power[:-1]
+                        power = float(power) * 10
+                    else:
+                        power = float(power)
+                except ValueError:
+                    channel(_("Power must be valid value."))
+                    return
+                if not (0 <= power <= 1000):
+                    channel(_("Power must be between 0 and 1000."))
+                    return
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
                 self.spooler.laserjob(
-                    list(timed_fire()),
+                    list(timed_fire(withpower=power)),
                     label=label,
                     helper=True,
                     outline=[self.native] * 4,
@@ -499,7 +697,7 @@ class LihuiyuDevice(Service, Status):
         @self.console_argument("dy", type=Length, help=_("change in y"))
         @self.console_command(
             "move_at_speed",
-            help=_("move_at_speed <speed> <dx> <dy>"),
+            help="move_at_speed <speed> <dx> <dy> : " + _("move the laser at a specific speed and distance"),
             all_arguments_required=True,
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
@@ -799,6 +997,27 @@ class LihuiyuDevice(Service, Status):
                 code = b"A%s\n" % challenge
                 self.output.write(code)
 
+        def _validate_board(channel, board):
+            """
+            Validates the board type
+            """
+            if self.board != board:
+                channel(
+                    _(
+                        "This command is only available for {target} boards. This is a {board}."
+                    ).format(target=board, board=self.board)
+                )
+                return False
+            return True
+
+        @self.console_command(
+            "get_m3nano_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_m3nano_info(command, channel, _, remainder=None, **kwgs):
+            if _validate_board(channel, "M3"):
+                self.driver.get_m3_hardware_info()
+
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwgs):
             self.controller.update_state("active")
@@ -893,6 +1112,7 @@ class LihuiyuDevice(Service, Status):
                 server = self.open_as("module/TCPServer", server_name, port=port)
                 if quit:
                     self.close(server_name)
+                    channel(_("TCP Server for lihuiyu has been closed"))
                     return
                 channel(_("TCP Server for lihuiyu on port: {port}").format(port=port))
                 if verbose:
@@ -924,8 +1144,21 @@ class LihuiyuDevice(Service, Status):
                         )
                     )
                 except KeyError:
-                    channel(_("Intepreter cannot be attached to any device."))
+                    channel(_("Interpreter cannot be attached to any device."))
                 return
+
+    def get_raster_instructions(self):
+        return {
+            "split_crossover": True,
+            "unsupported_opt": (
+                mkconst.RASTER_GREEDY_H,
+                mkconst.RASTER_GREEDY_V,
+                mkconst.RASTER_SPIRAL,
+                mkconst.RASTER_DIAGONAL,
+            ),  # Greedy loses registration way too often to be reliable
+            "gantry": True,
+            "legacy": self.legacy_raster,
+        }
 
     @property
     def safe_label(self):
@@ -944,6 +1177,7 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("plot_shift")
     @signal_listener("plot_phase_type")
     @signal_listener("plot_phase_value")
+    @signal_listener("supports_pwm")
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 
@@ -955,6 +1189,8 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("home_corner")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -988,6 +1224,7 @@ class LihuiyuDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):
@@ -1078,3 +1315,21 @@ class LihuiyuDevice(Service, Status):
             accel = 1
             steps = 128
         return UNITS_PER_MIL * steps
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
+
+    def location(self):
+        if self.mock:
+            return "mock"
+        if self.networked:
+            return f"tcp {self.address}:{self.port}"
+        return f"usb {'auto' if self.usb_index < 0 else self.usb_index}"
+
+    def get_operation_defaults(self, operation_type: str) -> dict:
+        """
+        Returns the default settings for a specific operation type.
+        """
+        settings = self.get_operation_power_speed_defaults(operation_type)
+        # Anything additional for the operation type can be added here
+        return settings

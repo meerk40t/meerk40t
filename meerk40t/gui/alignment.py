@@ -19,7 +19,16 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from ..gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
 from .mwindow import MWindow
@@ -32,18 +41,19 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.context.themes.set_window_colors(self)
+        self.lbl_info_main = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -79,34 +89,40 @@ class InfoPanel(wx.Panel):
             image_from_node = None
             c = None
             # Do we have a standard representation?
-            if node.type.startswith("elem "):
-                if (
-                    hasattr(node, "stroke")
-                    and node.stroke is not None
-                    and node.stroke.argb is not None
-                ):
-                    c = node.stroke
+            if (
+                node.type.startswith("elem ")
+                and hasattr(node, "stroke")
+                and node.stroke is not None
+                and node.stroke.argb is not None
+            ):
+                c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                image_from_node = self.make_raster(
-                    node,
-                    node.paint_bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image_from_node = self.make_raster(
+                        node,
+                        node.paint_bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except Exception:
+                    return None, None
             elif node.type in ("group", "file"):
                 data = list(node.flat(types=elem_nodes))
                 bounds = Node.union_bounds(data, attr="paint_bounds")
 
-                image_from_node = self.make_raster(
-                    data,
-                    bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image_from_node = self.make_raster(
+                        data,
+                        bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except Exception:
+                    return None, None
             if c is None:
                 c = Color("black")
             if image_from_node is None:
@@ -132,6 +148,8 @@ class InfoPanel(wx.Panel):
             if count > 0:
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
@@ -144,6 +162,8 @@ class InfoPanel(wx.Panel):
                 node = data[0]
                 first_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
@@ -155,6 +175,8 @@ class InfoPanel(wx.Panel):
                 node = data[-1]
                 last_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
 
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
@@ -175,10 +197,17 @@ class InfoPanel(wx.Panel):
 
 
 class AlignmentPanel(wx.Panel):
+    """Alignment Panel - Align and distribute design elements
+    **Technical Purpose:**
+    Provides alignment and distribution controls for design elements. Features checkbox controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel helps you align and distribute design elements. Use it to create evenly spaced objects or align them to specific positions."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("alignment")
         self.scene = scene
         # Amount of currently selected
@@ -198,7 +227,7 @@ class AlignmentPanel(wx.Panel):
         self.modeparam = ("default", "first", "last", "bed", "ref")
         self.xyparam = ("none", "min", "center", "max")
 
-        self.rbox_align_x = wx.RadioBox(
+        self.rbox_align_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to X-Axis:"),
@@ -213,7 +242,7 @@ class AlignmentPanel(wx.Panel):
             )
         )
 
-        self.rbox_align_y = wx.RadioBox(
+        self.rbox_align_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to Y-Axis:"),
@@ -228,7 +257,7 @@ class AlignmentPanel(wx.Panel):
             )
         )
 
-        self.rbox_relation = wx.RadioBox(
+        self.rbox_relation = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Relative to:"),
@@ -238,7 +267,7 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_relation.SetSelection(0)
 
-        self.rbox_treatment = wx.RadioBox(
+        self.rbox_treatment = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Treatment:"),
@@ -247,9 +276,9 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_treatment.SetSelection(0)
-        self.btn_align = wx.Button(self, wx.ID_ANY, "Align")
+        self.btn_align = wxButton(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
@@ -379,10 +408,17 @@ class AlignmentPanel(wx.Panel):
 
 
 class DistributionPanel(wx.Panel):
+    """DistributionPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for distribution functionality. Features checkbox controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for distribution functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("distribute")
         self.scene = scene
         # Amount of currently selected
@@ -409,7 +445,7 @@ class DistributionPanel(wx.Panel):
         self.xy_param = ("none", "min", "center", "max", "space")
         self.treat_param = ("default", "shape", "points", "bed", "ref")
 
-        self.rbox_dist_x = wx.RadioBox(
+        self.rbox_dist_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Position of element relative to point for X-Axis:"),
@@ -424,7 +460,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.rbox_dist_y = wx.RadioBox(
+        self.rbox_dist_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Position of element relative to point for Y-Axis:"),
@@ -439,7 +475,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.check_inside_xy = wx.CheckBox(
+        self.check_inside_xy = wxCheckBox(
             self, id=wx.ID_ANY, label=_("Keep first + last inside")
         )
         self.check_inside_xy.SetValue(True)
@@ -449,10 +485,10 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.check_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+        self.check_rotate = wxCheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.check_rotate.SetToolTip(_("Rotate elements parallel to the path"))
 
-        self.rbox_sort = wx.RadioBox(
+        self.rbox_sort = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Work-Sequence:"),
@@ -465,7 +501,7 @@ class DistributionPanel(wx.Panel):
             _("Defines the order in which the selection is being processed")
         )
 
-        self.rbox_treatment = wx.RadioBox(
+        self.rbox_treatment = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Treatment:"),
@@ -492,9 +528,9 @@ class DistributionPanel(wx.Panel):
             + _("- Ref-Object: along the boundaries of a reference-object")
         )
 
-        self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
+        self.btn_dist = wxButton(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_check = StaticBoxSizer(
@@ -528,10 +564,10 @@ class DistributionPanel(wx.Panel):
         self.Layout()
 
         self.btn_dist.Bind(wx.EVT_BUTTON, self.on_button_dist)
-        self.rbox_dist_x.Bind(wx.EVT_RADIOBOX, self.validate_data)
-        self.rbox_dist_y.Bind(wx.EVT_RADIOBOX, self.validate_data)
-        self.rbox_sort.Bind(wx.EVT_RADIOBOX, self.validate_data)
-        self.rbox_treatment.Bind(wx.EVT_RADIOBOX, self.validate_data)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_x)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_y)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_sort)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
         self.context.setting(int, "distribute_x", 0)
         self.context.setting(int, "distribute_y", 0)
         self.context.setting(int, "distribute_treatment", 0)
@@ -1085,10 +1121,17 @@ class DistributionPanel(wx.Panel):
 
 
 class ArrangementPanel(wx.Panel):
+    """ArrangementPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for arrangement functionality. Features checkbox controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for arrangement functionality. Key controls include "Rotate" (checkbox), "Rotate" (checkbox), "Same width" (checkbox)."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("arrangement")
         self.scene = scene
         # Amount of currently selected
@@ -1114,7 +1157,7 @@ class ArrangementPanel(wx.Panel):
         self.ychoices = (_("Top"), _("Center"), _("Bottom"))
         self.xyparam = ("min", "center", "max")
 
-        self.rbox_align_x = wx.RadioBox(
+        self.rbox_align_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to X-Axis:"),
@@ -1124,7 +1167,7 @@ class ArrangementPanel(wx.Panel):
         )
         self.rbox_align_x.SetSelection(0)
 
-        self.rbox_align_y = wx.RadioBox(
+        self.rbox_align_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to Y-Axis:"),
@@ -1137,10 +1180,10 @@ class ArrangementPanel(wx.Panel):
         self.arrange_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
         self.arrange_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
 
-        self.check_same_x = wx.CheckBox(self, wx.ID_ANY, label=_("Same width"))
-        self.check_same_y = wx.CheckBox(self, wx.ID_ANY, label=_("Same height"))
+        self.check_same_x = wxCheckBox(self, wx.ID_ANY, label=_("Same width"))
+        self.check_same_y = wxCheckBox(self, wx.ID_ANY, label=_("Same height"))
 
-        self.rbox_relation = wx.RadioBox(
+        self.rbox_relation = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Arrangement inside grid:"),
@@ -1150,7 +1193,7 @@ class ArrangementPanel(wx.Panel):
         )
         self.rbox_relation.SetSelection(0)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -1167,9 +1210,9 @@ class ArrangementPanel(wx.Panel):
             self, id=wx.ID_ANY, value="5mm", limited=True, check="length"
         )
 
-        self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
+        self.btn_arrange = wxButton(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
-            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
@@ -1196,12 +1239,12 @@ class ArrangementPanel(wx.Panel):
 
         sizer_gaps_x = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_x.Add(
-            wx.StaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
+            wxStaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_x.Add(self.txt_gap_x, 1, wx.EXPAND, 0)
         sizer_gaps_y = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_y.Add(
-            wx.StaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
+            wxStaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_y.Add(self.txt_gap_y, 1, wx.EXPAND, 0)
         sizer_gaps_xy = StaticBoxSizer(self, wx.ID_ANY, _("Gaps:"), wx.VERTICAL)
@@ -1231,12 +1274,12 @@ class ArrangementPanel(wx.Panel):
         # self.rbox_align_y.SetToolTip(_(""))
         self.check_same_x.SetToolTip(
             _(
-                "Set if all columns need to have the same size (ie maximum width over all columns)"
+                "Set if all columns need to have the same size (i.e. maximum width over all columns)"
             )
         )
         self.check_same_y.SetToolTip(
             _(
-                "Set if all rows need to have the same size (ie maximum height over all row)"
+                "Set if all rows need to have the same size (i.e. maximum height over all row)"
             )
         )
         # self.rbox_relation.SetToolTip(_(""))
@@ -1544,6 +1587,12 @@ class Alignment(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.scene = getattr(self.context.root, "mainscene", None)
         self.panel_align = AlignmentPanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene
@@ -1606,4 +1655,9 @@ class Alignment(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for Translation: _("Editing"), _("Element Alignment")
         return "Editing", "Element Alignment"
+
+    @staticmethod
+    def helptext():
+        return _("Align elements to each other")

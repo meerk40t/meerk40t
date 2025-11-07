@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.scene.scene import RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_DROP
 from meerk40t.gui.wxutils import get_key_name
 
 
@@ -8,13 +9,14 @@ class ScenePanel(wx.Panel):
     wxPanel that holds the Scene. This serves as the wx.Control object that holds and draws the scene.
     """
 
-    def __init__(self, context, parent, scene_name="Scene", **kwds):
+    def __init__(self, context, parent, scene_name="Scene", with_snap=True, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, parent, **kwds)
         #        self.scene_panel = wx.Panel(self, wx.ID_ANY)
         self.scene_panel = wx.Window(self, wx.ID_ANY)
-        self.scene = context.open_as("module/Scene", scene_name, self, pane=parent)
+        self.scene = context.open_as("module/Scene", scene_name, self, pane=parent, supports_snap=with_snap)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.scene_panel.SetDoubleBuffered(True)
 
         # The scene buffer is the updated image that is drawn to screen.
@@ -52,6 +54,7 @@ class ScenePanel(wx.Panel):
         self.last_key = None
         self.last_event = None
         self.last_char = None
+        self._keybind_channel = self.context.channel("keybinds")
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
@@ -117,57 +120,118 @@ class ScenePanel(wx.Panel):
     # while printable characters will issue both
 
     def on_key_down(self, evt):
-        self.last_char = None
+        consumed = False
         literal = get_key_name(evt, True)
+        self.last_char = None
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
-            self.scene.event(
-                window_pos=self.scene.last_position,
+            # print (f"on_key_down: {literal}")
+            consumed = self.scene.event(
+                window_pos=self.scene.last_window_pos,
                 event_type="key_down",
                 nearest_snap=None,
                 modifiers=literal,
                 keycode=None,
             )
+            if self._keybind_channel:
+                self._keybind_channel(
+                    f"scenepanel-on_key_down (rc={consumed}): {literal}"
+                )
         self.last_event = "key_down"
-        evt.Skip()
+        if not consumed:
+            if hasattr(self.scene.pane, "tool_active"):
+                ignore = self.scene.pane.tool_active
+            else:
+                ignore = False
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {literal}.")
+            if not ignore and self.context.bind.trigger(literal):
+                consumed = True
+                if self._keybind_channel:
+                    self._keybind_channel(f"Scene key_down: {literal} executed.")
+            else:
+                if self._keybind_channel:
+                    if ignore:
+                        self._keybind_channel(
+                            f"Scene key_down: {literal} was ignored as tool active."
+                        )
+                    else:
+                        self._keybind_channel(f"Scene key_down: {literal} unfound.")
+        # We need to skip the event to make sure the keypress is recognized properly
+        if not consumed:
+            evt.Skip()
         self.SetFocus()
 
     def on_key(self, evt):
+        consumed = False
         literal = get_key_name(evt, True)
         self.last_char = chr(evt.GetUnicodeKey())
         if self.last_event != "key_up":
-            # Fine we deal with it
-            # print (f"on_key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())} - {literal}")
-            self.scene.event(
-                window_pos=self.scene.last_position,
+            # Fine, we deal with it
+            consumed = self.scene.event(
+                window_pos=self.scene.last_window_pos,
                 event_type="key_up",
                 nearest_snap=None,
                 modifiers=literal,
                 keycode=self.last_char,
             )
+            if self._keybind_channel:
+                self._keybind_channel(
+                    f"scenepanel-on_key (rc={consumed}): {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}"
+                )
             self.last_event = "key_up"
-        evt.Skip()
+            # self.SetFocus()
+        if not consumed:
+            evt.Skip()
 
     def on_key_up(self, evt):
         # Only key provides the right character representation
+        consumed = False
         literal = get_key_name(evt, True)
         if self.last_event != "key_up":
             if literal or self.last_char:
                 # print (f"on_key_up: {literal}")
-                self.scene.event(
-                    window_pos=self.scene.last_position,
+                consumed = self.scene.event(
+                    window_pos=self.scene.last_window_pos,
                     event_type="key_up",
                     nearest_snap=None,
                     modifiers=literal,
                     keycode=None,
                 )
+                if self._keybind_channel:
+                    self._keybind_channel(
+                        f"scenepanel-on_key_up (rc={consumed}): {literal}, last_char: {self.last_char}"
+                    )
                 # After consumption all is done
             self.last_char = None
         # else:
         #     print (f"up: someone dealt with it ({literal}, {chr(evt.GetUnicodeKey())}, {self.last_char})")
         self.last_event = None
-        evt.Skip()
+        if not consumed:
+            if hasattr(self.scene.pane, "tool_active"):
+                ignore = self.scene.pane.tool_active
+            else:
+                ignore = False
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {literal}.")
+            if not ignore and self.context.bind.untrigger(literal):
+                if self._keybind_channel:
+                    self._keybind_channel(f"Scene key_up: {literal} executed.")
+            else:
+                if self._keybind_channel:
+                    if ignore:
+                        self._keybind_channel(
+                            f"Scene key_up: {literal} was ignored as tool active."
+                        )
+                    else:
+                        self._keybind_channel(f"Scene key_up: {literal} unfound.")
+        try:
+            del self.context.bind.triggered[literal]
+        except KeyError:
+            pass
+        if not consumed:
+            evt.Skip()
 
     def on_size(self, event=None):
         if self.context is None:
@@ -244,6 +308,27 @@ class ScenePanel(wx.Panel):
             event.GetPosition(), "middleup", None, self.event_modifiers(event)
         )
 
+    def _compute_snap_point(self, event):
+        """
+        Compute snap point for given mouse event.
+        
+        Returns:
+            tuple: (mouse_pos, space_pos, nearest_snap, modifiers)
+        """
+        mouse_pos = event.GetPosition()
+        space_pos = self.scene.widget_root.scene_widget.matrix.point_in_inverse_space(mouse_pos)
+        modifiers = self.event_modifiers(event)
+        
+        # Get snap point from scene
+        snap_x, snap_y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+        nearest_snap = None
+        if snap_x is not None and snap_y is not None:
+            # Convert back to screen coordinates for the snap info
+            snap_screen = self.scene.widget_root.scene_widget.matrix.point_in_matrix_space((snap_x, snap_y))
+            nearest_snap = (snap_x, snap_y, snap_screen[0], snap_screen[1])
+            
+        return mouse_pos, space_pos, nearest_snap, modifiers
+
     def on_left_mouse_down(self, event: wx.MouseEvent):
         """
         Scene Panel left click event for down.
@@ -256,9 +341,9 @@ class ScenePanel(wx.Panel):
 
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
-        self.scene.event(
-            event.GetPosition(), "leftdown", None, self.event_modifiers(event)
-        )
+            
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "leftdown", nearest_snap, modifiers)
 
     def on_left_mouse_up(self, event: wx.MouseEvent):
         """
@@ -270,9 +355,9 @@ class ScenePanel(wx.Panel):
             return
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
-        self.scene.event(
-            event.GetPosition(), "leftup", None, self.event_modifiers(event)
-        )
+            
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "leftup", nearest_snap, modifiers)
 
     def on_mouse_double_click(self, event: wx.MouseEvent):
         """
@@ -291,13 +376,19 @@ class ScenePanel(wx.Panel):
         Scene Panel move event. Calls hover if the mouse has no pressed buttons.
         Calls move if the mouse is currently dragging.
         """
+        # Calculate snap point for the current mouse position
+        mouse_pos = event.GetPosition()
+        modifiers = self.event_modifiers(event)
+        nearest_snap = None
+        # Hover will not snap
+       
         if event.Moving():
             self.scene.event(
-                event.GetPosition(), "hover", None, self.event_modifiers(event)
+                mouse_pos, "hover", nearest_snap, modifiers
             )
         else:
             self.scene.event(
-                event.GetPosition(), "move", None, self.event_modifiers(event)
+                mouse_pos, "move", nearest_snap, modifiers
             )
 
     def on_right_mouse_down(self, event: wx.MouseEvent):
@@ -307,9 +398,8 @@ class ScenePanel(wx.Panel):
         Offers alternative events if Alt or control is currently pressed.
         """
         self.SetFocus()
-        self.scene.event(
-            event.GetPosition(), "rightdown", None, self.event_modifiers(event)
-        )
+        mouse_pos, space_pos, nearest_snap, modifiers = self._compute_snap_point(event)
+        self.scene.event(mouse_pos, "rightdown", nearest_snap, modifiers)
         event.Skip()
 
     def on_right_mouse_up(self, event: wx.MouseEvent):

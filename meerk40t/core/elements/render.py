@@ -1,5 +1,16 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module contains console commands that interact with the elements system in the program.
+It provides functionality for rendering, vectorizing, outlining, and managing keyhole elements for images.
+
+Functions:
+- plugin: Initializes console commands related to rendering and vectorization.
+- init_commands: Sets up various console commands for rendering and manipulating elements.
+- render_elements: Creates a raster image from the given elements.
+- vectorize_elements: Converts given elements to a path.
+- element_outline: Creates an outline path at the inner and outer side of a path.
+- keyhole_elements: Sets a path-like element as a keyhole frame for selected images.
+- remove_keyhole_elements: Removes keyhole frame for selected images.
+
 """
 
 from copy import copy
@@ -60,18 +71,22 @@ def init_commands(kernel):
         new_height = height * dots_per_units
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
 
         image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
-        self.elem_branch.add_node(image_node)
+        with self.node_lock:
+            self.elem_branch.add_node(image_node)
         self.signal("refresh_scene", "Scene")
         data = [image_node]
         # Newly created! Classification needed?
@@ -205,6 +220,7 @@ def init_commands(kernel):
         if isinf(xmin):
             channel(_("No bounds for selected elements."))
             return
+        kernel.busyinfo.start(msg=_("Generating..."))
         width = xmax - xmin
         height = ymax - ymin
 
@@ -213,13 +229,16 @@ def init_commands(kernel):
         new_height = height * dots_per_units
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
-
-        image = make_raster(
-            data,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
+        try:
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
         path = make_vector(
             image,
             interpolationpolicy=ipolicy,
@@ -234,19 +253,20 @@ def init_commands(kernel):
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
         path.transform *= Matrix(matrix)
-        node = self.elem_branch.add(
-            path=abs(path),
-            stroke_width=0,
-            stroke_scaled=False,
-            type="elem path",
-            fillrule=Fillrule.FILLRULE_NONZERO,
-            linejoin=Linejoin.JOIN_ROUND,
-        )
+        with self.node_lock:
+            node = self.elem_branch.add(
+                path=abs(path),
+                stroke_width=500,
+                stroke_scaled=False,
+                type="elem path",
+                fillrule=Fillrule.FILLRULE_NONZERO,
+                linejoin=Linejoin.JOIN_ROUND,
+            )
         # Newly created! Classification needed?
         data_out = [node]
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
-
+        kernel.busyinfo.end()
         return "elements", data_out
 
     @self.console_option(
@@ -324,7 +344,7 @@ def init_commands(kernel):
         action="store_true",
         help=_("Preserve intermediary objects"),
     )
-    @self.console_argument("offset", type=Length, help="Offset distance")
+    @self.console_argument("offset", type=str, help="Offset distance")
     @self.console_command(
         "outline",
         help=_("Create an outline path at the inner and outer side of a path"),
@@ -378,6 +398,7 @@ def init_commands(kernel):
             return
         if debug is None:
             debug = False
+        kernel.busyinfo.start(msg=_("Generating..."))
         reverse = self.classify_reverse
         if reverse:
             data = list(reversed(data))
@@ -412,18 +433,21 @@ def init_commands(kernel):
             opticurve = True
         if opttolerance is None:
             opttolerance = 0.2
-        if color is None:
-            pathcolor = Color("blue")
-        else:
-            pathcolor = color
+        pathcolor = Color("blue") if color is None else color
         if invert is None:
             invert = False
         if blacklevel is None:
             blacklevel = 0.5
-        if offset is None:
-            offset = self.length("5mm")
-        else:
-            offset = self.length(offset)
+        try:
+            # fmt: off
+            lensett = self.length_settings()
+            if offset is None:
+                offset = "5mm"
+            offset = float(Length(offset, relative_length=self.device.view.width, settings=lensett))
+            # fmt: on
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
         if steps is None or steps < 1:
             steps = 1
         if outer is None:
@@ -447,9 +471,10 @@ def init_commands(kernel):
                     e.stroke_width = UNITS_PER_PIXEL
                 mydata.append(e)
         if debug:
-            for node in mydata:
-                node.label = "Phase 0: Initial copy"
-                self.elem_branch.add_node(node)
+            with self.node_lock:
+                for node in mydata:
+                    node.label = "Phase 0: Initial copy"
+                    self.elem_branch.add_node(node)
 
         ###############################################
         # Phase 1: render and vectorize first outline
@@ -473,13 +498,17 @@ def init_commands(kernel):
         new_height = max(new_height, 1)
         new_width = max(new_width, 1)
         dpi = 500
+        try:
+            data_image = make_raster(
+                mydata,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+        except Exception:
+            channel(_("Too much memory required."))
+            return
 
-        data_image = make_raster(
-            mydata,
-            bounds=bounds,
-            width=new_width,
-            height=new_height,
-        )
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
         image_node_1 = ImageNode(
@@ -502,7 +531,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         data_node = PathNode(
             path=abs(path),
-            stroke_width=1,
+            stroke_width=500,
             stroke=Color("black"),
             stroke_scaled=False,
             fill=None,
@@ -514,8 +543,9 @@ def init_commands(kernel):
         # If you want to debug the phases then uncomment the following lines to
         # see the interim path and interim render image
         if debug:
-            self.elem_branch.add_node(data_node)
-            self.elem_branch.add_node(image_node_1)
+            with self.node_lock:
+                self.elem_branch.add_node(data_node)
+                self.elem_branch.add_node(image_node_1)
 
         copy_data = [image_node_1, data_node]
 
@@ -546,13 +576,16 @@ def init_commands(kernel):
             new_height = max(new_height, 1)
             new_width = max(new_width, 1)
             dpi = 500
-
-            image_2 = make_raster(
-                copy_data,
-                bounds=bounds,
-                width=new_width,
-                height=new_height,
-            )
+            try:
+                image_2 = make_raster(
+                    copy_data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+            except Exception:
+                channel(_("Too much memory required."))
+                return
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
             image_node_2 = ImageNode(
@@ -577,7 +610,7 @@ def init_commands(kernel):
             path_final = path_2
             data_node_2 = PathNode(
                 path=abs(path_2),
-                stroke_width=1,
+                stroke_width=500,
                 stroke=Color("black"),
                 stroke_scaled=False,
                 fill=None,
@@ -590,8 +623,9 @@ def init_commands(kernel):
             # If you want to debug the phases then uncomment the following line to
             # see the interim image
             if debug:
-                self.elem_branch.add_node(image_node_2)
-                self.elem_branch.add_node(data_node_2)
+                with self.node_lock:
+                    self.elem_branch.add_node(image_node_2)
+                    self.elem_branch.add_node(data_node_2)
             #######################################################
             # Phase 3: render and vectorize last outline for outer
             #######################################################
@@ -603,7 +637,7 @@ def init_commands(kernel):
                     subpath = Path(pasp)
                     data_node = PathNode(
                         path=abs(subpath),
-                        stroke_width=1,
+                        stroke_width=500,
                         stroke=Color("black"),
                         stroke_scaled=False,
                         fill=Color("black"),
@@ -617,7 +651,8 @@ def init_commands(kernel):
                     # If you want to debug the phases then uncomment the following lines to
                     # see the interim path nodes
                     if debug:
-                        self.elem_branch.add_node(data_node)
+                        with self.node_lock:
+                            self.elem_branch.add_node(data_node)
 
                 bounds = Node.union_bounds(copy_data, attr="paint_bounds")
                 # bounds_regular = Node.union_bounds(data)
@@ -638,13 +673,16 @@ def init_commands(kernel):
                 new_height = max(new_height, 1)
                 new_width = max(new_width, 1)
                 dpi = 500
-
-                data_image = make_raster(
-                    copy_data,
-                    bounds=bounds,
-                    width=new_width,
-                    height=new_height,
-                )
+                try:
+                    data_image = make_raster(
+                        copy_data,
+                        bounds=bounds,
+                        width=new_width,
+                        height=new_height,
+                    )
+                except Exception:
+                    channel(_("Too much memory required."))
+                    return
                 matrix = Matrix.scale(width / new_width, height / new_height)
                 matrix.post_translate(bounds[0], bounds[1])
 
@@ -663,25 +701,111 @@ def init_commands(kernel):
                 matrix.post_translate(bounds[0], bounds[1])
                 path_final.transform *= Matrix(matrix)
 
-            outline_node = self.elem_branch.add(
-                path=abs(path_final),
-                stroke_width=1,
-                stroke_scaled=False,
-                type="elem path",
-                fill=None,
-                stroke=pathcolor,
-                # fillrule=Fillrule.FILLRULE_NONZERO,
-                linejoin=Linejoin.JOIN_ROUND,
-                label=f"Outline path #{numidx}",
-            )
+            with self.node_lock:
+                outline_node = self.elem_branch.add(
+                    path=abs(path_final),
+                    stroke_width=500,
+                    stroke_scaled=False,
+                    type="elem path",
+                    fill=None,
+                    stroke=pathcolor,
+                    # fillrule=Fillrule.FILLRULE_NONZERO,
+                    linejoin=Linejoin.JOIN_ROUND,
+                    label=f"Outline path #{numidx}",
+                )
             outline_node.fill = None
             outputdata.append(outline_node)
 
         # Newly created! Classification needed?
         post.append(classify_new(outputdata))
         self.signal("refresh_scene", "Scene")
+        kernel.busyinfo.end()
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
         return "elements", outputdata
+
+    @self.console_argument("refid", type=str, help=_("The id of the keyhole element"))
+    @self.console_command(
+        "keyhole",
+        help=_("Set a path-like element as keyhole frame for selected images"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def keyhole_elements(
+        command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs
+    ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        if nohide is None:
+            nohide = False
+        if refid is None:
+            # We do look for the very first occurence of a path like object and take this...
+            for node in data:
+                if node.id is not None and node.type in (
+                    "elem path",
+                    "elem ellipse",
+                    "elem rect",
+                    "elem polyline",
+                ):
+                    refid = node.id
+                    break
+
+        if refid is None:
+            channel(_("You need to provide an ID of an element to act as a keyhole"))
+            return
+        refnode = self.find_node(refid)
+        if refnode is None:
+            channel(_("A node with such an ID couldn't be found"))
+            return
+        if not hasattr(refnode, "as_geometry"):
+            channel(
+                _("This node can not act as a keyhole: {nodetype}").format(
+                    nodetype=refnode.type
+                )
+            )
+            return
+        images = list((e for e in data if e.type == "elem image"))
+        if len(images) == 0:
+            channel(_("No images selected/provided"))
+            return
+
+        for node in images:
+            rid = node.keyhole_reference
+            if rid is not None:
+                self.deregister_keyhole(rid, node)
+            try:
+                self.register_keyhole(refnode, node)
+            except ValueError as e:
+                channel(f"Could not register keyhole: {e}")
+                return
+        self.process_keyhole_updates(None)
+        self.signal("refresh_scene", "Scene")
+        return "elements", images
+
+    @self.console_command(
+        "remove_keyhole",
+        help=_("Removes keyhole frame for selected images"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def remove_keyhole_elements(
+        command, channel, _, refid=None, nohide=None, data=None, post=None, **kwargs
+    ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        images = list((e for e in data if e.type == "elem image"))
+        if len(images) == 0:
+            channel(_("No images selected/provided"))
+            return
+        for node in images:
+            rid = node.keyhole_reference
+            if rid is not None:
+                self.deregister_keyhole(rid, node)
+        self.process_keyhole_updates(None)
+
+        self.signal("refresh_scene", "Scene")
+        return "elements", images
 
     # --------------------------- END COMMANDS ------------------------------

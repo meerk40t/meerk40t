@@ -54,6 +54,7 @@ class Ch341LibusbDriver:
         self.channel = channel
         self.backend_error_code = None
         self.timeout = 1500
+        self.timeoutEPPWrite = 60000
         self.bulk = bulk
 
     def find_device(self, index=0):
@@ -437,7 +438,7 @@ class Ch341LibusbDriver:
             data.insert(i, p)
         try:
             # endpoint, data, timeout
-            device.write(endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeout)
+            device.write(endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeoutEPPWrite)
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 
@@ -514,6 +515,12 @@ class LibCH341Driver:
                 self.driver_value = None
                 self.state("STATE_CONNECTION_FAILED")
                 raise ConnectionRefusedError from e  # No more devices.
+            except Exception as e:
+                self.channel(_("Connection to USB failed: {e}.\n"))
+                self.driver_value = None
+                self.state("STATE_CONNECTION_FAILED")
+                raise ConnectionRefusedError from e  # No more devices.
+
             self.driver_index = usb_index
             self.channel(_("USB Connected."))
             self.state("STATE_USB_CONNECTED")

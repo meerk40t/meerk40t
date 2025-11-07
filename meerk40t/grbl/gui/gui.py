@@ -15,12 +15,14 @@ def plugin(service, lifecycle):
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
         from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.grbl.gui.grblhardwareconfig import GRBLHardwareConfig
+        from meerk40t.grbl.gui.grbloperationconfig import GRBLAdvancedPanel
         from meerk40t.gui.icons import (
             icons8_computer_support,
             icons8_connected,
             icons8_emergency_stop_button,
             icons8_flash_off,
             icons8_flash_on,
+            icons8_home_filled,
             icons8_info,
             icons8_pause,
         )
@@ -33,6 +35,11 @@ def plugin(service, lifecycle):
 
         service.register("window/GrblHardwareConfig", GRBLHardwareConfig)
 
+        service.register("property/RasterOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/CutOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/EngraveOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/ImageOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/DotsOpNode/GRBL", GRBLAdvancedPanel)
         _ = service._
 
         service.register(
@@ -45,16 +52,21 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("window toggle GRBLController\n"),
             },
         )
-        service.register(
-            "button/device/Configuration",
-            {
-                "label": _("Config"),
-                "icon": icons8_computer_support,
-                "tip": _("Opens device-specific configuration window"),
-                "help": "devicegrbl",
-                "action": lambda v: service("window toggle Configuration\n"),
-            },
-        )
+        kernel = service.kernel
+        if not (
+            hasattr(kernel.args, "lock_device_config")
+            and kernel.args.lock_device_config
+        ):
+            service.register(
+                "button/device/Configuration",
+                {
+                    "label": _("Config"),
+                    "icon": icons8_computer_support,
+                    "tip": _("Opens device-specific configuration window"),
+                    "help": "devicegrbl",
+                    "action": lambda v: service("window toggle Configuration\n"),
+                },
+            )
         service.register(
             "button/control/Pause",
             {
@@ -104,6 +116,12 @@ def plugin(service, lifecycle):
             },
         )
 
+        def in_error_state():
+            if hasattr(service, "controller"):
+                if service.controller is not None:
+                    return service.controller.error_condition
+            return False
+
         service.register(
             "button/control/ClearAlarm",
             {
@@ -111,7 +129,20 @@ def plugin(service, lifecycle):
                 "icon": icons8_info,
                 "tip": _("Send a GRBL Clear Alarm command"),
                 "help": "devicegrbl",
+                "rule_enabled": lambda v: in_error_state(),
                 "action": lambda v: service("clear_alarm\n"),
+            },
+        )
+
+        service.register(
+            "button/control/GoHome",
+            {
+                "label": _("Home"),
+                "icon": icons8_home_filled,
+                "tip": _("Send laser to home position (right click: to physical home)"),
+                "help": "devicegrbl",
+                "action": lambda v: service("home\n"),
+                "action_right": lambda v: service("physical_home\n"),
             },
         )
         service.add_service_delegate(GRBLGui(service))

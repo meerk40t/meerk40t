@@ -1,6 +1,7 @@
 """
 Mixin functions for wxMeerk40t
 """
+
 import platform
 from typing import List
 
@@ -8,7 +9,8 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
+from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Length
+from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
 
@@ -19,7 +21,7 @@ _ = wx.GetTranslation
 ##############
 
 
-def matrix_scale(matrix):
+def get_matrix_scale(matrix):
     # We usually use the value_scale_x to establish a pixel size
     # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
     # For a rotated scene this crashes, so we need to take
@@ -33,6 +35,54 @@ def matrix_scale(matrix):
     if res < 1e-8:
         res = 1
     return res
+
+
+def get_matrix_full_scale(matrix):
+    # We usually use the value_scale_x to establish a pixel size
+    # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
+    # For a rotated scene this crashes, so we need to take
+    # that into consideration, so let's look at the
+    # distance from (1, 0) to (0, 0) and call this our scale
+    from math import sqrt
+
+    x0, y0 = matrix.point_in_matrix_space((0, 0))
+    x1, y1 = matrix.point_in_matrix_space((1, 0))
+    resx = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if resx < 1e-8:
+        resx = 1
+    x1, y1 = matrix.point_in_matrix_space((0, 1))
+    resy = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if resy < 1e-8:
+        resy = 1
+    return resx, resy
+
+
+def get_gc_scale(gc):
+    gcmat = gc.GetTransform()
+    mat_param = gcmat.Get()
+    testmatrix = Matrix(
+        mat_param[0],
+        mat_param[1],
+        mat_param[2],
+        mat_param[3],
+        mat_param[4],
+        mat_param[5],
+    )
+    return get_matrix_scale(testmatrix)
+
+
+def get_gc_full_scale(gc):
+    gcmat = gc.GetTransform()
+    mat_param = gcmat.Get()
+    testmatrix = Matrix(
+        mat_param[0],
+        mat_param[1],
+        mat_param[2],
+        mat_param[3],
+        mat_param[4],
+        mat_param[5],
+    )
+    return get_matrix_full_scale(testmatrix)
 
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
@@ -79,12 +129,16 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         else:
             if get("separate_before", default=False):
                 menu.AppendSeparator()
+                c["separate_before"] = False
             if submenu_name:
                 submenu = wx.Menu()
                 menu.AppendSubMenu(submenu, submenu_name)
                 submenus[submenu_name] = submenu
 
         menu_context = submenu if submenu is not None else menu
+        if get("separate_before", default=False):
+            menu.AppendSeparator()
+            c["separate_before"] = False
         t = get("type")
         if t == bool:
             item = menu_context.Append(
@@ -192,23 +246,25 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                     _("Parameters"),
                     style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                 ) as dlg:
+                    gui.context.themes.set_window_colors(dlg)
+
                     sizer = wx.BoxSizer(wx.VERTICAL)
                     fields = []
                     for prompt in prompts:
-                        label = wx.StaticText(dlg, wx.ID_ANY, prompt["prompt"])
+                        label = wxStaticText(dlg, wx.ID_ANY, prompt["prompt"])
                         sizer.Add(label, 0, wx.EXPAND, 0)
                         dtype = prompt["type"]
                         if dtype == bool:
-                            control = wx.CheckBox(dlg, wx.ID_ANY)
+                            control = wxCheckBox(dlg, wx.ID_ANY)
                         else:
-                            control = wx.TextCtrl(dlg, wx.ID_ANY)
+                            control = TextCtrl(dlg, wx.ID_ANY)
                             control.SetMaxSize(dip_size(dlg, 75, -1))
                         fields.append(control)
                         sizer.Add(control, 0, wx.EXPAND, 0)
                         sizer.AddSpacer(23)
                     b_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                    button_OK = wx.Button(dlg, wx.ID_OK, _("OK"))
-                    button_CANCEL = wx.Button(dlg, wx.ID_CANCEL, _("Cancel"))
+                    button_OK = wxButton(dlg, wx.ID_OK, _("OK"))
+                    button_CANCEL = wxButton(dlg, wx.ID_CANCEL, _("Cancel"))
                     # dlg.SetAffirmativeId(button_OK.GetId())
                     # dlg.SetEscapeId(button_CANCEL.GetId())
                     b_sizer.Add(button_OK, 0, wx.EXPAND, 0)
@@ -264,12 +320,17 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                             parent_menu = submenu
                         else:
                             submenu = wx.Menu()
+                            if func.separate_before:
+                                last_was_separator = True
+                                parent_menu.AppendSeparator()
+                                func.separate_before = False
+
                             parent_menu.AppendSubMenu(submenu, sname, func.help)
                             submenus[common] = submenu
                             parent_menu = submenu
+
             menu_context = submenu if submenu is not None else menu
             if func.separate_before:
-                last_was_separator = True
                 menu_context.AppendSeparator()
             if func.reference is not None:
                 menu_context.AppendSubMenu(
@@ -348,6 +409,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         parent_menu = submenu
                     else:
                         submenu = wx.Menu()
+                        if func.separate_before:
+                            parent_menu.AppendSeparator()
+                            func.separate_before = False
                         parent_menu.AppendSubMenu(submenu, sname, func.help)
                         submenus[common] = submenu
                         parent_menu = submenu
@@ -355,6 +419,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         menu_context = submenu if submenu is not None else menu
         if func.separate_before:
             menu_context.AppendSeparator()
+            func.separate_before = False
         if func.reference is not None:
             menu_context.AppendSubMenu(
                 create_menu_for_node(gui, func.reference(node), elements),
@@ -446,6 +511,20 @@ def create_menu(gui, node, elements):
 ##############
 # GUI CONTROL OVERRIDES
 ##############
+def set_color_according_to_theme(control, background, foreground):
+    win = control
+    while win is not None:
+        if hasattr(win, "context") and hasattr(win.context, "themes"):
+            if background:
+                col = win.context.themes.get(background)
+                if col:
+                    control.SetBackgroundColour(col)
+            if foreground:
+                col = win.context.themes.get(foreground)
+                if col:
+                    control.SetForegroundColour(col)
+            break
+        win = win.GetParent()
 
 
 class TextCtrl(wx.TextCtrl):
@@ -469,6 +548,8 @@ class TextCtrl(wx.TextCtrl):
         limited=False,
         nonzero=False,
     ):
+        if value is None:
+            value = ""
         super().__init__(
             parent,
             id=id,
@@ -490,14 +571,7 @@ class TextCtrl(wx.TextCtrl):
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
         unitstr = "".join(ACCEPTED_UNITS)
-        angle_units = (
-            "deg",
-            "rad",
-            "grad",
-            "turn",
-            r"%",
-        )
-        anglestr = "".join(angle_units)
+        anglestr = "".join(ACCEPTED_ANGLE_UNITS)
         self.charpattern = ""
         if self._check == "length":
             self.charpattern = floatstr + unitstr
@@ -515,20 +589,21 @@ class TextCtrl(wx.TextCtrl):
         self.upper_limit_err = None
         self.lower_limit_warn = None
         self.upper_limit_warn = None
-        self._default_color_background = None
+        self._default_color_background = self.GetBackgroundColour()
         self._error_color_background = wx.RED
         self._warn_color_background = wx.YELLOW
-        self._modify_color_background = None
+        self._modify_color_background = self._default_color_background
 
-        self._default_color_foreground = None
-        self._error_color_foreground = None
+        self._default_color_foreground = self.GetForegroundColour()
+        self._error_color_foreground = self._default_color_foreground
         self._warn_color_foreground = wx.BLACK
-        self._modify_color_foreground = None
+        self._modify_color_foreground = self._default_color_foreground
         self._warn_status = "modified"
 
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
+        self._default_values = None
 
         # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
@@ -538,12 +613,14 @@ class TextCtrl(wx.TextCtrl):
             self.Bind(wx.EVT_KEY_UP, self.on_check)
         self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
         self.SetMinSize(dip_size(self, _MIN_WIDTH, -1))
         if limited:
             self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
+        set_color_according_to_theme(self, "text_bg", "text_fg")
 
     def validate_widths(self):
         minpattern = "0000"
@@ -605,6 +682,9 @@ class TextCtrl(wx.TextCtrl):
         or None in any other case
         """
         return self._event_generated
+
+    def set_default_values(self, def_values):
+        self._default_values = def_values
 
     def get_warn_status(self, txt):
         status = ""
@@ -713,6 +793,23 @@ class TextCtrl(wx.TextCtrl):
                     units = "in"
                 txt = txt.strip() + units
                 self.ChangeValue(txt)
+        elif (
+            txt != "" and self._check == "angle" and self.extend_default_units_if_empty
+        ):
+            # Do we have non-existing units provided? --> Change content
+            purenumber = True
+            unitstr = "".join(ACCEPTED_ANGLE_UNITS)
+            for c in unitstr:
+                if c in txt:
+                    purenumber = False
+                    break
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "angle_units", "deg")
+                units = root.angle_units
+                txt = txt.strip() + units
+                self.ChangeValue(txt)
 
     def on_enter_field(self, event):
         self._last_valid_value = super().GetValue()
@@ -724,8 +821,10 @@ class TextCtrl(wx.TextCtrl):
         self.prevalidate("leave")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_KILL_FOCUS
-            self._action_routine()
-            self._event_generated = None
+            try:
+                self._action_routine()
+            finally:
+                self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
@@ -737,12 +836,47 @@ class TextCtrl(wx.TextCtrl):
         self.prevalidate("enter")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_TEXT_ENTER
-            self._action_routine()
-            self._event_generated = None
+            try:
+                self._action_routine()
+            finally:
+                self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status
+
+    def on_right_click(self, event):
+        def set_menu_value(to_be_set):
+            def handler(event):
+                self.SetValue(to_be_set)
+                self.prevalidate("enter")
+                if self._action_routine is not None:
+                    self._event_generated = wx.EVT_TEXT_ENTER
+                    try:
+                        self._action_routine()
+                    finally:
+                        self._event_generated = None
+
+            return handler
+
+        if not self._default_values:
+            event.Skip()
+            return
+        menu = wx.Menu()
+        has_info = isinstance(self._default_values[0], (list, tuple))
+        item: wx.MenuItem = menu.Append(wx.ID_ANY, _("Default values..."), "")
+        item.Enable(False)
+        for info in self._default_values:
+            item = menu.Append(
+                wx.ID_ANY, info[0] if has_info else info, info[1] if has_info else ""
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                set_menu_value(info[0] if has_info else info),
+                id=item.GetId(),
+            )
+        self.PopupMenu(menu)
+        menu.Destroy()
 
     @property
     def warn_status(self):
@@ -820,8 +954,10 @@ class TextCtrl(wx.TextCtrl):
             if getattr(self.parent.context.root, "process_while_typing", False):
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT
-                    self._action_routine()
-                    self._event_generated = None
+                    try:
+                        self._action_routine()
+                    finally:
+                        self._event_generated = None
 
     @property
     def is_changed(self):
@@ -858,9 +994,9 @@ class TextCtrl(wx.TextCtrl):
         return result
 
 
-class CheckBox(wx.CheckBox):
+class wxCheckBox(wx.CheckBox):
     """
-    This checkbox replaces wx.Checkbox and creates a series of mouse over tool tips to permit Linux tooltips that
+    This class wraps around  wx.CheckBox and creates a series of mouse over tool tips to permit Linux tooltips that
     otherwise do not show.
     """
 
@@ -876,10 +1012,209 @@ class CheckBox(wx.CheckBox):
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
 
                 return mouse
 
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "text_bg", "text_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxComboBox(wx.ComboBox):
+    """
+    This class wraps around wx.ComboBox and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "text_bg", "text_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxTreeCtrl(wx.TreeCtrl):
+    """
+    This class wraps around wx.TreeCtrl and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "list_bg", "list_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxBitmapButton(wx.BitmapButton):
+    """
+    This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxButton(wx.Button):
+    """
+    This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxToggleButton(wx.ToggleButton):
+    """
+    This class wraps around wx.ToggleButton and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
+        self.bitmap_toggled = None
+        self.bitmap_untoggled = None
+
+    def update_button(self, value):
+        # We just act as a man in the middle
+        if value is None:
+            value = self.GetValue()
+        if value:
+            if self.bitmap_toggled is not None:
+                self.SetBitmap(self.bitmap_toggled)
+        else:
+            if self.bitmap_untoggled is not None:
+                self.SetBitmap(self.bitmap_untoggled)
+
+    def SetValue(self, value):
+        super().SetValue(value)
+        self.update_button(value)
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxStaticBitmap(wx.StaticBitmap):
+    """
+    This class wraps around wx.StaticBitmap and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+        set_color_according_to_theme(self, "button_bg", "button_fg")
 
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
@@ -896,9 +1231,19 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         *args,
         **kwargs,
     ):
+        if label is None:
+            label = ""
         self.sbox = wx.StaticBox(parent, id, label=label)
-        self.sbox.SetMinSize(dip_size(self, 50, 50))
+        self.sbox.SetMinSize(dip_size(self.sbox, 50, 50))
         super().__init__(self.sbox, orientation)
+        self.parent = parent
+
+    @property
+    def Id(self):
+        return self.sbox.Id
+
+    def GetId(self):
+        return self.Id
 
     def Show(self, show=True):
         self.sbox.Show(show)
@@ -906,8 +1251,25 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def SetLabel(self, label):
         self.sbox.SetLabel(label)
 
+    def GetLabel(self):
+        return self.sbox.GetLabel()
+
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
+
+    def Enable(self, enable: bool = True):
+        """Enable or disable the StaticBoxSizer and its children.
+
+        Enables or disables all children of the sizer recursively.
+        """
+
+        def enem(wind, flag):
+            for c in wind.GetChildren():
+                enem(c, flag)
+            if hasattr(wind, "Enable"):
+                wind.Enable(flag)
+
+        enem(self.sbox, enable)
 
 
 class ScrolledPanel(SP):
@@ -924,19 +1286,136 @@ class ScrolledPanel(SP):
             pass
 
 
-class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+class wxListCtrl(wx.ListCtrl):
+    """
+    wxListCtrl will extend a regular ListCtrl by saving / restoring column widths
+    """
+
+    def __init__(
+        self,
+        parent,
+        ID=wx.ID_ANY,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        context=None,
+        list_name=None,
+    ):
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        self.context = context
+        self.list_name = list_name
+        # The resize event is never triggered, so tap into the parent...
+        # parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, self)
+        parent.Bind(wx.EVT_SIZE, self.proxy_resize_event, parent)
+        parent.Bind(wx.EVT_LIST_COL_END_DRAG, self.proxy_col_resized, self)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
+
+    def save_column_widths(self):
+        if self.context is None or self.list_name is None:
+            return
+        try:
+            sizes = list()
+            for col in range(self.GetColumnCount()):
+                sizes.append(self.GetColumnWidth(col))
+            self.context.setting(tuple, self.list_name, None)
+            setattr(self.context, self.list_name, sizes)
+        except RuntimeError:
+            # Could happen if the control is already destroyed
+            return
+
+    def load_column_widths(self):
+        if self.context is None or self.list_name is None:
+            return
+        sizes = self.context.setting(tuple, self.list_name, None)
+        if sizes is None:
+            return
+        # print(f"Found for {self.list_name}: {sizes}")
+        available = self.GetColumnCount()
+        for idx, width in enumerate(sizes):
+            if idx >= available:
+                break
+            self.SetColumnWidth(idx, width)
+
+    def resize_columns(self):
+        self.load_column_widths()
+        # we could at least try to make use of the available space
+        dummy = self.adjust_last_column()
+
+    def proxy_col_resized(self, event):
+        # We are not touching the event object to allow other routines to tap into it
+        event.Skip()
+        # print (f"col resized called from {self.GetId()} - {self.list_name}")
+        dummy = self.adjust_last_column()
+        self.save_column_widths()
+
+    def adjust_last_column(self, size_to_use=None):
+        # gap is the amount of pixels to be reserved to allow for a vertical scrollbar
+        gap = 30
+        size = size_to_use
+        if size is None:
+            size = self.GetSize()
+        list_width = size[0]
+        total = gap
+        last = 0
+        for col in range(self.GetColumnCount()):
+            try:
+                last = self.GetColumnWidth(col)
+                total += last
+            except Exception as e:
+                # print(f"Strange, crashed for column {col} of {self.GetColumnCount()}: {e}")
+                return False
+        # print(f"{self.list_name}, cols={self.GetColumnCount()}, available={list_width}, used={total}")
+        if total < list_width:
+            col = self.GetColumnCount() - 1
+            if col < 0:
+                return False
+            # print(f"Will adjust last column from {last} to {last + (list_width - total)}")
+            try:
+                self.SetColumnWidth(col, last + (list_width - total))
+            except Exception as e:
+                # print(f"Something strange happened while resizing the last columns for {self.list_name}: {e}")
+                return False
+            return True
+        return False
+
+    def proxy_resize_event(self, event):
+        # We are not touching the event object to allow other routines to tap into it
+        event.Skip()
+        # print (f"Resize called from {self.GetId()} - {self.list_name}: {event.Size}")
+        if self.adjust_last_column(event.Size):
+            self.save_column_widths()
+
+
+class EditableListCtrl(wxListCtrl, listmix.TextEditMixin):
     """TextEditMixin allows any column to be edited."""
 
     # ----------------------------------------------------------------------
     def __init__(
-        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+        self,
+        parent,
+        ID=wx.ID_ANY,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        context=None,
+        list_name=None,
     ):
         """Constructor"""
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        wxListCtrl.__init__(
+            self,
+            parent=parent,
+            ID=ID,
+            pos=pos,
+            size=size,
+            style=style,
+            context=context,
+            list_name=list_name,
+        )
         listmix.TextEditMixin.__init__(self)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
 
 
-class HoverButton(wx.Button):
+class HoverButton(wxButton):
     """
     Provide a button with Hover-Color changing ability.
     """
@@ -950,6 +1429,7 @@ class HoverButton(wx.Button):
         self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave)
         # self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
 
     def SetFocusColour(self, color):
         self._focus_color = wx.Colour(color)
@@ -1000,6 +1480,396 @@ class HoverButton(wx.Button):
     #     if event.Leaving():
     #         self.on_leave(event)
     #     event.Skip()
+
+
+class wxRadioBox(StaticBoxSizer):
+    """
+    This class recreates the functionality of a wx.RadioBox, as this class does not recognize / honor parent color values, so a manual darkmode logic fails
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        id=None,
+        label=None,
+        choices=None,
+        majorDimension=0,
+        style=0,
+        *args,
+        **kwargs,
+    ):
+        self.parent = parent
+        self.choices = choices
+        self._children = []
+        self._labels = []
+        self._tool_tip = None
+        self._help = None
+        super().__init__(
+            parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL
+        )
+        if majorDimension == 0 or style == wx.RA_SPECIFY_ROWS:
+            majorDimension = 1000
+        container = None
+        for idx, c in enumerate(self.choices):
+            if idx % majorDimension == 0:
+                container = wx.BoxSizer(wx.HORIZONTAL)
+                self.Add(container, 0, wx.EXPAND, 0)
+            st = 0
+            if idx == 0:
+                st = wx.RB_GROUP
+
+            radio_option = wx.RadioButton(parent, wx.ID_ANY, label=c, style=st)
+            container.Add(radio_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            self._children.append(radio_option)
+
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+                    event.Skip()
+
+                return mouse
+
+            for ctrl in self._children:
+                ctrl.Bind(wx.EVT_MOTION, on_mouse_over_check(ctrl))
+
+        for ctrl in self._children:
+            ctrl.Bind(wx.EVT_RADIOBUTTON, self.on_radio)
+
+        for ctrl in self._children + self._labels:
+            set_color_according_to_theme(ctrl, "text_bg", "text_fg")
+
+    @property
+    def Children(self):
+        return self._children
+
+    def GetParent(self):
+        return self.parent
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        for ctrl in self._children:
+            ctrl.SetToolTip(self._tool_tip)
+
+    def Select(self, n):
+        self.SetSelection(n)
+
+    def SetSelection(self, n):
+        for idx, ctrl in enumerate(self._children):
+            ctrl.SetValue(idx == n)
+
+    def GetSelection(self):
+        for idx, ctrl in enumerate(self._children):
+            if ctrl.GetValue():
+                return idx
+        return -1
+
+    def GetStringSelection(self):
+        idx = self.GetSelection()
+        return None if idx < 0 else self.choices[idx]
+
+    def Disable(self):
+        self.Enable(False)
+
+    def EnableItem(self, n, flag):
+        if 0 <= n < len(self._children):
+            self._children[n].Enable(flag)
+
+    def Enable(self, flag):
+        for ctrl in self._children:
+            ctrl.Enable(flag)
+
+    def Hide(self):
+        self.Show(False)
+
+    def Show(self, flag):
+        for ctrl in self._children + self._labels:
+            ctrl.Show(flag)
+        super().Show(flag)
+
+    def Bind(self, event_type, routine):
+        self.parent.Bind(event_type, routine, self)
+
+    def on_radio(self, orgevent):
+        #
+        event = orgevent.Clone()
+        event.SetEventType(wx.wxEVT_RADIOBOX)
+        event.SetId(self.Id)
+        event.SetEventObject(self)
+        event.Int = self.GetSelection()
+        wx.PostEvent(self.parent, event)
+
+    def SetForegroundColour(self, wc):
+        for ctrl in self._children + self._labels:
+            ctrl.SetForegroundColour(wc)
+
+    def SetBackgroundColour(self, wc):
+        for ctrl in self._children + self._labels:
+            ctrl.SetBackgroundColour(wc)
+
+    def SetHelpText(self, help):
+        self._help = help
+
+    def GetHelpText(self):
+        return self._help
+
+
+class wxStaticText(wx.StaticText):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_color_according_to_theme(self, "label_bg", "label_fg")
+
+
+class wxListBox(wx.ListBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_color_according_to_theme(self, "list_bg", "list_fg")
+
+
+class wxCheckListBox(StaticBoxSizer):
+    """
+    This class recreates the functionality of a wx.CheckListBox, as this class has issues to properly refresh in nested sizers
+
+    Known Limitations:
+    - This custom implementation may not fully replicate all native wx.CheckListBox behaviors.
+    - Keyboard navigation (e.g., arrow keys, space/enter to toggle) may not work as expected.
+    - Accessibility features such as screen reader support may be limited or unavailable.
+    - If your application requires full accessibility or native keyboard handling, consider using the native wx.CheckListBox where possible.
+    """
+
+    def __init__(
+        self,
+        parent=None,
+        id=None,
+        label=None,
+        choices=None,
+        majorDimension=0,
+        style=0,
+        *args,
+        **kwargs,
+    ):
+        self.parent = parent
+        self.choices = []
+        self._children = []
+        self._tool_tip = ""
+        self._help = None
+        super().__init__(
+            parent=parent, id=wx.ID_ANY, label=label, orientation=wx.VERTICAL
+        )
+        self.majorDimension = majorDimension
+        self.style = style
+        if choices is None:
+            choices = []
+        self.Set(choices)
+
+    @property
+    def Children(self):
+        return self._children
+
+    def on_mouse_over_check(self, event):
+        """
+        Handle mouse over events to show tooltips on Linux.
+        """
+        if self._tool_tip:
+            event.GetEventObject().SetToolTip(self._tool_tip)
+        event.Skip()
+
+    def GetParent(self):
+        return self.parent
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        for ctrl in self._children:
+            ctrl.SetToolTip(self._tool_tip)
+
+    def Disable(self):
+        self.Enable(False)
+
+    def EnableItem(self, n, flag):
+        if 0 <= n < len(self._children):
+            self._children[n].Enable(flag)
+
+    def Enable(self, flag):
+        for ctrl in self._children:
+            ctrl.Enable(flag)
+
+    def Hide(self):
+        self.Show(False)
+
+    def Show(self, flag):
+        for ctrl in self._children:
+            ctrl.Show(flag)
+        self.ShowItems(flag)
+
+    # def Bind(self, event_type, routine):
+    #     self.parent.Bind(event_type, routine, self)
+
+    def on_check(self, orgevent):
+        #
+        event = orgevent.Clone()
+        event.SetEventType(wx.wxEVT_CHECKLISTBOX)
+        event.SetId(self.Id)
+        event.SetEventObject(self)
+        # event.Int = self.GetSelection()
+        wx.PostEvent(self.parent, event)
+
+    def on_right_click(self, event):
+        menu = wx.Menu()
+        parent = self.parent
+        item = menu.Append(wx.ID_ANY, _("Check all"), "")
+        parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.SetCheckedItems(range(len(self._children))),
+            id=item.GetId(),
+        )
+        item = menu.Append(wx.ID_ANY, _("Uncheck all"), "")
+        parent.Bind(wx.EVT_MENU, lambda e: self.SetCheckedItems([]), id=item.GetId())
+        item = menu.Append(wx.ID_ANY, _("Invert selection"), "")
+        parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.SetCheckedItems(
+                [
+                    i
+                    for i in range(len(self._children))
+                    if not self._children[i].GetValue()
+                ]
+            ),
+            id=item.GetId(),
+        )
+        # Test routines
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set few items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set(["A", "B", "C"]), id=item.GetId())
+        # item = menu.Append(wx.ID_ANY, "Test-Routine to set many items", "")
+        # parent.Bind(wx.EVT_MENU, lambda e: self.Set([f"Item {i}" for i in range(20)]), id=item.GetId())
+        parent.PopupMenu(menu)
+        menu.Destroy()
+
+    def SetForegroundColour(self, wc):
+        for ctrl in self._children:
+            ctrl.SetForegroundColour(wc)
+
+    def SetBackgroundColour(self, wc):
+        for ctrl in self._children:
+            ctrl.SetBackgroundColour(wc)
+
+    def SetHelpText(self, help):
+        self._help = help
+
+    def GetHelpText(self):
+        return self._help
+
+    def Clear(self) -> None:
+        with wx.BusyCursor():
+            for child in self._children:
+                child.Destroy()
+        self._children.clear()
+        self.choices.clear()
+
+    def Check(self, item: int, check: bool = True) -> None:
+        """
+        Check or uncheck an item in the CheckListBox.
+        :param item: The index of the item to check or uncheck.
+        :param check: True to check, False to uncheck.
+        """
+        if 0 <= item < len(self._children):
+            self._children[item].SetValue(check)
+
+    def GetCheckItems(self) -> list:
+        """
+        Get a list of indices of checked items in the CheckListBox.
+        :return: A list of indices of checked items.
+        """
+        return [idx for idx, ctrl in enumerate(self._children) if ctrl.GetValue()]
+
+    def GetCheckedStrings(self) -> list:
+        """
+        Get a list of strings of checked items in the CheckListBox.
+        :return: A list of strings of checked items.
+        """
+        return [self.choices[idx] for idx in self.GetCheckItems()]
+
+    def GetSelections(self) -> list:
+        """
+        Get a list of indices of selected items in the CheckListBox.
+        :return: A list of indices of selected items.
+        """
+        return self.GetCheckItems()
+
+    def SetCheckedStrings(self, choices):
+        """
+        Set the checked items in the CheckListBox based on a list of strings.
+        :param choices: A list of strings to check.
+        """
+        for idx, choice in enumerate(self.choices):
+            if choice in choices:
+                self.Check(idx, True)
+            else:
+                self.Check(idx, False)
+
+    def SetCheckedItems(self, choices):
+        """
+        Set the checked items in the CheckListBox based on a list of indices.
+        :param choices: A list of indices to check.
+        """
+        for idx in range(len(self._children)):
+            self.Check(idx, idx in choices)
+
+    def Set(self, choices):
+        """
+        Set the choices for the CheckListBox.
+        :param choices: A list of strings to set as choices.
+        """
+        # print (f"Setting choices for {self.GetLabel()}: {choices}")
+        """
+        This is more efficient than clearing and rebuilding the controls.
+        Update the labels of existing controls to match new_choices.
+        If there are more controls than choices, extra controls are destroyed.
+        If there are fewer controls than choices, new controls are created.
+        """
+        # Update existing controls
+        if self.majorDimension == 0 or self.style == wx.RA_SPECIFY_ROWS:
+            self.majorDimension = 1000
+        last_container = None
+        for idx, choice in enumerate(choices):
+            if idx < len(self._children):
+                self._children[idx].SetLabel(choice)
+                # self._children[idx].Show(True)
+            else:
+                # Add new controls if needed
+                check_option = wx.CheckBox(self.parent, wx.ID_ANY, label=choice)
+                if self._tool_tip:
+                    check_option.SetToolTip(self._tool_tip)
+                check_option.Bind(wx.EVT_CHECKBOX, self.on_check)
+                check_option.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
+                if platform.system() == "Linux":
+                    check_option.Bind(wx.EVT_MOTION, self.on_mouse_over_check)
+                set_color_according_to_theme(check_option, "text_bg", "text_fg")
+                self._children.append(check_option)
+                # Add to layout
+                # Find or create the appropriate container
+                if idx % self.majorDimension == 0:
+                    last_container = wx.BoxSizer(wx.HORIZONTAL)
+                    self.Add(last_container, 0, wx.EXPAND, 0)
+                else:
+                    # Find the last container
+                    if last_container is None:
+                        for c in self.GetChildren():
+                            if c.IsSizer():
+                                last_container = c.GetSizer()
+                    if last_container is None:
+                        # fallback: create new container
+                        last_container = wx.BoxSizer(wx.HORIZONTAL)
+                        self.Add(last_container, 0, wx.EXPAND, 0)
+                last_container.Add(check_option, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        # Remove extra controls
+        if len(self._children) > len(choices):
+            for idx in range(len(choices), len(self._children)):
+                self._children[idx].Destroy()
+            self._children = self._children[: len(choices)]
+        self.Layout()
+        self.parent.Layout()
+        self.choices = list(choices)
 
 
 ##############
@@ -1174,10 +2044,14 @@ def disable_window(window):
 
 def set_ctrl_value(ctrl, value):
     # Let's try to save the caret position
-    cursor = ctrl.GetInsertionPoint()
-    if ctrl.GetValue() != value:
-        ctrl.SetValue(value)
-        ctrl.SetInsertionPoint(min(len(value), cursor))
+    try:
+        cursor = ctrl.GetInsertionPoint()
+        if ctrl.GetValue() != value:
+            ctrl.SetValue(str(value))
+            ctrl.SetInsertionPoint(min(len(str(value)), cursor))
+    except RuntimeError:
+        # Control might already have been destroyed
+        pass
 
 
 def dip_size(frame, x, y):

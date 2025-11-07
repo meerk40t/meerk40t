@@ -1,16 +1,26 @@
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
 
 class NewlyConfiguration(MWindow):
+    """NewlyConfiguration - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for newlyconfiguration functionality. Integrates with activate;device for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for newlyconfiguration functionality in MeerK40t."""
+
+    """NewlyConfiguration - User interface panel for laser cutting operations"""
+
     def __init__(self, *args, **kwds):
         super().__init__(420, 570, *args, **kwds)
         self.context = self.context.device
@@ -28,6 +38,12 @@ class NewlyConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         options = (
@@ -51,6 +67,18 @@ class NewlyConfiguration(MWindow):
         )
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Raster Chart"))
+
+        newpanel = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="newly-effects"
+        )
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Effects"))
+
+        newpanel = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="newly-defaults"
+        )
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Operation Defaults"))
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
@@ -102,4 +130,11 @@ class NewlyConfiguration(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Configuration")
         return "Device-Settings", "Configuration"
+
+    @signal_listener("activate;device")
+    def on_device_changes(self, *args):
+        # Device activated, make sure we are still fine...
+        if self.context.device.name != "newly":
+            wx.CallAfter(self.Close)

@@ -1,6 +1,6 @@
 import ast
+import configparser
 import os
-from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Union
 
@@ -20,19 +20,29 @@ class Settings:
     `write_configuration` is called.
     """
 
-    def __init__(self, directory, filename, ignore_settings=False, create_backup=False):
-        self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
-            filename
-        )
+    def __init__(
+        self,
+        directory: Optional[str],
+        filename: str,
+        ignore_settings: bool = False,
+        create_backup: bool = False,
+    ) -> None:
+        if directory:
+            self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
+                filename
+            )
+        else:
+            self._config_file = filename
         self._config_dict = {}
         self.create_backup = create_backup
+        self.prevent_persisting = False
         if not ignore_settings:
             self.read_configuration()
 
-    def __contains__(self, item):
+    def __contains__(self, item: str) -> bool:
         return item in self._config_dict
 
-    def read_configuration(self, targetfile=None):
+    def read_configuration(self, targetfile: Optional[Union[str, Path]] = None) -> None:
         """
         Read configuration reads the self._config_file to get the parsed config file data.
 
@@ -43,35 +53,84 @@ class Settings:
         if targetfile is None:
             targetfile = self._config_file
         try:
-            parser = ConfigParser()
+            parser = configparser.ConfigParser()
             parser.read(targetfile, encoding="utf-8")
-            for section in parser.sections():
-                for option in parser.options(section):
-                    try:
-                        config_section = self._config_dict[section]
-                    except KeyError:
-                        config_section = dict()
-                        self._config_dict[section] = config_section
-                    config_section[option] = parser.get(section, option)
         except (
             PermissionError,
-            NoSectionError,
-            MissingSectionHeaderError,
+            configparser.NoSectionError,
+            configparser.MissingSectionHeaderError,
+            configparser.ParsingError,
+            configparser.NoOptionError,
             FileNotFoundError,
         ):
             return
+        except UnicodeDecodeError:
+            print(
+                "The config file contained unsupported characters, please share the file with the dev team"
+            )
+        except (
+            configparser.DuplicateOptionError,
+            configparser.DuplicateSectionError,
+        ) as e:
+            print(f"We had a duplication error in the config, try to recover from {e}")
+        for section in parser.sections():
+            for option in parser.options(section):
+                try:
+                    config_section = self._config_dict[section]
+                except KeyError:
+                    config_section = {}
+                    self._config_dict[section] = config_section
+                try:
+                    config_section[option] = parser.get(section, option)
+                except Exception as e:
+                    print(
+                        f"We had an error in the config, section {section}.{option}, try to recover from {e}"
+                    )
 
-    def write_configuration(self, targetfile=None):
+    def write_configuration(
+        self, targetfile: Optional[Union[str, Path]] = None
+    ) -> None:
         """
         Write configuration writes the config file to disk. This is typically done during the shutdown process.
 
         This uses the python ConfigParser to save data from the _config_dict.
         @return:
         """
-        if targetfile is None:
-            targetfile = self._config_file
+
+        def create_backup_if_needed(targetfile: str) -> None:
+            if not self.create_backup:
+                return
+            VERSIONS = 5
+            try:
+                if os.path.exists(targetfile):
+                    base_name, _ = os.path.splitext(targetfile)
+                    for history in range(VERSIONS - 1, -1, -1):
+                        v0 = ".bak" if history == 0 else f".ba{history}"
+                        v1 = f".ba{history + 1}"
+                        v0_file = f"{base_name}{v0}"
+                        v1_file = f"{base_name}{v1}"
+                        if os.path.exists(v0_file):
+                            if os.path.exists(v1_file):
+                                os.remove(v1_file)
+                            os.rename(v0_file, v1_file)
+
+                    v1_file = f"{base_name}.bak"
+                    os.rename(targetfile, v1_file)
+            except (
+                PermissionError,
+                OSError,
+                RuntimeError,
+                FileExistsError,
+                FileNotFoundError,
+            ):
+                # print (f"Error happened: {e}")
+                pass
+
+        if self.prevent_persisting:
+            return
+        target: str = str(self._config_file) if targetfile is None else str(targetfile)
         try:
-            parser = ConfigParser()
+            parser = configparser.ConfigParser()
             for section_key in self._config_dict:
                 section = self._config_dict[section_key]
                 for key in section:
@@ -80,52 +139,31 @@ class Settings:
                         if "%" in value:
                             value = value.replace("%", "%%")
                         parser.set(section_key, key, value)
-                    except NoSectionError:
+                    except configparser.NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
-            if self.create_backup:
-                VERSIONS = 5
-                try:
-                    if os.path.exists(targetfile):
-                        base_name, base_ext = os.path.splitext(targetfile)
-                        for history in range(VERSIONS - 1, -1, -1):
-                            if history == 0:
-                                v0 = ".bak"
-                            else:
-                                v0 = f".ba{history}"
-                            v1 = f".ba{history + 1}"
-                            v0_file = base_name + v0
-                            v1_file = base_name + v1
-                            if os.path.exists(v0_file):
-                                if os.path.exists(v1_file):
-                                    os.remove(v1_file)
-                                os.rename(v0_file, v1_file)
-
-                        v1_file = base_name + ".bak"
-                        os.rename(targetfile, v1_file)
-                except (
-                    PermissionError,
-                    OSError,
-                    RuntimeError,
-                    FileExistsError,
-                    FileNotFoundError,
-                ):
-                    # print (f"Error happened: {e}")
-                    pass
-            with open(targetfile, "w", encoding="utf-8") as fp:
+                    except (
+                        configparser.DuplicateOptionError,
+                        configparser.DuplicateSectionError,
+                    ) as e:
+                        print(
+                            f"We had a duplication error in the config, try to recover from {e}"
+                        )
+            create_backup_if_needed(target)
+            with open(target, "w", encoding="utf-8") as fp:
                 parser.write(fp)
-        except (PermissionError, FileNotFoundError):
+        except (PermissionError, FileNotFoundError, OSError, RuntimeError):
             return
 
-    def literal_dict(self):
-        literal_dict = dict()
+    def literal_dict(self) -> Dict[str, Dict[str, Any]]:
+        literal_dict = {}
         import warnings
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             for section in self._config_dict:
                 section_dict = self._config_dict[section]
-                literal_section_dict = dict()
+                literal_section_dict = {}
                 literal_dict[section] = literal_section_dict
                 for key in section_dict:
                     value = section_dict[key]
@@ -137,10 +175,10 @@ class Settings:
 
         return literal_dict
 
-    def set_dict(self, literal_dict):
+    def set_dict(self, literal_dict: Dict[str, Dict[str, Any]]) -> None:
         self._config_dict.clear()
         for section in literal_dict:
-            section_dict = dict()
+            section_dict = {}
             self._config_dict[section] = section_dict
             for key in literal_dict[section]:
                 section_dict[key] = str(literal_dict[section][key])
@@ -150,7 +188,7 @@ class Settings:
         t: type,
         section: str,
         key: str,
-        default: Union[str, int, float, bool, list, tuple] = None,
+        default: Union[str, int, float, bool, list, tuple, None] = None,
     ) -> Any:
         """
         Directly read from persistent storage the value of an item.
@@ -183,7 +221,7 @@ class Settings:
                 "Something is attempting to load a persistent setting after kernel is terminated."
             ) from e
 
-    def read_persistent_attributes(self, section: str, obj: Any):
+    def read_persistent_attributes(self, section: str, obj: Any) -> None:
         """
         Reads persistent settings for any value found set on the object so long as the object type is int, float, str
         or bool.
@@ -221,8 +259,11 @@ class Settings:
             obj.__dict__[k] = item
 
     def read_persistent_string_dict(
-        self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
-    ) -> Dict:
+        self,
+        section: str,
+        dictionary: Optional[Dict[str, str]] = None,
+        suffix: bool = False,
+    ) -> Dict[str, str]:
         """
         Updates the given dictionary with the key values at the given section.
 
@@ -234,7 +275,7 @@ class Settings:
         @return:
         """
         if dictionary is None:
-            dictionary = dict()
+            dictionary = {}
         for k in list(self.keylist(section)):
             item = self._config_dict[section][k]
             if not suffix:
@@ -246,7 +287,7 @@ class Settings:
 
     def write_persistent(
         self, section: str, key: str, value: Union[str, int, float, bool, list, tuple]
-    ):
+    ) -> None:
         """
         Directly write the value to persistent storage.
 
@@ -257,7 +298,7 @@ class Settings:
         try:
             config_section = self._config_dict[section]
         except KeyError:
-            config_section = dict()
+            config_section = {}
             self._config_dict[section] = config_section
 
         if isinstance(value, (str, int, float, bool)):
@@ -266,7 +307,7 @@ class Settings:
             s = str(value)
             config_section[str(key)] = s
 
-    def write_persistent_dict(self, section, write_dict):
+    def write_persistent_dict(self, section: str, write_dict: Dict[str, Any]) -> None:
         """
         Write all valid attribute values of this object to the section provided.
 
@@ -280,7 +321,7 @@ class Settings:
             if isinstance(value, (str, int, float, bool, list, tuple)):
                 self.write_persistent(section, key, value)
 
-    def write_persistent_attributes(self, section, obj):
+    def write_persistent_attributes(self, section: str, obj: Any) -> None:
         """
         Write all valid attribute values of this object to the section provided.
 
@@ -290,7 +331,7 @@ class Settings:
         """
         self.write_persistent_dict(section, obj.__dict__)
 
-    def clear_persistent(self, section: str):
+    def clear_persistent(self, section: str) -> None:
         """
         Clears a section of the persistent settings, all subsections are also cleared.
 
@@ -304,7 +345,7 @@ class Settings:
         except KeyError:
             pass
 
-    def delete_persistent(self, section: str, key: str):
+    def delete_persistent(self, section: str, key: str) -> None:
         """
         Deletes a key within a section of the persistent settings.
 
@@ -317,7 +358,7 @@ class Settings:
         except KeyError:
             pass
 
-    def delete_all_persistent(self):
+    def delete_all_persistent(self) -> None:
         """
         Deletes all persistent settings.
         @return:

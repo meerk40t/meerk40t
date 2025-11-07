@@ -1,0 +1,56 @@
+# This workflow builds PyInstaller single-file executables
+# of Meerk40t for Linux (Rocky 8 self-hosted runner)
+
+name: Meerk40t (Rocky 8)
+
+on:
+  workflow_dispatch:
+
+  release:
+    types: [published]
+
+jobs:
+  build-rocky8:
+    runs-on: rocky8
+    steps:
+    - name: Glibc
+      run: |
+        echo $(ldd --version)
+
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Ensure dependencies installed
+      run: |
+        . /home/jacob/py311/bin/activate
+        pip install ezdxf pyserial
+        pip install scipy
+        pip install meerk40t-camera opencv-python-headless
+        pip install pillow
+        pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/rocky-8/wxPython-4.2.1-cp311-cp311-linux_x86_64.whl
+
+    - name: Build Meerk40t
+      run: |
+        . /home/jacob/py311/bin/activate
+        mv meerk40t.py mk40t.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+        mv dist/MeerK40t dist/MeerK40t-Linux
+
+    - name: Set release version
+      id: set_release_version
+      run: |
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
+          echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+        else
+          echo "RELEASE_VERSION=9.999.9" >> $GITHUB_ENV
+        fi
+
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: ${{ env.RELEASE_VERSION }}
+        files: |
+          dist/MeerK40t-Linux

@@ -1,6 +1,7 @@
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
@@ -12,30 +13,50 @@ _ = wx.GetTranslation
 
 
 class BalorConfiguration(MWindow):
+    """BalorConfiguration - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for balorconfiguration functionality. Integrates with lens_size, balorpin for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for balorconfiguration functionality in MeerK40t."""
+
     def __init__(self, *args, **kwds):
         super().__init__(550, 700, *args, **kwds)
+        window_context = self.context
         self.context = self.context.device
         self.SetHelpText("balorconfig")
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_(_("Balor-Configuration")))
+        self.SetTitle(_("Balor-Configuration"))
         self._test_pin = False
+        self._define_cor = False
         self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
             | wx.aui.AUI_NB_SCROLL_BUTTONS
             | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            | wx.aui.AUI_NB_TAB_MOVE
+            | wx.aui.AUI_NB_TOP,
         )
+        # ARGGH, the color setting via the ArtProvider does only work
+        # if you set the tabs to the bottom! wx.aui.AUI_NB_BOTTOM
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         options = (
             ("balor", "Balor"),
-            ("balor-redlight", "Redlight"),
-            ("balor-global", "Global"),
-            ("balor-global-timing", "Timings"),
-            ("balor-extra", "Extras"),
+            ("balor-redlight", _("Redlight")),
+            ("balor-global", _("Global")),
+            ("balor-global-timing", _("Timings")),
+            ("balor-extra", _("Extras")),
+            ("balor-effects", _("Effects")),
+            ("balor-defaults", _("Operation Defaults")),
+            #            ("balor-corfile", _("Correction")),
         )
         self.test_bits = ""
         injector = (
@@ -47,7 +68,9 @@ class BalorConfiguration(MWindow):
                 "style": "button",
                 "label": _("Test"),
                 "tip": _("Turn red dot on for test purposes"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
                 "subsection": "_30_Pin-Index",
             },
             {
@@ -57,8 +80,22 @@ class BalorConfiguration(MWindow):
                 "type": str,
                 "enabled": False,
                 "label": _("Bits"),
+                # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
                 "subsection": "_30_Pin-Index",
+            },
+        )
+        injector_cor = (
+            {
+                "attr": "define_cor",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Define"),
+                "tip": _("Open a definition screen"),
+                "section": _("Correction-Values"),
             },
         )
         self.panels = []
@@ -69,6 +106,8 @@ class BalorConfiguration(MWindow):
             if addpanel:
                 if item[0] == "balor":
                     injection = injector
+                elif item[0] == "balor-corfile":
+                    injection = injector_cor
                 else:
                     injection = None
                 newpanel = ChoicePropertyPanel(
@@ -80,6 +119,11 @@ class BalorConfiguration(MWindow):
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
+
+        # newpanel = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
+        # self.panels.append(newpanel)
+        # self.notebook_main.AddPage(newpanel, _("Effects"))
+
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Warning"))
@@ -114,6 +158,16 @@ class BalorConfiguration(MWindow):
             self.context("red on\n")
         else:
             self.context("red off\n")
+
+    @property
+    def define_cor(self):
+        return self._define_cor
+
+    @define_cor.setter
+    def define_cor(self, value):
+        self._define_cor = value
+        if self._define_cor:
+            self.context("widget_corfile\n")
 
     def update_bit_info(self, *args):
         if not self.context.driver.connected:
@@ -155,9 +209,11 @@ class BalorConfiguration(MWindow):
     def on_corfile_changed(self, origin, *args):
         from meerk40t.balormk.controller import GalvoController
 
+        if not self.context.corfile:
+            return
         try:
             scale = GalvoController.get_scale_from_correction_file(self.context.corfile)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError, OSError):
             return
         self.context.lens_size = f"{65536.0 / scale:.03f}mm"
         self.context.signal("lens_size", self.context.lens_size, self.context)
@@ -186,4 +242,15 @@ class BalorConfiguration(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Device-Settings"), _("Configuration")
         return "Device-Settings", "Configuration"
+
+    @staticmethod
+    def helptext():
+        return _("Display and edit device configuration")
+
+    @signal_listener("activate;device")
+    def on_device_changes(self, *args):
+        # Device activated, make sure we are still fine...
+        if self.context.device.name != "balor":
+            wx.CallAfter(self.Close)

@@ -295,6 +295,7 @@ class DriverToPath:
                 "type": bool,
                 "label": "Ignore travel",
                 "tip": "Try to take only 'valid' movements",
+                # Hint for translation _("Path")
                 "section": "_10_Path",
             },
             {
@@ -304,6 +305,7 @@ class DriverToPath:
                 "type": bool,
                 "label": "Split paths",
                 "tip": "Split path into smaller chunks",
+                # Hint for translation _("Path")
                 "section": "_10_Path",
             },
             {
@@ -313,6 +315,7 @@ class DriverToPath:
                 "type": bool,
                 "label": "Single occurrence",
                 "tip": "Prevent duplicate creation of segments (like in a multipass operation)",
+                # Hint for translation _("Path")
                 "section": "_10_Path",
             },
             {
@@ -323,7 +326,9 @@ class DriverToPath:
                 "label": "Treat Z-Movement as On/Off",
                 "tip": "Use negative Z-Values as a Power-On indicator, positive values as travel",
                 "conditional": (self, "ignore_travel"),
+                # Hint for translation _("Path")
                 "section": "_10_Path",
+                # Hint for translation _("Z-Axis")
                 "subsection": "_10_Z-Axis",
             },
             {
@@ -334,7 +339,9 @@ class DriverToPath:
                 "label": "Only negative",
                 "tip": "Active: use positive values as travel\nInactive: use all non-zero values",
                 "conditional": (self, "treat_z_as_power"),
+                # Hint for translation _("Path")
                 "section": "_10_Path",
+                # Hint for translation _("Z-Axis")
                 "subsection": "_10_Z-Axis",
             },
             {
@@ -352,6 +359,7 @@ class DriverToPath:
                 ),
                 "label": "Bed-Origin",
                 "tip": "Correct starting point",
+                # Hint for translation _("Correct Orientation")
                 "section": "_20_Correct Orientation",
             },
             {
@@ -361,6 +369,7 @@ class DriverToPath:
                 "type": bool,
                 "label": "Create operations",
                 "tip": "Create corresponding operations for Power and Speed pairs",
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
             },
             {
@@ -373,7 +382,9 @@ class DriverToPath:
                 + "Minimum speed used will be mapped to lower level\n"
                 + "Maximum speed used will be mapped to upper level",
                 "conditional": (self, "create_operations"),
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
+                # Hint for translation _("Speed")
                 "subsection": "_20_Speed",
             },
             {
@@ -385,7 +396,9 @@ class DriverToPath:
                 "trailer": "mm/sec",
                 "tip": "Minimum speed used will be mapped to lower level",
                 "conditional": (self, "scale_speed"),
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
+                # Hint for translation _("Speed")
                 "subsection": "_20_Speed",
             },
             {
@@ -397,7 +410,9 @@ class DriverToPath:
                 "trailer": "mm/sec",
                 "tip": "Maximum speed used will be mapped to upper level",
                 "conditional": (self, "scale_speed"),
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
+                # Hint for translation _("Speed")
                 "subsection": "_20_Speed",
             },
             {
@@ -409,7 +424,9 @@ class DriverToPath:
                 "tip": "Set lower and higher level to scale the power\n"
                 + "Minimum power used will be mapped to lower level\n"
                 + "Maximum power used will be mapped to upper level",
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
+                # Hint for translation _("Power")
                 "subsection": "_20_Power",
             },
             {
@@ -418,10 +435,12 @@ class DriverToPath:
                 "default": 200,
                 "type": float,
                 "label": "Lowest Power",
-                "trailer": "ppi",
+                "trailer": "/1000",
                 "tip": "Minimum power used will be mapped to lower level",
                 "conditional": (self, "scale_power"),
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
+                # Hint for translation _("Power")
                 "subsection": "_20_Power",
             },
             {
@@ -433,7 +452,9 @@ class DriverToPath:
                 "trailer": "",
                 "tip": "Maximum power used will be mapped to upper level",
                 "conditional": (self, "scale_power"),
+                # Hint for translation _("Operation")
                 "section": "_30_Operation",
+                # Hint for translation _("Power")
                 "subsection": "_20_Power",
             },
         ]
@@ -447,14 +468,19 @@ class DriverToPath:
             elements (class): context for elements
             options (disctionary, optional): A dictionary with settings. Defaults to None.
         """
-        with elements.static("driver_to_path"):
+        # _("Driver to path")
+        with elements.undoscope("Driver to path"):
             plotter = PlotterDriver()
             for opt in self.options:
                 if hasattr(plotter, opt["attr"]):
                     setattr(plotter, opt["attr"], getattr(self, opt["attr"]))
 
             spooler_job = elements.lookup(f"spoolerjob/{blob_type}")
+            if spooler_job is None:
+                return
             job_object = spooler_job(plotter, elements.space.display.matrix)
+            if job_object is None:
+                return
             job_object.write_blob(data)
             while not job_object.execute():
                 # Still more to execute.

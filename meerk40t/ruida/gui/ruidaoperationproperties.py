@@ -13,19 +13,11 @@ class RuidaOperationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.parent = args[0]
         self.operation = node
 
-        choices = [
-            {
-                "attr": "air_assist",
-                "object": node,
-                "default": True,
-                "type": bool,
-                "label": _("Air Assist"),
-                "tip": _("Trigger the per element air assist"),
-            },
-        ]
+        choices = []
 
         self.panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False

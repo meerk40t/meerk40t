@@ -3,6 +3,7 @@ from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
+from .wxutils import TextCtrl, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -23,23 +24,31 @@ def register_panel(window, context):
     pane.dock_proportion = 100
     pane.control = panel
     pane.submenu = "_50_" + _("Tools")
+    pane.helptext = _("Edit job notes")
 
     window.on_pane_create(pane)
     context.register("pane/notes", pane)
 
 
 class NotePanel(wx.Panel):
+    """NotePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for note functionality. Integrates with wxpane/Notes for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for note functionality in MeerK40t."""
+
     def __init__(self, *args, context=None, pane=False, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("notes")
         self.pane = pane
         if not self.pane:
-            self.check_auto_open_notes = wx.CheckBox(
+            self.check_auto_open_notes = wxCheckBox(
                 self, wx.ID_ANY, _("Automatically Open Notes")
             )
-        self.text_notes = wx.TextCtrl(
+        self.text_notes = TextCtrl(
             self,
             wx.ID_ANY,
             "",
@@ -110,6 +119,12 @@ class NotePanel(wx.Panel):
 
 
 class Notes(MWindow):
+    """Notes - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for notes functionality. Integrates with wxpane/Notes for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides user interface controls for notes functionality in MeerK40t."""
+
     def __init__(self, *args, **kwds):
         super().__init__(450, 350, *args, **kwds)
 
@@ -126,17 +141,6 @@ class Notes(MWindow):
     @staticmethod
     def sub_register(kernel):
         kernel.register("wxpane/Notes", register_panel)
-        kernel.register(
-            "button/project/Notes",
-            {
-                "label": _("Notes"),
-                "icon": icons8_comments,
-                "tip": _("Open Notes Window"),
-                "help": "notes",
-                "action": lambda v: kernel.console("window toggle Notes\n"),
-                "size": STD_ICON_SIZE,
-            },
-        )
 
     def window_open(self):
         self.context.close(self.name)
@@ -144,3 +148,7 @@ class Notes(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def helptext():
+        return _("Edit job notes")

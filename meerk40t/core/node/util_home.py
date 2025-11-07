@@ -1,5 +1,5 @@
 from meerk40t.core.cutcode.homecut import HomeCut
-from meerk40t.core.elements.element_types import *
+from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.core.node.node import Node
 
 
@@ -12,8 +12,9 @@ class HomeOperation(Node):
 
     def __init__(self, **kwargs):
         self.output = True
+        self.physical = False
         super().__init__(type="util home", **kwargs)
-        self._formatter = "{enabled}{element_type}"
+        self._formatter = "{enabled}{element_type}{physical}"
 
     def __repr__(self):
         return "HomeOperation()"
@@ -29,21 +30,22 @@ class HomeOperation(Node):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Home"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["physical"] = " (Physical)" if self.physical else ""
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        # Move operation to a different position.
+        return bool(drag_node.type in op_nodes)
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an op node - irrelevant for others...
         drop_node = self
-        if drag_node.type in op_nodes:
-            if modify:
-                drop_node.insert_sibling(drag_node)
-            return True
-        elif drop_node.type == "branch ops":
-            # Dragging operation to op branch to effectively move to bottom.
-            if modify:
-                drop_node.append_child(drag_node)
-            return True
-        return False
+        if not self.can_drop(drag_node):
+            return False
+        if modify:
+            drop_node.insert_sibling(drag_node)
+        return True
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -58,4 +60,4 @@ class HomeOperation(Node):
         yield cut
 
     def generate(self):
-        yield "home"
+        yield "physical_home" if self.physical else "home"

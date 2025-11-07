@@ -3,13 +3,16 @@ import random
 import time
 
 import wx
+from PIL import Image
 from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.propertypanels.imageproperty import ContourPanel
 from meerk40t.gui.scene.scenepanel import ScenePanel
 
 # from meerk40t.gui.scenewidgets.affinemover import AffineMover
@@ -45,6 +48,7 @@ from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
+from meerk40t.gui.toolwidgets.tooltabedit import TabEditTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
@@ -53,7 +57,7 @@ from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Color
+from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
@@ -83,16 +87,58 @@ def register_panel_scene(window, context):
     context.register("pane/scene", pane)
 
 
+class ContourDetectionDialog(wx.Dialog):
+    def __init__(self, parent, context, node):
+        super().__init__(
+            parent, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        )
+        self.context = context
+        self._init_ui(node)
+        self._start_dialog()
+
+    def _init_ui(self, node):
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel = ContourPanel(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            node=node,
+            simplified=True,
+            direct_mode=True,
+        )
+        main_sizer.Add(panel, 1, wx.EXPAND, 0)
+        buttons = self.CreateStdDialogButtonSizer(wx.OK)
+        main_sizer.Add(buttons, 0, wx.EXPAND, 0)
+        panel.pane_active()
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def _start_dialog(self):
+        win_wd = self.context.setting(int, "win_bgcontour_width", 700)
+        win_ht = self.context.setting(int, "win_bgcontour_height", 500)
+        self.SetSize(win_wd, win_ht)
+        self.CenterOnParent()
+
+    def end_dialog(self):
+        # Save window size for next time
+        win_wd, win_ht = self.GetSize()
+        self.context.win_bgcontour_width = win_wd
+        self.context.win_bgcontour_height = win_ht
+        self.context.signal("refresh_scene", "Scene")
+
+
 class MeerK40tScenePanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.scene = ScenePanel(
             self.context,
             self,
             scene_name="Scene" if index is None else f"Scene{index}",
+            with_snap=True,
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.scene.start_scene()
@@ -100,6 +146,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         self.tool_active = False
         self.modif_active = False
+        self.ignore_snap = False
         self.suppress_selection = False
         self._reference = None  # Reference Object
 
@@ -115,12 +162,10 @@ class MeerK40tScenePanel(wx.Panel):
         self.context.setting(bool, "clear_magnets", True)
 
         # Save / Load the content of magnets
-        from os.path import join, realpath
-
-        from meerk40t.kernel.functions import get_safe_path
+        from os.path import join
 
         self._magnet_file = join(
-            realpath(get_safe_path(self.context.kernel.name)), "magnets.cfg"
+            self.context.kernel.os_information["WORKDIR"], "magnets.cfg"
         )
         self.load_magnets()
         # Add a plugin routine to be called at the time of a full new start
@@ -196,8 +241,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -223,6 +266,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/pointmove", PointMoveTool)
         context.register("tool/parameter", ParameterTool)
         context.register("tool/imagecut", ImageCutTool)
+        context.register("tool/tabedit", TabEditTool)
 
         bsize_normal = STD_ICON_SIZE
 
@@ -498,6 +542,10 @@ class MeerK40tScenePanel(wx.Panel):
                     self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
+                if aspect == "unsetbright":  # reset all
+                    self.widget_scene.colors.set_default_colors(brighter=True)
+                    self.context.signal("theme", True)
+                    return "scene", data
                 if aspect == "random":  # reset all
                     self.widget_scene.colors.set_random_colors()
                     self.context.signal("theme", True)
@@ -618,6 +666,11 @@ class MeerK40tScenePanel(wx.Panel):
         def scene_focus(
             command, _, channel, data, x, y, width, height, animate=False, **kwgs
         ):
+            if animate:
+                overrule = self.context.setting(bool, "suppress_focus_animation", False)
+                if overrule:
+                    animate = False
+
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
@@ -684,7 +737,7 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @context.console_command(
             "grid",
-            help=_("grid <target> <rows> <x_distance> <y_distance> <origin>"),
+            help="grid <target> <rows> <x_distance> <y_distance> <origin> : " + _("Shows a grid overlay on the scene"),
             input_type="scene",
         )
         def show_grid(
@@ -823,6 +876,167 @@ class MeerK40tScenePanel(wx.Panel):
                 else:
                     channel(_("Target needs to be one of primary, secondary, circular"))
 
+        # Establishes magnet commands
+        @context.console_argument(
+            "action", type=str, help=_("Action: clear or set / delete with coordinate")
+        )
+        @context.console_argument("axis", type=str, help=_("Axis (X or Y)"))
+        @context.console_argument("pos", type=str, help=_("Position for magnetline"))
+        @context.console_command(
+            "magnet",
+            help="magnet <action> <axis> <position> : " + _("Sets/clears a magnet line on the scene"),
+            input_type=("scene", None),
+        )
+        def magnet_set(
+            command,
+            channel,
+            _,
+            action=None,
+            axis=None,
+            pos=None,
+            **kwarg,
+        ):
+            def info(opt_msg):
+                channel(
+                    _("You need to provide the intended action:")
+                    + "\n"
+                    + _("clear x - clear y : will clear all magnets on the given axis")
+                    + "\n"
+                    + _(
+                        "set x <pos> - set y <pos>: will set a magnet line on the given axis"
+                    )
+                    + "\n"
+                    + _(
+                        "delete x <pos> - delete y <pos>: will delete the magnet line on the given axis"
+                    )
+                    + _(
+                        "split x <count> - split y <count>: will generate <count> lines between the selection boundaries on the given axis"
+                    )
+                )
+                if opt_msg:
+                    channel(opt_msg)
+
+            if action is None or axis is None or axis.upper() not in ("X", "Y"):
+                info("")
+                return
+            action = action.lower()
+            axis = axis.upper()
+            value = None
+            if action == "split":
+                if pos:
+                    try:
+                        value = int(pos)
+                    except ValueError:
+                        info(f"Invalid count: {pos}")
+                        return
+
+                if value is None or value <= 0:
+                    info(_("You need to provide a number of splits"))
+                    return
+            else:
+                if pos:
+                    try:
+                        rel_len = (
+                            self.context.device.view.width
+                            if axis == "X"
+                            else self.context.device.view.height
+                        )
+                        value = float(Length(pos, relative_length=rel_len))
+                    except ValueError:
+                        info(f"Invalid length: {pos}")
+                        return
+
+                if action != "clear" and value is None:
+                    info(_("You need to provide a position"))
+                    return
+
+            if action == "clear":
+                if axis == "X":
+                    count = len(self.magnet_x)
+                    self.magnet_x.clear()
+                else:
+                    count = len(self.magnet_y)
+                    self.magnet_y.clear()
+                self.save_magnets()
+                self.context.signal("refresh_scene", "Scene")
+                channel(
+                    _("Deleted {count} magnet lines on axis {axis}").format(
+                        axis=axis, count=count
+                    )
+                )
+            elif action == "split":
+                bb = self.context.elements.selected_area()
+                if bb is None:
+                    channel(_("Nothing selected"))
+                    return
+
+                min_v = bb[0] if axis == "X" else bb[1]
+                max_v = bb[2] if axis == "X" else bb[3]
+                count = value + 1
+                delta = (max_v - min_v) / count
+                mvalue = min_v
+                while mvalue + delta < max_v:
+                    mvalue += delta
+                    if axis == "X":
+                        if mvalue not in self.magnet_x:
+                            self.magnet_x.append(mvalue)
+                    else:
+                        if mvalue not in self.magnet_y:
+                            self.magnet_y.append(mvalue)
+                self.save_magnets()
+                channel(
+                    _(
+                        "Created {count} magnet lines on {axis}-axis between {min_len} and {max_len}"
+                    ).format(
+                        count=count,
+                        axis=axis,
+                        min_len=Length(min_v, digits=1).length_mm,
+                        max_len=Length(max_v, digits=1).length_mm,
+                    )
+                )
+                self.context.signal("refresh_scene", "Scene")
+
+            elif action == "set":
+                done = False
+                if axis == "X":
+                    if not value in self.magnet_x:
+                        done = True
+                        self.magnet_x.append(value)
+                else:
+                    if not value in self.magnet_y:
+                        done = True
+                        self.magnet_y.append(value)
+                self.save_magnets()
+                self.context.signal("refresh_scene", "Scene")
+                if done:
+                    channel(
+                        _("Magnetline appended at {pos} on axis {axis}").format(
+                            pos=pos, axis=axis
+                        )
+                    )
+                else:
+                    channel(_("Magnetline was already present"))
+            elif action.startswith("del"):
+                done = False
+                if axis == "X":
+                    if value in self.magnet_x:
+                        done = True
+                        self.magnet_x.remove(value)
+                else:
+                    if value in self.magnet_y:
+                        done = True
+                        self.magnet_y.remove(value)
+                self.save_magnets()
+                self.context.signal("refresh_scene", "Scene")
+                if done:
+                    channel(
+                        _("Magnetline removed at {pos} on axis {axis}").format(
+                            pos=pos, axis=axis
+                        )
+                    )
+                else:
+                    channel(_("Magnetline was not existing"))
+
     def toggle_ref_obj(self):
         for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
             if self.reference_object == e:
@@ -880,6 +1094,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def save_magnets(self):
         try:
+            self.context.signal("guide")  # The guide widget will draw the magnets
             with open(self._magnet_file, "w") as f:
                 f.write(f"a={self.magnet_attraction}\n")
                 for x in self.magnet_x:
@@ -1053,6 +1268,16 @@ class MeerK40tScenePanel(wx.Panel):
         self.reference_object = node
         self.context.signal("reference")
 
+    @signal_listener("create_magnets")
+    def listen_magnet_creation(self, origin, creation_list, *args):
+        for info, value in creation_list:
+            if info == "x":
+                self.toggle_x_magnet(value)
+            else:
+                self.toggle_y_magnet(value)
+        self.save_magnets()
+        self.request_refresh()
+
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
         if self._tool_widget is not None:
@@ -1117,6 +1342,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            elif gridtype == "offset":
+                self.grid.draw_offset_lines = not self.grid.draw_offset_lines
             self.scene.signal("guide")
             self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
@@ -1131,14 +1358,76 @@ class MeerK40tScenePanel(wx.Panel):
         def toggle_grid_c(event=None):
             toggle_grid("circular")
 
+        def toggle_grid_o(event=None):
+            toggle_grid("offset")
+
         def remove_background(event=None):
             self.widget_scene._signal_widget(
                 self.widget_scene.widget_root, "background", None
             )
             self.widget_scene.request_refresh()
 
+        def recognize_background_contours(event=None):
+            def image_from_bitmap(myBitmap):
+                img = myBitmap.ConvertToImage()
+                buf = img.GetData()
+                return Image.frombuffer(
+                    "RGB", tuple(myBitmap.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+                )
+                wx_image = myBitmap.ConvertToImage()
+                myPilImage = Image.new(
+                    "RGB", (wx_image.GetWidth(), wx_image.GetHeight())
+                )
+                byte_data = bytes(wx_image.GetData())
+                myPilImage.frombytes(byte_data)
+                return myPilImage
+
+            if not self.widget_scene.has_background:
+                return
+            # We build a dummy imageNode, so we fetch the background,
+            # calculate the required transformation matrix and pass
+            # it on to one of the standard image node property dialogs
+
+            background = self.widget_scene.active_background
+            if background is None:
+                return
+            background_image = image_from_bitmap(background)
+
+            # Calculate scaling matrix
+            sx = float(Length(self.context.device.view.width)) / background_image.width
+            sy = (
+                float(Length(self.context.device.view.height)) / background_image.height
+            )
+            matrix = Matrix(f"scale({sx},{sy})")
+            # print (f"Image dimension: {background_image.width} x {background_image.height} pixel")
+            # print (f"View-Size: {float(Length(self.context.device.view.width))} x {float(Length(self.context.device.view.height))}")
+            # print (f"Matrix: {matrix}")
+
+            node = ImageNode(
+                image=background_image,
+                matrix=matrix,
+                dither=False,
+                prevent_crop=True,
+                dpi=500,
+            )
+            # print (f"Node-Dimensions: {node.bbox()}")
+            # self.context.elements.elem_branch.add_node(node)
+
+            dlg = ContourDetectionDialog(self, self.context, node)
+            dlg.ShowModal()
+            dlg.end_dialog()
+            dlg.Destroy()
+
         def stop_auto_update(event=None):
-            self.context("timer.updatebg --off\n")
+            devlabel = self.context.device.label
+            to_stop = []
+            for job, content in self.context.kernel.jobs.items():
+                if job is not None and job.startswith("timer.updatebg"):
+                    cmd = str(content).strip()
+                    if cmd.endswith("background") or cmd.endswith(devlabel):
+                        to_stop.append(job)
+            for job in to_stop:
+                self.context(f"{job} --off\n")
 
         gui = self
         menu = wx.Menu()
@@ -1177,18 +1466,41 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
+        try:
+            mx = float(Length(self.context.device.view.margin_x))
+            my = float(Length(self.context.device.view.margin_y))
+        except ValueError:
+            mx = 0
+            my = 0
+        # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
+        if mx != 0.0 or my != 0.0:
+            menu.AppendSeparator()
+            id4b = menu.Append(
+                wx.ID_ANY,
+                _("Show physical dimensions"),
+                _("Display the physical dimensions"),
+                wx.ITEM_CHECK,
+            )
+            self.Bind(wx.EVT_MENU, toggle_grid_o, id=id4b.GetId())
+            menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
+
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
+
+            id6 = menu.Append(wx.ID_ANY, _("Detect contours on background"), "")
+            self.Bind(wx.EVT_MENU, recognize_background_contours, id=id6.GetId())
         # Do we have a timer called .updatebg?
+        devlabel = self.context.device.label
         we_have_a_job = False
-        try:
-            obj = self.context.kernel.jobs["timer.updatebg"]
-            if obj is not None:
-                we_have_a_job = True
-        except KeyError:
-            pass
+        for job, content in self.context.kernel.jobs.items():
+            if job is not None and job.startswith("timer.updatebg"):
+                cmd = str(content).strip()
+                if cmd.endswith("background") or cmd.endswith(devlabel):
+                    we_have_a_job = True
+                    break
+
         if we_have_a_job:
             self.Bind(
                 wx.EVT_MENU,
@@ -1254,6 +1566,15 @@ class MeerK40tScenePanel(wx.Panel):
         """
         if scene_name == "Scene":
             self.request_refresh()
+
+    @signal_listener("coolant_changed")
+    def on_coolant_changed(self, origin, *args):
+        if hasattr(self.context.device, "coolant"):
+            coolid = self.context.device.device_coolant
+            if coolid == "":
+                coolid = None
+            cool = self.context.kernel.root.coolant
+            cool.claim_coolant(self.context.device, coolid)
 
     @signal_listener("view;realized")
     def on_bedsize_simple(self, origin=None, nocmd=None, *args):
@@ -1347,13 +1668,21 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
+        self.context.elements.process_keyhole_updates(self.context)
         self.scene.signal("modified_by_tool")
+
+    @signal_listener("tabs_updated")
+    def on_tabs_update(self, origin, *args):
+        # Pass on to scene widgets
+        self.scene.signal("tabs_updated")
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
+        self.scene.context.elements.set_start_time("Emphasis wxmscene")
         self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
+        self.scene.context.elements.set_end_time("Emphasis wxmscene")
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
@@ -1415,6 +1744,13 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
         self.widget_scene.context.elements.default_fill = color
+
+    @signal_listener("scene_deactivated")
+    def on_scene_deactived(self, origin, *args):
+        if not self.context.setting(bool, "auto_tool_reset", True):
+            return
+        if self.active_tool != "none":
+            self.context(".tool none\n")
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

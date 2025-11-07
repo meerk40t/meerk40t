@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>meerk40t</id>
+  <name>MeerK40t</name>
+  <summary>Laser Cutter Control Software</summary>
+  <description>
+    <p>MeerK40t is a free and open-source laser cutter control software.</p>
+  </description>
+  <launchable type="desktop-id">meerk40t.desktop</launchable>
+  <categories>
+    <category>Graphics</category>
+    <category>VectorGraphics</category>
+  </categories>
+</component>

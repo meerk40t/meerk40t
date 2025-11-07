@@ -1,5 +1,11 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module clipboard operations provides a set of console commands for managing clipboard operations
+within the elements system of the application. application.
+It allows the user to copy, cut, paste, and clear elements, as well to as manage clipboard contents and settings.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up copy, clipboard commands.
+- init_commands(kernel): cut, paste, and clear Initializes the clipboard commands and defines elements, as well as manage clipboard contents.
 """
 
 from copy import copy
@@ -27,7 +33,7 @@ def init_commands(kernel):
     @self.console_option("name", "n", type=str)
     @self.console_command(
         "clipboard",
-        help=_("clipboard"),
+        help="clipboard : " + _("manage clipboard contents"),
         input_type=(None, "elements"),
         output_type="clipboard",
     )
@@ -48,7 +54,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "copy",
-        help=_("clipboard copy"),
+        help="clipboard copy : " + _("copy selected elements to clipboard"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -71,11 +77,11 @@ def init_commands(kernel):
         self.signal("icons")
         return "elements", self._clipboard[destination]
 
-    @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
-    @self.console_option("dy", "y", help=_("paste offset y"), type=Length, default=0)
+    @self.console_option("dx", "x", help=_("paste offset x"), type=str, default=0)
+    @self.console_option("dy", "y", help=_("paste offset y"), type=str, default=0)
     @self.console_command(
         "paste",
-        help=_("clipboard paste"),
+        help="clipboard paste : " + _("paste elements from clipboard"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -117,30 +123,31 @@ def init_commands(kernel):
         if len(pasted) == 0:
             channel(_("Error: Clipboard Empty"))
             return
-
-        if dx is not None:
-            dx = float(dx)
-        else:
-            dx = 0
-        if dy is not None:
-            dy = float(dy)
-        else:
-            dy = 0
+        lensett = self.length_settings()
+        # fmt: off
+        dx = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+        dy = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+        # fmt: on
         if dx != 0 or dy != 0:
             matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
-        if len(pasted) > 1:
-            group = self.elem_branch.add(type="group", label="Group", id="Copy")
-        else:
-            group = self.elem_branch
-        target = []
-        for p in pasted:
-            if hasattr(p, "label"):
-                s = "Copy" if p.label is None else f"{p.label} (copy)"
-                p.label = s
-            group.add_node(p)
-            target.append(p)
+        # _("Clipboard paste")
+        with self.undoscope("Clipboard paste"):
+            with self.node_lock:
+                if len(pasted) > 1:
+                    group = self.elem_branch.add(
+                        type="group", label="Group", id="Copy", expanded=True
+                    )
+                else:
+                    group = self.elem_branch
+                target = []
+                for p in pasted:
+                    if hasattr(p, "label"):
+                        s = "Copy" if p.label is None else f"{p.display_label()} (copy)"
+                        p.label = s
+                    group.add_node(p)
+                    target.append(p)
         # Make sure we are selecting the right thing...
         if len(pasted) > 1:
             self.set_emphasis([group])
@@ -154,7 +161,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "cut",
-        help=_("clipboard cut"),
+        help="clipboard cut : " + _("cut selected elements to clipboard"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -171,14 +178,16 @@ def init_commands(kernel):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
-        self.remove_elements(data)
+        # _("Clipboard cut")
+        with self.undoscope("Clipboard cut"):
+            self.remove_elements(data)
         # Let the world know we have filled the clipboard
         self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_command(
         "clear",
-        help=_("clipboard clear"),
+        help="clipboard clear : " + _("clear clipboard contents"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -193,7 +202,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "contents",
-        help=_("clipboard contents"),
+        help="clipboard contents : " + _("show clipboard contents"),
         input_type="clipboard",
         output_type="elements",
     )
@@ -203,7 +212,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "list",
-        help=_("clipboard list"),
+        help="clipboard list : " + _("list clipboard contents"),
         input_type="clipboard",
     )
     def clipboard_list(command, channel, _, **kwargs):

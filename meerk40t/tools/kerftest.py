@@ -11,7 +11,15 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
 
@@ -19,26 +27,29 @@ _ = wx.GetTranslation
 
 
 class KerfPanel(wx.Panel):
-    """
-    UI for KerfTest, allows setting of parameters
-    """
+    """KerfPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for kerf functionality. Features button, label controls for user interaction. Integrates with service/device/active, speed_min for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for kerf functionality. Key controls include "Create Pattern" (button), "Count:" (label), "Minimum:" (label)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("kerf")
         self.text_speed = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_speed.set_range(0, 1000)
-        self.label_speed = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_speed = wxStaticText(self, wx.ID_ANY, "")
         self.text_power = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_power.set_range(0, 1000)
-        self.label_power = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_power = wxStaticText(self, wx.ID_ANY, "")
         self.set_power_info()
         self.set_speed_info()
 
-        self.radio_pattern = wx.RadioBox(
+        self.radio_pattern = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Pattern"),
@@ -56,7 +67,7 @@ class KerfPanel(wx.Panel):
         self.text_delta = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         # self.text_delta.set_range(0, 50)
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
@@ -118,33 +129,33 @@ class KerfPanel(wx.Panel):
         hline_type = wx.BoxSizer(wx.HORIZONTAL)
         hline_type.Add(self.radio_pattern, 0, wx.EXPAND, 0)
         hline_count = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        self.info_distance = wx.StaticText(self, wx.ID_ANY, "")
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Count:"))
+        self.info_distance = wxStaticText(self, wx.ID_ANY, "")
         size_it(mylbl, 85)
         hline_count.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.spin_count, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.info_distance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Minimum:"))
         size_it(mylbl, 85)
         hline_min.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min.Add(self.text_min, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Maximum:"))
         size_it(mylbl, 85)
         hline_max.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max.Add(self.text_max, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Size:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Size:"))
         size_it(mylbl, 85)
         hline_dim.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim.Add(self.text_dim, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta = wx.BoxSizer(wx.HORIZONTAL)
-        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        mylbl = wxStaticText(self, wx.ID_ANY, _("Delta:"))
         size_it(mylbl, 85)
         hline_delta.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta.Add(self.text_delta, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -166,10 +177,10 @@ class KerfPanel(wx.Panel):
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."
         )
-        info_pic = wx.StaticBitmap(
+        info_pic = wxStaticBitmap(
             self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE)
         )
-        info_label = wx.TextCtrl(
+        info_label = TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())
@@ -837,9 +848,11 @@ class KerfPanel(wx.Panel):
         elif result == wx.ID_CANCEL:
             return
         if slider:
-            create_slider()
+            with self.context.elements.node_lock:
+                create_slider()
         else:
-            create_operations()
+            with self.context.elements.node_lock:
+                create_operations()
 
         self.context.signal("rebuild_tree")
         self.context.signal("refresh_scene", "Scene")
@@ -888,4 +901,9 @@ class KerfTool(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Laser-Tools"), _("Kerf-Test")
         return "Laser-Tools", "Kerf-Test"
+
+    @staticmethod
+    def helptext():
+        return _("Help establish the laser kerf width")

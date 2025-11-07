@@ -1,0 +1,8 @@
+potracer
+# pyclipr
+# pypotrace
+meerk40t-barcodes
+numba
+scipy>=1.10.0,<=1.14.0
+vtracer
+psutil

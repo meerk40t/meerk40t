@@ -1,4 +1,6 @@
+import threading
 from copy import copy
+from time import time
 
 from meerk40t.kernel import Service
 
@@ -21,6 +23,17 @@ The planner module provides cut planning services. This provides a method of goi
 cutcode which is then put inside a laserjob and sent to a spooler. Most of these operations are called on the
 individual CutPlan objects.
 """
+STAGE_PLAN_INIT = 0
+STAGE_PLAN_CLEAR = 2
+STAGE_PLAN_COPY = 1
+STAGE_PLAN_VALIDATED = 3
+STAGE_PLAN_GEOMETRY = 4
+STAGE_PLAN_PREPROCESSED = 5
+STAGE_PLAN_PREOPTIMIZED = 6
+STAGE_PLAN_OPTIMIZED = 7
+STAGE_PLAN_BLOB = 8
+STAGE_PLAN_FINISHED = 99
+STAGE_PLAN_INFO = 150
 
 
 def plugin(kernel, lifecycle=None):
@@ -43,7 +56,10 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("planner", choices)
-
+        INNER_WARNING = _(
+            "Notabene: When using both Reduce Travel Time and Burn Inner First, "
+            "travel optimization occurs within each hierarchy level (inners before outers)."
+        )
         choices = [
             {
                 "attr": "opt_raster_optimisation",
@@ -53,12 +69,14 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Cluster raster objects"),
                 "tip": _(
                     "Separate non-overlapping raster objects.\n"
-                    "Active: this will raster close (ie overlapping) objects as one,\n"
+                    "Active: this will raster close (i.e. overlapping) objects as one,\n"
                     "but will separately process objects lying apart from each other.\n"
                     "Inactive: all objects will be lasered as one single unit."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
+                # Hint for translation _("Splitting rasters")
                 "subsection": "Splitting rasters",
             },
             {
@@ -71,7 +89,9 @@ def plugin(kernel, lifecycle=None):
                     "Allowed gap between rasterable objects, to still be counted as one."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
+                # Hint for translation _("Splitting rasters")
                 "subsection": "Splitting rasters",
                 "conditional": (context, "opt_raster_optimisation"),
             },
@@ -97,8 +117,11 @@ def plugin(kernel, lifecycle=None):
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
-                ),
+                )
+                + "\n"
+                + INNER_WARNING,
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
             },
             {
@@ -124,6 +147,7 @@ def plugin(kernel, lifecycle=None):
                     + "at the point the burns join. "
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -153,6 +177,7 @@ def plugin(kernel, lifecycle=None):
                     + "or even an increased risk of the material catching fire."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -178,8 +203,38 @@ def plugin(kernel, lifecycle=None):
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
+            },
+            {
+                "attr": "opt_stitching",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Combine path segments"),
+                "tip": _(
+                    "Stitch segments together that are very close (ideally having joint start/end points)."
+                )
+                + "\n"
+                + _("Only inside a single cut/engrave operation."),
+                "page": "Optimisations",
+                # Hint for translation _("Stitching")
+                "section": "_05_Stitching",
+            },
+            {
+                "attr": "opt_stitch_tolerance",
+                "object": context,
+                "default": "0",
+                "type": Length,
+                "label": _("Tolerance"),
+                "tip": _(
+                    "Tolerance to decide whether two path segments should be joined."
+                ),
+                "page": "Optimisations",
+                # Hint for translation _("Stitching")
+                "section": "_05_Stitching",
+                "conditional": (context, "opt_stitching"),
             },
             {
                 "attr": "opt_inner_first",
@@ -198,8 +253,11 @@ def plugin(kernel, lifecycle=None):
                     + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
-                ),
+                )
+                + "\n"
+                + INNER_WARNING,
                 "page": "Optimisations",
+                # Hint for translation _("Burn sequence")
                 "section": "_10_Burn sequence",
             },
             {
@@ -210,6 +268,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Tolerance"),
                 "tip": _("Tolerance to decide if a shape is truly inside another one."),
                 "page": "Optimisations",
+                # Hint for translation _("Burn sequence")
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -239,6 +298,7 @@ def plugin(kernel, lifecycle=None):
                     + "in which case they may be optimised together."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Burn sequence")
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -252,8 +312,42 @@ def plugin(kernel, lifecycle=None):
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Reducing Movements")
                 "section": "_20_Reducing Movements",
                 "hidden": True,
+            },
+            {
+                "attr": "opt_effect_combine",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Keep effect lines together"),
+                "tip": (
+                    _("Active: effects like hatches are dealt with as a bigger shape")
+                    + "\n"
+                    + _(
+                        "Inactive: every single line segment will be dealt with individually."
+                    )
+                ),
+                "page": "Optimisations",
+                # Hint for translation _("Effects")
+                "section": "_25_Effects",
+            },
+            {
+                "attr": "opt_effect_optimize",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Optimize internally"),
+                "tip": (
+                    _("Active: hatch lines will be optimized internally")
+                    + "\n"
+                    + _("Inactive: hatch lines will be burnt sequentially.")
+                ),
+                "page": "Optimisations",
+                # Hint for translation _("Effects")
+                "section": "_25_Effects",
+                "conditional": (context, "opt_effect_combine"),
             },
             {
                 "attr": "opt_reduce_details",
@@ -271,6 +365,7 @@ def plugin(kernel, lifecycle=None):
                     + "compromise the quality at higher levels, so use with care and preview in simulation."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Details")
                 "section": "_30_Details",
                 "subsection": "_10_",
             },
@@ -288,6 +383,7 @@ def plugin(kernel, lifecycle=None):
                     + "compromise the quality at higher levels, so use with care and preview in simulation."
                 ),
                 "page": "Optimisations",
+                # Hint for translation _("Details")
                 "section": "_30_Details",
                 "subsection": "_10_",
                 "conditional": (context, "opt_reduce_details"),
@@ -298,8 +394,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register_choices("optimize", choices)
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)
-        context.setting(bool, "opt_reduce_directions", False)
-        context.setting(bool, "opt_remove_overlap", False)
         context.setting(bool, "opt_start_from_position", False)
 
         # context.setting(int, "opt_closed_distance", 15)
@@ -321,45 +415,106 @@ def plugin(kernel, lifecycle=None):
 
 class Planner(Service):
     """
-    Planner is a service that adds 'plan' commands to the kernel. These are text based versions of the job preview and
-    should be permitted to control the job creation process.
+    Planner is a service that manages cut planning and job creation for the kernel.
+    It provides thread-safe access to cut plans, tracks plan states and stages, and exposes
+    a set of console commands for manipulating plans, operations, and job execution.
+    Plans are tracked with multiple stages (init, copy, preprocess, optimize, etc.),
+    and the planner ensures that plan creation and modification are safe for concurrent use.
     """
 
+    STAGE_DESCRIPTIONS = {
+        STAGE_PLAN_INIT: "Init",
+        STAGE_PLAN_CLEAR: "Clear",
+        STAGE_PLAN_COPY: "Copy",
+        STAGE_PLAN_PREPROCESSED: "Pre-Proc",
+        STAGE_PLAN_PREOPTIMIZED: "Pre-Opt",
+        STAGE_PLAN_OPTIMIZED: "Opt",
+        STAGE_PLAN_INFO: "Info",
+        STAGE_PLAN_VALIDATED: "Valid",
+        STAGE_PLAN_GEOMETRY: "Geom",
+        STAGE_PLAN_BLOB: "Blob",
+        STAGE_PLAN_FINISHED: "Done",
+    }
+
     def __init__(self, kernel, *args, **kwargs):
+        """
+        Initialize the Planner service.
+        Sets up plan and state tracking, default plan, and thread lock for safe concurrent access.
+        """
         Service.__init__(self, kernel, "planner")
-        self._plan = dict()
+        self._plan = {}  # contains all cutplans, keyed by plan name
+        self._states = {}  # contains all plan state dictionaries, keyed by plan name
         self._default_plan = "0"
         self.do_optimization = True
+        self._plan_lock = threading.Lock()
 
     def length(self, v):
+        """
+        Convert a value to a float using the Length class (device-independent units).
+        """
         return float(Length(v))
 
     def length_x(self, v):
+        """
+        Convert a value to a float relative to the device's view width.
+        """
         return float(Length(v, relative_length=self.device.view.width))
 
     def length_y(self, v):
+        """
+        Convert a value to a float relative to the device's view height.
+        """
         return float(Length(v, relative_length=self.device.view.height))
 
-    def get_or_make_plan(self, plan_name):
+    def __get_or_make_plan(self, plan_name):
         """
-        Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
+        Internal helper to get an existing plan by name, or create a new one if it does not exist.
+        Initializes the plan's state tracking as well. Thread safety must be handled by the caller.
         """
         try:
             return self._plan[plan_name]
         except KeyError:
             self._plan[plan_name] = CutPlan(plan_name, self)
-            return self._plan[plan_name]
+            self._states[plan_name] = {STAGE_PLAN_INIT: time()}
+        return self._plan[plan_name]
+
+    def get_or_make_plan(self, plan_name):
+        """
+        Thread-safe method to get or create a plan by name.
+        Returns the CutPlan instance for the given plan name.
+        """
+        with self._plan_lock:
+            plan = self.__get_or_make_plan(plan_name)
+        return plan
 
     @property
     def default_plan(self):
+        """
+        Returns the default plan (usually plan '0').
+        """
         return self.get_or_make_plan(self._default_plan)
 
     def service_attach(self, *args, **kwargs):
         _ = self.kernel.translation
 
         @self.console_command(
+            "list-plans",
+            help=_("List all available plans"),
+            input_type=None,
+            output_type=None,
+        )
+        def list_plans(command, channel, _, **kwgs):
+            if not self._plan:
+                channel(_("No plans available."))
+                return
+            channel(_("Available plans:"))
+            for i, plan in enumerate(self._plan):
+                stage, info = self.get_plan_stage(plan)
+                channel(f"{i + 1}: {plan} (State: {info})")
+
+        @self.console_command(
             "plan",
-            help=_("plan<?> <command>"),
+            help="plan<?> <command> : " + _("issue a command to modify the plan"),
             regex=True,
             input_type=(None, "ops"),
             output_type="plan",
@@ -367,7 +522,6 @@ class Planner(Service):
         def plan_base(command, channel, _, data=None, remainder=None, **kwgs):
             if len(command) > 4:
                 self._default_plan = command[4:]
-                self.signal("plan", self._default_plan, None)
 
             cutplan = self.default_plan
             if data is not None:
@@ -386,27 +540,36 @@ class Planner(Service):
                     except AttributeError:
                         pass
                     cutplan.plan.append(copy_c)
-                self.signal("plan", self._default_plan, 1)
                 return "plan", cutplan
             if remainder is None:
                 channel(_("----------"))
-                channel(_("Plan:"))
-                for i, plan_name in enumerate(cutplan.name):
-                    channel(f"{i}: {plan_name}")
+                channel(_("Plan:") + self._default_plan)
+                if isinstance(cutplan.name, str):
+                    channel(f"{1}: {cutplan.name}")
+                else:
+                    for i, plan_name in enumerate(cutplan.name):
+                        channel(f"{i + 1}: {plan_name}")
                 channel(_("----------"))
-                channel(_("Plan {plan}:").format(plan=self._default_plan))
+                state, info = self.get_plan_stage(self._default_plan)
+                channel(
+                    _("Plan {plan}: {state}").format(
+                        plan=self._default_plan, state=info
+                    )
+                )
                 for i, op_name in enumerate(cutplan.plan):
-                    channel(f"{i}: {op_name}")
+                    channel(f"{i + 1}: {op_name}")
                 channel(_("Commands {plan}:").format(plan=self._default_plan))
                 for i, cmd_name in enumerate(cutplan.commands):
-                    channel(f"{i}: {cmd_name}")
+                    channel(f"{i + 1}: {cmd_name}")
                 channel(_("----------"))
 
             return "plan", cutplan
 
         @self.console_command(
             ("copy", "copy-selected"),
-            help=_("plan(-selected)<?> copy"),
+            help=_(
+                "plan<?> copy / copy-selected: copy data from all / only from selected operations"
+            ),
             input_type="plan",
             output_type="plan",
         )
@@ -535,6 +698,9 @@ class Planner(Service):
             init_settings()
 
             # Add default start ops
+            if busy.shown:
+                busy.change(msg=_("Adding trailing operations"), keep=1)
+                busy.show()
             add_ops(True)
             # types = (
             #     "op cut",
@@ -552,7 +718,16 @@ class Planner(Service):
             #     "place point"
             #     "blob",
             # )
+            c_count = 0
+            update_interval = 10  # Update busy indicator every 10 commands
             for c in operations:
+                c_count += 1
+                if busy.shown and (c_count % update_interval) == 0:
+                    busy.change(
+                        msg=_("Copying data {count}").format(count=c_count), keep=2
+                    )
+                    busy.show()
+
                 isactive = True
                 try:
                     if not c.output:
@@ -584,9 +759,12 @@ class Planner(Service):
                 data.plan.append(copy_c)
 
             # Add default trailing ops
+            if busy.shown:
+                busy.change(msg=_("Adding trailing operations"), keep=1)
+                busy.show()
             add_ops(False)
             channel(_("Copied Operations."))
-            self.signal("plan", data.name, 1)
+            self.update_stage(data.name, STAGE_PLAN_COPY)
             return data_type, data
 
         @self.console_option(
@@ -595,7 +773,7 @@ class Planner(Service):
         @self.console_argument("console", type=str, help=_("console command to append"))
         @self.console_command(
             "console",
-            help=_("plan<?> command"),
+            help="plan<?> command : " + _("inject a console command into the plan"),
             input_type="plan",
             output_type="plan",
             all_arguments_required=True,
@@ -625,12 +803,12 @@ class Planner(Service):
                         data.plan.insert(index, cmd)
                     except ValueError:
                         channel(_("Invalid index for command insert."))
-                self.signal("plan", data.name, None)
+                self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
         @self.console_command(
             "preprocess",
-            help=_("plan<?> preprocess"),
+            help="plan<?> preprocess : " + _("prepare the plan for execution"),
             input_type="plan",
             output_type="plan",
         )
@@ -642,12 +820,12 @@ class Planner(Service):
                 busy.show()
 
             data.preprocess()
-            self.signal("plan", data.name, 2)
+            self.update_stage(data.name, STAGE_PLAN_PREPROCESSED)
             return data_type, data
 
         @self.console_command(
             "validate",
-            help=_("plan<?> validate"),
+            help="plan<?> validate : " + _("validate the plan for execution"),
             input_type="plan",
             output_type="plan",
         )
@@ -664,12 +842,12 @@ class Planner(Service):
                 self.signal("cutplanning;failed", str(e))
                 data.clear()
                 return
-            self.signal("plan", data.name, 3)
+            self.update_stage(data.name, STAGE_PLAN_VALIDATED)
             return data_type, data
 
         @self.console_command(
             "geometry",
-            help=_("plan<?> geometry"),
+            help="plan<?> geometry : " + _("extract the geometry from the plan"),
             input_type="plan",
             output_type="plan",
         )
@@ -681,12 +859,12 @@ class Planner(Service):
                 busy.show()
 
             data.geometry()
-            self.signal("plan", data.name, 4)
+            self.update_stage(data.name, STAGE_PLAN_GEOMETRY)
             return data_type, data
 
         @self.console_command(
             "blob",
-            help=_("plan<?> blob"),
+            help="plan<?> blob : " + _("create the device specific format to send to the laser"),
             input_type="plan",
             output_type="plan",
         )
@@ -698,12 +876,12 @@ class Planner(Service):
                 busy.show()
 
             data.blob()
-            self.signal("plan", data.name, 4)
+            self.update_stage(data.name, STAGE_PLAN_BLOB)
             return data_type, data
 
         @self.console_command(
             "preopt",
-            help=_("plan<?> preopt"),
+            help="plan<?> preopt : " + _("prepare the plan for optimisation"),
             input_type="plan",
             output_type="plan",
         )
@@ -715,12 +893,12 @@ class Planner(Service):
                 busy.show()
 
             data.preopt()
-            self.signal("plan", data.name, 5)
+            self.update_stage(data.name, STAGE_PLAN_PREOPTIMIZED)
             return data_type, data
 
         @self.console_command(
             "optimize",
-            help=_("plan<?> optimize"),
+            help="plan<?> optimize : " + _("optimize the plan for execution, eg travel reduction"),
             input_type="plan",
             output_type="plan",
         )
@@ -732,12 +910,12 @@ class Planner(Service):
                 busy.show()
 
             data.execute()
-            self.signal("plan", data.name, 6)
+            self.update_stage(data.name, STAGE_PLAN_OPTIMIZED)
             return data_type, data
 
         @self.console_command(
             "clear",
-            help=_("plan<?> clear"),
+            help="plan<?> clear : " + _("clear the plan"),
             input_type="plan",
             output_type="plan",
         )
@@ -749,36 +927,47 @@ class Planner(Service):
                 busy.show()
 
             data.clear()
-            self.signal("plan", data.name, 0)
+            self.update_stage(data.name, STAGE_PLAN_CLEAR)
+            return data_type, data
+
+        @self.console_command(
+            "finish",
+            help="plan<?> finish : " + _("deem the plan to be finished"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_finish(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            self.update_stage(data.name, STAGE_PLAN_FINISHED)
             return data_type, data
 
         @self.console_command(
             "return",
-            help=_("plan<?> return"),
+            help="plan<?> return : " + _("extract the operations from the plan back to the tree"),
             input_type="plan",
             output_type="plan",
         )
         def plan_return(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
-            operations.remove_all_children()
-
-            for c in data.plan:
-                if isinstance(c, CutCode):
-                    operations.add(type="cutcode", cutcode=c)
-                if isinstance(
-                    c,
-                    (
-                        RasterOpNode,
-                        ImageOpNode,
-                        CutOpNode,
-                        EngraveOpNode,
-                        DotsOpNode,
-                    ),
-                ):
-                    copy_c = copy(c)
-                    operations.add_node(copy_c)
+            with self.elements.node_lock:
+                operations.remove_all_children()
+                for c in data.plan:
+                    if isinstance(c, CutCode):
+                        operations.add(type="cutcode", cutcode=c)
+                    if isinstance(
+                        c,
+                        (
+                            RasterOpNode,
+                            ImageOpNode,
+                            CutOpNode,
+                            EngraveOpNode,
+                            DotsOpNode,
+                        ),
+                    ):
+                        copy_c = copy(c)
+                        operations.add_node(copy_c)
             channel(_("Returned Operations."))
-            self.signal("plan", data.name, None)
+            self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
         @self.console_argument(
@@ -789,7 +978,7 @@ class Planner(Service):
         )
         @self.console_command(
             "sublist",
-            help=_("plan<?> sublist"),
+            help="plan<?> sublist : " + _("extract a sublist from the plan"),
             input_type="plan",
             output_type="plan",
         )
@@ -841,8 +1030,99 @@ class Planner(Service):
                     c = CutCode(c[: end - pos])
                 data.plan.append(c)
 
-            self.signal("plan", data.name, None)
+            self.update_stage(data.name, STAGE_PLAN_INFO)
             return data_type, data
 
     def plan(self, **kwargs):
         yield from self._plan
+
+    def finish_plan(self, plan_name):
+        self.update_stage(plan_name, STAGE_PLAN_FINISHED)
+
+    def has_content(self, plan_name):
+        """
+        Checks if the specified plan has any content (i.e., non-empty plan list).
+        Returns True if the plan exists and contains at least one operation.
+        """
+        if plan_name not in self._plan:
+            return False
+        return len(self._plan[plan_name].plan) > 0
+
+    def get_last_plan(self):
+        """
+        Finds and returns the most recently finished plan name that has content.
+        Returns the plan name, or None if no such plan exists.
+        """
+        last = None
+        last_time = 0
+        with self._plan_lock:
+            for candidate in self._plan:
+                plan = self._plan[candidate]
+                if (
+                    STAGE_PLAN_FINISHED not in self._states[candidate]
+                    or len(plan.plan) == 0
+                ):
+                    continue
+                # Make sure we take the most recent
+                t = self._states[candidate].get(STAGE_PLAN_FINISHED, 0)
+                if t > last_time:
+                    last_time = t
+                    last = candidate
+        return last
+
+    def get_free_plan(self):
+        """
+        Finds and returns a unique plan name not currently in use or a finished plan that can be reused.
+        This method generates a new plan name by incrementing a counter until an unused or finished name is found.
+        Returns the new unique plan name as a string.
+        """
+        candidate = "z"
+        index = 1
+        with self._plan_lock:
+            while True:
+                if candidate not in self._plan:
+                    plan = self.__get_or_make_plan(candidate)
+                    break
+                # We take this if we finished the plan
+                if STAGE_PLAN_FINISHED in self._states[candidate]:
+                    break
+                candidate = f"z{index}"
+                index += 1
+        return candidate
+
+    def update_stage(self, plan_name, stage):
+        """
+        Updates the stage of a plan, recording the current time for the given stage.
+        If clearing, resets all other stages. Otherwise, adds the new stage to the plan's state dictionary.
+        Emits a 'plan' signal with the plan name and stage.
+        """
+        if plan_name not in self._states:
+            self.console(f"Couldn't update plan {plan_name}: not found")
+            return
+        with self._plan_lock:
+            if stage == STAGE_PLAN_CLEAR:
+                self._states[plan_name].clear()
+            self._states[plan_name][stage] = time()
+        self.signal("plan", plan_name, stage)
+
+    def get_plan_stage(self, plan_name):
+        """
+        Returns the current state dictionary and a comma-separated string of all reached stage descriptions for a plan (ordered desc)
+        """
+        states = self._states.get(plan_name, {})
+        if not states:
+            return None, ""
+        ordered = sorted(states.items(), key=lambda kv: kv[1], reverse=True)
+        info = ", ".join(self.STAGE_DESCRIPTIONS[s] for s, _ in ordered)
+        return states, info
+
+    def is_finished(self, plan_name):
+        """
+        Checks if the specified plan has reached the finished stage.
+        Returns True if the plan exists and has the STAGE_PLAN_FINISHED recorded.
+        """
+        if plan_name not in self._states:
+            return False
+        with self._plan_lock:
+            finished = STAGE_PLAN_FINISHED in self._states[plan_name]
+        return finished

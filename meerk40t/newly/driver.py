@@ -16,7 +16,7 @@ from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.newly.controller import NewlyController
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 class NewlyDriver:
@@ -35,8 +35,16 @@ class NewlyDriver:
         self._shutdown = False
 
         self.queue = list()
+        self._queue_current = 0
+        self._queue_total = 0
+
         self.plot_planner = PlotPlanner(
-            dict(), single=True, ppi=False, shift=False, group=True
+            dict(),
+            single=True,
+            ppi=False,
+            shift=False,
+            group=True,
+            require_uniform_movement=False,
         )
         self._aborting = False
         self._list_bits = None
@@ -72,6 +80,13 @@ class NewlyDriver:
 
     def abort_retry(self):
         self.connection.abort_connect()
+
+    def get_internal_queue_status(self):
+        return self._queue_current, self._queue_total
+
+    def _set_queue_status(self, current, total):
+        self._queue_current = current
+        self._queue_total = total
 
     #############
     # DRIVER COMMANDS
@@ -241,7 +256,12 @@ class NewlyDriver:
         con = self.connection
         queue = self.queue
         self.queue = list()
+        total = len(queue)
+        current = 0
         for q in queue:
+            current += 1
+            self._set_queue_status(current, total)
+
             con.program_mode()
             # LOOP CHECKS
             if self._aborting:
@@ -329,6 +349,7 @@ class NewlyDriver:
                 con.raster(q)
                 con.update()
         con.rapid_mode()
+        self._set_queue_status(0, 0)
 
     def move_abs(self, x, y):
         """
@@ -381,7 +402,7 @@ class NewlyDriver:
 
     def physical_home(self):
         """ "
-        This would be the command to go to a real physical home position (ie hitting endstops)
+        This would be the command to go to a real physical home position (i.e. hitting endstops)
         """
         self.connection.sync()
         self.connection.home()
@@ -509,8 +530,8 @@ class NewlyDriver:
         """
         pass
 
-    def pulse(self, pulse_time):
-        self.connection.pulse(pulse_time)
+    def pulse(self, pulse_time, power=None):
+        self.connection.pulse(pulse_time, power=power)
 
     def dwell(self, time_in_ms):
         """

@@ -7,7 +7,16 @@ from meerk40t.gui.icons import (
     icon_split_image,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -19,18 +28,19 @@ class InfoPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
-        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.context.themes.set_window_colors(self)
+        self.lbl_info_main = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wxStaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wxStaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
-        self.image_default = wx.StaticBitmap(
+        self.image_default = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_first = wx.StaticBitmap(
+        self.image_first = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
-        self.image_last = wx.StaticBitmap(
+        self.image_last = wxStaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -69,14 +79,17 @@ class InfoPanel(wx.Panel):
                 ):
                     c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                image = self.make_raster(
-                    node,
-                    node.paint_bounds,
-                    width=iconsize,
-                    height=iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
+                try:
+                    image = self.make_raster(
+                        node,
+                        node.paint_bounds,
+                        width=iconsize,
+                        height=iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
+                except Exception:
+                    return None, None
 
             if c is None:
                 c = defaultcolor
@@ -95,6 +108,8 @@ class InfoPanel(wx.Panel):
             if count > 0:
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
@@ -105,6 +120,8 @@ class InfoPanel(wx.Panel):
                 data.sort(key=lambda n: n.emphasized_time)
                 node = data[0]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
@@ -114,6 +131,8 @@ class InfoPanel(wx.Panel):
 
                 node = data[-1]
                 c, image = create_image_from_node(node, self.preview_size)
+                if c is None:
+                    return
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
                     _("Last selected: {type} {lbl}").format(
@@ -132,10 +151,17 @@ class InfoPanel(wx.Panel):
 
 
 class SplitterPanel(wx.Panel):
+    """SplitterPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for splitter functionality. Features button controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for splitter functionality. Key controls include "Create split images" (button), "Create keyhole image" (button)."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("imagesplit")
         self.scene = scene
         # Amount of currently selected
@@ -154,7 +180,7 @@ class SplitterPanel(wx.Panel):
         self.split_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
         self.split_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -165,13 +191,19 @@ class SplitterPanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
-        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
+        self.lbl_info = wxStaticText(self, wx.ID_ANY, "")
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
-            icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
+            icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
-        lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
+        lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
             self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
@@ -277,10 +309,17 @@ class SplitterPanel(wx.Panel):
 
 
 class KeyholePanel(wx.Panel):
+    """KeyholePanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for keyhole functionality. Features button controls for user interaction. Integrates with emphasized, reference for enhanced functionality.
+    **End-User Perspective:**
+    This panel provides controls for keyhole functionality. Key controls include "Create split images" (button), "Create keyhole image" (button)."""
+
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.SetHelpText("keyhole")
         self.scene = scene
         # Amount of currently selected
@@ -295,7 +334,7 @@ class KeyholePanel(wx.Panel):
         )
         self.selectparam = ("first", "last")
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Keyhole Object:"),
@@ -306,14 +345,20 @@ class KeyholePanel(wx.Panel):
         self.rbox_selection.SetSelection(0)
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
+        self.text_dpi.set_default_values(
+            [
+                (str(dpi), _("Set DPI to {value}").format(value=str(dpi)))
+                for dpi in self.context.device.view.get_sensible_dpi_values()
+            ]
+        )
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create keyhole image"))
         self.btn_align.SetBitmap(
-            icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size())
+            icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
 
-        lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
+        lbl_dpi = wxStaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
             self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
@@ -327,8 +372,8 @@ class KeyholePanel(wx.Panel):
         sizer_check_outline = StaticBoxSizer(
             self, wx.ID_ANY, _("Trace Keyhole:"), wx.HORIZONTAL
         )
-        self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert")
-        self.check_outline = wx.CheckBox(self, wx.ID_ANY, "Trace")
+        self.check_invert = wxCheckBox(self, wx.ID_ANY, "Invert")
+        self.check_outline = wxCheckBox(self, wx.ID_ANY, "Trace")
 
         sizer_check_invert.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_check_outline.Add(self.check_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -449,6 +494,12 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.window_context.themes.set_window_colors(self.notebook_main)
+        bg_std = self.window_context.themes.get("win_bg")
+        bg_active = self.window_context.themes.get("highlight")
+        self.notebook_main.GetArtProvider().SetColour(bg_std)
+        self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
+
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
@@ -509,4 +560,9 @@ class RenderSplit(MWindow):
 
     @staticmethod
     def submenu():
+        # Hint for translation: _("Editing"), _("Image Splitting")
         return "Editing", "Image Splitting"
+
+    @staticmethod
+    def helptext():
+        return _("Split images for large jobs")

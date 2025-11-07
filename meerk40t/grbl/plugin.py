@@ -35,8 +35,7 @@ def plugin(kernel, lifecycle=None):
                 "friendly_name": _("Generic (GRBL-Controller)"),
                 "extended_info": _("Generic GRBL Laser Device."),
                 "priority": 17,
-                "family": _("Generic"),
-                "family_priority": 20,
+                "family": _("Generic Diode-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -59,7 +58,6 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "priority": 20,
                 "family": _("Generic"),
-                "family_priority": 20,
                 "choices": [
                     {
                         "attr": "label",
@@ -84,15 +82,14 @@ def plugin(kernel, lifecycle=None):
             "dev_info/grbl-k40",
             {
                 "provider": "provider/device/grbl",
-                "friendly_name": _("K40 (GRBL-Controller)"),
+                "friendly_name": _("K40 CO2 (GRBL-Controller)"),
                 "extended_info": _("K40 laser with a modified GRBL laser controller."),
                 "priority": 18,
-                "family": _("CO2-Laser"),
-                "family_priority": 99,
+                "family": _("K-Series CO2-Laser"),
                 "choices": [
                     {
                         "attr": "label",
-                        "default": "GRBL-K40",
+                        "default": "GRBL-K40-CO2",
                     },
                     {
                         "attr": "has_endstops",
@@ -126,8 +123,7 @@ def plugin(kernel, lifecycle=None):
                     "Any of a variety of inexpensive GRBL based diode lasers."
                 ),
                 "priority": 19,
-                "family": _("Diode-Laser"),
-                "family_priority": 50,
+                "family": _("Generic"),
                 "choices": [
                     {
                         "attr": "label",
@@ -151,8 +147,7 @@ def plugin(kernel, lifecycle=None):
                 "friendly_name": _("Ortur Laser Master 2 (GRBL)"),
                 "extended_info": _("Ortur-branded self-assembled grbl diode lasers"),
                 "priority": 21,
-                "family": _("Diode-Laser"),
-                "family_priority": 50,
+                "family": _("Ortur Diode-Laser"),
                 "choices": [
                     {
                         "attr": "label",
@@ -172,6 +167,38 @@ def plugin(kernel, lifecycle=None):
                     },
                     {"attr": "bedheight", "default": "430mm"},
                     {"attr": "bedwidth", "default": "400mm"},
+                ],
+            },
+        )
+        kernel.register(
+            "dev_info/grbl-longer-ray5",
+            {
+                "provider": "provider/device/grbl",
+                "friendly_name": _("Longer Ray5 (GRBL)"),
+                "extended_info": _(
+                    "Longer-branded 5w/10w/20w grbl diode laser.\nMake sure you verify your bed size! This machine has several upgrade kits."
+                ),
+                "priority": 21,
+                "family": _("Longer Diode-Laser"),
+                "choices": [
+                    {
+                        "attr": "label",
+                        "default": "Longer-Ray5",
+                    },
+                    {
+                        "attr": "has_endstops",
+                        "default": False,
+                    },
+                    {
+                        "attr": "source",
+                        "default": "diode",
+                    },
+                    {
+                        "attr": "require_validator",
+                        "default": False,
+                    },
+                    {"attr": "bedheight", "default": "450mm"},
+                    {"attr": "bedwidth", "default": "450mm"},
                 ],
             },
         )
@@ -204,9 +231,13 @@ def plugin(kernel, lifecycle=None):
             hidden=True,
         )
         def grblserver(
+            command,
+            channel,
+            _,
             port=23,
             verbose=False,
             quit=False,
+            remainder=None,
             **kwargs,
         ):
             """
@@ -214,10 +245,13 @@ def plugin(kernel, lifecycle=None):
             this emulates a grbl devices in order to be compatible with software that
             controls that type of device.
             """
+            if remainder and remainder.lower() in ("stop", "quit"):
+                quit = True
             root = kernel.root
             grblcontrol = root.device.lookup("grblcontrol")
             if grblcontrol is None:
                 if quit:
+                    channel(_("No control instance to stop."))
                     return
                 grblcontrol = GRBLControl(root)
                 root.device.register("grblcontrol", grblcontrol)

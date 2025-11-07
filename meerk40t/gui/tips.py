@@ -11,7 +11,6 @@ import webbrowser
 
 import wx
 
-from ..kernel import get_safe_path
 from .icons import (
     icon_outline,
     icon_youtube,
@@ -23,26 +22,36 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size
+from .wxutils import (
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxStaticBitmap,
+    wxStaticText,
+)
 
 _ = wx.GetTranslation
 
 
 class TipPanel(wx.Panel):
-    """
-    Display MeerK40t usage tips
-    """
+    """TipPanel - User interface panel for laser cutting operations
+    **Technical Purpose:**
+    Provides user interface controls for tip functionality. Features text control, button controls for user interaction.
+    **End-User Perspective:**
+    This panel provides controls for tip functionality. Key controls include "Image missing!" (text control), "Previous tip" (button), "Next tip" (button)."""
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.tip_command = ""
         self.tip_image = ""
-        self.tips = list()
+        self.tips = []
 
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         self.local_file = os.path.join(safe_dir, "tips.txt")
 
         self.setup_tips()
@@ -56,11 +65,12 @@ class TipPanel(wx.Panel):
         # self.context.tip_access_consent = False
         self.SetHelpText("tips")
         icon_size = dip_size(self, 25, 25)
+        icon_size *= self.context.root.bitmap_correction_scale
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
+        self.image_tip = wxStaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(dip_size(self, 250, -1))
-        self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
+        self.no_image_message = TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
                 "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
@@ -69,7 +79,7 @@ class TipPanel(wx.Panel):
         self.no_image_message.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
         # self.image_tip.SetSize(wx.Size(250, -1))
-        self.text_tip = wx.TextCtrl(
+        self.text_tip = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
@@ -79,15 +89,15 @@ class TipPanel(wx.Panel):
 
         sizer_main.Add(tip_area, 1, wx.EXPAND, 0)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_prev = wx.Button(self, wx.ID_ANY, _("Previous tip"))
+        self.button_prev = wxButton(self, wx.ID_ANY, _("Previous tip"))
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
-        self.label_position = wx.StaticText(
+        self.label_position = wxStaticText(
             self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
         )
 
-        self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
+        self.button_next = wxButton(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
         self.button_next.SetToolTip(_("Jump to the next tip"))
 
@@ -96,7 +106,10 @@ class TipPanel(wx.Panel):
         button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
-        self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup = wxCheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup.SetFont(
+            wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        )
         self.check_startup.SetToolTip(
             _(
                 "Show tips at program start.\n"
@@ -106,7 +119,7 @@ class TipPanel(wx.Panel):
         self.check_startup.SetValue(self.context.show_tips)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_try = wx.Button(self, wx.ID_ANY, _("Try it out"))
+        self.button_try = wxButton(self, wx.ID_ANY, _("Try it out"))
         self.button_try.SetToolTip(
             _(
                 "Launch an example, please be aware that this might change your design,\n"
@@ -114,7 +127,7 @@ class TipPanel(wx.Panel):
             )
         )
         self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
-        self.checkbox_update = wx.CheckBox(self, wx.ID_ANY, _("Automatically Update"))
+        self.checkbox_update = wxCheckBox(self, wx.ID_ANY, _("Automatically Update"))
         self.checkbox_update.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
@@ -162,6 +175,10 @@ class TipPanel(wx.Panel):
         self.load_tip()
 
     def load_tip(self):
+        if len(self.tips) == 0:
+            return
+        if self._current_tip >= len(self.tips):
+            self._current_tip = 0
         my_tip = self.tips[self._current_tip]
         self.text_tip.SetValue(my_tip[0])
         if my_tip[1]:
@@ -229,6 +246,10 @@ class TipPanel(wx.Panel):
             self.image_tip.Show(True)
             return True
 
+        img_size = self.image_tip.GetSize()
+        if img_size[0] == 0 or img_size[1] == 0:
+            # Invalid display area
+            return False
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
         self.tip_image = path
@@ -259,7 +280,14 @@ class TipPanel(wx.Panel):
             return False
 
         bmp = wx.Bitmap()
-        res = bmp.LoadFile(local_path)
+        try:
+            res = bmp.LoadFile(local_path)
+            if res:
+                new_x, new_y = bmp.Size
+                if new_x == 0 or new_y == 0:
+                    res = False
+        except Exception:
+            res = False
         if not res:
             # Bitmap failed to load.
             self.no_image_message.Show(True)
@@ -282,7 +310,7 @@ class TipPanel(wx.Panel):
             bmp = wx.Bitmap(image)
 
         try:
-            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
+            self.image_tip.SetScaleMode(wxStaticBitmap.Scale_None)
         except AttributeError:
             # Old version of wxpython
             pass
@@ -422,7 +450,7 @@ class TipPanel(wx.Panel):
         if locale and locale != "en":
             try:
                 with urllib.request.urlopen(url + locale + "/tips.txt") as file:
-                    content = file.read().decode("utf-8")
+                    content = file.read().decode("utf-8", errors="ignore")
                     successful = True
             except Exception:
                 pass
@@ -431,7 +459,7 @@ class TipPanel(wx.Panel):
         if not successful:
             try:
                 with urllib.request.urlopen(url + "tips.txt") as file:
-                    content = file.read().decode("utf-8")
+                    content = file.read().decode("utf-8", errors="ignore")
                     successful = True
             except Exception as e:
                 # print (f"Error: {e}")
@@ -440,11 +468,30 @@ class TipPanel(wx.Panel):
         if successful:
             # Store the result to the local cache file
             if len(content):
-                try:
-                    with open(self.local_file, mode="w") as f:
-                        f.write(content)
-                except (OSError, RuntimeError, PermissionError, FileNotFoundError):
-                    pass
+                successful = False
+                # Try to write the content to the local file.
+                for codepage in ["utf-8", "cp1252"]:
+                    try:
+                        with open(self.local_file, mode="w", encoding=codepage) as f:
+                            f.write(content)
+                        successful = True
+                        break
+                    except (
+                        UnicodeDecodeError,
+                        OSError,
+                        RuntimeError,
+                        PermissionError,
+                        FileNotFoundError,
+                    ):
+                        pass
+                if not successful:
+                    # If we still failed, try with surrogateescape
+                    # This is a workaround for some unicode issues.
+                    try:
+                        with open(self.local_file, mode="w") as f:
+                            f.write(content)
+                    except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+                        pass
 
     def load_tips_from_local_cache(self):
         def comparable_version(version):
@@ -480,42 +527,60 @@ class TipPanel(wx.Panel):
         myversion = comparable_version(self.context.kernel.version)
 
         try:
-            with open(self.local_file, mode="r") as f:
-                ver = ""
-                tip = ""
-                cmd = ""
-                img = ""
-                lastline_was_tip = False
-                for line in f:
-                    cline = line.strip()
-                    if cline.startswith("#") or len(cline) == 0:
-                        continue
-                    if cline.startswith("tip="):
-                        lastline_was_tip = True
-                        # Store previous
-                        add_tip(tip, cmd, img, ver, myversion)
-                        ver = ""
-                        tip = cline[len("tip=") :]
-                        cmd = ""
-                        img = ""
-                    elif cline.startswith("version="):
-                        lastline_was_tip = False
-                        ver = cline[len("version=") :]
-                    elif cline.startswith("cmd="):
-                        lastline_was_tip = False
-                        cmd = cline[len("cmd=") :]
-                    elif cline.startswith("image="):
-                        lastline_was_tip = False
-                        img = cline[len("image=") :]
-                    elif cline.startswith("img="):
-                        lastline_was_tip = False
-                        img = cline[len("img=") :]
-                    else:
-                        if lastline_was_tip:
-                            tip += "\n" + cline
+            content = ""
+            codepages = ["utf-8", "cp1252"]
+            for codepage in codepages:
+                try:
+                    with open(self.local_file, mode="r", encoding=codepage) as f:
+                        content = f.read()
+                    break
+                except UnicodeDecodeError:
+                    content = ""
+            if not content:
+                with open(
+                    self.local_file,
+                    mode="r",
+                    encoding="utf-8",
+                    errors="surrogateescape",
+                ) as f:
+                    content = f.read()
 
-                # Something pending?
-                add_tip(tip, cmd, img, ver, myversion)
+            lines = content.splitlines()
+            ver = ""
+            tip = ""
+            cmd = ""
+            img = ""
+            lastline_was_tip = False
+            for line in lines:
+                cline = line.strip()
+                if cline.startswith("#") or len(cline) == 0:
+                    continue
+                if cline.startswith("tip="):
+                    lastline_was_tip = True
+                    # Store previous
+                    add_tip(tip, cmd, img, ver, myversion)
+                    ver = ""
+                    tip = cline[len("tip=") :]
+                    cmd = ""
+                    img = ""
+                elif cline.startswith("version="):
+                    lastline_was_tip = False
+                    ver = cline[len("version=") :]
+                elif cline.startswith("cmd="):
+                    lastline_was_tip = False
+                    cmd = cline[len("cmd=") :]
+                elif cline.startswith("image="):
+                    lastline_was_tip = False
+                    img = cline[len("image=") :]
+                elif cline.startswith("img="):
+                    lastline_was_tip = False
+                    img = cline[len("img=") :]
+                else:
+                    if lastline_was_tip:
+                        tip += "\n" + cline
+
+            # Something pending?
+            add_tip(tip, cmd, img, ver, myversion)
 
         except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             return
@@ -525,7 +590,7 @@ class TipPanel(wx.Panel):
         Check for existence of a subdirectory to store images
         and create it if not found
         """
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         cache_dir = os.path.join(safe_dir, "tip_images")
         if not os.path.exists(cache_dir):
             try:
@@ -572,3 +637,7 @@ class Tips(MWindow):
     def submenu():
         # Suppress...
         return "Tips", "Tips", True
+
+    @staticmethod
+    def helptext():
+        return _("Display some tips and tricks how to best use MeerK40t")

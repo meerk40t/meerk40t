@@ -24,6 +24,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
+        from .extra.coolant import plugin as coolantplugin
+
+        plugins.append(coolantplugin)
+
         from .lihuiyu import plugin as lihuiyu_driver
 
         plugins.append(lihuiyu_driver.plugin)
@@ -43,6 +47,10 @@ def plugin(kernel, lifecycle):
         from .rotary import rotary
 
         plugins.append(rotary.plugin)
+
+        from .cylinder import cylinder
+
+        plugins.append(cylinder.plugin)
 
         from .core import core
 
@@ -68,6 +76,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(potrace.plugin)
 
+        from .extra import vtracer
+
+        plugins.append(vtracer.plugin)
+
         from .extra import inkscape
 
         plugins.append(inkscape.plugin)
@@ -83,6 +95,10 @@ def plugin(kernel, lifecycle):
         from .extra import lbrn
 
         plugins.append(lbrn.plugin)
+
+        from .extra import xcs_reader
+
+        plugins.append(xcs_reader.plugin)
 
         from .extra import updater
 
@@ -127,6 +143,10 @@ def plugin(kernel, lifecycle):
         from .extra.imageactions import plugin as splitterplugin
 
         plugins.append(splitterplugin)
+
+        from .extra.outerworld import plugin as owplugin
+
+        plugins.append(owplugin)
 
         return plugins
 

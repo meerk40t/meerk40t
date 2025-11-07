@@ -3,12 +3,13 @@ import re
 import struct
 import time
 
+from usb.core import NoBackendError
+
 from meerk40t.balormk.driver import BalorDriver
-from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 def plugin(service, lifecycle):
@@ -68,50 +69,61 @@ def plugin(service, lifecycle):
         if data is None:
             channel("Nothing sent")
             return
-        service.job = ElementLightJob(
+        service.job = LiveLightJob(
             service,
-            data,
+            mode="geometry",
+            geometry=data,
             travel_speed=travel_speed,
             jump_delay=jump_delay,
-            simulation_speed=simulation_speed,
             quantization=quantization,
-            simulate=bool(command != "light"),
+            listen=False,
         )
+        if command != "light":
+            service.job.set_travel_speed(simulation_speed)
         service.spooler.send(service.job)
 
+    def run_light_job(service, mode, toggle=False):
+        if service.job is not None:
+            if isinstance(service.job, LiveLightJob):
+                service.job.stop()
+                service.job = None
+                if toggle:
+                    return
+        service.job = LiveLightJob(service, mode=mode)
+        service.spooler.send(service.job)
+
+    @service.console_option(
+        "toggle", "t", type=bool, action="store_true", help="Toggle hull light mode"
+    )
     @service.console_command("select-light", help=_("Execute selection light idle job"))
     def select_light(**kwargs):
         """
         Start a live bounds job.
         """
-        # Live Bounds Job.
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="bounds")
-        service.spooler.send(service.job)
+        run_light_job(service, "bounds", toggle=kwargs.get("toggle", False))
 
+    @service.console_option(
+        "toggle", "t", type=bool, action="store_true", help="Toggle hull light mode"
+    )
     @service.console_command("full-light", help=_("Execute full light idle job"))
     def full_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service)
-        service.spooler.send(service.job)
+        run_light_job(service, "full", toggle=kwargs.get("toggle", False))
 
-    @service.console_command(
-        "regmark-light", help=_("Execute regmark live light idle job")
+    # @service.console_command(
+    #     "regmark-light", help=_("Execute regmark live light idle job")
+    # )
+    # def reg_light(**kwargs):
+    #     if service.job is not None:
+    #         service.job.stop()
+    #     service.job = LiveLightJob(service, mode="regmarks")
+    #     service.spooler.send(service.job)
+
+    @service.console_option(
+        "toggle", "t", type=bool, action="store_true", help="Toggle hull light mode"
     )
-    def reg_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="regmarks")
-        service.spooler.send(service.job)
-
     @service.console_command("hull-light", help=_("Execute convex hull light idle job"))
     def hull_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="hull")
-        service.spooler.send(service.job)
+        run_light_job(service, "hull", toggle=kwargs.get("toggle", False))
 
     @service.console_command(
         "stop",
@@ -148,7 +160,7 @@ def plugin(service, lifecycle):
             return
         xmin, ymin, xmax, ymax = bounds
         channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
+        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymax - ymin)
         if count > 1:
             geometry.copies(count)
         return "geometry", geometry
@@ -296,12 +308,15 @@ def plugin(service, lifecycle):
         action="store_true",
         help=_("override one second laser fire pulse duration"),
     )
+    @service.console_option("power", "p", type=str, help=_("Power level"))
     @service.console_argument("time", type=float, help=_("laser fire pulse duration"))
     @service.console_command(
         "pulse",
-        help=_("pulse <time>: Pulse the laser in place."),
+        help="pulse <time> : " + _("Pulse the laser in place."),
     )
-    def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+    def pulse(
+        command, channel, _, time=None, power=None, idonotlovemyhouse=False, **kwargs
+    ):
         if time is None:
             channel(_("Must specify a pulse time in milliseconds."))
             return
@@ -316,9 +331,21 @@ def plugin(service, lifecycle):
                     return
             except IndexError:
                 return
+        if power:
+            try:
+                if power.endswith("%"):
+                    power = float(power[:-1]) * 10
+                else:
+                    power = float(power)
+            except ValueError:
+                channel(_("Invalid power value: {power}").format(power=power))
+                return
         if service.spooler.is_idle:
-            service.spooler.command("pulse", time)
-            channel(_("Pulse laser for {time} milliseconds").format(time=time))
+            service.spooler.command("pulse", time, power)
+            channel(
+                _("Pulse laser for {time} milliseconds").format(time=time)
+                + f"[{power}]"
+            )
         else:
             channel(_("Pulse laser failed: Busy"))
         return
@@ -336,7 +363,7 @@ def plugin(service, lifecycle):
 
     @service.console_command(
         "usb_disconnect",
-        help=_("connect usb"),
+        help=_("disconnect usb"),
     )
     def usb_disconnect(command, channel, _, data=None, remainder=None, **kwgs):
         service.spooler.command("disconnect", priority=1)
@@ -374,7 +401,11 @@ def plugin(service, lifecycle):
                             if v[0] == 0x8002:
                                 break
 
-                driver.connection.connect_if_needed()
+                try:
+                    driver.connection.connect_if_needed()
+                except (ConnectionRefusedError, NoBackendError):
+                    channel("Could not connect to Galvo")
+                    return
                 driver.connection.connection.write = write
                 job.execute()
 
@@ -558,7 +589,7 @@ def plugin(service, lifecycle):
                     except (ValueError, struct.error):
                         pass
                 if not isinstance(v, int):
-                    channel(f'Compile error. Line #{cmd_i+1} value "{b}"')
+                    channel(f'Compile error. Line #{cmd_i + 1} value "{b}"')
                     return
                 values[byte_i] = v
                 byte_i += 1
@@ -717,11 +748,13 @@ def plugin(service, lifecycle):
                 service.driver.connection.write_port()
                 service.redlight_preferred = False
                 channel("Turning off redlight.")
+                service.signal("red_dot", False)
             else:
                 service.driver.connection.light_on()
                 service.driver.connection.write_port()
                 channel("Turning on redlight.")
                 service.redlight_preferred = True
+                service.signal("red_dot", True)
         except ConnectionRefusedError:
             service.signal(
                 "warning",
@@ -748,7 +781,7 @@ def plugin(service, lifecycle):
             channel(f"Using default corfile: {filename}")
         if filename is None:
             service.driver.connection.write_correction_file(None)
-            channel(f"Force set corrections to blank.")
+            channel("Force set corrections to blank.")
         else:
             from os.path import exists
 
@@ -1146,7 +1179,6 @@ def plugin(service, lifecycle):
         import platform
 
         from meerk40t.balormk.clone_loader import load_sys
-        from meerk40t.kernel import get_safe_path
 
         kernel = service.kernel
 
@@ -1166,7 +1198,7 @@ def plugin(service, lifecycle):
             return
 
         # Check for file in the meerk40t directory (safe_path)
-        directory = get_safe_path(kernel.name, create=True)
+        directory = kernel.os_information["WORKDIR"]
         p = os.path.join(directory, service.clone_sys)
         if os.path.exists(p):
             load_sys(p, channel=channel)

@@ -5,8 +5,6 @@ from subprocess import PIPE, TimeoutExpired, run
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel.kernel import get_safe_path
-
 
 def get_inkscape(context, manual_candidate=None):
     root_context = context
@@ -78,10 +76,16 @@ def run_command_and_log(command_array, logfile):
             f.write("Output:\n")
             try:
                 f.write(c.stdout.decode("utf-8", errors="surrogateescape"))
-            except UnicodeDecodeError:
+            except (UnicodeEncodeError, UnicodeDecodeError):
                 pass
         result = True
-    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError, OSError) as e:
+    except (
+        FileNotFoundError,
+        TimeoutExpired,
+        UnicodeDecodeError,
+        UnicodeEncodeError,
+        OSError,
+    ) as e:
         if f:
             f.write(f"Execution failed: {str(e)}\n")
     if f:
@@ -137,7 +141,7 @@ class MultiLoader:
                     break
 
         context_root = kernel.root
-        safe_dir = os.path.realpath(get_safe_path(kernel.name))
+        safe_dir = kernel.os_information["WORKDIR"]
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         inkscape = get_inkscape(context_root)
@@ -153,6 +157,11 @@ class MultiLoader:
             version = "inkscape 1.x"
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
+        if os.path.exists(svg_temp_file):
+            try:
+                os.remove(svg_temp_file)
+            except (OSError, FileNotFoundError):
+                raise BadFileError("Couldn't delete temporary inkscape file")
         logfile = os.path.join(safe_dir, "inkscape.log")
 
         # Check Version of Inkscape
@@ -177,6 +186,9 @@ class MultiLoader:
 
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
+            return False
+        # Has an output file been created?
+        if not os.path.exists(svg_temp_file):
             return False
 
         def unescaped(filename):
@@ -206,7 +218,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "load",
-            help=_("inkscape ... load  - load the previous conversion"),
+            help="inkscape load : " + _("load the previous conversion"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -214,7 +226,7 @@ def plugin(kernel, lifecycle):
             inkscape_path, filename = data
             channel(_("inkscape load - loading the previous conversion..."))
             try:
-                kernel.elements.load(filename)
+                kernel.elements.load(filename, svg_ppi=kernel.elements.svg_ppi)
             except BadFileError as e:
                 channel(_("File is Malformed."))
                 channel(str(e))
@@ -224,7 +236,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "simplify",
-            help=_("inkscape simplify  - convert to plain svg"),
+            help="inkscape simplify : " + _("convert to plain svg"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -248,7 +260,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "text2path",
-            help=_("inkscape text2path - convert text objects to paths"),
+            help="inkscape text2path : " + _("convert text objects to paths"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -276,7 +288,7 @@ def plugin(kernel, lifecycle):
         @kernel.console_option("step", "s", type=int, help=_("step to use"))
         @kernel.console_command(
             "makepng",
-            help=_("inkscape makepng   - make a png of all elements"),
+            help="inkscape makepng : " + _("make a png of all elements"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -311,7 +323,7 @@ def plugin(kernel, lifecycle):
         )
         @kernel.console_command(
             "input",
-            help=_("input filename fn ... - provide the filename to process"),
+            help="inkscape input : " + _("provide the filename to process"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -330,7 +342,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "version",
-            help=_("inkscape version   - get the inkscape version"),
+            help="inkscape version : " + _("get the inkscape version"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -357,7 +369,7 @@ def plugin(kernel, lifecycle):
         )
         @kernel.console_command(
             "locate",
-            help=_("inkscape locate    - set the path to inkscape on your computer"),
+            help="inkscape locate : " + _("set the path to inkscape on your computer"),
             input_type="inkscape",
             output_type="inkscape",
         )
@@ -409,7 +421,7 @@ def plugin(kernel, lifecycle):
                 ],
                 "pattern": [False, ("<pattern",), METHOD_CONVERT_TO_PNG],
             }
-            safe_dir = os.path.realpath(get_safe_path(kernel.name))
+            safe_dir = kernel.os_information["WORKDIR"]
             svg_temp_file = os.path.join(safe_dir, "temp.svg")
             png_temp_file = os.path.join(safe_dir, "temp.png")
             needs_conversion = 0
@@ -592,6 +604,7 @@ def plugin(kernel, lifecycle):
                     "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
                 ),
                 "page": "Input/Output",
+                # Hint for translation _("SVG-Features")
                 "section": "SVG-Features",
             },
             {
@@ -609,6 +622,7 @@ def plugin(kernel, lifecycle):
                 ),
                 "tip": stip,
                 "page": "Input/Output",
+                # Hint for translation _("SVG-Features")
                 "section": "SVG-Features",
             },
         ]

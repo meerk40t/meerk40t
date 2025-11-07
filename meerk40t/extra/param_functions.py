@@ -8,7 +8,7 @@ import math
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle):
@@ -61,7 +61,7 @@ def plugin(kernel, lifecycle):
         @self.console_argument("id", type=str)
         @self.console_option("dx", "x", type=Length, help=_("Horizontal delta"))
         @self.console_option("dy", "y", type=Length, help=_("Vertical delta"))
-        @context.console_command("pgrid", help=_("pgrid sx, sy, cols, rows, id"))
+        @context.console_command("pgrid", help="pgrid sx, sy, cols, rows, id : " + _("create a grid of copies of an element"), output_type="elements")
         def param_grid(
             command,
             channel,
@@ -121,7 +121,8 @@ def plugin(kernel, lifecycle):
                 channel("No matching element found.")
             start_pt = Point(ssx, ssy)
             geom = create_copied_grid(start_pt, found_node, cols, rows, sdx, sdy)
-            node = self.elem_branch.add(type="elem path", geometry=geom)
+            with self.node_lock:
+                node = self.elem_branch.add(type="elem path", geometry=geom)
             bb = geom.bbox()
             width = bb[2] - bb[0]
             # height = bb[3] - bb[1]
@@ -249,11 +250,11 @@ def plugin(kernel, lifecycle):
         )
         @context.console_command(
             "tfractal",
-            help=_("tfractal iterations"),
+            help="tfractal iterations : " + _("Number of iterations for the turtle fractal"),
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, turtle, n, iterations, base=None, **kwargs):
+        def fractal_t(command, channel, turtle, n, iterations, base=None, **kwargs):
             """
             Add a turtle fractal to the scene. All fractals are geometry outputs.
             F - Forward
@@ -333,7 +334,7 @@ def plugin(kernel, lifecycle):
         @self.console_command(
             "quad_corners", input_type="geometry", output_type="geometry"
         )
-        def round_corners(command, channel, data, amount=0.2, **kwargs):
+        def quad_corners(command, channel, data, amount=0.2, **kwargs):
             data.bezier_corners(amount)
             if hasattr(data, "parameter_store"):
                 param = list(data.parameter_store)  # make it editable
@@ -435,11 +436,11 @@ def plugin(kernel, lifecycle):
         @self.console_argument("inversions", nargs="*", type=int)
         @context.console_command(
             "ffractal",
-            help=_("ffractal iterations"),
+            help="ffractal iterations : " + _("Number of iterations for the fractal"),
             output_type="geometry",
             hidden=True,
         )
-        def fractal(command, channel, svg_path, iterations, inversions, **kwargs):
+        def fractal_f(command, channel, svg_path, iterations, inversions, **kwargs):
             seed = Geomstr.svg(svg_path)
             segments = seed.segments
             for i, q in enumerate(inversions):
@@ -456,7 +457,7 @@ def plugin(kernel, lifecycle):
         @self.console_argument("branch", type=Length)
         @self.console_argument("iterations", type=int)
         @context.console_command(
-            "fractal_tree", help=_("fractal_tree sx, sy, branch, iterations")
+            "fractal_tree", help="fractal_tree sx, sy, branch, iterations : " + _("create a fractal tree")
         )
         def fractal_tree(
             command,
@@ -490,7 +491,8 @@ def plugin(kernel, lifecycle):
             start_pt = Point(ssx, ssy)
             end_pt = Point.polar(start_pt, 0, blen)
             geom = create_fractal_tree(start_pt, end_pt, iterations, ratio)
-            node = self.elem_branch.add(type="elem path", geometry=geom)
+            with self.node_lock:
+                node = self.elem_branch.add(type="elem path", geometry=geom)
             node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
             node.altered()
@@ -615,7 +617,8 @@ def plugin(kernel, lifecycle):
         #     start_pt = Point(ssx, ssy)
         #     end_pt = Point.polar(start_pt, 0, blen)
         #     geom = create_fractal_dragon(start_pt, end_pt, iterations)
-        #     node = self.elem_branch.add(type="elem path", geometry=geom)
+        #     with self.node_lock:
+        #         node = self.elem_branch.add(type="elem path", geometry=geom)
         #     node.stroke = self.default_stroke
         #     node.stroke_width = self.default_strokewidth
         #     node.altered()
@@ -762,7 +765,8 @@ def plugin(kernel, lifecycle):
             geom = create_cycloid_shape(
                 ssx, ssy, radius_major, radius_minor, iterations
             )
-            node = self.elem_branch.add(type="elem path", geometry=geom)
+            with self.node_lock:
+                node = self.elem_branch.add(type="elem path", geometry=geom)
             node.label = f"Cycloid {iterations} iterations"
             node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
@@ -912,7 +916,7 @@ def plugin(kernel, lifecycle):
             # print(f"Created geometry from {len(pts) / 2} pts: {geom.capacity}")
             return geom
 
-        # Shape (ie star) routine
+        # Shape (i.e. star) routine
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
@@ -1002,7 +1006,7 @@ def plugin(kernel, lifecycle):
                 cy = 0
             if radius is None:
                 radius = 0
-            sangle = float(startangle)
+            sangle = 0 if startangle is None else float(startangle)
             if corners <= 2:
                 # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
                 geom = create_star_shape(
@@ -1101,17 +1105,18 @@ def plugin(kernel, lifecycle):
                             "To hit all, the density parameters should be e.g. {combinations}"
                         ).format(combinations=possible_combinations)
                     )
-
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.stroke = self.default_stroke
-            node.stroke_width = self.default_strokewidth
-            node.fill = self.default_fill
-            node.altered()
-            node.emphasized = True
+            # _("Create shape")
+            with self.undoscope("Create shape"):
+                with self.node_lock:
+                    node = self.elem_branch.add(type="elem path", geometry=geom)
+                node.stroke = self.default_stroke
+                node.stroke_width = self.default_strokewidth
+                node.fill = self.default_fill
+                node.altered()
+            self.set_emphasis([node])
             node.focus()
 
             data = [node]
-            node.emphasized = True
             # Newly created! Classification needed?
             post.append(classify_new(data))
 
@@ -1339,7 +1344,7 @@ def plugin(kernel, lifecycle):
             "gap", "g", type=int, help=_("Delta angle between moves in degrees")
         )
         @context.console_command(
-            "growingshape", help=_("growingshape sx sy sides iterations")
+            "growingshape", help="growingshape sx sy sides iterations : " + _("create a growing shape")
         )
         def growing_shape(
             command,
@@ -1394,11 +1399,14 @@ def plugin(kernel, lifecycle):
                 startangle,
                 gap_angle,
             )
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.label = f"Growing Polygon w. {sides} sides"
-            node.stroke = self.default_stroke
-            node.stroke_width = 1000  # self.default_strokewidth
-            node.altered()
+            # _("Create shape")
+            with self.undoscope("Create shape"):
+                with self.node_lock:
+                    node = self.elem_branch.add(type="elem path", geometry=geom)
+                node.label = f"Growing Polygon w. {sides} sides"
+                node.stroke = self.default_stroke
+                node.stroke_width = 1000  # self.default_strokewidth
+                node.altered()
             pt0 = None
             pt1 = None
             for pt in geom.as_points():

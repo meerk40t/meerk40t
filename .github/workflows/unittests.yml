@@ -1,6 +1,8 @@
 name: Unittest
 
 on:
+  workflow_dispatch:
+
   push:
     branches: [main, legacy6, legacy7, legacy8]
     paths:
@@ -29,26 +31,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019, macos-11]
+        os: [ubuntu-latest, windows-2022, macos-latest]
         python-version: [3.8, 3.12]
+        include:
+          # Python 3.6 only on Windows
+          - os: windows-2022
+            python-version: 3.6
 
     steps:
 
     - name: Checkout ${{ github.ref }}
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Identify precise Python version
       id: full-python-version
       shell: bash
-      run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+      run: echo "version=$(python -c 'import sys; print("-".join(str(v) for v in sys.version_info))')" >> "$GITHUB_OUTPUT"
 
     - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.pythonLocation }}
         key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-nogui.txt') }}

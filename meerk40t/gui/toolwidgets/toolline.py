@@ -18,18 +18,20 @@ class LineTool(PointListTool):
             x2 = self.point_series[1][0]
             y2 = self.point_series[1][1]
             elements = self.scene.context.elements
-            node = elements.elem_branch.add(
-                x1=x1,
-                y1=y1,
-                x2=x2,
-                y2=y2,
-                stroke_width=elements.default_strokewidth,
-                stroke=elements.default_stroke,
-                fill=elements.default_fill,
-                type="elem line",
-            )
-            if elements.classify_new:
-                elements.classify([node])
+            # _("Create line")
+            with elements.undoscope("Create line"):
+                node = elements.elem_branch.add(
+                    x1=x1,
+                    y1=y1,
+                    x2=x2,
+                    y2=y2,
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
+                    type="elem line",
+                )
+                if elements.classify_new:
+                    elements.classify([node])
             self.notify_created(node)
 
     def point_added(self):

@@ -4,42 +4,122 @@
 name: Meerk40t (Ubuntu)
 
 on:
+  workflow_dispatch:
+
   release:
     types: [published]
 
 jobs:
   build-ubuntu:
-    if: ${{ false }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: '3.9'
     - name: Install dependencies
       run: |
-        sudo apt-get install libgtk-3-dev
+        sudo apt install libgtk-3-dev cmake libeigen3-dev
+        sudo apt install libagg-dev libpotrace-dev
+        sudo apt install libpython3-dev
+        sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
+        sudo apt install libsdl2-dev libsm-dev libx11-dev
+        python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
+        pip cache purge
+        pip install setuptools
         pip install pyinstaller wheel
-        pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
+        pip install numpy==1.26.4
+        pip install pyusb
+        pip install wheel
+        # pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        pip install potracer
+        pip install pypotrace
+        pip install pillow==9.5.0
+        pip install ezdxf
+        pip install pyserial
+        pip install bitarray
+        # pip install scipy
+        pip install numba
+        pip install --no-cache-dir opencv-python-headless==4.5.3.56
+        # pip install meerk40t-camera
+        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: pip list
+      run: |
+          pip list
 
     - name: Build meerk40t
       run: |
         mv meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t mk40t.py
+        mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
+        mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+        pyinstaller .github/workflows/linux/meerk40t.spec
+        mv dist/MeerK40t dist/MeerK40t-Ubuntu-Latest
         mv mk40t.py meerk40t.py
-        mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
+        mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
+        mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
+
+    - name: Create AppImage
+      run: |
+        # Install AppImage tools
+        sudo apt-get update
+        sudo apt-get install -y wget fuse libfuse2
+
+        # Download appimagetool
+        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        chmod +x appimagetool
+
+        # Create AppDir structure
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+        # Copy the PyInstaller executable
+        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+
+        # Copy icon
+        cp meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.ico
+
+        # Create desktop file
+        cat > AppDir/usr/share/applications/meerk40t.desktop << 'EOF'
+        [Desktop Entry]
+        Name=MeerK40t
+        Exec=meerk40t
+        Icon=meerk40t
+        Type=Application
+        Categories=Graphics;
+        EOF
+
+        # Create AppRun script
+        cat > AppDir/AppRun << 'EOF'
+        #!/bin/bash
+        HERE="$(dirname "$(readlink -f "${0}")")"
+        export PATH="${HERE}/usr/bin:${PATH}"
+        export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+        exec "${HERE}/usr/bin/meerk40t" "$@"
+        EOF
+        chmod +x AppDir/AppRun
+
+        # Create AppImage
+        ./appimagetool AppDir MeerK40t-Ubuntu-Latest.AppImage
+
+        # Move to dist directory
+        mv MeerK40t-Ubuntu-Latest.AppImage dist/
 
 # Switched to using softprops/action-gh-release@v1
 # because it supports uploading to existing release based on current tag.
     - name: Upload Release Assets
       id: release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
           dist/MeerK40t-Ubuntu-Latest
-
+          dist/MeerK40t-Ubuntu-Latest.AppImage

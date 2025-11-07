@@ -3,6 +3,9 @@ from meerk40t.svgelements import Matrix
 
 
 class View:
+    
+    MARGIN_NONWORKING = True
+
     def __init__(
         self,
         width,
@@ -36,6 +39,8 @@ class View:
         self.dpi_x = dpi_x
         self.dpi_y = dpi_y
         self.dpi = (dpi_x + dpi_y) / 2.0
+        self.margin_x = 0.0
+        self.margin_y = 0.0
         self._source = None
         self._destination = None
         self._matrix = None
@@ -78,6 +83,15 @@ class View:
         self.width = width
         self.height = height
         self.reset()
+
+    def set_margins(self, offset_x, offset_y):
+        # Not working yet, so disable
+        if self.MARGIN_NONWORKING:
+            offset_x = 0
+            offset_y = 0
+        self.margin_x = offset_x
+        self.margin_y = offset_y
+        # print (f"Margins were set to {offset_x}, {offset_y}")
 
     def reset(self):
         width = float(Length(self.width))
@@ -265,7 +279,21 @@ class View:
         self._destination = (bottom_left, top_left, top_right, bottom_right)
         self._matrix = None
 
-    def position(self, x, y, vector=False):
+    def calc_margins(self, vector=False, margins=True):
+        off_x = 0.0
+        off_y = 0.0
+        if self.MARGIN_NONWORKING:
+            return 0.0, 0.0
+        if vector or not margins:
+            return 0.0, 0.0
+        try:
+            off_x = float(Length(self.margin_x))
+            off_y = float(Length(self.margin_y))
+        except ValueError:
+            pass
+        return off_x, off_y
+
+    def position(self, x, y, vector=False, margins=True):
         """
         Position from the source to the destination position. The result is in destination units.
         @param x:
@@ -273,14 +301,18 @@ class View:
         @param vector:
         @return:
         """
+        off_x, off_y = self.calc_margins(vector=vector, margins=margins)
+        # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
-        unit_x, unit_y = x, y
+        unit_x, unit_y = x + off_x, y + off_y
         if vector:
-            return self.matrix.transform_vector([unit_x, unit_y])
-        return self.matrix.point_in_matrix_space([unit_x, unit_y])
+            res = self.matrix.transform_vector([unit_x, unit_y])
+        else:
+            res = self.matrix.point_in_matrix_space([unit_x, unit_y])
+        return res
 
     def scene_position(self, x, y):
         if not isinstance(x, (int, float)):
@@ -298,17 +330,41 @@ class View:
         @param vector:
         @return:
         """
-        unit_x, unit_y = x, y
+        off_x, off_y = self.calc_margins(vector=vector, margins=True)
+        unit_x = x
+        unit_y = y
         matrix = ~self.matrix
         if vector:
-            return matrix.transform_vector([unit_x, unit_y])
-        return matrix.point_in_matrix_space([unit_x, unit_y])
+            px, py = matrix.transform_vector([unit_x, unit_y])
+        else:
+            px, py = matrix.point_in_matrix_space([unit_x, unit_y])
+        return (px - off_x, py - off_y)
 
     @property
     def matrix(self):
         if self._matrix is None:
             self._matrix = Matrix.map(*self._source, *self._destination)
         return self._matrix
+
+    def get_sensible_dpi_values(self) -> list:
+        # Look for dpis beyond 100 where we have an integer step value.
+        # We assume for this exercise that the x-axis is good enough
+        candidates = []
+        unit_x = UNITS_PER_INCH
+        matrix = self.matrix
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        lastdpi = None
+        for steps in range(1, 100):
+            dpi = int(round(oneinch_x / steps, 0))
+            if dpi < 75:
+                break
+            if dpi > 1000:
+                continue
+            if lastdpi is None or dpi % 25 < 5 or dpi % 33 < 3:
+                lastdpi = dpi
+                candidates.append(dpi)
+        # print (candidates)
+        return candidates
 
     def dpi_to_steps(self, dpi):
         """
@@ -339,3 +395,47 @@ class View:
     @property
     def unit_height(self):
         return float(Length(self.height))
+
+
+if __name__ == "__main__":
+
+    def test_position_and_iposition_and_scene_position():
+        def assertEqual(var1, var2, msg=""):
+            if isinstance(var1, (list, tuple)):
+                var1 = list(var1)
+            if isinstance(var2, (list, tuple)):
+                var2 = list(var2)
+            if var1 != var2:
+                print(f"Not equal {msg}: {var1} != {var2}")
+                return 1
+            print(f"Equal {msg}: {var1} == {var2}")
+            return 0
+
+        issues = 0
+        # Arrange
+        TX = 10.0
+        TY = 20.0
+        MX = 5.0
+        MY = 10.0
+        v = View(100.0, 200.0)
+        v.set_margins(MX, MY)
+        off_x, off_y = v.calc_margins(vector=False, margins=True)
+        issues += assertEqual((off_x, off_y), (MX, MY), "calc_margins")
+        off_x, off_y = v.calc_margins(vector=True, margins=True)
+        issues += assertEqual((off_x, off_y), (0.0, 0.0), "calc_margins with vector")
+        pos = v.position(TX, TY)
+        pos_vec = v.position(TX, TY, vector=True)
+        pos_nomargin = v.position(TX, TY, margins=False)
+        scene = v.scene_position("30", "40")
+        ipos = v.iposition(TX + MX, TY + MY)
+        ipos_vec = v.iposition(TX + MX, TY + MY, vector=True)
+        # Assert
+        issues += assertEqual(pos, (TX + MX, TY + MY), "pos")
+        issues += assertEqual(pos_vec, (TX, TY), "pos_vec")
+        issues += assertEqual(ipos, (TX, TY), "ipos")
+        issues += assertEqual(ipos_vec, (TX + MX, TY + MY), "ipos_vec")
+        issues += assertEqual(pos_nomargin, (TX, TY), "pos_nomargin")
+        issues += assertEqual(scene, (30, 40), "scene")
+        print(f"Basic tests were run: {issues} issues found")
+
+    test_position_and_iposition_and_scene_position()

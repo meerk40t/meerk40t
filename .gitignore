@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+Meerk40t.exe
 
 # C extensions
 *.so
@@ -54,9 +55,10 @@ coverage.xml
 .pytest_cache/
 
 # Translations
-*.mo
+#*.mo
 *.pot
 delta*.po
+fixed*.po
 
 # Django stuff:
 *.log
@@ -130,3 +132,16 @@ dmypy.json
 # Others
 *.bat
 MeerK40t-*.txt
+
+# Sourcery settings
+.sourcery.yaml
+.pre-commit-config.yaml
+meerk40t.spec
+mk40t.py
+
+# Local test files
+local_workspace/
+
+# VS Code settings
+.vscode/
+release_preview.md

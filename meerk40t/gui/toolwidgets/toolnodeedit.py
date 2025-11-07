@@ -25,7 +25,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.gui.wxutils import get_matrix_scale
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -38,7 +38,7 @@ from meerk40t.svgelements import (
     Polyline,
     QuadraticBezier,
 )
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 
 _ = wx.GetTranslation
 
@@ -84,10 +84,12 @@ class EditTool(ToolWidget):
         # "key": (routine, info, available for poly, available for path)
         self.commands = {
             "d": (self.delete_nodes, _("Delete"), True, True),
+            "delete": (self.delete_nodes, _("Delete"), True, True),
             "l": (self.convert_to_line, _("Line"), False, True),
             "c": (self.convert_to_curve, _("Curve"), False, True),
             "s": (self.cubic_symmetrical, _("Symmetric"), False, True),
             "i": (self.insert_midpoint, _("Insert"), True, True),
+            "insert": (self.insert_midpoint, _("Insert"), True, True),
             "a": (self.append_line, _("Append"), True, True),
             "b": (self.break_path, _("Break"), False, True),
             "j": (self.join_path, _("Join"), False, True),
@@ -331,7 +333,7 @@ class EditTool(ToolWidget):
                 pass  # Exceeds 32 bit signed integer.
 
         matrix = self.scene.widget_root.scene_widget.matrix
-        linewidth = 1.0 / matrix_scale(matrix)
+        linewidth = 1.0 / get_matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         set_width_pen(self.pen, linewidth)
@@ -795,6 +797,7 @@ class EditTool(ToolWidget):
         """
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.suppress_selection = False
         self.p1 = None
         self.p2 = None
         self.move_type = "node"
@@ -904,7 +907,10 @@ class EditTool(ToolWidget):
                 path.approximate_arcs_with_cubics()
         except AttributeError:
             return
-        newnode = node.replace_node(path=path, type="elem path")
+        try:
+            newnode = node.replace_node(path=path, type="elem path")
+        except ValueError:
+            return
         for item in oldstuff:
             setattr(newnode, item[0], item[1])
         newnode.altered()
@@ -946,7 +952,7 @@ class EditTool(ToolWidget):
                 entry = self.nodes[idx]
                 if entry["selected"] and entry["type"] == "point":
                     # What's the index of the last selected element
-                    # Have we dealt with that before? ie not multiple toggles.
+                    # Have we dealt with that before? i.e. not multiple toggles.
                     segstart = entry["start"]
                     if segstart in dealt_with:
                         continue
@@ -1063,7 +1069,7 @@ class EditTool(ToolWidget):
 
     def smoothen(self):
         """
-        Smoothen a circular bezier segment to adjacent segments, ie adjust
+        Smoothen a circular bezier segment to adjacent segments, i.e. adjust
         the control points so that they are an extension of the previous/next segment
         """
         if self.element is None or self.nodes is None:
@@ -1154,7 +1160,7 @@ class EditTool(ToolWidget):
         """
         Convert all segments of the path that are not cubic Béziers into
         such segments and apply the same smoothen logic as in smoothen(),
-        ie adjust the control points of two neighbouring segments
+        i.e. adjust the control points of two neighbouring segments
         so that the three points
         'prev control2' - 'prev/end=next start' - 'next control1'
         are collinear
@@ -1995,7 +2001,7 @@ class EditTool(ToolWidget):
             #     entry = self.nodes[self.selected_index]
             # else:
             #     entry = None
-            self.perform_action(keycode)
+            self.perform_action(modifiers)
 
             return RESPONSE_CONSUME
 
@@ -2049,6 +2055,23 @@ class EditTool(ToolWidget):
             action = self.commands[code]
             # print(f"Execute {action[1]}")
             action[0]()
+        # else:
+        #     print (f"Did not find {code}")
+
+    def _tool_change(self):
+        selected_node = None
+        elements = self.scene.context.elements.elem_branch
+        for node in elements.flat(emphasized=True):
+            if node.type in ("elem path", "elem polyline"):
+                selected_node = node
+                break
+        self.scene.pane.suppress_selection = selected_node is not None
+        if selected_node is None:
+            self.done()
+        else:
+            self.calculate_points(selected_node)
+            self.enable_rules()
+        self.scene.request_refresh()
 
     def signal(self, signal, *args, **kwargs):
         """
@@ -2058,21 +2081,11 @@ class EditTool(ToolWidget):
         # print(f"Signal: {signal}")
         if signal == "tool_changed":
             if len(args) > 0 and len(args[0]) > 1 and args[0][1] == "edit":
-                selected_node = self.scene.context.elements.first_element(
-                    emphasized=True
-                )
-                if selected_node is not None:
-                    self.calculate_points(selected_node)
-                    self.scene.request_refresh()
-                    self.enable_rules()
+                self._tool_change()
             return
         elif signal == "rebuild_tree":
-            selected_node = self.scene.context.elements.first_element(emphasized=True)
-            if selected_node is None:
-                self.done()
-            else:
-                self.calculate_points(selected_node)
-                self.enable_rules()
-            self.scene.request_refresh()
+            self._tool_change()
+        elif signal == "emphasized":
+            self._tool_change()
         if self.element is None:
             return

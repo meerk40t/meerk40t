@@ -1,10 +1,13 @@
 import functools
 import inspect
 import os
-import platform
 import re
+import subprocess
 import threading
 import time
+import ast
+import operator
+
 from datetime import datetime
 from threading import Thread
 from typing import Any, Callable, Generator, List, Optional, Tuple, Union
@@ -19,6 +22,7 @@ from .functions import (
     console_option,
     get_safe_path,
 )
+from .inhibitor import Inhibitor
 from .jobs import ConsoleFunction, Job
 from .lifecycles import *
 from .module import Module
@@ -29,6 +33,43 @@ KERNEL_VERSION = "0.0.10"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
+
+# Supported operators
+SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+def safe_eval(expr, term, term_value):
+    """
+    Safely evaluate arithmetic expressions with <term> as a variable.
+    Supports ast.Constant and ast.Num for compatibility.
+    """
+    def _eval(node):
+        if isinstance(node, ast.Constant):  # Python 3.8+
+            return node.value
+        elif isinstance(node, ast.Num):  # Python <3.8
+            return node.n
+        elif isinstance(node, ast.BinOp):
+            return SAFE_OPERATORS[type(node.op)](
+                _eval(node.left), _eval(node.right)
+            )
+        elif isinstance(node, ast.UnaryOp):
+            return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
+        elif isinstance(node, ast.Name):
+            if node.id == term:
+                return term_value
+            raise ValueError(f"Unknown variable: {node.id}")
+        else:
+            raise ValueError("Unsupported expression")
+    return _eval(ast.parse(expr, mode="eval").body)
 
 
 class BusyInfo:
@@ -64,6 +105,24 @@ class Kernel(Settings):
 
     The Kernel stores a persistence object, thread interactions, contexts, a translation routine, a run_later operation,
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
+
+    Key Features:
+    - Plugin-based architecture with lifecycle management
+    - Thread-safe job scheduling and execution
+    - Signal-based inter-module communication
+    - Channel-based messaging system
+    - Settings persistence and configuration management
+    - Translation and internationalization support
+    - Graceful shutdown with thread cleanup
+
+    Thread Management:
+    - Daemon scheduler thread for background job processing
+    - Proper thread synchronization and shutdown handling
+    - Job queue management with configurable delays
+
+    Lifecycle:
+    - init → prerun → run → postrun → preshutdown → shutdown → end
+    - Supports restart capability with state preservation
     """
 
     def __init__(
@@ -75,6 +134,7 @@ class Kernel(Settings):
         ignore_settings: bool = False,
         delay: float = 0.05,  # 20 ticks per second
         language: str = None,
+        restarted: bool = False,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -102,6 +162,7 @@ class Kernel(Settings):
         self._booted = False
         self._shutdown = False
         self._quit = False
+        self._was_restarted = restarted
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._kernel_plugins = []
@@ -114,6 +175,7 @@ class Kernel(Settings):
         # All registered threads.
         self.threads = {}
         self.thread_lock = threading.Lock()
+        self.thread_local = threading.local() 
 
         # All established delegates
         self.delegates = []
@@ -144,6 +206,7 @@ class Kernel(Settings):
         self.scheduler_handles_default_thread_jobs = True
 
         self.state = "init"
+        self._shutdown_requested = False
 
         # Scheduler
         self.jobs = {}
@@ -178,8 +241,23 @@ class Kernel(Settings):
         # Arguments Objects
         self.args = None
 
+        self.os_information = self._get_environment()
+        self.show_aio_prompt = True
+        self.silent_mode = False
+        self.inhibitor = Inhibitor()
+
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
+
+    def _get_environment(self):
+        from platform import system
+        from tempfile import gettempdir
+
+        return {
+            "OS_NAME": system(),
+            "OS_TEMPDIR": os.path.realpath(gettempdir()),
+            "WORKDIR": os.path.realpath(get_safe_path(self.name, create=True)),
+        }
 
     def set_language(self, language, localedir="locale"):
         from . import set_language
@@ -241,15 +319,21 @@ class Kernel(Settings):
                 kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = f"Calling {str(obj)}.{func.__name__}({signature})"
-                debug_file.write(start + "\n")
+                try:
+                    debug_file.write(start + "\n")
+                except (ValueError, OSError):
+                    pass
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
                 finish = f"    {func.__name__} returned {value} after {t * 1000}ms"
                 print(finish)
-                debug_file.write(finish + "\n")
-                debug_file.flush()
+                try:
+                    debug_file.write(finish + "\n")
+                    debug_file.flush()
+                except (ValueError, OSError):
+                    pass
                 return value
 
             return wrapper_debug
@@ -837,6 +921,11 @@ class Kernel(Settings):
                     channel(f"kernel-premain: {str(k)}")
                 if hasattr(k, "premain"):
                     k.premain()
+                    if self._shutdown:
+                        # Quit the program if shutdown was requested during premain
+                        # print (f"Shutdown requested during premain of {str(k)}: start was {KERNEL_LIFECYCLE_NAMES[start]}, end={KERNEL_LIFECYCLE_NAMES[end]}.")
+                        start = LIFECYCLE_KERNEL_PRESHUTDOWN
+                        end = LIFECYCLE_KERNEL_SHUTDOWN
         if start < LIFECYCLE_KERNEL_PREMAIN <= end:
             if channel:
                 channel("(plugin) kernel-premain")
@@ -1162,7 +1251,7 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler", daemon=True)
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -1219,12 +1308,14 @@ class Kernel(Settings):
 
             async def aio_readline(loop):
                 while not self._shutdown:
-                    print(">>", end="", flush=True)
+                    if self.show_aio_prompt:
+                        print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
-                    if line in ("quit", "shutdown", "restart"):
-                        self._quit = True
+                    if line in ("quit", "shutdown", "exit", "restart"):
+                        print (f"Will shut down due to '{line}' command.")
+                        self._shutdown = True
                         if line == "restart":
                             self._restart = True
                         break
@@ -1233,7 +1324,6 @@ class Kernel(Settings):
                         break
 
             import asyncio
-
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
@@ -1241,6 +1331,26 @@ class Kernel(Settings):
 
     def postmain(self):
         pass
+
+    def shutdown(self):
+        """
+        Initiate kernel shutdown and wait for scheduler thread.
+        
+        This is a lightweight shutdown method that signals termination
+        and waits for the scheduler thread to complete. Used for quick
+        shutdowns like settings reset operations.
+        
+        For comprehensive shutdown with full cleanup, use the main
+        shutdown procedure (see below).
+        
+        Sets kernel state to "terminate" and waits up to 1 second
+        for the scheduler thread to finish.
+        """
+        self.state = "terminate"
+        self._shutdown = True
+        # Wait for the scheduler thread to finish
+        if hasattr(self, 'scheduler_thread') and self.scheduler_thread.is_alive():
+            self.scheduler_thread.join(timeout=1.0)
 
     def preshutdown(self):
         channel = self.channel("shutdown")
@@ -1281,20 +1391,21 @@ class Kernel(Settings):
 
     def shutdown(self):
         """
-        Starts shutdown procedure.
+        Execute comprehensive kernel shutdown procedure.
 
-        Suspends all signals.
-        Each initialized context is flushed and shutdown.
-        Each opened module within the context is stopped and closed.
+        This is the main shutdown method that performs full cleanup:
+        - Suspends all signals
+        - Flushes and shuts down all contexts
+        - Stops and closes all opened modules
+        - Terminates all threads
+        - Cleans up residual listeners
 
-        All threads are stopped.
-
-        Any residual attached listeners are made warnings.
-
-        @return:
+        This method should be called during normal application shutdown
+        to ensure proper resource cleanup and state persistence.
         """
         channel = self.channel("shutdown")
         self.state = "end"  # Terminates the Scheduler.
+        self._shutdown_requested = True
 
         _ = self.translation
 
@@ -1360,7 +1471,7 @@ class Kernel(Settings):
         for thread_name in list(self.threads):
             thread_count += 1
             try:
-                thread = self.threads[thread_name]
+                thread = self.threads[thread_name][0]
             except KeyError:
                 if channel:
                     channel(_("Thread {name} exited safely").format(name=thread_name))
@@ -1439,8 +1550,8 @@ class Kernel(Settings):
         self._last_message = {}
         self.listeners = {}
         if (
-            self.scheduler_thread != threading.current_thread()
-        ):  # Join if not this thread.
+            self.scheduler_thread != threading.current_thread() and not self.scheduler_thread.daemon
+        ):  # Join if not this thread and not daemon.
             self.scheduler_thread.join()
         if channel:
             channel(_("Shutdown."))
@@ -1731,6 +1842,8 @@ class Kernel(Settings):
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
+        user_type : bool = False,
+        info : str = "",
     ) -> Thread:
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
@@ -1753,7 +1866,7 @@ class Kernel(Settings):
         if thread_name is None:
             thread_name = func.__name__
         try:
-            old_thread = self.threads[thread_name]
+            old_thread = self.threads[thread_name][0]
             channel(
                 _("Thread: {name} already exists. Waiting...").format(name=thread_name)
             )
@@ -1797,7 +1910,13 @@ class Kernel(Settings):
                 channel(_("Thread: {name}, Finished").format(name=thread_name))
 
         thread.run = run
-        self.threads[thread_name] = thread
+        self.threads[thread_name] = [
+            thread, 
+            "Running",
+            user_type,
+            info,
+            time.time(),
+        ]
         thread.daemon = daemon
         thread.start()
         self.thread_lock.release()
@@ -1823,6 +1942,32 @@ class Kernel(Settings):
             return _("Idle")
         elif state == "unknown":
             return _("Unknown")
+
+    def get_thread_message(self, thread_name) -> str:
+        if thread_name not in self.threads:
+            return ""
+        message = self.threads[thread_name][1]
+        return message
+
+    def set_thread_message(self, thread_name, message):
+        if thread_name not in self.threads:
+            return
+        thread, _, user_type, info, started = self.threads[thread_name]
+        # Update the thread status
+        self.threads[thread_name] = [thread, message, user_type, info, started]
+
+    def get_thread_messages(self, user_type_only: bool = False) -> list:
+        """
+        Get a list of all thread messages.
+        @param user_type_only: If True, only include user threads.
+        @return: List of thread messages (thread_name, status, user_type, info)
+        """
+        messages = []
+        for thread_name, (_, message, user_type, info) in self.threads.items():
+            if user_type_only and not user_type:
+                continue
+            messages.append([thread_name, message, user_type, info])
+        return messages 
 
     # ==========
     # SCHEDULER
@@ -1883,8 +2028,12 @@ class Kernel(Settings):
         Check each job, and if that job is scheduled to run. Executes that job.
         @return:
         """
+        if self._shutdown_requested:
+            return
         self.state = "active"
         while self.state != "end":
+            if self._shutdown_requested:
+                break
             time.sleep(self.delay)
             while self.state == "pause":
                 # The scheduler is paused.
@@ -1903,6 +2052,8 @@ class Kernel(Settings):
             # Could be recurring job. Reset on reschedule.
         except AttributeError:
             pass
+        if job.job_name is None:
+            job.job_name = f"job_{id(job)}"
         self.jobs[job.job_name] = job
         return job
 
@@ -2060,16 +2211,28 @@ class Kernel(Settings):
         Process signals in the processing queue.
         @return:
         """
+        to_be_ignored = ("console_update", "statusmsg")
         queue = self._processing
         signal_channel = self.channel("signals")
+        signal_channel_all = self.channel("signals-all")
         for signal, payload in queue.items():
             origin, message = payload
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
-                    listener(origin, *message)
-                    if signal_channel:
+                    try:
+                        listener(origin, *message)
+                    except RuntimeError as e:
+                        print(
+                            f"Listener {listener} no longer available. Error in {signal}: {e}"
+                        )
+                    if signal_channel and signal not in to_be_ignored:
                         signal_channel(
+                            f"Signal: {origin} {signal}: "
+                            f"{listener.__module__}:{listener.__name__}{str(message)}"
+                        )
+                    if signal_channel_all:
+                        signal_channel_all(
                             f"Signal: {origin} {signal}: "
                             f"{listener.__module__}:{listener.__name__}{str(message)}"
                         )
@@ -2268,7 +2431,7 @@ class Kernel(Settings):
         it will execute that in the console_parser. This works like a
         terminal, where each letter of data can be sent to the console and
         execution will occur at the carriage return.
-
+        Additionally you can provide a '|' character that will separate commands on a single line
         @param data:
         @return:
         """
@@ -2277,6 +2440,18 @@ class Kernel(Settings):
                 data = data.decode()
             except UnicodeDecodeError:
                 return
+        start = 0
+        while True:
+            idx = data.find("|", start)
+            if idx < 0:
+                break
+            # Is the amount of quotation marks odd (ie non-even)?
+            # Yes: we are in the middle of a str
+            # No: we can split the command
+            quotations = data.count('"', 0, idx)
+            if quotations % 2 == 0:
+                data = data[:idx].rstrip() + "\n" + data[idx + 1 :].lstrip()
+            start = idx + 1
         self._console_buffer += data
         data_out = None
         while "\n" in self._console_buffer:
@@ -2289,6 +2464,17 @@ class Kernel(Settings):
     def _console_interface(self, command: str):
         pass
 
+    def has_command(self, command: str) -> bool:
+        command = command.lower()
+        input_type = None  # Initial command context is None
+        # Process command matches.
+        for funct, name, regex in self.find("command", str(input_type), ".*"):
+            # Find all commands with matching input_type.
+            if not funct.regex and regex == command:
+                # Exact match only.
+                return True
+        return False
+
     def _console_parse(self, text: str, channel: "Channel"):
         """
         Takes single line console commands and executes them.
@@ -2298,13 +2484,11 @@ class Kernel(Settings):
             text = text[1:]
         else:
             channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
-
         data = None  # Initial command context data is null
         input_type = None  # Initial command context is None
         post = list()
         post_data = dict()
         _ = self.translation
-
         while len(text) > 0:
             # Split command from remainder.
             pos = text.find(" ")
@@ -2329,7 +2513,6 @@ class Kernel(Settings):
                     # Exact match only.
                     if regex != command:
                         continue
-
                 try:
                     data, remainder, input_type = funct(
                         command=command,
@@ -2383,7 +2566,6 @@ class Kernel(Settings):
                     ansi=True,
                 )
                 return None
-
         # If post execution commands were added along the way, run them now.
         for post_execute_command in post:
             post_execute_command(
@@ -2453,7 +2635,7 @@ class Kernel(Settings):
         @self.console_option("output", "o", help=_("Output type to match"), type=str)
         @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
-        @self.console_command(("help", "?"), hidden=True, help=_("help <help>"))
+        @self.console_command(("help", "?"), hidden=True, help="help <help> : " + _("get help on a command"))
         def help_command(channel, _, extended_help, output=None, input=None, **kwargs):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
@@ -2481,10 +2663,11 @@ class Kernel(Settings):
                         help_args.append(f"<{arg_name}:{arg_type}>")
                     if found:
                         channel("\n")
-                    if func.long_help is not None:
-                        channel(
-                            "\t" + inspect.cleandoc(func.long_help).replace("\n", " ")
-                        )
+                    helpstr = func.long_help
+                    if not helpstr:
+                        helpstr = func.help
+                    if helpstr:
+                        channel("\t" + inspect.cleandoc(helpstr).replace("\n", " "))
                         channel("\n")
 
                     channel(f"\t{command_item} {' '.join(help_args)}")
@@ -2548,14 +2731,14 @@ class Kernel(Settings):
                 else:
                     channel(command_name.split("/")[-1])
 
-        @self.console_argument("substr", type=str)
-        @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
-        def find_command(channel, _, substr, **kwargs):
+        @self.console_command(("find", "??"), hidden=False, help="find <substr> : " + _("display the list of accepted commands that contain a given substring"))
+        def find_command(channel, _, remainder=None, **kwargs):
             """
             'find' will display the list of accepted commands that contain a given substr.
             """
             allcommands = []
             allparams = []
+            substr = remainder
             if substr is not None:
                 found = False
 
@@ -2570,6 +2753,9 @@ class Kernel(Settings):
                     else:
                         s = input_type + " " + command_item
                     if substr in command_item:
+                        allcommands.append(s)
+                        found = True
+                    elif substr in s:
                         allcommands.append(s)
                         found = True
                     func = self.lookup(command_name)
@@ -2628,13 +2814,19 @@ class Kernel(Settings):
             """
             channel(_("----------"))
             channel(_("Registered Threads:"))
+            parts = ["Nr", "thread", "status", "type", "info", "alive"]
+            channel(" ".join(parts))
+            channel("-"*60)
             for i, thread_name in enumerate(list(self.threads)):
-                thread = self.threads[thread_name]
-                parts = list()
+                thread, message, user_type, info, started = self.threads[thread_name]
+                parts = []
                 parts.append(f"{i + 1}:")
-                parts.append(str(thread))
-                if thread.is_alive:
-                    parts.append(_("is alive."))
+                parts.append(thread_name)
+                parts.append("<user>" if user_type else "<system>")
+                parts.append(message)
+                parts.append(info)
+                runtime = time.time() - started
+                parts.append(f"{runtime:.1f}s" if thread.is_alive else _("dead"))
                 channel(" ".join(parts))
             channel(_("----------"))
 
@@ -2643,6 +2835,9 @@ class Kernel(Settings):
             channel(_("----------"))
             channel(_("Scheduled Processes:"))
             for i, job_name in enumerate(self.jobs):
+                if job_name is None:
+                    channel(_("Empty job definition..."))
+                    continue
                 job = self.jobs[job_name]
                 parts = list()
                 parts.append(f"{i + 1}:")
@@ -2713,6 +2908,8 @@ class Kernel(Settings):
                 channel(_("Timers:"))
                 i = 0
                 for job_name in self.jobs:
+                    if job_name is None:
+                        continue
                     if not job_name.startswith("timer"):
                         continue
                     i += 1
@@ -2748,6 +2945,8 @@ class Kernel(Settings):
                     skipped = False
                     canceled = False
                     for job_name in list(self.jobs):
+                        if job_name is None:
+                            continue
                         if not job_name.startswith("timer"):
                             continue
                         timer_name = job_name[5:]
@@ -2794,6 +2993,42 @@ class Kernel(Settings):
             return
 
         # ==========
+        # Sleep Commands
+        # ==========
+        @self.console_argument(
+            "mode", type=str, help=_("Mode to set: prevent/allow"), default=None
+        )
+        @self.console_command(
+            "system_hibernate", _("Prevent/allow system hibernation.")
+        )
+        def system_hibernate(channel, _, mode=None, **kwargs):
+            """
+            Prevent or allow system hibernation. This is a toggle command.
+            If no mode is specified, it will print the current state.
+            """
+            if not self.inhibitor.available:
+                channel(_("Inhibitor is not available on this system."))
+                return
+            if mode is not None:
+                if mode.lower() not in ("prevent", "allow"):
+                    channel(_("Please specify 'prevent' or 'allow'."))
+                    return
+                if mode.lower() == "prevent":
+                    self.inhibitor.inhibit()
+                else:
+                    self.inhibitor.release()
+            sudo_msg = _("You might need system administrator priviliges.")
+            if self.inhibitor.active:
+                channel(_("System hibernation is prevented."))
+            else:
+                channel(_("System hibernation is allowed."))
+            if self.os_information["OS_NAME"] == "Linux" and (
+                (mode == "prevent" and not self.inhibitor.active)
+                or (mode == "allow" and self.inhibitor.active)
+            ):
+                channel(sudo_msg)
+
+        # ==========
         # CORE OBJECTS COMMANDS
         # ==========
 
@@ -2804,25 +3039,85 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        @self.console_command("silent", _("Set/unset silent mode"))
+        def set_silent(channel, _, remainder=None, **kwargs):
+            """
+            Set or unset silent mode. In silent mode no beeps will be played.
+            """
+            if remainder is None:
+                channel(
+                    _("Silent mode is currently {mode}.").format(
+                        mode="ON" if self.silent_mode else "OFF"
+                    )
+                )
+                return
+            if remainder.lower() not in ("on", "off"):
+                channel(_("Please specify 'on' or 'off' to set silent mode."))
+                return
+            if remainder.lower() == "on":
+                self.silent_mode = True
+            else:
+                self.silent_mode = False
+            if self.silent_mode:
+                channel(_("Silent mode is now ON."))
+            else:
+                channel(_("Silent mode is now OFF."))
+
         @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
-            OS_NAME = platform.system()
-            if OS_NAME == "Windows":
+            if self.silent_mode:
+                channel(_("Silent mode is on, no beep will be played."))
+                return
+            OS_NAME = self.os_information["OS_NAME"]
+            system_sound = {
+                "Windows": r"c:\Windows\Media\Sounds\Alarm01.wav",
+                "Darwin": "/System/Library/Sounds/Ping.aiff",
+                "Linux": "/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga",
+            }
+
+            sys_snd = self.root.setting(
+                str, "beep_soundfile", system_sound.get(OS_NAME, "")
+            )
+            use_default = not sys_snd or not os.path.exists(sys_snd)
+
+            def _play_windows():
                 try:
                     import winsound
 
-                    for x in range(5):
-                        winsound.Beep(2000, 100)
-                except Exception:
+                    if use_default:
+                        for x in range(5):
+                            winsound.Beep(2000, 100)
+                    else:
+                        winsound.PlaySound(sys_snd, winsound.SND_FILENAME)
+                except Exception as e:
+                    channel(_("Encountered exception {error}").format(error=e))
                     pass
-            elif OS_NAME == "Darwin":  # Mac
-                os.system("afplay /System/Library/Sounds/Ping.aiff")
-            elif OS_NAME == "Linux":
-                print("\a")  # Beep.
-                os.system('say "Ding"')
 
-            else:  # Assuming other linux like system
-                print("\a")  # Beep.
+            def _play_darwin():
+                arg = system_sound["Darwin"] if use_default else sys_snd
+                cmd = ["afplay", arg]
+                try:
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel(_("Encountered exception {error}").format(error=f"{e} (cmd={cmd[0]})"))
+
+            def _play_linux():
+                try:
+                    if not use_default:
+                        cmd = ["play", sys_snd]
+                    else:
+                        print("\a")
+                        cmd = ["say", "Ding"]
+                    subprocess.run(cmd, shell=False)
+                except OSError as e:
+                    channel(f"Could not run {cmd[0]}: {e}")
+
+            players = {
+                "Windows": _play_windows,
+                "Darwin": _play_darwin,
+                "Linux": _play_linux,
+            }
+            players.get(OS_NAME, lambda: print("\a"))()
 
         @self.console_argument(
             "sleeptime", type=float, help=_("Wait time in seconds"), default=1
@@ -2925,7 +3220,7 @@ class Kernel(Settings):
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("module", help=_("module [(open|close) <module_name>]"))
+        @self.console_command("module", help="module [(open|close) <module_name>] : " + _("open/closes modules"))
         def module(channel, _, path=None, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
@@ -3106,6 +3401,34 @@ class Kernel(Settings):
         # BATCH COMMANDS
         # ==========
         @self.console_command(
+            "execute",
+            help=_(
+                "Loads a given file and executes all lines as commmands (as long as they don't start with a #)"
+            ),
+        )
+        def load_and_execute(channel, _, remainder=None, **kwargs):
+            if not remainder:
+                channel(_("You need to provide a filename to execute"))
+                return
+            filename = remainder
+            if not os.path.exists(filename):
+                channel(_("The file does not exist"))
+                return
+
+            root = self.root
+            try:
+                with open(filename, "r") as f:
+                    data = f.readlines()
+                    for line in data:
+                        if line.startswith("#"):
+                            continue
+                        line = line.strip()
+                        if line:
+                            root(f"{line}\n")
+            except (FileNotFoundError, OSError, PermissionError):
+                channel(f"Could not load file: {filename}")
+
+        @self.console_command(
             "batch",
             output_type="batch",
             help=_("Base command to manipulate batch commands."),
@@ -3155,7 +3478,7 @@ class Kernel(Settings):
             except IndexError:
                 raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
-        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to execute")
         @self.console_command(
             "run",
             input_type="batch",
@@ -3168,7 +3491,7 @@ class Kernel(Settings):
             except IndexError:
                 raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
-        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to disable/enable")
         @self.console_command(
             ("disable", "enable"),
             input_type="batch",
@@ -3189,7 +3512,7 @@ class Kernel(Settings):
 
         @self.console_command(
             "channel",
-            help=_("channel (open|close|save|list|print) <channel_name>"),
+            help="channel (open|close|save|list|print) <channel_name> : " + _("manage channels"),
             output_type="channel",
         )
         def channel(channel, _, remainder=None, **kwargs):
@@ -3222,15 +3545,18 @@ class Kernel(Settings):
             return "channel", 0
 
         @self.console_argument("channel_name", help=_("name of the channel"))
+        @self.console_option("force", "f", type=bool, action="store_true")
         @self.console_command(
             "open",
             help=_("watch this channel in the console"),
             input_type="channel",
             output_type="channel",
         )
-        def channel_open(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, force=False, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
+            if force is None:
+                force = False
 
             try:
                 v = int(channel_name) - 1
@@ -3243,6 +3569,22 @@ class Kernel(Settings):
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
             else:
+                if not force and channel_name not in self.channels:
+                    channel(
+                        f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch."
+                    )
+                    channel(_("----------"))
+                    channel(_("Channels Active:"))
+                    for i, name in enumerate(self.channels):
+                        channel_name = self.channels[name]
+                        is_watched = (
+                            "* "
+                            if self._console_channel in channel_name.watchers
+                            else "  "
+                        )
+                        channel(f"{is_watched}{i + 1}: {name}")
+                    return "channel", None
+
                 self.channel(channel_name).watch(self._console_channel)
                 channel(_("Watching Channel: {name}").format(name=channel_name))
             return "channel", channel_name
@@ -3354,7 +3696,7 @@ class Kernel(Settings):
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("set", help=_("set [<key> <value>]"))
+        @self.console_command("set", help="set [<key> <value>] : " + _("set or list variables"))
         def set_command(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = self.get_context(path) if path is not None else self.root
             if len(args) == 0:
@@ -3464,6 +3806,109 @@ class Kernel(Settings):
             except (TypeError, RuntimeError) as e:
                 channel(f"Error while sending {signalname}, {signalargs}: {e}")
             return
+
+        # ==========
+        # Threaded execution
+        # ==========
+        @self.console_command(
+            "threaded",
+            help=_(
+                "Execute the following command as a separate task in the background"
+            ),
+        )
+        def threaded_command(channel, _, remainder=None, **kwargs):
+            def handler():
+                """
+                Runs the specified command in a background thread and reports completion time.
+                This function is intended to be used as a job handler for asynchronous command execution.
+                """
+                self.thread_local.thread_name = job_identifier
+                self.signal("thread_update", "/", job_identifier, "started")
+                t0 = time.perf_counter()
+                try:
+                    data_out = self._console_parse(remainder, channel=self._console_channel)
+                except Exception as e:
+                    self._console_channel(_("Encountered exception {error}").format(error=e))
+
+                t1 = time.perf_counter()
+                self._console_channel(
+                    _("Finished command {cmd} after {duration}sec").format(
+                        cmd=remainder, duration=f"{t1 - t0:.2f}"
+                    )
+                )
+                self.signal("thread_update", "/", job_identifier, "ended")
+
+            if remainder is None:
+                # List all scheduled jobs that fit our format
+                i = 0
+                for job_name, job in self.jobs.items():
+                    if job_name is None or not job_name.startswith("threaded-"):
+                        continue
+                    i += 1
+                    parts = list()
+                    parts.append(f"{i}:")
+                    parts.append(job.info)
+                    parts.append(f"{time.time() - job._created}sec")
+                    parts.append(job.message)
+                    channel(" ".join(parts))
+                channel(_("----------"))
+                return
+            job_identifier = f"user-{time.time():.4f}"
+            thread = self.threaded(handler, thread_name=job_identifier, user_type=True, info=remainder)
+            # self.schedule(job)
+            channel(
+                _("Command '{cmd}' is now running in the background.").format(
+                    cmd=remainder
+                )
+            )
+
+        @self.console_option(
+            "variable", "v", type=str, default="loop", help=_("Variable name to replace (default 'loop')")
+        )
+        @self.console_argument("range_from", type=int, help=_("First value to take"))
+        @self.console_argument("range_to", type=int, help=_("Last value to take"))
+        @self.console_command("loop", help=_("loop a given command"))
+        def loop_command(
+            channel, _, range_from=None, range_to=None, remainder=None, variable=None, **kwargs
+        ):
+            if variable is None:
+                variable = "loop"
+            if range_from is None or range_to is None:
+                channel(_("Please provide the range to loop in"))
+                return
+            try:
+                range_from = int(range_from)
+                range_to = int(range_to)
+                if range_to < range_from:
+                    raise ValueError(
+                        _("upper bound needs to be greater than lower bound")
+                    )
+            except ValueError as e:
+                channel(
+                    _("Invalid values for from={lbound}, to={ubound}: {error}").format(
+                        lbound=range_from, ubound=range_to, error=e
+                    )
+                )
+                return
+            if remainder is None:
+                channel(_("Please provide a command to loop."))
+                return
+
+            for loop_index in range(range_from, range_to + 1):
+
+                def repl(match):
+                    expr = match.group(1)
+                    try:
+                        return str(safe_eval(expr, variable, loop_index))
+                    except Exception:
+                        return match.group(0)
+
+                cmd = re.sub(r"\{([^}]+)\}", repl, remainder)
+                channel(f"#{loop_index}: {cmd}")
+                try:
+                    data_out = self._console_parse(cmd, channel=self._console_channel)
+                except Exception as e:
+                    channel(_("Encountered exception {error}").format(error=e))
 
         # ==========
         # LIFECYCLE

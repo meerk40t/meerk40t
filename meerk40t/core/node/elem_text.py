@@ -4,7 +4,12 @@ from math import ceil, floor, tau
 
 from PIL import Image
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.mixins import (
+    FunctionalParameter,
+    LabelDisplay,
+    Stroked,
+    Suppressable,
+)
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_POINT, Length
 from meerk40t.svgelements import (
@@ -44,7 +49,7 @@ REGEX_CSS_FONT_FAMILY = re.compile(
 DEFAULT_RES = 96
 
 
-class TextNode(Node, Stroked, FunctionalParameter):
+class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
     """
     TextNode is the bootstrapped node type for the 'elem text' type.
     """
@@ -98,6 +103,13 @@ class TextNode(Node, Stroked, FunctionalParameter):
         else:
             font = None
         super().__init__(type="elem text", **kwargs)
+        if "hidden" in kwargs:
+            if isinstance(kwargs["hidden"], str):
+                if kwargs["hidden"].lower() == "true":
+                    kwargs["hidden"] = True
+                else:
+                    kwargs["hidden"] = False
+            self.hidden = kwargs["hidden"]
 
         # We might have relevant font-information hidden inside settings...
         rotangle = 0
@@ -438,16 +450,37 @@ class TextNode(Node, Stroked, FunctionalParameter):
         default_map.update(self.__dict__)
         return default_map
 
-    def drop(self, drag_node, modify=True):
+    def can_drop(self, drag_node):
+        if self.is_a_child_of(drag_node):
+            return False
         # Dragging element into element.
-        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
+        return bool(
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("op raster", "file", "group")
+        )
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Dragging element into element.
+        if not self.can_drop(drag_node):
+            return False
+        if (
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type in ("file", "group")
+        ):
             if modify:
                 self.insert_sibling(drag_node)
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         return False
 
     def revalidate_points(self):

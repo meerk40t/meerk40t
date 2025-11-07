@@ -98,7 +98,7 @@ class Segment:
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
         denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
-        if denom == 0:
+        if abs(denom) < 1e-10:
             return None  # Parallel.
         ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom
         ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom
@@ -416,9 +416,7 @@ class GraphWalker:
             if segment is None:
                 points.append(None)
             else:
-                point.value = (
-                    segment.value
-                )  # This doesn't work, nodes are repeated, so they can't store unique values.
+                point.value = segment.value  # This doesn't work, nodes are repeated, so they can't store unique values.
             points.append(point)
 
     def remove_loop(self, from_pos, to_pos):
@@ -705,6 +703,44 @@ class VectorMontonizer:
         for i in range(len(path) - 1):
             p0 = path[i]
             p1 = path[i + 1]
+            if p0.y > p1.y:
+                high = p0
+                low = p1
+            else:
+                high = p1
+                low = p0
+
+            # b = low.y - (m * low.x)
+            if self.valid_low > high.y:
+                # Cluster before range.
+                continue
+            if self.valid_high < low.y:
+                # Cluster after range.
+                continue
+            seg = Segment(p0, p1)
+            # cluster = [False, i, p0, p1, high, low, m, b, path]
+            if self.valid_low < low.y:
+                self._events.append((low.y, seg))
+            if self.valid_high > high.y:
+                self._events.append((high.y, seg))
+            if high.y >= self.scanline >= low.y:
+                seg.active = True
+                self._actives.append(seg)
+
+    def add_pointlist(self, path):
+        """
+        Add segments in the form of a connected path. These positions are read and segments are created for these
+        points.
+
+        @param path:
+        @return:
+        """
+        self._dirty_scanline = True
+        self._dirty_event_sort = True
+        self._dirty_actives_sort = True
+        for i in range(len(path) - 1):
+            p0 = Point(path[i])
+            p1 = Point(path[i + 1])
             if p0.y > p1.y:
                 high = p0
                 low = p1

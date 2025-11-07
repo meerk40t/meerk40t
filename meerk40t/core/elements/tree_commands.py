@@ -2,10 +2,9 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-
 from meerk40t.kernel import CommandSyntaxError
 
-from .element_types import *
+from .element_types import op_nodes, elem_group_nodes, elem_nodes
 
 
 def plugin(kernel, lifecycle=None):
@@ -39,9 +38,10 @@ def init_commands(kernel):
             for i, n in enumerate(node.children):
                 p = list(path)
                 p.append(str(i))
-                channel(
-                    f"{'.'.join(p).ljust(10)}: {str(n._bounds)} - {str(n._bounds_dirty)} {str(n.type)} - {str(str(n)[:16])}"
-                )
+                if hasattr(n, "_bounds"):
+                    channel(
+                        f"{'.'.join(p).ljust(10)}: {str(n._bounds)} - {str(n._bounds_dirty)} {str(n.type)} - {str(str(n)[:16])}"
+                    )
                 b_list(p, n)
 
         for d in data:
@@ -49,7 +49,12 @@ def init_commands(kernel):
             if d.type == "root":
                 channel(_("Tree:"))
             else:
-                channel(f"{str(d)}:")
+                if hasattr(d, "_bounds"):
+                    channel(
+                        f"{str(d)}: {str(d._bounds)} - {str(d._bounds_dirty)} {str(d.type)} - {str(str(d)[:16])}"
+                    )
+                else:
+                    channel(f"{str(d)}:")
             b_list([], d)
             channel("----------")
 
@@ -82,7 +87,7 @@ def init_commands(kernel):
             if d.type == "root":
                 channel(_("Tree:"))
             else:
-                channel(f"{d.label}:")
+                channel(f"{d.display_label()}:")
             t_list([], d)
             channel("----------")
 
@@ -102,7 +107,8 @@ def init_commands(kernel):
             data = [self._tree]
         if drop is None:
             raise CommandSyntaxError
-        with self.static("tree_dnd"):
+        # _("Drag and Drop")
+        with self.undoscope("Drag and Drop"):
             try:
                 drag_node = self._tree
                 for n in drag.split("."):
@@ -110,7 +116,8 @@ def init_commands(kernel):
                 drop_node = self._tree
                 for n in drop.split("."):
                     drop_node = drop_node.children[int(n)]
-                drop_node.drop(drag_node)
+                with self.node_lock:
+                    drop_node.drop(drag_node)
             except (IndexError, AttributeError, ValueError):
                 raise CommandSyntaxError
         return "tree", data
@@ -156,6 +163,9 @@ def init_commands(kernel):
                 submenu = submenus[submenu_name]
             elif submenu_name is not None:
                 submenu = list()
+                if func.separate_before:
+                    menu_context.append(("------", None))
+                    func.separate_before = False
                 menu.append((submenu_name, submenu))
                 submenus[submenu_name] = submenu
 
@@ -366,7 +376,7 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
-        with self.static("delete"):
+        with self.undoscope("Delete"):
             self.remove_nodes(todelete[entry])
             self.validate_selected_area()
         self.signal("update_group_labels")

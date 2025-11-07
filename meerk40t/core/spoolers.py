@@ -3,6 +3,7 @@ from math import isinf
 from threading import Condition
 
 from meerk40t.core.laserjob import LaserJob
+from meerk40t.core.planner import STAGE_PLAN_BLOB
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 
@@ -21,7 +22,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "spool",
-            help=_("spool <command>"),
+            help="spool <command> : " + _("Send a command to the spooler"),
             regex=True,
             input_type=(None, "plan"),
             output_type="spooler",
@@ -34,6 +35,21 @@ def plugin(kernel, lifecycle):
             label = kernel.elements.basename
 
             if data is not None:
+                planner = kernel.planner
+                try:
+                    stage, info = planner.get_plan_stage(data.name)
+                except AttributeError:
+                    stage = None
+                    info = ""
+                # print (data.name, stage, info)
+                if stage is None or STAGE_PLAN_BLOB not in stage:
+                    channel(
+                        _(
+                            "Invalid plan - no 'blob' plan stage found. Please generate a valid plan before spooling."
+                        )
+                    )
+                    return "spooler", spooler
+
                 # If plan data is in data, then we copy that and move on to next step.
                 data.final()
                 loops = 1
@@ -50,7 +66,7 @@ def plugin(kernel, lifecycle):
                     data.plan, loops=loops, label=label, outline=data.outline
                 )
                 channel(_("Spooled Plan."))
-                kernel.root.signal("plan", data.name, 6)
+                kernel.planner.finish_plan(data.name)
 
             if remainder is None:
                 channel(_("----------"))
@@ -89,7 +105,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "list",
-            help=_("spool<?> list"),
+            help="spool<?> list : " + _("List all spooled jobs"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -110,7 +126,7 @@ def plugin(kernel, lifecycle):
 
         @kernel.console_command(
             "clear",
-            help=_("spooler<?> clear"),
+            help="spooler<?> clear : " + _("clear the spooler queue"),
             input_type="spooler",
             output_type="spooler",
         )
@@ -154,7 +170,8 @@ def plugin(kernel, lifecycle):
             ("left", "right", "up", "down"),
             input_type=("spooler", None),
             output_type="spooler",
-            help=_("cmd <amount>"),
+            help="<left/right/up/down> <amount> : "
+            + _("Move the laser in the specified direction."),
         )
         def direction(command, channel, _, data=None, amount=None, **kwgs):
             if data is None:
@@ -239,7 +256,8 @@ def plugin(kernel, lifecycle):
             "move_relative",
             input_type=("spooler", None),
             output_type="spooler",
-            help=_("move_relative <dx> <dy>"),
+            help="move_relative <dx> <dy> : "
+            + _("Move the laser relative to its current position."),
         )
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
@@ -334,7 +352,7 @@ def plugin(kernel, lifecycle):
                 yield "wait_finish"
 
             spooler.laserjob(
-                list(home_dot_test()), label=f"Dot and Home Test", helper=True
+                list(home_dot_test()), label="Dot and Home Test", helper=True
             )
             return "spooler", spooler
 
@@ -370,7 +388,7 @@ class SpoolerJob:
 
         @return:
         """
-        if self.is_running:
+        if self.is_running():
             return "Running"
         else:
             return "Queued"
@@ -428,6 +446,12 @@ class Spooler:
 
         self._shutdown = False
         self._thread = None
+        # If True, jobs that are stopped and have priority will be reinserted into the queue.
+        # This can affect job ordering and execution, as stopped priority jobs may be retried or reordered.
+        # Use with caution: enabling this may lead to repeated execution of certain jobs
+        self.reinsert_stopped_priority_jobs = kwargs.get(
+            "reinsert_stopped_priority_jobs", False
+        )
 
     def __repr__(self):
         return f"Spooler({str(self.context)})"
@@ -593,8 +617,11 @@ class Spooler:
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
         with self._lock:
-            self._stop_lower_priority_running_jobs(priority)
+            stopped_jobs = self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
+            if self.reinsert_stopped_priority_jobs and stopped_jobs:
+                for sj in stopped_jobs:
+                    self._queue.append(sj)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
@@ -606,8 +633,11 @@ class Spooler:
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
         with self._lock:
-            self._stop_lower_priority_running_jobs(priority)
+            stopped_jobs = self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
+            if self.reinsert_stopped_priority_jobs and stopped_jobs:
+                for sj in stopped_jobs:
+                    self._queue.append(sj)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
@@ -626,16 +656,27 @@ class Spooler:
                 for q in self._queue:
                     if q is job:
                         return
-            self._stop_lower_priority_running_jobs(job.priority)
+            stopped_jobs = self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
+            if self.reinsert_stopped_priority_jobs and stopped_jobs:
+                for sj in stopped_jobs:
+                    self._queue.append(sj)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def _stop_lower_priority_running_jobs(self, priority):
+    def _stop_lower_priority_running_jobs(self, priority) -> list:
+        stopped_jobs = []
         for e in self._queue:
             if e.is_running() and e.priority < priority:
+                # Create a copy of the stopped job to reinsert later.
+                if self.reinsert_stopped_priority_jobs and hasattr(
+                    e, "copy_for_reinsertion"
+                ):
+                    stopped_copy = e.copy_for_reinsertion()
+                    stopped_jobs.append(stopped_copy)
                 e.stop()
+        return stopped_jobs
 
     def clear_queue(self):
         with self._lock:
@@ -680,7 +721,7 @@ class Spooler:
                 status = "Stopped"
             self.context.logging.event(
                 {
-                    "uid": getattr(element, "uid"),
+                    "uid": getattr(element, "uid", None),
                     "status": status,
                     "loop": getattr(element, "loops_executed", None),
                     "total": getattr(element, "loops", None),

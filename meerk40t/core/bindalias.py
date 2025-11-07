@@ -176,7 +176,10 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_fill",
     ),
-    "ctrl+i": ("element* select^",),
+    "ctrl+i": (
+        "",
+        "element* select^",
+    ),
     "ctrl+d": ("element copy",),
     "ctrl+g": (
         "",
@@ -245,7 +248,11 @@ DEFAULT_KEYMAP = {
         "reset_bind_alias",
     ),
     "ctrl+alt+shift+home": ("bind default;alias default",),
-    "ctrl+shift+l": ("signal lock_helper",),
+    # That's not working, so we delete it...
+    "ctrl+shift+l": (
+        "",
+        "signal lock_helper",
+    ),
 }
 DEFAULT_ALIAS = {
     "+scale_up": (".timerscale_up 0 0.1 .scale 1.02",),
@@ -260,6 +267,8 @@ DEFAULT_ALIAS = {
     "+left": (".timerleft 0 0.1 left 1mm",),
     "+up": (".timerup 0 0.1 up 1mm",),
     "+down": (".timerdown 0 0.1 down 1mm",),
+    "burn": ("planz clear copy preprocess validate blob preopt optimize spool",),
+    "simulate": ("planz clear copy preprocess validate blob preopt optimize finish\nwindow open Simulation",),
     "-scale_up": (".timerscale_up off",),
     "-scale_down": (".timerscale_down off",),
     "-rotate_cw": (".timerrotate_cw off",),
@@ -294,7 +303,7 @@ class Bind(Service):
 
         _ = self._
 
-        @self.console_command("bind", help=_("bind <key> <console command>"))
+        @self.console_command("bind", help="bind <key> <console command> - " + _("Binds a key to a given keyboard keystroke"))
         def bind(command, channel, _, args=tuple(), **kwgs):
             """
             Binds a key to a given keyboard keystroke.
@@ -310,7 +319,11 @@ class Bind(Service):
                         key,
                     )
 
-                channel(_("    Key                    Command"))
+                channel(
+                    "    {key} {command}".format(
+                        key=_("Key").ljust(22), command=_("Command")
+                    )
+                )
                 for i, key in enumerate(sorted(self.keymap.keys(), key=keymap_index)):
                     value = self.keymap[key]
                     channel(f"{i:2d}: {key.ljust(22)} {value}")
@@ -356,6 +369,7 @@ class Bind(Service):
         return value, keyvalue
 
     def trigger(self, keyvalue):
+        # print (f"trigger for {keyvalue} started with {self.triggered}")
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
             fnd, keyvalue = self.is_found(keyvalue, self.triggered)
@@ -365,10 +379,11 @@ class Bind(Service):
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
                     self(f"{cmd}\n")
-                return True
+            return True
         return False
 
     def untrigger(self, keyvalue):
+        # print (f"untrigger for {keyvalue} started with {self.triggered}")
         keymap = self.keymap
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
@@ -380,7 +395,7 @@ class Bind(Service):
                 # Keyup commands only trigger if the down command started with +
                 action = "-" + action[1:]
                 self(action + "\n")
-                return True
+            return True
         return False
 
     def shutdown(self, *args, **kwargs):
@@ -429,14 +444,18 @@ class Alias(Service):
 
         @self.console_argument("alias", type=str, help=_("alias command"))
         @self.console_command(
-            "alias", help=_("alias <alias> <console commands[;console command]*>")
+            "alias", help="alias <alias> <console commands[;console command]*> - " + _("Sets or shows command aliases"),
         )
         def alias_command(command, channel, _, alias=None, remainder=None, **kwgs):
             _ = self._
             if alias is None:
                 reverse_keymap = {v: k for k, v in self.bind.keymap.items()}
-                channel(_("Aliases (keybind)`:"))
-                channel(_("    Alias                  Command(s)"))
+                channel(_("Aliases (keybind):"))
+                channel(
+                    "    {key} {value}".format(
+                        key=_("Alias").ljust(22), value=_("Command(s)")
+                    )
+                )
                 last = None
                 i = -1
                 for key in sorted(

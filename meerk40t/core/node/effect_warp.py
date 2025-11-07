@@ -1,13 +1,13 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import FunctionalParameter
+from meerk40t.core.node.mixins import FunctionalParameter, Suppressable
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Color
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
 
-class WarpEffectNode(Node, FunctionalParameter):
+class WarpEffectNode(Node, FunctionalParameter, Suppressable):
     """
     Effect node performing a warp. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -20,6 +20,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
+        self.autohide = True
         self.p1 = complex(0, 0)
         self.p2 = complex(0, 0)
         self.p3 = complex(0, 0)
@@ -28,9 +29,10 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.d2 = complex(0, 0)
         self.d3 = complex(0, 0)
         self.d4 = complex(0, 0)
+        self._interim = False
 
         Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
-        self._formatter = "{element_type} - ({children})"
+        self._formatter = "{element_type} {id} - ({children})"
 
         if label is None:
             self.label = "Warp"
@@ -85,13 +87,61 @@ class WarpEffectNode(Node, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         return WarpEffectNode(**nd)
 
-    def scaled(self, sx, sy, ox, oy):
+    def get_effect_descriptor(self):
+        """
+        Returns a string descriptor for the effect, concatenating the effect type, warp points, and distortions, separated by pipe ('|') characters.
+
+        Returns:
+            str: A descriptor string in the format "<type>|<p1>|<p2>|<p3>|<p4>|<d1>|<d2>|<d3>|<d4>".
+        """
+
+        def compstr(val):
+            if isinstance(val, complex):
+                return f"{val.real},{val.imag}"
+            return str(val)
+
+        return f"{self.type}|{compstr(self.p1)}|{compstr(self.p2)}|{compstr(self.p3)}|{compstr(self.p4)}|{compstr(self.d1)}|{compstr(self.d2)}|{compstr(self.d3)}|{compstr(self.d4)}"
+
+    def set_effect_descriptor(self, descriptor):
+        """
+        Sets the effect parameters from a descriptor string.
+
+        The descriptor should be a string with five components separated by '|':
+        'typeinfo|hatchtype|hatchdistance|hatchangle|hatchangledelta|loops'.
+
+        If the typeinfo matches the current object's type, updates the hatch
+        parameters (type, distance, angle, angle_delta, loops) and triggers recalculation.
+
+        Parameters:
+            descriptor (str): The effect descriptor string.
+
+        Exceptions:
+            ValueError: Silently ignored if the descriptor cannot be split into five parts.
+        """
+        try:
+            (typeinfo, p1, p2, p3, p4, d1, d2, d3, d4) = descriptor.split("|")
+            if typeinfo == self.type:
+                self.p1 = complex(*map(float, p1.split(",")))
+                self.p2 = complex(*map(float, p2.split(",")))
+                self.p3 = complex(*map(float, p3.split(",")))
+                self.p4 = complex(*map(float, p4.split(",")))
+                self.d1 = complex(*map(float, d1.split(",")))
+                self.d2 = complex(*map(float, d2.split(",")))
+                self.d3 = complex(*map(float, d3.split(",")))
+                self.d4 = complex(*map(float, d4.split(",")))
+                self.recalculate()
+        except ValueError:
+            pass
+
+    def scaled(self, sx, sy, ox, oy, interim=False):
         self.altered()
 
     def notify_attached(self, node=None, **kwargs):
         Node.notify_attached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = True
         self.altered()
         self.set_bounds_parameters()
 
@@ -99,6 +149,8 @@ class WarpEffectNode(Node, FunctionalParameter):
         Node.notify_detached(self, node=node, **kwargs)
         if node is self:
             return
+        if self.autohide and hasattr(node, "hidden"):
+            node.hidden = False
         self.altered()
         self.set_bounds_parameters()
 
@@ -116,19 +168,30 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.altered()
         self.set_bounds_parameters()
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
-        self.set_bounds_parameters()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+            self.set_bounds_parameters()
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        Node.notify_translated(self, node, dx, dy, **kwargs)
+    def append_child(self, new_child):
+        if self.autohide and hasattr(new_child, "hidden"):
+            new_child.hidden = True
+        return super().append_child(new_child)
+
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
         if node is self:
             return
-        self.altered()
-        self.set_bounds_parameters()
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+            self.set_bounds_parameters()
 
     def recalculate(self):
         """
@@ -138,12 +201,65 @@ class WarpEffectNode(Node, FunctionalParameter):
         pass
 
     def preprocess(self, context, matrix, plan):
-        pass
+        """
+        We need to adjust the internal warp parameters according to the matrix
+
+        p1 to p4 define the original rectangle - they will be recalculated in as_geometry, so no need to do it here
+        n1 to n4 define the skewed rectangle - again recalculated by applying d1 to d4 to p1 to p4
+        The problem is that the attribution of d1 to p1 and d2 to p2 etc. could be swapped
+        as the bbox might turn the sequence of points around
+
+        So lets have a look at where the old points would fall now
+        nx, ny, mx, my = b
+        self.p1 = complex(nx, ny)
+        self.p2 = complex(mx, ny)
+        self.p3 = complex(mx, my)
+        self.p4 = complex(nx, my)
+        """
+        n1 = self.p1 + self.d1
+        n2 = self.p2 + self.d2
+        n3 = self.p3 + self.d3
+        n4 = self.p4 + self.d4
+        p1 = matrix.point_in_matrix_space((self.p1.real, self.p1.imag))
+        p2 = matrix.point_in_matrix_space((self.p2.real, self.p2.imag))
+        p3 = matrix.point_in_matrix_space((self.p3.real, self.p3.imag))
+        p4 = matrix.point_in_matrix_space((self.p4.real, self.p4.imag))
+        n1 = matrix.point_in_matrix_space((n1.real, n1.imag))
+        n2 = matrix.point_in_matrix_space((n2.real, n2.imag))
+        n3 = matrix.point_in_matrix_space((n3.real, n3.imag))
+        n4 = matrix.point_in_matrix_space((n4.real, n4.imag))
+        # We need to establish the top left point of p1 to p4 and swap n1 to n4 accordingly
+        nx = min(p1.x, p2.x, p3.x, p4.x)
+        mx = max(p1.x, p2.x, p3.x, p4.x)
+        ny = min(p1.y, p2.y, p3.y, p4.y)
+        my = max(p1.y, p2.y, p3.y, p4.y)
+        candidates = [(p1, n1), (p2, n2), (p3, n3), (p4, n4)]
+
+        def find_values(x, y):
+            for idx in range(len(candidates)):
+                content = candidates[idx]
+                if content is None:
+                    continue
+                p, n = content
+                if p.x == x and p.y == y:
+                    candidates[idx] = None
+                    return p, n
+            # This will never happen!
+            return None, None
+
+        pp1, nn1 = find_values(nx, ny)
+        pp2, nn2 = find_values(mx, ny)
+        pp3, nn3 = find_values(mx, my)
+        pp4, nn4 = find_values(nx, my)
+        self.d1 = complex(nn1.x - pp1.x, nn1.y - pp1.y)
+        self.d2 = complex(nn2.x - pp2.x, nn2.y - pp2.y)
+        self.d3 = complex(nn3.x - pp3.x, nn3.y - pp3.y)
+        self.d4 = complex(nn4.x - pp4.x, nn4.y - pp4.y)
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Warp"
-        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["enabled"] = "" if self.output else "(Disabled) "
 
         default_map["children"] = str(len(self.children))
         return default_map
@@ -158,13 +274,16 @@ class WarpEffectNode(Node, FunctionalParameter):
                     subs = right_types(e)
                     res.extend(subs)
                 elif e.type.startswith("elem"):
+                    # Is this node hidden? If we autohide, then that's still relevant, if not ignore.
+                    if hasattr(e, "hidden") and e.hidden and not self.autohide:
+                        continue
                     res.append(e)
             return res
 
         nodes = right_types(self)
         return nodes
 
-    def as_geometry(self, **kws):
+    def as_geometry(self, **kws) -> Geomstr:
         """
         Calculates the warp effect geometry.
 
@@ -178,6 +297,9 @@ class WarpEffectNode(Node, FunctionalParameter):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
+        if self._interim:
+            return outlines
+
         self.set_bounds_parameters()
 
         self.perspective_matrix = PMatrix.map(
@@ -193,11 +315,48 @@ class WarpEffectNode(Node, FunctionalParameter):
         outlines.transform3x3(self.perspective_matrix)
         return outlines
 
+    def set_interim(self):
+        self.empty_cache()
+        self._interim = True
+
+    def altered(self, *args, **kwargs):
+        self._interim = False
+        super().altered()
+
     def modified(self):
         self.altered()
 
-    def drop(self, drag_node, modify=True):
-        # Default routine for drag + drop for an op node - irrelevant for others...
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, interim=False, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, interim=interim, **kwargs)
+        if node is self:
+            return
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+
+    def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
+        Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
+        if node is self:
+            return
+        if interim:
+            self.set_interim()
+        else:
+            self.altered()
+
+    def can_drop(self, drag_node):
+        if (
+            hasattr(drag_node, "as_geometry")
+            or drag_node.type in ("effect", "file", "group", "reference")
+            or (drag_node.type.startswith("op ") and drag_node.type != "op dots")
+        ):
+            return True
+        return False
+
+    def drop(self, drag_node, modify=True, flag=False):
+        # Default routine for drag + drop for an effect node - irrelevant for others...
+        if not self.can_drop(drag_node):
+            return False
         if drag_node.type.startswith("effect"):
             if modify:
                 if drag_node.parent is self.parent:
@@ -209,7 +368,7 @@ class WarpEffectNode(Node, FunctionalParameter):
             return True
         if hasattr(drag_node, "as_geometry"):
             # Dragging element onto operation adds that element to the op.
-            if not modify:
+            if modify:
                 if self.has_ancestor("branch ops"):
                     self.add_reference(drag_node)
                 else:
@@ -226,7 +385,14 @@ class WarpEffectNode(Node, FunctionalParameter):
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
-            return drag_node.drop(self, modify=modify)
+            old_references = list(self._references)
+            result = drag_node.drop(self, modify=modify, flag=flag)
+            if result and modify:
+                if hasattr(drag_node, "color") and drag_node.color is not None:
+                    self.stroke = drag_node.color
+                for ref in old_references:
+                    ref.remove_node()
+            return result
         elif drag_node.type in ("file", "group"):
             # If we drag a group or a file to this node,
             # then we will do it only if this an element effect

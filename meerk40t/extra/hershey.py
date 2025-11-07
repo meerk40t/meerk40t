@@ -5,11 +5,10 @@ from glob import glob
 from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.node import Fillrule
+from meerk40t.core.node.node import Fillrule, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.kernel import get_safe_path
-from meerk40t.tools.geomstr import BeamTable, Geomstr
-from meerk40t.tools.jhfparser import JhfFont
+from meerk40t.core.geomstr import BeamTable, Geomstr
+from meerk40t.tools.jhfparser import JhfFont, SimplexFont, STD_FONT_FILE
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont, TTFParsingError
 
@@ -106,6 +105,10 @@ class Meerk40tFonts:
         self._available_fonts = None
 
     @property
+    def std_font_file(self):
+        return STD_FONT_FILE
+    
+    @property
     def fonts_registered(self):
         fonts = {
             "shx": ("Autocad", ShxFont, None),
@@ -116,7 +119,7 @@ class Meerk40tFonts:
 
     @property
     def font_directory(self):
-        safe_dir = realpath(get_safe_path(self.context.kernel.name))
+        safe_dir = self.context.kernel.os_information["WORKDIR"]
         self.context.setting(str, "font_directory", safe_dir)
         fontdir = self.context.font_directory
         if not exists(fontdir):
@@ -129,7 +132,7 @@ class Meerk40tFonts:
     def font_directory(self, value):
         if not exists(value):
             # We cant allow a non-valid directory
-            value = realpath(get_safe_path(self.context.kernel.name))
+            value = self.context.kernel.os_information["WORKDIR"]
         self.context.setting(str, "font_directory", value)
         self.context.font_directory = value
         self._available_fonts = None
@@ -153,6 +156,8 @@ class Meerk40tFonts:
 
     @lru_cache(maxsize=512)
     def get_font_information(self, full_file_name):
+        if full_file_name == STD_FONT_FILE:
+            return STD_FONT_FILE
         filename, file_extension = splitext(full_file_name)
         if len(file_extension) == 0:
             return None
@@ -174,6 +179,14 @@ class Meerk40tFonts:
             f_lower = info[0].lower()
             if f_lower.endswith(s_lower):
                 return info
+        # Hmm, we did not find it - there's a special case though, replace "-" with " " to see whether this helps
+        s_lower = s_lower.replace("-", " ")
+        for info in p:
+            # We don't care about capitalisation
+            f_lower = info[0].lower()
+            f_lower = f_lower.replace("-", " ")
+            if f_lower.endswith(s_lower):
+                return info
         return None
 
     def is_system_font(self, short):
@@ -185,12 +198,21 @@ class Meerk40tFonts:
     def face_to_full_name(self, short):
         s_lower = short.lower()
         p = self.available_fonts()
+        options = ("regular", "bold", "italic")
+        candidates = []
         for info in p:
             # We don't care about capitalisation
             f_lower = info[1].lower()
             # print (f"Comparing {s_lower} to {f_lower} ({info[1]}, {info[2]}, {info[3]})")
             if f_lower == s_lower:
                 return info[0]
+            for idx, opt in enumerate(options):
+                if f"{s_lower} {opt}" == f_lower:
+                    # print (f"Appending {idx} {f_lower}")
+                    candidates.append((idx, info[0]))
+        if len(candidates):
+            candidates.sort(key=lambda e: e[0])
+            return candidates[0][1]
         return None
 
     def full_name(self, short):
@@ -204,6 +226,8 @@ class Meerk40tFonts:
 
     @lru_cache(maxsize=128)
     def cached_fontclass(self, fontname):
+        if fontname == STD_FONT_FILE:
+            return SimplexFont("")
         registered_fonts = self.fonts_registered
         if not exists(fontname):
             return
@@ -357,6 +381,11 @@ class Meerk40tFonts:
         node.mkfont = fontname
         node._translated_text = mytext
         # _t3 = perf_counter()
+        tlines = mytext.split("\n")
+        tlabel = f"Text: {tlines[0]}"
+        if node.label is None or node.label.startswith("Text: "):
+            node.label = tlabel
+
         node.altered()
         # _t4 = perf_counter()
         # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
@@ -395,9 +424,11 @@ class Meerk40tFonts:
         for fname in candidates:
             if self._validate_font(fname):
                 return self.full_name(fname)
+        # lets fallback to our internal font if nothing else works
+        
         return None
 
-    def _try_availible(self):
+    def _try_available(self):
         if not self.available_fonts():
             return None
         for i, font in enumerate(self._available_fonts):
@@ -406,16 +437,14 @@ class Meerk40tFonts:
                 return candidate
         return None
 
-    def create_linetext_node(
-        self, x, y, text, font=None, font_size=None, font_spacing=1.0
-    ):
-        if font_size is None:
-            font_size = Length("20px")
-        if font_spacing is None:
-            font_spacing = 1
-        self.context.setting(str, "last_font", "")
-        if not self._validate_font(font):
+    def retrieve_font(self, font):
+        if not self._validate_font(font) and font is not None:
             # Is the given font valid?
+            # It could still translate to a valid name
+            font_path = self.face_to_full_name(font)
+            if font_path:
+                font = self.short_name(font_path)
+                return font, font_path
             font = None
         if not font:
             # No valid font, try last font.
@@ -427,17 +456,43 @@ class Meerk40tFonts:
             font = self._try_candidates()
         if not font:
             # You know, I take anything at this point...
-            font = self._try_availible()
-        # We tried everything if there is a font, set it to last_font.
-        self.context.last_font = font
+            font = self._try_available()
+
+        if not font:
+            # No font could be located.
+            return None, None
+
+        # We have our valid font.
+        font_path = self.full_name(font)
+        font = self.short_name(font)
+        return font, font_path
+
+    def create_linetext_node(
+        self,
+        x,
+        y,
+        text,
+        font=None,
+        font_size=None,
+        font_spacing=1.0,
+        align="start",
+    ):
+        if font_size is None:
+            font_size = Length("20px")
+        if font_spacing is None:
+            font_spacing = 1
+        self.context.setting(str, "last_font", "")
+        font, font_path = self.retrieve_font(font)
 
         if not font:
             # No font could be located.
             return None
 
+        # We tried everything if there is a font, set it to last_font.
+        self.context.last_font = font
+
         # We have our valid font.
-        font_path = self.full_name(font)
-        font = self.short_name(font)
+
         horizontal = True
         cfont = self.cached_fontclass(font_path)
         weld = False
@@ -447,11 +502,20 @@ class Meerk40tFonts:
             path = FontPath(weld)
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
-            cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
-        except ShxFontParseError:
+            cfont.render(
+                path,
+                mytext,
+                horizontal=horizontal,
+                font_size=float(font_size),
+                h_spacing=font_spacing,
+                align=align,
+            )
+        except (AttributeError, ShxFontParseError):
             # Could not parse path.
             pass
 
+        tlines = mytext.split("\n")
+        tlabel = "Text: {mktext}"
         # Create the node.
         path_node = PathNode(
             geometry=path.geometry,
@@ -459,13 +523,15 @@ class Meerk40tFonts:
             stroke_width=self.context.elements.default_strokewidth,
             fill=self.context.elements.default_fill,
             fillrule=Fillrule.FILLRULE_NONZERO,
+            linejoin=Linejoin.JOIN_BEVEL,
+            label=tlabel,
         )
         path_node.matrix.post_translate(x, y)
         path_node.mkfont = font
         path_node.mkfontsize = float(font_size)
         path_node.mkfontspacing = float(font_spacing)
         path_node.mkfontweld = weld
-        path_node.mkalign = "start"
+        path_node.mkalign = align
         path_node.mklinegap = 1.1
         path_node.mktext = text
         path_node._translated_text = mytext
@@ -582,6 +648,12 @@ class Meerk40tFonts:
             except (OSError, FileNotFoundError, PermissionError):
                 self._available_fonts = []
             if len(self._available_fonts):
+                # Check that the std font is present
+                if not any(f[0] == STD_FONT_FILE for f in self._available_fonts):
+                    self._available_fonts.insert(
+                        0,
+                        (STD_FONT_FILE, "MeerK40t Simple", "Hershey", "Regular", False)
+                    )
                 # t1 = perf_counter()
                 # print (f"Cached, took {t1 - t0:.2f}sec")
                 return self._available_fonts
@@ -606,7 +678,11 @@ class Meerk40tFonts:
             try:
                 for root, dirs, files in os.walk(fontpath):
                     for filename in files:
+                        if not filename:
+                            continue
                         short = basename(filename)
+                        if not short:
+                            continue
                         full_name = join(root, filename)
                         test = filename.lower()
                         for p in font_types:
@@ -622,10 +698,12 @@ class Meerk40tFonts:
                                     else:
                                         entry = font_types[p]
                                         font_family = entry[0]
+                                    if face_name is None:
+                                        face_name = short
                                     self._available_fonts.append(
                                         (
-                                            full_name,
-                                            face_name,
+                                            str(full_name),
+                                            str(face_name),
                                             font_family,
                                             font_subfamily,
                                             systemfont,
@@ -639,7 +717,7 @@ class Meerk40tFonts:
                 continue
             # for key, value in found.items():
             #     print(f"{key}: {value} - {fontpath}")
-
+        self._available_fonts.append( (STD_FONT_FILE, "MeerK40t Simple", "Hershey", "Regular", False) )
         self._available_fonts.sort(key=lambda e: e[1])
         try:
             with open(cache, "w", encoding="utf-8") as f:
@@ -683,6 +761,7 @@ def plugin(kernel, lifecycle):
                 "attr": "system_font_directories",
                 "object": context,
                 "page": "_95_Fonts",
+                # Hint for translation _("System font locations")
                 "section": "_95_System font locations",
                 "default": directories,
                 "type": list,
@@ -713,7 +792,10 @@ def plugin(kernel, lifecycle):
         ):
             kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
-        @context.console_option("font", "f", type=str, help=_("SHX font file."))
+        @context.console_argument("x", type=Length, help=_("X-Coordinate"))
+        @context.console_argument("y", type=Length, help=_("Y-Coordinate"))
+        @context.console_argument("text", type=str, help=_("Text to render"))
+        @context.console_option("font", "f", type=str, help=_("Font file."))
         @context.console_option(
             "font_size", "s", type=Length, default="20px", help=_("Font size")
         )
@@ -725,68 +807,58 @@ def plugin(kernel, lifecycle):
             help=_("Character spacing factor"),
         )
         @context.console_command(
-            "linetext", help=_("linetext <font> <font_size> <text>")
+            "linetext", help="linetext <font> <font_size> <text> : " + _("Render vector text")
         )
         def linetext(
             command,
             channel,
             _,
+            x=None,
+            y=None,
+            text=None,
             font=None,
             font_size=None,
             font_spacing=None,
             remainder=None,
             **kwargs,
         ):
-            def display_fonts():
-                for extension, item in registered_fonts:
-                    desc = item[0]
-                    channel(
-                        _("{ftype} fonts in {path}:").format(ftype=desc, path=font_dir)
-                    )
-                    for p in glob(join(font_dir, "*." + extension.lower())):
-                        channel(p)
-                    for p in glob(join(font_dir, "*." + extension.upper())):
-                        channel(p)
-                    return
+            if x is None or y is None or text is None:
+                channel(
+                    "linetext <x> <y> <text> - " + _("please provide all required arguments")
+                )
+                registered_fonts = context.fonts.available_fonts()
+                for item in registered_fonts:
+                    channel(f"{item[1]} ({item[0]})")
+                return
+            try:
+                x = float(Length(x))
+                y = float(Length(y))
+            except ValueError:
+                channel(_("Invalid coordinates"))
+                return
+            if text is None or text == "":
+                channel(_("No text given."))
+                return
 
-            registered_fonts = context.fonts.fonts_registered
             if font_spacing is None:
                 font_spacing = 1
 
             context.setting(str, "last_font", None)
-            if font is not None:
-                context.last_font = font
-            font = context.last_font
-
-            safe_dir = realpath(get_safe_path(context.kernel.name))
-            context.setting(str, "font_directory", safe_dir)
-            font_dir = context.font_directory
-
             if font is None:
-                display_fonts()
-                return
-            font_path = join(font_dir, font)
-            if not exists(font_path):
-                channel(_("Font was not found at {path}").format(path=font_path))
-                display_fonts()
-                return
-            if remainder is None:
-                channel(_("No text to make a path with."))
-                info = str(context.fonts.cached_fontclass.cache_info())
-                channel(info)
-                return
-            x = 0
-            y = float(font_size)
+                font = context.last_font
 
-            # try:
-            #     font = ShxFont(font_path)
-            #     path = FontPath()
-            #     font.render(path, remainder, True, float(font_size))
-            # except ShxFontParseError as e:
-            #     channel(f"{e.args}")
-            #     return
+            font_name, font_path = context.fonts.retrieve_font(font)
+            if font_name is None:
+                channel(f"Could not find a valid font file for '{font}'")
+                registered_fonts = context.fonts.available_fonts()
+                for item in registered_fonts:
+                    channel(f"{item[1]} ({item[0]})")
+                return
+
+            channel(f"Will use font '{font_name}' ({font_path})")
+
             path_node = context.fonts.create_linetext_node(
-                context, x, y, remainder, font, font_size, font_spacing
+                x, y, text, font_path, font_size, font_spacing
             )
             # path_node = PathNode(
             #     path=path.path,
@@ -794,4 +866,9 @@ def plugin(kernel, lifecycle):
             #     stroke=Color("black"),
             # )
             context.elements.elem_branch.add_node(path_node)
+            if context.elements.classify_new:
+                context.elements.classify([path_node])
+            context.elements.set_emphasis([path_node])
+
             context.signal("element_added", path_node)
+            context.signal("refresh_scene", "Scene")

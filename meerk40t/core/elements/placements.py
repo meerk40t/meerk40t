@@ -1,6 +1,34 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides a set of console commands for managing placements within the application.
+Users can create fixed job start positions, add relative placements,
+and manipulate the arrangement of placements in a grid pattern.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up placement commands.
+- init_commands(kernel): Initializes the placement commands and defines the associated operations.
+- place_points(command, channel, _, x=None, y=None, nx=None, ny=None, dx=None, dy=None, rotation=None, corner=None, loops=None, **kwargs): Adds a placement at a specified position with optional repetitions and gaps.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    x: The x-coordinate for the placement.
+    y: The y-coordinate for the placement.
+    nx: The number of placements on the x-axis.
+    ny: The number of placements on the y-axis.
+    dx: The gap in the x-direction.
+    dy: The gap in the y-direction.
+    rotation: The rotation angle for the placement.
+    corner: The corner position for the placement.
+    loops: The number of placement repetitions.
+  Returns:
+    A tuple containing the type of operations and the added placements.
+- place_current(command, channel, _, **kwargs): Adds a relative job start position at the current laser position.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+  Returns:
+    A tuple containing the type of operations and the added placement.
 """
+
 
 from meerk40t.core.units import Angle as UAngle
 from meerk40t.core.units import Length
@@ -46,10 +74,10 @@ def init_commands(kernel):
         type=int,
         help=_("How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"),
     )
-    @self.console_option("dx", "m", type=Length, help=_("Gap in x-direction"))
-    @self.console_option("dy", "n", type=Length, help=_("Gap in y-direction"))
-    @self.console_argument("x", type=Length, help=_("x coord"))
-    @self.console_argument("y", type=Length, help=_("y coord"))
+    @self.console_option("dx", "m", type=str, help=_("Gap in x-direction"))
+    @self.console_option("dy", "n", type=str, help=_("Gap in y-direction"))
+    @self.console_argument("x", type=str, help=_("x coord"))
+    @self.console_argument("y", type=str, help=_("y coord"))
     @self.console_command(
         "placement",
         help=_("Adds a placement = a fixed job start position"),
@@ -72,36 +100,31 @@ def init_commands(kernel):
         loops=None,
         **kwargs,
     ):
+        try:
+            # fmt: off
+            lensett = self.length_settings()
+            x = 0 if x is None else float(Length(x, relative_length=self.device.view.width, settings=lensett))
+            y = 0 if y is None else float(Length(y, relative_length=self.device.view.height, settings=lensett))
+            dx = 0 if dx is None else float(Length(dx, relative_length=self.device.view.width, settings=lensett))
+            dy = 0 if dy is None else float(Length(dy, relative_length=self.device.view.height, settings=lensett))
+            # fmt: on
+        except ValueError:
+            channel(_("Invalid length value."))
+            return
         if loops is None:
             loops = 1
         if corner is None:
             corner = 0
         if rotation is None:
             rotation = 0
-        if x is None:
-            x = 0
-        if y is None:
-            y = x
         if nx is None:
             nx = 1
         if ny is None:
             ny = 1
-        if dx is None:
-            dx = 0
+        if dx == 0:
             nx = 1
-        if dy is None:
-            dy = 0
+        if dy == 0:
             ny = 1
-        try:
-            x = Length(x)
-            y = Length(y)
-            len_dx = Length(dx)
-            dx_val = float(len_dx)
-            len_dy = Length(dy)
-            dy_val = float(len_dy)
-        except ValueError:
-            channel(_("Invalid values given"))
-            return
         if nx < 0 or ny < 0:
             channel(_("Invalid values for nx/ny provided"))
             return
@@ -113,18 +136,19 @@ def init_commands(kernel):
             return
         added = []
         # print (f"x={x}, y={y}, nx={nx}, ny={ny}, dx={dx}, dy={dy}, rotation={rotation}, corner={corner}, loops={loops}")
-        node = self.op_branch.add(
-            x=x,
-            y=y,
-            nx=nx,
-            ny=ny,
-            dx=dx,
-            dy=dy,
-            rotation=rotation.radians,
-            corner=corner,
-            loops=loops,
-            type="place point",
-        )
+        with self.node_lock:
+            node = self.op_branch.add(
+                x=x,
+                y=y,
+                nx=nx,
+                ny=ny,
+                dx=dx,
+                dy=dy,
+                rotation=rotation.radians,
+                corner=corner,
+                loops=loops,
+                type="place point",
+            )
         added.append(node)
         self.set_emphasis(added)
         return "ops", added
@@ -137,7 +161,8 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def place_current(command, channel, _, **kwargs):
-        node = self.op_branch.add(type="place current")
+        with self.node_lock:
+            node = self.op_branch.add(type="place current")
         added = [node]
         self.set_emphasis(added)
         return "ops", added

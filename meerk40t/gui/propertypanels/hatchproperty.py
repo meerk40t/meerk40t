@@ -4,22 +4,58 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
-from ..wxutils import TextCtrl, set_ctrl_value
+from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox, wxComboBox
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 
 
 class HatchPropertyPanel(ScrolledPanel):
+    """
+    HatchPropertyPanel - Advanced hatch pattern configuration and editing interface.
+
+    This panel provides comprehensive control over hatch effect operations including pattern generation,
+    spacing, angle control, and fill style selection. It enables precise configuration of hatch patterns
+    for laser engraving and cutting operations with real-time preview capabilities.
+
+    Technical Purpose:
+    - Manages hatch effect node parameters for pattern generation
+    - Controls hatch distance, angle, and angle delta for pattern variation
+    - Implements loop count controls for multi-pass hatching
+    - Provides algorithm selection (Scanbeam, Direct Grid, Auto-Select)
+    - Supports unidirectional and bidirectional hatch patterns
+    - Handles stroke color configuration with auto-classification
+    - Generates real-time hatch pattern previews
+
+    Signal Listeners:
+    - None directly (relies on callback mechanisms for property updates)
+
+    User Interface:
+    - Element ID: Identification and naming controls
+    - Stroke Color: Color selection with classification callbacks
+    - Loops: Hatch pass count with slider control
+    - Hatch Distance: Spacing between hatch lines with length validation
+    - Angle: Primary hatch angle with slider control
+    - Angle Delta: Secondary angle variation for complex patterns
+    - Fill Style: Algorithm selection (Auto-Select, Scanbeam, Direct Grid)
+    - Unidirectional: Toggle for single-direction hatching
+    - Auto-classify: Immediate classification after color changes
+    - Preview: Real-time hatch pattern visualization
+    """
+
+    name = _("Hatch")
+
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.themes.set_window_colors(self)
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
         self.node = node
+        self.panels = []
         self.SetHelpText("hatches")
 
         self._Buffer = None
@@ -29,7 +65,7 @@ class HatchPropertyPanel(ScrolledPanel):
         # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
-
+        self.panels.append(panel_id)
         panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
@@ -40,6 +76,7 @@ class HatchPropertyPanel(ScrolledPanel):
             node=self.node,
         )
         main_sizer.Add(panel_stroke, 1, wx.EXPAND, 0)
+        self.panels.append(panel_stroke)
 
         # panel_fill = ColorPanel(
         #     self,
@@ -51,7 +88,7 @@ class HatchPropertyPanel(ScrolledPanel):
         #     node=self.node,
         # )
         # main_sizer.Add(panel_fill, 1, wx.EXPAND, 0)
-
+        option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_loops = StaticBoxSizer(self, wx.ID_ANY, _("Loops"), wx.HORIZONTAL)
         self.text_loops = TextCtrl(
             self,
@@ -64,7 +101,10 @@ class HatchPropertyPanel(ScrolledPanel):
         sizer_loops.Add(self.text_loops, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_loops = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
         sizer_loops.Add(self.slider_loops, 3, wx.EXPAND, 0)
-        main_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
+        option_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
+        self.check_include_outline = wx.CheckBox(self, wx.ID_ANY, _("Include Outline"))
+        option_sizer.Add(self.check_include_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        main_sizer.Add(option_sizer, 1, wx.EXPAND, 0)
 
         sizer_distance = StaticBoxSizer(
             self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
@@ -114,15 +154,44 @@ class HatchPropertyPanel(ScrolledPanel):
         main_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.fills = list(self.context.match("hatch", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
+        self.combo_fill_style = wxComboBox(
             self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
+        self.check_directional = wx.CheckBox(self, wx.ID_ANY, _("Unidirectional"))
 
+        # Add algorithm selection dropdown
+        self.combo_algorithm = wxComboBox(
+            self,
+            wx.ID_ANY,
+            choices=[
+                _("Auto-Select"),
+                _("Scanbeam (Default)"),
+                _("Direct Grid (Fast)"),
+            ],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        # Set initial selection based on node property
+        if hasattr(node, "hatch_algorithm"):
+            algo_map = {"auto": 0, "scanbeam": 1, "direct_grid": 2}
+            self.combo_algorithm.SetSelection(algo_map.get(node.hatch_algorithm, 0))
+        else:
+            self.combo_algorithm.SetSelection(0)  # Default to auto-select
+
+        style_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        style_sizer.Add(self.combo_fill_style, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        style_sizer.Add(self.check_directional, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_fill.Add(style_sizer, 0, wx.EXPAND, 0)
+
+        # Add algorithm selection
+        algo_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        algo_label = wx.StaticText(self, wx.ID_ANY, _("Algorithm:"))
+        algo_sizer.Add(algo_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        algo_sizer.Add(self.combo_algorithm, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_fill.Add(algo_sizer, 0, wx.EXPAND, 0)
         self.display_panel = wx.Panel(self, wx.ID_ANY)
         sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
 
-        self.check_classify = wx.CheckBox(
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)
@@ -141,6 +210,9 @@ class HatchPropertyPanel(ScrolledPanel):
             wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta
         )
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
+        self.check_include_outline.Bind(wx.EVT_CHECKBOX, self.on_check_outline)
+        self.check_directional.Bind(wx.EVT_CHECKBOX, self.on_check_directional)
+        self.combo_algorithm.Bind(wx.EVT_COMBOBOX, self.on_combo_algorithm)
         # end wxGlade
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
@@ -175,6 +247,8 @@ class HatchPropertyPanel(ScrolledPanel):
         return node.type in ("effect hatch",)
 
     def set_widgets(self, node):
+        for panel in self.panels:
+            panel.set_widgets(node)
         self.node = node
         if self.node is None or not self.accepts(node):
             self.Hide()
@@ -220,7 +294,26 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle_delta.SetValue(int(h_angle))
         except ValueError:
             pass
+        flag = bool(self.node.unidirectional)
+        self.check_directional.SetValue(flag)
+        flag = bool(self.node.include_outlines)
+        self.check_include_outline.SetValue(flag)
         self.Show()
+
+    def on_check_directional(self, event):
+        self.node.unidirectional = self.check_directional.GetValue()
+        self.update()
+
+    def on_check_outline(self, event):
+        self.node.include_outlines = self.check_include_outline.GetValue()
+        self.update()
+
+    def on_combo_algorithm(self, event):
+        """Handle algorithm selection change."""
+        selection = self.combo_algorithm.GetSelection()
+        algo_map = {0: "auto", 1: "scanbeam", 2: "direct_grid"}
+        self.node.hatch_algorithm = algo_map.get(selection, "auto")
+        self.update()
 
     def on_check_classify(self, event):
         self.context._auto_classify = self.check_classify.GetValue()
@@ -228,18 +321,27 @@ class HatchPropertyPanel(ScrolledPanel):
     def update_label(self):
         return
 
+    def update(self):
+        self.node.modified()
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+        self.context.elements.signal("element_property_reload", self.node)
+
     def callback_color(self):
         self.node.altered()
         self.update_label()
         self.Refresh()
         if self.check_classify.GetValue():
-            mynode = self.node
-            wasemph = self.node.emphasized
-            data = [self.node]
-            self.context.elements.remove_elements_from_operations(data)
-            self.context.elements.classify(data)
+            # _("Color classify")
+            with self.context.elements.undoscope("Color classify"):
+                mynode = self.node
+                wasemph = self.node.emphasized
+                data = [self.node]
+                self.context.elements.remove_elements_from_operations(data)
+                self.context.elements.classify(data)
             self.context.elements.signal("tree_changed")
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
 
@@ -249,7 +351,6 @@ class HatchPropertyPanel(ScrolledPanel):
             if loops == self.node.loops:
                 return
             self.node.loops = loops
-            self.node.modified()
         except ValueError:
             return
         try:
@@ -257,9 +358,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_loops.SetValue(int(h_loops))
         except ValueError:
             pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_slider_loops(self, event):
         value = self.slider_loops.GetValue()
@@ -273,12 +372,9 @@ class HatchPropertyPanel(ScrolledPanel):
                 return
             self.node.hatch_distance = dist
             self.node.distance = dist
-            self.node.modified()
-            self.hatch_lines = None
-            self.travel_lines = None
-            self.refresh_display()
         except ValueError:
             pass
+        self.update()
 
     def on_text_angle(self):
         try:
@@ -287,7 +383,6 @@ class HatchPropertyPanel(ScrolledPanel):
                 return
             self.node.hatch_angle = angle
             self.node.angle = angle
-            self.node.modified()
 
         except ValueError:
             return
@@ -300,9 +395,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle.SetValue(int(h_angle))
         except ValueError:
             pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_slider_angle(self, event):
         value = self.slider_angle.GetValue()
@@ -316,7 +409,6 @@ class HatchPropertyPanel(ScrolledPanel):
                 return
             self.node.hatch_angle_delta = angle
             self.node.delta = angle
-            self.node.modified()
         except ValueError:
             return
         try:
@@ -328,9 +420,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle_delta.SetValue(int(h_angle_delta))
         except ValueError:
             pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_slider_angle_delta(self, event):
         value = self.slider_angle_delta.GetValue()
@@ -340,10 +430,7 @@ class HatchPropertyPanel(ScrolledPanel):
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]
         self.node.hatch_type = hatch_type
-        self.node.modified()
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_display_paint(self, event=None):
         if self._Buffer is None:
@@ -388,6 +475,249 @@ class HatchPropertyPanel(ScrolledPanel):
 
         # print(f"Calculate hatch lines {perf_counter():.3f}")
         w, h = self._Buffer.Size
+        hatch_type = self.node.hatch_type
+
+        # Check if we should use our optimized Direct Grid algorithm
+        if (
+            hasattr(self.node, "hatch_algorithm")
+            and self.node.hatch_algorithm == "direct_grid"
+        ):
+            # Use Direct Grid algorithm for preview
+            self._calculate_hatch_lines_direct_grid(w, h)
+            return
+        elif (
+            hasattr(self.node, "hatch_algorithm")
+            and self.node.hatch_algorithm == "auto"
+            and hasattr(self.node, "_should_use_direct_grid")
+            and self.node._should_use_direct_grid()
+        ):
+            # Auto-selection chose Direct Grid
+            self._calculate_hatch_lines_direct_grid(w, h)
+            return
+
+        # Use original algorithm system
+        hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
+        if hatch_algorithm is None:
+            return
+        paths = (
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
+        )
+        matrix = Matrix.scale(0.018)
+        hatch = list(
+            hatch_algorithm(
+                settings=self.node.__dict__,
+                outlines=paths,
+                matrix=matrix,
+                limit=1000,
+            )
+        )
+        o_start = []
+        o_end = []
+        last = None
+        for c in paths:
+            if last is not None and c is not None:
+                o_start.append((c.real, c.imag))
+                o_end.append((last.real, last.imag))
+            last = c
+        self.outline_lines = o_start, o_end
+        h_start = []
+        h_end = []
+        t_start = []
+        t_end = []
+        last_x = None
+        last_y = None
+        travel = True
+        for p in hatch:
+            if p is None:
+                travel = True
+                continue
+            x, y = p
+            if last_x is None:
+                last_x = x
+                last_y = y
+                travel = False
+                continue
+            if travel:
+                t_start.append((last_x, last_y))
+                t_end.append((x, y))
+            else:
+                h_start.append((last_x, last_y))
+                h_end.append((x, y))
+            travel = False
+            last_x = x
+            last_y = y
+        self.hatch_lines = h_start, h_end
+        self.travel_lines = t_start, t_end
+
+    def _calculate_hatch_lines_direct_grid(self, w, h):
+        """Calculate hatch lines using Direct Grid algorithm for preview."""
+        try:
+            # Import Direct Grid algorithm
+            import os
+            import sys
+
+            sys.path.insert(
+                0,
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                ),
+            )
+            from direct_grid_fill import direct_grid_fill
+
+            # Create outline geometry like the original method
+            paths = [
+                complex(w * 0.05, h * 0.05),
+                complex(w * 0.95, h * 0.05),
+                complex(w * 0.95, h * 0.95),
+                complex(w * 0.05, h * 0.95),
+                complex(w * 0.05, h * 0.05),
+            ]
+
+            # Convert to Geomstr
+            from meerk40t.core.geomstr import Geomstr
+
+            outline_geom = Geomstr()
+            last = None
+            for c in paths:
+                if last is not None:
+                    outline_geom.line(last, c)
+                last = c
+            outline_geom.end()
+
+            # Add inner rectangle
+            inner_paths = [
+                complex(w * 0.25, h * 0.25),
+                complex(w * 0.75, h * 0.25),
+                complex(w * 0.75, h * 0.75),
+                complex(w * 0.25, h * 0.75),
+                complex(w * 0.25, h * 0.25),
+            ]
+
+            last = None
+            for c in inner_paths:
+                if last is not None:
+                    outline_geom.line(last, c)
+                last = c
+            outline_geom.end()
+
+            # Apply matrix scaling like original
+            from meerk40t.svgelements import Matrix
+
+            matrix = Matrix.scale(0.018)
+
+            # Get hatch parameters
+            distance = (
+                self.node._distance
+                if hasattr(self.node, "_distance") and self.node._distance
+                else 5.0
+            )
+            angle = (
+                self.node._angle
+                if hasattr(self.node, "_angle") and self.node._angle
+                else 0.0
+            )
+            unidirectional = getattr(self.node, "unidirectional", False)
+
+            # Apply matrix scaling to distance
+            distance *= 0.018
+
+            # Generate hatch using Direct Grid
+            hatch_result = direct_grid_fill(
+                outline_geom, angle, distance, unidirectional
+            )
+
+            # Convert result to the format expected by the preview
+            hatch = []
+            for i in range(hatch_result.index):
+                segment = hatch_result.segments[i]
+                seg_type = hatch_result._segtype(segment)
+                if seg_type == 41:  # TYPE_LINE
+                    p1 = segment[0]
+                    p2 = segment[4]
+                    hatch.append((p1.real, p1.imag))
+                    hatch.append((p2.real, p2.imag))
+                    hatch.append(None)  # End line
+
+            # Process like original method
+            o_start = []
+            o_end = []
+            # Outline lines for outer rectangle
+            outer_outline = [
+                complex(w * 0.05, h * 0.05),
+                complex(w * 0.95, h * 0.05),
+                complex(w * 0.95, h * 0.95),
+                complex(w * 0.05, h * 0.95),
+                complex(w * 0.05, h * 0.05),
+            ]
+            for i in range(len(outer_outline) - 1):
+                c1, c2 = outer_outline[i], outer_outline[i + 1]
+                o_start.append((c1.real, c1.imag))
+                o_end.append((c2.real, c2.imag))
+
+            # Inner rectangle outline
+            inner_outline = [
+                complex(w * 0.25, h * 0.25),
+                complex(w * 0.75, h * 0.25),
+                complex(w * 0.75, h * 0.75),
+                complex(w * 0.25, h * 0.75),
+                complex(w * 0.25, h * 0.25),
+            ]
+            for i in range(len(inner_outline) - 1):
+                c1, c2 = inner_outline[i], inner_outline[i + 1]
+                o_start.append((c1.real, c1.imag))
+                o_end.append((c2.real, c2.imag))
+
+            self.outline_lines = o_start, o_end
+
+            h_start = []
+            h_end = []
+            t_start = []
+            t_end = []
+            last_x = None
+            last_y = None
+            travel = True
+            for p in hatch:
+                if p is None:
+                    travel = True
+                    continue
+                x, y = p
+                if last_x is None:
+                    last_x = x
+                    last_y = y
+                    travel = False
+                    continue
+                if travel:
+                    t_start.append((last_x, last_y))
+                    t_end.append((x, y))
+                else:
+                    h_start.append((last_x, last_y))
+                    h_end.append((x, y))
+                travel = False
+                last_x = x
+                last_y = y
+
+            self.hatch_lines = h_start, h_end
+            self.travel_lines = t_start, t_end
+
+        except ImportError:
+            # Fallback to original method if Direct Grid not available
+            self.calculate_hatch_lines_original(w, h)
+        except Exception as e:
+            print(f"Error in Direct Grid preview: {e}")
+            self.calculate_hatch_lines_original(w, h)
+
+    def calculate_hatch_lines_original(self, w, h):
+        """Original hatch line calculation method."""
         hatch_type = self.node.hatch_type
         hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
         if hatch_algorithm is None:
@@ -481,7 +811,10 @@ class HatchPropertyPanel(ScrolledPanel):
             if self.outline_lines is not None:
                 starts, ends = self.outline_lines
                 if len(starts):
-                    gc.SetPen(self.outline_pen)
+                    if self.node.include_outlines:
+                        gc.SetPen(self.raster_pen)
+                    else:
+                        gc.SetPen(self.outline_pen)
                     gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)

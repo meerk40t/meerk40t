@@ -1,5 +1,17 @@
 """
-This is a giant list of console commands that deal with and often implement the elements system in the program.
+This module provides console commands for managing notes within the application. Users can set, retrieve, and append notes, allowing for easy tracking of information.
+
+Functions:
+- plugin(kernel, lifecycle=None): Initializes the plugin and sets up note commands.
+- init_commands(kernel): Initializes the note commands and defines the associated operations.
+- note(command, channel, _, append=False, remainder=None, **kwargs): Sets or retrieves the current note. If a note is provided, it can either replace the existing note or be appended to it.
+  Args:
+    command: The command context.
+    channel: The communication channel for messages.
+    append: A flag indicating whether to append to the existing note.
+    remainder: The note text to set or append.
+  Returns:
+    None
 """
 
 
@@ -18,7 +30,7 @@ def init_commands(kernel):
     # NOTES COMMANDS
     # ==========
     @self.console_option("append", "a", type=bool, action="store_true", default=False)
-    @self.console_command("note", help=_("note <note>"))
+    @self.console_command("note", help="note <note> : " + _("set or append a note"), input_type=None, output_type=None)
     def note(command, channel, _, append=False, remainder=None, **kwargs):
         _note = remainder
         if _note is None:

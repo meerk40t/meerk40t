@@ -1,14 +1,701 @@
 import os
 import subprocess
 from copy import copy
+from math import tau
 
+import numpy as np
+
+from meerk40t.constants import RASTER_B2T, RASTER_T2B
+from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.elem_line import LineNode
+from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.node import Linejoin
+from meerk40t.core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Color, Matrix, Path
+from meerk40t.core.geomstr import Geomstr
 
-from ..core.exceptions import BadFileError
-from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
-from ..svgelements import Color, Matrix, Path
-from ..tools.geomstr import Geomstr
 from .dither import dither
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
+
+def img_to_polygons(
+    node_image,  # The image
+    minimal,  # Minimum area in percent (int) to consider
+    maximal,  # Maximum area in percent (int) to consider
+    ignoreinner,  # Ignore inner contours
+    needs_invert=True,  # Does the image require inverting (we need white strcutures on a black background)
+):
+    """
+    Takes the image and provides a list of geomstr + associated matrix
+    containing the (simplified) contours of the artifacts found on the image
+    """
+    try:
+        import cv2
+        from PIL import ImageOps
+    except ImportError:
+        return []
+    geom_list = list()
+
+    # Convert the image to grayscale
+    img = node_image.convert("L")
+    gray = np.array(ImageOps.invert(img)) if needs_invert else np.array(img)
+    # Apply thresholding to create a binary image
+    _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Find contours in the binary image
+    try:
+        contours, hierarchies = cv2.findContours(
+            th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+    except ValueError:
+        # Invalid data
+        return []
+
+    # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
+    width, height = node_image.size
+    minarea = int(minimal / 100.0 * width * height)
+    maxarea = int(maximal / 100.0 * width * height)
+
+    # Extract coordinates of white regions
+    for idx, contour in enumerate(contours):
+        hierarchy = hierarchies[0][idx]
+        # print (hierarchy)
+        h_next, h_prev, h_child, h_parent = hierarchy
+        if ignoreinner and h_parent >= 0:
+            continue
+        area = cv2.contourArea(contour)
+        if area < minarea:
+            continue
+        if area > maxarea:
+            continue
+        region = contour.squeeze().astype(float).tolist()
+        if type(region[0]) is list and len(region) > 2:
+            crdnts = [{"x": i[0], "y": i[1]} for i in region]
+
+            geom = Geomstr()
+            notfirst = False
+            for pnt in crdnts:
+                rx, ry = pnt["x"], pnt["y"]
+                if notfirst:
+                    geom.line(complex(lx, ly), complex(rx, ry))
+                notfirst = True
+                lx = rx
+                ly = ry
+            geom.close()
+            matrix = Matrix()
+            geom_list.append((geom, 100 * area / (width * height)))
+
+    return geom_list
+
+
+def do_innerwhite(
+    minimal=None,
+    outer=False,
+    simplified=False,
+    line=False,
+    breakdown=False,
+    whiten=False,
+    data=None,
+):
+    import cv2
+
+    def org_bounds(node):
+        image_width, image_height = node.image.size
+        matrix = node.matrix
+        x0, y0 = matrix.point_in_matrix_space((0, 0))
+        x1, y1 = matrix.point_in_matrix_space((image_width - 1, image_height - 1))
+        x2, y2 = matrix.point_in_matrix_space((0, image_height - 1))
+        x3, y3 = matrix.point_in_matrix_space((image_width - 1, 0))
+        return (
+            min(x0, x1, x2, x3),
+            min(y0, y1, y2, y3),
+            max(x0, x1, x2, x3),
+            max(y0, y1, y2, y3),
+        )
+
+    if minimal is None:
+        minimal = 2
+    if minimal <= 0 or minimal > 100:
+        minimal = 2
+
+    data_out = []
+
+    show_contour = not simplified
+    show_simplified = simplified
+    if breakdown or whiten:
+        line = False
+        show_simplified = False
+        show_contour = False
+
+    # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
+    for inode in data:
+        # node_image = inode.active_image
+        node_image = inode.image
+        width, height = node_image.size
+        if width == 0 or height == 0:
+            continue
+        if not hasattr(inode, "bounds"):
+            continue
+        bb = org_bounds(inode)
+        ox = bb[0]
+        oy = bb[1]
+        coord_width = bb[2] - bb[0]
+        coord_height = bb[3] - bb[1]
+
+        def getpoint(ix, iy):
+            # Translate image to scene coordinates
+            return (
+                ox + ix / width * coord_width,
+                oy + iy / height * coord_height,
+            )
+
+        gray = np.array(node_image.convert("L"))
+        # Threshold the image
+        _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
+
+        # Find contours
+        try:
+            contours, hierarchy = cv2.findContours(
+                thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
+        except ValueError:
+            # Invalid data
+            continue
+
+        linecandidates = list()
+
+        minarea = int(minimal / 100.0 * width * height)
+        # Filter contours based on area, rectangle of at least x%
+
+        large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > minarea]
+
+        # Create some rectangles around the white areas
+        for contour in large_contours:
+            # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
+            x, y, w, h = cv2.boundingRect(contour)
+            # rx, ry = getpoint(x, y)
+            rw, rh = getpoint(w, h)
+            rw -= ox
+            rh -= oy
+            if outer:
+                # leftmost
+                extreme = tuple(contour[contour[:, :, 0].argmin()][0])
+                if extreme[0] == 0:
+                    # print ("Left edge")
+                    continue
+                # rightmost
+                extreme = tuple(contour[contour[:, :, 0].argmax()][0])
+                if extreme[0] >= width - 1:
+                    # print ("Right edge")
+                    continue
+                # topmost
+                extreme = tuple(contour[contour[:, :, 1].argmin()][0])
+                if extreme[1] == 0:
+                    # print ("Top edge")
+                    continue
+                # bottommost
+                extreme = tuple(contour[contour[:, :, 1].argmax()][0])
+                if extreme[1] >= height - 1:
+                    # print ("Bottom edge")
+                    continue
+
+            linecandidates.append((x, w))
+            area = cv2.contourArea(contour)
+            rect_area = w * h
+            extent = float(area) / rect_area
+            # print (f"x={x}, y={y}, w={w}, h={h}, extent={extent*100:.1f}%")
+            label = f"Contour - Area={100 * area / (width * height):.1f}%, Extent={extent*100:.1f}%"
+            # if show_rect:
+            #     node = context.elements.elem_branch.add(
+            #         x=rx,
+            #         y=ry,
+            #         width=rw,
+            #         height=rh,
+            #         stroke=Color("red"),
+            #         label=label,
+            #         type="elem rect",
+            #     )
+            #     data_out.append(node)
+            if show_contour:
+                geom = Geomstr()
+                notfirst = False
+                for c in contour:
+                    for e in c:
+                        rx, ry = getpoint(e[0], e[1])
+                        if notfirst:
+                            geom.line(complex(lx, ly), complex(rx, ry))
+                        notfirst = True
+                        lx = rx
+                        ly = ry
+                geom.close()
+                node = PathNode(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    fill=Color("yellow"),
+                    label=label,
+                )
+                data_out.append(node)
+            if show_simplified:
+                # Set the epsilon value (adjust as needed)
+                epsilon = 0.01 * cv2.arcLength(contour, True)
+
+                # Compute the approximate contour points
+                approx = cv2.approxPolyDP(contour, epsilon, True)
+                geom = Geomstr()
+                notfirst = False
+                for c in approx:
+                    for e in c:
+                        rx, ry = getpoint(e[0], e[1])
+                        if notfirst:
+                            geom.line(complex(lx, ly), complex(rx, ry))
+                        notfirst = True
+                        lx = rx
+                        ly = ry
+                geom.close()
+                node = PathNode(
+                    geometry=geom,
+                    stroke=Color("green"),
+                    label=label,
+                    type="elem path",
+                )
+                data_out.append(node)
+
+            # if show_extreme:
+            #     # leftmost
+            #     extreme = tuple(contour[contour[:, :, 0].argmin()][0])
+            #     lmx, lmy = getpoint(extreme[0], extreme[1])
+            #     # rightmost
+            #     extreme = tuple(contour[contour[:, :, 0].argmax()][0])
+            #     rmx, rmy = getpoint(extreme[0], extreme[1])
+            #     # topmost
+            #     extreme = tuple(contour[contour[:, :, 1].argmin()][0])
+            #     tmx, tmy = getpoint(extreme[0], extreme[1])
+            #     # bottommost
+            #     extreme = tuple(contour[contour[:, :, 1].argmax()][0])
+            #     bmx, bmy = getpoint(extreme[0], extreme[1])
+            #     geom = Geomstr()
+            #     geom.line(lmx + 1j * lmy, tmx + 1j * tmy)
+            #     geom.line(tmx + 1j * tmy, rmx + 1j * rmy)
+            #     geom.line(rmx + 1j * rmy, bmx + 1j * bmy)
+            #     geom.line(bmx + 1j * bmy, lmx + 1j * lmy)
+            #     node = context.elements.elem_branch.add(
+            #         geometry=geom,
+            #         stroke=Color("green"),
+            #         label=label,
+            #         type="elem path",
+            #     )
+            #     data_out.append(node)
+        linecandidates.sort(key=lambda e: e[0])
+        if line or breakdown or whiten:
+            for idx1, c in enumerate(linecandidates):
+                if c[0] < 0:
+                    continue
+                # cx = c[0] + c[1] / 2
+                for idx2, d in enumerate(linecandidates):
+                    if idx1 == idx2 or d[0] < 0:
+                        continue
+                    # Does c line inside d? if yes then we don't need d
+                    if d[0] <= c[0] and d[0] + d[1] >= c[0] + c[1]:
+                        linecandidates[idx2] = (-1, -1)
+        if line:
+            for c in linecandidates:
+                if c[0] < 0:
+                    continue
+                sx, sy = getpoint(c[0] + c[1] / 2, 0)
+                ex, ey = getpoint(c[0] + c[1] / 2, height)
+                node = LineNode(
+                    x1=sx,
+                    y1=sy,
+                    x2=ex,
+                    y2=ey,
+                    stroke=Color("red"),
+                    label="Splitline",
+                )
+                data_out.append(node)
+        if node_image.mode == "L":
+            white_paste = 255
+        else:
+            white_paste = (255, 255, 255)
+        if breakdown or whiten:
+            anyslices = 0
+            right_image = node_image.copy()
+            dx = 0
+            for c in linecandidates:
+                if c[0] < 0:
+                    continue
+                rdx, rdy = getpoint(dx, 0)
+                rdx -= ox
+                rwidth, rheight = right_image.size
+                anyslices += 1
+                if breakdown:
+                    x = int(c[0] + c[1] / 2 - dx)
+                    left_image = right_image.crop((0, 0, x, rheight))
+                    dx = x + 1
+                    right_image = right_image.crop((dx, 0, rwidth, rheight))
+                elif whiten:
+                    x = int(c[0] + c[1] / 2)
+                    left_image = right_image.copy()
+                    # print(f"Break position: {x}")
+                    if dx > 0:
+                        # print(f"Erasing left: 0:{dx - 1}")
+                        left_image.paste(white_paste, (0, 0, dx - 1, rheight))
+                    dx = x + 1
+                    left_image.paste(white_paste, (dx, 0, rwidth, rheight))
+                    # print(f"Erasing right: {dx}:{rwidth}")
+                newnode = copy(inode)
+                newnode.matrix = copy(inode.matrix)
+                newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
+                # newnode.dither = False
+                # newnode.operations.clear()
+                # newnode.prevent_crop = True
+                newnode.image = left_image
+                if breakdown and rdx != 0:
+                    newnode.matrix.post_translate_x(rdx)
+                if whiten:
+                    newnode.prevent_crop = True
+
+                newnode.altered()
+                newnode._processed_image = None
+
+                data_out.append(newnode)
+            if anyslices > 0:
+                rdx, rdy = getpoint(dx, 0)
+                rdx -= ox
+                anyslices += 1
+                newnode = copy(inode)
+                newnode.matrix = copy(inode.matrix)
+                newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.display_label()}"
+                # newnode.dither = False
+                # newnode.operations.clear()
+                # newnode.prevent_crop = True
+                if whiten and dx > 0:
+                    right_image.paste(white_paste, (0, 0, dx - 1, rheight))
+                newnode.image = right_image
+                if breakdown and rdx != 0:
+                    newnode.matrix.post_translate_x(rdx)
+                if whiten:
+                    newnode.prevent_crop = True
+                newnode.altered()
+                newnode._processed_image = None
+                data_out.append(newnode)
+    return data_out
+
+
+def img_to_rectangles(
+    node_image,  # The image
+    minimal,  # Minimum area in percent (int) to consider
+    maximal,  # Maximum area in percent (int) to consider
+    ignoreinner,  # Ignore inner contours
+    needs_invert=True,  # Does the image require inverting (we need white strcutures on a black background)
+):
+    """
+    Takes the image and provides a list of geomstr + associated matrix
+    containing the minimum bounding rectangle of the artifacts found on the image
+    Please note that these rectangles can be already rotated.
+    """
+    try:
+        import cv2
+        from PIL import ImageOps
+    except ImportError:
+        return []
+    geom_list = []
+
+    # Convert the image to grayscale
+    img = node_image.convert("L")
+    if needs_invert:
+        gray = np.array(ImageOps.invert(img))
+    else:
+        gray = np.array(img)
+
+    # Apply thresholding to create a binary image
+    _, th2 = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Find contours in the binary image
+    try:
+        contours, hierarchies = cv2.findContours(
+            th2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+    except ValueError:
+        # Invalid data
+        return []
+
+    # print(f"Found {len(contours)} contours and {len(hierarchies)} hierarchies")
+    width, height = node_image.size
+    minarea = int(minimal / 100.0 * width * height)
+    maxarea = int(maximal / 100.0 * width * height)
+
+    for idx, contour in enumerate(contours):
+        hierarchy = hierarchies[0][idx]
+        # print (hierarchy)
+        h_next, h_prev, h_child, h_parent = hierarchy
+        if ignoreinner and h_parent >= 0:
+            continue
+        area = cv2.contourArea(contour)
+        if area < minarea:
+            continue
+        if area > maxarea:
+            continue
+        rot_rect = cv2.minAreaRect(contour)
+        box = cv2.boxPoints(rot_rect)
+        # rot_rect is a tuple containing  ( (center_x, center_y), (width, height), angle_in_degress
+        # box contains the coordinates of the 4 corners
+        # (center_x, center_y), (rect_width, rect_height), angle_deg = rot_rect
+        # print (f"center: {center_x:.2f}, {center_y:.2f}, dimension: {rect_width:.2f}x{rect_height:.2f}, angle={angle_deg:.1f}")
+        # print (box)
+        geom = Geomstr()
+        geom.line(
+            start=complex(box[0][0], box[0][1]), end=complex(box[1][0], box[1][1])
+        )
+        geom.line(
+            start=complex(box[1][0], box[1][1]), end=complex(box[2][0], box[2][1])
+        )
+        geom.line(
+            start=complex(box[2][0], box[2][1]), end=complex(box[3][0], box[3][1])
+        )
+        geom.line(
+            start=complex(box[3][0], box[3][1]), end=complex(box[0][0], box[0][1])
+        )
+        # Geometry plus enclosed area
+        geom_list.append((geom, 100 * area / (width * height)))
+
+    return geom_list
+
+
+def split_image_into_subimages(image, threshold=254, adaptive=False, min_area=20, max_components=1000, channel=None, morphology=True, recombine=False, recombine_gap=2, recombine_align=3):
+    """
+    Split a PIL image into multiple rectangular subimages containing individual regions.
+
+    Args:
+        image: PIL Image object
+        threshold: Threshold value for binary conversion (0-255). Default 254.
+        adaptive: Whether to use adaptive thresholding instead of fixed threshold. Default False.
+        min_area: Minimum area in pixels for a component to be considered (connected method only). Default 20.
+        max_components: Maximum number of components before warning. Default 1000.
+        morphology: Whether to apply morphological operations to separate touching shapes (connected method only). Default True.
+        recombine: Whether to recombine nearby rectangles that are nearly parallel. Default False.
+        recombine_gap: Maximum gap in pixels for recombination (horizontal/vertical). Default 2.
+        recombine_align: Maximum alignment difference in pixels for recombination. Default 3.
+
+    Returns:
+        List of tuples: (subimage, offset_x, offset_y) where offsets are relative to original image
+    """
+    if cv2 is None or np is None:
+        raise ImportError("OpenCV and NumPy are required for image splitting")
+
+    # Handle alpha channels explicitly
+    if image.mode == 'RGBA':
+        # For RGBA images, convert to RGB first, then to grayscale
+        # This preserves the visual appearance while discarding transparency
+        image = image.convert('RGB')
+    elif image.mode == 'LA':
+        # For LA images, convert to L (luminance only)
+        image = image.convert('L')
+
+    # Convert to grayscale for processing
+    if image.mode not in ('L', 'P'):
+        gray = image.convert('L')
+    else:
+        gray = image
+
+    return _split_image_connected(image, gray, threshold, adaptive, min_area, max_components, morphology, recombine, recombine_gap, recombine_align, channel)
+
+
+def _recombine_rectangles(subimages, recombine_gap=2, recombine_align=3, channel=None):
+    """
+    Recombine nearby rectangles that are nearly parallel and close together.
+
+    Args:
+        subimages: List of tuples (image, x, y) where x,y are offsets
+        recombine_gap: Maximum gap in pixels for recombination (horizontal/vertical). Default 2.
+        recombine_align: Maximum alignment difference in pixels for recombination. Default 3.
+        channel: Optional channel for logging
+
+    Returns:
+        List of tuples (image, x, y) with merged rectangles
+    """
+    if len(subimages) <= 1:
+        return subimages
+
+    # Extract bounding boxes and areas
+    rectangles = []
+    for img, x, y in subimages:
+        w, h = img.size
+        area = w * h
+        rectangles.append({
+            'x': x, 'y': y, 'w': w, 'h': h, 'area': area,
+            'x2': x + w, 'y2': y + h, 'aspect': w / h if h > 0 else 0,
+            'img': img
+        })
+
+    # Find rectangles to merge
+    merged = []
+    used = set()
+
+    for i, rect1 in enumerate(rectangles):
+        if i in used:
+            continue
+
+        current_group = [rect1]
+        used.add(i)
+
+        # Check all other rectangles for merging
+        for j, rect2 in enumerate(rectangles):
+            if j in used or j == i:
+                continue
+
+            # Check proximity and alignment
+            can_merge = False
+
+            # Horizontal adjacency (rect2 to the right of rect1)
+            if rect1['x2'] <= rect2['x'] and rect2['x'] - rect1['x2'] <= recombine_gap:
+                # Check upper and lower edge alignment
+                upper_align = abs(rect1['y'] - rect2['y']) <= recombine_align
+                lower_align = abs(rect1['y2'] - rect2['y2']) <= recombine_align
+                if upper_align and lower_align:
+                    can_merge = True
+
+            # Horizontal adjacency (rect2 to the left of rect1)
+            elif rect2['x2'] <= rect1['x'] and rect1['x'] - rect2['x2'] <= recombine_gap:
+                # Check upper and lower edge alignment
+                upper_align = abs(rect1['y'] - rect2['y']) <= recombine_align
+                lower_align = abs(rect1['y2'] - rect2['y2']) <= recombine_align
+                if upper_align and lower_align:
+                    can_merge = True
+
+            # Vertical adjacency (rect2 below rect1)
+            elif rect1['y2'] <= rect2['y'] and rect2['y'] - rect1['y2'] <= recombine_gap:
+                # Check left and right edge alignment
+                left_align = abs(rect1['x'] - rect2['x']) <= recombine_align
+                right_align = abs(rect1['x2'] - rect2['x2']) <= recombine_align
+                if left_align and right_align:
+                    can_merge = True
+
+            # Vertical adjacency (rect2 above rect1)
+            elif rect2['y2'] <= rect1['y'] and rect1['y'] - rect2['y2'] <= recombine_gap:
+                # Check left and right edge alignment
+                left_align = abs(rect1['x'] - rect2['x']) <= recombine_align
+                right_align = abs(rect1['x2'] - rect2['x2']) <= recombine_align
+                if left_align and right_align:
+                    can_merge = True
+
+            if can_merge:
+                # Check size similarity (optional - avoid merging very different sizes)
+                size_ratio = min(rect1['area'], rect2['area']) / max(rect1['area'], rect2['area'])
+                if size_ratio < 0.1:  # One is much smaller than the other
+                    continue
+
+                # Merge these rectangles
+                current_group.append(rect2)
+                used.add(j)
+
+        # Create merged rectangle for the group
+        if len(current_group) == 1:
+            # Single rectangle, no merge needed
+            merged.append((rect1['img'], rect1['x'], rect1['y']))
+        else:
+            # Merge multiple rectangles
+            min_x = min(r['x'] for r in current_group)
+            min_y = min(r['y'] for r in current_group)
+            max_x = max(r['x2'] for r in current_group)
+            max_y = max(r['y2'] for r in current_group)
+
+            # Find the original image that contains all these rectangles
+            # We'll use the first image as reference and expand it
+            merged_width = max_x - min_x
+            merged_height = max_y - min_y
+
+            # Create a new image large enough for all rectangles
+            from PIL import Image
+            if current_group[0]['img'].mode == 'L':
+                merged_img = Image.new(current_group[0]['img'].mode, (merged_width, merged_height), 255)
+            else:
+                merged_img = Image.new(current_group[0]['img'].mode, (merged_width, merged_height), (255, 255, 255))
+
+            # Paste all rectangles into the merged image
+            for rect in current_group:
+                # Calculate position in merged image
+                paste_x = rect['x'] - min_x
+                paste_y = rect['y'] - min_y
+                merged_img.paste(rect['img'], (paste_x, paste_y))
+
+            merged.append((merged_img, min_x, min_y))
+
+            if channel:
+                channel(f"Merged {len(current_group)} rectangles into one")
+
+    return merged
+
+
+def _split_image_connected(image, gray, threshold, adaptive, min_area, max_components, morphology, recombine, recombine_gap, recombine_align, channel):
+    """Split image using connected components analysis."""
+    # Convert to numpy array for OpenCV
+    img_array = np.array(gray)
+
+    # Apply thresholding
+    if adaptive:
+        # Use adaptive thresholding for better accuracy with varying backgrounds
+        binary = cv2.adaptiveThreshold(
+            img_array,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            11,  # blockSize
+            2    # C
+        )
+    else:
+        # Threshold to get binary image (white = 255, non-white = 0)
+        _, binary = cv2.threshold(img_array, threshold, 255, cv2.THRESH_BINARY_INV)
+
+    # Apply morphological operations to clean up the binary image
+    if morphology:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
+        # Skip closing to avoid connecting shapes that should remain separate
+        # binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+    # Find connected components
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=4)
+
+    # Check for excessive components
+    if num_labels > max_components:
+        if channel:
+            channel(
+                f"Detected {num_labels} connected components.\n" +
+                "This may cause performance issues. Consider preprocessing the image or adjusting the threshold.\n" +
+                f"Current settings: threshold={threshold}, adaptive={adaptive}, min_area={min_area}, max_components={max_components}"
+            )
+
+    subimages = []
+
+    for i in range(1, num_labels):  # Skip label 0 (background)
+        # Get bounding box for this component
+        x, y, w, h, area = stats[i]
+
+        # Filter out small/noisy components
+        if area < min_area:
+            continue
+
+        # Crop the original image to this bounding box
+        # PIL crop expects (left, upper, right, lower)
+        cropped = image.crop((x, y, x + w, y + h))
+
+        # Preserve image metadata
+        if hasattr(image, 'info') and image.info:
+            cropped.info = image.info.copy()
+
+        # Store the subimage with its offset from the original image
+        subimages.append((cropped, x, y))
+
+    # Recombine nearby rectangles if requested
+    if recombine and len(subimages) > 1:
+        subimages = _recombine_rectangles(subimages, recombine_gap, recombine_align, channel)
+
+    return subimages
 
 
 def plugin(kernel, lifecycle=None):
@@ -27,6 +714,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle != "register":
         return
     _ = kernel.translation
+    preproc = RasterImagePreprocessor(kernel)
     kernel.register("load/ImageLoader", ImageLoader)
     choices = [
         {
@@ -37,14 +725,15 @@ def plugin(kernel, lifecycle=None):
             "label": _("Image DPI Scaling"),
             "tip": "\n".join(
                 (
-                    _("Unset: Use the image as if it were 1000 pixels per inch."),
+                    _("Unset: Use the image as if it were 96 pixels per inch."),
                     _(
                         "Set: Use the DPI setting saved in the image to scale the image to the correct size."
                     ),
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            # Hint for translation _("Images")
+            "section": "Images",
         },
         {
             "attr": "create_image_group",
@@ -59,7 +748,37 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            # Hint for translation _("Images")
+            "section": "Images",
+        },
+        {
+            "attr": "scale_oversized_images",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Scale oversized images"),
+            "tip": _(
+                "Set: Will scale down large images so they will fit on the laserbed."
+            ),
+            "page": "Input/Output",
+            # Hint for translation _("Images")
+            "section": "Images",
+        },
+        {
+            "attr": "center_image_on_load",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Center image on import"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Places the image at the left upper corner."),
+                    _("Set: Places the image at the center."),
+                )
+            ),
+            "page": "Input/Output",
+            # Hint for translation _("Images")
+            "section": "Images",
         },
     ]
     kernel.register_choices("preferences", choices)
@@ -70,11 +789,11 @@ def plugin(kernel, lifecycle=None):
         if hasattr(node, "node"):
             node.node.altered()
         node.altered()
-        node.update(context)
+        context.elements.do_image_update(node, context)
 
     @context.console_command(
         "image",
-        help=_("image <operation>*"),
+        help="image <operation>* : " + _("perform image operations"),
         input_type=(None, "image-array", "inkscape"),
         output_type="image",
     )
@@ -117,7 +836,11 @@ def plugin(kernel, lifecycle=None):
                 from PIL import Image
 
                 img = Image.open(filename)
-                inode = elements.elem_branch.add(image=img, type="elem image")
+                # _("Add image")
+                with elements.undoscope("Add image"):
+                    inode = elements.elem_branch.add(image=img, type="elem image")
+                    if elements.classify_new:
+                        elements.classify([inode])
                 return "image", [inode]
         elif data_type == "image-array":
             # Camera Image-Array, convert to image.
@@ -125,7 +848,11 @@ def plugin(kernel, lifecycle=None):
 
             width, height, frame = data
             img = Image.fromarray(frame)
-            images = [elements.elem_branch.add(image=img, type="elem image")]
+            # _("Add image")
+            with elements.undoscope("Add image"):
+                images = [elements.elem_branch.add(image=img, type="elem image")]
+                if elements.classify_new:
+                    elements.classify(images)
             return "image", images
         else:
             raise CommandSyntaxError
@@ -139,18 +866,22 @@ def plugin(kernel, lifecycle=None):
     def image_path(data, **kwargs):
         elements = context.elements
         paths = []
-        for inode in data:
-            bounds = inode.bounds
-            p = Path()
-            p.move(
-                (bounds[0], bounds[1]),
-                (bounds[0], bounds[3]),
-                (bounds[2], bounds[3]),
-                (bounds[2], bounds[1]),
-            )
-            p.closed()
-            paths.append(p)
-            elements.elem_branch.add(p, type="elem path")
+        if not data:
+            return
+        # _("Paths around images")
+        with elements.undoscope("Paths around images"):
+            for inode in data:
+                bounds = inode.bounds
+                p = Path()
+                p.move(
+                    (bounds[0], bounds[1]),
+                    (bounds[0], bounds[3]),
+                    (bounds[2], bounds[3]),
+                    (bounds[2], bounds[1]),
+                )
+                p.closed()
+                paths.append(p)
+                elements.elem_branch.add(p, type="elem path")
         return "elements", paths
 
     @context.console_argument("script", help=_("script to apply"), type=str)
@@ -183,7 +914,7 @@ def plugin(kernel, lifecycle=None):
             if not len(script) and inode.operations:
                 channel(_("Disabled raster script."))
             inode.operations = script
-            inode.update(context)
+            context.elements.do_image_update(inode, context)
         return "image", data
 
     @context.console_command(
@@ -231,15 +962,16 @@ def plugin(kernel, lifecycle=None):
     @context.console_argument("threshold_max", type=float)
     @context.console_argument("threshold_min", type=float)
     @context.console_command(
-        "threshold", help="", input_type="image", output_type="image"
+        "threshold", help=_("Apply cutoff threshold to image"), input_type="image", output_type="image"
     )
     def image_threshold(
         command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs
     ):
         if threshold_min is None:
             raise CommandSyntaxError
-        threshold_min, threshold_max = min(threshold_min, threshold_max), max(
-            threshold_max, threshold_min
+        threshold_min, threshold_max = (
+            min(threshold_min, threshold_max),
+            max(threshold_max, threshold_min),
         )
         divide = (threshold_max - threshold_min) / 255.0
         for node in data:
@@ -264,10 +996,13 @@ def plugin(kernel, lifecycle=None):
             img = img.point(lut)
 
             elements = context.elements
-            node = elements.elem_branch.add(
-                image=img, type="elem image", matrix=copy(node.matrix)
-            )
-            elements.classify([node])
+            # _("Paths around images")
+            with elements.undoscope("Image threshold"):
+                node = elements.elem_branch.add(
+                    image=img, type="elem image", matrix=copy(node.matrix)
+                )
+                if elements.classify_new:
+                    elements.classify([node])
         return "image", data
 
     # @context.console_command(
@@ -800,21 +1535,17 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.opaque_image
+            img = inode.image  # opaque_image
             original_mode = inode.image.mode
-            if img.mode == "RGBA":
-                r, g, b, a = img.split()
-                background = Image.new("RGB", img.size, "white")
-                background.paste(img, mask=a)
-                img = background
-            elif img.mode in ("P", "1"):
-                img = img.convert("RGB")
+            img = img.convert("RGBA")
             try:
-                inode.image = ImageOps.invert(img)
-                if original_mode == "1":
-                    inode.image = inode.image.convert("1")
-                update_image_node(inode)
+                img_array = np.array(img)
+                alpha = img_array[:, :, 3]
+                img_array[:, :, :3] = 255 - img_array[:, :, :3]
+                inode.image = Image.fromarray(img_array)
 
+                inode.image = inode.image.convert(original_mode)
+                update_image_node(inode)
                 channel(_("Image Inverted."))
             except OSError:
                 channel(
@@ -1017,7 +1748,7 @@ def plugin(kernel, lifecycle=None):
     )
     @context.console_command(
         "linecut",
-        help=_("Cuts and image with a line"),
+        help=_("Cuts an image with a line"),
         input_type="image",
         output_type="image",
         hidden=True,
@@ -1054,6 +1785,9 @@ def plugin(kernel, lifecycle=None):
             elemimage, elemmatrix = create_image(
                 make_raster, [inode], b, inode.dpi, keep_ratio=True
             )
+            if elemimage is None:
+                channel(_("Intermediary images were none"))
+                return
 
             for g in geoms:
                 masknode = PathNode(geometry=g, stroke=None, fill=Color("black"))
@@ -1062,7 +1796,7 @@ def plugin(kernel, lifecycle=None):
                 maskimage, maskmatrix = create_image(
                     make_raster, (masknode, rectnode), b, inode.dpi, keep_ratio=True
                 )
-                if maskimage is None or elemimage is None:
+                if maskimage is None:
                     channel(_("Intermediary images were none"))
                     continue
 
@@ -1099,16 +1833,16 @@ def plugin(kernel, lifecycle=None):
             image_right = img.crop((x, 0, inode.image.width, inode.image.height))
 
             parent = inode.parent
-
-            inode.remove_node()
             elements = context.elements
+            with elements.node_lock:
+                inode.remove_node()
 
-            node1 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_left
-            )
-            node2 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_right
-            )
+                node1 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_left
+                )
+                node2 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_right
+                )
             node2.matrix.pre_translate(x)
             elements.classify([node1, node2])
             channel(_("Image sliced at position {position}").format(position=x))
@@ -1141,15 +1875,16 @@ def plugin(kernel, lifecycle=None):
 
             parent = inode.parent
 
-            inode.remove_node()
             elements = context.elements
+            with elements.node_lock:
+                inode.remove_node()
 
-            node1 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_top
-            )
-            node2 = parent.add(
-                type="elem image", matrix=Matrix(inode.matrix), image=image_bottom
-            )
+                node1 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_top
+                )
+                node2 = parent.add(
+                    type="elem image", matrix=Matrix(inode.matrix), image=image_bottom
+                )
             node2.matrix.pre_translate(0, y)
 
             elements.classify([node1, node2])
@@ -1157,6 +1892,138 @@ def plugin(kernel, lifecycle=None):
             return "image", [node1, node2]
 
         return "image", data
+
+    @context.console_option(
+        "threshold",
+        "t",
+        type=int,
+        help=_("Threshold value for binary conversion (0-255)"),
+        default=254,
+    )
+    @context.console_option(
+        "adaptive",
+        "a",
+        type=bool,
+        help=_("Use adaptive thresholding instead of fixed threshold"),
+        action="store_true",
+    )
+    @context.console_option(
+        "min_area",
+        "m",
+        type=int,
+        help=_("Minimum area in pixels for a component to be considered"),
+        default=20,
+    )
+    @context.console_option(
+        "morphology",
+        "o",
+        type=bool,
+        help=_("Apply morphological operations to separate touching shapes"),
+        action="store_true",
+        default=False,
+    )
+    @context.console_option(
+        "recombine",
+        "r",
+        type=bool,
+        help=_("Recombine nearby rectangles that are nearly parallel"),
+        action="store_true",
+    )
+    @context.console_option(
+        "recombine_gap",
+        "g",
+        type=int,
+        help=_("Maximum gap in pixels for recombination (horizontal/vertical)"),
+        default=2,
+    )
+    @context.console_option(
+        "recombine_align",
+        "h",
+        type=int,
+        help=_("Maximum alignment difference in pixels for recombination"),
+        default=3,
+    )
+    @context.console_command(
+        "split_subimages",
+        help=_("Split image into rectangular subimages of connected non-white regions (not lossless)"),
+        input_type=(None, "image"),
+        output_type="image",
+    )
+    def image_split_subimages(command, channel, _, data=None, threshold=254, adaptive=False, min_area=20, morphology=False, recombine=False, recombine_gap=2, recombine_align=3, **kwargs):
+        if cv2 is None or np is None:
+            channel(_("OpenCV and NumPy are required for image splitting"))
+            return
+
+        # Collect nodes
+        if data is None:
+            data = [
+                e for e in context.elements.flat()
+                if e.type == "elem image"
+            ]
+        if not data:
+            channel(_("No images found"))
+            return
+        channel(f"Parameters: threshold={threshold}, adaptive={adaptive}, min_area={min_area}, morphology={morphology}, recombine={recombine}, recombine_gap={recombine_gap}, recombine_align={recombine_align}")
+        elements = context.elements
+        data_out = []
+
+        # Helper functions
+        def _validate_image_node(node):
+            if node.lock:
+                return False, _("Can't modify a locked image: {name}").format(name=str(node))
+            if not hasattr(node, "image"):
+                return False, _("Node is not an image: {name}").format(name=node.type)
+            return True, None
+
+        def _create_subnodes(parent, inode, subimages):
+            new_nodes = []
+            for img, ox, oy in subimages:
+                # Create a new matrix with translation for the subimage position
+                new_matrix = Matrix(inode.matrix)
+                # print (f"Translating subimage by ({ox}, {oy})")
+                new_matrix.pre_translate(ox, oy)
+
+                # Add the subimage as a new node
+                sub_node = parent.add(
+                    image=img,
+                    matrix=new_matrix,
+                    type="elem image"
+                )
+                new_nodes.append(sub_node)
+            return new_nodes
+        # Translation hint: _("Split images")
+        with elements.undoscope("Split images"):
+            for inode in data:
+                ok, msg = _validate_image_node(inode)
+                if not ok:
+                    channel(msg)
+                    continue
+
+                try:
+                    subimgs = split_image_into_subimages(inode.image, threshold=threshold, adaptive=adaptive, min_area=min_area, morphology=morphology, recombine=recombine, recombine_gap=recombine_gap, recombine_align=recombine_align, channel=channel)
+                except Exception as e:
+                    channel(_("Error splitting image {name}: {error}").format(
+                        name=str(inode), error=str(e)
+                    ))
+                    continue
+
+                if not subimgs:
+                    channel(_("No non-white regions found in {name}").format(name=str(inode)))
+                    continue
+
+                channel(_("Splitting {name} into {count} subimages").format(
+                    name=str(inode), count=len(subimgs)
+                ))
+
+                parent = inode.parent
+                inode.remove_node()
+                data_out.extend(_create_subnodes(parent, inode, subimgs))
+
+            if elements.classify_new and data_out:
+                elements.classify(data_out)
+
+        context.signal("refresh_scene", "Scene")
+        return "image", data_out
 
     @context.console_option(
         "remain",
@@ -1212,12 +2079,16 @@ def plugin(kernel, lifecycle=None):
             inode_remain = copy(inode)
             inode_remain.image = image_remain
 
-            inode.remove_node()
-
             elements = context.elements
-            node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
-            node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
-            elements.classify([node1, node2])
+
+            # _("Paths around images")
+            with elements.undoscope("Image pop"):
+                with elements.node_lock:
+                    inode.remove_node()
+                    node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
+                    node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
+                if elements.classify_new:
+                    elements.classify([node1, node2])
 
         return "image", data
 
@@ -1375,7 +2246,9 @@ def plugin(kernel, lifecycle=None):
             update_image_node(inode)
         return "image", data
 
-    @context.console_option("minimal", "m", type=int, help=_("minimal area"), default=2)
+    @context.console_option(
+        "minimal", "m", type=float, help=_("minimal area (%)"), default=2
+    )
     @context.console_option(
         "outer",
         "o",
@@ -1433,9 +2306,8 @@ def plugin(kernel, lifecycle=None):
     ):
         try:
             import cv2
-            import numpy as np
         except ImportError:
-            channel("Either cv2 or numpy weren't installed")
+            channel("cv2 wasn't installed")
             return
         # from PIL import Image
         if data is None:
@@ -1446,9 +2318,6 @@ def plugin(kernel, lifecycle=None):
         if minimal <= 0 or minimal > 100:
             minimal = 2
 
-        data_out = list()
-
-        show_contour = not simplified
         show_simplified = simplified
         if breakdown and whiten:
             channel("You can't use --breakdown and --whiten at the same time")
@@ -1456,264 +2325,437 @@ def plugin(kernel, lifecycle=None):
         if breakdown or whiten:
             line = False
             show_simplified = False
-            show_contour = False
 
-        # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
-        for inode in data:
-            # node_image = inode.active_image
-            node_image = inode.image
-            width, height = node_image.size
-            if width == 0 or height == 0:
-                continue
-            if not hasattr(inode, "bounds"):
-                continue
-            bb = inode.bounds
-            ox = bb[0]
-            oy = bb[1]
-            coord_width = bb[2] - bb[0]
-            coord_height = bb[3] - bb[1]
-
-            def getpoint(ix, iy):
-                # Translate image to scene coordinates
-                return (
-                    ox + ix / width * coord_width,
-                    oy + iy / height * coord_height,
-                )
-
-            gray = np.array(node_image.convert("L"))
-            # Threshold the image
-            _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
-
-            # Find contours
-            contours, hierarchy = cv2.findContours(
-                thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-            )
-            linecandidates = list()
-
-            minarea = int(minimal / 100.0 * width * height)
-            # Filter contours based on area, rectangle of at least x%
-
-            large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > minarea]
-
-            # Create some rectangles around the white areas
-            for contour in large_contours:
-                # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
-                x, y, w, h = cv2.boundingRect(contour)
-                # rx, ry = getpoint(x, y)
-                rw, rh = getpoint(w, h)
-                rw -= ox
-                rh -= oy
-                if outer:
-                    # leftmost
-                    extreme = tuple(contour[contour[:, :, 0].argmin()][0])
-                    if extreme[0] == 0:
-                        # print ("Left edge")
-                        continue
-                    # rightmost
-                    extreme = tuple(contour[contour[:, :, 0].argmax()][0])
-                    if extreme[0] >= width - 1:
-                        # print ("Right edge")
-                        continue
-                    # topmost
-                    extreme = tuple(contour[contour[:, :, 1].argmin()][0])
-                    if extreme[1] == 0:
-                        # print ("Top edge")
-                        continue
-                    # bottommost
-                    extreme = tuple(contour[contour[:, :, 1].argmax()][0])
-                    if extreme[1] >= height - 1:
-                        # print ("Bottom edge")
-                        continue
-
-                linecandidates.append((x, w))
-                area = cv2.contourArea(contour)
-                rect_area = w * h
-                extent = float(area) / rect_area
-                # print (f"x={x}, y={y}, w={w}, h={h}, extent={extent*100:.1f}%")
-                label = f"Contour - Area={100 * area / (width * height):.1f}%, Extent={extent*100:.1f}%"
-                # if show_rect:
-                #     node = context.elements.elem_branch.add(
-                #         x=rx,
-                #         y=ry,
-                #         width=rw,
-                #         height=rh,
-                #         stroke=Color("red"),
-                #         label=label,
-                #         type="elem rect",
-                #     )
-                #     data_out.append(node)
-                if show_contour:
-                    geom = Geomstr()
-                    notfirst = False
-                    for c in contour:
-                        for e in c:
-                            rx, ry = getpoint(e[0], e[1])
-                            if notfirst:
-                                geom.line(complex(lx, ly), complex(rx, ry))
-                            notfirst = True
-                            lx = rx
-                            ly = ry
-                    geom.close()
-                    node = context.elements.elem_branch.add(
-                        geometry=geom,
-                        stroke=Color("blue"),
-                        fill=Color("yellow"),
-                        label=label,
-                        type="elem path",
-                    )
-                    data_out.append(node)
-                if show_simplified:
-                    # Set the epsilon value (adjust as needed)
-                    epsilon = 0.01 * cv2.arcLength(contour, True)
-
-                    # Compute the approximate contour points
-                    approx = cv2.approxPolyDP(contour, epsilon, True)
-                    geom = Geomstr()
-                    notfirst = False
-                    for c in approx:
-                        for e in c:
-                            rx, ry = getpoint(e[0], e[1])
-                            if notfirst:
-                                geom.line(complex(lx, ly), complex(rx, ry))
-                            notfirst = True
-                            lx = rx
-                            ly = ry
-                    geom.close()
-                    node = context.elements.elem_branch.add(
-                        geometry=geom,
-                        stroke=Color("green"),
-                        label=label,
-                        type="elem path",
-                    )
-                    data_out.append(node)
-
-                # if show_extreme:
-                #     # leftmost
-                #     extreme = tuple(contour[contour[:, :, 0].argmin()][0])
-                #     lmx, lmy = getpoint(extreme[0], extreme[1])
-                #     # rightmost
-                #     extreme = tuple(contour[contour[:, :, 0].argmax()][0])
-                #     rmx, rmy = getpoint(extreme[0], extreme[1])
-                #     # topmost
-                #     extreme = tuple(contour[contour[:, :, 1].argmin()][0])
-                #     tmx, tmy = getpoint(extreme[0], extreme[1])
-                #     # bottommost
-                #     extreme = tuple(contour[contour[:, :, 1].argmax()][0])
-                #     bmx, bmy = getpoint(extreme[0], extreme[1])
-                #     geom = Geomstr()
-                #     geom.line(lmx + 1j * lmy, tmx + 1j * tmy)
-                #     geom.line(tmx + 1j * tmy, rmx + 1j * rmy)
-                #     geom.line(rmx + 1j * rmy, bmx + 1j * bmy)
-                #     geom.line(bmx + 1j * bmy, lmx + 1j * lmy)
-                #     node = context.elements.elem_branch.add(
-                #         geometry=geom,
-                #         stroke=Color("green"),
-                #         label=label,
-                #         type="elem path",
-                #     )
-                #     data_out.append(node)
-            linecandidates.sort(key=lambda e: e[0])
-            if line or breakdown or whiten:
-                for idx1, c in enumerate(linecandidates):
-                    if c[0] < 0:
-                        continue
-                    # cx = c[0] + c[1] / 2
-                    for idx2, d in enumerate(linecandidates):
-                        if idx1 == idx2 or d[0] < 0:
-                            continue
-                        # Does c line inside d? if yes then we don't need d
-                        if d[0] <= c[0] and d[0] + d[1] >= c[0] + c[1]:
-                            linecandidates[idx2] = (-1, -1)
-            if line:
-                for c in linecandidates:
-                    if c[0] < 0:
-                        continue
-                    sx, sy = getpoint(c[0] + c[1] / 2, 0)
-                    ex, ey = getpoint(c[0] + c[1] / 2, height)
-                    node = context.elements.elem_branch.add(
-                        x1=sx,
-                        y1=sy,
-                        x2=ex,
-                        y2=ey,
-                        stroke=Color("red"),
-                        label="Splitline",
-                        type="elem line",
-                    )
-                    data_out.append(node)
-            white_paste = (255, 255, 255)
-            if breakdown or whiten:
-                anyslices = 0
-                right_image = node_image.copy()
-                dx = 0
-                for c in linecandidates:
-                    if c[0] < 0:
-                        continue
-                    rdx, rdy = getpoint(dx, 0)
-                    rdx -= ox
-                    rwidth, rheight = right_image.size
-                    anyslices += 1
-                    if breakdown:
-                        x = int(c[0] + c[1] / 2 - dx)
-                        left_image = right_image.crop((0, 0, x, rheight))
-                        dx = x + 1
-                        right_image = right_image.crop((dx, 0, rwidth, rheight))
-                    elif whiten:
-                        x = int(c[0] + c[1] / 2)
-                        left_image = right_image.copy()
-                        # print(f"Break position: {x}")
-                        if dx > 0:
-                            # print(f"Erasing left: 0:{dx - 1}")
-                            left_image.paste(white_paste, (0, 0, dx - 1, rheight))
-                        dx = x + 1
-                        left_image.paste(white_paste, (dx, 0, rwidth, rheight))
-                        # print(f"Erasing right: {dx}:{rwidth}")
-                    newnode = copy(inode)
-                    newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
-                    )
-                    # newnode.dither = False
-                    # newnode.operations.clear()
-                    # newnode.prevent_crop = True
-                    newnode.image = left_image
-                    if breakdown and rdx != 0:
-                        newnode.matrix.post_translate_x(rdx)
-                    if whiten:
-                        newnode.prevent_crop = True
-
-                    newnode.altered()
-                    newnode._processed_image = None
-
-                    context.elements.elem_branch.add_node(newnode)
-                    data_out.append(newnode)
-                if anyslices > 0:
-                    rdx, rdy = getpoint(dx, 0)
-                    rdx -= ox
-                    anyslices += 1
-                    newnode = copy(inode)
-                    newnode.label = (
-                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
-                    )
-                    # newnode.dither = False
-                    # newnode.operations.clear()
-                    # newnode.prevent_crop = True
-                    if whiten:
-                        if dx > 0:
-                            # print(f"Last, erasing left: 0:{dx - 1}")
-                            right_image.paste(white_paste, (0, 0, dx - 1, rheight))
-                    newnode.image = right_image
-                    if breakdown and rdx != 0:
-                        newnode.matrix.post_translate_x(rdx)
-                    if whiten:
-                        newnode.prevent_crop = True
-                    newnode.altered()
-                    newnode._processed_image = None
-                    context.elements.elem_branch.add_node(newnode)
-                    data_out.append(newnode)
-
-                    inode.remove_node()
+        data_out = do_innerwhite(
+            minimal=minimal,
+            outer=outer,
+            simplified=show_simplified,
+            line=line,
+            breakdown=breakdown,
+            whiten=whiten,
+            data=data,
+        )
+        if len(data_out):
+            # _("Image white")
+            with context.elements.undoscope("Image white"):
+                with context.elements.node_lock:
+                    needs_adding = [True] * len(data_out)
+                    if breakdown or whiten:
+                        for inode in data:
+                            if inode in data_out:
+                                idx = data_out.index(inode)
+                                needs_adding[idx] = False
+                            else:
+                                inode.remove_node()
+                    for idx, inode in enumerate(data_out):
+                        if needs_adding[idx]:
+                            context.elements.elem_branch.add_node(inode)
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
+
+    @context.console_option(
+        "threshold",
+        "t",
+        type=float,
+        help=_("Threshold for simplification"),
+        default=0.25,
+    )
+    @context.console_option(
+        "minimal", "m", type=float, help=_("minimal area (%)"), default=2
+    )
+    @context.console_option(
+        "inner",
+        "i",
+        type=bool,
+        help=_("Ignore inner areas"),
+        action="store_true",
+    )
+    @context.console_option(
+        "dontinvert",
+        "d",
+        type=bool,
+        help=_("Do not invert the image"),
+        action="store_true",
+    )
+    @context.console_option(
+        "rectangles",
+        "r",
+        type=bool,
+        help=_("Create minimum-area bounding rectangle instead of the contour"),
+        action="store_true",
+    )
+    @context.console_option(
+        "simplified",
+        "s",
+        type=bool,
+        help=_("Use alternative simplification method"),
+        action="store_true",
+    )
+    @context.console_command(
+        "identify_contour",
+        help=_("identify contours in image"),
+        input_type=(None, "image"),
+        output_type="elements",
+    )
+    def image_contour(
+        command,
+        channel,
+        _,
+        minimal=None,
+        threshold=None,
+        simplified=False,
+        inner=False,
+        dontinvert=False,
+        rectangles=False,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        try:
+            import time
+
+            import cv2
+            import PIL.ImageOps
+        except ImportError:
+            channel("cv2/Pillow weren't installed")
+            return
+
+        t0 = time.perf_counter()
+        elements = context.elements
+        # from PIL import Image
+        if data is None:
+            data = list(
+                e for e in elements.flat(emphasized=True) if e.type == "elem image"
+            )
+        if data is None or len(data) == 0:
+            channel(_("No images selected"))
+            return
+
+        ignoreinner = inner
+        if ignoreinner is None:
+            ignoreinner = False
+        if dontinvert is None:
+            dontinvert = False
+        if rectangles is None:
+            rectangles = False
+
+        if minimal is None:
+            minimal = 2
+        if minimal <= 0 or minimal > 100:
+            minimal = 2
+        maximal = 95
+
+        if threshold is None:
+            # We are on pixel level
+            threshold = 0.25
+        channel(
+            f"Contouring: {minimal:.2f} <= area <= {maximal:.2f}, inverting: {'No' if dontinvert else 'Yes'}, threshold: {threshold:.2f}, inner: {'No' if ignoreinner else 'Yes'}"
+        )
+        data_out = list()
+
+        remembered_dithers = list()
+        # _("Contour generation")
+        with context.elements.undoscope("Contour generation"):
+            for idx, inode in enumerate(data):
+                if inode.type != "elem image":
+                    continue
+                if inode.dither:
+                    remembered_dithers.append(inode)
+                    inode.dither = False
+                    inode.update(None)
+
+                # node_image = inode.image
+                node_image = inode.active_image
+                width, height = node_image.size
+                if width == 0 or height == 0:
+                    continue
+                if not hasattr(inode, "bounds"):
+                    continue
+                # Extract polygons from the image
+                if rectangles:
+                    contours = img_to_rectangles(
+                        node_image,
+                        minimal,
+                        maximal,
+                        ignoreinner,
+                        needs_invert=not dontinvert,
+                    )
+                    msg = "Bounding"
+                else:
+                    contours = img_to_polygons(
+                        node_image,
+                        minimal,
+                        maximal,
+                        ignoreinner,
+                        needs_invert=not dontinvert,
+                    )
+                    msg = "Contour"
+                pidx = 0
+                for geom, c_info in contours:
+                    pidx += 1
+                    channel(f"Processing {idx+1}.{pidx}: area={c_info:.2f}%")
+                    if simplified:
+                        # Let's try Visvalingam line simplification
+                        geom = geom.simplify_geometry(threshold=threshold)
+                    else:
+                        # Use Douglas-Peucker instead
+                        geom = geom.simplify(threshold)
+                    geom.transform(inode.active_matrix)
+                    node = context.elements.elem_branch.add(
+                        geometry=geom,
+                        stroke=Color("blue"),
+                        label=f"{msg} {idx+1}.{pidx}",
+                        type="elem path",
+                    )
+                    data_out.append(node)
+            for inode in remembered_dithers:
+                inode.dither = True
+                inode.update(None)
+
+        t_total_overall = time.perf_counter() - t0
+        channel(
+            f"Done, created: {len(data_out)} contour elements >= {minimal}% (Total time: {t_total_overall:.2f} sec)"
+        )
+        post.append(context.elements.post_classify(data_out))
+        return "elements", data_out
+
+    @context.console_command(
+        "background",
+        help=_("use the image as bed background"),
+        input_type=(None, "image"),
+        output_type=None,
+    )
+    def image_background(
+        command,
+        channel,
+        _,
+        data=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(
+                e
+                for e in context.elements.flat(emphasized=True)
+                if e.type == "elem image"
+            )
+        if len(data) == 0:
+            channel("No image provided")
+            return
+        image = None
+        for node in data:
+            if hasattr(node, "image"):
+                if node.image.mode == "I":
+                    continue
+                image = node.image.convert("L")
+                break
+        if image is None:
+            channel("No valid image provided")
+            return
+
+        width, height = image.size
+        newimage = image.convert("RGB")
+        context.signal("background", (width, height, newimage.tobytes()))
+
+    @context.console_command(
+        "linefill",
+        help=_("Create a linefill representation of the provided images"),
+        input_type=(None, "image", "elements"),
+        output_type="elements",
+    )
+    def do_linefill(
+        command,
+        channel,
+        _,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        from time import perf_counter
+
+        def trace_black_areas(image):
+            def dfs(x, y):
+                path = []
+                stack = [(-1, -1, x, y)]
+                while stack:
+                    x_prev, y_prev, x, y = stack.pop()
+                    if x < 0 or x >= image.shape[0] or y < 0 or y >= image.shape[1]:
+                        continue
+                    if image[x, y] == 255 or visited[x, y]:
+                        continue
+                    visited[x, y] = True
+                    path.append((x_prev, y_prev, x, y))
+                    stack.extend(
+                        [
+                            (x, y, x + 1, y),
+                            (x, y, x - 1, y),
+                            (x, y, x, y + 1),
+                            (x, y, x, y - 1),
+                        ]
+                    )
+                return path
+
+            visited = np.zeros_like(image, dtype=bool)
+            separated = []
+            path = []
+            for x in range(image.shape[0]):
+                for y in range(image.shape[1]):
+                    if image[x, y] != 255 and not visited[x, y]:
+                        path = dfs(x, y)
+                        if path:
+                            separated.append(path)
+                        path = []
+            return separated
+
+        if data is None:
+            data = list(
+                e
+                for e in context.elements.flat(emphasized=True)
+                if e.type == "elem image"
+            )
+        if len(data) == 0:
+            channel("No image provided")
+            return
+        data_out = []
+        context.process_console_in_realtime = True
+        channel("This algorithm has still some flaws! Start analyzing...")
+        t0 = perf_counter()
+        for node in data:
+            if node.type != "elem image":
+                continue
+            if node.dither:
+                node.dither = False
+                # Needs to be done immediately
+                node.update(None)
+                node_image, bounds = node.as_image()
+                node.dither = True
+                # Could be done later...
+                node.update(context)
+            else:
+                node_image, bounds = node.as_image()
+            # Trace the black areas
+            image = np.array(node_image)
+
+            # print (f"NP: {image.shape[0]}x{image.shape[1]}, image: {node_image.width}x{node_image.height}")
+
+            multiple = trace_black_areas(image)
+            points = sum(len(path) for path in multiple)
+            channel(f"Found points: {points}, subpaths={len(multiple)}")
+            # for y in range(20):
+            #     msg = f"[{y:2d}]"
+            #     for x in range(20):
+            #         msg =f"{msg} {image[x,y]}"
+            #     print (msg)
+            matrix = Matrix(
+                f"scale ({(bounds[2] - bounds[0]) / node_image.width}, {(bounds[3] - bounds[1]) / node_image.height})"
+            )
+            matrix.post_translate(bounds[0], bounds[1])
+            # matrix = node.active_matrix
+
+            def save_geom(geom, idx, matrix):
+                before = geom.index
+                if before == 0:
+                    return idx
+                idx += 1
+                geom = geom.simplify(2)
+                after = geom.index
+                # channel(f"Simplify: {before} -> {after}")
+                geom.transform(matrix)
+                label = f"L_{idx:2d}_{node.display_label()}"
+                rnode = context.elements.elem_branch.add(
+                    geometry=geom,
+                    stroke=Color("blue"),
+                    label=label,
+                    type="elem path",
+                    stroke_width=1000,
+                    linejoin=Linejoin.JOIN_ROUND,
+                )
+                data_out.append(rnode)
+                return idx
+
+            with context.elements.undoscope("Create lines"):
+                idx = 0
+                for path in multiple:
+                    # Notabene: the axes are swapped between np array and pil image!!
+                    if len(path) == 1:
+                        y_prev, x_prev, y, x = path[0]
+                        if x_prev < 0:
+                            # print (f"Single point at {idx}")
+                            continue
+                    geom = Geomstr()
+                    for i in range(len(path)):
+                        y_prev, x_prev, y, x = path[i]
+                        dx = x - x_prev
+                        dy = y - y_prev
+                        if (
+                            dx * dx + dy * dy
+                        ) >= 4:  # Thats too wide by definition, new subpath
+                            idx = save_geom(geom, idx, matrix)
+                            geom = Geomstr()
+                            continue
+                        geom.line(complex(x_prev, y_prev), complex(x, y))
+                    idx = save_geom(geom, idx, matrix)
+        t1 = perf_counter()
+
+        # Save the result
+        channel(f"Done, created: {len(data_out)} paths (Total time: {t1 - t0:.2f} sec)")
+        context.process_console_in_realtime = False
+        post.append(context.elements.post_classify(data_out))
+        return "elements", data_out
+
+
+class RasterImagePreprocessor:
+    def __init__(self, kernel):
+        self.test = False
+        self.kernel = kernel
+        _ = self.kernel.translation
+        RASTER_METHOD_OFFSET = 100
+        self.methods = {
+            RASTER_METHOD_OFFSET + 0: (
+                _("Split image along white areas"),
+                self.process_innerwhite,
+            ),
+        }
+        self.register_methods()
+
+    @staticmethod
+    def process_innerwhite(operation):
+        # print (f"Innerwhite called: {len(operation.children)} children of {operation.type}")
+        data = [inode for inode in operation.children if inode.type == "elem image"]
+        for inode in data:
+            pil_image, bounds = inode.as_image()
+            # Get steps from individual images
+            image_width, image_height = pil_image.size
+            expected_width = bounds[2] - bounds[0]
+            expected_height = bounds[3] - bounds[1]
+            step_x = expected_width / image_width
+            step_y = expected_height / image_height
+            inode.step_x = step_x
+            inode.step_y = step_y
+            data_out = do_innerwhite(minimal=2, outer=True, whiten=True, data=[inode])
+            was_covered = False
+            for idx, e in enumerate(data_out):
+                e.step_x = step_x
+                e.step_y = step_y
+                e.process_image()
+                if e is not inode:
+                    operation.add_node(e)
+                else:
+                    was_covered = True
+                e.direction = RASTER_T2B if idx % 2 == 0 else RASTER_B2T
+            if not was_covered and data_out:
+                inode.remove_node()
+
+        operation.raster_direction = RASTER_T2B
+        operation.bidirectional = True
+        # print (f"Innerwhite exit: {len(operation.children)} children of {operation.type}")
+
+    def register_methods(self):
+        # Split image along white areas
+        for method, (description, routine) in self.methods.items():
+            self.kernel.register(
+                f"raster_preprocessor/Method_{method}", (method, description, routine)
+            )
 
 
 class RasterScripts:
@@ -2118,6 +3160,7 @@ class ImageLoader:
             raise BadFileError(
                 "Cannot load an .eps file without GhostScript installed"
             ) from e
+        elements_service._loading_cleared = True
         try:
             from PIL import ImageOps
 
@@ -2150,9 +3193,10 @@ class ImageLoader:
         element_branch = elements_service.get(type="branch elems")
         if context.create_image_group:
             file_node = element_branch.add(
-                type="file", label=os.path.basename(pathname)
+                type="file",
+                label=os.path.basename(pathname),
+                filepath=pathname,
             )
-            file_node.filepath = pathname
         else:
             file_node = element_branch
         n = file_node.add(
@@ -2162,6 +3206,25 @@ class ImageLoader:
             type="elem image",
             dpi=_dpi,
         )
+
+        context.setting(bool, "scale_oversized_images", True)
+        if context.scale_oversized_images:
+            bb = n.bbox()
+            sx = (bb[2] - bb[0]) / context.device.space.width
+            sy = (bb[3] - bb[1]) / context.device.space.height
+            if sx > 1 or sy > 1:
+                sx = max(sx, sy)
+                n.matrix.post_scale(1 / sx, 1 / sx)
+                n.update(context)
+
+        context.setting(bool, "center_image_on_load", True)
+        if context.center_image_on_load:
+            bb = n.bbox()
+            dx = (context.device.space.width - (bb[2] - bb[0])) / 2
+            dy = (context.device.space.height - (bb[3] - bb[1])) / 2
+
+            n.matrix.post_translate(dx, dy)
+
         if context.create_image_group:
             file_node.focus()
         else:
