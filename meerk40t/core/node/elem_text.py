@@ -105,10 +105,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         super().__init__(type="elem text", **kwargs)
         if "hidden" in kwargs:
             if isinstance(kwargs["hidden"], str):
-                if kwargs["hidden"].lower() == "true":
-                    kwargs["hidden"] = True
-                else:
-                    kwargs["hidden"] = False
+                kwargs["hidden"] = kwargs["hidden"].lower() == "true"
             self.hidden = kwargs["hidden"]
 
         # We might have relevant font-information hidden inside settings...
@@ -232,42 +229,39 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         except ValueError:
             return None
 
-    def _process_image(self, step_x, step_y):
-        """
-        This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
-        a post-processed form with resulting post-process matrix.
-
-        @param crop: Should the unneeded edges be cropped as part of this process. The need for the edge is determined
-            by the color and the state of the self.invert attribute.
-        @return:
-        """
-
+    def _setup_pil_transforms(self):
+        """Set up PIL transform constants for image processing."""
         try:
             from PIL.Image import Transform
-
             AFFINE = Transform.AFFINE
         except ImportError:
             AFFINE = Image.AFFINE
 
         try:
             from PIL.Image import Resampling
-
             BICUBIC = Resampling.BICUBIC
         except ImportError:
             BICUBIC = Image.BICUBIC
 
+        return AFFINE, BICUBIC
+
+    def _prepare_image_for_processing(self):
+        """Prepare the image for processing by converting to RGBA and getting crop box."""
         image = self._image.convert("RGBA")
 
         # Calculate image box.
-        box = None
         box = self._get_crop_box(image)
         if box is None:
             # If box is entirely white, bbox caused value error, or crop not set.
             box = (0, 0, image.width, image.height)
-        orgbox = (box[0], box[1], box[2], box[3])
 
+        return image, box
+
+    def _calculate_boundary_points(self, box, step_x, step_y):
+        """Calculate boundary points and bounding box for image transformation."""
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
         transform_matrix.pre_scale(1 / self._magnification)
+
         # Find the boundary points of the rotated box edges.
         boundary_points = [
             transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
@@ -275,6 +269,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             transform_matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
             transform_matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
         ]
+
         xs = [e[0] for e in boundary_points]
         ys = [e[1] for e in boundary_points]
 
@@ -286,12 +281,19 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
 
         image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
         image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
+
+        return transform_matrix, bbox, image_width, image_height
+
+    def _setup_transform_matrix(self, transform_matrix, bbox, image_width, image_height, step_x, step_y):
+        """Set up the transformation matrix for image processing."""
         tx = bbox[0]
         ty = bbox[1]
+
         # Caveat: we move the picture backward, so that the non-white
         # image content aligns at 0 , 0 - but we don't crop the image
         transform_matrix.post_translate(-tx, -ty)
-        transform_matrix.post_scale(step_scale_x, step_scale_y)
+        transform_matrix.post_scale(1 / float(step_x), 1 / float(step_y))
+
         if step_y < 0:
             # If step_y is negative, translate
             transform_matrix.post_translate(0, image_height)
@@ -305,6 +307,10 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             # malformed matrix, scale=0 or something.
             transform_matrix.reset()
 
+        return tx, ty
+
+    def _transform_image_if_needed(self, image, image_width, image_height, transform_matrix, AFFINE, BICUBIC, step_x, step_y):
+        """Transform the image if the matrix requires it."""
         # Perform image transform if needed.
         if (
             self.matrix.a != step_x
@@ -330,6 +336,10 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
                 resample=BICUBIC,
                 fillcolor="white",
             )
+        return image
+
+    def _create_actualized_matrix(self, image_width, image_height, step_x, step_y):
+        """Create the actualized matrix for the processed image."""
         actualized_matrix = Matrix()
 
         if step_y < 0:
@@ -339,6 +349,10 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             # if step_x is negative, translate.
             actualized_matrix.post_translate(-image_width, 0)
 
+        return actualized_matrix
+
+    def _apply_cropping(self, image, actualized_matrix, orgbox):
+        """Apply cropping to the image if needed."""
         # If crop applies, apply crop.
         cbox = self._get_crop_box(image)
         if cbox is not None:
@@ -353,14 +367,42 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
                 if orgbox[0] == 0 and orgbox[1] == 0:
                     actualized_matrix.post_translate(cbox[0], cbox[1])
 
-        actualized_matrix.post_scale(step_x, step_y)
-        actualized_matrix.post_translate(tx, ty)
-        # # make white transparent
+        return image, actualized_matrix
+
+    def _make_white_transparent(self, image):
+        """Convert white pixels to transparent."""
+        # make white transparent
         import numpy as np
 
         x = np.asarray(image.convert("RGBA")).copy()
         x[:, :, 3] = (255 * (x[:, :, :3] != 255).any(axis=2)).astype(np.uint8)
         image = Image.fromarray(x)
+        return image
+
+    def _process_image(self, step_x, step_y):
+        """
+        This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
+        a post-processed form with resulting post-process matrix.
+
+        @param crop: Should the unneeded edges be cropped as part of this process. The need for the edge is determined
+            by the color and the state of the self.invert attribute.
+        @return:
+        """
+        AFFINE, BICUBIC = self._setup_pil_transforms()
+        image, box = self._prepare_image_for_processing()
+        orgbox = (box[0], box[1], box[2], box[3])
+
+        transform_matrix, bbox, image_width, image_height = self._calculate_boundary_points(box, step_x, step_y)
+        tx, ty = self._setup_transform_matrix(transform_matrix, bbox, image_width, image_height, step_x, step_y)
+
+        image = self._transform_image_if_needed(image, image_width, image_height, transform_matrix, AFFINE, BICUBIC, step_x, step_y)
+        actualized_matrix = self._create_actualized_matrix(image_width, image_height, step_x, step_y)
+        image, actualized_matrix = self._apply_cropping(image, actualized_matrix, orgbox)
+
+        actualized_matrix.post_scale(step_x, step_y)
+        actualized_matrix.post_translate(tx, ty)
+
+        image = self._make_white_transparent(image)
         return actualized_matrix, image
 
     def process_image(self, step_x, step_y):
@@ -550,7 +592,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         self.font_family = match.group(7)
         self.validate_font()
 
-    def establish_magification(self):
+    def establish_magnification(self):
         # We evaluate the estimated image size and decide our resolution...
         magnificent = 5  # 480 dpi should be enough
         # We have an overreach factor established of 2.5
@@ -592,7 +634,7 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
                     self.line_height = height
             except ValueError:
                 pass
-        self.establish_magification()
+        self.establish_magnification()
 
     @property
     def font_list(self):
@@ -663,12 +705,12 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
         )
 
     def updated(self):
-        self.establish_magification()
+        self.establish_magnification()
         self.update_image(None)
         super().updated()
 
     def modified(self):
-        self.establish_magification()
+        self.establish_magnification()
         self.update_image(None)
         super().modified()
 
