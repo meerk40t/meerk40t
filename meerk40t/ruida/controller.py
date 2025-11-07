@@ -12,6 +12,7 @@ from meerk40t.ruida.rdjob import (
     MACHINE_STATUS_MOVING,
     MACHINE_STATUS_PART_END,
     MACHINE_STATUS_JOB_RUNNING,
+    MACHINE_STATUS_TO_LABEL_LUT,
     MEM_BED_SIZE_X,
     MEM_BED_SIZE_Y,
     MEM_CURRENT_X,
@@ -194,11 +195,11 @@ class RuidaController:
             # TODO: Having dependencies on text strings is risky. A single
             # definition is needed.
             if status & MACHINE_STATUS_MOVING:
-                _msg = 'Moving'
+                _msg = MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING]
             elif status & MACHINE_STATUS_PART_END:
-                _msg = 'Part end'
+                _msg = MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_PART_END]
             elif status & MACHINE_STATUS_JOB_RUNNING:
-                _msg = 'Job running'
+                _msg = MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_JOB_RUNNING]
             else:
                 _msg = 'Idle'
             # Signal the GUI update.

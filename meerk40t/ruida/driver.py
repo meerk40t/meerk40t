@@ -22,6 +22,12 @@ from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.ruida.controller import RuidaController
 from meerk40t.core.geomstr import Geomstr
 
+from meerk40t.ruida.rdjob import (
+    MACHINE_STATUS_MOVING,
+    MACHINE_STATUS_PART_END,
+    MACHINE_STATUS_JOB_RUNNING,
+    MACHINE_STATUS_TO_LABEL_LUT,
+)
 
 class RuidaDriver(Parameters):
     def __init__(self, service, **kwargs):
@@ -377,7 +383,7 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         out = self.controller.write
         self.controller.gross_timeout()
-        self.events('Moving')
+        self.events(MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING])
         job.home_xy(output=out)
         time.sleep(5)
         while self.controller.is_busy:

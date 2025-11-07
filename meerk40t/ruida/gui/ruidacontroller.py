@@ -11,6 +11,13 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl, dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
+from meerk40t.ruida.rdjob import (
+    MACHINE_STATUS_MOVING,
+    MACHINE_STATUS_PART_END,
+    MACHINE_STATUS_JOB_RUNNING,
+    MACHINE_STATUS_TO_LABEL_LUT,
+)
+
 _ = wx.GetTranslation
 
 
@@ -95,16 +102,17 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             # definition is needed.
             if isinstance(text, str):
                 self._buffer += f"{text}\n"
+                _txt = text.strip()
                 _color_change = False
-                if 'Moving' in text:
+                if _txt == MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING]:
                     self.busy = True
                     self.color = self.moving_color
                     _color_change = True
-                elif 'running' in text:
+                elif _txt == MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_JOB_RUNNING]:
                     self.busy = True
                     self.color = self.busy_color
                     _color_change = True
-                elif 'Idle' in text or 'Connected' in text:
+                elif 'Idle' in text or 'Connected' in _txt:
                     self.busy = False
                     self.color = self.idle_color
                     _color_change = True
