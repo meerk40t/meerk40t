@@ -2,7 +2,7 @@
 
 The current code in the GitHub repository may contain experimental features or other deficits that may not necessarily make it fit for real-world production use. This repository represents ongoing development work and should be approached with caution for critical applications.
 
-### Device Support Status (as of 01/11/2025)
+### Device Support Status (as of 07/11/2025)
 
 | Device Type | Use Status | Development Status | Notes |
 |-------------|------------|-------------------|--------|
@@ -10,7 +10,7 @@ The current code in the GitHub repository may contain experimental features or o
 | **GRBL** | ✅ Okay | Stable | No issues known |
 | **Moshi** | ✅ Okay | Stable | No issues known |
 | **Newly** | ✅ Okay | Stable | No issues known |
-| **Ruida** | ⚠️ Minor Issues | Under Revision | Fit for testing |
+| **Ruida** | ⚠️ Minor Issues | Under Revision | Fit for testing (Networked only)|
 | **Balor** | ✅ Okay | Stable | No issues known |
 
 **Status Legend:**
