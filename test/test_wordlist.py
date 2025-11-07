@@ -142,11 +142,11 @@ class TestWordlist(unittest.TestCase):
         result = self.wordlist.translate("Hello {name}, you are {age} years old.")
         self.assertEqual(result, "Hello John Doe, you are 30 years old.")
 
-        # Test case insensitivity - keys are stored in lowercase, so uppercase won't match
+        # Test case insensitivity - variables are case-insensitive
         result = self.wordlist.translate("Hello {NAME}, you are {AGE} years old.")
         self.assertEqual(
-            result, "Hello , you are  years old."
-        )  # No replacement for uppercase
+            result, "Hello John Doe, you are 30 years old."
+        )  # Case-insensitive replacement
 
         # Test non-existent key
         result = self.wordlist.translate("Hello {nonexistent}.")
