@@ -36,10 +36,6 @@ class RuidaDriver(Parameters):
         self.events = service.channel(f"{service.safe_label}/events")
         self.native_x = 0
         self.native_y = 0
-        # Coordinates reported by the device. These are set by the
-        # controller updaters.
-        self.device_x = 0
-        self.device_y = 0
 
         self.name = str(self.service)
 
@@ -384,14 +380,13 @@ class RuidaDriver(Parameters):
         out = self.controller.write
         self.controller.gross_timeout()
         self.events(MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING])
+        self.events('Moving to physical home')
         job.home_xy(output=out)
         time.sleep(5)
         while self.controller.is_busy:
             time.sleep(0.25)
         self.controller.normal_timeout()
-        self.controller.sync_coords()
-        self.move_abs(10, 10)
-        self.home()
+        self.events("Idle")
 
     def rapid_mode(self):
         """

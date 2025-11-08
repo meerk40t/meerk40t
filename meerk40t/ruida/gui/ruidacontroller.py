@@ -152,12 +152,11 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             status = "Unknown"
         if status in ['Connecting', 'Connected', 'Disconnected']:
             self.button_device_connect.SetLabel(_(status))
-        if not self.busy:
-            if self.service.connected:
-                # self.color = self.idle_color
-                self.set_button_connected()
-            else:
-                self.set_button_disconnected()
+        #if not self.busy:
+        if self.service.connected:
+            self.set_button_connected()
+        else:
+            self.set_button_disconnected()
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         connected = self.service.connected

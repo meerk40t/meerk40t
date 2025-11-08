@@ -740,11 +740,6 @@ class RuidaDevice(Service, Status):
         """
         @return: the location in units for the current known position.
         """
-        # This is a kludge because current is used for multiple moves and
-        # the navigation window/panel calls current. This conflicts with
-        # constant update of coordinates from the Ruida controller.
-        if inspect.stack()[1].function == 'on_label_dclick':
-            return self.view.iposition(self.driver.device_x, self.driver.device_y)
         return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property

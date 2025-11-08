@@ -97,16 +97,6 @@ class RuidaController:
     def is_busy(self):
         return self._expected_status is not None
 
-    def sync_coords(self):
-        '''
-        Sync native coordinates with device coordinates.
-
-        This is typically used after actions such as physical home.'''
-        while self.is_busy:
-            time.sleep(self._status_thread_sleep)
-        self.service.driver.native_x = self.service.driver.device_x
-        self.service.driver.native_y = self.service.driver.device_y
-
     def gross_timeout(self):
         '''Set a gross comms timeout. This is typically used in situations
         where the Ruida controller is expected to stop communicating for
@@ -237,9 +227,6 @@ class RuidaController:
                 "driver;position",
                 (self._last_x, self._last_y, self.x, self.y))
             self._last_x = self.x
-            # TODO: Updating native_x here causes intermittent move
-            # behavior.
-            self.service.driver.device_x = x
             self.service.driver.native_x = x
 
     def update_y(self, y):
@@ -252,9 +239,6 @@ class RuidaController:
                 "driver;position",
                 (self._last_x, self._last_y, self.x, self.y))
             self._last_y = self.y
-            # TODO: Updating native_y here causes intermittent move
-            # behavior.
-            self.service.driver.device_y = y
             self.service.driver.native_y = y
 
     def update_z(self, z):
