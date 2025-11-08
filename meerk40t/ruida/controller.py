@@ -1,10 +1,13 @@
 """
-Ruida Encoder
+Ruida Controller
 
-The Ruida Encoder is responsible for turning function calls into binary ruida data.
+The Ruida Controller occupies the Presentation Layer (Layer 6) and the
+Application Layer (Layer 7) of the OSI model.
 """
 import threading
 import time
+
+from meerk40t.core.units import UNITS_PER_uM
 
 from meerk40t.ruida.rdjob import (
     MEM_CARD_ID,
@@ -224,13 +227,10 @@ class RuidaController:
             self.service.bedheight = f'{_bed_y:.1f}mm'
             self.service.signal('bedheight', self.service.bedheight)
 
-    # TODO: Factor discovered by trial and error -- why necessary?
-    # The precise value was discovered in a project file.
-    COORD_SCALE_FACTOR = 2.5801195035
-
     def update_x(self, x):
-        _x = (self.bed_x * 1000 - x) * self.COORD_SCALE_FACTOR
-        if True or _x != self.x:
+        # The (x - 50) adjusts for a rounding error on the Ruida display.
+        _x = round((self.bed_x * 1000 - (x - 50)) * UNITS_PER_uM, 1)
+        if _x != self.x:
             self.x = _x
             # Signal the GUI update.
             self.service.signal(
@@ -243,8 +243,9 @@ class RuidaController:
             self.service.driver.native_x = x
 
     def update_y(self, y):
-        _y = y * self.COORD_SCALE_FACTOR
-        if True or _y != self.y:
+        # The (y - 50) adjusts for a rounding error on the Ruida display.
+        _y = round((y - 50) * UNITS_PER_uM, 1)
+        if _y != self.y:
             self.y = _y
             # Signal the GUI update.
             self.service.signal(
@@ -257,13 +258,15 @@ class RuidaController:
             self.service.driver.native_y = y
 
     def update_z(self, z):
-        if z != self.z:
-            self.z = z
+        _z = round(z * UNITS_PER_uM, 1)
+        if _z != self.z:
+            self.z = _z
             # Signal the GUI update.
 
     def update_u(self, u):
-        if u != self.u:
-            self.u = u
+        _u = round(u * UNITS_PER_uM, 1)
+        if _u != self.u:
+            self.u = _u
             # Signal the GUI update.
 
     _dispatch_lut = {
