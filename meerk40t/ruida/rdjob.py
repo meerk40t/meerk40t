@@ -126,7 +126,7 @@ WORK_MODE_PART = b"\xCA\x41"  # part(1), mode(1)
 ACK = b"\xCC"
 NAK = b"\xCF"
 ERR = b"\xCD"
-KEEP_ALIVE = b"\xCE"
+ENQ = b"\xCE"
 END_OF_FILE = b"\xD7"
 START_PROCESS = b"\xD8\x00"
 STOP_PROCESS = b"\xD8\x01"
@@ -1861,7 +1861,7 @@ class RDJob:
         self(ERR, output=output)
 
     def keep_alive(self, output=None):
-        self(KEEP_ALIVE, output=output)
+        self(ENQ, output=output)
 
     def end_of_file(self, output=None):
         self(END_OF_FILE, output=output)
