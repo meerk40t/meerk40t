@@ -265,6 +265,7 @@ def create_mo_files(force: bool, locales: set) -> list:
     data_files = []
     po_dirs = []
     po_locales = []
+    locales_lower = {loc.lower() for loc in locales}
     for locale_name in next(os.walk(LOCALE_DIR))[1]:
         po_dirs.append(f"{LOCALE_DIR}/{locale_name}/LC_MESSAGES/")
         po_locales.append(locale_name)
@@ -279,7 +280,7 @@ def create_mo_files(force: bool, locales: set) -> list:
     print_header("Compiling .po to .mo Files")
 
     for d_local, d in zip(po_locales, po_dirs):
-        if locales and d_local not in locales:
+        if locales and d_local.lower() not in locales_lower:
             print_info(f"Skipping locale {d_local}")
             file_results.append((d_local, "Skipped", "Not in selected locales"))
             continue
