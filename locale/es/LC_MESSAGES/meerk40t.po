@@ -24818,3 +24818,166 @@ msgstr "Comando de consola a ejecutar."
 #: meerk40t/gui/propertypanels/hatchproperty.py:105
 msgid "Include Outline"
 msgstr "Incluir Contorno"
+
+#: meerk40t/gui/materialtest.py:652 meerk40t/gui/materialtest.py:655
+msgid "Valid values between {min} and {max}"
+msgstr "Valores válidos entre {min} y {max}"
+
+#: meerk40t/newly/controller.py:229
+msgid "Connect Attempts Aborted"
+msgstr "Intentos de conexión abortados"
+
+#: meerk40t/newly/controller.py:240
+msgid "Connection closed"
+msgstr "Conexión cerrada"
+
+#: meerk40t/newly/controller.py:280 meerk40t/newly/controller.py:311
+msgid "Could not connect to the controller."
+msgstr "No se pudo conectar al controlador."
+
+#: meerk40t/newly/controller.py:293
+msgid "Connection established"
+msgstr "Conexión establecida"
+
+#: meerk40t/newly/gui/newlycontroller.py:33
+msgid "Connection Status:"
+msgstr "Estado de conexión:"
+
+#: meerk40t/newly/gui/newlycontroller.py:36
+msgid "Verbose:"
+msgstr "Detallado:"
+
+#: meerk40t/newly/gui/newlycontroller.py:39
+msgid "Device Info:"
+msgstr "Información del dispositivo:"
+
+#: meerk40t/newly/gui/newlycontroller.py:42
+msgid "Machine Index:"
+msgstr "Índice de máquina:"
+
+#: meerk40t/newly/gui/newlycontroller.py:43
+#: meerk40t/newly/gui/newlycontroller.py:402
+msgid "0"
+msgstr "0"
+
+#: meerk40t/newly/gui/newlycontroller.py:45
+msgid "Current Position:"
+msgstr "Posición actual:"
+
+#: meerk40t/newly/gui/newlycontroller.py:46
+#: meerk40t/newly/gui/newlycontroller.py:248
+#: meerk40t/newly/gui/newlycontroller.py:403
+msgid "0.0, 0.0"
+msgstr "0.0, 0.0"
+
+#: meerk40t/newly/gui/newlycontroller.py:48
+msgid "Current Mode:"
+msgstr "Modo actual:"
+
+#: meerk40t/newly/gui/newlycontroller.py:49
+#: meerk40t/newly/gui/newlycontroller.py:255
+#: meerk40t/newly/gui/newlycontroller.py:404
+msgid "init"
+msgstr "init"
+
+#: meerk40t/newly/gui/newlycontroller.py:51
+msgid "Current Speed:"
+msgstr "Velocidad actual:"
+
+#: meerk40t/newly/gui/newlycontroller.py:54
+msgid "Current Power:"
+msgstr "Potencia actual:"
+
+#: meerk40t/newly/gui/newlycontroller.py:57
+msgid "PWM Frequency:"
+msgstr "Frecuencia PWM:"
+
+#: meerk40t/newly/gui/newlycontroller.py:60
+msgid "Relative Mode:"
+msgstr "Modo relativo:"
+
+#: meerk40t/newly/gui/newlycontroller.py:61
+#: meerk40t/newly/gui/newlycontroller.py:283
+#: meerk40t/newly/gui/newlycontroller.py:408
+msgid "True"
+msgstr "Verdadero"
+
+#: meerk40t/newly/gui/newlycontroller.py:63
+msgid "Command Buffer:"
+msgstr "Búfer de comandos:"
+
+#: meerk40t/newly/gui/newlycontroller.py:64
+#: meerk40t/newly/gui/newlycontroller.py:290
+#: meerk40t/newly/gui/newlycontroller.py:409
+msgid "0 commands"
+msgstr "0 comandos"
+
+#: meerk40t/newly/gui/newlycontroller.py:66
+msgid "Connection Details:"
+msgstr "Detalles de conexión:"
+
+#: meerk40t/newly/gui/newlycontroller.py:69
+msgid "Device Enumeration:"
+msgstr "Enumeración de dispositivos:"
+
+#: meerk40t/newly/gui/newlycontroller.py:72
+msgid "Backend Status:"
+msgstr "Estado del backend:"
+
+#: meerk40t/newly/gui/newlycontroller.py:75
+msgid "Controller Status:"
+msgstr "Estado del controlador:"
+
+#: meerk40t/newly/gui/newlycontroller.py:78
+msgid "Mode Details:"
+msgstr "Detalles del modo:"
+
+#: meerk40t/newly/gui/newlycontroller.py:137
+msgid "Position & Mode"
+msgstr "Posición y modo"
+
+#: meerk40t/newly/gui/newlycontroller.py:161
+msgid "Command Buffer"
+msgstr "Búfer de comandos"
+
+#: meerk40t/newly/gui/newlycontroller.py:169
+msgid "Connection Details"
+msgstr "Detalles de conexión"
+
+#: meerk40t/newly/gui/newlycontroller.py:177
+msgid "Device Enumeration"
+msgstr "Enumeración de dispositivos"
+
+#: meerk40t/newly/gui/newlycontroller.py:185
+msgid "Backend Status"
+msgstr "Estado del backend"
+
+#: meerk40t/newly/gui/newlycontroller.py:193
+msgid "Controller Status"
+msgstr "Estado del controlador"
+
+#: meerk40t/newly/gui/newlycontroller.py:201
+msgid "Mode Details"
+msgstr "Detalles del modo"
+
+#: meerk40t/newly/gui/newlycontroller.py:235
+msgid "Mock Device"
+msgstr "Dispositivo simulado"
+
+#: meerk40t/newly/gui/newlycontroller.py:331
+#: meerk40t/newly/gui/newlycontroller.py:411
+msgid "No devices"
+msgstr "Sin dispositivos"
+
+#: meerk40t/newly/gui/newlycontroller.py:395
+#: meerk40t/newly/gui/newlycontroller.py:414
+msgid "No mode info"
+msgstr "Sin información de modo"
+
+#: meerk40t/newly/gui/newlycontroller.py:516
+msgid "Clear Log"
+msgstr "Limpiar registro"
+
+#: meerk40t/ruida/plugin.py:28
+msgid "Please use udp_connection for now!"
+msgstr "¡Por favor use udp_connection por ahora!"
