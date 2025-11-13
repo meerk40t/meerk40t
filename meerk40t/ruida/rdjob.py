@@ -1344,7 +1344,7 @@ class RDJob:
         _mem = None
         _v = None
         _decoded = None
-        if reply[0] == 0xDA:
+        if len(reply) > 0 and reply[0] == 0xDA:
             if reply[1] == 0x01: # Response to command 0xDA 0x00.
                 _mem = reply[2:4]
                 if _mem == MEM_CARD_ID:

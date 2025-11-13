@@ -48,8 +48,10 @@ class RuidaController:
         self._status_tries = self._status_normal_to / self._status_thread_sleep
         self._connected = False
         self._job_lock = threading.Lock() # To allow running a job.
+        self._job_lock.acquire() # Hold threads until told to start.
         self._status_thread = threading.Thread(
             target=self._status_monitor, daemon=True)
+        self._status_thread.start()
         self._expected_status = None
         self._next = 0
         self._start = False
@@ -89,9 +91,13 @@ class RuidaController:
         if last != len(data):
             self._send_queue.append(self.job.get_contents(last))
 
-    def start(self):
-        '''Start the background threads.'''
-        self._status_thread.start()
+    def start_monitor(self):
+        '''Start the background machine status monitor.'''
+        self._job_lock.release()
+
+    def stop_monitor(self):
+        '''Stop the background machine status monitor.'''
+        self._job_lock.acquire()
 
     @property
     def is_busy(self):
@@ -137,13 +143,12 @@ class RuidaController:
     def _status_monitor(self):
         '''Status monitoring thread.
 
-        The thread runs continually to monitor connection status with a
+        The thread runs continually to monitor machine status with a
         Ruida controller. It also updates the UI when status changes.
 
         NOTE: This thread is blocked while _data_sender is running.'''
         _tries = 0
-        time.sleep(3) # Wait for controller window to init.
-        self.service.connect()
+        time.sleep(3) # Wait for controller window to init. Need a semaphore.
         try:
             while True:
                 # if not self.is_busy and not self.service.is_busy:
@@ -167,6 +172,7 @@ class RuidaController:
                             _tries = 0
                             # self._expected_status = None
                 else:
+                    self.service.connect()
                     self.card_id = ''
                 time.sleep(self._status_thread_sleep)
         except OSError:

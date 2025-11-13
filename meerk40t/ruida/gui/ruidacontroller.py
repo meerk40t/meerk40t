@@ -18,6 +18,8 @@ from meerk40t.ruida.rdjob import (
     MACHINE_STATUS_TO_LABEL_LUT,
 )
 
+from meerk40t.ruida.device import RuidaDevice
+
 _ = wx.GetTranslation
 
 
@@ -35,7 +37,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             wx.FONTWEIGHT_NORMAL,
         )
         self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
-        self.service = self.context.device
+        self.service: RuidaDevice = self.context.device
         self._buffer = ""
         self._buffer_lock = threading.Lock()
         self.text_usb_log = TextCtrl(
@@ -56,8 +58,11 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         self.idle_color = '#00ff00'
         self.moving_color = '#008000'
         self.busy_color = '#ff8000'
-        self.color = self.disconnected_color
+        self.color = self.idle_color
         self.busy = False
+        self.last_usb_status = ''
+        self.last_event_text = ''
+        self.service.update_connect_status()
 
     def __set_properties(self):
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
@@ -101,6 +106,9 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             # TODO: Having dependencies on text strings is risky. A single
             # definition is needed.
             if isinstance(text, str):
+                if text == self.last_event_text:
+                    return
+                self.last_event_text = text
                 self._buffer += f"{text}\n"
                 _txt = text.strip()
                 _color_change = False
@@ -148,9 +156,16 @@ class RuidaControllerPanel(wx.ScrolledWindow):
     def on_usb_update(self, origin=None, status=None):
         if origin != self.service.path:
             return
+        if status == self.last_usb_status:
+            return
+        self.last_usb_status = status
         if status is None:
             status = "Unknown"
-        if status in ['Connecting', 'Connected', 'Disconnected']:
+        if 'Connected' in status:
+            _s = 'Connected'
+        else:
+            _s = status
+        if _s in ['Connecting', 'Connected', 'Disconnected']:
             self.button_device_connect.SetLabel(_(status))
         #if not self.busy:
         if self.service.connected:

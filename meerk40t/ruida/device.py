@@ -15,11 +15,9 @@ from ..core.spoolers import Spooler
 from ..core.units import Length, uM_PER_INCH
 from ..device.mixins import Status
 from .driver import RuidaDriver
-from .mock_connection import MockConnection
-from .serial_connection import SerialConnection
-from .tcp_connection import TCPConnection
-from .udp_connection import UDPConnection
 
+from .ruidasession import RuidaSession
+from .ruidatransport import TransportError
 
 class RuidaDevice(Service, Status):
     """
@@ -386,13 +384,9 @@ class RuidaDevice(Service, Status):
 
         _ = self.kernel.translation
 
-        self.interface_mock = MockConnection(self)
-        self.interface_udp = UDPConnection(self)
-        self.interface_tcp = TCPConnection(self)
-        self.interface_usb = SerialConnection(self)
-        self.active_interface = None
-
         self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
+
+        self.active_session: RuidaSession = None
 
         @self.console_command(
             "interface_update",
@@ -400,23 +394,23 @@ class RuidaDevice(Service, Status):
             help=_("Updates interface state for the device."),
         )
         def interface_update(command, channel, _, data=None, **kwargs):
-            if self.interface == "mock":
-                self.active_interface = self.interface_mock
-                self.driver.controller.write = self.interface_mock.write
-            elif self.interface == "udp":
-                self.active_interface = self.interface_udp
-                self.driver.controller.write = self.interface_udp.write
-                self.driver.controller.start()
-            elif self.interface == "tcp":
-                # Special tcp out to lightburn bridge et al.
-                self.active_interface = self.interface_tcp
-                self.driver.controller.write = self.interface_tcp.write
-            elif self.interface == "usb":
-                self.active_interface = self.interface_usb
-                self.driver.controller.write = self.interface_usb.write
-            _swizzle = self.driver.controller.job.swizzle
-            _unswizzle = self.driver.controller.job.unswizzle
-            self.active_interface.set_swizzles(_swizzle, _unswizzle)
+            try:
+                if self.active_session is not None:
+                    if self.interface != self.active_session.interface:
+                        self.driver.controller.stop_monitor()
+                        self.active_session.shutdown()
+                        self.active_session = None
+
+                if self.active_session is None: # Start or restart.
+                    self.active_session = RuidaSession(self)
+                    self.driver.controller.write = self.active_session.write
+                    _swizzle = self.driver.controller.job.swizzle
+                    _unswizzle = self.driver.controller.job.unswizzle
+                    self.active_session.set_swizzles(_swizzle, _unswizzle)
+                    self.active_session.open()
+                    self.driver.controller.start_monitor()
+            except AttributeError as e:
+                channel(e)
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(command, channel, _, data=None, **kwargs):
@@ -443,7 +437,7 @@ class RuidaDevice(Service, Status):
         def ruida_connect(command, channel, _, data=None, **kwargs):
             if not self.connected:
                 try:
-                    self.active_interface.open()
+                    self.active_session.open()
                 except Exception as e:
                     channel(f"Could not establish the connection: {e}")
 
@@ -454,7 +448,7 @@ class RuidaDevice(Service, Status):
         )
         def ruida_disconnect(command, channel, _, data=None, **kwargs):
             if self.connected:
-                self.active_interface.close()
+                self.active_session.close()
                 channel("Connection closed")
 
         @self.console_command(
@@ -623,6 +617,10 @@ class RuidaDevice(Service, Status):
         name = self.label.replace(" ", "-")
         return name.replace("/", "-")
 
+    # TODO: Why here? Either remove or pass to the active session so it can
+    # query its transport layer.
+    # I think this is cruft as a result of mixing in emulation concerns with
+    # actual comms with a Ruida controller.
     @property
     def tcp_address(self):
         return self.address
@@ -630,16 +628,11 @@ class RuidaDevice(Service, Status):
     @property
     def tcp_port(self):
         return 5005
+    # End cruft
 
     def location(self):
-        if self.interface == "mock":
-            return "mock"
-        elif self.interface == "udp":
-            return "udp, port 40200"
-        elif self.interface == "tcp":
-            return f"tcp {self.tcp_address}:{self.tcp_port}"
-        elif self.interface == "usb":
-            return f"usb: {self.serial_port}"
+        if self.active_session:
+            return self.active_session.location()
         return f"undefined {self.interface}"
 
     @property
@@ -648,25 +641,36 @@ class RuidaDevice(Service, Status):
 
     @property
     def connected(self):
-        if self.active_interface:
-            return self.active_interface.connected
+        if self.active_session:
+            return self.active_session.connected
         return False
 
     @property
     def is_connecting(self):
-        if self.active_interface:
-            return self.active_interface.is_connecting
+        if self.active_session:
+            return self.active_session.is_connecting
         return False
 
     def connect(self):
         '''
-        WARNING: this will not return until connected. Call from a thread.'''
-        if self.active_interface:
-            self.active_interface.connect()
+        WARNING: this will not return until connected or error.
+        Call from a thread.'''
+        if self.active_session:
+            try:
+                self.active_session.connect()
+            except TransportError:
+                pass
+
+    def update_connect_status(self):
+        if self.active_session is not None:
+            self.active_session.update_connect_status()
+        else:
+            self.signal(
+                "pipe;usb_status", "Disconnected")
 
     def abort_connect(self):
-        if self.active_interface:
-            self.active_interface.abort_connect()
+        if self.active_session:
+            self.active_session.abort_connect()
 
     def set_disable_connect(self, should_disable):
         pass
@@ -675,11 +679,11 @@ class RuidaDevice(Service, Status):
         '''Set the interface timeout.
 
         Currently only the UDP interface supports this.'''
-        self.interface_udp.set_timeout(seconds)
+        self.active_session.set_timeout(seconds)
 
     @property
     def is_busy(self):
-        return self.interface_udp.is_busy
+        return self.active_session.is_busy
 
     def service_attach(self, *args, **kwargs):
         self.realize()
