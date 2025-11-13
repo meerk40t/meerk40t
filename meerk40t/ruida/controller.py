@@ -42,7 +42,7 @@ class RuidaController:
         self._send_queue = []
         self._send_thread = None
         self.events = service.channel(f"{service.safe_label}/events")
-        self._status_thread_sleep = 0.25 # Time between polls.
+        self._status_thread_sleep = 0.2 # Time between polls.
         self._status_gross_to = 40 # seconds
         self._status_normal_to = 1 # seconds
         self._status_tries = self._status_normal_to / self._status_thread_sleep
@@ -163,6 +163,7 @@ class RuidaController:
                         self._expected_status = _status
                         self._job_lock.release()
                         _tries = 0
+                        self._next_status()
                     else:
                         _tries += 1
                         if _tries > self._status_tries:
@@ -283,8 +284,6 @@ class RuidaController:
                     # Dispatch to the corresponding updater.
                     self._dispatch_lut[_mem](self, _value)
                 self._connected = True
-                if _mem == self._expected_status:
-                    self._next_status()
         else:
             # Comm failure -- timeout.
             self._connected = False
