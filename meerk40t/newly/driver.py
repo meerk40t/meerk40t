@@ -367,7 +367,7 @@ class NewlyDriver:
             pass
         self.connection.update()
 
-    def move_rel(self, dx, dy, confined):
+    def move_rel(self, dx, dy, confined=False)
         """
         Requests laser move relative position dx, dy in physical units
 

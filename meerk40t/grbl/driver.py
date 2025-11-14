@@ -186,7 +186,7 @@ class GRBLDriver(Parameters):
                 (old_current[0], old_current[1], new_current[0], new_current[1]),
             )
 
-    def move_rel(self, dx, dy, confined):
+    def move_rel(self, dx, dy, confined=False)
         """
         Requests laser move relative position dx, dy in physical units
 
