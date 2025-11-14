@@ -388,7 +388,7 @@ class LihuiyuDriver(Parameters):
         self.rapid_mode()
         self._move_absolute(int(round(x)), int(round(y)))
 
-    def move_rel(self, dx, dy, confined):
+    def move_rel(self, dx, dy, confined=False):
         """
         Requests laser move relative position dx, dy in physical units
 
