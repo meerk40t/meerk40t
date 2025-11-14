@@ -39,8 +39,18 @@ class TestKernel(unittest.TestCase):
         """
         Test registration of kernel command via classbased decorator
         """
-        # Skip this test for now as it has issues with command registration/unregistration
-        self.skipTest("Kernel command registration test has issues with pytest compatibility")
+        def test_plugin_kernel(kernel, lifecycle):
+            if lifecycle == "register":
+                # Register TestObject directly to kernel for kernel commands
+                kernel.add_delegate(TestObject(), kernel)
+
+        kernel = bootstrap.bootstrap(plugins=[test_plugin_kernel])
+        try:
+            # Test kernel command - should return ("elements", 1)
+            result = kernel.root("hello")
+            self.assertEqual(result, 1)
+        finally:
+            kernel()
 
     def test_kernel_commands(self):
         """
