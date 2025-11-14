@@ -379,12 +379,10 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         out = self.controller.write
         self.controller.gross_timeout()
-        self.events(MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING])
-        self.events('Moving to physical home')
         job.home_xy(output=out)
-        time.sleep(5)
-        while self.controller.is_busy:
-            time.sleep(0.25)
+        self.controller.update_machine_status(MACHINE_STATUS_MOVING)
+        self.controller.sync()
+        # time.sleep(0.5)
         self.controller.normal_timeout()
         self.events("Idle")
 

@@ -51,6 +51,8 @@ class RuidaController:
         self._status_thread = threading.Thread(
             target=self._status_monitor, daemon=True)
         self._status_thread.start()
+        self._waiting = False
+        self._idle = True
         self._next = 0
         self._start = False
         self.card_id = b''
@@ -62,6 +64,8 @@ class RuidaController:
         self.z = -1.0
         self.u = -1.0
         self._last_card_id = b''
+        self._x_read = True
+        self._y_read = True
         self._last_bed_x = -1.0
         self._last_bed_y = -1.0
         self._last_x = 0.0
@@ -99,7 +103,7 @@ class RuidaController:
 
     @property
     def is_busy(self):
-        return self.service.is_busy
+        return self._waiting or self.service.is_busy
 
     def gross_timeout(self):
         '''Set a gross comms timeout. This is typically used in situations
@@ -161,7 +165,6 @@ class RuidaController:
         Ruida controller. It also updates the UI when status changes.
 
         NOTE: This thread is blocked while _data_sender is running.'''
-        _tries = 0
         time.sleep(3) # Wait for controller window to init. Need a semaphore.
         try:
             while True:
@@ -169,17 +172,18 @@ class RuidaController:
                 if self.service.connected:
                     if not self.service.is_busy:
                         self._job_lock.acquire() # Wait if sending a job.
+                        self._waiting = True
                         # Step through a series of commands and send/recv each one
                         # by one. When received, recv will update the UI.
                         _status = self.STATUS_ADDRESSES[self._next]
                         self.job.get_setting(
                             _status, output=self.write)
                         self._job_lock.release()
-                        _tries = 0
                         self._next += 1
                         if self._next >= len(self.STATUS_ADDRESSES):
                             self._next = 0
                 else:
+                    self._waiting = True
                     self.service.connect()
                     self.card_id = ''
                 time.sleep(self._status_thread_sleep)
@@ -203,12 +207,16 @@ class RuidaController:
             # definition is needed.
             if status & MACHINE_STATUS_MOVING:
                 _msg = MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING]
+                self._idle = False
             elif status & MACHINE_STATUS_PART_END:
                 _msg = MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_PART_END]
+                self._idle = False
             elif status & MACHINE_STATUS_JOB_RUNNING:
                 _msg = MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_JOB_RUNNING]
+                self._idle = False
             else:
                 _msg = 'Idle'
+                self._idle = True
             # Signal the GUI update.
             self.events(_msg)
             self.service.signal('pipe;usb_status', _msg)
@@ -231,28 +239,33 @@ class RuidaController:
             self.service.bedheight = f'{_bed_y:.1f}mm'
             self.service.signal('bedheight', self.service.bedheight)
 
-    def update_x(self, x):
-        # The (x - 50) adjusts for a rounding error on the Ruida display.
-        _x = round((self.bed_x * 1000 - (x - 50)) * UNITS_PER_uM, 1)
-        if _x != self.x:
-            self.x = _x
+    def _update_position(self):
+        if True or self._x_read and self._y_read:
             # Signal the GUI update.
             self.service.signal(
                 "driver;position",
                 (self._last_x, self._last_y, self.x, self.y))
+            self._x_read = False
+            self._y_read = False
             self._last_x = self.x
+            self._last_y = self.y
+
+    def update_x(self, x):
+        # The (x - 50) adjusts for a rounding error on the Ruida display.
+        _x = round((self.bed_x * 1000 - (x - 50)) * UNITS_PER_uM, 1)
+        self._x_read = True
+        if _x != self.x:
+            self.x = _x
+            self._update_position()
             self.service.driver.native_x = x
 
     def update_y(self, y):
         # The (y - 50) adjusts for a rounding error on the Ruida display.
         _y = round((y - 50) * UNITS_PER_uM, 1)
+        self._y_read = True
         if _y != self.y:
             self.y = _y
-            # Signal the GUI update.
-            self.service.signal(
-                "driver;position",
-                (self._last_x, self._last_y, self.x, self.y))
-            self._last_y = self.y
+            self._update_position()
             self.service.driver.native_y = y
 
     def update_z(self, z):
@@ -290,6 +303,7 @@ class RuidaController:
                 if _mem in self._dispatch_lut:
                     # Dispatch to the corresponding updater.
                     self._dispatch_lut[_mem](self, _value)
+                self._waiting = False
                 self._connected = True
         else:
             # Comm failure -- timeout.
@@ -354,7 +368,15 @@ class RuidaController:
         pass
 
     def wait_idle(self):
-        pass
+        while not self._idle and self.service.connected:
+            time.sleep(0.025)
+        self.x = -1
+        self.y = -1
+
+    def sync(self):
+        '''Resync the status monitor.'''
+        self.wait_idle()
+        self.service.active_session.close() # Reconnects automatically.
 
     def abort(self):
         self.mode = "rapid"
