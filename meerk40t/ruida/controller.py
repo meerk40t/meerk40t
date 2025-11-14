@@ -22,7 +22,6 @@ from meerk40t.ruida.rdjob import (
     MEM_CURRENT_Y,
     MEM_CURRENT_Z,
     MEM_CURRENT_U,
-    STATUS_ADDRESSES,
     RDJob)
 
 
@@ -52,7 +51,6 @@ class RuidaController:
         self._status_thread = threading.Thread(
             target=self._status_monitor, daemon=True)
         self._status_thread.start()
-        self._expected_status = None
         self._next = 0
         self._start = False
         self.card_id = b''
@@ -101,7 +99,7 @@ class RuidaController:
 
     @property
     def is_busy(self):
-        return self._expected_status is not None
+        return self.service.is_busy
 
     def gross_timeout(self):
         '''Set a gross comms timeout. This is typically used in situations
@@ -132,13 +130,29 @@ class RuidaController:
         self.events("File Sent.")
         self._job_lock.release()
 
-    def _next_status(self):
-        '''The expected status has been received. Advance to the next.
-        '''
-        self._next += 1
-        if self._next >= len(STATUS_ADDRESSES):
-            self._next = 0
-        self._expected_status = None
+    # This table defines the sequence in which specific mem reads occur. It also
+    # controls the number of times the same request repeats relative to
+    # other requests. The intent is to be able the tune the responsiveness of
+    # things like head location updates.
+    STATUS_ADDRESSES = (
+        MEM_CARD_ID,
+        MEM_MACHINE_STATUS,
+        MEM_CURRENT_X,
+        MEM_CURRENT_Y,
+        MEM_MACHINE_STATUS,
+        MEM_CURRENT_X,
+        MEM_CURRENT_Y,
+        MEM_MACHINE_STATUS,
+        MEM_BED_SIZE_X,
+        MEM_CURRENT_X,
+        MEM_CURRENT_Y,
+        MEM_MACHINE_STATUS,
+        MEM_BED_SIZE_Y,
+        MEM_CURRENT_X,
+        MEM_CURRENT_Y,
+    #    MEM_CURRENT_Z,
+    #    MEM_CURRENT_U,
+        )
 
     def _status_monitor(self):
         '''Status monitoring thread.
@@ -154,24 +168,17 @@ class RuidaController:
                 # if not self.is_busy and not self.service.is_busy:
                 if self.service.connected:
                     if not self.service.is_busy:
-                        self._job_lock.acquire() # Wait if running a job.
+                        self._job_lock.acquire() # Wait if sending a job.
                         # Step through a series of commands and send/recv each one
                         # by one. When received, recv will update the UI.
-                        _status = STATUS_ADDRESSES[self._next]
+                        _status = self.STATUS_ADDRESSES[self._next]
                         self.job.get_setting(
                             _status, output=self.write)
-                        self._expected_status = _status
                         self._job_lock.release()
                         _tries = 0
-                        self._next_status()
-                    else:
-                        _tries += 1
-                        if _tries > self._status_tries:
-                            if self._expected_status is not None:
-                                self.job.get_setting(
-                                    self._expected_status, output=self.write)
-                            _tries = 0
-                            # self._expected_status = None
+                        self._next += 1
+                        if self._next >= len(self.STATUS_ADDRESSES):
+                            self._next = 0
                 else:
                     self.service.connect()
                     self.card_id = ''

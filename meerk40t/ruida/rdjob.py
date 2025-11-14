@@ -254,17 +254,6 @@ REPLY_LABEL_LUT = {
 }
 
 
-STATUS_ADDRESSES = (
-    MEM_CARD_ID,
-    MEM_MACHINE_STATUS,
-    MEM_BED_SIZE_X,
-    MEM_BED_SIZE_Y,
-    MEM_CURRENT_X,
-    MEM_CURRENT_Y,
-#    MEM_CURRENT_Z,
-#    MEM_CURRENT_U,
-    )
-
 def encode_switch(state):
     assert state == 0 or state == 1
     return bytes([state])
