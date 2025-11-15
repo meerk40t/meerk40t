@@ -111,7 +111,7 @@ class Driver:
         @return:
         """
 
-    def move_rel(self, dx, dy):
+    def move_rel(self, dx, dy, confined=False):
         """
         Requests laser move relative position dx, dy in physical units
 

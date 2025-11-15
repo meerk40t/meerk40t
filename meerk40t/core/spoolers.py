@@ -211,13 +211,15 @@ def plugin(kernel, lifecycle):
                 idy = spooler._dy
             except AttributeError:
                 return
+            confined = getattr(kernel.root, 'confined', False)
+
             if force:
-                spooler.command("move_rel", idx, idy)
+                spooler.command("move_rel", idx, idy, False)
                 spooler._dx = Length(0)
                 spooler._dy = Length(0)
             else:
                 if spooler.is_idle:
-                    spooler.command("move_rel", float(idx), float(idy))
+                    spooler.command("move_rel", float(idx), float(idy), confined)
                     channel(_("Position moved: {x} {y}").format(x=idx, y=idy))
                     spooler._dx = Length(0)
                     spooler._dy = Length(0)
@@ -262,14 +264,15 @@ def plugin(kernel, lifecycle):
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
                 data = kernel.device.spooler
+            confined = getattr(kernel.root, 'confined', False)
             spooler = data
             if dy is None:
                 raise CommandSyntaxError
             if force:
-                spooler.command("move_rel", dx, dy)
+                spooler.command("move_rel", dx, dy, False)
             else:
                 if spooler.is_idle:
-                    spooler.command("move_rel", dx, dy)
+                    spooler.command("move_rel", dx, dy, confined)
                 else:
                     channel(_("Busy Error"))
             return "spooler", spooler
