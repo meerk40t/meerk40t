@@ -7,7 +7,7 @@ Application Layer (Layer 7) of the OSI model.
 import threading
 import time
 
-from meerk40t.core.units import UNITS_PER_uM
+from meerk40t.core.units import UNITS_PER_uM, Length
 
 from meerk40t.ruida.rdjob import (
     MEM_CARD_ID,
@@ -63,14 +63,15 @@ class RuidaController:
         self.z = -1.0
         self.u = -1.0
         self._last_card_id = b''
-        self._x_read = True
-        self._y_read = True
+        self._x_read = False
+        self._y_read = False
         self._last_bed_x = -1.0
         self._last_bed_y = -1.0
         self._last_x = 0.0
         self._last_y = 0.0
         self._last_z = 0.0
         self._last_u = 0.0
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
     def start_sending(self):
         self._send_thread = threading.Thread(target=self._data_sender, daemon=True)
@@ -140,17 +141,17 @@ class RuidaController:
     STATUS_ADDRESSES = (
         MEM_CARD_ID,
         MEM_MACHINE_STATUS,
-        MEM_CURRENT_X,
-        MEM_CURRENT_Y,
-        MEM_MACHINE_STATUS,
-        MEM_CURRENT_X,
-        MEM_CURRENT_Y,
-        MEM_MACHINE_STATUS,
         MEM_BED_SIZE_X,
+        MEM_BED_SIZE_Y,
         MEM_CURRENT_X,
         MEM_CURRENT_Y,
         MEM_MACHINE_STATUS,
-        MEM_BED_SIZE_Y,
+        MEM_CURRENT_X,
+        MEM_CURRENT_Y,
+        MEM_MACHINE_STATUS,
+        MEM_CURRENT_X,
+        MEM_CURRENT_Y,
+        MEM_MACHINE_STATUS,
         MEM_CURRENT_X,
         MEM_CURRENT_Y,
     #    MEM_CURRENT_Z,
@@ -226,7 +227,7 @@ class RuidaController:
             self.bed_x = _bed_x
             # Signal the GUI update.
             # TODO: The GUI should define the format and presentation units.
-            self.service.bedwidth = f'{_bed_x:.1f}mm'
+            self.service.bedwidth = Length(f'{_bed_x:.1f}mm')
             self.service.signal('bedwidth', self.service.bedwidth)
 
     def update_bed_y(self, bed_y):
@@ -235,15 +236,19 @@ class RuidaController:
             self.bed_y = _bed_y
             # Signal the GUI update.
             # TODO: The GUI should define the format and presentation units.
-            self.service.bedheight = f'{_bed_y:.1f}mm'
+            self.service.bedheight = Length(f'{_bed_y:.1f}mm')
             self.service.signal('bedheight', self.service.bedheight)
 
     def _update_position(self):
-        if True or self._x_read and self._y_read:
-            # Signal the GUI update.
-            self.service.signal(
-                "driver;position",
-                (self._last_x, self._last_y, self.x, self.y))
+        if self._x_read and self._y_read:
+            # Signal the GUI update - convert to system units.
+            _last_x = Length(f'{self._last_x}mm').units
+            _last_y = Length(f'{self._last_y}mm').units
+            _x = Length(f'{self.x}mm').units
+            _y = Length(f'{self.y}mm').units
+
+            if self._signal_updates:
+                self.service.signal("driver;position", (_last_x, _last_y, _x, _y))
             self._x_read = False
             self._y_read = False
             self._last_x = self.x
@@ -251,18 +256,18 @@ class RuidaController:
 
     def update_x(self, x):
         # The (x - 50) adjusts for a rounding error on the Ruida display.
-        _x = round((self.bed_x * 1000 - (x - 50)) * UNITS_PER_uM, 1)
+        _x = round(self.bed_x - (x - 50) / 1000, 1)
         self._x_read = True
-        if _x != self.x:
+        if _x != self.x or self._y_read:
             self.x = _x
             self._update_position()
             self.service.driver.native_x = x
 
     def update_y(self, y):
         # The (y - 50) adjusts for a rounding error on the Ruida display.
-        _y = round((y - 50) * UNITS_PER_uM, 1)
+        _y = round((y + 50) / 1000, 1)
         self._y_read = True
-        if _y != self.y:
+        if _y != self.y or self._x_read:
             self.y = _y
             self._update_position()
             self.service.driver.native_y = y

@@ -67,7 +67,9 @@ class RuidaDriver(Parameters):
             dict(), single=True, ppi=False, shift=False, group=True
         )
         self._aborting = False
-        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        #self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        self._signal_updates = False # Disable because not in sync with actual
+                                     # position and causes jumping cursor.
 
     def __repr__(self):
         return f"RuidaDriver({self.name})"
@@ -331,12 +333,12 @@ class RuidaDriver(Parameters):
         @return:
         """
         if confined:
-            new_x = self.native_x * self.service.view.native_scale_x + dx
+            new_x = self.native_x * self.service.view.native_scale_x - dx
             new_y = self.native_y * self.service.view.native_scale_y + dy
             if new_x < 0:
                 dx = - self.native_x * self.service.view.native_scale_x
             elif new_x > self.service.view.width:
-                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x 
+                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x
             if new_y < 0:
                 dy = - self.native_y * self.service.view.native_scale_y
             elif new_y > self.service.view.height:
