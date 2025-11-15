@@ -53,6 +53,8 @@ class RuidaSession:
         # TODO: Tune the queue size.
         self.send_q = queue.Queue(2 ** 18) # Power of 2 for efficiency.
         self._q_to = 0.25 # Queue timeout.
+        self.swizzle = None
+        self.unswizzle = None
 
         # Status
         self._responding = False
@@ -222,7 +224,7 @@ class RuidaSession:
         '''
         # Wait for init to complete. Need the swizzle method from RDJob.
         # TODO: Has the chicken/egg been resolved?
-        while self.swizzle is None:
+        while self.swizzle is None or self.unswizzle is None:
             time.sleep(0.25)
         if not self.connected:
             self.update_connect_status()
@@ -307,7 +309,10 @@ class RuidaSession:
                 # responsive.
                 # Also shutdown can happen any time this thread is waiting.
                 # IDLE
-                while not self._shutdown: # Block here for IDLE state.
+                _message = None
+                self.connect()
+                while self.connected and not self._shutdown:
+                    # Block here for IDLE state.
                     try: # NOTE: The queue will be empty if not opened.
                         # Don't block forever because some earlier versions
                         # of Python and on Windows will not respond to
@@ -319,11 +324,11 @@ class RuidaSession:
                     # TODO: Could add a sanity check on connect state.
                 if self._shutdown:
                     continue
-                self.connect()
                 # Transition
                 # Check for only KNOWN command expecting a reply.
-                if (_message[0] == 0xDA and
-                    _message[1] != 0x01): # 0x01 is a memory set -- no reply.
+                if (_message is not None
+                        and (_message[0] == 0xDA
+                        and _message[1] != 0x01)): # 0x01 is a memory set -- no reply.
                     self._reply_pending = True
                 _packet = self._package(_message)
                 self.transport.write(_packet)
