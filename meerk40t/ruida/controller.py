@@ -44,7 +44,6 @@ class RuidaController:
         self._status_thread_sleep = 0.2 # Time between polls.
         self._status_gross_to = 40 # seconds
         self._status_normal_to = 1 # seconds
-        self._status_tries = self._status_normal_to / self._status_thread_sleep
         self._connected = False
         self._job_lock = threading.Lock() # To allow running a job.
         self._job_lock.acquire() # Hold threads until told to start.
@@ -108,15 +107,12 @@ class RuidaController:
     def gross_timeout(self):
         '''Set a gross comms timeout. This is typically used in situations
         where the Ruida controller is expected to stop communicating for
-        extended periods of time but is still OK.'''
-        self._status_tries = self._status_gross_to / self._status_thread_sleep
+        extended periods of time, such as when doing a physical home, but is
+        still OK.'''
         self.service.set_timeout(self._status_gross_to)
 
     def normal_timeout(self):
-        '''Set a gross comms timeout. This is typically used in situations
-        where the Ruida controller is expected to stop communicating for
-        extended periods of time but is still OK.'''
-        self._status_tries = self._status_normal_to / self._status_thread_sleep
+        '''Set a normal comms timeout.'''
         self.service.set_timeout(self._status_normal_to)
 
     def _data_sender(self):
