@@ -51,6 +51,7 @@ class RuidaDriver(Parameters):
         self.power_dirty = True
         self._current_power = -1.0
 
+        self._jog_speed = 600.0
         self.speed_dirty = True
         self.absolute_dirty = True
         self._absolute = True
@@ -302,7 +303,7 @@ class RuidaDriver(Parameters):
         old_current = self.service.current
         job = self.controller.job
         out = self.controller.write
-        job.speed_laser_1(400.0, output=out)
+        job.speed_laser_1(self._jog_speed, output=out)
 
         x, y = self.service.view.position(x, y)
 
@@ -348,6 +349,7 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         out = self.controller.write
         dx, dy = self.service.view.position(dx, dy, vector=True)
+        job.speed_laser_1(self._jog_speed, output=out)
         if dx == 0:
             if dy != 0:
                 job.rapid_move_y(dy, output=out)
