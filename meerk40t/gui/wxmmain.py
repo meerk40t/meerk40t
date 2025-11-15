@@ -5168,7 +5168,7 @@ class MeerK40t(MWindow):
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
         self.main_statusbar.SetStatusText(
-            _("Usb: {index}").format(index=value),
+            _("Laser: {index}").format(index=value),
             1,
         )
 
