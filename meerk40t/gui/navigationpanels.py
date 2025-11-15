@@ -1630,7 +1630,7 @@ class MovePanel(wx.Panel):
         h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
         button_info_sizer = wx.BoxSizer(wx.VERTICAL)
         smallfont = wx.Font(
-            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.label_pos.SetFont(smallfont)
         button_info_sizer.Add(
