@@ -322,7 +322,7 @@ class RuidaDriver(Parameters):
                 (old_current[0], old_current[1], new_current[0], new_current[1]),
             )
 
-    def move_rel(self, dx, dy):
+    def move_rel(self, dx, dy, confined=False):
         """
         Requests laser move relative position dx, dy in physical units
 
@@ -330,6 +330,18 @@ class RuidaDriver(Parameters):
         @param dy:
         @return:
         """
+        if confined:
+            new_x = self.native_x * self.service.view.native_scale_x + dx
+            new_y = self.native_y * self.service.view.native_scale_y + dy
+            if new_x < 0:
+                dx = - self.native_x * self.service.view.native_scale_x
+            elif new_x > self.service.view.width:
+                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x 
+            if new_y < 0:
+                dy = - self.native_y * self.service.view.native_scale_y
+            elif new_y > self.service.view.height:
+                dy = self.service.view.height - self.native_y * self.service.view.native_scale_y
+
         old_current = self.service.current
         job = self.controller.job
         out = self.controller.write

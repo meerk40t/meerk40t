@@ -611,6 +611,47 @@ class Meerk40tFonts:
             bitmap.LoadFile(bmpfile, wx.BITMAP_TYPE_PNG)
         return bitmap
 
+    def _validate_cache_entry(self, entry):
+        """
+        Validate a single cache entry for invalid characters.
+        
+        @param entry: Tuple of (full_path, display_name, family, subfamily, is_system)
+        @return: True if valid, False if contains invalid characters
+        """
+        if not isinstance(entry, tuple) or len(entry) != 5:
+            return False
+            
+        full_path, display_name, family, subfamily, is_system = entry
+        
+        # Check that all string fields are actually strings and not empty
+        for field in [full_path, display_name, family, subfamily]:
+            if not isinstance(field, str) or not field.strip():
+                return False
+        
+        # Check for non-printable characters in display_name (most likely to be garbled)
+        for char in display_name:
+            if not char.isprintable():
+                return False
+        
+        # Check for obviously garbled text - if display_name contains many non-ASCII characters
+        # when it should typically be ASCII for font names, it might be corrupted
+        non_ascii_count = sum(1 for c in display_name if ord(c) > 127)
+        if non_ascii_count > len(display_name) * 0.5:  # More than 50% non-ASCII
+            # Additional check: if it contains CJK characters, it's likely garbled
+            cjk_ranges = [
+                (0x4E00, 0x9FFF),   # CJK Unified Ideographs
+                (0x3400, 0x4DBF),   # CJK Extension A
+                (0x20000, 0x2A6DF), # CJK Extension B
+                (0x2A700, 0x2B73F), # CJK Extension C
+                (0x2B740, 0x2B81F), # CJK Extension D
+                (0x2B820, 0x2CEAF), # CJK Extension E
+            ]
+            cjk_count = sum(1 for c in display_name if any(start <= ord(c) <= end for start, end in cjk_ranges))
+            if cjk_count > len(display_name) * 0.3:  # More than 30% CJK characters
+                return False
+        
+        return True
+
     def available_fonts(self):
         if self._available_fonts is not None:
             return self._available_fonts
@@ -623,6 +664,7 @@ class Meerk40tFonts:
         self._available_fonts = []
 
         cache = self.cache_file
+        cache_valid = True
         if exists(cache):
             try:
                 with open(cache, "r", encoding="utf-8") as f:
@@ -634,20 +676,34 @@ class Meerk40tFonts:
                         parts = line.split("|")
                         if len(parts) > 4:
                             flag = False
-                            if parts[4].lower in ("true", "1"):
+                            if parts[4].lower() in ("true", "1"):
                                 flag = True
-                            self._available_fonts.append(
-                                (
-                                    parts[0],
-                                    parts[1],
-                                    parts[2],
-                                    parts[3],
-                                    flag,
-                                )
+                            entry = (
+                                parts[0],
+                                parts[1],
+                                parts[2],
+                                parts[3],
+                                flag,
                             )
-            except (OSError, FileNotFoundError, PermissionError):
+                            # Validate the cache entry
+                            if not self._validate_cache_entry(entry):
+                                cache_valid = False
+                                break
+                            self._available_fonts.append(entry)
+            except (OSError, FileNotFoundError, PermissionError, UnicodeDecodeError):
+                cache_valid = False
                 self._available_fonts = []
-            if len(self._available_fonts):
+            
+            if not cache_valid:
+                # Cache contains invalid data, remove it so it gets rebuilt
+                try:
+                    os.remove(cache)
+                except (OSError, FileNotFoundError, PermissionError):
+                    pass
+                # Also clear the LRU cache for get_font_information since it might contain old data
+                self.get_font_information.cache_clear()
+                self._available_fonts = []
+            elif len(self._available_fonts):
                 # Check that the std font is present
                 if not any(f[0] == STD_FONT_FILE for f in self._available_fonts):
                     self._available_fonts.insert(

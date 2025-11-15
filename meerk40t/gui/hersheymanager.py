@@ -351,6 +351,35 @@ class FontGlyphPicker(wx.Dialog):
         return self.txt_result.GetValue()
 
 
+class TextVariables(wx.Panel):
+    def __init__(self, *args, context=None, textbox=None, **kwds):
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.textbox = textbox
+        self.context.themes.set_window_colors(self)
+        # populate listbox
+        choices = self.context.elements.mywordlist.get_variable_list()
+        self.lb_variables = wxListBox(self, wx.ID_ANY, choices=choices)
+        self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
+        sizer_h_variables = StaticBoxSizer(
+            self,
+            wx.ID_ANY,
+            _("Available Variables (double click to use)"),
+            wx.HORIZONTAL,
+        )
+        sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_h_variables)
+        self.Layout()
+        self.lb_variables.Bind(wx.EVT_LISTBOX_DCLICK, self.on_variable_dclick)
+
+    def on_variable_dclick(self, event):
+        svalue = event.GetString()
+        svalue = svalue[0 : svalue.find(" (")]
+        svalue = self.textbox.GetValue() + " {" + svalue + "}"
+        self.textbox.SetValue(svalue.strip(" "))
+
+
 class LineTextPropertyPanel(wx.Panel):
     """
     Panel for post-creation text property editing
@@ -468,29 +497,40 @@ class LineTextPropertyPanel(wx.Panel):
             self.btn_attrib_lineplus,
         ):
             btn.SetMinSize(dip_size(self, 35, 35))
-
-        sizer_fonts = StaticBoxSizer(
-            self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
+        self.notebook = wx.Notebook(self, id=wx.ID_ANY)
+        self.context.themes.set_window_colors(self.notebook)
+        self.panel_variables = TextVariables(
+            self.notebook, wx.ID_ANY, context=self.context, textbox=self.text_text
         )
-        self.warning_label = wxStaticText(self, wx.ID_ANY, "")
+        page_main = wx.Panel(self.notebook, id=wx.ID_ANY)
+        sizer_fonts = StaticBoxSizer(
+            page_main, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
+        )
+        self.warning_label = wxStaticText(page_main, wx.ID_ANY, "")
         self.warning_label.Show(False)
         self.warning_label.SetForegroundColour(wx.Colour(255, 0, 0))
         self.warning_label.SetBackgroundColour(self.context.themes.get("win_bg"))
-        self.list_fonts = wxListBox(self, wx.ID_ANY)
+        self.list_fonts = wxListBox(page_main, wx.ID_ANY)
         self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
+        self.bmp_preview = wxStaticBitmap(page_main, wx.ID_ANY)
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
+
         sizer_fonts.Add(self.warning_label, 0, wx.EXPAND, 0)
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
-
-        self.bmp_preview = wxStaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
-
+        page_main.SetSizer(sizer_fonts)
+        page_main.Layout()
+        page_main.Reparent(self.notebook)
+        self.panel_variables.Reparent(self.notebook)
+        self.notebook.AddPage(page_main, _("Fonts"))
+        self.notebook.AddPage(self.panel_variables, _("Text-Variables"))
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
         main_sizer.Add(text_options, 0, wx.EXPAND, 0)
-        main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.notebook, 0, wx.EXPAND, 0)
+        # main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
         self.btn_bigger.Bind(wx.EVT_BUTTON, self.on_button_bigger)
@@ -574,6 +614,7 @@ class LineTextPropertyPanel(wx.Panel):
     def load_directory(self):
         self.list_fonts.Clear()
         self.fonts = self.context.fonts.available_fonts()
+        # print ("Fonts loaded:", len(self.fonts), self.fonts)
         font_desc = [e[1] for e in self.fonts]
         self.list_fonts.SetItems(font_desc)
         # index = -1
@@ -876,7 +917,7 @@ class PanelFontSelect(wx.Panel):
         self.fonts.clear()
         font_desc = []
         for entry in self.all_fonts:
-            # 0 basename, 1 full_path, 2 facename
+            # entry format: (full_path, display_name, family, subfamily, is_system)
             parts = os.path.splitext(entry[0])
             if len(parts) > 1:
                 extension = parts[1][1:].lower()
@@ -884,8 +925,8 @@ class PanelFontSelect(wx.Panel):
                     if not self.font_checks[extension][1]:
                         entry = None
             if entry is not None:
-                self.fonts.append(entry[0])
-                font_desc.append(entry[1])
+                self.fonts.append(entry[0])  # full_path
+                font_desc.append(entry[1])  # display_name
 
         self.list_fonts.SetItems(font_desc)
 
