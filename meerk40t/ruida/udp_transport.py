@@ -38,6 +38,8 @@ class UDPTransport(RuidaTransport):
 
     def close(self):
         '''Close the transport interface.'''
+        if self.is_open:
+            return
         self.socket.close()
         self.socket = None
 
