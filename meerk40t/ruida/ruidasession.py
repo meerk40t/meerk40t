@@ -263,7 +263,10 @@ class RuidaSession:
                     if self.interface == 'usb':
                         # Try until the OS figures out the USB device.
                         try:
-                            self.transport.close()
+                            if self.transport is None:
+                                self._open()
+                            else:
+                                self.transport.close()
                             self.transport.open()
                         except TransportError:
                             pass
@@ -376,6 +379,7 @@ class RuidaSession:
                                 self.transport.write(_packet)
                             except TransportError:
                                 self._responding = False
+                                self._ack_pending = False
                             self.naks += 1
                         elif _ack == ENQ:
                             self.enqs += 1
