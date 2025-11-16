@@ -267,8 +267,12 @@ class RuidaSession:
                     continue
                 # Drop any replies the controller had been saving to confuse
                 # drivers with.
-                _data = self.transport.purge()
-                self.dropped_packets += 1
+                # Put try/except TransportError and set responding False.
+                try:
+                    _data = self.transport.purge()
+                    self.dropped_packets += 1
+                except TransportError:
+                    self._responding = False
             # Prime the pump to get things rolling.
             self.send_q.put(_enq, timeout=self._q_to)
             self.update_connect_status()

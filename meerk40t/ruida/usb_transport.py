@@ -73,7 +73,7 @@ class USBTransport(RuidaTransport):
             raise TransportError
         try:
             return self.serial.read(n)
-        except SerialException:
+        except (SerialException, TypeError):
             raise TransportTimeout
 
     def write(self, data: bytes):
@@ -107,6 +107,7 @@ class USBTransport(RuidaTransport):
         _spewing = True
         while _spewing:
             try:
+                # try except TypeError and raise TransportError
                 _b = self.serial.read(1)
                 _spewing = len(_b) > 0
             except SerialException:
