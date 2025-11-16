@@ -113,7 +113,7 @@ class RuidaSession:
         self.events("Disconnected")
 
     def close(self):
-        if not self.is_open:
+        if self.transport is None:
             return
         self.transport.close()
         self.transport = None
@@ -162,7 +162,10 @@ class RuidaSession:
         return self._reply_pending or self._ack_pending
 
     def abort_connect(self):
-        pass
+        if self.transport is not None:
+            self.transport.close()
+            self.transport = None
+            self._open()
 
     def write(self, data):
         '''Provide double buffered data transmission.
@@ -307,8 +310,8 @@ class RuidaSession:
         self._ack_pending = False
         self._responding = False
         self._is_shutdown = False
-        try:
-            while not self._shutdown:
+        while not self._shutdown:
+            try:
                 # Be sure to allow context switching so the GUI remains
                 # responsive.
                 # Also shutdown can happen any time this thread is waiting.
@@ -326,16 +329,18 @@ class RuidaSession:
                     except queue.Empty:
                         continue
                     # TODO: Could add a sanity check on connect state.
-                if self._shutdown:
+                if self._shutdown or _message is None:
                     continue
                 # Transition
                 # Check for only KNOWN command expecting a reply.
-                if (_message is not None
-                        and (_message[0] == 0xDA
-                        and _message[1] != 0x01)): # 0x01 is a memory set -- no reply.
+                if (_message[0] == 0xDA
+                        and _message[1] != 0x01): # 0x01 is a memory set -- no reply.
                     self._reply_pending = True
                 _packet = self._package(_message)
-                self.transport.write(_packet)
+                try:
+                    self.transport.write(_packet)
+                except TransportError:
+                    self._responding = False
                 self.sends += 1
                 if self.interface == 'udp':
                     self._ack_pending = True
@@ -345,7 +350,7 @@ class RuidaSession:
                 while self._ack_pending:
                     try:
                         _data = self.transport.read(1)
-                    except TransportTimeout:
+                    except (TransportTimeout, TransportError, AttributeError):
                         # Handle a receive timeout. This may be the result of a
                         # loss of sync or the controller is no longer responding.
                         # NOTE: This will occur while the controller is executing
@@ -367,7 +372,10 @@ class RuidaSession:
                             self._ack_pending = False
                             self.acks += 1
                         elif _ack == NAK:
-                            self.transport.write(_packet)
+                            try:
+                                self.transport.write(_packet)
+                            except TransportError:
+                                self._responding = False
                             self.naks += 1
                         elif _ack == ENQ:
                             self.enqs += 1
@@ -389,7 +397,7 @@ class RuidaSession:
                         self.replies += 1
                         _reply = self.unswizzle(_data)
                         self.recv(_reply) # Forward to client.
-                    except TransportTimeout:
+                    except (TransportTimeout, AttributeError):
                         if _tries >= 0:
                             _tries -= 1
                         else:
@@ -397,9 +405,10 @@ class RuidaSession:
                             self.recv(None) # Inform the upper layer of failure.
                             self.events('Time out when expecting data.')
                             break
-            self._is_shutdown = True
-        except OSError:
-            self.service.signal(
-                "pipe;usb_status", "Ruida comms ERROR")
-            self.events("Ruida comms error.")
-            self.shutdown()
+            except OSError:
+                if self._responding:
+                    self.service.signal(
+                        "pipe;usb_status", "Ruida comms ERROR")
+                    self.events("Ruida comms error.")
+                    self._responding = False
+        self._is_shutdown = True

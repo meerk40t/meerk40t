@@ -108,7 +108,10 @@ class USBTransport(RuidaTransport):
         while _spewing:
             try:
                 # try except TypeError and raise TransportError
-                _b = self.serial.read(1)
+                try:
+                    _b = self.serial.read(1)
+                except TypeError: # May not exist if reconnecting.
+                    raise TransportError
                 _spewing = len(_b) > 0
             except SerialException:
                 _spewing = False

@@ -32,13 +32,16 @@ class UDPTransport(RuidaTransport):
         '''Open the transport interface.'''
         if self.is_open:
             return
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.settimeout(self._s_to)
-        self.socket.bind(("", self.listen_port))
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.socket.settimeout(self._s_to)
+            self.socket.bind(("", self.listen_port))
+        except OSError:
+            raise TransportError
 
     def close(self):
         '''Close the transport interface.'''
-        if self.is_open:
+        if not self.is_open:
             return
         self.socket.close()
         self.socket = None
@@ -57,7 +60,7 @@ class UDPTransport(RuidaTransport):
             raise TransportError
         try:
             _data, _ = self.socket.recvfrom(1024)
-        except (socket.timeout, AttributeError):
+        except (socket.timeout, AttributeError, OSError):
             raise TransportTimeout
         return _data
 
@@ -65,7 +68,10 @@ class UDPTransport(RuidaTransport):
         '''Send the data using the transport interface.'''
         if not self.is_open:
             raise TransportError
-        self.socket.sendto(data, (self.send_address, self.send_port))
+        try:
+            self.socket.sendto(data, (self.send_address, self.send_port))
+        except OSError:
+            raise TransportError
 
     def set_timeout(self, seconds: float):
         '''Set the receive timeout.
@@ -83,7 +89,7 @@ class UDPTransport(RuidaTransport):
         data if necessary.
         '''
         _spewing = True
-        while _spewing:
+        while _spewing and self.is_open:
             try:
                 self.socket.recvfrom(1024)
                 self.dropped_packets += 1
@@ -97,7 +103,8 @@ class UDPTransport(RuidaTransport):
     @property
     def is_open(self):
         '''Return True if the transport interface has been opened.'''
-        return self.socket is not None
+        return (self.socket is not None
+                and self.socket.getsockname() != '0.0.0.0')
 
     @property
     def connected(self) -> bool:

@@ -182,9 +182,11 @@ class RuidaControllerPanel(wx.ScrolledWindow):
 
         if connected:
             self.context("ruida_disconnect\n")
+            self.service.abort_connect()
             self.service.set_disable_connect(False)
         else:
             self.service.set_disable_connect(False)
+            self.service.abort_connect()
             self.context("ruida_connect\n")
 
     def pane_show(self):
