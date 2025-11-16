@@ -257,7 +257,7 @@ class RuidaSession:
                             self._ack_pending = False
                             self._reply_pending = False
                             self._responding = True
-                except (TransportTimeout, TransportError):
+                except (TransportTimeout, TransportError, AttributeError):
                     # Still not responding.
                     time.sleep(1)
                     if self.interface == 'usb':
