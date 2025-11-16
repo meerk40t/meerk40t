@@ -169,6 +169,8 @@ class RuidaDriver(Parameters):
         @return:
         """
         # Write layer header information.
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        self.controller.show_cursor = False
         self.controller.start_record()
         self.controller.job.write_header(self.queue)
         first = True
@@ -290,6 +292,8 @@ class RuidaDriver(Parameters):
         # Ruida end data.
         self.controller.job.write_tail()
         self.controller.stop_record()
+        self.controller.show_cursor = self.service.setting(bool, "signal_updates", True)
+        self._signal_updates = False
         return False
 
     def move_abs(self, x, y):

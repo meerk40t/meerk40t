@@ -71,7 +71,7 @@ class RuidaController:
         self._last_y = 0.0
         self._last_z = 0.0
         self._last_u = 0.0
-        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        self.show_cursor = self.service.setting(bool, "signal_updates", True)
 
     def start_sending(self):
         self._send_thread = threading.Thread(target=self._data_sender, daemon=True)
@@ -247,7 +247,7 @@ class RuidaController:
             _x = Length(f'{self.x}mm').units
             _y = Length(f'{self.y}mm').units
 
-            if self._signal_updates:
+            if self.show_cursor:
                 self.service.signal("driver;position", (_last_x, _last_y, _x, _y))
             self._x_read = False
             self._y_read = False
