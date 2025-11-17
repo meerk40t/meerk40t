@@ -353,7 +353,8 @@ class RuidaDevice(Service, Status):
         self.setting(int, "packet_count", 0)
         self.setting(str, "serial", None)
         self.setting(str, "address", "localhost")
-
+        self.setting(bool, "tcp_keepalive", False)
+        
         self.driver = RuidaDriver(self)
 
         self.spooler = Spooler(self, driver=self.driver)

@@ -224,10 +224,11 @@ class ConfigurationTcp(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_13 = StaticBoxSizer(self, wx.ID_ANY, _("TCP Settings"), wx.HORIZONTAL)
-
+        sizer_main = StaticBoxSizer(self, wx.ID_ANY, _("TCP Settings"), wx.VERTICAL)
+        sizer_address = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_address, 0, wx.EXPAND, 0)
         h_sizer_y1 = StaticBoxSizer(self, wx.ID_ANY, _("Address"), wx.VERTICAL)
-        sizer_13.Add(h_sizer_y1, 3, wx.EXPAND, 0)
+        sizer_address.Add(h_sizer_y1, 3, wx.EXPAND, 0)
 
         self.text_address = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_address.SetMinSize(dip_size(self, 75, -1))
@@ -235,7 +236,7 @@ class ConfigurationTcp(wx.Panel):
         h_sizer_y1.Add(self.text_address, 1, wx.EXPAND, 0)
 
         sizer_port = StaticBoxSizer(self, wx.ID_ANY, _("Port"), wx.VERTICAL)
-        sizer_13.Add(sizer_port, 1, wx.EXPAND, 0)
+        sizer_address.Add(sizer_port, 1, wx.EXPAND, 0)
 
         self.text_port = TextCtrl(
             self,
@@ -252,13 +253,22 @@ class ConfigurationTcp(wx.Panel):
 
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         sizer_port.Add(self.text_port, 1, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_13)
+        sizer_keepalive = StaticBoxSizer(
+            self, wx.ID_ANY, _("TCP Keepalive"), wx.VERTICAL
+        )
+        self.check_keepalive = wxCheckBox(
+            self, wx.ID_ANY, _("Enable TCP Keepalive")
+        )
+        sizer_keepalive.Add(self.check_keepalive, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_keepalive, 1, wx.EXPAND, 0)  
+        self.SetSizer(sizer_main)
 
         self.Layout()
 
         self.text_address.SetActionRoutine(self.on_text_address)
         self.text_port.SetActionRoutine(self.on_text_port)
+        self.check_keepalive.SetValue(self.context.tcp_keepalive)
+        self.check_keepalive.Bind(wx.EVT_CHECKBOX, self.on_check_keepalive)
         # end wxGlade
         self.text_port.SetValue(str(self.context.port))
         self.text_address.SetValue(self.context.address)
@@ -277,6 +287,11 @@ class ConfigurationTcp(wx.Panel):
             self.context.port = max(0, min(65535, int(self.text_port.GetValue())))
         except ValueError:
             pass
+    
+    def on_check_keepalive(
+        self, event
+    ):  
+        self.context.tcp_keepalive = self.check_keepalive.GetValue()    
 
 
 class ConfigurationInterfacePanel(ScrolledPanel):

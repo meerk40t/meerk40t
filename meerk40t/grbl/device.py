@@ -353,6 +353,8 @@ class GRBLDevice(Service, Status):
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
                 "signals": "update_interface",
+                # Translation hint _("Connection")
+                "subsection": "_00_Connection",
             },
             {
                 "attr": "port",
@@ -364,6 +366,19 @@ class GRBLDevice(Service, Status):
                 "lower": 0,
                 "upper": 65535,
                 "signals": "update_interface",
+                # Translation hint _("Connection")
+                "subsection": "_00_Connection",
+            },
+            {
+                "attr": "tcp_keepalive",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("TCP Keepalive"),
+                "tip": _("Enable TCP keepalive to prevent connection timeouts"),
+                "signals": "update_interface",
+                # Translation hint _("Options")
+                "subsection": "_10_Options",
             },
         ]
         if self.permit_tcp:

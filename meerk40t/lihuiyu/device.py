@@ -609,6 +609,7 @@ class LihuiyuDevice(Service, Status):
 
         self.setting(int, "port", def_port)
         self.setting(str, "address", "localhost")
+        self.setting(bool, "tcp_keepalive", False)
 
         self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
