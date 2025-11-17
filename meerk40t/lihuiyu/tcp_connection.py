@@ -88,13 +88,26 @@ class TCPOutput:
 
     def _sending(self):
         tries = 0
+        connection_tries = 0
         while True:
             try:
                 if len(self.buffer):
+                    # Ensure we have a connection before trying to send
                     if self._stream is None:
                         self.connect()
                         if self._stream is None:
-                            return
+                            # Connection failed, increment counter and wait
+                            connection_tries += 1
+                            if connection_tries >= 50:  # Give up after 50 connection attempts
+                                # Clear buffer if we can't connect and no more data expected
+                                with self.lock:
+                                    if len(self.buffer) == 0:
+                                        break
+                            time.sleep(0.1)
+                            continue
+                        else:
+                            connection_tries = 0  # Reset on successful connection
+                    
                     with self.lock:
                         sent = self._stream.send(self.buffer)
                         del self.buffer[:sent]
@@ -105,6 +118,7 @@ class TCPOutput:
                     time.sleep(0.1)
             except (ConnectionError, OSError):
                 tries += 1
+                connection_tries += 1
                 self.disconnect()
                 time.sleep(0.05)
             if tries >= 20:
