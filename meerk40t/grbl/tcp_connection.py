@@ -67,6 +67,11 @@ class TCPOutput:
         self._stream = None
 
     def write(self, data):
+        if not self.connected:
+            # Connection not established, cannot send
+            self.service.signal("grbl;status", "write failed: not connected")
+            return
+            
         self.service.signal("grbl;write", data)
         if isinstance(data, str):
             data = bytes(data, "utf-8")
@@ -84,6 +89,10 @@ class TCPOutput:
     realtime_write = write
 
     def read(self):
+        if not self.connected:
+            # Connection not established, cannot read
+            return None
+            
         f = self.read_buffer.find(b"\n")
         if f == -1:
             try:
