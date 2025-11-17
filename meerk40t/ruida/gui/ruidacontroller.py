@@ -58,6 +58,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         self.idle_color = '#00ff00'
         self.moving_color = '#008000'
         self.busy_color = '#ff8000'
+        self.plotting_color = '#d0ffd0'
         self.color = self.idle_color
         self.busy = False
         self.last_usb_status = ''
@@ -123,6 +124,9 @@ class RuidaControllerPanel(wx.ScrolledWindow):
                 elif 'Idle' in text or 'Connected' in _txt:
                     self.busy = False
                     self.color = self.idle_color
+                    _color_change = True
+                elif 'Plotting' in text:
+                    self.color = self.plotting_color
                     _color_change = True
                 if _color_change:
                     self.button_device_connect.SetBackgroundColour(self.color)

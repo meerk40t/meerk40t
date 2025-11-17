@@ -168,9 +168,13 @@ class RuidaDriver(Parameters):
 
         @return:
         """
-        # Write layer header information.
+        # Normally, only status updates move the cursor to avoid a bouncy cursor.
+        # When processing a job the status update is disabled and instead the
+        # cursor is updated to show plot progress.
+        self.events("Plotting")
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
         self.controller.show_cursor = False
+        # Write layer header information.
         self.controller.start_record()
         self.controller.job.write_header(self.queue)
         first = True
@@ -258,9 +262,11 @@ class RuidaDriver(Parameters):
             else:
                 #  Rastercut
                 self.plot_planner.push(q)
+                _lines = 0
                 for x, y, on in self.plot_planner.gen():
                     while self.hold_work(0):
                         time.sleep(0.05)
+                    time.sleep(0.0001) # Allow other threads to run.
                     if on > 1:
                         # Special Command.
                         if isinstance(on, float):
@@ -286,7 +292,9 @@ class RuidaDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self._move(x, y, cut=True)
+                    _lines += 1
+                    _update = _lines % 100 == 0
+                    self._move(x, y, cut=True, update=_update)
         self.queue.clear()
         self._set_queue_status(0, 0)
         # Ruida end data.
@@ -541,7 +549,7 @@ class RuidaDriver(Parameters):
     # PROTECTED DRIVER CODE
     ####################
 
-    def _move(self, x, y, cut=True):
+    def _move(self, x, y, cut=True, update=True):
         old_current = self.service.current
         job = self.controller.job
         if self.power_dirty:
@@ -569,7 +577,7 @@ class RuidaDriver(Parameters):
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
-        if self._signal_updates:
+        if update and self._signal_updates:
             self.service.signal(
                 "driver;position",
                 (old_current[0], old_current[1], new_current[0], new_current[1]),
