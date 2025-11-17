@@ -53,6 +53,7 @@ class TCPServer(Module):
         try:
             self.socket.bind(("", self.port))
             self.socket.listen(1)
+            self.socket.settimeout(2.0)  # Prevent indefinite blocking on accept()
         except OSError:
             self.events_channel(_("Could not start listening."))
             return
@@ -99,6 +100,12 @@ class TCPServer(Module):
         _ = self.context._
 
         def handle():
+            try:
+                connection.settimeout(2.0)  # Prevent indefinite blocking on recv()
+            except OSError:
+                # Socket might already be closed
+                return
+
             def send(e):
                 if connection is None:
                     return
@@ -138,5 +145,7 @@ class TCPServer(Module):
             self.events_channel(
                 _("Connection to {address} was closed.").format(address=address)
             )
+            if connection is not None:
+                connection.close()
 
         return handle
