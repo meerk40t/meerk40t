@@ -139,7 +139,6 @@ class RuidaController:
     # other requests. The intent is to be able the tune the responsiveness of
     # things like head location updates.
     STATUS_ADDRESSES = (
-        MEM_CARD_ID,
         MEM_MACHINE_STATUS,
         MEM_BED_SIZE_X,
         MEM_BED_SIZE_Y,
@@ -154,6 +153,7 @@ class RuidaController:
         MEM_MACHINE_STATUS,
         MEM_CURRENT_X,
         MEM_CURRENT_Y,
+        MEM_CARD_ID,
     #    MEM_CURRENT_Z,
     #    MEM_CURRENT_U,
         )
