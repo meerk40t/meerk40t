@@ -196,6 +196,8 @@ class RuidaController:
             # Signal the GUI update.
             _msg = f'Card ID:{card_id}'
             self.service.signal('pipe;usb_status', _msg)
+            _msg += f'\nBed width: {self.service.bedwidth}'
+            _msg += f' Bed height: {self.service.bedheight}'
             self.events(_msg)
 
     def update_machine_status(self, status):
