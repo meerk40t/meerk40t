@@ -72,7 +72,11 @@ class USBTransport(RuidaTransport):
         if not self.is_open:
             raise TransportError
         try:
-            return self.serial.read(n)
+            _data = self.serial.read(n)
+            if len(_data) == n:
+                return _data
+            else:
+                raise TransportTimeout
         except (SerialException, TypeError):
             raise TransportTimeout
 

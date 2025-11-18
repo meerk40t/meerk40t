@@ -367,11 +367,11 @@ class RuidaSession:
                             self._ack_pending = False
                             self._reply_pending = False
                             break
-                    self._responding = True
                     _ack = self.unswizzle(_data)
                     if len(_ack) == 1:
                         if _ack == ACK:
                             # Signal that the next message can be sent.
+                            self._responding = True
                             self._ack_pending = False
                             self.acks += 1
                         elif _ack == NAK:
@@ -384,13 +384,14 @@ class RuidaSession:
                         elif _ack == ENQ:
                             self.enqs += 1
                     else:
-                        self.events('Reply data when expecting ACK.')
-                        # Reply data in response to a command. Forward to be
-                        # processed.
-                        self.replies += 1
-                        self._reply_pending = False
-                        # TODO: May need a way to restore sync.
-                        self.recv(_ack) # Just in case
+                        if len(_ack) > 0:
+                            self.events('Reply data when expecting ACK.')
+                            # Reply data in response to a command. Forward to be
+                            # processed.
+                            self.replies += 1
+                            self._reply_pending = False
+                            # TODO: May need a way to restore sync.
+                            self.recv(_ack) # Just in case
 
                 # REPLY_PENDING
                 _tries = self._tries
