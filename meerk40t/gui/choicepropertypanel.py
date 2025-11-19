@@ -990,12 +990,15 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         if data_style == "radio":
             # Traditional radio box
+            display_list = list(map(str, choice.get("display")))
             choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+            if display_list is None or len(display_list) != len(choice_list):
+                display_list = choice_list
             control = wxRadioBox(
                 self,
                 wx.ID_ANY,
                 label,
-                choices=choice_list,
+                choices=display_list,
                 majorDimension=3,
                 style=wx.RA_SPECIFY_COLS,
             )
@@ -1905,6 +1908,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Creates a handler for radio selection controls."""
         param = choice["attr"]
         obj = choice["object"]
+        choice_list = choice.get("choices", [choice.get("default")])    
         dtype = choice.get("type", str)
         addsig = self._get_additional_signals(choice)
 
@@ -1915,7 +1919,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # For non-int types, get the string value of the selected item
                 selection = ctrl.GetSelection()
                 if selection != wx.NOT_FOUND:
-                    v = dtype(ctrl.GetString(selection))
+                    v = dtype(choice_list[selection])
                 else:
                     v = dtype("")  # Fallback to empty string if no selection
             self._update_property_and_signal(obj, param, v, addsig)
