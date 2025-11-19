@@ -82,6 +82,10 @@ class BalorDevice(Service, Status):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
+        self.setting(bool, "networked", False)
+        self.setting(int, "port", 1022)
+        self.setting(str, "address", "localhost")
+
         choices = [
             {
                 "attr": "label",
@@ -275,6 +279,46 @@ class BalorDevice(Service, Status):
                 # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
+            },
+            {
+                "attr": "networked",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Connect to networked device"),
+                "tip": _(
+                    "This setting enables connection to a remote instance running 'balorserver'."
+                ),
+                # Hint for translation _("General")
+                "section": "_00_General",
+                "priority": "30",
+            },
+            {
+                "attr": "address",
+                "object": self,
+                "default": "localhost",
+                "type": str,
+                "label": _("Address"),
+                # "style": "address",
+                "tip": _("IP address/host name of the networked device"),
+                "signals": "update_interface",
+                "section": "_00_General",
+                "subsection": _("Remote connection"),
+                "conditional": (self, "networked"),
+            },
+            {
+                "attr": "port",
+                "object": self,
+                "default": 1022,
+                "type": int,
+                "label": _("Port"),
+                "tip": _("TCP Port of the networked device"),
+                "lower": 0,
+                "upper": 65535,
+                "signals": "update_interface",
+                "section": "_00_General",
+                "subsection": _("Remote connection"),
+                "conditional": (self, "networked"),
             },
             {
                 "attr": "mock",
@@ -1047,6 +1091,65 @@ class BalorDevice(Service, Status):
         self.viewbuffer = ""
         self._simulate = False
         self.laser_status = "idle"
+
+        @self.console_option(
+            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
+        )
+        @self.console_option(
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help=_("shutdown current balorserver"),
+        )
+        @self.console_command("balorserver", help=_("activate the balorserver."))
+        def balorserver(
+            channel, _, port=23, verbose=False, watch=False, quit=False, **kwgs
+        ):
+            """
+            The balorserver provides for an open TCP on a specific port. Any data sent to this port will be sent directly
+            to the balor laser. This is how the tcp-connection sends data to the laser if that option is used.
+            """
+            try:
+                server_name = f"balorserver{self.path}"
+                output = self.driver.connection
+                server = self.open_as("module/TCPServer", server_name, port=port)
+                if quit:
+                    self.close(server_name)
+                    channel(_("TCP Server for balor has been closed"))
+                    return
+                channel(_("TCP Server for balor on port: {port}").format(port=port))
+                if verbose:
+                    console = kernel.channel("console")
+                    server.events_channel.watch(console)
+                    if watch:
+                        server.data_channel.watch(console)
+                channel(_("Watching Channel: {channel}").format(channel="server"))
+
+                def write_to_device(data):
+                    try:
+                        output.write(0, data)
+                        # Attempt to read response
+                        try:
+                            response = output.read(0)
+                            if response:
+                                server.data_channel(f"<-- {response}")
+                                self.channel(f"{server_name}/send")(response)
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        channel(f"Error writing to device: {e}")
+
+                self.channel(f"{server_name}/recv").watch(write_to_device)
+                channel(_("Attached: {output}").format(output=repr(output)))
+
+            except OSError:
+                channel(_("Server failed on port: {port}").format(port=port))
+            except KeyError:
+                channel(_("Server cannot be attached to any device."))
+            return
+
+        self.viewbuffer = ""
 
     @property
     def safe_label(self):

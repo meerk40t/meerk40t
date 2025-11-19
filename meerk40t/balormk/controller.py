@@ -14,6 +14,7 @@ from usb.core import NoBackendError
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
+from meerk40t.balormk.tcp_connection import TCPConnection
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_LIGHT = 1
@@ -367,6 +368,8 @@ class GalvoController:
                 name = self.service.safe_label
                 self.connection.send = self.service.channel(f"{name}/send")
                 self.connection.recv = self.service.channel(f"{name}/recv")
+            elif self.service.setting(bool, "networked", False):
+                self.connection = TCPConnection(self.service)
             else:
                 self.connection = USBConnection(self.usb_log)
         self._is_opening = True
