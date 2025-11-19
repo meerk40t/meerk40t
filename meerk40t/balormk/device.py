@@ -95,12 +95,6 @@ class BalorDevice(Service, Status):
                 "label": _("Label"),
                 "tip": _("What is this device called."),
                 # Hint for translation _("General")
-                # Hint for translation _("General")
-                # Hint for translation _("General")
-                # Hint for translation _("General")
-                # Hint for translation _("General")
-                # Hint for translation _("General")
-                # Hint for translation _("General")
                 "section": "_00_General",
                 "priority": "10",
                 "signals": "device;renamed",
@@ -125,7 +119,7 @@ class BalorDevice(Service, Status):
                 # Hint for translation _("General")
                 "section": "_00_General",
                 # Hint for translation _("Correction File")
-                "subsection": "Correction File",
+                "subsection": "_20_Correction File",
             },
             {
                 "attr": "corfile",
@@ -141,7 +135,7 @@ class BalorDevice(Service, Status):
                 # Hint for translation _("General")
                 "section": "_00_General",
                 # Hint for translation _("Correction File")
-                "subsection": "Correction File",
+                "subsection": "_20_Correction File",
             },
             {
                 "attr": "lens_size",
@@ -166,7 +160,7 @@ class BalorDevice(Service, Status):
                 "tip": _("Laser spot size"),
                 # Hint for translation _("General")
                 "section": "_00_General",
-                "subsection": "_00_",
+                "subsection": "_40_",
                 "priority": "20",
                 "nonzero": True,
             },
@@ -179,7 +173,7 @@ class BalorDevice(Service, Status):
                 "tip": _("UV lasers might require inverted power levels"),
                 # Hint for translation _("General")
                 "section": "_00_General",
-                "subsection": "_00_",
+                "subsection": "_40_",
                 "priority": "20",
                 "conditional": (self, "source", "uv"),
             },
@@ -281,19 +275,6 @@ class BalorDevice(Service, Status):
                 "tip": _("Number of curve interpolation points"),
             },
             {
-                "attr": "networked",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Connect to networked device"),
-                "tip": _(
-                    "This setting enables connection to a remote instance running 'balorserver'."
-                ),
-                # Hint for translation _("General")
-                "section": "_00_General",
-                "priority": "30",
-            },
-            {
                 "attr": "address",
                 "object": self,
                 "default": "localhost",
@@ -303,8 +284,9 @@ class BalorDevice(Service, Status):
                 "tip": _("IP address/host name of the networked device"),
                 "signals": "update_interface",
                 "section": "_00_General",
-                "subsection": _("Remote connection"),
-                "conditional": (self, "networked"),
+                # Translation hint: _("Remote connection")
+                "subsection": "_10_Remote connection",
+                "conditional": (self, "interface", "network"),
             },
             {
                 "attr": "port",
@@ -317,21 +299,26 @@ class BalorDevice(Service, Status):
                 "upper": 65535,
                 "signals": "update_interface",
                 "section": "_00_General",
-                "subsection": _("Remote connection"),
-                "conditional": (self, "networked"),
+                # Translation hint: _("Remote connection")
+                "subsection": "_10_Remote connection",
+                "conditional": (self, "interface", "network"),
             },
             {
-                "attr": "mock",
+                "attr": "interface",
                 "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Run mock-usb backend"),
+                "default": "usb",
+                "type": str ,
+                "label": _("Interface"),
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                "choices": ["usb", "mock", "network"],
+                "display": [_("USB"), _("Mock"), _("Network")],
+                "style": "radio",
+                "signals": "update_interface",
                 # Hint for translation _("General")
                 "section": "_00_General",
-                "priority": "30",
+                "priority": "05",
             },
             {
                 "attr": "machine_index",
@@ -345,7 +332,7 @@ class BalorDevice(Service, Status):
                 # Hint for translation _("General")
                 "section": "_00_General",
                 # Hint for translation _("Device Selection")
-                "subsection": "_10_Device Selection",
+                "subsection": "_20_Device Selection",
             },
             {
                 "attr": "serial_enable",
@@ -1150,6 +1137,27 @@ class BalorDevice(Service, Status):
             return
 
         self.viewbuffer = ""
+
+    @property 
+    def interface(self):
+        if self.networked:
+            return "network"
+        if self.mock:
+            return "mock"   
+        return "usb"
+
+    @interface.setter
+    def interface(self, value):
+        if value == "network":
+            self.networked = True
+            self.mock = False
+        elif value == "mock":
+            self.mock = True
+            self.networked = False
+        else:
+            self.networked = False
+            self.mock = False
+        # print (f"Value set to: {value} -> networked: {self.networked}, mock: {self.mock}, usb:{'True' if not self.networked and not self.mock else 'False'}")
 
     @property
     def safe_label(self):
