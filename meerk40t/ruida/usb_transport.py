@@ -56,7 +56,12 @@ class USBTransport(RuidaTransport):
     def close(self):
         '''Close the transport interface.'''
         if self.is_open:
-            self.serial.close()
+            try:
+                self.serial.close()
+            except OSError:
+                # This can occur when the Ruida controller is turned on while
+                # MK is running and the USB device has not yet stabilized.
+                pass
         self.serial = None
 
     def read(self, n: int) -> bytes:

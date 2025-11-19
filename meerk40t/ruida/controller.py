@@ -93,11 +93,11 @@ class RuidaController:
         if last != len(data):
             self._send_queue.append(self.job.get_contents(last))
 
-    def start_monitor(self):
+    def resume_monitor(self):
         '''Start the background machine status monitor.'''
         self._job_lock.release()
 
-    def stop_monitor(self):
+    def pause_monitor(self):
         '''Stop the background machine status monitor.'''
         self._job_lock.acquire()
 
@@ -166,29 +166,28 @@ class RuidaController:
 
         NOTE: This thread is blocked while _data_sender is running.'''
         time.sleep(3) # Wait for controller window to init. Need a semaphore.
-        try:
-            while True:
-                # if not self.is_busy and not self.service.is_busy:
-                if self.service.connected:
-                    if not self.service.is_busy:
-                        self._job_lock.acquire() # Wait if sending a job.
-                        self._waiting = True
-                        # Step through a series of commands and send/recv each one
-                        # by one. When received, recv will update the UI.
-                        _status = self.STATUS_ADDRESSES[self._next]
-                        self.job.get_setting(
-                            _status, output=self.write)
-                        self._job_lock.release()
-                        self._next += 1
-                        if self._next >= len(self.STATUS_ADDRESSES):
-                            self._next = 0
-                else:
-                    self._waiting = True
-                    self.service.connect()
-                    self.card_id = ''
-                time.sleep(self._status_thread_sleep)
-        except OSError:
-            pass
+        while True:
+            # if not self.is_busy and not self.service.is_busy:
+            if self.service.connected and not self.service.is_busy:
+                self._job_lock.acquire() # Wait if sending a job.
+                self._waiting = True
+                # Step through a series of commands and send/recv each one
+                # by one. When received, recv will update the UI.
+                _status = self.STATUS_ADDRESSES[self._next]
+                try:
+                    self.job.get_setting(
+                        _status, output=self.write)
+                except OSError:
+                    pass
+                self._job_lock.release()
+                self._next += 1
+                if self._next >= len(self.STATUS_ADDRESSES):
+                    self._next = 0
+            else:
+                self._waiting = True
+                self.service.connect()
+                self.card_id = ''
+            time.sleep(self._status_thread_sleep)
 
     def update_card_id(self, card_id):
         if card_id != self.card_id:

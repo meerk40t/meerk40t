@@ -397,7 +397,7 @@ class RuidaDevice(Service, Status):
             try:
                 if self.active_session is not None:
                     if self.interface != self.active_session.interface:
-                        self.driver.controller.stop_monitor()
+                        self.driver.controller.pause_monitor()
                         self.active_session.shutdown()
                         self.active_session = None
 
@@ -408,7 +408,7 @@ class RuidaDevice(Service, Status):
                     _unswizzle = self.driver.controller.job.unswizzle
                     self.active_session.set_swizzles(_swizzle, _unswizzle)
                     self.active_session.open()
-                    self.driver.controller.start_monitor()
+                    self.driver.controller.resume_monitor()
             except AttributeError as e:
                 channel(e)
 
