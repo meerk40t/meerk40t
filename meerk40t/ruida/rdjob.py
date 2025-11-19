@@ -527,7 +527,8 @@ class RDJob:
         self.time_started = None
         self.runtime = 0
         self.label = f"RuidaJob-{self.time_submitted:.2f}"
-        self.power_warning = False
+        self.low_power_warning = False
+        self.high_power_warning = False
 
         self._stopped = True
         self.enabled = True
@@ -1399,6 +1400,9 @@ class RDJob:
     def write_header(self, data):
         if not data:
             return
+
+        self.low_power_warning = False
+        self.high_power_warning = False
         self.first_layer = True
         # Optional: Set Tick count.
         self.ref_point_2()  # abs_pos
@@ -1590,8 +1594,10 @@ class RDJob:
         self.cut_rel_xy(dx, dy)
 
     def _power(self, power):
-        if not self.power_warning and power > 70.0:
-            self.power_warning  = True
+        if not self.high_power_warning and power > 70.0:
+            self.high_power_warning  = True
+        if not self.low_power_warning and power < 10.0:
+            self.low_power_warning  = True
         return encode_power(power)
 
     #######################

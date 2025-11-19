@@ -130,9 +130,10 @@ class RuidaController:
         self._send_thread = None
         self.events("File Sent.")
         self._job_lock.release()
-        if self.job.power_warning:
+        if self.job.low_power_warning:
+            self.events(f'WARNING: Power less than 10% may not fire CO2.')
+        if self.job.high_power_warning:
             self.events(f'WARNING: Power greater than 70% reduces CO2 life.')
-            self.job.power_warning = False
 
     # This table defines the sequence in which specific mem reads occur. It also
     # controls the number of times the same request repeats relative to
