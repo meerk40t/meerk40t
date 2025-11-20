@@ -261,6 +261,8 @@ class RuidaController:
         _x = round(self.bed_x - (x - 50) / 1000, 1)
         self._x_read = True
         if _x != self.x or self._y_read:
+            # Only X and then Y are updated. This avoids stair-stepping.
+            self._y_read = False
             self.x = _x
             self._update_position()
             self.service.driver.native_x = x
@@ -367,7 +369,30 @@ class RuidaController:
     # Command Shortcuts
     #######################
 
-    def wait_finished(self):
+    def wait_for_move(self, x, y):
+        '''Wait until a move completes and the head is at the desired position.
+
+        Because of rounding errors for coordinates reported by the machine
+        the position is rounded to the nearest mm.
+
+        The status monitor is paused until the move completes.
+        '''
+        _exp_x = round(x / 1000)
+        _exp_y = round(y / 1000)
+        _tries = 10 / 0.2 # wait for 10 seconds max.
+        self._job_lock.acquire()
+        while _tries > 0:
+            _tries -= 1
+            if (round(self.service.driver.native_x / 1000) == _exp_x
+                and round(self.service.driver.native_y / 1000) == _exp_y):
+                break
+            for _status in [MEM_MACHINE_STATUS, MEM_CURRENT_X, MEM_CURRENT_Y]:
+                self.job.get_setting(
+                    _status, output=self.write)
+            time.sleep(0.2)
+        self._job_lock.release()
+
+
         pass
 
     def wait_ready(self):

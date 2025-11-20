@@ -312,7 +312,6 @@ class RuidaDriver(Parameters):
         @param y:
         @return:
         """
-        old_current = self.service.current
         job = self.controller.job
         out = self.controller.write
         job.speed_laser_1(self._jog_speed, output=out)
@@ -328,14 +327,7 @@ class RuidaDriver(Parameters):
             job.rapid_move_x(dx, output=out)
         else:
             job.rapid_move_xy(x, y, origin=True, output=out)  # Not relative
-        self.native_x = x
-        self.native_y = y
-        new_current = self.service.current
-        if self._signal_updates:
-            self.service.signal(
-                "driver;position",
-                (old_current[0], old_current[1], new_current[0], new_current[1]),
-            )
+        self.controller.wait_for_move(x, y)
 
     def move_rel(self, dx, dy, confined=False):
         """
@@ -357,7 +349,6 @@ class RuidaDriver(Parameters):
             elif new_y > self.service.view.height:
                 dy = self.service.view.height - self.native_y * self.service.view.native_scale_y
 
-        old_current = self.service.current
         job = self.controller.job
         out = self.controller.write
         dx, dy = self.service.view.position(dx, dy, vector=True)
@@ -374,14 +365,8 @@ class RuidaDriver(Parameters):
                 origin=True,
                 output=out,
             )
-        self.native_x += dx
-        self.native_y += dy
-        new_current = self.service.current
-        if self._signal_updates:
-            self.service.signal(
-                "driver;position",
-                (old_current[0], old_current[1], new_current[0], new_current[1]),
-            )
+        self.controller.wait_for_move(
+            self.native_x + dx, self.native_y + dy)
 
     def focusz(self):
         """
