@@ -3360,7 +3360,19 @@ def _group_preserving_selection(context, complete_path, channel):
             best_start_distance = float("inf")
 
             for candidate_group in ready_groups:
-                group_cuts = list(candidate_group.flat())
+                if isinstance(candidate_group, CutGroup):
+                    group_cuts = list(
+                        candidate_group.candidate(
+                            complete_path=complete_path, grouped_inner=False
+                        )
+                    )
+                else:
+                    group_cuts = (
+                        [candidate_group]
+                        if candidate_group.burns_done < candidate_group.passes
+                        else []
+                    )
+
                 if not group_cuts:
                     continue
 
@@ -3388,7 +3400,12 @@ def _group_preserving_selection(context, complete_path, channel):
 
         # Optimize travel within the selected group
         # Only include cuts that still need burns (don't reset burns_done)
-        group_cuts = [cut for cut in group.flat() if cut.burns_done < cut.passes]
+        if isinstance(group, CutGroup):
+            group_cuts = list(
+                group.candidate(complete_path=complete_path, grouped_inner=False)
+            )
+        else:
+            group_cuts = [group] if group.burns_done < group.passes else []
 
         # Apply travel optimization to this group's cuts
         group_ordered = _simple_greedy_selection(group_cuts, (curr_x, curr_y))
