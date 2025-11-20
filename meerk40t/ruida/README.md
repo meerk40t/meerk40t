@@ -162,7 +162,7 @@ The parser handles the complete Ruida command set including:
 - **UDPConnection**: Primary network interface for external software
 - **SerialConnection**: Direct serial connection to Ruida controllers
 
-**Unsuported by Ruida controllers.**
+**Unsupported by Ruida controllers.**
 - **TCPConnection**: Alternative TCP-based communication
 - **MockConnection**: Development and testing interface
 
