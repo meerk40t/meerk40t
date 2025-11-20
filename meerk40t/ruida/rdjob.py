@@ -1594,10 +1594,8 @@ class RDJob:
         self.cut_rel_xy(dx, dy)
 
     def _power(self, power):
-        if not self.high_power_warning and power > 70.0:
-            self.high_power_warning  = True
-        if not self.low_power_warning and power < 10.0:
-            self.low_power_warning  = True
+        self.high_power_warning  = (power > 70.0)
+        self.low_power_warning  = (power < 10.0)
         return encode_power(power)
 
     #######################
