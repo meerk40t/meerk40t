@@ -266,7 +266,7 @@ class RuidaDriver(Parameters):
                 for x, y, on in self.plot_planner.gen():
                     while self.hold_work(0):
                         time.sleep(0.05)
-                    time.sleep(0.0001) # Allow other threads to run.
+                    time.sleep(0)  # Yield control to other threads.
                     if on > 1:
                         # Special Command.
                         if isinstance(on, float):
