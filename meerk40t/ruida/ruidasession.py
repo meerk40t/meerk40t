@@ -252,11 +252,11 @@ class RuidaSession:
                     self.enqs += 1
                     _data = self.transport.read(len(_ack))
                     _reply = self.unswizzle(_data)
-                    if len(_reply) == len(_ack):
-                        if _reply == _ack:
-                            self._ack_pending = False
-                            self._reply_pending = False
-                            self._responding = True
+                    if len(_reply) == len(_ack) and _reply == _ack:
+                        self._ack_pending = False
+                        self._reply_pending = False
+                        self._responding = True
+
                 except (TransportTimeout, TransportError, AttributeError):
                     # Still not responding.
                     time.sleep(1)
