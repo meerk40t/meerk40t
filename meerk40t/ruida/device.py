@@ -641,9 +641,7 @@ class RuidaDevice(Service, Status):
 
     @property
     def connected(self):
-        if self.active_session:
-            return self.active_session.connected
-        return False
+        return self.active_session.connected if self.active_session else False
 
     @property
     def is_connecting(self):
