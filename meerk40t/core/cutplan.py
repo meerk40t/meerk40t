@@ -2677,7 +2677,7 @@ def short_travel_cutcode_legacy(
                 if (
                     abs(s[0] - curr.real) <= distance
                     and abs(s[1] - curr.imag) <= distance
-                    and (not complete_path or cut.closed or cut.first)
+                    and (not complete_path or cut.closed or cut.first or cut.original_op in ("op cut", "op engrave"))
                 ):
                     d = abs(complex(s[0], s[1]) - curr)
                     if d < distance:
@@ -2693,7 +2693,7 @@ def short_travel_cutcode_legacy(
                 if (
                     abs(e[0] - curr.real) <= distance
                     and abs(e[1] - curr.imag) <= distance
-                    and (not complete_path or cut.closed or cut.last)
+                    and (not complete_path or cut.closed or cut.last or cut.original_op in ("op cut", "op engrave"))
                 ):
                     d = abs(complex(e[0], e[1]) - curr)
                     if d < distance:
