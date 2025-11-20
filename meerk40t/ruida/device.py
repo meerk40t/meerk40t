@@ -395,11 +395,11 @@ class RuidaDevice(Service, Status):
         )
         def interface_update(command, channel, _, data=None, **kwargs):
             try:
-                if self.active_session is not None:
-                    if self.interface != self.active_session.interface:
-                        self.driver.controller.pause_monitor()
-                        self.active_session.shutdown()
-                        self.active_session = None
+                if self.active_session is not None and self.interface != self.active_session.interface:
+                    self.driver.controller.pause_monitor()
+                    self.active_session.shutdown()
+                    self.active_session = None
+
 
                 if self.active_session is None: # Start or restart.
                     self.active_session = RuidaSession(self)
