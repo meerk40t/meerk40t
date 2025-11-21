@@ -17,12 +17,12 @@ from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 
+from ..core.geomstr import Geomstr
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, Length
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
-from ..core.geomstr import Geomstr
 
 
 class GRBLDriver(Parameters):
@@ -206,13 +206,19 @@ class GRBLDriver(Parameters):
             new_x = self.native_x * self.service.view.native_scale_x + dx
             new_y = self.native_y * self.service.view.native_scale_y + dy
             if new_x < 0:
-                dx = - self.native_x * self.service.view.native_scale_x
+                dx = -self.native_x * self.service.view.native_scale_x
             elif new_x > self.service.view.width:
-                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x 
+                dx = (
+                    self.service.view.width
+                    - self.native_x * self.service.view.native_scale_x
+                )
             if new_y < 0:
-                dy = - self.native_y * self.service.view.native_scale_y
+                dy = -self.native_y * self.service.view.native_scale_y
             elif new_y > self.service.view.height:
-                dy = self.service.view.height - self.native_y * self.service.view.native_scale_y
+                dy = (
+                    self.service.view.height
+                    - self.native_y * self.service.view.native_scale_y
+                )
         self._g91_relative()
         self._clean()
         old_current = self.service.current
@@ -526,6 +532,10 @@ class GRBLDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
+                    if on == 0:
+                        self.move_mode = 0
+                    else:
+                        self.move_mode = 1
                     self._move(x, y)
             else:
                 #  Rastercut

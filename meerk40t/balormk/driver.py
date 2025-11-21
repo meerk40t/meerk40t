@@ -20,9 +20,9 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
-from meerk40t.core.geomstr import Geomstr
 
 
 class BalorDriver:
@@ -407,30 +407,33 @@ class BalorDriver:
                         time.sleep(0.05)
 
                     # q.plot can have different on values, these are parsed
-                    if last_on is None or on != last_on:
-                        # No power change.
-                        last_on = on
-                        if self.value_penbox:
-                            # There is an active value_penbox
-                            settings = dict(q.settings)
-                            limit = len(self.value_penbox) - 1
-                            m = int(round(on * limit))
-                            try:
-                                pen = self.value_penbox[m]
-                                settings.update(pen)
-                            except IndexError:
-                                pass
-                            # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
-                            con.set_settings(settings)
-                        else:
-                            # We are using traditional power-scaling
-                            max_power = float(
-                                q.settings.get("power", self.service.default_power)
-                            )
-                            percent_power = max_power / 10.0
-                            # Max power is the percent max power, scaled by the pixel power.
-                            con.power(percent_power * on)
-                    con.mark(x, y)
+                    if on == 0:
+                        con.goto(x, y)
+                    else:
+                        if last_on is None or on != last_on:
+                            # No power change.
+                            last_on = on
+                            if self.value_penbox:
+                                # There is an active value_penbox
+                                settings = dict(q.settings)
+                                limit = len(self.value_penbox) - 1
+                                m = int(round(on * limit))
+                                try:
+                                    pen = self.value_penbox[m]
+                                    settings.update(pen)
+                                except IndexError:
+                                    pass
+                                # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
+                                con.set_settings(settings)
+                            else:
+                                # We are using traditional power-scaling
+                                max_power = float(
+                                    q.settings.get("power", self.service.default_power)
+                                )
+                                percent_power = max_power / 10.0
+                                # Max power is the percent max power, scaled by the pixel power.
+                                con.power(percent_power * on)
+                        con.mark(x, y)
             elif isinstance(q, DwellCut):
                 start = q.start
                 con.goto(start[0], start[1])
