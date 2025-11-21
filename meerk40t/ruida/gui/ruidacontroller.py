@@ -11,6 +11,15 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl, dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
+from meerk40t.ruida.rdjob import (
+    MACHINE_STATUS_MOVING,
+    MACHINE_STATUS_PART_END,
+    MACHINE_STATUS_JOB_RUNNING,
+    MACHINE_STATUS_TO_LABEL_LUT,
+)
+
+from meerk40t.ruida.device import RuidaDevice
+
 _ = wx.GetTranslation
 
 
@@ -28,7 +37,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             wx.FONTWEIGHT_NORMAL,
         )
         self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
-        self.service = self.context.device
+        self.service: RuidaDevice = self.context.device
         self._buffer = ""
         self._buffer_lock = threading.Lock()
         self.text_usb_log = TextCtrl(
@@ -49,8 +58,12 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         self.idle_color = '#00ff00'
         self.moving_color = '#008000'
         self.busy_color = '#ff8000'
-        self.color = self.disconnected_color
+        self.plotting_color = '#d0ffd0'
+        self.color = self.idle_color
         self.busy = False
+        self.last_usb_status = ''
+        self.last_event_text = ''
+        self.service.update_connect_status()
 
     def __set_properties(self):
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
@@ -91,20 +104,29 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         with self._buffer_lock:
             # Ignore the binary spew.
             # Instead, use tshark and the protocol analyzer.
+            # TODO: Having dependencies on text strings is risky. A single
+            # definition is needed.
             if isinstance(text, str):
+                if text == self.last_event_text:
+                    return
+                self.last_event_text = text
                 self._buffer += f"{text}\n"
+                _txt = text.strip()
                 _color_change = False
-                if 'Moving' in text:
+                if _txt == MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_MOVING]:
                     self.busy = True
                     self.color = self.moving_color
                     _color_change = True
-                elif 'running' in text:
+                elif _txt == MACHINE_STATUS_TO_LABEL_LUT[MACHINE_STATUS_JOB_RUNNING]:
                     self.busy = True
                     self.color = self.busy_color
                     _color_change = True
-                elif 'Idle' in text:
+                elif 'Idle' in text or 'Connected' in _txt:
                     self.busy = False
                     self.color = self.idle_color
+                    _color_change = True
+                elif 'Plotting' in text:
+                    self.color = self.plotting_color
                     _color_change = True
                 if _color_change:
                     self.button_device_connect.SetBackgroundColour(self.color)
@@ -138,19 +160,22 @@ class RuidaControllerPanel(wx.ScrolledWindow):
     def on_usb_update(self, origin=None, status=None):
         if origin != self.service.path:
             return
+        if status == self.last_usb_status:
+            return
+        self.last_usb_status = status
         if status is None:
             status = "Unknown"
-        connected = self.service.connected
-        if status == "Connected":
-            self.button_device_connect.SetLabel(_("Connected"))
-        if status == "Disconnected":
-            self.button_device_connect.SetLabel(_("Disconnected"))
-        if not self.busy:
-            if connected:
-                self.color = self.idle_color
-                self.set_button_connected()
-            else:
-                self.set_button_disconnected()
+        if 'Connected' in status:
+            _s = 'Connected'
+        else:
+            _s = status
+        if _s in ['Connecting', 'Connected', 'Disconnected']:
+            self.button_device_connect.SetLabel(_(status))
+        #if not self.busy:
+        if self.service.connected:
+            self.set_button_connected()
+        else:
+            self.set_button_disconnected()
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         connected = self.service.connected
@@ -161,9 +186,11 @@ class RuidaControllerPanel(wx.ScrolledWindow):
 
         if connected:
             self.context("ruida_disconnect\n")
+            self.service.abort_connect()
             self.service.set_disable_connect(False)
         else:
             self.service.set_disable_connect(False)
+            self.service.abort_connect()
             self.context("ruida_connect\n")
 
     def pane_show(self):

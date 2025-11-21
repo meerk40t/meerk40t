@@ -8,7 +8,7 @@ import struct
 import time
 import threading
 
-from meerk40t.ruida.rdjob import ACK, NAK, KEEP_ALIVE, ERR
+from meerk40t.ruida.rdjob import ACK, NAK, ENQ, ERR
 
 class UDPConnection:
     def __init__(self, service):
@@ -159,7 +159,7 @@ class UDPConnection:
                 "pipe;usb_status", "Connecting")
             self.events("Connecting")
             self.open()
-            _enq = self._package(KEEP_ALIVE)
+            _enq = self._package(ENQ)
             while not self.connected and not self._shutdown:
                 self._ack_pending = True
                 self.socket.sendto(
@@ -176,7 +176,7 @@ class UDPConnection:
                             self._responding = True
                         elif _reply == NAK:
                             pass # Ignore this -- controller confused?
-                        elif _reply == KEEP_ALIVE:
+                        elif _reply == ENQ:
                             pass # At least it's talking.
                 except (socket.timeout, AttributeError):
                     # Still not responding.
@@ -192,7 +192,7 @@ class UDPConnection:
                     except (socket.timeout):
                         _spewing = False
             # Prime the pump to get things rolling.
-            self.send_q.put(KEEP_ALIVE, timeout=self._q_to)
+            self.send_q.put(ENQ, timeout=self._q_to)
             self.service.signal(
                 "pipe;usb_status", "Connected")
             self.events("Connected")
@@ -289,7 +289,7 @@ class UDPConnection:
                             self.socket.sendto(_packet,
                                    (self.service.address, self.send_port))
                             self.naks += 1
-                        elif _ack == KEEP_ALIVE:
+                        elif _ack == ENQ:
                             self.keep_alives += 1
                     else:
                         self.events('Reply data when expecting ACK.')
