@@ -14,20 +14,20 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.ruida.controller import RuidaController
-from meerk40t.core.geomstr import Geomstr
-
 from meerk40t.ruida.rdjob import (
+    MACHINE_STATUS_JOB_RUNNING,
     MACHINE_STATUS_MOVING,
     MACHINE_STATUS_PART_END,
-    MACHINE_STATUS_JOB_RUNNING,
     MACHINE_STATUS_TO_LABEL_LUT,
 )
+
 
 class RuidaDriver(Parameters):
     def __init__(self, service, **kwargs):
@@ -68,9 +68,9 @@ class RuidaDriver(Parameters):
             dict(), single=True, ppi=False, shift=False, group=True
         )
         self._aborting = False
-        #self._signal_updates = self.service.setting(bool, "signal_updates", True)
-        self._signal_updates = False # Disable because not in sync with actual
-                                     # position and causes jumping cursor.
+        # self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        self._signal_updates = False  # Disable because not in sync with actual
+        # position and causes jumping cursor.
 
     def __repr__(self):
         return f"RuidaDriver({self.name})"
@@ -188,8 +188,7 @@ class RuidaDriver(Parameters):
                 current_settings = q.settings
                 _raster = isinstance(q, RasterCut)
                 if current_settings is not last_settings:
-                    self.controller.job.write_settings(
-                        current_settings, _raster)
+                    self.controller.job.write_settings(current_settings, _raster)
                     last_settings = current_settings
             x = self.native_x
             y = self.native_y
@@ -258,7 +257,7 @@ class RuidaDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self._move(x, y, cut=True)
+                    self._move(x, y, cut=self.on_value > 0)
             else:
                 #  Rastercut
                 self.plot_planner.push(q)
@@ -341,13 +340,19 @@ class RuidaDriver(Parameters):
             new_x = self.native_x * self.service.view.native_scale_x - dx
             new_y = self.native_y * self.service.view.native_scale_y + dy
             if new_x < 0:
-                dx = - self.native_x * self.service.view.native_scale_x
+                dx = -self.native_x * self.service.view.native_scale_x
             elif new_x > self.service.view.width:
-                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x
+                dx = (
+                    self.service.view.width
+                    - self.native_x * self.service.view.native_scale_x
+                )
             if new_y < 0:
-                dy = - self.native_y * self.service.view.native_scale_y
+                dy = -self.native_y * self.service.view.native_scale_y
             elif new_y > self.service.view.height:
-                dy = self.service.view.height - self.native_y * self.service.view.native_scale_y
+                dy = (
+                    self.service.view.height
+                    - self.native_y * self.service.view.native_scale_y
+                )
 
         job = self.controller.job
         out = self.controller.write
@@ -365,8 +370,7 @@ class RuidaDriver(Parameters):
                 origin=True,
                 output=out,
             )
-        self.controller.wait_for_move(
-            self.native_x + dx, self.native_y + dy)
+        self.controller.wait_for_move(self.native_x + dx, self.native_y + dy)
 
     def focusz(self):
         """
