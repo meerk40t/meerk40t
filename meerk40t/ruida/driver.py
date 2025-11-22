@@ -293,7 +293,7 @@ class RuidaDriver(Parameters):
                     self.on_value = on
                     _lines += 1
                     _update = _lines % 100 == 0
-                    self._move(x, y, cut=True, update=_update)
+                    self._move(x, y, cut=self.on_value > 0, update=_update)
         self.queue.clear()
         self._set_queue_status(0, 0)
         # Ruida end data.
