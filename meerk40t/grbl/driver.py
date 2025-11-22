@@ -575,6 +575,10 @@ class GRBLDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
+                    if on == 0:
+                        self.move_mode = 0
+                    else:
+                        self.move_mode = 1
                     self._move(x, y)
         self.queue.clear()
         self._set_queue_status(0, 0)
