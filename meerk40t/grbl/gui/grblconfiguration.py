@@ -7,11 +7,57 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+
+class ConfigurationUsb(wx.Panel):
+    '''Allow direct entry of serial port.
+
+    On Linux this enables use of symlinks for devices to avoid having to
+    re-enter the serial device when the cable has been pulled or the controller
+    has been turned off. See the README for more information on how to
+    configure UDEV to create the symlinks.
+    '''
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: ConfigurationTcp.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.context.themes.set_window_colors(self)
+
+        sizer_13 = StaticBoxSizer(self, wx.ID_ANY, _("USB Settings"), wx.HORIZONTAL)
+
+        h_sizer_y1 = StaticBoxSizer(self, wx.ID_ANY, _("Serial Interface"), wx.VERTICAL)
+        sizer_13.Add(h_sizer_y1, 3, wx.EXPAND, 0)
+
+        self.text_serial_port = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_serial_port.SetMinSize(dip_size(self, 75, -1))
+        self.text_serial_port.SetToolTip(_(
+            'Serial port on the host.\n'
+            'On Linux this is "/dev/<dev>"\n'
+            'This allows use of symlinks using UDEV rules.\n'
+            'On Windows this is "COM<n>"'))
+        h_sizer_y1.Add(self.text_serial_port, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_13)
+
+        self.Layout()
+
+        self.text_serial_port.SetActionRoutine(self.on_text_serial_port)
+        # end wxGlade
+        self.text_serial_port.SetValue(self.context.serial_port)
+
+    def pane_show(self):
+        pass
+
+    def pane_hide(self):
+        pass
+
+    def on_text_serial_port(self):
+        self.context.serial_port = self.text_serial_port.GetValue()
 
 class ConfigurationInterfacePanel(ScrolledPanel):
     """ConfigurationInterfacePanel - User interface panel for laser cutting operations
@@ -70,9 +116,11 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface_radio.Add(self.radio_mock, 1, wx.EXPAND, 0)
 
-        self.panel_serial_settings = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="serial"
-        )
+        #self.panel_serial_settings = ChoicePropertyPanel(
+        #    self, wx.ID_ANY, context=self.context, choices="serial"
+        #)
+        self.panel_serial_settings = ConfigurationUsb(self, wx.ID_ANY, context=self.context)
+
         sizer_interface.Add(self.panel_serial_settings, 1, wx.EXPAND, 0)
 
         self.panel_tcp_config = ChoicePropertyPanel(
