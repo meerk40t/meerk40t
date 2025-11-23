@@ -22324,8 +22324,8 @@ msgid "magic number used to encode the file"
 msgstr "магическое число для кодирования файла"
 
 #: meerk40t/ruida/plugin.py:27
-msgid "K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"
-msgstr "K50/K60-CO2-Лазер (Ruida-контроллер) (НЕЗАВЕРШЕНО)"
+msgid "K50/K60-CO2-Laser (Ruida-Controller)"
+msgstr "K50/K60-CO2-Лазер (Ruida-контроллер)"
 
 #: meerk40t/ruida/plugin.py:28
 msgid "This driver is incomplete. Use at your own risk."
@@ -24720,3 +24720,27 @@ msgstr "Очистить журнал"
 #: meerk40t/ruida/plugin.py:28
 msgid "Please use udp_connection for now!"
 msgstr "Пожалуйста, используйте udp_connection пока!"
+
+#: meerk40t/gui/wxmmain.py:5171
+msgid "Laser: {index}"
+msgstr "Лазер: {index}"
+
+#: meerk40t/ruida/plugin.py:28
+msgid "This driver has been tested on Linux only so far."
+msgstr "Этот драйвер до сих пор протестирован только на Linux."
+
+#: meerk40t/ruida/plugin.py:28
+msgid "Please provide feedback if you find issues."
+msgstr "Пожалуйста, сообщите о найденных проблемах."
+
+#: meerk40t/ruida/gui/ruidaconfig.py:77
+msgid ""
+"Serial port on the host.\n"
+"On Linux this is \"/dev/<dev>\"\n"
+"This allows use of symlinks using UDEV rules.\n"
+"On Windows this is \"COM<n>\""
+msgstr ""
+"Сериальный порт на хосте.\n"
+"В Linux это \"/dev/<dev>\"\n"
+"Это позволяет использовать символические ссылки (symlinks) с помощью правил UDEV.\n"
+"В Windows это \"COM<n>\""
