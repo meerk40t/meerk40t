@@ -57,7 +57,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.pythonLocation }}
-        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-nogui.txt') }}
+        # Use a glob to find requirements-nogui.txt anywhere under the repo root and
+        # provide a stable fallback if the file is not present (prevents template errors
+        # on certain runners where hashFiles may fail if no files match).
+        key: |
+          new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-
+          ${{ hashFiles('**/requirements-nogui.txt') || 'no-reqs-nogui' }}
 
     - name: Install Python dependencies
       run: |
