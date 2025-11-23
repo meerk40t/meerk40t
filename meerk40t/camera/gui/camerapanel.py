@@ -42,7 +42,8 @@ def _get_camera_attribute(kernel, camera, attribute, default=None):
 
 
 def register_panel_camera(window, context):
-    for index in range(5):
+    max_range = context.kernel.root.setting(int, "search_range", 5) or 5
+    for index in range(max_range):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
         )
@@ -1052,7 +1053,8 @@ class CameraInterface(MWindow):
             camera("camdetect\n")
 
         caminfo = []
-        for idx in range(5):
+        max_range = kernel.root.setting(int, "search_range", 5) or 5
+        for idx in range(max_range):
             label = _get_camera_attribute(
                 kernel, idx, "desc", _("Camera {index}").format(index=idx)
             )
@@ -1095,27 +1097,31 @@ class CameraInterface(MWindow):
         def camera_win(index=None, **kwargs):
             kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
+        @kernel.console_argument("max_range", type=int)
         @kernel.console_command(
             "camdetect", help="camdetect : " + _("Tries to detect cameras on the system")
         )
-        def cam_detect(**kwargs):
+        def cam_detect(max_range=None, **kwargs):
             try:
                 import cv2
             except ImportError:
                 return
 
             # Max range to look at
+            kernel.root.setting(int, "search_range", 5)
+            if max_range is not None and max_range > 0:
+                kernel.root.max_range = max_range
+            max_range = kernel.root.max_range
+            if max_range is None or max_range < 1:
+                max_range = 5
+
             cam_context = kernel.get_context("camera")
-            cam_context.setting(int, "search_range", 5)
             cam_context.setting(list, "uris", [])
             # Reset stuff...
-            for _index in range(5):
+            for _index in range(max(5, max_range)):
                 if _index in cam_context.uris:
                     cam_context.uris.remove(_index)
 
-            max_range = cam_context.search_range
-            if max_range is None or max_range < 1:
-                max_range = 5
             found = 0
             found_camera_string = _("Cameras found: {count}")
             progress = wx.ProgressDialog(
