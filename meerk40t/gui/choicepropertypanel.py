@@ -684,6 +684,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Helper method to update property value and dispatch signals."""
         has_settings = hasattr(obj, "settings") and param in obj.settings
         current_value = obj.settings[param] if has_settings else getattr(obj, param)
+        # print (f"Update property: {new_value} for attr: {param}, current: {current_value}")
 
         # Special handling for Angle comparison to avoid TypeError
         try:
@@ -794,17 +795,17 @@ class ChoicePropertyPanel(ScrolledPanel):
         if has_display:
             # Use display/choices separation like "option" style
             display_list = list(map(str, choice.get("display")))
-            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+            choice_list = list(choice.get("choices", [choice.get("default")]))
 
             # Handle value not in list
             try:
-                index = choice_list.index(str(data))
+                index = choice_list.index(data)
             except ValueError:
                 index = 0
                 if data is None:
                     data = choice.get("default")
                 display_list.insert(0, str(data))
-                choice_list.insert(0, str(data))
+                choice_list.insert(0, data)
 
             # Create the control
             control = wxComboBox(
@@ -819,18 +820,22 @@ class ChoicePropertyPanel(ScrolledPanel):
             control._choice_list = choice_list
         else:
             # Standard combo without display/choices separation
-            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+            raw_choice_list = list(choice.get("choices", [choice.get("default")]))
+            display_choice_list = list(map(str, raw_choice_list))
 
             # Create the control
             control = wxComboBox(
                 self,
                 wx.ID_ANY,
-                choices=choice_list,
+                choices=display_choice_list,
                 style=combo_config["style"],
             )
 
             # Set display value
-            self._set_combo_value(control, data, data_type, choice_list)
+            self._set_combo_value(control, data, data_type, display_choice_list)
+            
+            # Store raw choices
+            control._choice_list = raw_choice_list
 
         # Apply width constraints
         if data_style == "combosmall":
@@ -955,7 +960,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         if data_style == "combosmall":
             exclusive = choice.get("exclusive", True)
             combo_config["style"] = (
-                wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN
+                wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
             )
         else:  # regular combo
             combo_config["style"] = wx.CB_DROPDOWN | wx.CB_READONLY
@@ -1568,7 +1573,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 {**choice, "style": data_style}
                 if factory == self._create_text_control
                 else choice,
-                lambda: None,  # Dummy handler for now
+                None,  # No handler for now
             )
             # Now bind the real handler after control is created
             if handler_factory is not None:
@@ -1576,11 +1581,15 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Bind appropriate event based on control type
                 if hasattr(control, "Bind"):
                     if data_style in ("combo", "combosmall"):
-                        control.Bind(wx.EVT_COMBOBOX, real_handler)
-                        if hasattr(control, "GetTextCtrl"):
-                            text_ctrl = control.GetTextCtrl()
-                            if text_ctrl:
-                                text_ctrl.Bind(wx.EVT_TEXT, real_handler)
+                        has_display = "display" in choice and choice["display"] != choice.get("choices")
+                        if has_display:
+                            combo_handler = self._make_combosmall_option_handler(control, choice)
+                        else:
+                            combo_handler = real_handler
+                        control.Bind(wx.EVT_COMBOBOX, combo_handler)
+                        if not choice.get("exclusive", True):
+                            control.Bind(wx.EVT_TEXT_ENTER, real_handler)
+                            control.Bind(wx.EVT_KILL_FOCUS, real_handler)
                     elif data_style == "radio":
                         control.Bind(wx.EVT_RADIOBOX, real_handler)
                     elif data_style == "slider":
@@ -2395,7 +2404,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         # Set tooltip
         tip = choice.get("tip")
-        if tip and not self.context.root.disable_tool_tips:
+        if tip and not self.context.root.setting(bool, "disable_tool_tips", False):
             control.SetToolTip(tip)
 
         # Set help text
@@ -2497,7 +2506,37 @@ class ChoicePropertyPanel(ScrolledPanel):
             if ctrl.GetValue() != data:
                 ctrl.SetValue(data)
         elif dtype in (str, int, float) and dstyle in ("combo", "combosmall"):
-            if dtype == str:
+            # print (f"Update combo control with data: {data} for attr: {choice.get('attr')}")
+            if hasattr(ctrl, "_choice_list"):
+                try:
+                    idx = ctrl._choice_list.index(data)
+                    if ctrl.GetSelection() != idx:
+                        ctrl.SetSelection(idx)
+                except ValueError:
+                    # Value not found - extend lists
+                    # Check if we are currently editing this control
+                    has_focus = False
+                    if ctrl.HasFocus():
+                        has_focus = True
+                    elif hasattr(ctrl, "GetTextCtrl") and ctrl.GetTextCtrl() and ctrl.GetTextCtrl().HasFocus():
+                        has_focus = True
+                    
+                    # If user is typing and the value matches what they typed, don't update the list
+                    if has_focus and ctrl.GetValue() == str(data):
+                        return
+
+                    new_val = str(data)
+                    # Check if the string value is already in the control's list
+                    found_idx = ctrl.FindString(new_val)
+                    if found_idx != wx.NOT_FOUND:
+                        # It's already in the list, just select it
+                        ctrl.SetSelection(found_idx)
+                    else:
+                        # Not in list, insert it
+                        ctrl.Insert(new_val, 0)
+                        ctrl._choice_list.insert(0, data)
+                        ctrl.SetSelection(0)
+            elif dtype == str:
                 ctrl.SetValue(str(data))
             else:
                 least = None

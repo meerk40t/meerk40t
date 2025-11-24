@@ -445,12 +445,29 @@ class Planner(Service):
         self._plan = {}  # contains all cutplans, keyed by plan name
         self._states = {}  # contains all plan state dictionaries, keyed by plan name
         self._default_plan = "0"
-        self.do_optimization = True
+        # self.do_optimization = True
         self._plan_lock = threading.Lock()
 
+    @property
+    def do_optimization(self):
+        """
+        Get the optimization flag.
+        """
+        value = self.kernel.root.setting(bool, "do_optimization", True)
+        return value
+
+    @do_optimization.setter
+    def do_optimization(self, value):
+        """
+        Set the optimization flag.
+        """
+        self.kernel.root.setting(bool, "do_optimization", value)
+        self.kernel.root.do_optimization = value
+    
     def length(self, v):
         """
-        Convert a value to a float using the Length class (device-independent units).
+        Convert a value to a float using the Length class (device-indepen
+        dent units).
         """
         return float(Length(v))
 

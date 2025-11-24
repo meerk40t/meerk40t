@@ -8619,8 +8619,8 @@ msgid "RuidaServer shutdown."
 msgstr "RuidaServer 关闭。"
 
 #: meerk40t/ruida/plugin.py:27
-msgid "K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"
-msgstr "K50/K60-CO2 激光器（瑞达控制器）（不完整）"
+msgid "K50/K60-CO2-Laser (Ruida-Controller)"
+msgstr "K50/K60-CO2 激光器（瑞达控制器)"
 
 #: meerk40t/ruida/plugin.py:28
 msgid "This driver is incomplete. Use at your own risk."
@@ -24030,3 +24030,27 @@ msgstr "清除日志"
 #: meerk40t/ruida/plugin.py:28
 msgid "Please use udp_connection for now!"
 msgstr "请暂时使用 udp_connection！"
+
+#: meerk40t/gui/wxmmain.py:5171
+msgid "Laser: {index}"
+msgstr "激光：{index}"
+
+#: meerk40t/ruida/plugin.py:28
+msgid "This driver has been tested on Linux only so far."
+msgstr "此驱动程序目前仅在 Linux 上经过测试。"
+
+#: meerk40t/ruida/plugin.py:28
+msgid "Please provide feedback if you find issues."
+msgstr "如果发现问题，请提供反馈。"
+
+#: meerk40t/ruida/gui/ruidaconfig.py:77
+msgid ""
+"Serial port on the host.\n"
+"On Linux this is \"/dev/<dev>\"\n"
+"This allows use of symlinks using UDEV rules.\n"
+"On Windows this is \"COM<n>\""
+msgstr ""
+"主机上的串口。\n"
+"在 Linux 上通常为 \"/dev/<dev>\"。\n"
+"这允许使用 UDEV 规则使用符号链接（symlinks）。\n"
+"在 Windows 上通常为 \"COM<n>\"。"

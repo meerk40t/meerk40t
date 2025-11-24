@@ -42,7 +42,8 @@ def _get_camera_attribute(kernel, camera, attribute, default=None):
 
 
 def register_panel_camera(window, context):
-    for index in range(5):
+    max_range = context.kernel.root.setting(int, "search_range", 5) or 5
+    for index in range(max_range):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
         )
@@ -1052,7 +1053,8 @@ class CameraInterface(MWindow):
             camera("camdetect\n")
 
         caminfo = []
-        for idx in range(5):
+        max_range = kernel.root.setting(int, "search_range", 5) or 5
+        for idx in range(max_range):
             label = _get_camera_attribute(
                 kernel, idx, "desc", _("Camera {index}").format(index=idx)
             )
@@ -1095,27 +1097,30 @@ class CameraInterface(MWindow):
         def camera_win(index=None, **kwargs):
             kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
+        @kernel.console_argument("max_range", type=int)
         @kernel.console_command(
             "camdetect", help="camdetect : " + _("Tries to detect cameras on the system")
         )
-        def cam_detect(**kwargs):
+        def cam_detect(max_range=None, **kwargs):
             try:
                 import cv2
             except ImportError:
                 return
 
             # Max range to look at
+            dummy = kernel.root.setting(int, "search_range", 5)
+            if max_range is None:
+                max_range = dummy
+            if max_range is None or max_range < 1:
+                max_range = 5
+
             cam_context = kernel.get_context("camera")
-            cam_context.setting(int, "search_range", 5)
             cam_context.setting(list, "uris", [])
             # Reset stuff...
-            for _index in range(5):
+            for _index in range(max(5, max_range)):
                 if _index in cam_context.uris:
                     cam_context.uris.remove(_index)
 
-            max_range = cam_context.search_range
-            if max_range is None or max_range < 1:
-                max_range = 5
             found = 0
             found_camera_string = _("Cameras found: {count}")
             progress = wx.ProgressDialog(
@@ -1127,25 +1132,95 @@ class CameraInterface(MWindow):
                 parent=None,
                 style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
             )
-            # checks for cameras in the first x USB ports
+            # Prefer enumerateCameras if available (introduced in newer OpenCV
+            # versions); otherwise fall back to probing numeric indices.
             first_found = -1
-            index = 0
-            keepgoing = True
-            while index < max_range and keepgoing:
+            found_list = []
+
+            # Helper to attempt open and register a camera candidate
+            def try_register(candidate):
+                nonlocal first_found, found
                 try:
-                    cap = cv2.VideoCapture(index)
-                    if cap.read()[0]:
+                    # Allow numeric or string device paths
+                    cap = cv2.VideoCapture(candidate)
+                    ok = False
+                    try:
+                        # isOpened is a more conservative check but read gives confirmation
+                        if cap.isOpened():
+                            ok = cap.read()[0]
+                    except Exception:
+                        # Fallback - if read fails, treat as not ok
+                        ok = False
+
+                    if ok:
                         if first_found < 0:
-                            first_found = index
-                        cam_context.uris.append(index)
-                        cap.release()
+                            first_found = candidate
+                        # store original candidate representation
+                        found_list.append(candidate)
+                        try:
+                            cap.release()
+                        except Exception:
+                            pass
                         found += 1
-                except:
-                    pass
-                keepgoing = progress.Update(
-                    index + 1, found_camera_string.format(count=found)
-                )
-                index += 1
+                except Exception:
+                    # Ignore failures probing a candidate
+                    try:
+                        cap.release()
+                    except Exception:
+                        pass
+
+            # Try to use enumerateCameras if available
+            enum_fn = getattr(cv2, "enumerateCameras", None) or getattr(
+                cv2, "enumerate_cameras", None
+            )
+            camera_candidates = None
+            if enum_fn is not None:
+                try:
+                    camera_candidates = enum_fn()
+                except Exception:
+                    camera_candidates = None
+            # If enumeration gave results, try those first
+            if camera_candidates:
+                # enumeration may return list of dicts or strings
+                # interpret candidates conservatively
+                for idx, candidate in enumerate(camera_candidates[:max_range]):
+                    if isinstance(candidate, dict):
+                        # try device, index, or name fields if present
+                        candidate_value = candidate.get("device") or candidate.get(
+                            "index"
+                        ) or candidate.get("url") or candidate.get("name")
+                    else:
+                        candidate_value = candidate
+
+                    # convert numeric-looking strings to int
+                    try:
+                        if isinstance(candidate_value, str) and candidate_value.isdigit():
+                            candidate_value = int(candidate_value)
+                    except Exception:
+                        pass
+
+                    # Progress update (we'll use idx as position for progress bar)
+                    try_register(candidate_value)
+                    keepgoing = progress.Update(
+                        idx + 1, found_camera_string.format(count=found)
+                    )
+                    if not keepgoing:
+                        break
+
+            # If enumerateCameras not available or found none, fall back to numeric probe
+            if not found_list:
+                index = 0
+                keepgoing = True
+                while index < max_range and keepgoing:
+                    try_register(index)
+                    keepgoing = progress.Update(
+                        index + 1, found_camera_string.format(count=found)
+                    )
+                    index += 1
+
+            # save found indexes/uris
+            for c in found_list:
+                cam_context.uris.append(c)
             progress.Destroy()
             if first_found >= 0:
                 kernel.signal(f"camset{first_found}", "camera", (first_found, found))

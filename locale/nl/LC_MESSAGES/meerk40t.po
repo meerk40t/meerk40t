@@ -13366,8 +13366,8 @@ msgid "magic number used to encode the file"
 msgstr "magisch nummer gebruikt om het bestand te coderen"
 
 #: meerk40t/ruida/plugin.py:27
-msgid "K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"
-msgstr "K50/K60-CO2-Laser (Ruida-controller) (ONVOLLEDIG)"
+msgid "K50/K60-CO2-Laser (Ruida-Controller)"
+msgstr "K50/K60-CO2-Laser (Ruida-controller)"
 
 #: meerk40t/ruida/plugin.py:28
 msgid "This driver is incomplete. Use at your own risk."
@@ -24783,3 +24783,27 @@ msgstr "Log wissen"
 #: meerk40t/ruida/plugin.py:28
 msgid "Please use udp_connection for now!"
 msgstr "Gebruik voorlopig udp_connection!"
+
+#: meerk40t/gui/wxmmain.py:5171
+msgid "Laser: {index}"
+msgstr "Laser: {index}"
+
+#: meerk40t/ruida/plugin.py:28
+msgid "This driver has been tested on Linux only so far."
+msgstr "Deze driver is tot nu toe alleen op Linux getest."
+
+#: meerk40t/ruida/plugin.py:28
+msgid "Please provide feedback if you find issues."
+msgstr "Geef alstublieft feedback als u problemen vindt."
+
+#: meerk40t/ruida/gui/ruidaconfig.py:77
+msgid ""
+"Serial port on the host.\n"
+"On Linux this is \"/dev/<dev>\"\n"
+"This allows use of symlinks using UDEV rules.\n"
+"On Windows this is \"COM<n>\""
+msgstr ""
+"Seriële poort op de host.\n"
+"Op Linux is dit \"/dev/<dev>\"\n"
+"Dit maakt gebruik van symlinks via UDEV-regels mogelijk.\n"
+"Op Windows is dit \"COM<n>\""

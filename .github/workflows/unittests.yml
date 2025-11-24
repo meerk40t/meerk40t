@@ -53,11 +53,23 @@ jobs:
       shell: bash
       run: echo "version=$(python -c 'import sys; print("-".join(str(v) for v in sys.version_info))')" >> "$GITHUB_OUTPUT"
 
+    - name: Compute hash for requirements-nogui.txt (if present)
+      id: reqs_nogui_hash
+      shell: bash
+      run: |
+        if [ -f requirements-nogui.txt ]; then
+          # Use Python to compute a stable SHA1 of the file contents
+          h=$(python -c "import hashlib,sys;print(hashlib.sha1(open('requirements-nogui.txt','rb').read()).hexdigest())")
+          echo "hash=$h" >> "$GITHUB_OUTPUT"
+        else
+          echo "hash=no-reqs-nogui" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
       uses: actions/cache@v4
       with:
         path: ${{ env.pythonLocation }}
-        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-nogui.txt') }}
+        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ steps.reqs_nogui_hash.outputs.hash }}
 
     - name: Install Python dependencies
       run: |
