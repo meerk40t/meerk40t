@@ -17,8 +17,8 @@ jobs:
 
     - name: Clean up old weekly releases
       run: |
-        # Calculate cutoff date (60 days ago)
-        CUTOFF_DATE=$(date -d '60 days ago' +%Y-%m-%dT%H:%M:%SZ)
+        # Calculate cutoff date (30 days ago)
+        CUTOFF_DATE=$(date -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ)
         echo "Cleaning up releases older than: $CUTOFF_DATE"
 
         # Get all weekly releases
@@ -37,11 +37,11 @@ jobs:
         DELETE_COUNT=$(echo "$TO_DELETE" | jq length)
 
         if [ "$DELETE_COUNT" -eq 0 ]; then
-          echo "No releases older than 60 days found"
+          echo "No releases older than 30 days found"
           exit 0
         fi
 
-        echo "Will delete $DELETE_COUNT release(s) older than 60 days"
+        echo "Will delete $DELETE_COUNT release(s) older than 30 days"
 
         # Delete old releases
         echo "$TO_DELETE" | jq -r '.[].id' | while read -r release_id; do
