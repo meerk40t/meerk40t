@@ -835,6 +835,19 @@ class Planner(Service):
             if busy.shown:
                 busy.change(msg=_("Preprocessing"), keep=1)
                 busy.show()
+            anykerf = False
+            method = ""
+            for operation in data.plan:
+                if isinstance(operation, CutOpNode):
+                    kerf = getattr(operation, "kerf", None)
+                    if kerf is not None and kerf != 0:
+                        anykerf = True
+                        method = self.kernel.get_capability("offset_routine")
+                        if method is None:
+                            method = "unknown"
+                        break
+            if anykerf and channel:
+                channel(f"Kerf requirement detected, will adjust with {method}.")
 
             data.preprocess()
             self.update_stage(data.name, STAGE_PLAN_PREPROCESSED)

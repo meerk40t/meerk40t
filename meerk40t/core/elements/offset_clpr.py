@@ -621,6 +621,7 @@ def init_commands(kernel):
     from meerk40t.core.node.op_cut import CutOpNode
 
     CutOpNode.offset_routine = offset_path
+    kernel.add_capability("offset_routine", "Clipper")
 
     @self.console_argument(
         "offset",

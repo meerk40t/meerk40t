@@ -246,6 +246,9 @@ class Kernel(Settings):
         self.silent_mode = False
         self.inhibitor = Inhibitor()
 
+        # Capabilities
+        self._capabilities = {}
+
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
 
@@ -4121,6 +4124,34 @@ class Kernel(Settings):
         """
         return console_command_remove(self, *args, **kwargs)
 
+    def add_capability(self, key, value):
+        """
+        Add a capability to the kernel.
+
+        @param key: capability name
+        @param value: capability value
+        @return:
+        """
+        self._capabilities[key] = value
+
+    def get_capability(self, key):
+        """
+        Retrieve a capability from the kernel.
+
+        @param key: capability name
+        @return:
+        """
+        return self._capabilities.get(key, None)
+    
+    def get_capabilities(self):
+        """
+        Retrieve all capabilities from the kernel.
+
+        @return: dictionary of capabilities
+        """
+        return self._capabilities.copy()    
+
+# ==========
 
 def lookup_listener(param):
     """
@@ -4157,3 +4188,4 @@ def signal_listener(param):
         return func
 
     return decor
+
