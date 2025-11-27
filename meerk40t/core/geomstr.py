@@ -8314,6 +8314,12 @@ class Geomstr:
             """
             if len(points) < 3:
                 return False
+            """
+            Detect if a closed shape should be protected from over-simplification.
+            This prevents loss of important geometric features in various shapes.
+            """
+            if len(points) < 3:
+                return False
 
             # For a closed shape, the last point should be close to the first
             is_closed = False
@@ -8343,17 +8349,78 @@ class Geomstr:
 
             # 3. Regular polygon detection (pentagon, hexagon, octagon, etc.)
             if 5 <= num_points <= 12:
-                return _is_regular_polygon(points)
+                if _is_regular_polygon(points):
+                    return True
 
             # 4. Ellipse/circle detection (many points in roughly circular pattern)
             if num_points >= 8:
-                return _is_elliptical_shape(points)
+                if _is_elliptical_shape(points):
+                    return True
 
             # 5. Star pattern detection
             if num_points >= 6:
-                return _is_star_pattern(points)
+                if _is_star_pattern(points):
+                    return True
+
+            # 6. Convex shape detection (rounded rectangles, etc.)
+            if num_points >= 6:
+                if _is_convex_shape(points):
+                    return True
 
             return False
+
+        def _is_convex_shape(points):
+            """Detect if the shape is convex (or mostly convex)."""
+            n = len(points)
+            if n < 3:
+                return False
+
+            # Create shifted arrays for vectorized calculation
+            p_prev = np.roll(points, 1, axis=0)
+            p_curr = points
+            p_next = np.roll(points, -1, axis=0)
+
+            v1 = p_curr - p_prev
+            v2 = p_next - p_curr
+
+            # Cross product: x1*y2 - y1*x2
+            cp = v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0]
+
+            # Check signs
+            pos_count = np.sum(cp > 1e-6)
+            neg_count = np.sum(cp < -1e-6)
+
+            # Allow some noise (10% outliers)
+            # A shape is convex if almost all turns are in the same direction (or straight)
+            # So we check if the number of turns in the WRONG direction is small.
+            allowed_outliers = 0.1 * n
+            return neg_count <= allowed_outliers or pos_count <= allowed_outliers
+            """Detect if the shape is convex (or mostly convex)."""
+            n = len(points)
+            if n < 3:
+                return False
+
+            # Create shifted arrays for vectorized calculation
+            p_prev = np.roll(points, 1, axis=0)
+            p_curr = points
+            p_next = np.roll(points, -1, axis=0)
+
+            v1 = p_curr - p_prev
+            v2 = p_next - p_curr
+
+            # Cross product: x1*y2 - y1*x2
+            cp = v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0]
+
+            # Check signs
+            pos_count = np.sum(cp > 1e-6)
+            neg_count = np.sum(cp < -1e-6)
+            print(f"Convex check: pos={pos_count}, neg={neg_count}, n={n}")
+
+            # Allow some noise (10% outliers)
+            # A shape is convex if almost all turns are in the same direction (or straight)
+            # So we check if the number of turns in the WRONG direction is small.
+            allowed_outliers = 0.1 * n
+            return neg_count <= allowed_outliers or pos_count <= allowed_outliers
 
         def _is_rectangular_shape_detailed(points):
             """Enhanced rectangle detection with better tolerance handling."""
@@ -8642,12 +8709,15 @@ class Geomstr:
                     protected_epsilon = (
                         epsilon * 0.05 * size_factor
                     )  # Much more conservative
-                    protected_epsilon = max(
-                        protected_epsilon, 0.1
-                    )  # Minimum protection
-                    protected_epsilon = min(
-                        protected_epsilon, 5.0
-                    )  # Maximum protection
+                    
+                    # Ensure protected_epsilon is not larger than a fraction of the shape size
+                    # For very small shapes, 0.1 might be too large
+                    max_allowed_epsilon = shape_size * 0.02  # Max 2% of shape size
+                    
+                    protected_epsilon = min(protected_epsilon, max_allowed_epsilon)
+                    
+                    # But keep a tiny absolute minimum to avoid infinite recursion or zero tolerance
+                    protected_epsilon = max(protected_epsilon, 1e-5)
                 else:
                     protected_epsilon = min(epsilon * 0.1, 2.0)
                 mask = _mask(points, protected_epsilon)
