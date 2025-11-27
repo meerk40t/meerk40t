@@ -1534,7 +1534,7 @@ class Node:
                 continue
 
             # Direct attribute access (avoid getattr overhead for common case)
-            box = e.bounds if attr == "bounds" else getattr(e, attr, None)
+            box = getattr(e, "bounds", None) if attr == "bounds" else getattr(e, attr, None)
             if box is None:
                 continue
 
