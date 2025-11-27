@@ -330,6 +330,11 @@ class PositionPanel(wx.Panel):
     def update_position(self, reset):
         if not self.IsShown():
             return
+        # Quick check whether we are already in a deletion phase
+        try:
+            dummy = hasattr(self.text_h, "GetValue")
+        except RuntimeError:
+            return
         more_than_one = False
         ct = 0
         for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):
