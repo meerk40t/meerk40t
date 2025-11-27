@@ -1447,17 +1447,22 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         f"MeerK40t crash log. Version: {APPLICATION_VERSION} on {platform.system()}: "
         f"Python {platform.python_version()}: {platform.machine()} - wxPython: {wxversion}\n"
     )
-    error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    error_log += "".join(reversed(tb_lines))
     variable_info = ""
     try:
         variable_info = "\nLocal variables:\n"
+        frames = []
         tb = exc_traceback
         while tb:
+            frames.append(tb)
+            tb = tb.tb_next
+        frames.reverse()  # Reverse to outermost first
+        for tb in frames:
             frame = tb.tb_frame
             code = frame.f_code
             source = f"{code.co_filename}:{tb.tb_lineno}, in {code.co_name}"
             variable_info += f"[{source}]:\n" + _variable_summary(frame.f_locals)
-            tb = tb.tb_next
     except Exception:
         pass
     try:
