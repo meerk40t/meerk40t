@@ -4983,11 +4983,11 @@ class MeerK40t(MWindow):
                 return True  # VETO
         for job in self.context.device.spooler.queue:
             if job.is_running():
-                print(f"{job.label} was still running, stopping...")
+                print(f"{job.label if hasattr(job, 'label') else 'Unknown Job'} was still running, stopping...")
                 try:
                     job.stop()
                 except Exception as e:
-                    print(f"Error stopping job {job.label}: {e}")
+                    print(f"Error stopping job {job.label if hasattr(job, 'label') else 'Unknown Job'}: {e}")
         return False
 
     def window_close(self):

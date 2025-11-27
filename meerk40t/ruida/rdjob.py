@@ -517,6 +517,7 @@ class RDJob:
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
+        self.label = "Ruida Job"
         self.reply = None
         self.buffer = list()
         self.plotcut = None
