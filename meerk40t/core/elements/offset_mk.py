@@ -689,19 +689,8 @@ def path_offset(
                     elif not radial:
                         # is the intersection too far away for our purposes?
                         odist = orgintersect.distance_to(p)
-                        if odist > abs(offset) * 10:
+                        if odist > abs(offset) * 4:
                             needs_connector = True
-                        elif odist > abs(offset) * 10:
-                            angle = orgintersect.angle_to(p)
-                            p = orgintersect.polar_to(angle, abs(offset))
-
-                            newseg1 = Line(seg1.end, p)
-                            newseg2 = Line(p, seg2.start)
-                            stitchpath._segments.insert(left_end + 1, newseg2)
-                            stitchpath._segments.insert(left_end + 1, newseg1)
-                            point_added += 2
-                            needs_connector = False
-                            # print ("Used shortened external intersect")
                         else:
                             seg1.end = Point(p)
                             seg2.start = Point(p)
