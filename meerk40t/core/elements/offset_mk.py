@@ -567,12 +567,13 @@ def path_offset(
                     else:
                          # Global backward cut (removing start and end)
                          # We want to keep P->B (tail of seg1) ... C->P (head of seg2)
+                         # Actually we keep right_start ... best_idx
                          
                          # 1. Update seg2 (C->D becomes C->P)
                          seg2.end = Point(best_p)
                          
-                         # 2. Update seg1 (A->B becomes P->B)
-                         seg1.start = Point(best_p)
+                         # 2. Update start of kept chain
+                         stitchpath._segments[right_start].start = Point(best_p)
                          
                          # 3. Remove end: best_idx + 1 ... end
                          count_end = lp - (best_idx + 1)
@@ -581,9 +582,8 @@ def path_offset(
                              deleted_tail = count_end
                              point_added -= count_end
                          
-                         # 4. Remove start: 0 ... left_end
-                         # Note: left_end is index of seg1.
-                         count_start = left_end
+                         # 4. Remove start: 0 ... right_start
+                         count_start = right_start
                          if count_start > 0:
                              del stitchpath._segments[:count_start]
                              deleted_from_start = count_start
