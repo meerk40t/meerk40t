@@ -446,6 +446,9 @@ def path_offset(
                 pred_idx = len(stitchpath._segments) - 1
                 while pred_idx > left_end and isinstance(stitchpath._segments[pred_idx], Move):
                      pred_idx -= 1
+            
+            # print(f"Stitch {left_end}: pred_idx={pred_idx}, len={len(stitchpath._segments)}")
+
 
             # Precompute seg1 bbox
             s1_x1 = min(seg1.start.x, seg1.end.x)
@@ -469,24 +472,21 @@ def path_offset(
                          d1 = seg1.start.distance_to(p_g)
                          d2 = seg_k.end.distance_to(p_g)
                          limit_dist = abs(offset) * 10 if abs(offset) > 1e-6 else 1000
+                         # print(f"Global Join Check: {left_end} vs {k}. d1={d1}, d2={d2}, limit={limit_dist}")
                          if d1 < limit_dist and d2 < limit_dist:
                              # Check for inversion
                              v1 = seg1.end - seg1.start
                              vk = seg_k.end - seg_k.start
-                             v1_new = p_g - seg1.start # seg1.start becomes p_g? No, seg1.start becomes p_g.
-                             # Wait, for Global Join: seg_k.end -> seg1.start.
-                             # So seg_k.end becomes p_g. seg1.start becomes p_g.
-                             
-                             # seg1 (curr) starts at p_g.
-                             # seg_k (pred) ends at p_g.
-                             
-                             # seg1 new vector: seg1.end - p_g
                              v1_new = seg1.end - p_g
-                             # seg_k new vector: p_g - seg_k.start
                              vk_new = p_g - seg_k.start
                              
-                             if (v1.x * v1_new.x + v1.y * v1_new.y) > 0 and \
-                                (vk.x * vk_new.x + vk.y * vk_new.y) > 0:
+                             dot1 = v1.x * v1_new.x + v1.y * v1_new.y
+                             dotk = vk.x * vk_new.x + vk.y * vk_new.y
+                             
+                             # print(f"Global Join Inversion: dot1={dot1}, dotk={dotk}")
+                             
+                             if dot1 > 0 and dotk > 0:
+                                     # print(f"Global Join Applied: {left_end} vs {k} at {p_g}")
                                      seg1.start = Point(p_g)
                                      seg_k.end = Point(p_g)
                     continue
@@ -676,7 +676,7 @@ def path_offset(
                 )
                 if p is not None:
                     # We have an intersection
-                    if 0 <= s <= 1 and 0 <= t <= 1:
+                    if -1e-9 <= s <= 1.0 + 1e-9 and -1e-9 <= t <= 1.0 + 1e-9:
                         # We shorten the segments accordingly.
                         seg1.end = Point(p)
                         seg2.start = Point(p)
@@ -689,9 +689,9 @@ def path_offset(
                     elif not radial:
                         # is the intersection too far away for our purposes?
                         odist = orgintersect.distance_to(p)
-                        if odist > abs(offset) * 1.5:
+                        if odist > abs(offset) * 10:
                             needs_connector = True
-                        elif odist > abs(offset):
+                        elif odist > abs(offset) * 10:
                             angle = orgintersect.angle_to(p)
                             p = orgintersect.polar_to(angle, abs(offset))
 
@@ -817,6 +817,7 @@ def path_offset(
             if p is not None:
                 # We have an intersection and shorten the segments accordingly.
                 d = orgintersect.distance_to(p)
+                # print(f"CloseSubpath: s={s}, t={t}, d={d}, offset={offset}")
                 if 0 <= s <= 1 and 0 <= t <= 1:
                     seg1.start = Point(p)
                     seg2.end = Point(p)
@@ -1029,6 +1030,8 @@ def path_offset(
                     idx -= 1
                     continue
                 
+                # print(f"Idx {idx}: newsegment len={len(newsegment)}")
+                
                 # Insert segments
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
@@ -1047,9 +1050,11 @@ def path_offset(
                     if len(p._segments) == 0:
                         break
                     h1 = helper1 if curr == idx + cnt - 1 else Point(p._segments[curr].end)
+                    # print(f"Before Stitch {curr}: len={len(p._segments)}")
                     stitched, deleted_start, deleted_tail, deleted_loop = stitch_segments_at_index(
                         offset, p, curr, h1, radial=radial_connector, closed=is_closed, limit=last_point
                     )
+                    # print(f"After Stitch {curr}: len={len(p._segments)}")
                     
                     if last_point is not None:
                         last_point += stitched
