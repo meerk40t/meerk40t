@@ -202,10 +202,9 @@ def offset_line(segment, offset=0):
         return None
     newseg = copy(segment)
     normal_vector = norm_vector(segment.start, segment.end, offset)
+    # print(f"Offset Line: {segment.start} -> {segment.end} | Off={offset} | Norm={normal_vector}")
     newseg.start += normal_vector
     newseg.end += normal_vector
-    # print (f"Old= ({segment.start.x:.0f}, {segment.start.y:.0f})-({segment.end.x:.0f}, {segment.end.y:.0f})")
-    # print (f"New= ({newsegment.start.x:.0f}, {newsegment.start.y:.0f})-({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
     return [newseg]
 
 
@@ -407,6 +406,15 @@ def path_offset(
                 (Arc, Line, QuadraticBezier, CubicBezier),
             ):
                 right_start += 1
+            
+            # If we wrapped to a segment that is before our current processing point (left_end),
+            # it means we are trying to stitch with an unprocessed (Original) segment.
+            # We must NOT do this. We should leave the gap and let the First segment 
+            # (when processed later/earlier?) handle the stitch with us, or let close_subpath handle it.
+            # Note: We iterate backwards, so segments < left_end are unprocessed.
+            if right_start < left_end:
+                 return point_added, deleted_from_start, deleted_tail, deleted_loop
+
         seg1 = stitchpath._segments[left_end]
         seg2 = stitchpath._segments[right_start]
 
@@ -813,7 +821,7 @@ def path_offset(
                     seg1.start = Point(p)
                     seg2.end = Point(p)
                     # print (f"{perf_counter()-t_start:.3f} Close subpath by adjusting inner lines, d={d:.2f} vs. offs={offset:.2f}")
-                elif d >= abs(offset):
+                elif d >= abs(offset) and seglen > abs(offset):
                     if radial:
                         # print (f"{perf_counter()-t_start:.3f} Insert an arc")
                         # Let's check whether the distance of these points is smaller
