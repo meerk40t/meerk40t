@@ -386,17 +386,22 @@ def path_offset(
     MINIMAL_LEN = 5
 
     def stitch_segments_at_index(
-        offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False
+        offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False, limit=None
     ):
         point_added = 0
+        deleted_from_start = 0
+        deleted_tail = 0
+        deleted_loop = 0
         left_end = seg1_end
         lp = len(stitchpath)
         right_start = left_end + 1
+        wrapped = False
         if right_start >= lp:
             if not closed:
-                return point_added
+                return point_added, deleted_from_start, deleted_tail, deleted_loop
             # Look for the first segment
             right_start = right_start % lp
+            wrapped = True
             while not isinstance(
                 stitchpath._segments[right_start],
                 (Arc, Line, QuadraticBezier, CubicBezier),
@@ -408,14 +413,187 @@ def path_offset(
         #  print (f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
-            return point_added
+            return point_added, deleted_from_start, deleted_tail, deleted_loop
         if isinstance(seg1, Move):
             seg1.end = Point(seg2.start)
-            return point_added
+            return point_added, deleted_from_start, deleted_tail, deleted_loop
 
         if isinstance(seg1, Line):
             needs_connector = True
-            if isinstance(seg2, Line):
+            # Check for intersections with subsequent segments
+            # We iterate backwards to find the furthest intersection (largest loop removal)
+            best_p = None
+            best_idx = -1
+
+            # Let's scan all subsequent segments that are Lines
+            scan_end = len(stitchpath._segments) - 1
+            if limit is not None and limit < scan_end:
+                scan_end = limit
+            
+            # Identify predecessor index
+            pred_idx = left_end - 1
+            while pred_idx >= 0 and isinstance(stitchpath._segments[pred_idx], Move):
+                pred_idx -= 1
+            if pred_idx < 0 and closed:
+                pred_idx = len(stitchpath._segments) - 1
+                while pred_idx > left_end and isinstance(stitchpath._segments[pred_idx], Move):
+                     pred_idx -= 1
+
+            # Precompute seg1 bbox
+            s1_x1 = min(seg1.start.x, seg1.end.x)
+            s1_x2 = max(seg1.start.x, seg1.end.x)
+            s1_y1 = min(seg1.start.y, seg1.end.y)
+            s1_y2 = max(seg1.start.y, seg1.end.y)
+
+            for k in range(scan_end, right_start - 1, -1):
+                if k == left_end:
+                    continue
+                if k == pred_idx:
+                    continue
+                seg_k = stitchpath._segments[k]
+                if isinstance(seg_k, Line):
+                    # Bbox check
+                    if min(seg_k.start.x, seg_k.end.x) > s1_x2: continue
+                    if max(seg_k.start.x, seg_k.end.x) < s1_x1: continue
+                    if min(seg_k.start.y, seg_k.end.y) > s1_y2: continue
+                    if max(seg_k.start.y, seg_k.end.y) < s1_y1: continue
+
+                    p, s, t = intersect_line_segments(
+                        Point(seg1.start),
+                        Point(seg1.end),
+                        Point(seg_k.start),
+                        Point(seg_k.end),
+                    )
+                    if p is not None:
+                        # Check if intersection is within segments
+                        # We use a small tolerance for floating point errors
+                        if -1e-9 <= s <= 1.0 + 1e-9 and -1e-9 <= t <= 1.0 + 1e-9:
+                            # print(f"Intersection found between {left_end} and {k}: s={s}, t={t}")
+                            best_p = p
+                            best_idx = k
+                            break  # Found the furthest intersection
+
+            if best_p is not None:
+                # print(f"Cutting loop: {left_end} -> {best_idx} (removing {best_idx - right_start} segments)")
+                # We found a valid intersection
+                
+                # Determine which way to cut
+                cut_forward = True
+                if closed:
+                    # Check if we should keep the "inner" loop (forward cut) or "outer" loop (backward cut)
+                    # Forward cut removes: right_start ... best_idx - 1
+                    len_forward = best_idx - right_start
+                    
+                    # Backward cut removes: best_idx ... end AND start ... right_start - 1
+                    # Note: if wrapped, right_start is already modulo'd, but here we use linear indices
+                    # If wrapped locally (right_start < left_end), len_forward calculation might be negative?
+                    # No, best_idx comes from loop range(scan_end, right_start - 1, -1).
+                    # If wrapped, right_start is 0. best_idx >= 0.
+                    # So len_forward is positive.
+                    
+                    # Backward length:
+                    len_backward = (lp - best_idx) + right_start
+                    
+                    # If wrapped locally, right_start is 0.
+                    # len_backward = lp - best_idx.
+                    # len_forward = best_idx.
+                    # This matches the wrapped heuristic.
+                    
+                    if len_forward > len_backward:
+                        cut_forward = False
+                elif wrapped:
+                    # Fallback if not closed but wrapped (shouldn't happen if logic is correct)
+                    len_forward = best_idx - right_start
+                    len_backward = left_end - best_idx
+                    if len_backward < len_forward:
+                        cut_forward = False
+                
+                if cut_forward:
+                    if best_idx > right_start:
+                        # Remove segments from right_start to best_idx - 1
+                        count = best_idx - right_start
+                        del stitchpath._segments[right_start:best_idx]
+                        point_added -= count
+                        if wrapped:
+                            deleted_from_start = count
+                        # Update best_idx (it shifted)
+                        best_idx = right_start
+                    
+                    seg2 = stitchpath._segments[
+                        best_idx
+                    ]  # This is the segment we intersected with
+
+                    seg1.end = Point(best_p)
+                    seg2.start = Point(best_p)
+                    if best_idx > 0 and isinstance(
+                        stitchpath._segments[best_idx - 1], Move
+                    ):
+                        stitchpath._segments[best_idx - 1].end = Point(best_p)
+
+                    needs_connector = False
+                else:
+                    # Backward cut
+                    seg2 = stitchpath._segments[best_idx]
+                    
+                    if wrapped and right_start == 0:
+                         # This is the local wrap case (loop at end)
+                         # We want to keep the "wrap" loop: P->B (tail of seg1) ... C->P (head of seg2)
+                         # Remove segments from best_idx (tail) to left_end (head)
+                         
+                         # Update seg2 (C->D becomes C->P)
+                         seg2.end = Point(best_p)
+                         
+                         # Update seg1 (A->B becomes P->B)
+                         seg1.start = Point(best_p)
+                         
+                         # Remove segments between seg2 and seg1 (inclusive of tails/heads we don't want?)
+                         # We kept head of seg2 and tail of seg1.
+                         # We remove tail of seg2 (handled by update) and head of seg1 (handled by update).
+                         # We remove segments strictly between best_idx and left_end.
+                         
+                         if left_end > best_idx + 1:
+                             count = left_end - (best_idx + 1)
+                             del stitchpath._segments[best_idx + 1 : left_end]
+                             deleted_loop = count
+                             point_added -= count
+                         
+                         # Note: We don't delete seg1 or seg2, just modified them.
+                         # But wait, if we modified them, we effectively removed the "loop" part?
+                         # No, we removed the "Main" part.
+                         # The "Main" part was D...A.
+                         # D was end of seg2. A was start of seg1.
+                         # We removed D...A.
+                         
+                    else:
+                         # Global backward cut (removing start and end)
+                         # We want to keep P->B (tail of seg1) ... C->P (head of seg2)
+                         
+                         # 1. Update seg2 (C->D becomes C->P)
+                         seg2.end = Point(best_p)
+                         
+                         # 2. Update seg1 (A->B becomes P->B)
+                         seg1.start = Point(best_p)
+                         
+                         # 3. Remove end: best_idx + 1 ... end
+                         count_end = lp - (best_idx + 1)
+                         if count_end > 0:
+                             del stitchpath._segments[best_idx + 1:]
+                             deleted_tail = count_end
+                             point_added -= count_end
+                         
+                         # 4. Remove start: 0 ... left_end
+                         # Note: left_end is index of seg1.
+                         count_start = left_end
+                         if count_start > 0:
+                             del stitchpath._segments[:count_start]
+                             deleted_from_start = count_start
+                             point_added -= count_start
+                    
+                    return point_added, deleted_from_start, deleted_tail, deleted_loop
+                    
+                    return point_added, deleted_from_start, deleted_from_end
+
+            elif isinstance(seg2, Line):
                 p, s, t = intersect_line_segments(
                     Point(seg1.start),
                     Point(seg1.end),
@@ -424,7 +602,7 @@ def path_offset(
                 )
                 if p is not None:
                     # We have an intersection
-                    if 0 <= abs(s) <= 1 and 0 <= abs(t) <= 1:
+                    if 0 <= s <= 1 and 0 <= t <= 1:
                         # We shorten the segments accordingly.
                         seg1.end = Point(p)
                         seg2.start = Point(p)
@@ -437,7 +615,9 @@ def path_offset(
                     elif not radial:
                         # is the intersection too far away for our purposes?
                         odist = orgintersect.distance_to(p)
-                        if odist > abs(offset):
+                        if odist > abs(offset) * 1.5:
+                            needs_connector = True
+                        elif odist > abs(offset):
                             angle = orgintersect.angle_to(p)
                             p = orgintersect.polar_to(angle, abs(offset))
 
@@ -445,7 +625,7 @@ def path_offset(
                             newseg2 = Line(p, seg2.start)
                             stitchpath._segments.insert(left_end + 1, newseg2)
                             stitchpath._segments.insert(left_end + 1, newseg1)
-                            point_added = 2
+                            point_added += 2
                             needs_connector = False
                             # print ("Used shortened external intersect")
                         else:
@@ -524,7 +704,7 @@ def path_offset(
         else:
             # print ("No connector needed")
             pass
-        return point_added
+        return point_added, deleted_from_start, deleted_tail, deleted_loop
 
     def close_subpath(radial, sub_path, firstidx, lastidx, offset, orgintersect):
         # from time import perf_counter
@@ -563,7 +743,7 @@ def path_offset(
             if p is not None:
                 # We have an intersection and shorten the segments accordingly.
                 d = orgintersect.distance_to(p)
-                if 0 <= abs(s) <= 1 and 0 <= abs(t) <= 1:
+                if 0 <= s <= 1 and 0 <= t <= 1:
                     seg1.start = Point(p)
                     seg2.end = Point(p)
                     # print (f"{perf_counter()-t_start:.3f} Close subpath by adjusting inner lines, d={d:.2f} vs. offs={offset:.2f}")
@@ -637,7 +817,7 @@ def path_offset(
     spct = 0
     for subpath in path.as_subpaths():
         spct += 1
-        # print (f"Subpath {spct}")
+        print (f"Subpath {spct}")
         p = Path(subpath)
         if not linearize:
             # p.approximate_arcs_with_cubics()
@@ -686,7 +866,12 @@ def path_offset(
         is_closed = False
         helper1 = None
         helper2 = None
-        for idx in range(len(p._segments) - 1, -1, -1):
+        idx = len(p._segments) - 1
+        while idx >= 0:
+            if idx >= len(p._segments):
+                idx = len(p._segments) - 1
+                if idx < 0:
+                    break
             segment = p._segments[idx]
             # print (f"Deal with seg {idx}: {type(segment).__name__} - {first_point}, {last_point}, {is_closed}")
             if isinstance(segment, Close):
@@ -726,6 +911,7 @@ def path_offset(
                     p._segments.pop(idx)
                     if last_point is not None:
                         last_point -= 1
+                    idx -= 1
                     continue
             elif isinstance(segment, Move):
                 if last_point is not None and first_point is not None and is_closed:
@@ -750,6 +936,7 @@ def path_offset(
                     p._segments.pop(idx)
                     if last_point is not None:
                         last_point -= 1
+                    idx -= 1
                     continue
                 first_point = idx
                 if last_point is None:
@@ -776,58 +963,125 @@ def path_offset(
             helper2 = Point(p._segments[idx].start)
             left_end = idx
             #  print (f"Segment to deal with: {type(segment).__name__}")
+            newsegment = None
             if isinstance(segment, Arc):
                 arclinearize = linearize
                 # Arc is not working, so we always linearize
                 arclinearize = True
                 newsegment = offset_arc(segment, offset, arclinearize, interpolation)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                last_point += len(newsegment) - 1
-                p._segments[idx] = newsegment[0]
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, QuadraticBezier):
                 newsegment = offset_quad(segment, offset, linearize, interpolation)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                last_point += len(newsegment) - 1
-                p._segments[idx] = newsegment[0]
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, CubicBezier):
                 newsegment = offset_cubic(segment, offset, linearize, interpolation)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                last_point += len(newsegment) - 1
-                p._segments[idx] = newsegment[0]
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
                 newsegment = offset_line(segment, offset)
-                if newsegment is None or len(newsegment) == 0:
+            
+            if newsegment is not None:
+                if len(newsegment) == 0:
+                    idx -= 1
                     continue
-                left_end = idx - 1 + len(newsegment)
-                last_point += len(newsegment) - 1
+                
+                # Insert segments
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
-            stitched = stitch_segments_at_index(
-                offset, p, left_end, helper1, radial=radial_connector
+                
+                # Stitch loop
+                cnt = len(newsegment)
+                curr = idx + cnt - 1
+                
+                # Update last_point for the inserted segments
+                if last_point is not None:
+                    last_point += cnt - 1
+
+                while curr >= idx:
+                    if len(p._segments) == 0:
+                        break
+                    h1 = helper1 if curr == idx + cnt - 1 else Point(p._segments[curr].end)
+                    stitched, deleted_start, deleted_tail, deleted_loop = stitch_segments_at_index(
+                        offset, p, curr, h1, radial=radial_connector, closed=is_closed, limit=last_point
+                    )
+                    
+                    if last_point is not None:
+                        last_point += stitched
+                    
+                    if deleted_start > 0:
+                        idx -= deleted_start
+                        curr -= deleted_start
+                        if idx < 0:
+                            idx = 0
+                        if first_point is not None:
+                            first_point -= deleted_start
+                            if first_point < 0: first_point = 0
+
+                    if deleted_loop > 0:
+                        # We deleted segments between best_idx and curr
+                        # deleted_loop = curr - (best_idx + 1)
+                        # start_deleted = best_idx + 1 = curr - deleted_loop
+                        start_deleted = curr - deleted_loop
+                        if idx >= start_deleted:
+                            idx = start_deleted - 1
+                            if first_point is not None:
+                                first_point = idx
+                        curr -= deleted_loop
+
+                    if deleted_tail > 0:
+                        if curr >= len(p._segments):
+                            curr = len(p._segments)
+                    
+                    curr -= 1
+                
+                idx -= 1
+                continue
+
+            # Fallback (should not be reached with current types)
+            left_end = idx
+            stitched, deleted_start, deleted_tail, deleted_loop = stitch_segments_at_index(
+                offset, p, left_end, helper1, radial=radial_connector, closed=is_closed, limit=last_point
             )
             if last_point is not None:
                 last_point += stitched
+            
+            if deleted_tail > 0:
+                if last_point is not None:
+                    last_point -= deleted_tail
+                # idx = left_end - deleted_tail + 1 # ?
+
+            idx -= 1
+            if deleted_start > 0:
+                idx -= deleted_start
+                if first_point is not None:
+                    first_point -= deleted_start
+                    if first_point < 0:
+                        first_point = 0
+                if last_point is not None:
+                    last_point -= deleted_start
+
+            if deleted_loop > 0:
+                # Should not happen for Move segments usually?
+                # But if it does, we need to handle it.
+                curr = left_end
+                start_deleted = curr - deleted_loop
+                if idx >= start_deleted:
+                    idx = start_deleted - 1
+                    if first_point is not None:
+                        first_point = idx
+
+
         if last_point is not None and first_point is not None and is_closed:
-            seglen = p._segments[first_point].start.distance_to(
-                p._segments[last_point].end
-            )
-            if seglen > MINIMAL_LEN:
-                close_subpath(
-                    radial_connector, p, first_point, last_point, offset, helper2
-                )
+            print(f"Attempting to close subpath: first={first_point}, last={last_point}, len={len(p._segments)}")
+            if 0 <= first_point < len(p._segments) and 0 <= last_point < len(p._segments):
+                start_pt = p._segments[first_point].start
+                end_pt = p._segments[last_point].end
+                if start_pt is not None and end_pt is not None:
+                    seglen = start_pt.distance_to(end_pt)
+                    # print(f"Gap distance: {seglen}")
+                    if seglen > MINIMAL_LEN:
+                        close_subpath(
+                            radial_connector, p, first_point, last_point, offset, helper2
+                        )
+        else:
+            print(f"Not closing: last={last_point}, first={first_point}, closed={is_closed}")
 
         results.append(p)
 
@@ -859,9 +1113,9 @@ def init_commands(kernel):
     # Notabene: this may be overloaded by another routine (like from pyclipr)
     # at a later time.
     from meerk40t.core.node.op_cut import CutOpNode
-
+    print ("Changing CutOpNode.offset_routine to internal")
     CutOpNode.offset_routine = offset_path
-    kernel.add_capability("offset_routine", "Clipper")
+    kernel.add_capability("offset_routine", "Internal")
 
     @self.console_argument(
         "offset",
