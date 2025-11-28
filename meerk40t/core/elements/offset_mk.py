@@ -449,6 +449,39 @@ def path_offset(
                 if k == left_end:
                     continue
                 if k == pred_idx:
+                    # Global Join (Predecessor)
+                    seg_k = stitchpath._segments[k]
+                    # seg1 is curr. seg_k is pred.
+                    # We want to join seg_k.end to seg1.start.
+                    p_g, s_g, t_g = intersect_line_segments(
+                        Point(seg1.start), Point(seg1.end),
+                        Point(seg_k.start), Point(seg_k.end)
+                    )
+                    if p_g is not None:
+                         d1 = seg1.start.distance_to(p_g)
+                         d2 = seg_k.end.distance_to(p_g)
+                         limit_dist = abs(offset) * 10 if abs(offset) > 1e-6 else 1000
+                         if d1 < limit_dist and d2 < limit_dist:
+                             # Check for inversion
+                             v1 = seg1.end - seg1.start
+                             vk = seg_k.end - seg_k.start
+                             v1_new = p_g - seg1.start # seg1.start becomes p_g? No, seg1.start becomes p_g.
+                             # Wait, for Global Join: seg_k.end -> seg1.start.
+                             # So seg_k.end becomes p_g. seg1.start becomes p_g.
+                             
+                             # seg1 (curr) starts at p_g.
+                             # seg_k (pred) ends at p_g.
+                             
+                             # seg1 new vector: seg1.end - p_g
+                             v1_new = seg1.end - p_g
+                             # seg_k new vector: p_g - seg_k.start
+                             vk_new = p_g - seg_k.start
+                             
+                             if (v1.x * v1_new.x + v1.y * v1_new.y) > 0 and \
+                                (vk.x * vk_new.x + vk.y * vk_new.y) > 0:
+                                     seg1.start = Point(p_g)
+                                     seg_k.end = Point(p_g)
+                    continue
                     continue
                 seg_k = stitchpath._segments[k]
                 if isinstance(seg_k, Line):
@@ -472,6 +505,31 @@ def path_offset(
                             best_p = p
                             best_idx = k
                             break  # Found the furthest intersection
+                        elif k == left_end + 1:
+                            # Consecutive segment - check if we can close the gap/overlap
+                            # This handles Miter joins and missed overlaps
+                            d1 = seg1.end.distance_to(p)
+                            d2 = seg_k.start.distance_to(p)
+                            # Allow extension up to a limit (e.g. 10x offset or fixed amount)
+                            limit_dist = abs(offset) * 10 if abs(offset) > 1e-6 else 1000
+                            # Check for inversion
+                            # seg1.end becomes p.
+                            # seg_k.start becomes p.
+                            
+                            # Original vectors
+                            v1 = seg1.end - seg1.start
+                            vk = seg_k.end - seg_k.start
+                            
+                            # New vectors
+                            v1_new = p - seg1.start
+                            vk_new = seg_k.end - p
+                            
+                            # Check dot products
+                            if (v1.x * v1_new.x + v1.y * v1_new.y) > 0 and \
+                               (vk.x * vk_new.x + vk.y * vk_new.y) > 0:
+                                seg1.end = Point(p)
+                                seg_k.start = Point(p)
+                                needs_connector = False
 
             if best_p is not None:
                 # print(f"Cutting loop: {left_end} -> {best_idx} (removing {best_idx - right_start} segments)")
@@ -585,9 +643,17 @@ def path_offset(
                          # 4. Remove start: 0 ... right_start
                          count_start = right_start
                          if count_start > 0:
-                             del stitchpath._segments[:count_start]
-                             deleted_from_start = count_start
-                             point_added -= count_start
+                             start_del = 0
+                             if len(stitchpath._segments) > 0 and isinstance(stitchpath._segments[0], Move):
+                                 start_del = 1
+                                 # We preserve the Move, so we must update its end point to match the new start
+                                 stitchpath._segments[0].end = Point(best_p)
+                             
+                             # print(f"Global backward cut: count_start={count_start}, start_del={start_del}")
+                             if count_start > start_del:
+                                 del stitchpath._segments[start_del:count_start]
+                                 deleted_from_start = count_start - start_del
+                                 point_added -= (count_start - start_del)
                     
                     return point_added, deleted_from_start, deleted_tail, deleted_loop
                     
@@ -829,37 +895,6 @@ def path_offset(
         #     offset = min(offset, bb[2] - bb[0])
         #     offset = min(offset, bb[3] - bb[1])
         is_closed = False
-        # Let's check the first and last valid point. If they are identical
-        # we consider this to be a closed path even if it has no closed indicator.
-        # firstp_start = None
-        # lastp = None
-        idx = 0
-        while (idx < len(p)) and not isinstance(
-            p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
-        ):
-            idx += 1
-        firstp_start = Point(p._segments[idx].start)
-        idx = len(p._segments) - 1
-        while idx >= 0 and not isinstance(
-            p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
-        ):
-            idx -= 1
-        lastp = Point(p._segments[idx].end)
-        if firstp_start.distance_to(lastp) < 1e-3:
-            is_closed = True
-            # print ("Seems to be closed!")
-        # We need to establish if this is a closed path and if the first segment goes counterclockwise
-        cw = False
-        if not is_closed:
-            for idx in range(len(p._segments) - 1, -1, -1):
-                if isinstance(p._segments[idx], Close):
-                    is_closed = True
-                    break
-        if is_closed:
-            cw = is_clockwise(p, 0)
-            if cw:
-                offset = -1 * offset_value
-        # print (f"Subpath: closed={is_closed}, clockwise={cw}")
         # Remember the complete subshape (could be multiple segements due to linearization)
         last_point = None
         first_point = None
@@ -914,6 +949,7 @@ def path_offset(
                     idx -= 1
                     continue
             elif isinstance(segment, Move):
+                # print(f"Move handler: last={last_point}, first={first_point}, closed={is_closed}")
                 if last_point is not None and first_point is not None and is_closed:
                     seglen = p._segments[first_point].start.distance_to(
                         p._segments[last_point].end
@@ -941,6 +977,7 @@ def path_offset(
                 first_point = idx
                 if last_point is None:
                     last_point = idx
+                    # print(f"Init last_point={last_point}")
                     is_closed = False
                     offset = offset_value
                     # We need to establish if this is a closed path and if it goes counterclockwise
@@ -959,6 +996,9 @@ def path_offset(
                             offset = -1 * offset_value
                         # print ("Seems to be closed!")
                 # print (f"Regular point: {idx}, {type(segment).__name__}, {first_point}, {last_point}, {is_closed}")
+            if idx == 0:
+                # print(f"Processing index 0: {type(segment).__name__}, last={last_point}, first={first_point}, closed={is_closed}")
+                pass
             helper1 = Point(p._segments[idx].end)
             helper2 = Point(p._segments[idx].start)
             left_end = idx
@@ -993,6 +1033,7 @@ def path_offset(
                 # Update last_point for the inserted segments
                 if last_point is not None:
                     last_point += cnt - 1
+                    # print(f"Updated last_point (insert)={last_point}")
 
                 while curr >= idx:
                     if len(p._segments) == 0:
@@ -1004,6 +1045,7 @@ def path_offset(
                     
                     if last_point is not None:
                         last_point += stitched
+                        # if stitched != 0: print(f"Updated last_point (stitched)={last_point}")
                     
                     if deleted_start > 0:
                         idx -= deleted_start
@@ -1013,6 +1055,11 @@ def path_offset(
                         if first_point is not None:
                             first_point -= deleted_start
                             if first_point < 0: first_point = 0
+                            if first_point == 0 and len(p._segments) > 1 and isinstance(p._segments[0], Move):
+                                first_point = 1
+                        if last_point is not None:
+                            last_point -= deleted_start
+                            # print(f"Updated last_point (del_start)={last_point}")
 
                     if deleted_loop > 0:
                         # We deleted segments between best_idx and curr
@@ -1026,12 +1073,16 @@ def path_offset(
                         curr -= deleted_loop
 
                     if deleted_tail > 0:
+                        if last_point is not None:
+                            last_point -= deleted_tail
+                            # print(f"Updated last_point (del_tail)={last_point}")
                         if curr >= len(p._segments):
                             curr = len(p._segments)
                     
                     curr -= 1
                 
                 idx -= 1
+                # print(f"End of loop iter: idx={idx}, last={last_point}, closed={is_closed}")
                 continue
 
             # Fallback (should not be reached with current types)
@@ -1069,7 +1120,7 @@ def path_offset(
 
 
         if last_point is not None and first_point is not None and is_closed:
-            print(f"Attempting to close subpath: first={first_point}, last={last_point}, len={len(p._segments)}")
+            # print(f"Attempting to close subpath: first={first_point}, last={last_point}, len={len(p._segments)}")
             if 0 <= first_point < len(p._segments) and 0 <= last_point < len(p._segments):
                 start_pt = p._segments[first_point].start
                 end_pt = p._segments[last_point].end
@@ -1081,7 +1132,8 @@ def path_offset(
                             radial_connector, p, first_point, last_point, offset, helper2
                         )
         else:
-            print(f"Not closing: last={last_point}, first={first_point}, closed={is_closed}")
+            # print(f"Not closing: last={last_point}, first={first_point}, closed={is_closed}")
+            pass
 
         results.append(p)
 
