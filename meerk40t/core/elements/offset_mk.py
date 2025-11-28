@@ -78,9 +78,11 @@ def is_clockwise(path, start=0):
         for i in range(len(poly) - 1):
             total += poly[i].x * poly[i + 1].y - poly[i + 1].x * poly[i].y
 
-        if total <= 0:
+        if total > 0:
+            # print(f"is_clockwise: Total {total} > 0 -> True (CW)")
             return True
         else:
+            # print(f"is_clockwise: Total {total} <= 0 -> False (CCW)")
             return False
 
     poly = []
@@ -393,6 +395,7 @@ def path_offset(
         deleted_loop = 0
         left_end = seg1_end
         lp = len(stitchpath)
+        cw_global = is_clockwise(stitchpath)
         right_start = left_end + 1
         wrapped = False
         if right_start >= lp:
@@ -413,6 +416,7 @@ def path_offset(
             # (when processed later/earlier?) handle the stitch with us, or let close_subpath handle it.
             # Note: We iterate backwards, so segments < left_end are unprocessed.
             if right_start < left_end:
+                 # print(f"Wrapped but right_start {right_start} < left_end {left_end}. Aborting stitch.")
                  return point_added, deleted_from_start, deleted_tail, deleted_loop
 
         seg1 = stitchpath._segments[left_end]
@@ -471,7 +475,7 @@ def path_offset(
                     if p_g is not None:
                          d1 = seg1.start.distance_to(p_g)
                          d2 = seg_k.end.distance_to(p_g)
-                         limit_dist = abs(offset) * 10 if abs(offset) > 1e-6 else 1000
+                         limit_dist = abs(offset) * 4 if abs(offset) > 1e-6 else 1000
                          # print(f"Global Join Check: {left_end} vs {k}. d1={d1}, d2={d2}, limit={limit_dist}")
                          if d1 < limit_dist and d2 < limit_dist:
                              # Check for inversion
@@ -493,6 +497,36 @@ def path_offset(
                     continue
                 seg_k = stitchpath._segments[k]
                 if isinstance(seg_k, Line):
+                    # Check for parallel swap (Inverted U-turn)
+                    v1 = seg1.end - seg1.start
+                    vk = seg_k.end - seg_k.start
+                    # Check if parallel and opposite
+                    cross = v1.x * vk.y - v1.y * vk.x
+                    dot = v1.x * vk.x + v1.y * vk.y
+                    
+                    if abs(cross) < 1e-3 and dot < 0:
+                            len1 = abs(v1)
+                            if len1 > 1e-9:
+                                # Check for Inversion using Cross Product of connection
+                                v_conn = seg_k.start - seg1.end
+                                turn_cross = v1.x * v_conn.y - v1.y * v_conn.x
+                                
+                                is_inverted = False
+                                if cw_global: # CW Shape
+                                    # Expect CW Turn (Positive Cross). If Negative, Inverted.
+                                    if turn_cross < -1e-6:
+                                        is_inverted = True
+                                else: # CCW Shape
+                                    # Expect CCW Turn (Negative Cross). If Positive, Inverted.
+                                    if turn_cross > 1e-6:
+                                        is_inverted = True
+                                
+                                if is_inverted:
+                                    # Swapped! Use midpoint of outer ends
+                                    best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
+                                    best_idx = k
+                                    break
+
                     # Bbox check
                     if min(seg_k.start.x, seg_k.end.x) > s1_x2: continue
                     if max(seg_k.start.x, seg_k.end.x) < s1_x1: continue
@@ -519,7 +553,7 @@ def path_offset(
                             d1 = seg1.end.distance_to(p)
                             d2 = seg_k.start.distance_to(p)
                             # Allow extension up to a limit (e.g. 10x offset or fixed amount)
-                            limit_dist = abs(offset) * 10 if abs(offset) > 1e-6 else 1000
+                            limit_dist = abs(offset) * 4 if abs(offset) > 1e-6 else 1000
                             # Check for inversion
                             # seg1.end becomes p.
                             # seg_k.start becomes p.
@@ -538,6 +572,33 @@ def path_offset(
                                 seg1.end = Point(p)
                                 seg_k.start = Point(p)
                                 needs_connector = False
+                    else:
+                        # Check for parallel swap (Inverted U-turn)
+                        v1 = seg1.end - seg1.start
+                        vk = seg_k.end - seg_k.start
+                        # Check if parallel and opposite
+                        cross = v1.x * vk.y - v1.y * vk.x
+                        dot = v1.x * vk.x + v1.y * vk.y
+                        
+                        if abs(cross) < 1e-3 and dot < 0:
+                             print(f"Parallel Check {left_end} vs {k}: cross={cross}, dot={dot}")
+                        
+                        if abs(cross) < 1e-6 and dot < 0:
+                             len1 = abs(v1)
+                             if len1 > 1e-9:
+                                 n1 = Point(-v1.y / len1, v1.x / len1)
+                                 v_conn = seg_k.start - seg1.end
+                                 proj = v_conn.x * n1.x + v_conn.y * n1.y
+                                 
+                                 print(f"Parallel Swap Check: proj={proj}")
+                                 
+                                 # If proj < 0, they are swapped
+                                 if proj < -1e-4:
+                                     # Swapped! Use midpoint of outer ends
+                                     print(f"Swapped! Fixing U-turn.")
+                                     best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
+                                     best_idx = k
+                                     break
 
             if best_p is not None:
                 # print(f"Cutting loop: {left_end} -> {best_idx} (removing {best_idx - right_start} segments)")
@@ -937,7 +998,7 @@ def path_offset(
                     last_point = idx
                     is_closed = True
                     cw = is_clockwise(p, max(0, idx1))
-                    if cw:
+                    if not cw:
                         offset = -1 * offset_value
                 else:
                     # Invalid close?! Remove it
@@ -990,7 +1051,7 @@ def path_offset(
                     if fpt is not None and segment.end.distance_to(fpt) < MINIMAL_LEN:
                         is_closed = True
                         cw = is_clockwise(p, max(0, idx1))
-                        if cw:
+                        if not cw:
                             offset = -1 * offset_value
                         # print ("Seems to be closed!")
                 # print (f"Regular point: {idx}, {type(segment).__name__}, {first_point}, {last_point}, {is_closed}")
@@ -1050,8 +1111,8 @@ def path_offset(
                         # if stitched != 0: print(f"Updated last_point (stitched)={last_point}")
                     
                     if deleted_start > 0:
-                        idx -= deleted_start
-                        curr -= deleted_start
+                        # idx -= deleted_start
+                        # curr -= deleted_start
                         if idx < 0:
                             idx = 0
                         if first_point is not None:
@@ -1069,7 +1130,7 @@ def path_offset(
                         # start_deleted = best_idx + 1 = curr - deleted_loop
                         start_deleted = curr - deleted_loop
                         if idx >= start_deleted:
-                            idx = start_deleted - 1
+                            idx = start_deleted
                             if first_point is not None:
                                 first_point = idx
                         curr -= deleted_loop
