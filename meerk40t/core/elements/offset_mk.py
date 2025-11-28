@@ -145,24 +145,87 @@ def linearize_segment(segment, interpolation=500, reduce=True):
 
 
 def offset_point_array(points, offset):
-    result = list()
-    p0 = None
-    for idx, p1 in enumerate(points):
-        if idx > 0:
-            nv = norm_vector(p0, p1, offset)
-            result.append(p0 + nv)
-            result.append(p1 + nv)
-        p0 = Point(p1)
-    for idx in range(3, len(result)):
-        w = result[idx - 3]
-        z = result[idx - 2]
-        x = result[idx - 1]
-        y = result[idx]
-        p_i, s, t = intersect_line_segments(w, z, x, y)
-        if p_i is None:
-            continue
-        result[idx - 2] = Point(p_i)
-        result[idx - 1] = Point(p_i)
+    if len(points) < 2:
+        return []
+
+    class Segment:
+        def __init__(self, start, end, orig_start, orig_end):
+            self.start = Point(start)
+            self.end = Point(end)
+            self.orig_start = Point(orig_start)
+            self.orig_end = Point(orig_end)
+            self.orig_vector = self.orig_end - self.orig_start
+
+    raw_segments = []
+    for i in range(len(points) - 1):
+        p0 = points[i]
+        p1 = points[i + 1]
+        nv = norm_vector(p0, p1, offset)
+        raw_segments.append(Segment(p0 + nv, p1 + nv, p0, p1))
+
+    if not raw_segments:
+        return []
+
+    final_segments = []
+    final_segments.append(raw_segments[0])
+
+    for i in range(1, len(raw_segments)):
+        next_seg = raw_segments[i]
+
+        while len(final_segments) > 0:
+            curr_seg = final_segments[-1]
+
+            # Intersect
+            p_i, s, t = intersect_line_segments(
+                curr_seg.start, curr_seg.end, next_seg.start, next_seg.end
+            )
+
+            if p_i is None:
+                # Parallel lines.
+                final_segments.append(next_seg)
+                break
+
+            # Check for spikes (far intersections)
+            limit = max(abs(offset) * 10, 50)
+            if curr_seg.end.distance_to(p_i) > limit:
+                final_segments.append(next_seg)
+                break
+
+            # Check validity for curr_seg
+            # The new segment would be curr_seg.start -> p_i
+            v_new = p_i - curr_seg.start
+            
+            # Dot product with original direction
+            dot = v_new.x * curr_seg.orig_vector.x + v_new.y * curr_seg.orig_vector.y
+
+            if dot > 0:  # Valid
+                if s < 1.0 - 1e-9:
+                    # print(f"  Keep intersection: {curr_seg.start} -> {p_i} (Dot: {dot:.4f})")
+                    curr_seg.end = Point(p_i)
+                    next_seg.start = Point(p_i)
+                    final_segments.append(next_seg)
+                    break
+                else:
+                    # next_seg is overshoot/retrograde. Skip it.
+                    break
+            else:
+                # Invalid/Retrograde. Pop curr_seg and try again with previous.
+                # print(f"  Prune retrograde: {curr_seg.start} -> {p_i} (Dot: {dot:.4f})")
+                final_segments.pop()
+
+        if len(final_segments) == 0:
+            # We popped everything. Restart with next_seg.
+            final_segments.append(next_seg)
+
+    # Convert back to points
+    result = []
+    if final_segments:
+        result.append(final_segments[0].start)
+        for seg in final_segments:
+            # Filter tiny segments in output
+            if seg.end.distance_to(result[-1]) > 0.01:
+                result.append(seg.end)
+
     return result
 
 
@@ -178,6 +241,7 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
                 start=Point(s[idx - 1][0], s[idx - 1][1]),
                 end=Point(s[idx][0], s[idx][1]),
             )
+            seg.origin_type = "offset_arc_linearized"
             newsegments.append(seg)
     else:
         centerpt = Point(segment.center)
@@ -195,6 +259,7 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
             centerpt,
             #         ccw=ccw,
         )
+        newseg.origin_type = "offset_arc"
         newsegments.append(newseg)
     return newsegments
 
@@ -207,6 +272,7 @@ def offset_line(segment, offset=0):
     # print(f"Offset Line: {segment.start} -> {segment.end} | Off={offset} | Norm={normal_vector}")
     newseg.start += normal_vector
     newseg.end += normal_vector
+    newseg.origin_type = "offset_line"
     return [newseg]
 
 
@@ -255,6 +321,7 @@ def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
                 start=Point(s[idx - 1][0], s[idx - 1][1]),
                 end=Point(s[idx][0], s[idx][1]),
             )
+            seg.origin_type = "offset_cubic_linearized"
             newsegments.append(seg)
     else:
         newseg = copy(segment)
@@ -294,6 +361,7 @@ def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
         newseg.control2 = intersect
         # print (f"Old: start=({segment.start.x:.0f}, {segment.start.y:.0f}), c1=({segment.control1.x:.0f}, {segment.control1.y:.0f}), c2=({segment.control2.x:.0f}, {segment.control2.y:.0f}), end=({segment.end.x:.0f}, {segment.end.y:.0f})")
         # print (f"New: start=({newsegment.start.x:.0f}, {newsegment.start.y:.0f}), c1=({newsegment.control1.x:.0f}, {newsegment.control1.y:.0f}), c2=({newsegment.control2.x:.0f}, {newsegment.control2.y:.0f}), end=({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
+        newseg.origin_type = "offset_cubic"
         newsegments.append(newseg)
     return newsegments
 
@@ -385,6 +453,9 @@ def path_offset(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):
     MINIMAL_LEN = 5
+    print (f"Path Offset: Offset={offset_value}, Radial={radial_connector}, Linearize={linearize}, Interp={interpolation}")
+    if isinstance(path, Path):
+        print (f"Path: {path.d()}")
 
     def stitch_segments_at_index(
         offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False, limit=None
@@ -500,32 +571,45 @@ def path_offset(
                     # Check for parallel swap (Inverted U-turn)
                     v1 = seg1.end - seg1.start
                     vk = seg_k.end - seg_k.start
-                    # Check if parallel and opposite
-                    cross = v1.x * vk.y - v1.y * vk.x
-                    dot = v1.x * vk.x + v1.y * vk.y
                     
-                    if abs(cross) < 1e-3 and dot < 0:
-                            len1 = abs(v1)
-                            if len1 > 1e-9:
-                                # Check for Inversion using Cross Product of connection
-                                v_conn = seg_k.start - seg1.end
-                                turn_cross = v1.x * v_conn.y - v1.y * v_conn.x
-                                
-                                is_inverted = False
-                                if cw_global: # CW Shape
-                                    # Expect CW Turn (Positive Cross). If Negative, Inverted.
-                                    if turn_cross < -1e-6:
-                                        is_inverted = True
-                                else: # CCW Shape
-                                    # Expect CCW Turn (Negative Cross). If Positive, Inverted.
-                                    if turn_cross > 1e-6:
-                                        is_inverted = True
-                                
-                                if is_inverted:
-                                    # Swapped! Use midpoint of outer ends
-                                    best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
-                                    best_idx = k
-                                    break
+                    len1 = abs(v1)
+                    lenk = abs(vk)
+                    
+                    # Check if parallel and opposite
+                    # We use normalized cross product (sin(angle)) to be scale-independent
+                    if len1 > 1e-9 and lenk > 1e-9:
+                        cross = v1.x * vk.y - v1.y * vk.x
+                        dot = v1.x * vk.x + v1.y * vk.y
+                        sin_angle = cross / (len1 * lenk)
+                        cos_angle = dot / (len1 * lenk)
+                        
+                        if abs(sin_angle) < 1e-3 and cos_angle < 0:
+                            # Check for Inversion using Cross Product of connection
+                            v_conn = seg_k.start - seg1.end
+                            turn_cross = v1.x * v_conn.y - v1.y * v_conn.x
+                            
+                            is_inverted = False
+                            if cw_global: # CW Shape
+                                # Expect CW Turn (Positive Cross). If Negative, Inverted.
+                                if turn_cross < -1e-6:
+                                    is_inverted = True
+                            else: # CCW Shape
+                                # Expect CCW Turn (Negative Cross). If Positive, Inverted.
+                                if turn_cross > 1e-6:
+                                    is_inverted = True
+                            
+                            # Check for Collinear Overlap (Spike)
+                            if abs(turn_cross) < 1e-6:
+                                # Collinear connection. Check if backtracking.
+                                dot_conn = v1.x * v_conn.x + v1.y * v_conn.y
+                                if dot_conn < 0:
+                                    is_inverted = True
+                            
+                            if is_inverted:
+                                # Swapped! Use midpoint of outer ends
+                                best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
+                                best_idx = k
+                                break
 
                     # Bbox check
                     if min(seg_k.start.x, seg_k.end.x) > s1_x2: continue
@@ -543,6 +627,15 @@ def path_offset(
                         # Check if intersection is within segments
                         # We use a small tolerance for floating point errors
                         if -1e-9 <= s <= 1.0 + 1e-9 and -1e-9 <= t <= 1.0 + 1e-9:
+                            # Check Miter Limit for consecutive segments
+                            if k == left_end + 1:
+                                d = seg1.end.distance_to(p)
+                                limit_dist = abs(offset) * 10
+                                if d > limit_dist:
+                                    # Exceeds miter limit, ignore this intersection
+                                    # This will cause a fallback to inserting a connector
+                                    continue
+
                             # print(f"Intersection found between {left_end} and {k}: s={s}, t={t}")
                             best_p = p
                             best_idx = k
@@ -601,7 +694,6 @@ def path_offset(
                                      break
 
             if best_p is not None:
-                # print(f"Cutting loop: {left_end} -> {best_idx} (removing {best_idx - right_start} segments)")
                 # We found a valid intersection
                 
                 # Determine which way to cut
@@ -721,6 +813,8 @@ def path_offset(
                              # print(f"Global backward cut: count_start={count_start}, start_del={start_del}")
                              if count_start > start_del:
                                  del stitchpath._segments[start_del:count_start]
+                                 point_added -= (count_start - start_del)
+                                 deleted_from_start = (count_start - start_del)
                                  deleted_from_start = count_start - start_del
                                  point_added -= (count_start - start_del)
                     
@@ -752,6 +846,19 @@ def path_offset(
                         odist = orgintersect.distance_to(p)
                         if odist > abs(offset) * 4:
                             needs_connector = True
+                        elif t > 1.0 + 1e-9:
+                            # seg2 is overshadowed (t > 1). Remove it.
+                            del stitchpath._segments[right_start]
+                            # Recurse to stitch seg1 to the new neighbor
+                            p_a, d_s, d_t, d_l = stitch_segments_at_index(
+                                offset, stitchpath, left_end, orgintersect, radial, closed, limit
+                            )
+                            return point_added - 1 + p_a, deleted_from_start + d_s, deleted_tail + d_t, deleted_loop + d_l
+                        elif s < -1e-9:
+                            # seg1 is overshadowed (s < 0). 
+                            # Remove it.
+                            del stitchpath._segments[left_end]
+                            return point_added, deleted_from_start + 1, deleted_tail, deleted_loop
                         else:
                             seg1.end = Point(p)
                             seg2.start = Point(p)
@@ -820,8 +927,38 @@ def path_offset(
             else:
                 # print ("Inserted a Line")
                 connect_seg = Line(Point(seg1.end), Point(seg2.start))
-            stitchpath._segments.insert(left_end + 1, connect_seg)
-            point_added = 1
+                
+                # Check for backtracking (Z-shape artifact)
+                # This happens when segments cross but we missed the intersection
+                # or they are parallel and overlapping.
+                v1 = seg1.end - seg1.start
+                vc = connect_seg.end - connect_seg.start
+                
+                if abs(v1) > 1e-9 and abs(vc) > 1e-9:
+                    dot1 = v1.x * vc.x + v1.y * vc.y
+                    print(f"Connector check: dot1={dot1}, v1={v1}, vc={vc}")
+                    # If dot product is negative, the connector goes backwards relative to seg1
+                    if dot1 < 0:
+                        # Check if it's a sharp turn (e.g. > 90 degrees)
+                        # If dot < 0, it means angle > 90.
+                        # This is likely an artifact for inside corners that failed to intersect.
+                        # For outside corners, the connector should always go forward (dot > 0).
+                        
+                        # Likely an artifact. 
+                        # Try to find a better stitch point (midpoint of overlap)
+                        # Project seg2.start onto seg1 line
+                        # Or just use midpoint of the connector
+                        mid = Point((seg1.end.x + seg2.start.x)/2, (seg1.end.y + seg2.start.y)/2)
+                        seg1.end = Point(mid)
+                        seg2.start = Point(mid)
+                        connect_seg = None
+                        needs_connector = False
+                        point_added = 0
+                
+            if connect_seg is not None:
+                connect_seg.origin_type = "stitch_connector"
+                stitchpath._segments.insert(left_end + 1, connect_seg)
+                point_added = 1
         elif needs_connector:
             # print ("Need connector but end points were identical")
             pass
@@ -907,6 +1044,7 @@ def path_offset(
                         if clen > abs(tau * offset / 2):
                             # That seems strange...
                             segment = Line(startpt, endpt)
+                        segment.origin_type = "close_segment"
                         # print(f"{perf_counter()-t_start:.3f} Inserting segment at {lastidx + 1}...")
                         sub_path._segments.insert(lastidx + 1, segment)
                         # print(f"{perf_counter()-t_start:.3f} Done.")
@@ -917,8 +1055,10 @@ def path_offset(
                             distance=abs(offset),
                         )
                         segment = Line(p, seg1.start)
+                        segment.origin_type = "close_segment_interim_1"
                         sub_path._segments.insert(lastidx + 1, segment)
                         segment = Line(seg2.end, p)
+                        segment.origin_type = "close_segment_interim_2"
                         sub_path._segments.insert(lastidx + 1, segment)
                         # sub_path._segments.insert(firstidx, segment)
                         # print (f"Close subpath with interim pt, d={d:.2f} vs. offs={offset:.2f}")
@@ -1061,7 +1201,7 @@ def path_offset(
             helper1 = Point(p._segments[idx].end)
             helper2 = Point(p._segments[idx].start)
             left_end = idx
-            #  print (f"Segment to deal with: {type(segment).__name__}")
+            print (f"Segment to deal with: {type(segment).__name__}")
             newsegment = None
             if isinstance(segment, Arc):
                 arclinearize = linearize
