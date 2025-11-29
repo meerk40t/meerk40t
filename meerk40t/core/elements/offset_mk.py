@@ -606,6 +606,12 @@ def path_offset(
                     continue
                 seg_k = stitchpath._segments[k]
                 if isinstance(seg_k, Line):
+                    # Bbox check
+                    if min(seg_k.start.x, seg_k.end.x) > s1_x2: continue
+                    if max(seg_k.start.x, seg_k.end.x) < s1_x1: continue
+                    if min(seg_k.start.y, seg_k.end.y) > s1_y2: continue
+                    if max(seg_k.start.y, seg_k.end.y) < s1_y1: continue
+
                     # Check for parallel swap (Inverted U-turn)
                     v1 = seg1.end - seg1.start
                     vk = seg_k.end - seg_k.start
@@ -648,12 +654,6 @@ def path_offset(
                                 best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
                                 best_idx = k
                                 break
-
-                    # Bbox check
-                    if min(seg_k.start.x, seg_k.end.x) > s1_x2: continue
-                    if max(seg_k.start.x, seg_k.end.x) < s1_x1: continue
-                    if min(seg_k.start.y, seg_k.end.y) > s1_y2: continue
-                    if max(seg_k.start.y, seg_k.end.y) < s1_y1: continue
 
                     p, s, t = intersect_line_segments(
                         Point(seg1.start),
@@ -1131,7 +1131,7 @@ def path_offset(
     spct = 0
     for subpath in path.as_subpaths():
         spct += 1
-        print (f"Subpath {spct}")
+        # print (f"Subpath {spct}")
         p = Path([copy(seg) for seg in subpath])
         if not linearize:
             # p.approximate_arcs_with_cubics()
