@@ -11,7 +11,6 @@ via the pyclipr library of Luke Parry
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "invalidate":
-        return True # Always invalidate 
         try:
             import pyclipr
         except ImportError:
