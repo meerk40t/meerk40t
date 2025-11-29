@@ -59,7 +59,7 @@ def norm_vector(p1, p2, target_len):
     
     Creates a vector perpendicular to the line from p1 to p2, scaled to the
     specified length. The normal points to the left of the direction vector
-    (90 degrees counter-clockwise rotation).
+    in SVG coordinate space (90 degrees clockwise rotation due to Y-down coords).
     
     Args:
         p1 (Point): Start point of the line segment
@@ -71,12 +71,14 @@ def norm_vector(p1, p2, target_len):
         
     Note:
         Returns a zero vector if p1 and p2 are coincident.
+        In SVG coords (Y increases down), "left" of vector (dx, dy) is (dy, -dx).
     """
     line_vector = p2 - p1
     # if line_vector.x == 0 and line_vector.y == 0:
     #     return Point(target_len, 0)
     factor = target_len
-    normal_vector = Point(-1 * line_vector.y, line_vector.x)
+    # For SVG coords (Y-down), left-hand normal is (dy, -dx) not (-dy, dx)
+    normal_vector = Point(line_vector.y, -1 * line_vector.x)
     normlen = abs(normal_vector)
     if normlen != 0:
         factor = target_len / normlen
@@ -243,6 +245,7 @@ def offset_point_array(points, offset):
 
     for i in range(1, len(raw_segments)):
         next_seg = raw_segments[i]
+        pop_count = 0
 
         while len(final_segments) > 0:
             curr_seg = final_segments[-1]
@@ -281,9 +284,45 @@ def offset_point_array(points, offset):
                     # next_seg is overshoot/retrograde. Skip it.
                     break
             else:
-                # Invalid/Retrograde. Pop curr_seg and try again with previous.
+                # Potential retrograde case. Be conservative to avoid oversimplifying
+                # outward offsets on smooth shapes (e.g., circles).
+                # Accept intersections when consecutive segments are nearly aligned
+                # (small turning angle), or when the intersection lies at a boundary.
+
+                accepted = False
+                # Angle between original consecutive segments
+                ov1 = curr_seg.orig_vector
+                ov2 = next_seg.orig_vector
+                len1 = abs(ov1)
+                len2 = abs(ov2)
+                if len1 > 1e-9 and len2 > 1e-9:
+                    cosang = (ov1.x * ov2.x + ov1.y * ov2.y) / (len1 * len2)
+                    # If angle < ~60 degrees (cos > 0.5), keep intersection
+                    if cosang > 0.5:
+                        curr_seg.end = Point(p_i)
+                        next_seg.start = Point(p_i)
+                        final_segments.append(next_seg)
+                        accepted = True
+                # Also accept if intersection is effectively at segment boundary
+                if not accepted and s is not None and t is not None:
+                    if s <= 1e-9 or t >= 1.0 - 1e-9:
+                        curr_seg.end = Point(p_i)
+                        next_seg.start = Point(p_i)
+                        final_segments.append(next_seg)
+                        accepted = True
+
+                if accepted:
+                    break
+                # Otherwise, treat as true retrograde and prune current segment.
                 # print(f"  Prune retrograde: {curr_seg.start} -> {p_i} (Dot: {dot:.4f})")
                 final_segments.pop()
+                pop_count += 1
+                # Prevent pathological collapse: if we popped too many times,
+                # stop pruning and keep detail by accepting the next segment.
+                if pop_count > 5:
+                    # Force-append next segment to preserve local detail
+                    final_segments.append(next_seg)
+                    break
 
         if len(final_segments) == 0:
             # We popped everything. Restart with next_seg.
@@ -299,6 +338,55 @@ def offset_point_array(points, offset):
                 result.append(seg.end)
 
     return result
+
+
+def _offset_polyline_simple(points, offset):
+    """
+    Simple, stable polyline offset using pairwise intersections of consecutive
+    offset segments. This avoids aggressive pruning and preserves detail for
+    smooth convex shapes (e.g., arcs/circles).
+
+    Args:
+        points (list[Point]): Original polyline points
+        offset (float): Offset distance
+
+    Returns:
+        list[Point]: Offset polyline points
+    """
+    if len(points) < 2:
+        return []
+
+    # Build offset segments
+    off_segs = []
+    for i in range(len(points) - 1):
+        p0 = points[i]
+        p1 = points[i + 1]
+        nv = norm_vector(p0, p1, offset)
+        s = p0 + nv
+        e = p1 + nv
+        off_segs.append((s, e))
+
+    result = []
+    # Start with first offset point
+    result.append(off_segs[0][0])
+    # Intersections between consecutive offset segments
+    for i in range(len(off_segs) - 1):
+        s1, e1 = off_segs[i]
+        s2, e2 = off_segs[i + 1]
+        p, t, s = intersect_line_segments(s1, e1, s2, e2)
+        if p is None:
+            # Parallel: use connection point
+            p = e1
+        result.append(p)
+    # End with last offset point
+    result.append(off_segs[-1][1])
+
+    # Remove tiny duplicate steps
+    cleaned = []
+    for pt in result:
+        if not cleaned or pt.distance_to(cleaned[-1]) > 1e-6:
+            cleaned.append(pt)
+    return cleaned
 
 
 def offset_arc(segment, offset=0, linearize=False, interpolation=500):
@@ -323,7 +411,9 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
     newsegments = list()
     if linearize:
         s = linearize_segment(segment, interpolation=interpolation, reduce=True)
-        s = offset_point_array(s, offset)
+        # Use a simpler, stable offset for linearized arcs to preserve detail
+        # and avoid aggressive pruning that can oversimplify outward offsets.
+        s = _offset_polyline_simple(s, offset)
         for idx in range(1, len(s)):
             seg = Line(
                 start=Point(s[idx - 1][0], s[idx - 1][1]),
@@ -448,7 +538,8 @@ def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
     newsegments = list()
     if linearize:
         s = linearize_segment(segment, interpolation=interpolation, reduce=True)
-        s = offset_point_array(s, offset)
+        # Preserve detail during linearized cubic offsets using a simple, stable polyline offset
+        s = _offset_polyline_simple(s, offset)
         for idx in range(1, len(s)):
             seg = Line(
                 start=Point(s[idx - 1][0], s[idx - 1][1]),
@@ -669,7 +760,7 @@ def offset_path(self, path, offset_value=0):
         
     p = path_offset(
         path,
-        offset_value=-offset_value,
+        offset_value=offset_value,
         radial_connector=False,
         linearize=True,
         interpolation=500,
@@ -1778,9 +1869,7 @@ def init_commands(kernel):
             offset = 0
         else:
             try:
-                ll = Length(offset)
-                # Invert for right behaviour
-                offset = -1.0 * float(ll)
+                offset = float(Length(offset))
             except ValueError:
                 offset = 0
         if radial is None:
