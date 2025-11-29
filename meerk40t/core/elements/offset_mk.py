@@ -422,7 +422,45 @@ def intersect_line_segments(w, z, x, y):
     # print (f"p1 = ({p1.x:.3f}, {p1.y:.3f})")
     # print (f"p2 = ({p2.x:.3f}, {p2.y:.3f})")
     p = p1
-    return p, s, t
+    return p, t, s
+
+
+def get_loop_area(segments, close_pt):
+    area = 0.0
+    if not segments:
+        return 0.0
+    
+    first_pt = None
+    last_pt = None
+    
+    # Sum segments
+    for seg in segments:
+        if seg.start is None or seg.end is None:
+            continue
+        if isinstance(seg, Move):
+            continue
+        
+        if first_pt is None:
+            first_pt = seg.start
+        
+        if last_pt is not None:
+            area += (last_pt.x * seg.start.y - seg.start.x * last_pt.y)
+
+        x1, y1 = seg.start.x, seg.start.y
+        x2, y2 = seg.end.x, seg.end.y
+        area += (x1 * y2 - x2 * y1)
+        last_pt = seg.end
+    
+    if first_pt is None or last_pt is None:
+        return 0.0
+
+    # Close the loop to close_pt
+    # last -> close_pt
+    area += (last_pt.x * close_pt.y - close_pt.x * last_pt.y)
+    # close_pt -> first
+    area += (close_pt.x * first_pt.y - first_pt.x * close_pt.y)
+    
+    return abs(area * 0.5)
 
 
 def offset_path(self, path, offset_value=0):
@@ -626,7 +664,7 @@ def path_offset(
                     if p is not None:
                         # Check if intersection is within segments
                         # We use a small tolerance for floating point errors
-                        if -1e-9 <= s <= 1.0 + 1e-9 and -1e-9 <= t <= 1.0 + 1e-9:
+                        if -1e-5 <= s <= 1.0 + 1e-5 and -1e-5 <= t <= 1.0 + 1e-5:
                             # Check Miter Limit for consecutive segments
                             if k == left_end + 1:
                                 d = seg1.end.distance_to(p)
@@ -674,7 +712,7 @@ def path_offset(
                         dot = v1.x * vk.x + v1.y * vk.y
                         
                         if abs(cross) < 1e-3 and dot < 0:
-                             print(f"Parallel Check {left_end} vs {k}: cross={cross}, dot={dot}")
+                             pass
                         
                         if abs(cross) < 1e-6 and dot < 0:
                              len1 = abs(v1)
@@ -683,12 +721,10 @@ def path_offset(
                                  v_conn = seg_k.start - seg1.end
                                  proj = v_conn.x * n1.x + v_conn.y * n1.y
                                  
-                                 print(f"Parallel Swap Check: proj={proj}")
                                  
                                  # If proj < 0, they are swapped
                                  if proj < -1e-4:
                                      # Swapped! Use midpoint of outer ends
-                                     print(f"Swapped! Fixing U-turn.")
                                      best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
                                      best_idx = k
                                      break
@@ -698,28 +734,25 @@ def path_offset(
                 
                 # Determine which way to cut
                 cut_forward = True
-                if closed:
-                    # Check if we should keep the "inner" loop (forward cut) or "outer" loop (backward cut)
-                    # Forward cut removes: right_start ... best_idx - 1
-                    len_forward = best_idx - right_start
+                if closed and best_idx > right_start:
+                    # Calculate Area Heuristic
+                    # Forward Loop Area
+                    area_forward = get_loop_area(stitchpath._segments[right_start:best_idx], best_p)
                     
-                    # Backward cut removes: best_idx ... end AND start ... right_start - 1
-                    # Note: if wrapped, right_start is already modulo'd, but here we use linear indices
-                    # If wrapped locally (right_start < left_end), len_forward calculation might be negative?
-                    # No, best_idx comes from loop range(scan_end, right_start - 1, -1).
-                    # If wrapped, right_start is 0. best_idx >= 0.
-                    # So len_forward is positive.
+                    # Backward Loop Area
+                    # Construct backward loop segments
+                    seg2_part = Line(best_p, seg2.end)
+                    seg1_part = Line(seg1.start, best_p)
                     
-                    # Backward length:
-                    len_backward = (lp - best_idx) + right_start
+                    # Note: stitchpath[:left_end] excludes left_end.
+                    backward_segments = [seg2_part] + stitchpath._segments[best_idx+1:] + stitchpath._segments[:left_end] + [seg1_part]
                     
-                    # If wrapped locally, right_start is 0.
-                    # len_backward = lp - best_idx.
-                    # len_forward = best_idx.
-                    # This matches the wrapped heuristic.
+                    area_backward = get_loop_area(backward_segments, best_p)
                     
-                    if len_forward > len_backward:
+                    if area_forward > area_backward:
                         cut_forward = False
+                    else:
+                        pass
                 elif wrapped:
                     # Fallback if not closed but wrapped (shouldn't happen if logic is correct)
                     len_forward = best_idx - right_start
@@ -810,13 +843,11 @@ def path_offset(
                                  # We preserve the Move, so we must update its end point to match the new start
                                  stitchpath._segments[0].end = Point(best_p)
                              
-                             # print(f"Global backward cut: count_start={count_start}, start_del={start_del}")
                              if count_start > start_del:
                                  del stitchpath._segments[start_del:count_start]
-                                 point_added -= (count_start - start_del)
-                                 deleted_from_start = (count_start - start_del)
-                                 deleted_from_start = count_start - start_del
-                                 point_added -= (count_start - start_del)
+                                 count_del = count_start - start_del
+                                 point_added -= count_del
+                                 deleted_from_start = count_del
                     
                     return point_added, deleted_from_start, deleted_tail, deleted_loop
                     
@@ -849,16 +880,34 @@ def path_offset(
                         elif t > 1.0 + 1e-9:
                             # seg2 is overshadowed (t > 1). Remove it.
                             del stitchpath._segments[right_start]
+                            
+                            rec_point_added = -1
+                            rec_deleted_start = 0
+                            new_left_end = left_end
+                            new_limit = limit
+                            
+                            if right_start == 0:
+                                rec_point_added = 0
+                                rec_deleted_start = 1
+                                new_left_end = left_end - 1
+                            
+                            if new_limit is not None:
+                                new_limit -= 1
+
                             # Recurse to stitch seg1 to the new neighbor
                             p_a, d_s, d_t, d_l = stitch_segments_at_index(
-                                offset, stitchpath, left_end, orgintersect, radial, closed, limit
+                                offset, stitchpath, new_left_end, orgintersect, radial, closed, new_limit
                             )
-                            return point_added - 1 + p_a, deleted_from_start + d_s, deleted_tail + d_t, deleted_loop + d_l
+                            return point_added + rec_point_added + p_a, deleted_from_start + rec_deleted_start + d_s, deleted_tail + d_t, deleted_loop + d_l
                         elif s < -1e-9:
                             # seg1 is overshadowed (s < 0). 
                             # Remove it.
                             del stitchpath._segments[left_end]
-                            return point_added, deleted_from_start + 1, deleted_tail, deleted_loop
+                            
+                            if left_end == 0:
+                                return point_added, deleted_from_start + 1, deleted_tail, deleted_loop
+                            else:
+                                return point_added - 1, deleted_from_start, deleted_tail, deleted_loop
                         else:
                             seg1.end = Point(p)
                             seg2.start = Point(p)
@@ -936,7 +985,7 @@ def path_offset(
                 
                 if abs(v1) > 1e-9 and abs(vc) > 1e-9:
                     dot1 = v1.x * vc.x + v1.y * vc.y
-                    print(f"Connector check: dot1={dot1}, v1={v1}, vc={vc}")
+                    # print(f"Connector check: dot1={dot1}, v1={v1}, vc={vc}")
                     # If dot product is negative, the connector goes backwards relative to seg1
                     if dot1 < 0:
                         # Check if it's a sharp turn (e.g. > 90 degrees)
@@ -1083,7 +1132,7 @@ def path_offset(
     for subpath in path.as_subpaths():
         spct += 1
         print (f"Subpath {spct}")
-        p = Path(subpath)
+        p = Path([copy(seg) for seg in subpath])
         if not linearize:
             # p.approximate_arcs_with_cubics()
             pass
@@ -1201,7 +1250,7 @@ def path_offset(
             helper1 = Point(p._segments[idx].end)
             helper2 = Point(p._segments[idx].start)
             left_end = idx
-            print (f"Segment to deal with: {type(segment).__name__}")
+            # print (f"Segment to deal with: {type(segment).__name__}")
             newsegment = None
             if isinstance(segment, Arc):
                 arclinearize = linearize
@@ -1244,7 +1293,6 @@ def path_offset(
                     stitched, deleted_start, deleted_tail, deleted_loop = stitch_segments_at_index(
                         offset, p, curr, h1, radial=radial_connector, closed=is_closed, limit=last_point
                     )
-                    # print(f"After Stitch {curr}: len={len(p._segments)}")
                     
                     if last_point is not None:
                         last_point += stitched
@@ -1260,8 +1308,8 @@ def path_offset(
                             if first_point < 0: first_point = 0
                             if first_point == 0 and len(p._segments) > 1 and isinstance(p._segments[0], Move):
                                 first_point = 1
-                        if last_point is not None:
-                            last_point -= deleted_start
+                        # if last_point is not None:
+                        #     last_point -= deleted_start
                             # print(f"Updated last_point (del_start)={last_point}")
 
                     if deleted_loop > 0:
@@ -1276,8 +1324,8 @@ def path_offset(
                         curr -= deleted_loop
 
                     if deleted_tail > 0:
-                        if last_point is not None:
-                            last_point -= deleted_tail
+                        # if last_point is not None:
+                        #     last_point -= deleted_tail
                             # print(f"Updated last_point (del_tail)={last_point}")
                         if curr >= len(p._segments):
                             curr = len(p._segments)
@@ -1297,8 +1345,9 @@ def path_offset(
                 last_point += stitched
             
             if deleted_tail > 0:
-                if last_point is not None:
-                    last_point -= deleted_tail
+                pass
+                # if last_point is not None:
+                #     last_point -= deleted_tail
                 # idx = left_end - deleted_tail + 1 # ?
 
             idx -= 1
@@ -1308,8 +1357,8 @@ def path_offset(
                     first_point -= deleted_start
                     if first_point < 0:
                         first_point = 0
-                if last_point is not None:
-                    last_point -= deleted_start
+                # if last_point is not None:
+                #     last_point -= deleted_start
 
             if deleted_loop > 0:
                 # Should not happen for Move segments usually?

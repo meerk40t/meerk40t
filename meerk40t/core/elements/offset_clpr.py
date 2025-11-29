@@ -11,6 +11,7 @@ via the pyclipr library of Luke Parry
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "invalidate":
+        return True # Always invalidate 
         try:
             import pyclipr
         except ImportError:
@@ -619,7 +620,6 @@ def init_commands(kernel):
     # so that any new instance of this class will be able to use the
     # new functionality.
     from meerk40t.core.node.op_cut import CutOpNode
-
     CutOpNode.offset_routine = offset_path
     kernel.add_capability("offset_routine", "Clipper")
 
