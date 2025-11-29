@@ -463,6 +463,34 @@ def get_loop_area(segments, close_pt):
     return abs(area * 0.5)
 
 
+def is_point_inside_subpath(subpath, point):
+    # Linearize
+    poly = []
+    for seg in subpath:
+        pts = linearize_segment(seg)
+        if len(pts) > 0:
+            poly.extend(pts[:-1])
+    
+    # Ray casting
+    x, y = point.x, point.y
+    n = len(poly)
+    inside = False
+    if n == 0: return False
+    
+    p1x, p1y = poly[0].x, poly[0].y
+    for i in range(n + 1):
+        p2x, p2y = poly[i % n].x, poly[i % n].y
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        p1x, p1y = p2x, p2y
+    return inside
+
+
 def offset_path(self, path, offset_value=0):
     # As this oveloading a regular method in a class
     # it needs to have the very same definition (including the class
@@ -1128,8 +1156,30 @@ def path_offset(
 
     results = []
     # This needs to be a continuous path
+    
+    # Collect subpaths to determine nesting
+    subpaths = list(path.as_subpaths())
+    depths = [0] * len(subpaths)
+    
+    # Determine nesting depths
+    # We use the first point of each subpath to check containment
+    # This assumes subpaths are well-separated and not intersecting
+    for i in range(len(subpaths)):
+        # Find a valid point on subpath i
+        pt = None
+        for seg in subpaths[i]:
+            if isinstance(seg, (Line, Arc, QuadraticBezier, CubicBezier)):
+                pt = seg.start
+                break
+        if pt is None: continue
+        
+        for j in range(len(subpaths)):
+            if i == j: continue
+            if is_point_inside_subpath(subpaths[j], pt):
+                depths[i] += 1
+
     spct = 0
-    for subpath in path.as_subpaths():
+    for i, subpath in enumerate(subpaths):
         spct += 1
         # print (f"Subpath {spct}")
         p = Path([copy(seg) for seg in subpath])
@@ -1137,6 +1187,9 @@ def path_offset(
             # p.approximate_arcs_with_cubics()
             pass
         offset = offset_value
+        if depths[i] % 2 == 1:
+            offset = -1 * offset
+            
         # # No offset bigger than half the path size, otherwise stuff will get crazy
         # if offset > 0:
         #     bb = p.bbox()
@@ -1188,7 +1241,7 @@ def path_offset(
                     is_closed = True
                     cw = is_clockwise(p, max(0, idx1))
                     if not cw:
-                        offset = -1 * offset_value
+                        offset = -1 * offset
                 else:
                     # Invalid close?! Remove it
                     p._segments.pop(idx)
@@ -1227,7 +1280,7 @@ def path_offset(
                     last_point = idx
                     # print(f"Init last_point={last_point}")
                     is_closed = False
-                    offset = offset_value
+                    # offset = offset_value # Do not reset offset here, it might have been adjusted by depth
                     # We need to establish if this is a closed path and if it goes counterclockwise
                     # Let establish the range and check whether this is closed
                     idx1 = last_point - 1
@@ -1241,7 +1294,7 @@ def path_offset(
                         is_closed = True
                         cw = is_clockwise(p, max(0, idx1))
                         if not cw:
-                            offset = -1 * offset_value
+                            offset = -1 * offset
                         # print ("Seems to be closed!")
                 # print (f"Regular point: {idx}, {type(segment).__name__}, {first_point}, {last_point}, {is_closed}")
             if idx == 0:
