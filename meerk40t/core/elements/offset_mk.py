@@ -1299,8 +1299,8 @@ def path_offset(
                         # if stitched != 0: print(f"Updated last_point (stitched)={last_point}")
                     
                     if deleted_start > 0:
-                        # idx -= deleted_start
-                        # curr -= deleted_start
+                        idx -= deleted_start
+                        curr -= deleted_start
                         if idx < 0:
                             idx = 0
                         if first_point is not None:
