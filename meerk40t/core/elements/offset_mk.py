@@ -1,5 +1,40 @@
 """
-This adds console commands that deal with the creation of an offset
+Path Offset Module for MeerK40t
+
+This module provides sophisticated path offset (parallel curve) generation for SVG paths,
+primarily used for kerf compensation in laser cutting operations.
+
+Key Features:
+- Supports offset for lines, arcs, quadratic and cubic Bezier curves
+- Handles nested paths (holes) with automatic offset direction inversion
+- Advanced intersection detection and loop removal to prevent self-intersecting paths
+- Clockwise/counter-clockwise path detection for proper offset direction
+- Linearization of curves for improved accuracy
+- Segment stitching with miter limit handling
+- Support for both radial (arc) and linear connectors
+
+Algorithm Overview:
+1. Decompose path into subpaths and detect nesting depth
+2. Process each subpath backwards (for easier index management)
+3. For each segment, generate offset version by:
+   - Lines: Offset using normal vector
+   - Arcs: Adjust radius
+   - Bezier curves: Use Tiller-Hanson approximation or linearization
+4. Stitch offset segments together by:
+   - Finding intersections between consecutive segments
+   - Detecting and removing loops (forward or backward cuts)
+   - Inserting connectors where needed
+5. Close subpaths by connecting first and last segments
+6. Simplify resulting path using geometric simplification
+
+Offset Direction Convention:
+- Positive offset: left/outside for clockwise paths, right/inside for CCW paths
+- Negative offset: right/inside for clockwise paths, left/outside for CCW paths
+- Nested paths (holes) automatically get inverted offset direction
+
+References:
+- Tiller & Hanson: Offsets of Two-Dimensional Profiles (1984)
+- Visual reference: https://feirell.github.io/offset-bezier/
 """
 from copy import copy
 from math import atan2, tau
@@ -18,42 +53,25 @@ from meerk40t.svgelements import (
 )
 from meerk40t.core.geomstr import Geomstr
 
-"""
-The following routines deal with the offset of an SVG path at a given distance D.
-An offset or parallel curve can easily be established:
-    - for a line segment by another line parallel and in distance D:
-        Establish the two normals with length D on the end points and
-        create the two new endpoints
-    - for an arc segment: elongate rx and ry by D
-To establish an offset for a quadratic or cubic bezier by another cubic bezier
-is not possible so this requires approximation.
-An acceptable approximation is proposed by Tiller and Hanson:
-    P1 start point
-    P2 end point
-    C1 control point 1
-    C2 control point 2
-    You create the offset version of these 3 lines and look for their intersections:
-        - offset to (P1 C1)  -> helper 1
-        - offset to (C1 C2)  -> helper 2
-        - offset to (P2 C2)  -> helper 3
-        we establish P1-new
-        the intersections between helper 1 and helper 2 is our new control point C1-new
-        the intersections between helper 2 and helper 3 is our new control point C2-new
-
-
-
-A good visual representation can be seen here:
-https://feirell.github.io/offset-bezier/
-
-The algorithm deals with the challenge as follows:
-a) It walks through the subpaths of a given path so that we have a continuous curve
-b) It looks at the different segment typs and deals with them,
-generating a new offseted segment
-c) Finally it stitches those segments together, preparing for the simplification
-"""
-
-
 def norm_vector(p1, p2, target_len):
+    """
+    Calculate normal (perpendicular) vector for line segment offset.
+    
+    Creates a vector perpendicular to the line from p1 to p2, scaled to the
+    specified length. The normal points to the left of the direction vector
+    (90 degrees counter-clockwise rotation).
+    
+    Args:
+        p1 (Point): Start point of the line segment
+        p2 (Point): End point of the line segment
+        target_len (float): Desired length of the normal vector (offset distance)
+    
+    Returns:
+        Point: Normal vector with the specified length, perpendicular to p1->p2
+        
+    Note:
+        Returns a zero vector if p1 and p2 are coincident.
+    """
     line_vector = p2 - p1
     # if line_vector.x == 0 and line_vector.y == 0:
     #     return Point(target_len, 0)
@@ -67,9 +85,26 @@ def norm_vector(p1, p2, target_len):
 
 
 def is_clockwise(path, start=0):
+    """
+    Determine if a path is oriented clockwise or counter-clockwise.
+    
+    Uses the shoelace formula to calculate the signed area of the polygon
+    formed by the path segments. Positive area indicates clockwise orientation.
+    
+    Args:
+        path (Path): SVG path to analyze
+        start (int): Starting segment index (default: 0)
+    
+    Returns:
+        bool: True if path is clockwise, False if counter-clockwise
+        
+    Note:
+        Returns True for empty paths as a default.
+    """
     def poly_clockwise(poly):
         """
-        returns True if the polygon is clockwise ordered, false if not
+        Returns True if the polygon is clockwise ordered, False if not.
+        Uses the shoelace formula for signed area calculation.
         """
 
         total = (
@@ -105,6 +140,23 @@ def is_clockwise(path, start=0):
 
 
 def linearize_segment(segment, interpolation=500, reduce=True):
+    """
+    Convert a curve segment into a series of linear approximations.
+    
+    Samples points along the segment and optionally reduces collinear points
+    to minimize the number of line segments while maintaining accuracy.
+    
+    Args:
+        segment: Path segment (Arc, QuadraticBezier, or CubicBezier)
+        interpolation (int): Number of interpolation steps (default: 500)
+        reduce (bool): Whether to eliminate redundant collinear points (default: True)
+    
+    Returns:
+        list[Point]: Linearized points representing the segment
+        
+    Note:
+        Uses slope tolerance of 0.001 radians for collinearity detection.
+    """
     slope_tolerance = 0.001
     s = []
     delta = 1.0 / interpolation
@@ -145,6 +197,26 @@ def linearize_segment(segment, interpolation=500, reduce=True):
 
 
 def offset_point_array(points, offset):
+    """
+    Generate offset for an array of points representing a polyline.
+    
+    Creates offset segments for each line segment and handles intersections
+    to prevent loops and spikes. Includes retrograde detection to remove
+    segments that fold back on themselves.
+    
+    Args:
+        points (list[Point]): Array of points forming a polyline
+        offset (float): Offset distance (positive = left, negative = right)
+    
+    Returns:
+        list[Point]: Offset polyline as array of points
+        
+    Algorithm:
+        1. Generate offset segments using normal vectors
+        2. Find intersections between consecutive offset segments
+        3. Prune retrograde segments (where offset reverses direction)
+        4. Limit miter spikes using distance threshold
+    """
     if len(points) < 2:
         return []
 
@@ -230,6 +302,22 @@ def offset_point_array(points, offset):
 
 
 def offset_arc(segment, offset=0, linearize=False, interpolation=500):
+    """
+    Generate offset for an arc segment.
+    
+    Args:
+        segment (Arc): Arc segment to offset
+        offset (float): Offset distance
+        linearize (bool): If True, convert to line segments (default: False)
+        interpolation (int): Number of interpolation steps for linearization (default: 500)
+    
+    Returns:
+        list: List of offset segments (Arc or Line segments depending on linearize)
+        
+    Note:
+        Currently always linearizes arcs due to implementation limitations.
+        Non-linearized version adjusts radius by offset amount.
+    """
     if not isinstance(segment, Arc):
         return None
     newsegments = list()
@@ -265,6 +353,22 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
 
 
 def offset_line(segment, offset=0):
+    """
+    Generate offset for a line segment.
+    
+    Creates a parallel line at the specified offset distance using a normal vector.
+    The normal points to the left of the line direction.
+    
+    Args:
+        segment (Line): Line segment to offset
+        offset (float): Offset distance (positive = left, negative = right)
+    
+    Returns:
+        list[Line]: List containing the single offset line segment
+        
+    Note:
+        Returns a single-element list for API consistency with other offset functions.
+    """
     if not isinstance(segment, Line):
         return None
     newseg = copy(segment)
@@ -277,6 +381,21 @@ def offset_line(segment, offset=0):
 
 
 def offset_quad(segment, offset=0, linearize=False, interpolation=500):
+    """
+    Generate offset for a quadratic Bezier curve.
+    
+    Converts the quadratic Bezier to cubic Bezier representation and uses
+    cubic offset algorithm.
+    
+    Args:
+        segment (QuadraticBezier): Quadratic Bezier segment to offset
+        offset (float): Offset distance
+        linearize (bool): If True, convert to line segments (default: False)
+        interpolation (int): Number of interpolation steps for linearization (default: 500)
+    
+    Returns:
+        list: List of offset segments (Line or CubicBezier depending on linearize)
+    """
     if not isinstance(segment, QuadraticBezier):
         return None
     cubic = CubicBezier(
@@ -292,22 +411,36 @@ def offset_quad(segment, offset=0, linearize=False, interpolation=500):
 
 def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
     """
-    To establish an offset for a quadratic or cubic bezier by another cubic bezier
-    is not possible so this requires approximation.
-    An acceptable approximation is proposed by Tiller and Hanson:
-        P1 start point
-        P2 end point
-        C1 control point 1
-        C2 control point 2
-        You create the offset version of these 3 lines and look for their intersections:
-        - offset to (P1 C1)  -> helper 1
-        - offset to (C1 C2)  -> helper 2
-        - offset to (P2 C2)  -> helper 3
-        we establish P1-new
-        the intersections between helper 1 and helper 2 is our new control point C1-new
-        the intersections between helper 2 and helper 3 is our new control point C2-new
-
-        Beware, this has limitations! It's not dealing well with curves that have cusps
+    Generate offset for a cubic Bezier curve using Tiller-Hanson approximation.
+    
+    True offset curves for Bezier curves cannot be represented exactly as Bezier curves,
+    so this uses the Tiller-Hanson approximation algorithm:
+    
+    Algorithm:
+        1. Offset three helper lines:
+           - Helper 1: P1 -> C1 (start to first control point)
+           - Helper 2: C1 -> C2 (between control points)
+           - Helper 3: C2 -> P2 (second control point to end)
+        2. Find intersections:
+           - Intersection of Helper 1 & 2 = new C1
+           - Intersection of Helper 2 & 3 = new C2
+        3. Offset start/end points directly to create new P1 and P2
+    
+    Args:
+        segment (CubicBezier): Cubic Bezier segment to offset
+        offset (float): Offset distance
+        linearize (bool): If True, convert to line segments (default: False)
+        interpolation (int): Number of interpolation steps for linearization (default: 500)
+    
+    Returns:
+        list: List of offset segments (Line or CubicBezier depending on linearize)
+        
+    Limitations:
+        This approximation does not handle curves with cusps well. For such curves,
+        consider using linearization (linearize=True).
+    
+    References:
+        Tiller & Hanson (1984): "Offsets of Two-Dimensional Profiles"
     """
 
     if not isinstance(segment, CubicBezier):
@@ -426,6 +559,22 @@ def intersect_line_segments(w, z, x, y):
 
 
 def get_loop_area(segments, close_pt):
+    """
+    Calculate the area of a loop formed by segments and a closing point.
+    
+    Uses the shoelace formula to compute the signed area. Used in determining
+    which direction to cut when removing loops during offset operations.
+    
+    Args:
+        segments (list): List of path segments forming the loop
+        close_pt (Point): Point to close the loop
+    
+    Returns:
+        float: Absolute area of the loop (always positive)
+        
+    Note:
+        Returns 0.0 if segments list is empty or contains no valid points.
+    """
     area = 0.0
     if not segments:
         return 0.0
@@ -464,6 +613,23 @@ def get_loop_area(segments, close_pt):
 
 
 def is_point_inside_subpath(subpath, point):
+    """
+    Determine if a point is inside a closed subpath using ray casting algorithm.
+    
+    Linearizes the subpath and performs ray casting to determine containment.
+    Used for detecting nested paths (holes) to apply correct offset direction.
+    
+    Args:
+        subpath: Path segments forming a closed subpath
+        point (Point): Point to test for containment
+    
+    Returns:
+        bool: True if point is inside the subpath, False otherwise
+        
+    Algorithm:
+        Cast a horizontal ray from the point to infinity and count how many
+        times it crosses the polygon boundary. Odd count = inside, even = outside.
+    """
     # Linearize
     poly = []
     for seg in subpath:
@@ -492,6 +658,25 @@ def is_point_inside_subpath(subpath, point):
 
 
 def offset_path(self, path, offset_value=0):
+    """
+    High-level wrapper for path offset with simplification.
+    
+    This method is monkey-patched onto CutOpNode to provide offset functionality.
+    It calls path_offset() and applies geometric simplification to the result.
+    
+    Args:
+        self: CutOpNode instance (not used, required for method signature)
+        path (Path): Path to offset
+        offset_value (float): Offset distance in current units
+    
+    Returns:
+        Path: Offset and simplified path, or original path if offset fails
+        
+    Note:
+        - Inverts offset_value sign for correct behavior
+        - Uses linearization for all curves
+        - Applies aggressive simplification (tolerance=0.1) for device resolution
+    """
     # As this oveloading a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
@@ -518,6 +703,44 @@ def offset_path(self, path, offset_value=0):
 def path_offset(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):
+    """
+    Generate offset (parallel) path for an SVG path with advanced features.
+    
+    Main offset algorithm supporting nested paths, loop removal, and intersection
+    handling. Processes subpaths independently and handles nesting automatically.
+    
+    Args:
+        path (Path): SVG path to offset
+        offset_value (float): Offset distance (positive = expand for CW, shrink for CCW)
+        radial_connector (bool): Use arc connectors instead of lines (default: False)
+        linearize (bool): Convert curves to lines for processing (default: True)
+        interpolation (int): Number of interpolation steps for linearization (default: 500)
+    
+    Returns:
+        Path: Offset path with all subpaths processed
+        
+    Algorithm:
+        1. Detect nesting depth of all subpaths using point-in-polygon tests
+        2. Invert offset for nested paths (odd depth = holes)
+        3. For each subpath:
+           a. Process segments backwards (easier index management)
+           b. Generate offset version of each segment
+           c. Stitch segments together, handling intersections
+           d. Remove loops using area heuristics
+           e. Close the subpath
+        4. Combine all offset subpaths into result
+    
+    Key Features:
+        - Automatic hole detection and correct offset direction
+        - Loop removal with forward/backward cut decision
+        - Miter limit to prevent extreme spikes
+        - Retrograde segment detection and removal
+        - Global join optimization for corners
+        - Backtracking artifact prevention
+    
+    Constants:
+        MINIMAL_LEN (float): Minimum segment length threshold (5 units)
+    """
     MINIMAL_LEN = 5
     print (f"Path Offset: Offset={offset_value}, Radial={radial_connector}, Linearize={linearize}, Interp={interpolation}")
     if isinstance(path, Path):
@@ -526,6 +749,48 @@ def path_offset(
     def stitch_segments_at_index(
         offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False, limit=None
     ):
+        """
+        Stitch two consecutive offset segments together, handling gaps and intersections.
+        
+        This is the core stitching function that connects offset segments by:
+        - Finding intersections between segments
+        - Detecting and removing loops (self-intersections)
+        - Inserting connector segments where needed
+        - Applying miter limits to prevent spikes
+        
+        Args:
+            offset (float): Offset distance for reference
+            stitchpath (Path): Path being constructed with offset segments
+            seg1_end (int): Index of the left segment to stitch
+            orgintersect (Point): Original intersection point before offset
+            radial (bool): Use arc connectors instead of lines (default: False)
+            closed (bool): Whether this is a closed path (default: False)
+            limit (int): Maximum segment index to scan for intersections (default: None)
+        
+        Returns:
+            tuple: (point_added, deleted_from_start, deleted_tail, deleted_loop)
+                - point_added (int): Number of connector segments added (1, 0, or negative)
+                - deleted_from_start (int): Segments deleted from path start
+                - deleted_tail (int): Segments deleted from path end
+                - deleted_loop (int): Segments deleted in middle (loop removal)
+        
+        Algorithm:
+            1. Identify seg1 (left) and seg2 (right) segments
+            2. Scan for intersections with subsequent segments (backwards for furthest)
+            3. If intersection found:
+               a. Decide cut direction using area heuristic (forward vs backward)
+               b. Remove intervening segments
+               c. Adjust segment endpoints to intersection point
+            4. If no intersection and gap exists:
+               a. Insert connector segment (line or arc)
+               b. Check for backtracking artifacts and fix
+        
+        Special Cases:
+            - Parallel segments: Detect inverted U-turns using cross products
+            - Consecutive segments: Apply miter limit check
+            - Global joins: Connect to predecessor segment when appropriate
+            - Wrapped segments: Handle closed path wraparound
+        """
         point_added = 0
         deleted_from_start = 0
         deleted_tail = 0
@@ -630,7 +895,6 @@ def path_offset(
                                      # print(f"Global Join Applied: {left_end} vs {k} at {p_g}")
                                      seg1.start = Point(p_g)
                                      seg_k.end = Point(p_g)
-                    continue
                     continue
                 seg_k = stitchpath._segments[k]
                 if isinstance(seg_k, Line):
@@ -1045,6 +1309,28 @@ def path_offset(
         return point_added, deleted_from_start, deleted_tail, deleted_loop
 
     def close_subpath(radial, sub_path, firstidx, lastidx, offset, orgintersect):
+        """
+        Close a subpath by connecting the last segment to the first segment.
+        
+        Handles the final connection needed to close offset paths. Attempts to
+        find intersection between first and last segments, or inserts connector.
+        
+        Args:
+            radial (bool): Use arc connectors instead of lines
+            sub_path (Path): Subpath to close
+            firstidx (int): Index of first valid segment
+            lastidx (int): Index of last valid segment
+            offset (float): Offset distance for reference
+            orgintersect (Point): Original corner point before offset
+        
+        Algorithm:
+            1. Find first and last valid segments
+            2. Check if they intersect:
+               a. If intersection within both segments: adjust endpoints
+               b. If intersection beyond segments: insert connector
+            3. Use radial connector if requested and gap is small
+            4. Fall back to line connector if needed
+        """
         # from time import perf_counter
         seg1 = None
         seg2 = None
@@ -1148,22 +1434,28 @@ def path_offset(
                 sub_path._segments.insert(lastidx + 1, segment)
                 # print ("Fallback case, just create  line")
 
-    # def dis(pt):
-    #     if pt is None:
-    #         return "None"
-    #     else:
-    #         return f"({pt.x:.0f}, {pt.y:.0f})"
-
-    results = []
-    # This needs to be a continuous path
+    # Main path_offset algorithm begins here
     
-    # Collect subpaths to determine nesting
+    results = []
+    
+    # Phase 1: Detect nested paths (holes) for automatic offset direction inversion
+    # ============================================================================
+    # Collect all subpaths and determine their nesting depth by testing if their
+    # first point is contained in any other subpath. Odd nesting depth indicates
+    # a hole, which requires inverted offset direction.
+    # 
+    # Example: Outer rectangle with inner rectangular hole
+    #   - Outer path: depth 0 (not inside anything)
+    #   - Inner path: depth 1 (inside outer) -> offset inverted
+    # 
+    # This ensures that "expand" operation shrinks holes (thickens material)
+    # and "shrink" operation expands holes (thins material).
+    
     subpaths = list(path.as_subpaths())
     depths = [0] * len(subpaths)
     
-    # Determine nesting depths
-    # We use the first point of each subpath to check containment
-    # This assumes subpaths are well-separated and not intersecting
+    # Determine nesting depths using point-in-polygon tests
+    # Note: Assumes subpaths are well-separated and non-intersecting
     for i in range(len(subpaths)):
         # Find a valid point on subpath i
         pt = None
