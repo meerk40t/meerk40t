@@ -501,37 +501,22 @@ def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
 
 def intersect_line_segments(w, z, x, y):
     """
-    We establish the intersection between two lines given by
-    line1 = (w, z), line2 = (x, y)
-    We define the first line by the equation w + s * (z - w)
-    We define the second line by the equation x + t * (y - x)
-    We give back the intersection and the values for s and t
-    out of these two equations at the intersection point.
-    Notabene: if the intersection is on the two line segments
-    then s and t need to be between 0 and 1.
-
+    Calculate intersection between two line segments.
+    
+    Line1 defined by: w + t * (z - w), where t in [0,1] for segment
+    Line2 defined by: x + s * (y - x), where s in [0,1] for segment
+    
     Args:
         w (Point): Start point of the first line segment
-        z (Point): End point of the second line segment
-        x (Point): Start point of the first line segment
+        z (Point): End point of the first line segment
+        x (Point): Start point of the second line segment
         y (Point): End point of the second line segment
-    Returns three values: P, s, t
-        P: Point of intersection, None if the two lines have no intersection
-        S: Value for s in P = w + s * (z - w)
-        T: Value for t in P = x + t * (y - x)
-
-        ( w1 )     ( z1 - w1 )    ( x1 )     ( y1 - x1 )
-        (    ) + t (         )  = (    ) + s (         )
-        ( w2 )     ( z2 - w2 )    ( y1 )     ( y2 - x2 )
-
-        ( w1 - x1 )     ( y1 - x1 )     ( z1 - w1 )
-        (         ) = s (         ) - t (         )
-        ( w2 - x2 )     ( y2 - x2 )     ( z2 - w2 )
-
-        ( w1 - x1 )    ( y1 - x1   -z1 + w1 ) ( s )
-        (         ) =  (                    ) (   )
-        ( w2 - x2 )    ( y2 - x2   -z2 + w2 ) ( t )
-
+        
+    Returns:
+        tuple: (P, t, s) where:
+            P (Point): Intersection point, None if lines are parallel
+            t (float): Parameter for first line (0-1 means within segment)
+            s (float): Parameter for second line (0-1 means within segment)
     """
     a = y.x - x.x
     b = -z.x + w.x
@@ -677,10 +662,11 @@ def offset_path(self, path, offset_value=0):
         - Uses linearization for all curves
         - Applies aggressive simplification (tolerance=0.1) for device resolution
     """
-    # As this oveloading a regular method in a class
+    # As this overloads a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
     # Radial connectors seem to have issues, so we don't use them for now...
+        
     p = path_offset(
         path,
         offset_value=-offset_value,
@@ -742,9 +728,9 @@ def path_offset(
         MINIMAL_LEN (float): Minimum segment length threshold (5 units)
     """
     MINIMAL_LEN = 5
-    print (f"Path Offset: Offset={offset_value}, Radial={radial_connector}, Linearize={linearize}, Interp={interpolation}")
-    if isinstance(path, Path):
-        print (f"Path: {path.d()}")
+    # print (f"Path Offset: Offset={offset_value}, Radial={radial_connector}, Linearize={linearize}, Interp={interpolation}")
+    # if isinstance(path, Path):
+    #     print (f"Path: {path.d()}")
 
     def stitch_segments_at_index(
         offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False, limit=None
@@ -995,31 +981,6 @@ def path_offset(
                                 seg1.end = Point(p)
                                 seg_k.start = Point(p)
                                 needs_connector = False
-                    else:
-                        # Check for parallel swap (Inverted U-turn)
-                        v1 = seg1.end - seg1.start
-                        vk = seg_k.end - seg_k.start
-                        # Check if parallel and opposite
-                        cross = v1.x * vk.y - v1.y * vk.x
-                        dot = v1.x * vk.x + v1.y * vk.y
-                        
-                        if abs(cross) < 1e-3 and dot < 0:
-                             pass
-                        
-                        if abs(cross) < 1e-6 and dot < 0:
-                             len1 = abs(v1)
-                             if len1 > 1e-9:
-                                 n1 = Point(-v1.y / len1, v1.x / len1)
-                                 v_conn = seg_k.start - seg1.end
-                                 proj = v_conn.x * n1.x + v_conn.y * n1.y
-                                 
-                                 
-                                 # If proj < 0, they are swapped
-                                 if proj < -1e-4:
-                                     # Swapped! Use midpoint of outer ends
-                                     best_p = Point((seg1.start.x + seg_k.end.x)/2, (seg1.start.y + seg_k.end.y)/2)
-                                     best_idx = k
-                                     break
 
             if best_p is not None:
                 # We found a valid intersection
@@ -1142,8 +1103,6 @@ def path_offset(
                                  deleted_from_start = count_del
                     
                     return point_added, deleted_from_start, deleted_tail, deleted_loop
-                    
-                    return point_added, deleted_from_start, deleted_from_end
 
             elif isinstance(seg2, Line):
                 p, s, t = intersect_line_segments(
@@ -1294,7 +1253,7 @@ def path_offset(
                         seg2.start = Point(mid)
                         connect_seg = None
                         needs_connector = False
-                        point_added = 0
+                        # No segment added, point_added remains unchanged
                 
             if connect_seg is not None:
                 connect_seg.origin_type = "stitch_connector"
