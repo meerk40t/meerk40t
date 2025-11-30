@@ -1794,6 +1794,601 @@ def path_offset(
     return result
 
 
+def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None, cleanup_window=100):
+    """Simplified path offset (performance-oriented).
+
+    Provides a lightweight alternative to `path_offset` without complex loop
+    removal, retrograde pruning, or multi-pass heuristics. Intended for fast
+    outward/inward expansion of single, simple closed paths (rectangles,
+    polygons, linearized curves).
+
+    Semantics: Positive offset expands clockwise paths and shrinks
+    counter-clockwise paths (matching full algorithm semantics).
+
+    Args:
+        path (Path): Source path (should be closed).
+        offset_value (float): Requested offset distance.
+        interpolation (int): Uniform subdivision per segment (0 for adaptive).
+        miter_limit (float): Max miter length factor (None=auto: 4 outward, 2.5 inward).
+        cleanup_window (int): Recent edge window for self-intersection checks (default 100).
+
+    Returns:
+        Path | None: Offset path or None if degenerate.
+    """
+    try:
+        from meerk40t.svgelements import Path, Move, Line, Point
+    except Exception:
+        return None
+
+    if path is None or len(path) == 0:
+        return None
+
+    # Adaptive sampling helpers
+    def _seg_length(seg):
+        try:
+            return seg.length()
+        except Exception:
+            # Fallback rough length
+            s = getattr(seg, "start", None)
+            e = getattr(seg, "end", None)
+            if s is None or e is None:
+                return 0.0
+            dx = e.x - s.x
+            dy = e.y - s.y
+            return (dx * dx + dy * dy) ** 0.5
+
+    def _adaptive_samples(seg, base_step, max_samples=200):
+        L = _seg_length(seg)
+        if L == 0:
+            return 1
+        # Curvature-based refinement: sample more densely for curves
+        k = int(max(4, min(max_samples, L / base_step)))  # Minimum 4 samples per segment
+        # If segment has curvature (arc/quad/cubic), use angle-based splitting heuristic
+        if hasattr(seg, 'point') and hasattr(seg, 'derivative'):
+            try:
+                # Sample at thirds and check angle change
+                d0 = seg.derivative(0.0)
+                d1 = seg.derivative(0.5)
+                d2 = seg.derivative(1.0)
+                # Rough angle heuristic: if derivative changes significantly, boost samples
+                def _angle(dx, dy):
+                    import math
+                    return math.atan2(dy, dx)
+                a0 = _angle(d0.x, d0.y) if d0 else 0
+                a1 = _angle(d1.x, d1.y) if d1 else 0
+                a2 = _angle(d2.x, d2.y) if d2 else 0
+                # Normalize angle differences to [-pi, pi]
+                import math
+                def _norm_angle(a):
+                    while a > math.pi: a -= 2*math.pi
+                    while a < -math.pi: a += 2*math.pi
+                    return a
+                delta1 = abs(_norm_angle(a1 - a0))
+                delta2 = abs(_norm_angle(a2 - a1))
+                max_delta = max(delta1, delta2)
+                # If angle change per half-segment > 0.15 rad (~8.5 deg), increase samples
+                if max_delta > 0.15:
+                    k = int(k * (1 + max_delta / 0.15))
+                    k = min(k, max_samples)
+            except Exception:
+                pass
+        return k
+
+    def _sample_segment(seg, k):
+        """Sample segment including both start and end points"""
+        points = []
+        s = getattr(seg, "start", None)
+        if s is not None:
+            points.append(s)
+        if hasattr(seg, "point") and k > 1:
+            for i in range(1, k):
+                t = i / k
+                try:
+                    p = seg.point(t)
+                except Exception:
+                    p = None
+                if p is not None:
+                    points.append(p)
+        # Always include the endpoint
+        e = getattr(seg, "end", None)
+        if e is not None:
+            points.append(e)
+        return points
+
+    # Base step scales with offset magnitude and overall shape size
+    try:
+        bx0, by0, bx1, by1 = path.bbox()
+        diag = ((bx1 - bx0) ** 2 + (by1 - by0) ** 2) ** 0.5
+    except Exception:
+        diag = 100.0
+    base_step = max(5.0, min(diag / 200.0, max(5.0, abs(offset_value) / 2.0)))
+
+    # Collect polyline points with adaptive sampling per segment
+    # Track which points are segment boundaries (original control points)
+    pts = []
+    seg_boundary_map = {}  # index -> (seg_idx, is_start, is_end, seg)
+    
+    for seg_idx, seg in enumerate(path):
+        if interpolation and interpolation > 1:
+            k = interpolation
+        else:
+            k = _adaptive_samples(seg, base_step)
+        sampled = _sample_segment(seg, k)
+        
+        if not sampled:
+            continue
+        
+        # Mark first point as segment start boundary
+        start_idx = len(pts)
+        seg_boundary_map[start_idx] = (seg_idx, True, False, seg)
+        
+        # Add first point or skip if duplicate of previous segment's endpoint
+        if len(pts) == 0 or sampled[0] != pts[-1]:
+            pts.append(sampled[0])
+        else:
+            # Junction point - update mapping to indicate it's also start of this segment
+            start_idx = len(pts) - 1
+            seg_boundary_map[start_idx] = (seg_idx, True, True, seg)  # Both end and start
+        
+        # Add intermediate points
+        pts.extend(sampled[1:-1])
+        
+        # Add endpoint and mark as segment end boundary
+        if sampled[-1] != sampled[0]:  # Avoid duplicate if segment is a point
+            pts.append(sampled[-1])
+            seg_boundary_map[len(pts) - 1] = (seg_idx, False, True, seg)
+    
+    # For closed paths, ensure last point equals first point, or remove duplicate
+    if len(pts) > 1 and pts[-1] == pts[0]:
+        # Last point is duplicate of first - remove it
+        pts = pts[:-1]
+    
+    if len(pts) < 3:
+        return None
+
+    # Optional secondary uniform interpolation to densify long straight segments
+    if interpolation and interpolation > 1:
+        refined = []
+        for i in range(len(pts) - 1):
+            p0 = pts[i]
+            p1 = pts[i + 1]
+            refined.append(p0)
+            dx = p1.x - p0.x
+            dy = p1.y - p0.y
+            for j in range(1, interpolation):
+                t = j / interpolation
+                refined.append(p0 + (dx * t, dy * t))
+        refined.append(pts[-1])
+        pts = refined
+
+    # Determine orientation directly from points (shoelace) to avoid segment start edge cases.
+    def _poly_clockwise(points):
+        total = points[-1].x * points[0].y - points[0].x * points[-1].y
+        for i in range(len(points) - 1):
+            total += points[i].x * points[i + 1].y - points[i + 1].x * points[i].y
+        return total > 0
+    cw = _poly_clockwise(pts)
+    effective_offset = offset_value if cw else -offset_value
+    if effective_offset == 0:
+        return Path(path)  # Shallow copy; no change.
+
+    # Auto-adjust miter_limit: tighter for inward (shrink) offsets to reduce spikes
+    if miter_limit is None:
+        miter_limit = 2.5 if effective_offset < 0 else 4.0
+
+    # Edge normals (SVG Y-down left-hand normal => outward for CW)
+    edges = []
+    normals = []
+    for i in range(len(pts)):
+        p0 = pts[i]
+        p1 = pts[(i + 1) % len(pts)]  # Wrap around to close the polygon
+        dx = p1.x - p0.x
+        dy = p1.y - p0.y
+        edges.append((dx, dy))
+        nx = dy
+        ny = -dx
+        length = (nx * nx + ny * ny) ** 0.5
+        if length != 0:
+            scale = effective_offset / length
+            nx *= scale
+            ny *= scale
+        normals.append((nx, ny))
+
+    def intersect_lines(p, d, q, e):
+        """Find intersection of two lines: p+t*d and q+u*e"""
+        cross = d[0] * e[1] - d[1] * e[0]
+        if abs(cross) < 1e-9:
+            return None
+        qmpx = q[0] - p[0]
+        qmpy = q[1] - p[1]
+        t = (qmpx * e[1] - qmpy * e[0]) / cross
+        return (p[0] + t * d[0], p[1] + t * d[1])
+
+    # Generate offset points using miter joins with intersection search
+    out_pts = []
+    n = len(pts)
+    search_radius = 10  # How many edges to search backward/forward
+    
+    for i in range(n):
+        p_curr = pts[i]
+        
+        # Search backward for a substantial incoming edge
+        best_prev_idx = (i - 1) % n
+        best_prev_len = (edges[best_prev_idx][0]**2 + edges[best_prev_idx][1]**2) ** 0.5
+        for k in range(2, min(search_radius, n)):
+            idx = (i - k) % n
+            edge_len = (edges[idx][0]**2 + edges[idx][1]**2) ** 0.5
+            if edge_len > best_prev_len * 1.5:  # Significantly longer edge
+                best_prev_idx = idx
+                best_prev_len = edge_len
+                break
+        
+        # Search forward for a substantial outgoing edge
+        best_next_idx = i
+        best_next_len = (edges[best_next_idx][0]**2 + edges[best_next_idx][1]**2) ** 0.5
+        for k in range(1, min(search_radius, n)):
+            idx = (i + k) % n
+            edge_len = (edges[idx][0]**2 + edges[idx][1]**2) ** 0.5
+            if edge_len > best_next_len * 1.5:  # Significantly longer edge
+                best_next_idx = idx
+                best_next_len = edge_len
+                break
+        
+        # Get the start points of the offset edges we're intersecting
+        p_prev_start_idx = best_prev_idx
+        p_next_start_idx = best_next_idx
+        
+        offset_prev_start = (pts[p_prev_start_idx].x + normals[best_prev_idx][0], 
+                            pts[p_prev_start_idx].y + normals[best_prev_idx][1])
+        offset_next_start = (pts[p_next_start_idx].x + normals[best_next_idx][0], 
+                            pts[p_next_start_idx].y + normals[best_next_idx][1])
+        
+        edge_prev = edges[best_prev_idx]
+        edge_next = edges[best_next_idx]
+        
+        # Try to find intersection of the two offset edges
+        intersection = intersect_lines(offset_prev_start, edge_prev, offset_next_start, edge_next)
+        
+        if intersection is not None:
+            # Check if intersection is reasonable (miter limit)
+            dist_to_intersection = ((intersection[0] - p_curr.x)**2 + (intersection[1] - p_curr.y)**2) ** 0.5
+            max_miter_dist = abs(effective_offset) * miter_limit
+            
+            if dist_to_intersection <= max_miter_dist:
+                out_pts.append(intersection)
+            else:
+                # Miter limit exceeded - use bevel join
+                n_prev = normals[(i - 1) % n]
+                n_next = normals[i]
+                avg_nx = (n_prev[0] + n_next[0]) * 0.5
+                avg_ny = (n_prev[1] + n_next[1]) * 0.5
+                out_pts.append((p_curr.x + avg_nx, p_curr.y + avg_ny))
+        else:
+            # Parallel edges - use simple offset
+            out_pts.append((p_curr.x + normals[i][0], p_curr.y + normals[i][1]))
+
+    if len(out_pts) < 3:
+        return None
+
+    # Fast self-intersection cleanup (spike/loop removal)
+    # Stack-based approach: when the new edge intersects a prior edge (non-adjacent),
+    # truncate the polygon to the intersection point to remove the loop.
+    def _bbox(a, b):
+        x0 = a[0] if isinstance(a, tuple) else a.x
+        y0 = a[1] if isinstance(a, tuple) else a.y
+        x1 = b[0] if isinstance(b, tuple) else b.x
+        y1 = b[1] if isinstance(b, tuple) else b.y
+        return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+
+    def _segments_intersect(p1, p2, q1, q2):
+        x1, y1 = (p1[0], p1[1]) if isinstance(p1, tuple) else (p1.x, p1.y)
+        x2, y2 = (p2[0], p2[1]) if isinstance(p2, tuple) else (p2.x, p2.y)
+        x3, y3 = (q1[0], q1[1]) if isinstance(q1, tuple) else (q1.x, q1.y)
+        x4, y4 = (q2[0], q2[1]) if isinstance(q2, tuple) else (q2.x, q2.y)
+        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if abs(den) < 1e-9:
+            return None
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+        u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
+        if t < 0 or t > 1 or u < 0 or u > 1:
+            return None
+        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+    cleaned = []
+    window = cleanup_window  # check last N edges for performance
+    max_spike_len = abs(effective_offset) * 2.0  # reject spikes longer than 2x offset
+    for pt in out_pts:
+        # Skip None points
+        if pt is None:
+            continue
+            
+        if not cleaned:
+            cleaned.append(pt)
+            continue
+        # Candidate new edge from cleaned[-1] to pt
+        p1 = cleaned[-1]
+        p2 = pt
+        
+        # Validate edge length - reject edges much longer than offset distance
+        dx = (p2[0] if isinstance(p2, tuple) else p2.x) - (p1[0] if isinstance(p1, tuple) else p1.x)
+        dy = (p2[1] if isinstance(p2, tuple) else p2.y) - (p1[1] if isinstance(p1, tuple) else p1.y)
+        edge_len = (dx * dx + dy * dy) ** 0.5
+        
+        # For large offsets, be more aggressive: skip edges > 3x offset
+        # For small offsets, use 5x to avoid over-filtering
+        threshold_multiplier = 3.0 if abs(effective_offset) > 1000 else 5.0
+        if edge_len > max_spike_len * threshold_multiplier:
+            continue
+        
+        cb1 = _bbox(p1, p2)
+        # Check intersection against prior edges in window
+        truncated = False
+        start_idx = max(0, len(cleaned) - window)
+        for j in range(start_idx, len(cleaned) - 2):
+            q1 = cleaned[j]
+            q2 = cleaned[j + 1]
+            # Skip adjacent edge check
+            if q2 == p1 or q1 == p1:
+                continue
+            qb = _bbox(q1, q2)
+            # Coarse BB test
+            if cb1[0] > qb[2] or cb1[2] < qb[0] or cb1[1] > qb[3] or cb1[3] < qb[1]:
+                continue
+            inter = _segments_intersect(p1, p2, q1, q2)
+            if inter is not None:
+                # Validate intersection doesn't create extreme jump
+                ix, iy = inter
+                dist_to_inter = ((ix - (p1[0] if isinstance(p1, tuple) else p1.x))**2 + 
+                                (iy - (p1[1] if isinstance(p1, tuple) else p1.y))**2) ** 0.5
+                if dist_to_inter < max_spike_len * 2.0:
+                    # Truncate cleaned to j+1 and replace endpoint with intersection
+                    cleaned = cleaned[: j + 1]
+                    cleaned.append(inter)
+                    truncated = True
+                    break
+        if not truncated:
+            cleaned.append(pt)
+
+    out_pts = cleaned
+
+    # Final validation - ensure no None values
+    out_pts = [pt for pt in out_pts if pt is not None]
+    if len(out_pts) < 3:
+        return None
+    
+    # For closed paths, detect if we have an overlap at the closure generically.
+    # Strategy:
+    # - Compute the best-matching pair between first K and last K points
+    # - Slice out_pts between these indices to remove head/tail duplicates
+    # - Fallback: if none found, try rotating so the earliest match becomes start
+    n = len(out_pts)
+    if n > 10:
+        K = 6
+        best_i = -1
+        best_j = -1
+        best_dist = float('inf')
+        
+        for i in range(min(K, n - 3)):
+            pt_early = out_pts[i]
+            x_early = pt_early[0] if isinstance(pt_early, tuple) else pt_early.x
+            y_early = pt_early[1] if isinstance(pt_early, tuple) else pt_early.y
+            
+            for j in range(max(n - K, i + 3), n):
+                pt_late = out_pts[j]
+                x_late = pt_late[0] if isinstance(pt_late, tuple) else pt_late.x
+                y_late = pt_late[1] if isinstance(pt_late, tuple) else pt_late.y
+                dist = ((x_late - x_early)**2 + (y_late - y_early)**2) ** 0.5
+                
+                if dist < best_dist:
+                    best_dist = dist
+                    best_i = i
+                    best_j = j
+        
+        # If we found a plausible pair, remove head and tail generically
+        if best_i >= 0 and best_j > best_i + 2:
+            # Keep inclusive range [best_i .. best_j]
+            out_pts = out_pts[best_i:best_j + 1]
+        else:
+            # Fallback: rotate to start at earliest close match to last point
+            last_pt = out_pts[-1]
+            x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
+            y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+            rotate_idx = -1
+            rotate_best = float('inf')
+            for i in range(min(K, n - 1)):
+                pt = out_pts[i]
+                x = pt[0] if isinstance(pt, tuple) else pt.x
+                y = pt[1] if isinstance(pt, tuple) else pt.y
+                d = ((x - x_last)**2 + (y - y_last)**2) ** 0.5
+                if d < rotate_best:
+                    rotate_best = d
+                    rotate_idx = i
+            if rotate_idx > 0:
+                out_pts = out_pts[rotate_idx:] + out_pts[:rotate_idx]
+
+        # Explicitly resolve start/end intersection and trim to the intersection point.
+        # Intersect the first edge with the last edge; if they cross, snap both ends.
+        def _seg_intersect(p1, p2, q1, q2):
+            x1 = p1[0] if isinstance(p1, tuple) else p1.x
+            y1 = p1[1] if isinstance(p1, tuple) else p1.y
+            x2 = p2[0] if isinstance(p2, tuple) else p2.x
+            y2 = p2[1] if isinstance(p2, tuple) else p2.y
+            x3 = q1[0] if isinstance(q1, tuple) else q1.x
+            y3 = q1[1] if isinstance(q1, tuple) else q1.y
+            x4 = q2[0] if isinstance(q2, tuple) else q2.x
+            y4 = q2[1] if isinstance(q2, tuple) else q2.y
+            den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+            if abs(den) < 1e-9:
+                return None
+            t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+            u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
+            if t < 0 or t > 1 or u < 0 or u > 1:
+                return None
+            ix = x1 + t * (x2 - x1)
+            iy = y1 + t * (y2 - y1)
+            return (ix, iy)
+
+        if len(out_pts) >= 3:
+            # Utility: segment intersection and on-segment checks
+            def _on_segment(a, b, p):
+                    ax = a[0] if isinstance(a, tuple) else a.x
+                    ay = a[1] if isinstance(a, tuple) else a.y
+                    bx = b[0] if isinstance(b, tuple) else b.x
+                    by = b[1] if isinstance(b, tuple) else b.y
+                    px = p[0] if isinstance(p, tuple) else p[0]
+                    py = p[1] if isinstance(p, tuple) else p[1]
+                    # Bounding box check with epsilon
+                    eps = 1e-6
+                    if px < min(ax, bx) - eps or px > max(ax, bx) + eps:
+                        return False
+                    if py < min(ay, by) - eps or py > max(ay, by) + eps:
+                        return False
+                    # Collinearity check via cross product
+                    dx1 = bx - ax
+                    dy1 = by - ay
+                    dx2 = px - ax
+                    dy2 = py - ay
+                    cross = abs(dx1 * dy2 - dy1 * dx2)
+                    return cross < 1e-6
+            
+            # Windowed search of intersections: first K vs last K segments
+            K = min(12, len(out_pts) - 1)
+            best_pair = None
+            best_dist = float('inf')
+            last_pt = out_pts[-1]
+            lx = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
+            ly = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+            for i in range(0, K):
+                a1 = out_pts[i]
+                a2 = out_pts[i + 1]
+                for j in range(len(out_pts) - 2, max(len(out_pts) - K - 1, i + 2), -1):
+                    b1 = out_pts[j]
+                    b2 = out_pts[j + 1]
+                    inter = _seg_intersect(a1, a2, b1, b2)
+                    if inter is not None:
+                        # Prefer intersections nearer to the last point (closure area)
+                        ix = inter[0]
+                        iy = inter[1]
+                        dlast = ((ix - lx) ** 2 + (iy - ly) ** 2) ** 0.5
+                        if dlast < best_dist:
+                            best_dist = dlast
+                            best_pair = (i, j, inter)
+            
+            if best_pair is not None:
+                head_idx, tail_idx, inter = best_pair
+                # Trim head: if intersection lies within (head_idx, head_idx+1), start at inter
+                # Trim tail: end at inter within (tail_idx, tail_idx+1)
+                trimmed = [inter]
+                for i in range(head_idx + 1, tail_idx + 1):
+                    trimmed.append(out_pts[i])
+                trimmed.append(inter)
+                out_pts = trimmed
+                
+                # Snap first and last exactly if very close (epsilon)
+                if len(out_pts) >= 2:
+                    fx = out_pts[0][0] if isinstance(out_pts[0], tuple) else out_pts[0].x
+                    fy = out_pts[0][1] if isinstance(out_pts[0], tuple) else out_pts[0].y
+                    lx = out_pts[-1][0] if isinstance(out_pts[-1], tuple) else out_pts[-1].x
+                    ly = out_pts[-1][1] if isinstance(out_pts[-1], tuple) else out_pts[-1].y
+                    dcl = ((fx - lx)**2 + (fy - ly)**2)**0.5
+                    if dcl < 0.5:  # Small epsilon for large coordinate space
+                        # Use the first point as canonical
+                        out_pts[-1] = out_pts[0]
+    
+    if len(out_pts) < 3:
+        return None
+
+    # Post-slice leading point cleanup:
+    # If the first edge is extremely short or the angle at the first vertex
+    # indicates a near reversal, drop the first point.
+    def _edge_len(a, b):
+        ax = a[0] if isinstance(a, tuple) else a.x
+        ay = a[1] if isinstance(a, tuple) else a.y
+        bx = b[0] if isinstance(b, tuple) else b.x
+        by = b[1] if isinstance(b, tuple) else b.y
+        dx = bx - ax
+        dy = by - ay
+        return (dx * dx + dy * dy) ** 0.5
+
+    def _angle_deg(p0, p1, p2):
+        x0 = p0[0] if isinstance(p0, tuple) else p0.x
+        y0 = p0[1] if isinstance(p0, tuple) else p0.y
+        x1 = p1[0] if isinstance(p1, tuple) else p1.x
+        y1 = p1[1] if isinstance(p1, tuple) else p1.y
+        x2 = p2[0] if isinstance(p2, tuple) else p2.x
+        y2 = p2[1] if isinstance(p2, tuple) else p2.y
+        dx1 = x1 - x0
+        dy1 = y1 - y0
+        dx2 = x2 - x1
+        dy2 = y2 - y1
+        l1 = (dx1 * dx1 + dy1 * dy1) ** 0.5
+        l2 = (dx2 * dx2 + dy2 * dy2) ** 0.5
+        if l1 < 1e-9 or l2 < 1e-9:
+            return 0.0
+        dot = (dx1 * dx2 + dy1 * dy2) / (l1 * l2)
+        if dot < -1.0:
+            dot = -1.0
+        elif dot > 1.0:
+            dot = 1.0
+        import math
+        return math.degrees(math.acos(dot))
+
+    if len(out_pts) >= 3:
+        first_edge = _edge_len(out_pts[0], out_pts[1])
+        # Compute a reference edge length from the next edge
+        ref_edge = _edge_len(out_pts[1], out_pts[2])
+        # Angle at the first vertex
+        ang = _angle_deg(out_pts[0], out_pts[1], out_pts[2])
+        # Debug: report first edges and angle to help tune thresholds
+        try:
+            print(
+                f"[offset_simple] first_edge={first_edge:.3f} ref_edge={ref_edge:.3f} angle={ang:.2f} deg"
+            )
+        except Exception:
+            pass
+        # Absolute epsilon based on offset magnitude (and a minimum)
+        abs_eps = max(1.0, abs(effective_offset) * 0.005)
+        # Conditions to drop the leading point:
+        # - First edge is an absolute tiny stub (first_edge < abs_eps)
+        # - OR first edge is much shorter than the next (likely a stub)
+        # - OR angle suggests near reversal (> 170°)
+        if first_edge < abs_eps or (ref_edge > 0 and first_edge < ref_edge * 0.2) or ang > 170.0:
+            out_pts = out_pts[1:]
+
+    # Build path segments with explicit start/end points
+    # For a closed path, construct it as a loop without duplicating the start point
+    first_pt = out_pts[0]
+    x0 = first_pt[0] if isinstance(first_pt, tuple) else first_pt.x
+    y0 = first_pt[1] if isinstance(first_pt, tuple) else first_pt.y
+    first = Point(x0, y0)
+    
+    segs = [Move(first)]
+    
+    # Create line segments forming a closed loop
+    # For n points, we create n-1 line segments (0→1, 1→2, ..., n-2→n-1)
+    n = len(out_pts)
+    for i in range(n - 1):
+        curr_pt = out_pts[i]
+        next_pt = out_pts[i + 1]
+        x_curr = curr_pt[0] if isinstance(curr_pt, tuple) else curr_pt.x
+        y_curr = curr_pt[1] if isinstance(curr_pt, tuple) else curr_pt.y
+        x_next = next_pt[0] if isinstance(next_pt, tuple) else next_pt.x
+        y_next = next_pt[1] if isinstance(next_pt, tuple) else next_pt.y
+        segs.append(Line(start=Point(x_curr, y_curr), end=Point(x_next, y_next)))
+    
+    # Check if last point is already close to first (cleanup created proper closure)
+    last_pt = out_pts[-1]
+    x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
+    y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+    dist_to_first = ((x_last - x0)**2 + (y_last - y0)**2) ** 0.5
+    
+    # Only add closing segment if last point is not already at first point
+    if dist_to_first > abs(effective_offset) * 0.01:
+        segs.append(Line(start=Point(x_last, y_last), end=first))
+    
+    return Path(*segs)
+
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -1910,8 +2505,86 @@ def init_commands(kernel):
 
         # Newly created! Classification needed?
         if len(data_out) > 0:
-            post.append(classify_new(data_out))
+            # Skip classification for simple offset to avoid overhead and classification side-effects.
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
     # --------------------------- END COMMANDS ------------------------------
+    # Simplified variant using path_offset_simple
+    @self.console_argument(
+        "offset",
+        type=str,
+        help=_(
+            "offset distance (positive expands CW path, negative shrinks)"
+        ),
+    )
+    @self.console_option(
+        "interpolation", "i", type=int, help=_("uniform interpolation per segment (simple)")
+    )
+    @self.console_option(
+        "miterlimit", "m", type=float, help=_("maximum miter length factor (auto if omitted)")
+    )
+    @self.console_option(
+        "window", "w", type=int, help=_("self-intersection check window (default 100)")
+    )
+    @self.console_command(
+        ("offsetsimple", "offset_simple"),
+        help=_("create an offset path using simplified fast algorithm"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def element_offset_path_simple(
+        command,
+        channel,
+        _,
+        offset=None,
+        interpolation=None,
+        miterlimit=None,
+        window=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No elements selected"))
+            return "elements", data
+        if interpolation is None:
+            interpolation = 0
+        if window is None:
+            window = 100
+        if offset is None:
+            offset = 0
+        else:
+            try:
+                offset = float(Length(offset))
+            except ValueError:
+                offset = 0
+        data_out = []
+        for node in data:
+            if hasattr(node, "as_path"):
+                p = abs(node.as_path())
+            else:
+                bb = node.bounds
+                if bb is None:
+                    continue
+                p = Geomstr.rect(
+                    x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
+                ).as_path()
+            new_path = path_offset_simple(p, offset_value=offset, interpolation=interpolation, miter_limit=miterlimit, cleanup_window=window)
+            if new_path is None or len(new_path) == 0:
+                continue
+            new_path.validate_connections()
+            with self.node_lock:
+                newnode = self.elem_branch.add(
+                    path=new_path, type="elem path", stroke=node.stroke
+                )
+            newnode.stroke_width = UNITS_PER_PIXEL
+            newnode.linejoin = Linejoin.JOIN_ROUND
+            newnode.label = f"Simple Offset of {node.id if node.label is None else node.display_label()}"
+            data_out.append(newnode)
+        if len(data_out) > 0:
+            post.append(classify_new(data_out))
+            self.signal("refresh_scene", "Scene")
+        return "elements", data_out
