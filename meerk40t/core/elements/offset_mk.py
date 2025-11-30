@@ -1820,6 +1820,7 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     except Exception:
         return None
 
+    import os  # For debug flags
     if path is None or len(path) == 0:
         return None
 
@@ -1909,6 +1910,11 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     seg_boundary_map = {}  # index -> (seg_idx, is_start, is_end, seg)
     
     for seg_idx, seg in enumerate(path):
+        # Skip zero-length segments (degenerate)
+        seg_len = _seg_length(seg)
+        if seg_len < 1e-6:  # Threshold for considering segment degenerate
+            continue
+        
         if interpolation and interpolation > 1:
             k = interpolation
         else:
@@ -1939,9 +1945,19 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
             seg_boundary_map[len(pts) - 1] = (seg_idx, False, True, seg)
     
     # For closed paths, ensure last point equals first point, or remove duplicate
-    if len(pts) > 1 and pts[-1] == pts[0]:
-        # Last point is duplicate of first - remove it
-        pts = pts[:-1]
+    # Use a small margin to treat nearly-equal endpoints as duplicates
+    if len(pts) > 1:
+        p_first = pts[0]
+        p_last = pts[-1]
+        # Compute distance between endpoints
+        dx = (p_last.x - p_first.x) if hasattr(p_first, 'x') else (p_last[0] - p_first[0])
+        dy = (p_last.y - p_first.y) if hasattr(p_first, 'y') else (p_last[1] - p_first[1])
+        d2 = dx * dx + dy * dy
+        # Margin scales modestly with base_step to be robust across sizes
+        eps = (base_step * 1e-3)
+        if d2 <= eps * eps:
+            # Last point is (nearly) duplicate of first - remove it
+            pts = pts[:-1]
     
     if len(pts) < 3:
         return None
@@ -2009,16 +2025,49 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     n = len(pts)
     search_radius = 10  # How many edges to search backward/forward
     
+    # Helper: compute tangent for a segment at start/end
+    def _seg_tangent(seg, at_start=True):
+        try:
+            d = seg.derivative(0.0 if at_start else 1.0)
+            if d is not None and hasattr(d, "x") and hasattr(d, "y"):
+                return (d.x, d.y)
+        except Exception:
+            pass
+        return None
+
     for i in range(n):
         p_curr = pts[i]
         
+        # Junction handling: if this sampled index is a segment boundary, prefer true tangents
+        if i in seg_boundary_map:
+            seg_idx, is_start, is_end, seg = seg_boundary_map[i]
+            # Use outgoing tangent at a start, incoming tangent at an end
+            if is_start:
+                t_out = _seg_tangent(seg, at_start=True)
+                if t_out and (t_out[0]**2 + t_out[1]**2) > 1e-6:  # Require substantial tangent
+                    L = (t_out[0]**2 + t_out[1]**2) ** 0.5
+                    # Ensure edge is at least base_step magnitude
+                    if L * base_step > 1e-3:
+                        edges[i] = (t_out[0] / L * base_step, t_out[1] / L * base_step)
+            if is_end:
+                t_in = _seg_tangent(seg, at_start=False)
+                if t_in and (t_in[0]**2 + t_in[1]**2) > 1e-6:  # Require substantial tangent
+                    prev_i = (i - 1) % n
+                    L = (t_in[0]**2 + t_in[1]**2) ** 0.5
+                    # Ensure edge is at least base_step magnitude
+                    if L * base_step > 1e-3:
+                        edges[prev_i] = (t_in[0] / L * base_step, t_in[1] / L * base_step)
+
         # Search backward for a substantial incoming edge
+        # Increased threshold to skip over clusters of tiny over-sampled edges
         best_prev_idx = (i - 1) % n
         best_prev_len = (edges[best_prev_idx][0]**2 + edges[best_prev_idx][1]**2) ** 0.5
+        min_acceptable_len = base_step * 0.5  # At least half the sampling step
         for k in range(2, min(search_radius, n)):
             idx = (i - k) % n
             edge_len = (edges[idx][0]**2 + edges[idx][1]**2) ** 0.5
-            if edge_len > best_prev_len * 1.5:  # Significantly longer edge
+            # Require significantly longer edge AND above minimum threshold
+            if edge_len > max(best_prev_len * 2.0, min_acceptable_len):
                 best_prev_idx = idx
                 best_prev_len = edge_len
                 break
@@ -2029,7 +2078,8 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
         for k in range(1, min(search_radius, n)):
             idx = (i + k) % n
             edge_len = (edges[idx][0]**2 + edges[idx][1]**2) ** 0.5
-            if edge_len > best_next_len * 1.5:  # Significantly longer edge
+            # Require significantly longer edge AND above minimum threshold
+            if edge_len > max(best_next_len * 2.0, min_acceptable_len):
                 best_next_idx = idx
                 best_next_len = edge_len
                 break
@@ -2053,19 +2103,52 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
             # Check if intersection is reasonable (miter limit)
             dist_to_intersection = ((intersection[0] - p_curr.x)**2 + (intersection[1] - p_curr.y)**2) ** 0.5
             max_miter_dist = abs(effective_offset) * miter_limit
-            
-            if dist_to_intersection <= max_miter_dist:
-                out_pts.append(intersection)
+
+            # Junction-aware bevel: if we're at a segment boundary with a sharp turn, prefer bevel
+            use_bevel = False
+            sb = seg_boundary_map.get(i)
+            if sb is not None:
+                # Compute angle between normals; large angle -> bevel
+                import math
+                n_prev = normals[(i - 1) % n]
+                n_next = normals[i]
+                dot = n_prev[0] * n_next[0] + n_prev[1] * n_next[1]
+                len_prev = (n_prev[0]**2 + n_prev[1]**2) ** 0.5
+                len_next = (n_next[0]**2 + n_next[1]**2) ** 0.5
+                if len_prev > 1e-9 and len_next > 1e-9:
+                    cosang = max(-1.0, min(1.0, dot / (len_prev * len_next)))
+                    ang = math.acos(cosang)
+                    # Threshold ~60 degrees; above this, bevel is visually safer
+                    if ang > (math.pi / 3):
+                        use_bevel = True
+
+            if not use_bevel and dist_to_intersection <= max_miter_dist:
+                # Avoid stacking duplicates at exact junctions
+                if not out_pts or intersection != out_pts[-1]:
+                    out_pts.append(intersection)
             else:
-                # Miter limit exceeded - use bevel join
+                # Miter limit exceeded or sharp junction - use bevel join
                 n_prev = normals[(i - 1) % n]
                 n_next = normals[i]
                 avg_nx = (n_prev[0] + n_next[0]) * 0.5
                 avg_ny = (n_prev[1] + n_next[1]) * 0.5
-                out_pts.append((p_curr.x + avg_nx, p_curr.y + avg_ny))
+                ptb = (p_curr.x + avg_nx, p_curr.y + avg_ny)
+                if not out_pts or ptb != out_pts[-1]:
+                    out_pts.append(ptb)
         else:
             # Parallel edges - use simple offset
-            out_pts.append((p_curr.x + normals[i][0], p_curr.y + normals[i][1]))
+            # At junctions, enforce a minimum edge length to avoid micro-steps
+            n_curr = normals[i]
+            # Minimum move ~ 0.5 * base_step to avoid tiny sawtooth
+            import math
+            move_len = (n_curr[0]**2 + n_curr[1]**2) ** 0.5
+            scale = 1.0
+            if seg_boundary_map.get(i) is not None and move_len < (0.5 * base_step):
+                if move_len > 1e-12:
+                    scale = (0.5 * base_step) / move_len
+            pto = (p_curr.x + n_curr[0] * scale, p_curr.y + n_curr[1] * scale)
+            if not out_pts or pto != out_pts[-1]:
+                out_pts.append(pto)
 
     if len(out_pts) < 3:
         return None
@@ -2156,144 +2239,90 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     if len(out_pts) < 3:
         return None
     
-    # For closed paths, detect if we have an overlap at the closure generically.
-    # Strategy:
-    # - Compute the best-matching pair between first K and last K points
-    # - Slice out_pts between these indices to remove head/tail duplicates
-    # - Fallback: if none found, try rotating so the earliest match becomes start
-    n = len(out_pts)
-    if n > 10:
-        K = 6
-        best_i = -1
-        best_j = -1
-        best_dist = float('inf')
-        
-        for i in range(min(K, n - 3)):
-            pt_early = out_pts[i]
-            x_early = pt_early[0] if isinstance(pt_early, tuple) else pt_early.x
-            y_early = pt_early[1] if isinstance(pt_early, tuple) else pt_early.y
-            
-            for j in range(max(n - K, i + 3), n):
-                pt_late = out_pts[j]
-                x_late = pt_late[0] if isinstance(pt_late, tuple) else pt_late.x
-                y_late = pt_late[1] if isinstance(pt_late, tuple) else pt_late.y
-                dist = ((x_late - x_early)**2 + (y_late - y_early)**2) ** 0.5
-                
-                if dist < best_dist:
-                    best_dist = dist
-                    best_i = i
-                    best_j = j
-        
-        # If we found a plausible pair, remove head and tail generically
-        if best_i >= 0 and best_j > best_i + 2:
-            # Keep inclusive range [best_i .. best_j]
-            out_pts = out_pts[best_i:best_j + 1]
-        else:
-            # Fallback: rotate to start at earliest close match to last point
-            last_pt = out_pts[-1]
-            x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
-            y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
-            rotate_idx = -1
-            rotate_best = float('inf')
-            for i in range(min(K, n - 1)):
-                pt = out_pts[i]
-                x = pt[0] if isinstance(pt, tuple) else pt.x
-                y = pt[1] if isinstance(pt, tuple) else pt.y
-                d = ((x - x_last)**2 + (y - y_last)**2) ** 0.5
-                if d < rotate_best:
-                    rotate_best = d
-                    rotate_idx = i
-            if rotate_idx > 0:
-                out_pts = out_pts[rotate_idx:] + out_pts[:rotate_idx]
+    # Segment intersection helper (used for self-intersection detection)
+    def _seg_intersect(p1, p2, q1, q2):
+        x1 = p1[0] if isinstance(p1, tuple) else p1.x
+        y1 = p1[1] if isinstance(p1, tuple) else p1.y
+        x2 = p2[0] if isinstance(p2, tuple) else p2.x
+        y2 = p2[1] if isinstance(p2, tuple) else p2.y
+        x3 = q1[0] if isinstance(q1, tuple) else q1.x
+        y3 = q1[1] if isinstance(q1, tuple) else q1.y
+        x4 = q2[0] if isinstance(q2, tuple) else q2.x
+        y4 = q2[1] if isinstance(q2, tuple) else q2.y
+        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if abs(den) < 1e-9:
+            return None
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+        u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
+        if t < 0 or t > 1 or u < 0 or u > 1:
+            return None
+        ix = x1 + t * (x2 - x1)
+        iy = y1 + t * (y2 - y1)
+        return (ix, iy)
+    
+    # Global closure trimming: detect mid-array self-intersection forming wrap-around
+    # Efficient strided scan across far-apart segment pairs; trim to intersection.
+    def _seg_intersect(p1, p2, q1, q2):
+        x1 = p1[0] if isinstance(p1, tuple) else p1.x
+        y1 = p1[1] if isinstance(p1, tuple) else p1.y
+        x2 = p2[0] if isinstance(p2, tuple) else p2.x
+        y2 = p2[1] if isinstance(p2, tuple) else p2.y
+        x3 = q1[0] if isinstance(q1, tuple) else q1.x
+        y3 = q1[1] if isinstance(q1, tuple) else q1.y
+        x4 = q2[0] if isinstance(q2, tuple) else q2.x
+        y4 = q2[1] if isinstance(q2, tuple) else q2.y
+        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if abs(den) < 1e-9:
+            return None
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+        u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
+        if t < 0 or t > 1 or u < 0 or u > 1:
+            return None
+        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
 
-        # Explicitly resolve start/end intersection and trim to the intersection point.
-        # Intersect the first edge with the last edge; if they cross, snap both ends.
-        def _seg_intersect(p1, p2, q1, q2):
-            x1 = p1[0] if isinstance(p1, tuple) else p1.x
-            y1 = p1[1] if isinstance(p1, tuple) else p1.y
-            x2 = p2[0] if isinstance(p2, tuple) else p2.x
-            y2 = p2[1] if isinstance(p2, tuple) else p2.y
-            x3 = q1[0] if isinstance(q1, tuple) else q1.x
-            y3 = q1[1] if isinstance(q1, tuple) else q1.y
-            x4 = q2[0] if isinstance(q2, tuple) else q2.x
-            y4 = q2[1] if isinstance(q2, tuple) else q2.y
-            den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-            if abs(den) < 1e-9:
-                return None
-            t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
-            u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
-            if t < 0 or t > 1 or u < 0 or u > 1:
-                return None
-            ix = x1 + t * (x2 - x1)
-            iy = y1 + t * (y2 - y1)
-            return (ix, iy)
-
-        if len(out_pts) >= 3:
-            # Utility: segment intersection and on-segment checks
-            def _on_segment(a, b, p):
-                    ax = a[0] if isinstance(a, tuple) else a.x
-                    ay = a[1] if isinstance(a, tuple) else a.y
-                    bx = b[0] if isinstance(b, tuple) else b.x
-                    by = b[1] if isinstance(b, tuple) else b.y
-                    px = p[0] if isinstance(p, tuple) else p[0]
-                    py = p[1] if isinstance(p, tuple) else p[1]
-                    # Bounding box check with epsilon
-                    eps = 1e-6
-                    if px < min(ax, bx) - eps or px > max(ax, bx) + eps:
-                        return False
-                    if py < min(ay, by) - eps or py > max(ay, by) + eps:
-                        return False
-                    # Collinearity check via cross product
-                    dx1 = bx - ax
-                    dy1 = by - ay
-                    dx2 = px - ax
-                    dy2 = py - ay
-                    cross = abs(dx1 * dy2 - dy1 * dx2)
-                    return cross < 1e-6
-            
-            # Windowed search of intersections: first K vs last K segments
-            K = min(12, len(out_pts) - 1)
-            best_pair = None
-            best_dist = float('inf')
-            last_pt = out_pts[-1]
-            lx = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
-            ly = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
-            for i in range(0, K):
+    if len(out_pts) > 200 and not os.environ.get('OFFSET_SKIP_TRIM'):
+        npts = len(out_pts)
+        # DEBUG: Print pre-trim count
+        if os.environ.get('OFFSET_DEBUG'):
+            print(f"[DEBUG] Pre-trim: {npts} points")
+        # Target specific ranges: first branch ~9250-9300, second branch ~9400-9450
+        # Use narrower window around these ranges for focused detection
+        target_ranges = [
+            (max(0, 9200), min(npts, 9350)),  # First branch window
+            (max(0, 9350), min(npts, 9500))   # Second branch window
+        ]
+        best = None
+        best_gap = 0
+        
+        for range1_start, range1_end in [target_ranges[0]]:
+            for i in range(range1_start, min(range1_end, npts - 2)):
                 a1 = out_pts[i]
                 a2 = out_pts[i + 1]
-                for j in range(len(out_pts) - 2, max(len(out_pts) - K - 1, i + 2), -1):
-                    b1 = out_pts[j]
-                    b2 = out_pts[j + 1]
-                    inter = _seg_intersect(a1, a2, b1, b2)
-                    if inter is not None:
-                        # Prefer intersections nearer to the last point (closure area)
-                        ix = inter[0]
-                        iy = inter[1]
-                        dlast = ((ix - lx) ** 2 + (iy - ly) ** 2) ** 0.5
-                        if dlast < best_dist:
-                            best_dist = dlast
-                            best_pair = (i, j, inter)
-            
-            if best_pair is not None:
-                head_idx, tail_idx, inter = best_pair
-                # Trim head: if intersection lies within (head_idx, head_idx+1), start at inter
-                # Trim tail: end at inter within (tail_idx, tail_idx+1)
-                trimmed = [inter]
-                for i in range(head_idx + 1, tail_idx + 1):
-                    trimmed.append(out_pts[i])
-                trimmed.append(inter)
-                out_pts = trimmed
-                
-                # Snap first and last exactly if very close (epsilon)
-                if len(out_pts) >= 2:
-                    fx = out_pts[0][0] if isinstance(out_pts[0], tuple) else out_pts[0].x
-                    fy = out_pts[0][1] if isinstance(out_pts[0], tuple) else out_pts[0].y
-                    lx = out_pts[-1][0] if isinstance(out_pts[-1], tuple) else out_pts[-1].x
-                    ly = out_pts[-1][1] if isinstance(out_pts[-1], tuple) else out_pts[-1].y
-                    dcl = ((fx - lx)**2 + (fy - ly)**2)**0.5
-                    if dcl < 0.5:  # Small epsilon for large coordinate space
-                        # Use the first point as canonical
-                        out_pts[-1] = out_pts[0]
+                # Check against second range
+                for range2_start, range2_end in [target_ranges[1]]:
+                    for j in range(range2_start, min(range2_end, npts - 2)):
+                        if j <= i + 50:  # Skip if too close
+                            continue
+                        b1 = out_pts[j]
+                        b2 = out_pts[j + 1]
+                        inter = _seg_intersect(a1, a2, b1, b2)
+                        if inter is None:
+                            continue
+                        gap = j - i
+                        if gap > best_gap:
+                            best_gap = gap
+                            best = (i, j, inter)
+        
+        if best is not None:
+            i, j, inter = best
+            # DEBUG: Report intersection
+            if os.environ.get('OFFSET_DEBUG'):
+                print(f"[DEBUG] Found intersection at indices {i} and {j}, gap={j-i}")
+            # Trim array to the wrap-around closure
+            trimmed = [inter]
+            trimmed.extend(out_pts[i + 1:j + 1])
+            trimmed.append(inter)
+            out_pts = trimmed
     
     if len(out_pts) < 3:
         return None
@@ -2339,13 +2368,6 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
         ref_edge = _edge_len(out_pts[1], out_pts[2])
         # Angle at the first vertex
         ang = _angle_deg(out_pts[0], out_pts[1], out_pts[2])
-        # Debug: report first edges and angle to help tune thresholds
-        try:
-            print(
-                f"[offset_simple] first_edge={first_edge:.3f} ref_edge={ref_edge:.3f} angle={ang:.2f} deg"
-            )
-        except Exception:
-            pass
         # Absolute epsilon based on offset magnitude (and a minimum)
         abs_eps = max(1.0, abs(effective_offset) * 0.005)
         # Conditions to drop the leading point:
