@@ -2234,8 +2234,25 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
 
     out_pts = cleaned
 
-    # Final validation - ensure no None values
-    out_pts = [pt for pt in out_pts if pt is not None]
+    # Final validation - ensure no None values and remove duplicate consecutive points
+    clean_pts = []
+    prev_pt = None
+    for pt in out_pts:
+        if pt is None:
+            continue
+        # Check if duplicate of previous
+        if prev_pt is not None:
+            px = prev_pt[0] if isinstance(prev_pt, tuple) else prev_pt.x
+            py = prev_pt[1] if isinstance(prev_pt, tuple) else prev_pt.y
+            cx = pt[0] if isinstance(pt, tuple) else pt.x
+            cy = pt[1] if isinstance(pt, tuple) else pt.y
+            # Skip if identical to previous point (within tiny epsilon)
+            if abs(cx - px) < 1e-6 and abs(cy - py) < 1e-6:
+                continue
+        clean_pts.append(pt)
+        prev_pt = pt
+    
+    out_pts = clean_pts
     if len(out_pts) < 3:
         return None
     
@@ -2280,45 +2297,41 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
             return None
         return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
 
+    # Global self-intersection cleanup: detect large loops dynamically
+    # Scan for non-adjacent segments that intersect, indicating a wrap-around
     if len(out_pts) > 200 and not os.environ.get('OFFSET_SKIP_TRIM'):
         npts = len(out_pts)
-        # DEBUG: Print pre-trim count
         if os.environ.get('OFFSET_DEBUG'):
             print(f"[DEBUG] Pre-trim: {npts} points")
-        # Target specific ranges: first branch ~9250-9300, second branch ~9400-9450
-        # Use narrower window around these ranges for focused detection
-        target_ranges = [
-            (max(0, 9200), min(npts, 9350)),  # First branch window
-            (max(0, 9350), min(npts, 9500))   # Second branch window
-        ]
+        
+        # Dynamic detection: look for large-gap intersections across the path
+        # Use strided scan for efficiency: check every 10th point against distant points
         best = None
         best_gap = 0
+        stride = max(10, npts // 100)  # Adaptive stride based on path size
+        min_gap = max(100, npts // 10)  # Minimum separation to consider
         
-        for range1_start, range1_end in [target_ranges[0]]:
-            for i in range(range1_start, min(range1_end, npts - 2)):
-                a1 = out_pts[i]
-                a2 = out_pts[i + 1]
-                # Check against second range
-                for range2_start, range2_end in [target_ranges[1]]:
-                    for j in range(range2_start, min(range2_end, npts - 2)):
-                        if j <= i + 50:  # Skip if too close
-                            continue
-                        b1 = out_pts[j]
-                        b2 = out_pts[j + 1]
-                        inter = _seg_intersect(a1, a2, b1, b2)
-                        if inter is None:
-                            continue
-                        gap = j - i
-                        if gap > best_gap:
-                            best_gap = gap
-                            best = (i, j, inter)
+        for i in range(0, npts - 2, stride):
+            a1 = out_pts[i]
+            a2 = out_pts[i + 1]
+            # Check against distant segments
+            for j in range(i + min_gap, npts - 2, stride):
+                b1 = out_pts[j]
+                b2 = out_pts[j + 1]
+                inter = _seg_intersect(a1, a2, b1, b2)
+                if inter is None:
+                    continue
+                gap = j - i
+                if gap > best_gap:
+                    best_gap = gap
+                    best = (i, j, inter)
         
-        if best is not None:
+        # If large intersection found, trim to the loop
+        if best is not None and best_gap > min_gap:
             i, j, inter = best
-            # DEBUG: Report intersection
             if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Found intersection at indices {i} and {j}, gap={j-i}")
-            # Trim array to the wrap-around closure
+                print(f"[DEBUG] Found intersection at indices {i} and {j}, gap={best_gap}")
+            # Create closed loop from intersection through interior
             trimmed = [inter]
             trimmed.extend(out_pts[i + 1:j + 1])
             trimmed.append(inter)
@@ -2330,6 +2343,7 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     # Post-slice leading point cleanup:
     # If the first edge is extremely short or the angle at the first vertex
     # indicates a near reversal, drop the first point.
+    # For negative offsets, also check for oversized edges at closure that indicate artifacts.
     def _edge_len(a, b):
         ax = a[0] if isinstance(a, tuple) else a.x
         ay = a[1] if isinstance(a, tuple) else a.y
@@ -2361,7 +2375,44 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
             dot = 1.0
         import math
         return math.degrees(math.acos(dot))
+    
+    # For negative offsets, trim oversized edges at start/end (closure artifacts)
+    if effective_offset < 0 and len(out_pts) >= 5:
+        # Use median edge length as reference for "normal" edges
+        edge_lengths = []
+        for i in range(min(20, len(out_pts) - 1)):
+            if i < 3 or i >= len(out_pts) - 3:
+                continue  # Skip first/last 3 edges
+            edge_lengths.append(_edge_len(out_pts[i], out_pts[i + 1]))
+        
+        if edge_lengths:
+            edge_lengths.sort()
+            median_edge = edge_lengths[len(edge_lengths) // 2]
+            # Threshold: 3x median edge length (catches artifacts while preserving valid geometry)
+            max_normal_edge = max(median_edge * 3.0, abs(effective_offset) * 0.3)
+        else:
+            max_normal_edge = abs(effective_offset) * 0.5
+        
+        # Check and trim leading oversized edges
+        while len(out_pts) >= 3:
+            first_edge = _edge_len(out_pts[0], out_pts[1])
+            if first_edge > max_normal_edge:
+                out_pts = out_pts[1:]  # Drop first point
+            else:
+                break
+        
+        # Check and trim trailing oversized edges
+        while len(out_pts) >= 3:
+            last_edge = _edge_len(out_pts[-2], out_pts[-1])
+            if last_edge > max_normal_edge:
+                out_pts = out_pts[:-1]  # Drop last point
+            else:
+                break
 
+    if len(out_pts) < 3:
+        return None
+
+    # Check for remaining stub artifacts
     if len(out_pts) >= 3:
         first_edge = _edge_len(out_pts[0], out_pts[1])
         # Compute a reference edge length from the next edge
@@ -2376,6 +2427,9 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
         # - OR angle suggests near reversal (> 170°)
         if first_edge < abs_eps or (ref_edge > 0 and first_edge < ref_edge * 0.2) or ang > 170.0:
             out_pts = out_pts[1:]
+    
+    if len(out_pts) < 3:
+        return None
 
     # Build path segments with explicit start/end points
     # For a closed path, construct it as a loop without duplicating the start point
@@ -2398,14 +2452,16 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
         y_next = next_pt[1] if isinstance(next_pt, tuple) else next_pt.y
         segs.append(Line(start=Point(x_curr, y_curr), end=Point(x_next, y_next)))
     
-    # Check if last point is already close to first (cleanup created proper closure)
+    # Ensure proper closure
     last_pt = out_pts[-1]
     x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
     y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
     dist_to_first = ((x_last - x0)**2 + (y_last - y0)**2) ** 0.5
     
-    # Only add closing segment if last point is not already at first point
-    if dist_to_first > abs(effective_offset) * 0.01:
+    # Close the path if there's any non-trivial gap
+    # Use permissive threshold: 1% of offset magnitude or base_step, whichever is larger
+    close_threshold = max(abs(effective_offset) * 0.01, base_step * 0.1)
+    if dist_to_first > close_threshold:
         segs.append(Line(start=Point(x_last, y_last), end=first))
     
     return Path(*segs)
