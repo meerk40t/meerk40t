@@ -2023,7 +2023,7 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     # Generate offset points using miter joins with intersection search
     out_pts = []
     n = len(pts)
-    search_radius = 10  # How many edges to search backward/forward
+    search_radius = 3  # Reduced from 10 - only look at nearby edges to prevent distant intersections
     
     # Helper: compute tangent for a segment at start/end
     def _seg_tangent(seg, at_start=True):
@@ -2326,15 +2326,15 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
                     best_gap = gap
                     best = (i, j, inter)
         
-        # If large intersection found, trim to the loop
+        # If large intersection found, remove the self-intersecting loop
         if best is not None and best_gap > min_gap:
             i, j, inter = best
             if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Found intersection at indices {i} and {j}, gap={best_gap}")
-            # Create closed loop from intersection through interior
-            trimmed = [inter]
-            trimmed.extend(out_pts[i + 1:j + 1])
-            trimmed.append(inter)
+                print(f"[DEBUG] Found self-intersection at indices {i} and {j}, gap={best_gap}")
+            # Remove the self-intersecting portion: keep from start to i, then jump to j+1 to end
+            # This removes the loop between i and j
+            trimmed = out_pts[:i+1]  # Keep up to the first intersection point
+            trimmed.extend(out_pts[j+1:])  # Skip the self-intersecting loop
             out_pts = trimmed
     
     if len(out_pts) < 3:
@@ -2431,8 +2431,75 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     if len(out_pts) < 3:
         return None
 
+    # Compute proper closing junction before building segments
+    # Check if we need to close the path with a junction point
+    first_pt = out_pts[0]
+    last_pt = out_pts[-1]
+    x0 = first_pt[0] if isinstance(first_pt, tuple) else first_pt.x
+    y0 = first_pt[1] if isinstance(first_pt, tuple) else first_pt.y
+    x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
+    y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+    dist_to_first = ((x_last - x0)**2 + (y_last - y0)**2) ** 0.5
+    
+    # Track if we computed a closing junction
+    closing_junction = None
+    
+    close_threshold = max(abs(effective_offset) * 0.01, base_step * 0.1)
+    if dist_to_first > close_threshold:
+        # Compute proper junction intersection for closing the path
+        # We need to intersect the offset edges extending from the last and first points
+        
+        if len(out_pts) >= 3 and len(pts) >= 3:
+            # Get the original points and edges for the closing junction
+            n_pts = len(pts)
+            
+            # Last offset edge: starts at last offset point, extends along the edge 
+            # between second-to-last and last original points
+            last_orig_idx = n_pts - 1
+            prev_orig_idx = n_pts - 2
+            
+            # Direction of last edge (from prev to last original point)
+            last_edge_dir = edges[prev_orig_idx]  # edges[i] is from pts[i] to pts[i+1]
+            
+            # Start point of last offset edge: last offset point
+            offset_last_start = (x_last, y_last)
+            
+            # First offset edge: starts at first offset point, extends along the edge
+            # between first and second original points  
+            first_edge_dir = edges[0]  # edges[0] is from pts[0] to pts[1]
+            
+            # Start point of first offset edge: first offset point
+            offset_first_start = (x0, y0)
+            
+            # Find intersection of the two offset edges
+            junction = intersect_lines(offset_last_start, last_edge_dir, 
+                                     offset_first_start, first_edge_dir)
+            
+            if junction is not None:
+                # Check if junction is reasonable (miter limit)
+                dist_last = ((junction[0] - x_last)**2 + (junction[1] - y_last)**2) ** 0.5
+                dist_first = ((junction[0] - x0)**2 + (junction[1] - y0)**2) ** 0.5
+                max_miter_dist = abs(effective_offset) * miter_limit
+                
+                if dist_last <= max_miter_dist and dist_first <= max_miter_dist:
+                    # Use the junction point - replace the last point with it
+                    out_pts[-1] = junction
+                else:
+                    # Miter limit exceeded - use bevel (average of normals)
+                    # Get normals for the closing junction
+                    last_normal = normals[prev_orig_idx]
+                    first_normal = normals[0]
+                    avg_nx = (last_normal[0] + first_normal[0]) * 0.5
+                    avg_ny = (last_normal[1] + first_normal[1]) * 0.5
+                    
+                    # Bevel point at the midpoint between last and first points
+                    mid_x = (x_last + x0) * 0.5
+                    mid_y = (y_last + y0) * 0.5
+                    bevel_pt = (mid_x + avg_nx, mid_y + avg_ny)
+                    out_pts[-1] = bevel_pt  # Replace last point with bevel
+            # If no intersection found (parallel edges), the path closes naturally
+
     # Build path segments with explicit start/end points
-    # For a closed path, construct it as a loop without duplicating the start point
     first_pt = out_pts[0]
     x0 = first_pt[0] if isinstance(first_pt, tuple) else first_pt.x
     y0 = first_pt[1] if isinstance(first_pt, tuple) else first_pt.y
@@ -2440,8 +2507,7 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
     
     segs = [Move(first)]
     
-    # Create line segments forming a closed loop
-    # For n points, we create n-1 line segments (0→1, 1→2, ..., n-2→n-1)
+    # Create line segments for all consecutive points
     n = len(out_pts)
     for i in range(n - 1):
         curr_pt = out_pts[i]
@@ -2452,17 +2518,13 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
         y_next = next_pt[1] if isinstance(next_pt, tuple) else next_pt.y
         segs.append(Line(start=Point(x_curr, y_curr), end=Point(x_next, y_next)))
     
-    # Ensure proper closure
+    # Final closing segment back to start
     last_pt = out_pts[-1]
     x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
     y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
-    dist_to_first = ((x_last - x0)**2 + (y_last - y0)**2) ** 0.5
     
-    # Close the path if there's any non-trivial gap
-    # Use permissive threshold: 1% of offset magnitude or base_step, whichever is larger
-    close_threshold = max(abs(effective_offset) * 0.01, base_step * 0.1)
-    if dist_to_first > close_threshold:
-        segs.append(Line(start=Point(x_last, y_last), end=first))
+    # Direct closing segment from last point (which may be a junction) to first point
+    segs.append(Line(start=Point(x_last, y_last), end=first))
     
     return Path(*segs)
 
