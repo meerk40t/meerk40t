@@ -2305,37 +2305,98 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
             print(f"[DEBUG] Pre-trim: {npts} points")
         
         # Dynamic detection: look for large-gap intersections across the path
-        # Use strided scan for efficiency: check every 10th point against distant points
-        best = None
-        best_gap = 0
-        stride = max(10, npts // 100)  # Adaptive stride based on path size
-        min_gap = max(100, npts // 10)  # Minimum separation to consider
-        
-        for i in range(0, npts - 2, stride):
-            a1 = out_pts[i]
-            a2 = out_pts[i + 1]
-            # Check against distant segments
-            for j in range(i + min_gap, npts - 2, stride):
-                b1 = out_pts[j]
-                b2 = out_pts[j + 1]
-                inter = _seg_intersect(a1, a2, b1, b2)
-                if inter is None:
-                    continue
-                gap = j - i
-                if gap > best_gap:
-                    best_gap = gap
-                    best = (i, j, inter)
-        
-        # If large intersection found, remove the self-intersecting loop
-        if best is not None and best_gap > min_gap:
-            i, j, inter = best
-            if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Found self-intersection at indices {i} and {j}, gap={best_gap}")
-            # Remove the self-intersecting portion: keep from start to i, then jump to j+1 to end
-            # This removes the loop between i and j
-            trimmed = out_pts[:i+1]  # Keep up to the first intersection point
-            trimmed.extend(out_pts[j+1:])  # Skip the self-intersecting loop
-            out_pts = trimmed
+        # Use chunk-based spatial hashing for efficiency
+        # Iteratively remove loops until no more found
+        max_passes = 10
+        for _ in range(max_passes):
+            npts = len(out_pts)
+            if npts < 3:
+                break
+                
+            best = None
+            best_gap = 0
+            min_gap = 50  # Minimum separation to consider
+            
+            # Divide path into chunks
+            chunk_size = 50
+            chunks = []
+            for i in range(0, npts - 1, chunk_size):
+                end = min(i + chunk_size + 1, npts)
+                pts_slice = out_pts[i:end]
+                xs = [p[0] if isinstance(p, tuple) else p.x for p in pts_slice]
+                ys = [p[1] if isinstance(p, tuple) else p.y for p in pts_slice]
+                bbox = (min(xs), min(ys), max(xs), max(ys))
+                chunks.append({'bbox': bbox, 'start': i, 'end': end-1})
+
+            def _bbox_intersect(b1, b2):
+                return not (b1[2] < b2[0] or b1[0] > b2[2] or b1[3] < b2[1] or b1[1] > b2[3])
+
+            # Check chunk pairs
+            for i in range(len(chunks)):
+                c1 = chunks[i]
+                # Skip adjacent chunks to respect min_gap
+                start_j = i + max(2, min_gap // chunk_size + 1)
+                
+                for j in range(start_j, len(chunks)):
+                    c2 = chunks[j]
+                    if not _bbox_intersect(c1['bbox'], c2['bbox']):
+                        continue
+                    
+                    # Detailed check for segments in intersecting chunks
+                    for k in range(c1['start'], c1['end']):
+                        a1 = out_pts[k]
+                        a2 = out_pts[k+1]
+                        
+                        for m in range(c2['start'], c2['end']):
+                            # Ensure gap constraint
+                            if m <= k + min_gap:
+                                continue
+                                
+                            b1 = out_pts[m]
+                            b2 = out_pts[m+1]
+                            
+                            inter = _seg_intersect(a1, a2, b1, b2)
+                            if inter:
+                                gap = m - k
+                                # Ignore closure intersections (start/end meeting)
+                                if gap > npts - 50:
+                                    continue
+                                    
+                                if gap > best_gap:
+                                    best_gap = gap
+                                    best = (k, m, inter)
+            
+            # If intersection found, handle it
+            if best is not None and best_gap > min_gap:
+                i, j, inter = best
+                if os.environ.get('OFFSET_DEBUG'):
+                    print(f"[DEBUG] Found self-intersection at indices {i} and {j}, gap={best_gap}")
+                
+                # Heuristic: if the loop is larger than half the path, it's likely the main body
+                # (e.g. closure intersection). Keep the loop, discard tails.
+                # Otherwise, it's an artifact loop. Remove the loop, keep tails.
+                if best_gap > npts / 2:
+                    # Keep the loop i...j
+                    # Path: inter -> (i+1...j) -> inter
+                    # We construct it as [inter] + out_pts[i+1:j+1] + [inter]
+                    new_pts = [inter]
+                    new_pts.extend(out_pts[i+1:j+1])
+                    new_pts.append(inter)
+                    out_pts = new_pts
+                    if os.environ.get('OFFSET_DEBUG'):
+                        print(f"[DEBUG] Kept loop (main body), new len={len(out_pts)}")
+                else:
+                    # Remove the loop i...j
+                    # Path: (0...i) -> inter -> (j+1...N)
+                    new_pts = out_pts[:i+1]
+                    new_pts.append(inter)
+                    new_pts.extend(out_pts[j+1:])
+                    out_pts = new_pts
+                    if os.environ.get('OFFSET_DEBUG'):
+                        print(f"[DEBUG] Removed loop (artifact), new len={len(out_pts)}")
+            else:
+                # No more intersections
+                break
     
     if len(out_pts) < 3:
         return None
