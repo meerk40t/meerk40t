@@ -2315,7 +2315,7 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
                 
             best = None
             best_gap = 0
-            min_gap = 50  # Minimum separation to consider
+            min_gap = 2  # Minimum separation to consider (catch small loops)
             
             # Divide path into chunks
             chunk_size = 50
@@ -2334,10 +2334,8 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
             # Check chunk pairs
             for i in range(len(chunks)):
                 c1 = chunks[i]
-                # Skip adjacent chunks to respect min_gap
-                start_j = i + max(2, min_gap // chunk_size + 1)
                 
-                for j in range(start_j, len(chunks)):
+                for j in range(i, len(chunks)):
                     c2 = chunks[j]
                     if not _bbox_intersect(c1['bbox'], c2['bbox']):
                         continue
@@ -2359,7 +2357,8 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
                             if inter:
                                 gap = m - k
                                 # Ignore closure intersections (start/end meeting)
-                                if gap > npts - 50:
+                                # Adjacent segments at closure are 0 and npts-2 (gap = npts-2)
+                                if gap >= npts - 2:
                                     continue
                                     
                                 if gap > best_gap:
