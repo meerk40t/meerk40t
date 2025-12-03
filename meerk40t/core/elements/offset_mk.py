@@ -2049,6 +2049,11 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
                     # Ensure edge is at least base_step magnitude
                     if L * base_step > 1e-3:
                         edges[i] = (t_out[0] / L * base_step, t_out[1] / L * base_step)
+                        # Update normal to match new edge
+                        nx = edges[i][1]
+                        ny = -edges[i][0]
+                        scale = effective_offset / base_step
+                        normals[i] = (nx * scale, ny * scale)
             if is_end:
                 t_in = _seg_tangent(seg, at_start=False)
                 if t_in and (t_in[0]**2 + t_in[1]**2) > 1e-6:  # Require substantial tangent
@@ -2057,6 +2062,11 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
                     # Ensure edge is at least base_step magnitude
                     if L * base_step > 1e-3:
                         edges[prev_i] = (t_in[0] / L * base_step, t_in[1] / L * base_step)
+                        # Update normal to match new edge
+                        nx = edges[prev_i][1]
+                        ny = -edges[prev_i][0]
+                        scale = effective_offset / base_step
+                        normals[prev_i] = (nx * scale, ny * scale)
 
         # Search backward for a substantial incoming edge
         # Increased threshold to skip over clusters of tiny over-sampled edges
@@ -2119,8 +2129,10 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
                     cosang = max(-1.0, min(1.0, dot / (len_prev * len_next)))
                     ang = math.acos(cosang)
                     # Threshold ~60 degrees; above this, bevel is visually safer
-                    if ang > (math.pi / 3):
-                        use_bevel = True
+                    # RELAXED: For 90 degree turns, we want miter. 
+                    # Let miter_limit handle the decision.
+                    # if ang > (math.pi / 3):
+                    #    use_bevel = True
 
             if not use_bevel and dist_to_intersection <= max_miter_dist:
                 # Avoid stacking duplicates at exact junctions
@@ -2188,6 +2200,50 @@ def path_offset_simple(path, offset_value=0, interpolation=20, miter_limit=None,
         if not cleaned:
             cleaned.append(pt)
             continue
+
+        # Singularity Pruning (Swallowtail/Loop Removal)
+        # When the offset distance exceeds the local radius of curvature (especially in negative offsets
+        # of concave curves), the offset path forms a loop or "swallowtail" singularity.
+        # These manifest as sharp reversals (hairpins) where the path goes out and immediately returns.
+        # We detect and prune these by checking if the new segment backtracks sharply against the previous one.
+        while len(cleaned) >= 2:
+            cp1 = cleaned[-1]
+            cp0 = cleaned[-2]
+            
+            cx0 = cp0[0] if isinstance(cp0, tuple) else cp0.x
+            cy0 = cp0[1] if isinstance(cp0, tuple) else cp0.y
+            cx1 = cp1[0] if isinstance(cp1, tuple) else cp1.x
+            cy1 = cp1[1] if isinstance(cp1, tuple) else cp1.y
+            cx2 = pt[0] if isinstance(pt, tuple) else pt.x
+            cy2 = pt[1] if isinstance(pt, tuple) else pt.y
+            
+            cdx1, cdy1 = cx1 - cx0, cy1 - cy0
+            cdx2, cdy2 = cx2 - cx1, cy2 - cy1
+            
+            clen1_sq = cdx1*cdx1 + cdy1*cdy1
+            clen2_sq = cdx2*cdx2 + cdy2*cdy2
+            
+            if clen1_sq < 1e-9:
+                cleaned.pop()
+                continue
+            if clen2_sq < 1e-9:
+                break
+                
+            cdot = cdx1*cdx2 + cdy1*cdy2
+            ccos_angle = cdot / ((clen1_sq * clen2_sq) ** 0.5)
+            
+            # Check for sharp reversal (> 165 degrees)
+            # This indicates we have entered a singularity loop
+            if ccos_angle < -0.965:
+                # Verify it's a tight hairpin (collinear return)
+                ccross = abs(cdx1*cdy2 - cdy1*cdx2)
+                cheight = ccross / (clen1_sq ** 0.5)
+                ctol = max(1.0, abs(effective_offset) * 0.01)
+                if cheight < ctol:
+                    cleaned.pop()
+                    continue
+            break
+
         # Candidate new edge from cleaned[-1] to pt
         p1 = cleaned[-1]
         p2 = pt
