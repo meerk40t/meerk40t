@@ -53,6 +53,12 @@ from meerk40t.svgelements import (
 )
 from meerk40t.core.geomstr import Geomstr
 
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 def norm_vector(p1, p2, target_len):
     """
     Calculate normal (perpendicular) vector for line segment offset.
@@ -802,6 +808,9 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         return None
 
     import os  # For debug flags
+    # Performance optimization: reduce cleanup window for speed
+    if os.environ.get('OFFSET_FAST'):
+        cleanup_window = min(cleanup_window, 20)  # Reduce from 100 to 20 for speed
     if path is None or len(path) == 0:
         return None
 
@@ -833,20 +842,31 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 d1 = seg.derivative(0.5)
                 d2 = seg.derivative(1.0)
                 # Rough angle heuristic: if derivative changes significantly, boost samples
-                def _angle(dx, dy):
+                if HAS_NUMPY:
+                    # Vectorized angle calculation
+                    derivatives = np.array([[d0.x, d0.y], [d1.x, d1.y], [d2.x, d2.y]])
+                    angles = np.arctan2(derivatives[:, 1], derivatives[:, 0])
+                    # Normalize angle differences to [-pi, pi]
+                    angle_diffs = np.diff(angles)
+                    angle_diffs = (angle_diffs + np.pi) % (2 * np.pi) - np.pi
+                    delta1 = abs(angle_diffs[0])
+                    delta2 = abs(angle_diffs[1])
+                else:
+                    # Fallback to original implementation
+                    def _angle(dx, dy):
+                        import math
+                        return math.atan2(dy, dx)
+                    a0 = _angle(d0.x, d0.y) if d0 else 0
+                    a1 = _angle(d1.x, d1.y) if d1 else 0
+                    a2 = _angle(d2.x, d2.y) if d2 else 0
+                    # Normalize angle differences to [-pi, pi]
                     import math
-                    return math.atan2(dy, dx)
-                a0 = _angle(d0.x, d0.y) if d0 else 0
-                a1 = _angle(d1.x, d1.y) if d1 else 0
-                a2 = _angle(d2.x, d2.y) if d2 else 0
-                # Normalize angle differences to [-pi, pi]
-                import math
-                def _norm_angle(a):
-                    while a > math.pi: a -= 2*math.pi
-                    while a < -math.pi: a += 2*math.pi
-                    return a
-                delta1 = abs(_norm_angle(a1 - a0))
-                delta2 = abs(_norm_angle(a2 - a1))
+                    def _norm_angle(a):
+                        while a > math.pi: a -= 2*math.pi
+                        while a < -math.pi: a += 2*math.pi
+                        return a
+                    delta1 = abs(_norm_angle(a1 - a0))
+                    delta2 = abs(_norm_angle(a2 - a1))
                 max_delta = max(delta1, delta2)
                 # If angle change per half-segment > 0.15 rad (~8.5 deg), increase samples
                 if max_delta > 0.15:
@@ -1336,7 +1356,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
     # Global self-intersection cleanup: detect large loops dynamically
     # Scan for non-adjacent segments that intersect, indicating a wrap-around
-    if len(out_pts) > 200 and not os.environ.get('OFFSET_SKIP_TRIM'):
+    if len(out_pts) > 200 and not os.environ.get('OFFSET_SKIP_TRIM') and not os.environ.get('OFFSET_FAST'):
         npts = len(out_pts)
         if os.environ.get('OFFSET_DEBUG'):
             print(f"[DEBUG] Pre-trim: {npts} points")
