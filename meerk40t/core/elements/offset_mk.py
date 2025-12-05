@@ -720,7 +720,13 @@ def is_point_inside_subpath(subpath, point):
             poly.extend(pts[:-1])
     
     # Ray casting
-    x, y = point.x, point.y
+    try:
+        x = point.x
+        y = point.y
+    except AttributeError:
+        x = point[0]
+        y = point[1]
+        
     n = len(poly)
     inside = False
     if n == 0: return False
@@ -763,24 +769,20 @@ def offset_path(self, path, offset_value=0):
     # it needs to have the very same definition (including the class
     # reference self)
     # Radial connectors seem to have issues, so we don't use them for now...
-    print ("Offsetting path for cutcode")   
     p = path_offset(
         path,
         offset_value=offset_value,
         interpolation=500,
     )
-    print ("Offset complete")
     if p is None:
         return path
     g = Geomstr.svg(p)
     if g.index:
         # We are already at device resolution, so we need to reduce tolerance a lot
         # Standard is 25 tats, so about 1/3 of a mil
-        print ("Simplifying offset path")
         p = g.simplify(tolerance=0.1).as_path()
         p.stroke = path.stroke
         p.fill = path.fill
-    print ("Offset path ready")
     return p
 
 
@@ -795,10 +797,18 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     Semantics: Positive offset expands clockwise paths and shrinks
     counter-clockwise paths (matching full algorithm semantics).
 
+    Adaptive Interpolation:
+    - For `Line` and `Close` segments, the number of interpolation points is
+      calculated adaptively based on segment length to balance performance and
+      quality. Short segments get fewer points (down to 1), while long segments
+      get more points (up to `interpolation` limit) to ensure correct intersection
+      handling.
+    - For curves, adaptive sampling based on curvature is used if `interpolation` is 0.
+
     Args:
         path (Path): Source path (should be closed).
         offset_value (float): Requested offset distance.
-        interpolation (int): Uniform subdivision per segment (0 for adaptive).
+        interpolation (int): Max subdivision per segment (0 for adaptive).
         miter_limit (float): Max miter length factor (None=auto: 4 outward, 2.5 inward).
         cleanup_window (int): Recent edge window for self-intersection checks (default 100).
 
@@ -806,16 +816,77 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         Path | None: Offset path or None if degenerate.
     """
     try:
-        from meerk40t.svgelements import Path, Move, Line, Point
+        from meerk40t.svgelements import Path, Move, Line, Point, Close
     except Exception:
         return None
 
-    import os  # For debug flags
-    # Performance optimization: reduce cleanup window for speed
-    if os.environ.get('OFFSET_FAST'):
-        cleanup_window = min(cleanup_window, 20)  # Reduce from 100 to 20 for speed
     if path is None or len(path) == 0:
         return None
+
+    # Handle multiple subpaths
+    try:
+        if hasattr(path, "as_subpaths"):
+            subpaths = list(path.as_subpaths())
+        else:
+            subpaths = [path]
+
+        if len(subpaths) > 1:
+            total_path = Path()
+            for i, sub in enumerate(subpaths):
+                # Find a sample point for containment check
+                sample_pt = None
+                if len(sub) > 0:
+                    try:
+                        for seg in sub:
+                            if isinstance(seg, Move):
+                                continue
+                            if hasattr(seg, 'start') and seg.start is not None:
+                                sample_pt = seg.start
+                                break
+                    except Exception:
+                        pass
+                
+                if sample_pt is None:
+                    # Try using end point of first segment (e.g. Move)
+                    try:
+                        if len(sub) > 0 and hasattr(sub[0], 'end'):
+                            sample_pt = sub[0].end
+                    except Exception:
+                        pass
+
+                if sample_pt is None:
+                    continue
+                    
+                depth = 0
+                for j, other in enumerate(subpaths):
+                    if i == j:
+                        continue
+                    # Fast bbox check
+                    try:
+                        bb_other = other.bbox()
+                        bb_sub = sub.bbox()
+                        if bb_other and bb_sub:
+                            if (bb_sub[0] < bb_other[0] or bb_sub[2] > bb_other[2] or
+                                bb_sub[1] < bb_other[1] or bb_sub[3] > bb_other[3]):
+                                continue
+                    except Exception:
+                        pass
+                        
+                    if is_point_inside_subpath(other, sample_pt):
+                        depth += 1
+                
+                # Even depth = Body (keep sign), Odd depth = Hole (invert sign)
+                # This ensures holes shrink when bodies expand (Kerf logic)
+                factor = 1 if (depth % 2 == 0) else -1
+                
+                # Recursively offset each subpath
+                off_sub = path_offset(sub, offset_value * factor, interpolation, miter_limit, cleanup_window)
+                if off_sub:
+                    total_path += off_sub
+            return total_path
+    except Exception:
+        # Fallback if subpath iteration fails
+        pass
 
     # Adaptive sampling helpers
     def _seg_length(seg):
@@ -838,7 +909,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         # Curvature-based refinement: sample more densely for curves
         k = int(max(4, min(max_samples, L / base_step)))  # Minimum 4 samples per segment
         # If segment has curvature (arc/quad/cubic), use angle-based splitting heuristic
-        if hasattr(seg, 'point') and hasattr(seg, 'derivative'):
+        # Skip for Line/Close segments as they have no curvature
+        if not isinstance(seg, (Line, Close)) and hasattr(seg, 'point') and hasattr(seg, 'derivative'):
             try:
                 # Sample at thirds and check angle change
                 d0 = seg.derivative(0.0)
@@ -886,6 +958,20 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         if s is not None:
             points.append(s)
             
+        # Optimization for Line/Close segments: simple linear interpolation
+        if isinstance(seg, (Line, Close)) and k > 1:
+            s_x, s_y = s.x, s.y
+            e = getattr(seg, "end", None)
+            if e is not None:
+                e_x, e_y = e.x, e.y
+                dx = e_x - s_x
+                dy = e_y - s_y
+                for i in range(1, k):
+                    t = i / k
+                    points.append(Point(s_x + t * dx, s_y + t * dy))
+                points.append(e)
+                return points
+
         # Try vectorized sampling first
         if hasattr(seg, "npoint") and k > 1:
             try:
@@ -907,8 +993,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 return points
             except Exception as e:
                 # Fallback to iterative method if npoint fails
-                if os.environ.get('OFFSET_DEBUG'):
-                    print(f"[DEBUG] npoint failed: {e}")
                 pass
 
         if hasattr(seg, "point") and k > 1:
@@ -940,23 +1024,33 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     seg_boundary_map = {}  # index -> (seg_idx, is_start, is_end, seg)
     
     for seg_idx, seg in enumerate(path):
+        # Skip Move segments (they are just positioning for subpaths)
+        if isinstance(seg, Move):
+            continue
+
         # Skip zero-length segments (degenerate) and invalid segments
         if hasattr(seg, 'start') and hasattr(seg, 'end') and seg.start is not None and seg.end is not None:
             dx = seg.end.x - seg.start.x
             dy = seg.end.y - seg.start.y
             seg_len = (dx * dx + dy * dy) ** 0.5
             if seg_len < 1e-6:  # Threshold for considering segment degenerate
-                if os.environ.get('OFFSET_DEBUG'):
-                    print(f"[DEBUG] Skipping zero-length segment {seg_idx}: length={seg_len}")
                 continue
         elif not hasattr(seg, 'start') or not hasattr(seg, 'end') or seg.start is None or seg.end is None:
             # Skip invalid segments
-            if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Skipping invalid segment {seg_idx}: start={getattr(seg, 'start', None)}, end={getattr(seg, 'end', None)}")
             continue
         
         if interpolation and interpolation > 1:
-            k = interpolation
+            if isinstance(seg, (Line, Close)):
+                # Adaptive interpolation for lines to avoid over-sampling small segments
+                # while maintaining density for long segments.
+                # Use base_step/10 as target resolution to maintain quality without excessive points
+                L = _seg_length(seg)
+                # Ensure at least 1 point, cap at interpolation
+                # base_step is at least 5.0, so base_step/10 is at least 0.5
+                step = max(0.1, base_step / 10.0)
+                k = int(min(interpolation, max(1, L / step)))
+            else:
+                k = interpolation
         else:
             k = _adaptive_samples(seg, base_step)
         sampled = _sample_segment(seg, k)
@@ -1319,17 +1413,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     threshold_multiplier = 10.0 if len(out_pts) > 1000 else (3.0 if abs(effective_offset) > 1000 else 5.0)
     # For negative offsets, disable edge length filtering as it can remove legitimate geometry
     if effective_offset < 0:
-        print(f"[DEBUG] Negative offset detected: {effective_offset}")
         threshold_multiplier = float('inf')  # Disable filtering
-        print(f"[DEBUG] Set threshold_multiplier to {threshold_multiplier}")
-        if os.environ.get('OFFSET_DEBUG'):
-            print(f"[DEBUG] Disabled edge filtering for negative offset")
-    
-    if os.environ.get('OFFSET_DEBUG'):
-        print(f"[DEBUG] max_spike_len={max_spike_len}, threshold_multiplier={threshold_multiplier}, threshold={max_spike_len * threshold_multiplier}")
-    
-    if os.environ.get('OFFSET_DEBUG'):
-        print(f"[DEBUG] Fast cleanup: starting with {len(out_pts)} points, window={window}")
     
     points_removed = 0
     for pt in out_pts:
@@ -1381,8 +1465,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     cleaned.pop()
                     if cleaned_bboxes: cleaned_bboxes.pop()
                     points_removed += 1
-                    if os.environ.get('OFFSET_DEBUG'):
-                        print(f"[DEBUG] Removed singularity point (hairpin), total removed: {points_removed}")
                     continue
             break
 
@@ -1400,8 +1482,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         # Skip long edges that are likely spikes
         if edge_len > max_spike_len * threshold_multiplier:
             points_removed += 1
-            if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Skipped long edge ({edge_len:.1f} > {max_spike_len * threshold_multiplier:.1f}), total removed: {points_removed}")
             continue
         
         cb1 = _bbox(p1, p2)
@@ -1469,19 +1549,13 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     
     # Global self-intersection cleanup: detect large loops dynamically
     # Scan for non-adjacent segments that intersect, indicating a wrap-around
-    if len(out_pts) > 200 and not os.environ.get('OFFSET_SKIP_TRIM') and not os.environ.get('OFFSET_FAST'):
+    if len(out_pts) > 200:
         npts = len(out_pts)
-        if os.environ.get('OFFSET_DEBUG'):
-            print(f"[DEBUG] Pre-trim: {npts} points")
-            print(f"[DEBUG] Effective offset: {effective_offset}")
         
     # Global self-intersection cleanup: detect large loops dynamically
     # Scan for non-adjacent segments that intersect, indicating a wrap-around
-    if len(out_pts) > 5000 and not os.environ.get('OFFSET_SKIP_TRIM') and not os.environ.get('OFFSET_FAST'):
+    if len(out_pts) > 5000:
         npts = len(out_pts)
-        if os.environ.get('OFFSET_DEBUG'):
-            print(f"[DEBUG] Pre-trim: {npts} points")
-            print(f"[DEBUG] Effective offset: {effective_offset}")
 
         # Dynamic detection: look for large-gap intersections across the path
         # Use spatial indexing for efficiency
@@ -1526,15 +1600,9 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 bbox = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
                 spatial_index.insert(k, bbox)
 
-            if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Pass {pass_num+1}: Built spatial index with {len(spatial_index.segments)} segments")
-
             # Find intersections using spatial index
             intersections_found = 0
             total_segment_checks = 0
-
-            if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Pass {pass_num+1}: Starting intersection detection")
 
             # Check each segment against potentially intersecting segments
             for k in range(npts - 1):  # Check ALL segments, not just first 100
@@ -1551,9 +1619,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 # Query spatial index for potentially intersecting segments
                 candidates = spatial_index.query(query_bbox)
 
-                if os.environ.get('OFFSET_DEBUG') and k < 5:  # Debug first few
-                    print(f"[DEBUG] Segment {k}: bbox {query_bbox}, found {len(candidates)} candidates")
-
                 for m in candidates:
                     # Ensure gap constraint and avoid self-checks
                     if m <= k + min_gap or m >= npts - 1:
@@ -1566,8 +1631,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     inter = _segments_intersect(a1, a2, b1, b2)
                     if inter:
                         intersections_found += 1
-                        if os.environ.get('OFFSET_DEBUG'):
-                            print(f"[DEBUG] Found intersection at ({inter[0]:.1f},{inter[1]:.1f}) between segments {k}-{k+1} and {m}-{m+1}")
                         gap = m - k
                         # Ignore closure intersections (start/end meeting)
                         # Adjacent segments at closure are 0 and npts-2 (gap = npts-2)
@@ -1578,12 +1641,9 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                             best_gap = gap
                             best = (k, m, inter)
 
-            if os.environ.get('OFFSET_DEBUG'):
-                print(f"[DEBUG] Pass {pass_num+1}: total_segment_checks={total_segment_checks}, intersections_found={intersections_found}")            # If intersection found, handle it
+            # If intersection found, handle it
             if best is not None and best_gap > min_gap:
                 i, j, inter = best
-                if os.environ.get('OFFSET_DEBUG'):
-                    print(f"[DEBUG] Found self-intersection at indices {i} and {j}, gap={best_gap}")
                 
                 # For negative offsets, use area-based heuristic instead of size-based
                 if effective_offset < 0:
@@ -1610,16 +1670,12 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                         new_pts.extend(out_pts[i+1:j+1])
                         new_pts.append(inter)
                         out_pts = new_pts
-                        if os.environ.get('OFFSET_DEBUG'):
-                            print(f"[DEBUG] Kept loop (larger area: {loop1_area:.1f} vs {loop2_area:.1f}), new len={len(out_pts)}")
                     else:
                         # Remove the loop i...j
                         new_pts = out_pts[:i+1]
                         new_pts.append(inter)
                         new_pts.extend(out_pts[j+1:])
                         out_pts = new_pts
-                        if os.environ.get('OFFSET_DEBUG'):
-                            print(f"[DEBUG] Removed loop (smaller area: {loop1_area:.1f} vs {loop2_area:.1f}), new len={len(out_pts)}")
                 else:
                     # Original heuristic for positive offsets
                     # Heuristic: if the loop is larger than half the path, it's likely the main body
@@ -1633,8 +1689,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                         new_pts.extend(out_pts[i+1:j+1])
                         new_pts.append(inter)
                         out_pts = new_pts
-                        if os.environ.get('OFFSET_DEBUG'):
-                            print(f"[DEBUG] Kept loop (main body), new len={len(out_pts)}")
                     else:
                         # Remove the loop i...j
                         # Path: (0...i) -> inter -> (j+1...N)
@@ -1642,8 +1696,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                         new_pts.append(inter)
                         new_pts.extend(out_pts[j+1:])
                         out_pts = new_pts
-                        if os.environ.get('OFFSET_DEBUG'):
-                            print(f"[DEBUG] Removed loop (artifact), new len={len(out_pts)}")
             else:
                 # No more intersections
                 break
@@ -1812,9 +1864,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
     # Special area-based cleanup for negative offsets (applied even without intersections)
     if effective_offset < 0 and len(out_pts) > 1000:  # Increased threshold to avoid overhead on normal paths  # Increased threshold to avoid overhead on small paths
-        if os.environ.get('OFFSET_DEBUG'):
-            print(f"[DEBUG] Applying negative offset area-based cleanup, starting with {len(out_pts)} points")
-
         # For negative offsets, scan for potential small loops and remove them
         # Use spatial indexing for efficiency
         class PointIndex:
@@ -1873,8 +1922,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 if len(loop_pts) >= 5:
                     loop_area = abs(_poly_area(loop_pts))
                     if loop_area < max_area:
-                        if os.environ.get('OFFSET_DEBUG'):
-                            print(f"[DEBUG] Removing small negative offset loop from {i} to {j}, area={loop_area:.1f}, threshold={max_area:.1f}")
                         # Remove the loop points, connect i directly to j
                         out_pts = out_pts[:i+1] + out_pts[j:]
                         removed_count += 1
@@ -1882,9 +1929,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                         continue
 
             i += 1
-
-        if os.environ.get('OFFSET_DEBUG'):
-            print(f"[DEBUG] Negative offset area cleanup complete: {len(out_pts)} points remaining (removed {removed_count} loops)")
 
     # Build path segments with explicit start/end points
     first_pt = out_pts[0]
@@ -1934,7 +1978,7 @@ def init_commands(kernel):
     # Notabene: this may be overloaded by another routine (like from pyclipr)
     # at a later time.
     from meerk40t.core.node.op_cut import CutOpNode
-    print ("Changing CutOpNode.offset_routine to internal")
+    # print ("Changing CutOpNode.offset_routine to internal")
     CutOpNode.offset_routine = offset_path
     kernel.add_capability("offset_routine", "Internal")
 
