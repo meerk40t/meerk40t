@@ -763,21 +763,24 @@ def offset_path(self, path, offset_value=0):
     # it needs to have the very same definition (including the class
     # reference self)
     # Radial connectors seem to have issues, so we don't use them for now...
-        
+    print ("Offsetting path for cutcode")   
     p = path_offset(
         path,
         offset_value=offset_value,
         interpolation=500,
     )
+    print ("Offset complete")
     if p is None:
         return path
     g = Geomstr.svg(p)
     if g.index:
         # We are already at device resolution, so we need to reduce tolerance a lot
         # Standard is 25 tats, so about 1/3 of a mil
+        print ("Simplifying offset path")
         p = g.simplify(tolerance=0.1).as_path()
         p.stroke = path.stroke
         p.fill = path.fill
+    print ("Offset path ready")
     return p
 
 
@@ -882,6 +885,32 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         s = getattr(seg, "start", None)
         if s is not None:
             points.append(s)
+            
+        # Try vectorized sampling first
+        if hasattr(seg, "npoint") and k > 1:
+            try:
+                # Generate t values for internal points
+                ts = [i / k for i in range(1, k)]
+                if ts:
+                    pts_array = seg.npoint(ts)
+                    # Check if result is numpy array
+                    if hasattr(pts_array, 'shape'): # Numpy array
+                        for i in range(len(pts_array)):
+                            points.append(Point(pts_array[i][0], pts_array[i][1]))
+                    else: # List of points
+                        points.extend(pts_array)
+                
+                # Always include the endpoint
+                e = getattr(seg, "end", None)
+                if e is not None:
+                    points.append(e)
+                return points
+            except Exception as e:
+                # Fallback to iterative method if npoint fails
+                if os.environ.get('OFFSET_DEBUG'):
+                    print(f"[DEBUG] npoint failed: {e}")
+                pass
+
         if hasattr(seg, "point") and k > 1:
             for i in range(1, k):
                 t = i / k
@@ -911,9 +940,19 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     seg_boundary_map = {}  # index -> (seg_idx, is_start, is_end, seg)
     
     for seg_idx, seg in enumerate(path):
-        # Skip zero-length segments (degenerate)
-        seg_len = _seg_length(seg)
-        if seg_len < 1e-6:  # Threshold for considering segment degenerate
+        # Skip zero-length segments (degenerate) and invalid segments
+        if hasattr(seg, 'start') and hasattr(seg, 'end') and seg.start is not None and seg.end is not None:
+            dx = seg.end.x - seg.start.x
+            dy = seg.end.y - seg.start.y
+            seg_len = (dx * dx + dy * dy) ** 0.5
+            if seg_len < 1e-6:  # Threshold for considering segment degenerate
+                if os.environ.get('OFFSET_DEBUG'):
+                    print(f"[DEBUG] Skipping zero-length segment {seg_idx}: length={seg_len}")
+                continue
+        elif not hasattr(seg, 'start') or not hasattr(seg, 'end') or seg.start is None or seg.end is None:
+            # Skip invalid segments
+            if os.environ.get('OFFSET_DEBUG'):
+                print(f"[DEBUG] Skipping invalid segment {seg_idx}: start={getattr(seg, 'start', None)}, end={getattr(seg, 'end', None)}")
             continue
         
         if interpolation and interpolation > 1:
@@ -972,19 +1011,74 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             refined.append(p0)
             dx = p1.x - p0.x
             dy = p1.y - p0.y
-            for j in range(1, interpolation):
-                t = j / interpolation
-                refined.append(p0 + (dx * t, dy * t))
+            segment_length = (dx * dx + dy * dy) ** 0.5
+            # Only interpolate if segment is longer than base_step
+            if segment_length > base_step:
+                # Limit interpolation based on segment length to prevent excessive points
+                effective_interp = min(interpolation, max(2, int(segment_length / base_step)))
+                for j in range(1, effective_interp):
+                    t = j / effective_interp
+                    refined.append(p0 + (dx * t, dy * t))
         refined.append(pts[-1])
         pts = refined
 
     # Determine orientation directly from points (shoelace) to avoid segment start edge cases.
     def _poly_clockwise(points):
-        total = points[-1].x * points[0].y - points[0].x * points[-1].y
-        for i in range(len(points) - 1):
-            total += points[i].x * points[i + 1].y - points[i + 1].x * points[i].y
+        # Handle both Point objects and tuples
+        def get_xy(p):
+            if hasattr(p, 'x') and hasattr(p, 'y'):
+                return p.x, p.y
+            else:
+                return p[0], p[1]
+        
+        total = 0.0
+        for i in range(len(points)):
+            j = (i + 1) % len(points)
+            x1, y1 = get_xy(points[i])
+            x2, y2 = get_xy(points[j])
+            total += x1 * y2 - x2 * y1
         return total > 0
-    cw = _poly_clockwise(pts)
+    
+    def _poly_area(points):
+        """Calculate polygon area using shoelace formula."""
+        if len(points) < 3:
+            return 0.0
+        # Handle both Point objects and tuples
+        def get_xy(p):
+            if hasattr(p, 'x') and hasattr(p, 'y'):
+                return p.x, p.y
+            else:
+                return p[0], p[1]
+        
+        total = 0.0
+        for i in range(len(points)):
+            j = (i + 1) % len(points)
+            x1, y1 = get_xy(points[i])
+            x2, y2 = get_xy(points[j])
+            total += x1 * y2 - x2 * y1
+        return total / 2.0
+    
+    # Vectorized implementation if numpy is available
+    pts_np = None
+    if HAS_NUMPY and len(pts) > 0:
+        try:
+            # Fast conversion if possible
+            if hasattr(pts[0], 'x'):
+                pts_np = np.array([(p.x, p.y) for p in pts], dtype=float)
+            else:
+                pts_np = np.array(pts, dtype=float)
+        except Exception:
+            pts_np = None
+
+    if pts_np is not None:
+        # Vectorized shoelace
+        x = pts_np[:, 0]
+        y = pts_np[:, 1]
+        total = np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)
+        cw = total > 0
+    else:
+        cw = _poly_clockwise(pts)
+
     effective_offset = offset_value if cw else -offset_value
     if effective_offset == 0:
         return Path(path)  # Shallow copy; no change.
@@ -994,22 +1088,42 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         miter_limit = 2.5 if effective_offset < 0 else 4.0
 
     # Edge normals (SVG Y-down left-hand normal => outward for CW)
-    edges = []
-    normals = []
-    for i in range(len(pts)):
-        p0 = pts[i]
-        p1 = pts[(i + 1) % len(pts)]  # Wrap around to close the polygon
-        dx = p1.x - p0.x
-        dy = p1.y - p0.y
-        edges.append((dx, dy))
-        nx = dy
-        ny = -dx
-        length = (nx * nx + ny * ny) ** 0.5
-        if length != 0:
-            scale = effective_offset / length
-            nx *= scale
-            ny *= scale
-        normals.append((nx, ny))
+    if pts_np is not None:
+        p0 = pts_np
+        p1 = np.roll(pts_np, -1, axis=0)
+        edges_np = p1 - p0
+        # Normal: (dy, -dx)
+        normals_np = np.empty_like(edges_np)
+        normals_np[:, 0] = edges_np[:, 1]
+        normals_np[:, 1] = -edges_np[:, 0]
+        
+        lengths = np.hypot(normals_np[:, 0], normals_np[:, 1])
+        # Avoid division by zero
+        mask = lengths > 1e-9
+        scale = np.zeros_like(lengths)
+        scale[mask] = effective_offset / lengths[mask]
+        
+        normals_np *= scale[:, np.newaxis]
+        
+        edges = edges_np
+        normals = normals_np
+    else:
+        edges = []
+        normals = []
+        for i in range(len(pts)):
+            p0 = pts[i]
+            p1 = pts[(i + 1) % len(pts)]  # Wrap around to close the polygon
+            dx = p1.x - p0.x
+            dy = p1.y - p0.y
+            edges.append((dx, dy))
+            nx = dy
+            ny = -dx
+            length = (nx * nx + ny * ny) ** 0.5
+            if length != 0:
+                scale = effective_offset / length
+                nx *= scale
+                ny *= scale
+            normals.append((nx, ny))
 
     def intersect_lines(p, d, q, e):
         """Find intersection of two lines: p+t*d and q+u*e"""
@@ -1170,17 +1284,13 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     # Stack-based approach: when the new edge intersects a prior edge (non-adjacent),
     # truncate the polygon to the intersection point to remove the loop.
     def _bbox(a, b):
-        x0 = a[0] if isinstance(a, tuple) else a.x
-        y0 = a[1] if isinstance(a, tuple) else a.y
-        x1 = b[0] if isinstance(b, tuple) else b.x
-        y1 = b[1] if isinstance(b, tuple) else b.y
-        return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+        return (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
 
     def _segments_intersect(p1, p2, q1, q2):
-        x1, y1 = (p1[0], p1[1]) if isinstance(p1, tuple) else (p1.x, p1.y)
-        x2, y2 = (p2[0], p2[1]) if isinstance(p2, tuple) else (p2.x, p2.y)
-        x3, y3 = (q1[0], q1[1]) if isinstance(q1, tuple) else (q1.x, q1.y)
-        x4, y4 = (q2[0], q2[1]) if isinstance(q2, tuple) else (q2.x, q2.y)
+        x1, y1 = p1
+        x2, y2 = p2
+        x3, y3 = q1
+        x4, y4 = q2
         den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
         if abs(den) < 1e-9:
             return None
@@ -1191,8 +1301,37 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
 
     cleaned = []
-    window = cleanup_window  # check last N edges for performance
+    cleaned_bboxes = []  # Cache bboxes for segments in cleaned
+    
+    # Adaptive window sizing: smaller window for complex shapes to maintain performance
+    # Window should be large enough to catch local loops but not so large as to create O(n²) bottlenecks
+    base_window = min(cleanup_window, 50)  # Cap base window size
+    # For very complex shapes, use smaller window to maintain performance
+    if len(out_pts) > 2000:
+        window = max(10, base_window // 4)  # Very small window for huge shapes
+    elif len(out_pts) > 1000:
+        window = max(15, base_window // 2)  # Smaller window for large shapes
+    else:
+        window = base_window  # Normal window for smaller shapes
     max_spike_len = abs(effective_offset) * 2.0  # reject spikes longer than 2x offset
+    # For complex shapes with many points, be more lenient with edge length filtering
+    # Use a higher threshold to avoid removing legitimate geometry
+    threshold_multiplier = 10.0 if len(out_pts) > 1000 else (3.0 if abs(effective_offset) > 1000 else 5.0)
+    # For negative offsets, disable edge length filtering as it can remove legitimate geometry
+    if effective_offset < 0:
+        print(f"[DEBUG] Negative offset detected: {effective_offset}")
+        threshold_multiplier = float('inf')  # Disable filtering
+        print(f"[DEBUG] Set threshold_multiplier to {threshold_multiplier}")
+        if os.environ.get('OFFSET_DEBUG'):
+            print(f"[DEBUG] Disabled edge filtering for negative offset")
+    
+    if os.environ.get('OFFSET_DEBUG'):
+        print(f"[DEBUG] max_spike_len={max_spike_len}, threshold_multiplier={threshold_multiplier}, threshold={max_spike_len * threshold_multiplier}")
+    
+    if os.environ.get('OFFSET_DEBUG'):
+        print(f"[DEBUG] Fast cleanup: starting with {len(out_pts)} points, window={window}")
+    
+    points_removed = 0
     for pt in out_pts:
         # Skip None points
         if pt is None:
@@ -1211,12 +1350,9 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             cp1 = cleaned[-1]
             cp0 = cleaned[-2]
             
-            cx0 = cp0[0] if isinstance(cp0, tuple) else cp0.x
-            cy0 = cp0[1] if isinstance(cp0, tuple) else cp0.y
-            cx1 = cp1[0] if isinstance(cp1, tuple) else cp1.x
-            cy1 = cp1[1] if isinstance(cp1, tuple) else cp1.y
-            cx2 = pt[0] if isinstance(pt, tuple) else pt.x
-            cy2 = pt[1] if isinstance(pt, tuple) else pt.y
+            cx0, cy0 = cp0
+            cx1, cy1 = cp1
+            cx2, cy2 = pt
             
             cdx1, cdy1 = cx1 - cx0, cy1 - cy0
             cdx2, cdy2 = cx2 - cx1, cy2 - cy1
@@ -1226,6 +1362,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             
             if clen1_sq < 1e-9:
                 cleaned.pop()
+                if cleaned_bboxes: cleaned_bboxes.pop()
                 continue
             if clen2_sq < 1e-9:
                 break
@@ -1242,6 +1379,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 ctol = max(1.0, abs(effective_offset) * 0.01)
                 if cheight < ctol:
                     cleaned.pop()
+                    if cleaned_bboxes: cleaned_bboxes.pop()
+                    points_removed += 1
+                    if os.environ.get('OFFSET_DEBUG'):
+                        print(f"[DEBUG] Removed singularity point (hairpin), total removed: {points_removed}")
                     continue
             break
 
@@ -1250,14 +1391,17 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         p2 = pt
         
         # Validate edge length - reject edges much longer than offset distance
-        dx = (p2[0] if isinstance(p2, tuple) else p2.x) - (p1[0] if isinstance(p1, tuple) else p1.x)
-        dy = (p2[1] if isinstance(p2, tuple) else p2.y) - (p1[1] if isinstance(p1, tuple) else p1.y)
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
         edge_len = (dx * dx + dy * dy) ** 0.5
         
         # For large offsets, be more aggressive: skip edges > 3x offset
         # For small offsets, use 5x to avoid over-filtering
-        threshold_multiplier = 3.0 if abs(effective_offset) > 1000 else 5.0
+        # Skip long edges that are likely spikes
         if edge_len > max_spike_len * threshold_multiplier:
+            points_removed += 1
+            if os.environ.get('OFFSET_DEBUG'):
+                print(f"[DEBUG] Skipped long edge ({edge_len:.1f} > {max_spike_len * threshold_multiplier:.1f}), total removed: {points_removed}")
             continue
         
         cb1 = _bbox(p1, p2)
@@ -1265,29 +1409,39 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         truncated = False
         start_idx = max(0, len(cleaned) - window)
         for j in range(start_idx, len(cleaned) - 2):
-            q1 = cleaned[j]
-            q2 = cleaned[j + 1]
-            # Skip adjacent edge check
-            if q2 == p1 or q1 == p1:
-                continue
-            qb = _bbox(q1, q2)
+            # Use cached bbox if available
+            if j < len(cleaned_bboxes):
+                qb = cleaned_bboxes[j]
+            else:
+                q1 = cleaned[j]
+                q2 = cleaned[j + 1]
+                qb = _bbox(q1, q2)
+                
             # Coarse BB test
             if cb1[0] > qb[2] or cb1[2] < qb[0] or cb1[1] > qb[3] or cb1[3] < qb[1]:
                 continue
+            
+            q1 = cleaned[j]
+            q2 = cleaned[j + 1]
             inter = _segments_intersect(p1, p2, q1, q2)
             if inter is not None:
                 # Validate intersection doesn't create extreme jump
                 ix, iy = inter
-                dist_to_inter = ((ix - (p1[0] if isinstance(p1, tuple) else p1.x))**2 + 
-                                (iy - (p1[1] if isinstance(p1, tuple) else p1.y))**2) ** 0.5
+                dist_to_inter = ((ix - p1[0])**2 + (iy - p1[1])**2) ** 0.5
                 if dist_to_inter < max_spike_len * 2.0:
                     # Truncate cleaned to j+1 and replace endpoint with intersection
                     cleaned = cleaned[: j + 1]
                     cleaned.append(inter)
+                    # Truncate bboxes to j and add new segment bbox
+                    cleaned_bboxes = cleaned_bboxes[:j]
+                    if len(cleaned) >= 2:
+                        cleaned_bboxes.append(_bbox(cleaned[-2], cleaned[-1]))
                     truncated = True
                     break
         if not truncated:
             cleaned.append(pt)
+            if len(cleaned) >= 2:
+                cleaned_bboxes.append(_bbox(cleaned[-2], cleaned[-1]))
 
     out_pts = cleaned
 
@@ -1313,143 +1467,183 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     if len(out_pts) < 3:
         return None
     
-    # Segment intersection helper (used for self-intersection detection)
-    def _seg_intersect(p1, p2, q1, q2):
-        x1 = p1[0] if isinstance(p1, tuple) else p1.x
-        y1 = p1[1] if isinstance(p1, tuple) else p1.y
-        x2 = p2[0] if isinstance(p2, tuple) else p2.x
-        y2 = p2[1] if isinstance(p2, tuple) else p2.y
-        x3 = q1[0] if isinstance(q1, tuple) else q1.x
-        y3 = q1[1] if isinstance(q1, tuple) else q1.y
-        x4 = q2[0] if isinstance(q2, tuple) else q2.x
-        y4 = q2[1] if isinstance(q2, tuple) else q2.y
-        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-        if abs(den) < 1e-9:
-            return None
-        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
-        u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
-        if t < 0 or t > 1 or u < 0 or u > 1:
-            return None
-        ix = x1 + t * (x2 - x1)
-        iy = y1 + t * (y2 - y1)
-        return (ix, iy)
-    
-    # Global closure trimming: detect mid-array self-intersection forming wrap-around
-    # Efficient strided scan across far-apart segment pairs; trim to intersection.
-    def _seg_intersect(p1, p2, q1, q2):
-        x1 = p1[0] if isinstance(p1, tuple) else p1.x
-        y1 = p1[1] if isinstance(p1, tuple) else p1.y
-        x2 = p2[0] if isinstance(p2, tuple) else p2.x
-        y2 = p2[1] if isinstance(p2, tuple) else p2.y
-        x3 = q1[0] if isinstance(q1, tuple) else q1.x
-        y3 = q1[1] if isinstance(q1, tuple) else q1.y
-        x4 = q2[0] if isinstance(q2, tuple) else q2.x
-        y4 = q2[1] if isinstance(q2, tuple) else q2.y
-        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-        if abs(den) < 1e-9:
-            return None
-        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
-        u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den
-        if t < 0 or t > 1 or u < 0 or u > 1:
-            return None
-        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
-
     # Global self-intersection cleanup: detect large loops dynamically
     # Scan for non-adjacent segments that intersect, indicating a wrap-around
     if len(out_pts) > 200 and not os.environ.get('OFFSET_SKIP_TRIM') and not os.environ.get('OFFSET_FAST'):
         npts = len(out_pts)
         if os.environ.get('OFFSET_DEBUG'):
             print(f"[DEBUG] Pre-trim: {npts} points")
+            print(f"[DEBUG] Effective offset: {effective_offset}")
         
+    # Global self-intersection cleanup: detect large loops dynamically
+    # Scan for non-adjacent segments that intersect, indicating a wrap-around
+    if len(out_pts) > 5000 and not os.environ.get('OFFSET_SKIP_TRIM') and not os.environ.get('OFFSET_FAST'):
+        npts = len(out_pts)
+        if os.environ.get('OFFSET_DEBUG'):
+            print(f"[DEBUG] Pre-trim: {npts} points")
+            print(f"[DEBUG] Effective offset: {effective_offset}")
+
         # Dynamic detection: look for large-gap intersections across the path
-        # Use chunk-based spatial hashing for efficiency
+        # Use spatial indexing for efficiency
         # Iteratively remove loops until no more found
         max_passes = 10
-        for _ in range(max_passes):
+        for pass_num in range(max_passes):
             npts = len(out_pts)
             if npts < 3:
                 break
-                
+
             best = None
             best_gap = 0
             min_gap = 2  # Minimum separation to consider (catch small loops)
-            
-            # Divide path into chunks
-            chunk_size = 50
-            chunks = []
-            for i in range(0, npts - 1, chunk_size):
-                end = min(i + chunk_size + 1, npts)
-                pts_slice = out_pts[i:end]
-                xs = [p[0] if isinstance(p, tuple) else p.x for p in pts_slice]
-                ys = [p[1] if isinstance(p, tuple) else p.y for p in pts_slice]
-                bbox = (min(xs), min(ys), max(xs), max(ys))
-                chunks.append({'bbox': bbox, 'start': i, 'end': end-1})
 
-            def _bbox_intersect(b1, b2):
-                return not (b1[2] < b2[0] or b1[0] > b2[2] or b1[3] < b2[1] or b1[1] > b2[3])
+            # Build spatial index of segments
+            class SpatialIndex:
+                def __init__(self):
+                    self.segments = []
 
-            # Check chunk pairs
-            for i in range(len(chunks)):
-                c1 = chunks[i]
-                
-                for j in range(i, len(chunks)):
-                    c2 = chunks[j]
-                    if not _bbox_intersect(c1['bbox'], c2['bbox']):
+                def insert(self, idx, bbox):
+                    self.segments.append((idx, bbox))
+
+                def query(self, bbox):
+                    """Find segments with bounding boxes that intersect the query bbox"""
+                    results = []
+                    for idx, seg_bbox in self.segments:
+                        if not (seg_bbox[2] < bbox[0] or seg_bbox[0] > bbox[2] or
+                               seg_bbox[3] < bbox[1] or seg_bbox[1] > bbox[3]):
+                            results.append(idx)
+                    return results
+
+            spatial_index = SpatialIndex()
+
+            # Index all segments
+            for k in range(npts - 1):
+                p1 = out_pts[k]
+                p2 = out_pts[k + 1]
+                x1 = p1[0] if isinstance(p1, tuple) else p1.x
+                y1 = p1[1] if isinstance(p1, tuple) else p1.y
+                x2 = p2[0] if isinstance(p2, tuple) else p2.x
+                y2 = p2[1] if isinstance(p2, tuple) else p2.y
+                bbox = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+                spatial_index.insert(k, bbox)
+
+            if os.environ.get('OFFSET_DEBUG'):
+                print(f"[DEBUG] Pass {pass_num+1}: Built spatial index with {len(spatial_index.segments)} segments")
+
+            # Find intersections using spatial index
+            intersections_found = 0
+            total_segment_checks = 0
+
+            if os.environ.get('OFFSET_DEBUG'):
+                print(f"[DEBUG] Pass {pass_num+1}: Starting intersection detection")
+
+            # Check each segment against potentially intersecting segments
+            for k in range(npts - 1):  # Check ALL segments, not just first 100
+                a1 = out_pts[k]
+                a2 = out_pts[k + 1]
+
+                # Get bounding box for current segment
+                x1 = a1[0] if isinstance(a1, tuple) else a1.x
+                y1 = a1[1] if isinstance(a1, tuple) else a1.y
+                x2 = a2[0] if isinstance(a2, tuple) else a2.x
+                y2 = a2[1] if isinstance(a2, tuple) else a2.y
+                query_bbox = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+
+                # Query spatial index for potentially intersecting segments
+                candidates = spatial_index.query(query_bbox)
+
+                if os.environ.get('OFFSET_DEBUG') and k < 5:  # Debug first few
+                    print(f"[DEBUG] Segment {k}: bbox {query_bbox}, found {len(candidates)} candidates")
+
+                for m in candidates:
+                    # Ensure gap constraint and avoid self-checks
+                    if m <= k + min_gap or m >= npts - 1:
                         continue
-                    
-                    # Detailed check for segments in intersecting chunks
-                    for k in range(c1['start'], c1['end']):
-                        a1 = out_pts[k]
-                        a2 = out_pts[k+1]
-                        
-                        for m in range(c2['start'], c2['end']):
-                            # Ensure gap constraint
-                            if m <= k + min_gap:
-                                continue
-                                
-                            b1 = out_pts[m]
-                            b2 = out_pts[m+1]
-                            
-                            inter = _seg_intersect(a1, a2, b1, b2)
-                            if inter:
-                                gap = m - k
-                                # Ignore closure intersections (start/end meeting)
-                                # Adjacent segments at closure are 0 and npts-2 (gap = npts-2)
-                                if gap >= npts - 2:
-                                    continue
-                                    
-                                if gap > best_gap:
-                                    best_gap = gap
-                                    best = (k, m, inter)
-            
-            # If intersection found, handle it
+
+                    b1 = out_pts[m]
+                    b2 = out_pts[m + 1]
+
+                    total_segment_checks += 1
+                    inter = _segments_intersect(a1, a2, b1, b2)
+                    if inter:
+                        intersections_found += 1
+                        if os.environ.get('OFFSET_DEBUG'):
+                            print(f"[DEBUG] Found intersection at ({inter[0]:.1f},{inter[1]:.1f}) between segments {k}-{k+1} and {m}-{m+1}")
+                        gap = m - k
+                        # Ignore closure intersections (start/end meeting)
+                        # Adjacent segments at closure are 0 and npts-2 (gap = npts-2)
+                        if gap >= npts - 2:
+                            continue
+
+                        if gap > best_gap:
+                            best_gap = gap
+                            best = (k, m, inter)
+
+            if os.environ.get('OFFSET_DEBUG'):
+                print(f"[DEBUG] Pass {pass_num+1}: total_segment_checks={total_segment_checks}, intersections_found={intersections_found}")            # If intersection found, handle it
             if best is not None and best_gap > min_gap:
                 i, j, inter = best
                 if os.environ.get('OFFSET_DEBUG'):
                     print(f"[DEBUG] Found self-intersection at indices {i} and {j}, gap={best_gap}")
                 
-                # Heuristic: if the loop is larger than half the path, it's likely the main body
-                # (e.g. closure intersection). Keep the loop, discard tails.
-                # Otherwise, it's an artifact loop. Remove the loop, keep tails.
-                if best_gap > npts / 2:
-                    # Keep the loop i...j
-                    # Path: inter -> (i+1...j) -> inter
-                    # We construct it as [inter] + out_pts[i+1:j+1] + [inter]
-                    new_pts = [inter]
-                    new_pts.extend(out_pts[i+1:j+1])
-                    new_pts.append(inter)
-                    out_pts = new_pts
-                    if os.environ.get('OFFSET_DEBUG'):
-                        print(f"[DEBUG] Kept loop (main body), new len={len(out_pts)}")
+                # For negative offsets, use area-based heuristic instead of size-based
+                if effective_offset < 0:
+                    # Calculate areas of the two potential loops
+                    # Loop 1: inter -> (i+1...j) -> inter (the "kept" loop)
+                    loop1_pts = [inter] + out_pts[i+1:j+1] + [inter]
+                    if len(loop1_pts) >= 3:
+                        loop1_area = abs(_poly_area(loop1_pts))
+                    else:
+                        loop1_area = 0
+                    
+                    # Loop 2: (0...i) -> inter -> (j+1...N) (the "discarded" loop)
+                    loop2_pts = out_pts[:i+1] + [inter] + out_pts[j+1:]
+                    if len(loop2_pts) >= 3:
+                        loop2_pts.append(loop2_pts[0])  # Close the loop for area calculation
+                        loop2_area = abs(_poly_area(loop2_pts))
+                    else:
+                        loop2_area = 0
+                    
+                    # Keep the loop with larger area (more significant geometry)
+                    if loop1_area >= loop2_area:
+                        # Keep the loop i...j
+                        new_pts = [inter]
+                        new_pts.extend(out_pts[i+1:j+1])
+                        new_pts.append(inter)
+                        out_pts = new_pts
+                        if os.environ.get('OFFSET_DEBUG'):
+                            print(f"[DEBUG] Kept loop (larger area: {loop1_area:.1f} vs {loop2_area:.1f}), new len={len(out_pts)}")
+                    else:
+                        # Remove the loop i...j
+                        new_pts = out_pts[:i+1]
+                        new_pts.append(inter)
+                        new_pts.extend(out_pts[j+1:])
+                        out_pts = new_pts
+                        if os.environ.get('OFFSET_DEBUG'):
+                            print(f"[DEBUG] Removed loop (smaller area: {loop1_area:.1f} vs {loop2_area:.1f}), new len={len(out_pts)}")
                 else:
-                    # Remove the loop i...j
-                    # Path: (0...i) -> inter -> (j+1...N)
-                    new_pts = out_pts[:i+1]
-                    new_pts.append(inter)
-                    new_pts.extend(out_pts[j+1:])
-                    out_pts = new_pts
-                    if os.environ.get('OFFSET_DEBUG'):
-                        print(f"[DEBUG] Removed loop (artifact), new len={len(out_pts)}")
+                    # Original heuristic for positive offsets
+                    # Heuristic: if the loop is larger than half the path, it's likely the main body
+                    # (e.g. closure intersection). Keep the loop, discard tails.
+                    # Otherwise, it's an artifact loop. Remove the loop, keep tails.
+                    if best_gap > npts / 2:
+                        # Keep the loop i...j
+                        # Path: inter -> (i+1...j) -> inter
+                        # We construct it as [inter] + out_pts[i+1:j+1] + [inter]
+                        new_pts = [inter]
+                        new_pts.extend(out_pts[i+1:j+1])
+                        new_pts.append(inter)
+                        out_pts = new_pts
+                        if os.environ.get('OFFSET_DEBUG'):
+                            print(f"[DEBUG] Kept loop (main body), new len={len(out_pts)}")
+                    else:
+                        # Remove the loop i...j
+                        # Path: (0...i) -> inter -> (j+1...N)
+                        new_pts = out_pts[:i+1]
+                        new_pts.append(inter)
+                        new_pts.extend(out_pts[j+1:])
+                        out_pts = new_pts
+                        if os.environ.get('OFFSET_DEBUG'):
+                            print(f"[DEBUG] Removed loop (artifact), new len={len(out_pts)}")
             else:
                 # No more intersections
                 break
@@ -1615,6 +1809,82 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     bevel_pt = (mid_x + avg_nx, mid_y + avg_ny)
                     out_pts[-1] = bevel_pt  # Replace last point with bevel
             # If no intersection found (parallel edges), the path closes naturally
+
+    # Special area-based cleanup for negative offsets (applied even without intersections)
+    if effective_offset < 0 and len(out_pts) > 1000:  # Increased threshold to avoid overhead on normal paths  # Increased threshold to avoid overhead on small paths
+        if os.environ.get('OFFSET_DEBUG'):
+            print(f"[DEBUG] Applying negative offset area-based cleanup, starting with {len(out_pts)} points")
+
+        # For negative offsets, scan for potential small loops and remove them
+        # Use spatial indexing for efficiency
+        class PointIndex:
+            def __init__(self):
+                self.points = []
+
+            def insert(self, idx, x, y):
+                self.points.append((idx, x, y))
+
+            def query_nearby(self, x, y, radius):
+                """Find points within radius of (x,y)"""
+                results = []
+                for idx, px, py in self.points:
+                    dist_sq = (px - x)**2 + (py - y)**2
+                    if dist_sq <= radius * radius:
+                        results.append((idx, (px - x)**2 + (py - y)**2))
+                return results
+
+        point_index = PointIndex()
+        # Index all points
+        for idx, pt in enumerate(out_pts):
+            x = pt[0] if isinstance(pt, tuple) else pt.x
+            y = pt[1] if isinstance(pt, tuple) else pt.y
+            point_index.insert(idx, x, y)
+
+        # Process points in order, removing small loops as we find them
+        i = 0
+        removed_count = 0
+        search_radius = abs(effective_offset) * 0.5
+        max_area = abs(effective_offset) * abs(effective_offset) * 10
+
+        while i < len(out_pts) - 5 and removed_count < 100:  # Limit total removals
+            pt = out_pts[i]
+            x = pt[0] if isinstance(pt, tuple) else pt.x
+            y = pt[1] if isinstance(pt, tuple) else pt.y
+
+            # Find nearby points that could form small loops
+            nearby = point_index.query_nearby(x, y, search_radius)
+
+            # Look for the closest point that's at least 5 indices away
+            best_candidate = None
+            best_dist = float('inf')
+            best_j = -1
+
+            for j, dist_sq in nearby:
+                if j <= i + 4 or j >= len(out_pts) - 1:  # Too close or at end
+                    continue
+                if dist_sq < best_dist:
+                    best_dist = dist_sq
+                    best_j = j
+
+            if best_j != -1:
+                # Check if this forms a small loop
+                j = best_j
+                loop_pts = out_pts[i:j+1] + [out_pts[i]]
+                if len(loop_pts) >= 5:
+                    loop_area = abs(_poly_area(loop_pts))
+                    if loop_area < max_area:
+                        if os.environ.get('OFFSET_DEBUG'):
+                            print(f"[DEBUG] Removing small negative offset loop from {i} to {j}, area={loop_area:.1f}, threshold={max_area:.1f}")
+                        # Remove the loop points, connect i directly to j
+                        out_pts = out_pts[:i+1] + out_pts[j:]
+                        removed_count += 1
+                        # Rebuild index for remaining points (simplified - just continue)
+                        continue
+
+            i += 1
+
+        if os.environ.get('OFFSET_DEBUG'):
+            print(f"[DEBUG] Negative offset area cleanup complete: {len(out_pts)} points remaining (removed {removed_count} loops)")
 
     # Build path segments with explicit start/end points
     first_pt = out_pts[0]
