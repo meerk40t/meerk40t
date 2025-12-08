@@ -433,7 +433,8 @@ class MaterialPanel(ScrolledPanel):
             context=self.context,
             list_name="list_materialmanager",
         )
-
+        self.list_preview_power_mode = 0 # 0 = ppi , 1 = percentage
+        self.list_preview_speed_mode = 0 # 0 = mm/s , 1 = mm / min
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
         self.list_preview.AppendColumn(
             _("Operation"),
@@ -2220,6 +2221,21 @@ class MaterialPanel(ScrolledPanel):
                     else:
                         oplabel = ""
                     oplabel += f"({command})"
+                if self.list_preview_power_mode == 1:
+                    # Show as percentage
+                    if power != "":
+                        try:
+                            pval = max(min(1000, float(power)), 0)
+                            power = pval / 10
+                        except ValueError:
+                            pass
+                if self.list_preview_speed_mode == 1:   
+                    # Show as mm / min
+                    try:
+                        sval = float(speed)
+                        speed = sval * 60
+                    except ValueError:
+                        pass
                 self.list_preview.SetItem(list_id, 1, info[0])
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
@@ -3162,6 +3178,9 @@ class MaterialPanel(ScrolledPanel):
                         new_data = float(new_data[:-1]) * 10.0
                     else:
                         new_data = float(new_data)
+                        if self.list_preview_power_mode == 1:
+                            # percent mode
+                            new_data = new_data * 10.0
                     self.op_data.write_persistent(key, "power", new_data)
                     new_data = f"{new_data:.0f}"
                 except ValueError:
@@ -3171,6 +3190,8 @@ class MaterialPanel(ScrolledPanel):
                 # speed
                 try:
                     new_data = float(new_data)
+                    if self.list_preview_speed_mode == 1:
+                        new_data /= 60
                     self.op_data.write_persistent(key, "speed", new_data)
                     new_data = f"{new_data:.1f}"
                 except ValueError:
