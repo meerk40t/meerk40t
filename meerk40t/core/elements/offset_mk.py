@@ -1807,93 +1807,100 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     # Track if we computed a closing junction
     closing_junction = None
     
-    close_threshold = max(abs(effective_offset) * 0.01, base_step * 0.1)
-    if dist_to_first > close_threshold:
-        # Compute proper junction intersection for closing the path
-        # We need to intersect the offset edges extending from the last and first points
+    # Trim overshoot at the end of the path
+    # The last segment should end at out_pts[0]. If points go beyond out_pts[0]
+    # in the direction of the last original edge, they are overshoots.
+    if len(out_pts) > 3 and len(edges) > 0:
+        start_pt = out_pts[0]
+        # Last original edge direction
+        last_edge = edges[-1]
         
-        if len(out_pts) >= 3 and len(pts) >= 3:
-            # Get the original points and edges for the closing junction
-            n_pts = len(pts)
+        # Normalize last_edge for consistent epsilon
+        le_len = (last_edge[0]**2 + last_edge[1]**2) ** 0.5
+        if le_len > 1e-9:
+            lx = last_edge[0] / le_len
+            ly = last_edge[1] / le_len
             
-            # Last offset edge: starts at last offset point, extends along the edge 
-            # between second-to-last and last original points
-            last_orig_idx = n_pts - 1
-            prev_orig_idx = n_pts - 2
+            # Check last few points
+            # We limit to checking the last 20% of points or 50 points to avoid 
+            # deleting the whole shape if something is weird.
+            max_check = min(50, len(out_pts) // 2)
             
-            # Direction of last edge (from prev to last original point)
-            last_edge_dir = edges[prev_orig_idx]  # edges[i] is from pts[i] to pts[i+1]
-            
-            # Start point of last offset edge: last offset point
-            offset_last_start = (x_last, y_last)
-            
-            # First offset edge: starts at first offset point, extends along the edge
-            # between first and second original points  
-            first_edge_dir = edges[0]  # edges[0] is from pts[0] to pts[1]
-            
-            # Start point of first offset edge: first offset point
-            offset_first_start = (x0, y0)
-            
-            # Find intersection of the two offset edges
-            junction = intersect_lines(offset_last_start, last_edge_dir, 
-                                     offset_first_start, first_edge_dir)
-            
-            if junction is not None:
-                # Check if junction is reasonable (miter limit)
-                dist_last = ((junction[0] - x_last)**2 + (junction[1] - y_last)**2) ** 0.5
-                dist_first = ((junction[0] - x0)**2 + (junction[1] - y0)**2) ** 0.5
-                max_miter_dist = abs(effective_offset) * miter_limit
+            for _ in range(max_check):
+                if len(out_pts) < 3:
+                    break
                 
-                if dist_last <= max_miter_dist and dist_first <= max_miter_dist:
-                    # Use the junction point - replace the last point with it
-                    out_pts[-1] = junction
+                last_pt = out_pts[-1]
+                x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
+                y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+                x_start = start_pt[0] if isinstance(start_pt, tuple) else start_pt.x
+                y_start = start_pt[1] if isinstance(start_pt, tuple) else start_pt.y
+                
+                dx = x_last - x_start
+                dy = y_last - y_start
+                
+                # Dot product
+                dot = dx * lx + dy * ly
+                
+                # If dot is positive, the point is "ahead" of the start point
+                # We use a small epsilon to allow for numerical noise
+                if dot > 1e-4:
+                    out_pts.pop()
+                elif abs(dot) < 1e-4 and (dx*dx + dy*dy) < 1e-4:
+                    # Duplicate of start point
+                    out_pts.pop()
                 else:
-                    # Miter limit exceeded - use bevel (average of normals)
-                    # Get normals for the closing junction
-                    last_normal = normals[prev_orig_idx]
-                    first_normal = normals[0]
-                    avg_nx = (last_normal[0] + first_normal[0]) * 0.5
-                    avg_ny = (last_normal[1] + first_normal[1]) * 0.5
-                    
-                    # Bevel point at the midpoint between last and first points
-                    mid_x = (x_last + x0) * 0.5
-                    mid_y = (y_last + y0) * 0.5
-                    bevel_pt = (mid_x + avg_nx, mid_y + avg_ny)
-                    out_pts[-1] = bevel_pt  # Replace last point with bevel
-            # If no intersection found (parallel edges), the path closes naturally
-
+                    # Found a point "behind" or at the start (but not duplicate)
+                    break
+    
     # Special area-based cleanup for negative offsets (applied even without intersections)
     if effective_offset < 0 and len(out_pts) > 1000:  # Increased threshold to avoid overhead on normal paths  # Increased threshold to avoid overhead on small paths
         # For negative offsets, scan for potential small loops and remove them
-        # Use spatial indexing for efficiency
-        class PointIndex:
-            def __init__(self):
-                self.points = []
+        search_radius = abs(effective_offset) * 0.5
+        max_area = abs(effective_offset) * abs(effective_offset) * 10
+        
+        class GridIndex:
+            def __init__(self, cell_size):
+                self.cell_size = max(1e-6, cell_size)
+                self.grid = {}
 
             def insert(self, idx, x, y):
-                self.points.append((idx, x, y))
+                cx = int(x / self.cell_size)
+                cy = int(y / self.cell_size)
+                key = (cx, cy)
+                if key not in self.grid:
+                    self.grid[key] = []
+                self.grid[key].append((idx, x, y))
 
             def query_nearby(self, x, y, radius):
-                """Find points within radius of (x,y)"""
                 results = []
-                for idx, px, py in self.points:
-                    dist_sq = (px - x)**2 + (py - y)**2
-                    if dist_sq <= radius * radius:
-                        results.append((idx, (px - x)**2 + (py - y)**2))
+                cx = int(x / self.cell_size)
+                cy = int(y / self.cell_size)
+                r_sq = radius * radius
+                
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        key = (cx + dx, cy + dy)
+                        if key in self.grid:
+                            for idx, px, py in self.grid[key]:
+                                dist_sq = (px - x)**2 + (py - y)**2
+                                if dist_sq <= r_sq:
+                                    results.append((idx, dist_sq))
                 return results
 
-        point_index = PointIndex()
-        # Index all points
-        for idx, pt in enumerate(out_pts):
-            x = pt[0] if isinstance(pt, tuple) else pt.x
-            y = pt[1] if isinstance(pt, tuple) else pt.y
-            point_index.insert(idx, x, y)
+        def build_index(points):
+            idx = GridIndex(search_radius)
+            for i, pt in enumerate(points):
+                x = pt[0] if isinstance(pt, tuple) else pt.x
+                y = pt[1] if isinstance(pt, tuple) else pt.y
+                idx.insert(i, x, y)
+            return idx
+
+        point_index = build_index(out_pts)
 
         # Process points in order, removing small loops as we find them
         i = 0
         removed_count = 0
-        search_radius = abs(effective_offset) * 0.5
-        max_area = abs(effective_offset) * abs(effective_offset) * 10
 
         while i < len(out_pts) - 5 and removed_count < 100:  # Limit total removals
             pt = out_pts[i]
@@ -1904,7 +1911,6 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             nearby = point_index.query_nearby(x, y, search_radius)
 
             # Look for the closest point that's at least 5 indices away
-            best_candidate = None
             best_dist = float('inf')
             best_j = -1
 
@@ -1925,7 +1931,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                         # Remove the loop points, connect i directly to j
                         out_pts = out_pts[:i+1] + out_pts[j:]
                         removed_count += 1
-                        # Rebuild index for remaining points (simplified - just continue)
+                        # Rebuild index for remaining points
+                        point_index = build_index(out_pts)
                         continue
 
             i += 1
@@ -1954,8 +1961,12 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
     y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
     
-    # Direct closing segment from last point (which may be a junction) to first point
-    segs.append(Line(start=Point(x_last, y_last), end=first))
+    # Only add closing line if we are not already at the start
+    dist_sq = (x_last - x0)**2 + (y_last - y0)**2
+    if dist_sq > 1e-9:
+        segs.append(Line(start=Point(x_last, y_last), end=first))
+    
+    segs.append(Close())
     
     return Path(*segs)
 
