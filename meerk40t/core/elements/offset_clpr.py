@@ -11,6 +11,10 @@ via the pyclipr library of Luke Parry
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "invalidate":
+        ignore_offset = kernel.root.setting(bool, "ignore_clipper", False)
+        if ignore_offset:
+            # print ("Clipper offset plugin disabled by user setting.")
+            return True # always invalidate aka dont use
         try:
             import pyclipr
         except ImportError:
