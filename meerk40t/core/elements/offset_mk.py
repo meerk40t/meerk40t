@@ -832,6 +832,15 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
         if len(subpaths) > 1:
             total_path = Path()
+            
+            # Pre-calculate bboxes to avoid repeated expensive calls
+            sub_bboxes = []
+            for sub in subpaths:
+                try:
+                    sub_bboxes.append(sub.bbox())
+                except Exception:
+                    sub_bboxes.append(None)
+
             for i, sub in enumerate(subpaths):
                 # Find a sample point for containment check
                 sample_pt = None
@@ -858,13 +867,14 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     continue
                     
                 depth = 0
+                bb_sub = sub_bboxes[i]
+                
                 for j, other in enumerate(subpaths):
                     if i == j:
                         continue
                     # Fast bbox check
                     try:
-                        bb_other = other.bbox()
-                        bb_sub = sub.bbox()
+                        bb_other = sub_bboxes[j]
                         if bb_other and bb_sub:
                             if (bb_sub[0] < bb_other[0] or bb_sub[2] > bb_other[2] or
                                 bb_sub[1] < bb_other[1] or bb_sub[3] > bb_other[3]):
@@ -1341,9 +1351,15 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 if abs(cosang) > 0.99:
                      intersection = None
                 elif abs(cosang) > 0.1:
-                    # Artifact suppression: if intersection is wildly far compared to segment length,
-                    # AND the angle is not roughly perpendicular, it's likely a spike.
-                    # We exempt angles close to 90 deg (cosang ~ 0) to preserve corners on short segments.
+                    # Artifact suppression / Spike removal:
+                    # If the intersection point is significantly far away compared to the segment length
+                    # (more than 3x), it is likely a numerical artifact or an unwanted spike caused by
+                    # glancing intersections of nearly parallel lines.
+                    #
+                    # However, we must preserve valid corners, especially 90-degree turns on short segments.
+                    # A 90-degree turn has cosang ~ 0. By checking abs(cosang) > 0.1, we exempt
+                    # angles close to perpendicular (approx 84 to 96 degrees) from this suppression,
+                    # ensuring that valid miters on short segments are kept.
                     seg_len_prev = (edge_prev[0]**2 + edge_prev[1]**2) ** 0.5
                     seg_len_next = (edge_next[0]**2 + edge_next[1]**2) ** 0.5
                     if dist_to_intersection > max(seg_len_prev, seg_len_next) * 3.0:
@@ -1543,6 +1559,18 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             q2 = cleaned[j + 1]
             inter = _segments_intersect(p1, p2, q1, q2)
             if inter is not None:
+                # Ignore if intersection is at the start of the new segment (p1)
+                # This happens when the new segment starts exactly where the previous one ended (normal)
+                # or if we are backtracking on the same path.
+                if (inter[0] - p1[0])**2 + (inter[1] - p1[1])**2 < 1e-9:
+                    continue
+
+                # Ignore if intersection is at the start of the polygon (j=0)
+                # This indicates a valid loop closure, not a self-intersection to be pruned.
+                if j == 0:
+                    if (inter[0] - cleaned[0][0])**2 + (inter[1] - cleaned[0][1])**2 < 1e-9:
+                        continue
+
                 # Validate intersection doesn't create extreme jump
                 ix, iy = inter
                 dist_to_inter = ((ix - p1[0])**2 + (iy - p1[1])**2) ** 0.5
@@ -1583,6 +1611,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     
     out_pts = clean_pts
     if len(out_pts) < 3:
+        print(f"DEBUG: out_pts too small after cleanup: {len(out_pts)}")
         return None
     
     # Global self-intersection cleanup: detect large loops dynamically
@@ -1608,24 +1637,60 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             best_gap = 0
             min_gap = 2  # Minimum separation to consider (catch small loops)
 
+            # Calculate path bounds for grid sizing
+            min_x, min_y = float('inf'), float('inf')
+            max_x, max_y = float('-inf'), float('-inf')
+            # Sample points to estimate bounds (checking all is fast enough)
+            for pt in out_pts:
+                px = pt[0] if isinstance(pt, tuple) else pt.x
+                py = pt[1] if isinstance(pt, tuple) else pt.y
+                if px < min_x: min_x = px
+                if px > max_x: max_x = px
+                if py < min_y: min_y = py
+                if py > max_y: max_y = py
+            
+            width = max_x - min_x
+            height = max_y - min_y
+            # Aim for ~50x50 grid
+            cell_size = max(width, height) / 50.0
+            if cell_size < 1e-6: cell_size = 1.0
+
             # Build spatial index of segments
             class SpatialIndex:
-                def __init__(self):
-                    self.segments = []
+                def __init__(self, cell_size):
+                    self.cell_size = cell_size
+                    self.grid = {}
+
+                def _get_cells(self, bbox):
+                    x1, y1, x2, y2 = bbox
+                    cx1 = int(x1 / self.cell_size)
+                    cy1 = int(y1 / self.cell_size)
+                    cx2 = int(x2 / self.cell_size)
+                    cy2 = int(y2 / self.cell_size)
+                    cells = []
+                    for cx in range(cx1, cx2 + 1):
+                        for cy in range(cy1, cy2 + 1):
+                            cells.append((cx, cy))
+                    return cells
 
                 def insert(self, idx, bbox):
-                    self.segments.append((idx, bbox))
+                    for cell in self._get_cells(bbox):
+                        if cell not in self.grid:
+                            self.grid[cell] = []
+                        self.grid[cell].append((idx, bbox))
 
                 def query(self, bbox):
                     """Find segments with bounding boxes that intersect the query bbox"""
-                    results = []
-                    for idx, seg_bbox in self.segments:
-                        if not (seg_bbox[2] < bbox[0] or seg_bbox[0] > bbox[2] or
-                               seg_bbox[3] < bbox[1] or seg_bbox[1] > bbox[3]):
-                            results.append(idx)
-                    return results
+                    results = set()
+                    for cell in self._get_cells(bbox):
+                        if cell in self.grid:
+                            for idx, seg_bbox in self.grid[cell]:
+                                if not (seg_bbox[2] < bbox[0] or seg_bbox[0] > bbox[2] or
+                                       seg_bbox[3] < bbox[1] or seg_bbox[1] > bbox[3]):
+                                    results.add(idx)
+                    return list(results)
 
-            spatial_index = SpatialIndex()
+            spatial_index = SpatialIndex(cell_size)
 
             # Index all segments
             for k in range(npts - 1):
@@ -2006,7 +2071,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     
     segs.append(Close())
     
-    return Path(*segs)
+    return Path(segs)
 
 
 def plugin(kernel, lifecycle=None):
