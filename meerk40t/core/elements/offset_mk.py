@@ -1133,6 +1133,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             total += x1 * y2 - x2 * y1
         return total > 0
     
+    cw = _poly_clockwise(pts)
+    
     def _poly_area(points):
         """Calculate polygon area using shoelace formula."""
         if len(points) < 3:
@@ -1323,20 +1325,52 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             dist_to_intersection = ((intersection[0] - p_curr.x)**2 + (intersection[1] - p_curr.y)**2) ** 0.5
             max_miter_dist = abs(effective_offset) * miter_limit
 
+            # Stability check: for nearly straight lines, intersection should be close to offset distance.
+            # If it's huge, it's numerical noise.
+            n_prev = normals[best_prev_idx]
+            n_next = normals[best_next_idx]
+            dot = n_prev[0] * n_next[0] + n_prev[1] * n_next[1]
+            len_prev = (n_prev[0]**2 + n_prev[1]**2) ** 0.5
+            len_next = (n_next[0]**2 + n_next[1]**2) ** 0.5
+            
+            if len_prev > 1e-9 and len_next > 1e-9:
+                cosang = max(-1.0, min(1.0, dot / (len_prev * len_next)))
+                
+                # If angle is very small (< 8 degrees) or lines are anti-parallel,
+                # the intersection is numerically unstable.
+                if abs(cosang) > 0.99:
+                     intersection = None
+            
+            if intersection is not None:
+                # Artifact suppression:
+                # If the calculated intersection (miter) is significantly longer than the 
+                # supporting segments, it's likely a geometric artifact from short segments 
+                # (noise) rather than a desired feature.
+                # We reject such intersections to prevent "spikes" on rough paths.
+                # We compare miter length to the longer of the two adjacent segments.
+                max_segment_len = max(best_prev_len, best_next_len)
+                if dist_to_intersection > abs(effective_offset) and dist_to_intersection > max_segment_len * 3.0:
+                    intersection = None
+
+        if intersection is not None:
             # Junction-aware bevel: if we're at a segment boundary with a sharp turn, prefer bevel
             use_bevel = False
             sb = seg_boundary_map.get(i)
             if sb is not None:
                 # Compute angle between normals; large angle -> bevel
                 import math
-                n_prev = normals[(i - 1) % n]
-                n_next = normals[i]
-                dot = n_prev[0] * n_next[0] + n_prev[1] * n_next[1]
-                len_prev = (n_prev[0]**2 + n_prev[1]**2) ** 0.5
-                len_next = (n_next[0]**2 + n_next[1]**2) ** 0.5
-                if len_prev > 1e-9 and len_next > 1e-9:
-                    cosang = max(-1.0, min(1.0, dot / (len_prev * len_next)))
-                    ang = math.acos(cosang)
+                # n_prev and n_next are already computed above if we did the stability check, 
+                # but we need to be safe if we didn't enter that block? 
+                # Actually we can just recompute or use the ones from stability check if available.
+                # But to keep code clean and independent:
+                n_prev_sb = normals[(i - 1) % n]
+                n_next_sb = normals[i]
+                dot_sb = n_prev_sb[0] * n_next_sb[0] + n_prev_sb[1] * n_next_sb[1]
+                len_prev_sb = (n_prev_sb[0]**2 + n_prev_sb[1]**2) ** 0.5
+                len_next_sb = (n_next_sb[0]**2 + n_next_sb[1]**2) ** 0.5
+                if len_prev_sb > 1e-9 and len_next_sb > 1e-9:
+                    cosang_sb = max(-1.0, min(1.0, dot_sb / (len_prev_sb * len_next_sb)))
+                    ang = math.acos(cosang_sb)
                     # Threshold ~60 degrees; above this, bevel is visually safer
                     # RELAXED: For 90 degree turns, we want miter. 
                     # Let miter_limit handle the decision.
@@ -1399,14 +1433,21 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     
     # Adaptive window sizing: smaller window for complex shapes to maintain performance
     # Window should be large enough to catch local loops but not so large as to create O(n²) bottlenecks
-    base_window = min(cleanup_window, 50)  # Cap base window size
-    # For very complex shapes, use smaller window to maintain performance
+    # For rough paths (many small segments), we need a LARGER window to cover the same geometric area.
+    # The previous logic reduced the window for large shapes, which caused failure to detect loops in dense paths.
+    
+    base_window = max(cleanup_window, 100) # Ensure at least 100
+    
+    # If we have many points, it likely means high density.
+    # We should NOT reduce the window size, but perhaps cap it to avoid extreme slowness.
+    # A window of 400 covers significant ground even for dense paths.
     if len(out_pts) > 2000:
-        window = max(10, base_window // 4)  # Very small window for huge shapes
+        window = min(base_window, 400) 
     elif len(out_pts) > 1000:
-        window = max(15, base_window // 2)  # Smaller window for large shapes
+        window = min(base_window, 200)
     else:
-        window = base_window  # Normal window for smaller shapes
+        window = base_window
+    
     max_spike_len = abs(effective_offset) * 2.0  # reject spikes longer than 2x offset
     # For complex shapes with many points, be more lenient with edge length filtering
     # Use a higher threshold to avoid removing legitimate geometry
