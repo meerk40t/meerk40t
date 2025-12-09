@@ -1340,17 +1340,14 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 # the intersection is numerically unstable.
                 if abs(cosang) > 0.99:
                      intersection = None
-            
-            if intersection is not None:
-                # Artifact suppression:
-                # If the calculated intersection (miter) is significantly longer than the 
-                # supporting segments, it's likely a geometric artifact from short segments 
-                # (noise) rather than a desired feature.
-                # We reject such intersections to prevent "spikes" on rough paths.
-                # We compare miter length to the longer of the two adjacent segments.
-                max_segment_len = max(best_prev_len, best_next_len)
-                if dist_to_intersection > abs(effective_offset) and dist_to_intersection > max_segment_len * 3.0:
-                    intersection = None
+                elif abs(cosang) > 0.1:
+                    # Artifact suppression: if intersection is wildly far compared to segment length,
+                    # AND the angle is not roughly perpendicular, it's likely a spike.
+                    # We exempt angles close to 90 deg (cosang ~ 0) to preserve corners on short segments.
+                    seg_len_prev = (edge_prev[0]**2 + edge_prev[1]**2) ** 0.5
+                    seg_len_next = (edge_next[0]**2 + edge_next[1]**2) ** 0.5
+                    if dist_to_intersection > max(seg_len_prev, seg_len_next) * 3.0:
+                        intersection = None
 
         if intersection is not None:
             # Junction-aware bevel: if we're at a segment boundary with a sharp turn, prefer bevel
