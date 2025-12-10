@@ -1199,6 +1199,35 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         p0 = pts_np
         p1 = np.roll(pts_np, -1, axis=0)
         edges_np = p1 - p0
+
+        # Helper for tangents
+        def _get_tangent(seg, at_start):
+            try:
+                d = seg.derivative(0.0 if at_start else 1.0)
+                if d is not None and hasattr(d, "x") and hasattr(d, "y"):
+                    return (d.x, d.y)
+            except Exception:
+                pass
+            return None
+
+        # Apply tangent corrections
+        for i, (seg_idx, is_start, is_end, seg) in seg_boundary_map.items():
+            if is_start:
+                t_out = _get_tangent(seg, True)
+                if t_out:
+                    l_sq = t_out[0]**2 + t_out[1]**2
+                    if l_sq > 1e-12:
+                        l = l_sq**0.5
+                        edges_np[i] = (t_out[0]/l * base_step, t_out[1]/l * base_step)
+            if is_end:
+                t_in = _get_tangent(seg, False)
+                if t_in:
+                    l_sq = t_in[0]**2 + t_in[1]**2
+                    if l_sq > 1e-12:
+                        l = l_sq**0.5
+                        prev_i = (i - 1) % len(pts_np)
+                        edges_np[prev_i] = (t_in[0]/l * base_step, t_in[1]/l * base_step)
+
         # Normal: (dy, -dx)
         normals_np = np.empty_like(edges_np)
         normals_np[:, 0] = edges_np[:, 1]
@@ -1212,10 +1241,36 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         
         normals_np *= scale[:, np.newaxis]
         
+        # Vectorized Intersection Logic
+        edges_prev = np.roll(edges_np, 1, axis=0)
+        normals_prev = np.roll(normals_np, 1, axis=0)
+        pts_prev = np.roll(pts_np, 1, axis=0)
+        
+        O_prev = pts_prev + normals_prev
+        O_curr = pts_np + normals_np
+        
+        D = O_curr - O_prev
+        det = edges_prev[:, 0] * (-edges_np[:, 1]) - edges_prev[:, 1] * (-edges_np[:, 0])
+        
+        parallel_mask = np.abs(det) < 1e-9
+        det[parallel_mask] = 1.0 # Avoid div by zero
+        
+        t = (D[:, 0] * (-edges_np[:, 1]) - D[:, 1] * (-edges_np[:, 0])) / det
+        
+        intersections = O_prev + edges_prev * t[:, np.newaxis]
+        
+        dist_sq = np.sum((intersections - pts_np)**2, axis=1)
+        max_miter_dist_sq = (abs(effective_offset) * miter_limit)**2
+        
+        miter_ok = (dist_sq <= max_miter_dist_sq) & (~parallel_mask)
+        
+        bevel_pts = pts_np + (normals_prev + normals_np) * 0.5
+        final_pts = np.where(miter_ok[:, np.newaxis], intersections, bevel_pts)
+        
+        out_pts = final_pts.tolist()
         edges = edges_np.tolist()
-        normals = normals_np.tolist()
-        edge_lengths = lengths.tolist()
     else:
+        out_pts = None
         edges = []
         normals = []
         for i in range(len(pts)):
@@ -1245,8 +1300,11 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         return (p[0] + t * d[0], p[1] + t * d[1])
 
     # Generate offset points using miter joins with intersection search
-    out_pts = []
-    n = len(pts)
+    if out_pts is None:
+        out_pts = []
+        n = len(pts)
+    else:
+        n = 0
     search_radius = 3  # Reduced from 10 - only look at nearby edges to prevent distant intersections
     
     # Helper: compute tangent for a segment at start/end
@@ -1634,10 +1692,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             continue
         # Check if duplicate of previous
         if prev_pt is not None:
-            px = prev_pt[0] if isinstance(prev_pt, tuple) else prev_pt.x
-            py = prev_pt[1] if isinstance(prev_pt, tuple) else prev_pt.y
-            cx = pt[0] if isinstance(pt, tuple) else pt.x
-            cy = pt[1] if isinstance(pt, tuple) else pt.y
+            px = prev_pt[0] if isinstance(prev_pt, (tuple, list)) else prev_pt.x
+            py = prev_pt[1] if isinstance(prev_pt, (tuple, list)) else prev_pt.y
+            cx = pt[0] if isinstance(pt, (tuple, list)) else pt.x
+            cy = pt[1] if isinstance(pt, (tuple, list)) else pt.y
             # Skip if identical to previous point (within tiny epsilon)
             if abs(cx - px) < 1e-6 and abs(cy - py) < 1e-6:
                 continue
@@ -1677,8 +1735,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             max_x, max_y = float('-inf'), float('-inf')
             # Sample points to estimate bounds (checking all is fast enough)
             for pt in out_pts:
-                px = pt[0] if isinstance(pt, tuple) else pt.x
-                py = pt[1] if isinstance(pt, tuple) else pt.y
+                px = pt[0] if isinstance(pt, (tuple, list)) else pt.x
+                py = pt[1] if isinstance(pt, (tuple, list)) else pt.y
                 if px < min_x: min_x = px
                 if px > max_x: max_x = px
                 if py < min_y: min_y = py
@@ -1731,10 +1789,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             for k in range(npts - 1):
                 p1 = out_pts[k]
                 p2 = out_pts[k + 1]
-                x1 = p1[0] if isinstance(p1, tuple) else p1.x
-                y1 = p1[1] if isinstance(p1, tuple) else p1.y
-                x2 = p2[0] if isinstance(p2, tuple) else p2.x
-                y2 = p2[1] if isinstance(p2, tuple) else p2.y
+                x1 = p1[0] if isinstance(p1, (tuple, list)) else p1.x
+                y1 = p1[1] if isinstance(p1, (tuple, list)) else p1.y
+                x2 = p2[0] if isinstance(p2, (tuple, list)) else p2.x
+                y2 = p2[1] if isinstance(p2, (tuple, list)) else p2.y
                 bbox = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
                 spatial_index.insert(k, bbox)
 
@@ -1748,10 +1806,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 a2 = out_pts[k + 1]
 
                 # Get bounding box for current segment
-                x1 = a1[0] if isinstance(a1, tuple) else a1.x
-                y1 = a1[1] if isinstance(a1, tuple) else a1.y
-                x2 = a2[0] if isinstance(a2, tuple) else a2.x
-                y2 = a2[1] if isinstance(a2, tuple) else a2.y
+                x1 = a1[0] if isinstance(a1, (tuple, list)) else a1.x
+                y1 = a1[1] if isinstance(a1, (tuple, list)) else a1.y
+                x2 = a2[0] if isinstance(a2, (tuple, list)) else a2.x
+                y2 = a2[1] if isinstance(a2, (tuple, list)) else a2.y
                 query_bbox = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
 
                 # Query spatial index for potentially intersecting segments
@@ -1846,21 +1904,21 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     # indicates a near reversal, drop the first point.
     # For negative offsets, also check for oversized edges at closure that indicate artifacts.
     def _edge_len(a, b):
-        ax = a[0] if isinstance(a, tuple) else a.x
-        ay = a[1] if isinstance(a, tuple) else a.y
-        bx = b[0] if isinstance(b, tuple) else b.x
-        by = b[1] if isinstance(b, tuple) else b.y
+        ax = a[0] if isinstance(a, (tuple, list)) else a.x
+        ay = a[1] if isinstance(a, (tuple, list)) else a.y
+        bx = b[0] if isinstance(b, (tuple, list)) else b.x
+        by = b[1] if isinstance(b, (tuple, list)) else b.y
         dx = bx - ax
         dy = by - ay
         return (dx * dx + dy * dy) ** 0.5
 
     def _angle_deg(p0, p1, p2):
-        x0 = p0[0] if isinstance(p0, tuple) else p0.x
-        y0 = p0[1] if isinstance(p0, tuple) else p0.y
-        x1 = p1[0] if isinstance(p1, tuple) else p1.x
-        y1 = p1[1] if isinstance(p1, tuple) else p1.y
-        x2 = p2[0] if isinstance(p2, tuple) else p2.x
-        y2 = p2[1] if isinstance(p2, tuple) else p2.y
+        x0 = p0[0] if isinstance(p0, (tuple, list)) else p0.x
+        y0 = p0[1] if isinstance(p0, (tuple, list)) else p0.y
+        x1 = p1[0] if isinstance(p1, (tuple, list)) else p1.x
+        y1 = p1[1] if isinstance(p1, (tuple, list)) else p1.y
+        x2 = p2[0] if isinstance(p2, (tuple, list)) else p2.x
+        y2 = p2[1] if isinstance(p2, (tuple, list)) else p2.y
         dx1 = x1 - x0
         dy1 = y1 - y0
         dx2 = x2 - x1
@@ -1936,10 +1994,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     # Check if we need to close the path with a junction point
     first_pt = out_pts[0]
     last_pt = out_pts[-1]
-    x0 = first_pt[0] if isinstance(first_pt, tuple) else first_pt.x
-    y0 = first_pt[1] if isinstance(first_pt, tuple) else first_pt.y
-    x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
-    y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+    x0 = first_pt[0] if isinstance(first_pt, (tuple, list)) else first_pt.x
+    y0 = first_pt[1] if isinstance(first_pt, (tuple, list)) else first_pt.y
+    x_last = last_pt[0] if isinstance(last_pt, (tuple, list)) else last_pt.x
+    y_last = last_pt[1] if isinstance(last_pt, (tuple, list)) else last_pt.y
     dist_to_first = ((x_last - x0)**2 + (y_last - y0)**2) ** 0.5
     
     # Track if we computed a closing junction
@@ -1969,10 +2027,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     break
                 
                 last_pt = out_pts[-1]
-                x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
-                y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
-                x_start = start_pt[0] if isinstance(start_pt, tuple) else start_pt.x
-                y_start = start_pt[1] if isinstance(start_pt, tuple) else start_pt.y
+                x_last = last_pt[0] if isinstance(last_pt, (tuple, list)) else last_pt.x
+                y_last = last_pt[1] if isinstance(last_pt, (tuple, list)) else last_pt.y
+                x_start = start_pt[0] if isinstance(start_pt, (tuple, list)) else start_pt.x
+                y_start = start_pt[1] if isinstance(start_pt, (tuple, list)) else start_pt.y
                 
                 dx = x_last - x_start
                 dy = y_last - y_start
@@ -2029,8 +2087,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         def build_index(points):
             idx = GridIndex(search_radius)
             for i, pt in enumerate(points):
-                x = pt[0] if isinstance(pt, tuple) else pt.x
-                y = pt[1] if isinstance(pt, tuple) else pt.y
+                x = pt[0] if isinstance(pt, (tuple, list)) else pt.x
+                y = pt[1] if isinstance(pt, (tuple, list)) else pt.y
                 idx.insert(i, x, y)
             return idx
 
@@ -2042,8 +2100,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
         while i < len(out_pts) - 5 and removed_count < 100:  # Limit total removals
             pt = out_pts[i]
-            x = pt[0] if isinstance(pt, tuple) else pt.x
-            y = pt[1] if isinstance(pt, tuple) else pt.y
+            x = pt[0] if isinstance(pt, (tuple, list)) else pt.x
+            y = pt[1] if isinstance(pt, (tuple, list)) else pt.y
 
             # Find nearby points that could form small loops
             nearby = point_index.query_nearby(x, y, search_radius)
@@ -2075,10 +2133,66 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
             i += 1
 
+    # Collinear simplification to remove redundant points on straight lines
+    if len(out_pts) > 2:
+        simplified = [out_pts[0]]
+        for i in range(1, len(out_pts) - 1):
+            p0 = simplified[-1]
+            p1 = out_pts[i]
+            p2 = out_pts[i+1]
+            
+            x0 = p0[0] if isinstance(p0, (tuple, list)) else p0.x
+            y0 = p0[1] if isinstance(p0, (tuple, list)) else p0.y
+            x1 = p1[0] if isinstance(p1, (tuple, list)) else p1.x
+            y1 = p1[1] if isinstance(p1, (tuple, list)) else p1.y
+            x2 = p2[0] if isinstance(p2, (tuple, list)) else p2.x
+            y2 = p2[1] if isinstance(p2, (tuple, list)) else p2.y
+            
+            dx1 = x1 - x0
+            dy1 = y1 - y0
+            dx2 = x2 - x1
+            dy2 = y2 - y1
+            
+            # Cross product for collinearity
+            cross = dx1 * dy2 - dy1 * dx2
+            # Dot product for direction
+            dot = dx1 * dx2 + dy1 * dy2
+            
+            if abs(cross) < 1e-4 and dot > -1e-6:
+                continue
+            simplified.append(p1)
+        simplified.append(out_pts[-1])
+        
+        # Check if the last point is collinear with the previous point and the first point
+        if len(simplified) > 2:
+            p0 = simplified[-2]
+            p1 = simplified[-1]
+            p2 = simplified[0]
+            
+            x0 = p0[0] if isinstance(p0, (tuple, list)) else p0.x
+            y0 = p0[1] if isinstance(p0, (tuple, list)) else p0.y
+            x1 = p1[0] if isinstance(p1, (tuple, list)) else p1.x
+            y1 = p1[1] if isinstance(p1, (tuple, list)) else p1.y
+            x2 = p2[0] if isinstance(p2, (tuple, list)) else p2.x
+            y2 = p2[1] if isinstance(p2, (tuple, list)) else p2.y
+            
+            dx1 = x1 - x0
+            dy1 = y1 - y0
+            dx2 = x2 - x1
+            dy2 = y2 - y1
+            
+            cross = dx1 * dy2 - dy1 * dx2
+            dot = dx1 * dx2 + dy1 * dy2
+            
+            if abs(cross) < 1e-4 and dot > -1e-6:
+                simplified.pop()
+        
+        out_pts = simplified
+
     # Build path segments with explicit start/end points
     first_pt = out_pts[0]
-    x0 = first_pt[0] if isinstance(first_pt, tuple) else first_pt.x
-    y0 = first_pt[1] if isinstance(first_pt, tuple) else first_pt.y
+    x0 = first_pt[0] if isinstance(first_pt, (tuple, list)) else first_pt.x
+    y0 = first_pt[1] if isinstance(first_pt, (tuple, list)) else first_pt.y
     first = Point(x0, y0)
     
     segs = [Move(first)]
@@ -2088,16 +2202,16 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     for i in range(n - 1):
         curr_pt = out_pts[i]
         next_pt = out_pts[i + 1]
-        x_curr = curr_pt[0] if isinstance(curr_pt, tuple) else curr_pt.x
-        y_curr = curr_pt[1] if isinstance(curr_pt, tuple) else curr_pt.y
-        x_next = next_pt[0] if isinstance(next_pt, tuple) else next_pt.x
-        y_next = next_pt[1] if isinstance(next_pt, tuple) else next_pt.y
+        x_curr = curr_pt[0] if isinstance(curr_pt, (tuple, list)) else curr_pt.x
+        y_curr = curr_pt[1] if isinstance(curr_pt, (tuple, list)) else curr_pt.y
+        x_next = next_pt[0] if isinstance(next_pt, (tuple, list)) else next_pt.x
+        y_next = next_pt[1] if isinstance(next_pt, (tuple, list)) else next_pt.y
         segs.append(Line(start=Point(x_curr, y_curr), end=Point(x_next, y_next)))
     
     # Final closing segment back to start
     last_pt = out_pts[-1]
-    x_last = last_pt[0] if isinstance(last_pt, tuple) else last_pt.x
-    y_last = last_pt[1] if isinstance(last_pt, tuple) else last_pt.y
+    x_last = last_pt[0] if isinstance(last_pt, (tuple, list)) else last_pt.x
+    y_last = last_pt[1] if isinstance(last_pt, (tuple, list)) else last_pt.y
     
     # Only add closing line if we are not already at the start
     dist_sq = (x_last - x0)**2 + (y_last - y0)**2
@@ -2209,6 +2323,10 @@ def init_commands(kernel):
             )
             if node_path is None or len(node_path) == 0:
                 continue
+            # print (f"Offsetting node {node.type} with offset {offset}: {p.d()}")
+            # print (f"Resulting path: {type(node_path).__name__}")
+            # print (f"Resulting path: {None if node_path is None else node_path.d()}")
+
             node_path.validate_connections()
             with self.node_lock:
                 newnode = self.elem_branch.add(
@@ -2290,7 +2408,10 @@ def init_commands(kernel):
                 p = Geomstr.rect(
                     x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
                 ).as_path()
+            print (f"Offsetting node {node.type} with offset {offset}: {p.d()}")
             new_path = path_offset(p, offset_value=offset, interpolation=interpolation, miter_limit=miterlimit, cleanup_window=window)
+            print (f"Resulting path: {type(new_path).__name__}")
+            print (f"Resulting path: {None if new_path is None else new_path.d()}")
             if new_path is None or len(new_path) == 0:
                 continue
             new_path.validate_connections()
