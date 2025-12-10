@@ -1711,16 +1711,11 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     # Scan for non-adjacent segments that intersect, indicating a wrap-around
     if len(out_pts) > 200:
         npts = len(out_pts)
-        
-    # Global self-intersection cleanup: detect large loops dynamically
-    # Scan for non-adjacent segments that intersect, indicating a wrap-around
-    if len(out_pts) > 5000:
-        npts = len(out_pts)
 
         # Dynamic detection: look for large-gap intersections across the path
         # Use spatial indexing for efficiency
         # Iteratively remove loops until no more found
-        max_passes = 10
+        max_passes = 20
         for pass_num in range(max_passes):
             npts = len(out_pts)
             if npts < 3:
@@ -1841,57 +1836,38 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             if best is not None and best_gap > min_gap:
                 i, j, inter = best
                 
-                # For negative offsets, use area-based heuristic instead of size-based
-                if effective_offset < 0:
-                    # Calculate areas of the two potential loops
-                    # Loop 1: inter -> (i+1...j) -> inter (the "kept" loop)
-                    loop1_pts = [inter] + out_pts[i+1:j+1] + [inter]
-                    if len(loop1_pts) >= 3:
-                        loop1_area = abs(_poly_area(loop1_pts))
-                    else:
-                        loop1_area = 0
-                    
-                    # Loop 2: (0...i) -> inter -> (j+1...N) (the "discarded" loop)
-                    loop2_pts = out_pts[:i+1] + [inter] + out_pts[j+1:]
-                    if len(loop2_pts) >= 3:
-                        loop2_pts.append(loop2_pts[0])  # Close the loop for area calculation
-                        loop2_area = abs(_poly_area(loop2_pts))
-                    else:
-                        loop2_area = 0
-                    
-                    # Keep the loop with larger area (more significant geometry)
-                    if loop1_area >= loop2_area:
-                        # Keep the loop i...j
-                        new_pts = [inter]
-                        new_pts.extend(out_pts[i+1:j+1])
-                        new_pts.append(inter)
-                        out_pts = new_pts
-                    else:
-                        # Remove the loop i...j
-                        new_pts = out_pts[:i+1]
-                        new_pts.append(inter)
-                        new_pts.extend(out_pts[j+1:])
-                        out_pts = new_pts
+                # Use area-based heuristic for both positive and negative offsets
+                # This is more robust than point-count heuristic for complex shapes
+                
+                # Calculate areas of the two potential loops
+                # Loop 1: inter -> (i+1...j) -> inter (the "kept" loop)
+                loop1_pts = [inter] + out_pts[i+1:j+1] + [inter]
+                if len(loop1_pts) >= 3:
+                    loop1_area = abs(_poly_area(loop1_pts))
                 else:
-                    # Original heuristic for positive offsets
-                    # Heuristic: if the loop is larger than half the path, it's likely the main body
-                    # (e.g. closure intersection). Keep the loop, discard tails.
-                    # Otherwise, it's an artifact loop. Remove the loop, keep tails.
-                    if best_gap > npts / 2:
-                        # Keep the loop i...j
-                        # Path: inter -> (i+1...j) -> inter
-                        # We construct it as [inter] + out_pts[i+1:j+1] + [inter]
-                        new_pts = [inter]
-                        new_pts.extend(out_pts[i+1:j+1])
-                        new_pts.append(inter)
-                        out_pts = new_pts
-                    else:
-                        # Remove the loop i...j
-                        # Path: (0...i) -> inter -> (j+1...N)
-                        new_pts = out_pts[:i+1]
-                        new_pts.append(inter)
-                        new_pts.extend(out_pts[j+1:])
-                        out_pts = new_pts
+                    loop1_area = 0
+                
+                # Loop 2: (0...i) -> inter -> (j+1...N) (the "discarded" loop)
+                loop2_pts = out_pts[:i+1] + [inter] + out_pts[j+1:]
+                if len(loop2_pts) >= 3:
+                    loop2_pts.append(loop2_pts[0])  # Close the loop for area calculation
+                    loop2_area = abs(_poly_area(loop2_pts))
+                else:
+                    loop2_area = 0
+                
+                # Keep the loop with larger area (more significant geometry)
+                if loop1_area >= loop2_area:
+                    # Keep the loop i...j
+                    new_pts = [inter]
+                    new_pts.extend(out_pts[i+1:j+1])
+                    new_pts.append(inter)
+                    out_pts = new_pts
+                else:
+                    # Remove the loop i...j
+                    new_pts = out_pts[:i+1]
+                    new_pts.append(inter)
+                    new_pts.extend(out_pts[j+1:])
+                    out_pts = new_pts
             else:
                 # No more intersections
                 break
