@@ -1710,7 +1710,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     
     out_pts = clean_pts
     if len(out_pts) < 3:
-        print(f"DEBUG: out_pts too small after cleanup: {len(out_pts)}")
+        # print(f"DEBUG: out_pts too small after cleanup: {len(out_pts)}")
         return None
     
     # Global self-intersection cleanup: detect large loops dynamically
@@ -2305,9 +2305,6 @@ def init_commands(kernel):
             )
             if node_path is None or len(node_path) == 0:
                 continue
-            # print (f"Offsetting node {node.type} with offset {offset}: {p.d()}")
-            # print (f"Resulting path: {type(node_path).__name__}")
-            # print (f"Resulting path: {None if node_path is None else node_path.d()}")
 
             node_path.validate_connections()
             with self.node_lock:
@@ -2390,10 +2387,7 @@ def init_commands(kernel):
                 p = Geomstr.rect(
                     x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
                 ).as_path()
-            print (f"Offsetting node {node.type} with offset {offset}: {p.d()}")
             new_path = path_offset(p, offset_value=offset, interpolation=interpolation, miter_limit=miterlimit, cleanup_window=window)
-            print (f"Resulting path: {type(new_path).__name__}")
-            print (f"Resulting path: {None if new_path is None else new_path.d()}")
             if new_path is None or len(new_path) == 0:
                 continue
             new_path.validate_connections()
