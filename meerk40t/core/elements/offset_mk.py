@@ -1194,6 +1194,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         miter_limit = 2.5 if effective_offset < 0 else 4.0
 
     # Edge normals (SVG Y-down left-hand normal => outward for CW)
+    edge_lengths = []
     if pts_np is not None:
         p0 = pts_np
         p1 = np.roll(pts_np, -1, axis=0)
@@ -1211,8 +1212,9 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         
         normals_np *= scale[:, np.newaxis]
         
-        edges = edges_np
-        normals = normals_np
+        edges = edges_np.tolist()
+        normals = normals_np.tolist()
+        edge_lengths = lengths.tolist()
     else:
         edges = []
         normals = []
@@ -1225,6 +1227,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             nx = dy
             ny = -dx
             length = (nx * nx + ny * ny) ** 0.5
+            edge_lengths.append(length)
             if length != 0:
                 scale = effective_offset / length
                 nx *= scale
@@ -1270,6 +1273,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     # Ensure edge is at least base_step magnitude
                     if L * base_step > 1e-3:
                         edges[i] = (t_out[0] / L * base_step, t_out[1] / L * base_step)
+                        edge_lengths[i] = base_step
                         # Update normal to match new edge
                         nx = edges[i][1]
                         ny = -edges[i][0]
@@ -1283,20 +1287,43 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     # Ensure edge is at least base_step magnitude
                     if L * base_step > 1e-3:
                         edges[prev_i] = (t_in[0] / L * base_step, t_in[1] / L * base_step)
+                        edge_lengths[prev_i] = base_step
                         # Update normal to match new edge
                         nx = edges[prev_i][1]
                         ny = -edges[prev_i][0]
                         scale = effective_offset / base_step
                         normals[prev_i] = (nx * scale, ny * scale)
 
+        # Optimization: Check for smooth run (collinear segments)
+        # Use immediate neighbors first
+        idx_prev = (i - 1) % n
+        idx_next = i
+        
+        e_prev = edges[idx_prev]
+        e_next = edges[idx_next]
+        l_prev = edge_lengths[idx_prev]
+        l_next = edge_lengths[idx_next]
+        
+        # Cross product to check collinearity
+        cross = e_prev[0] * e_next[1] - e_prev[1] * e_next[0]
+        # Normalized cross product (sin theta)
+        if l_prev > 1e-9 and l_next > 1e-9:
+            sin_theta = cross / (l_prev * l_next)
+            if abs(sin_theta) < 0.05: # Approx 3 degrees
+                # Smooth enough, just project point
+                nx = (normals[idx_prev][0] + normals[idx_next][0]) / 2
+                ny = (normals[idx_prev][1] + normals[idx_next][1]) / 2
+                out_pts.append((p_curr.x + nx, p_curr.y + ny))
+                continue
+
         # Search backward for a substantial incoming edge
         # Increased threshold to skip over clusters of tiny over-sampled edges
         best_prev_idx = (i - 1) % n
-        best_prev_len = (edges[best_prev_idx][0]**2 + edges[best_prev_idx][1]**2) ** 0.5
+        best_prev_len = edge_lengths[best_prev_idx]
         min_acceptable_len = base_step * 0.5  # At least half the sampling step
         for k in range(2, min(search_radius, n)):
             idx = (i - k) % n
-            edge_len = (edges[idx][0]**2 + edges[idx][1]**2) ** 0.5
+            edge_len = edge_lengths[idx]
             # Require significantly longer edge AND above minimum threshold
             if edge_len > max(best_prev_len * 2.0, min_acceptable_len):
                 best_prev_idx = idx
@@ -1305,10 +1332,10 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         
         # Search forward for a substantial outgoing edge
         best_next_idx = i
-        best_next_len = (edges[best_next_idx][0]**2 + edges[best_next_idx][1]**2) ** 0.5
+        best_next_len = edge_lengths[best_next_idx]
         for k in range(1, min(search_radius, n)):
             idx = (i + k) % n
-            edge_len = (edges[idx][0]**2 + edges[idx][1]**2) ** 0.5
+            edge_len = edge_lengths[idx]
             # Require significantly longer edge AND above minimum threshold
             if edge_len > max(best_next_len * 2.0, min_acceptable_len):
                 best_next_idx = idx
@@ -1443,6 +1470,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
     cleaned = []
     cleaned_bboxes = []  # Cache bboxes for segments in cleaned
+    cleaned_cum_len = [0.0]
     
     # Adaptive window sizing: smaller window for complex shapes to maintain performance
     # Window should be large enough to catch local loops but not so large as to create O(n²) bottlenecks
@@ -1451,15 +1479,8 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
     
     base_window = max(cleanup_window, 100) # Ensure at least 100
     
-    # If we have many points, it likely means high density.
-    # We should NOT reduce the window size, but perhaps cap it to avoid extreme slowness.
-    # A window of 400 covers significant ground even for dense paths.
-    if len(out_pts) > 2000:
-        window = min(base_window, 400) 
-    elif len(out_pts) > 1000:
-        window = min(base_window, 200)
-    else:
-        window = base_window
+    # Use distance-based window to handle variable density
+    limit_dist = max(base_step * 5, abs(effective_offset) * 3)
     
     max_spike_len = abs(effective_offset) * 2.0  # reject spikes longer than 2x offset
     # For complex shapes with many points, be more lenient with edge length filtering
@@ -1501,6 +1522,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
             if clen1_sq < 1e-9:
                 cleaned.pop()
                 if cleaned_bboxes: cleaned_bboxes.pop()
+                if len(cleaned_cum_len) > 1: cleaned_cum_len.pop()
                 continue
             if clen2_sq < 1e-9:
                 break
@@ -1518,6 +1540,7 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                 if cheight < ctol:
                     cleaned.pop()
                     if cleaned_bboxes: cleaned_bboxes.pop()
+                    if len(cleaned_cum_len) > 1: cleaned_cum_len.pop()
                     points_removed += 1
                     continue
             break
@@ -1541,15 +1564,20 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
         cb1 = _bbox(p1, p2)
         # Check intersection against prior edges in window
         truncated = False
-        start_idx = max(0, len(cleaned) - window)
+        
+        import bisect
+        start_dist = cleaned_cum_len[-1] - limit_dist
+        start_idx = bisect.bisect_left(cleaned_cum_len, start_dist)
+        start_idx = max(0, start_idx)
+        
+        # Performance cap: don't check more than 500 segments back
+        # This prevents O(N^2) behavior for very large offsets or very dense paths
+        if len(cleaned) - start_idx > 500:
+            start_idx = len(cleaned) - 500
+        
         for j in range(start_idx, len(cleaned) - 2):
-            # Use cached bbox if available
-            if j < len(cleaned_bboxes):
-                qb = cleaned_bboxes[j]
-            else:
-                q1 = cleaned[j]
-                q2 = cleaned[j + 1]
-                qb = _bbox(q1, q2)
+            # Use cached bbox (always available for j < len(cleaned)-2)
+            qb = cleaned_bboxes[j]
                 
             # Coarse BB test
             if cb1[0] > qb[2] or cb1[2] < qb[0] or cb1[1] > qb[3] or cb1[3] < qb[1]:
@@ -1582,10 +1610,17 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
                     cleaned_bboxes = cleaned_bboxes[:j]
                     if len(cleaned) >= 2:
                         cleaned_bboxes.append(_bbox(cleaned[-2], cleaned[-1]))
+                    
+                    # Update cum_len
+                    cleaned_cum_len = cleaned_cum_len[:j+1]
+                    d_inter = ((inter[0] - cleaned[j][0])**2 + (inter[1] - cleaned[j][1])**2) ** 0.5
+                    cleaned_cum_len.append(cleaned_cum_len[-1] + d_inter)
+                    
                     truncated = True
                     break
         if not truncated:
             cleaned.append(pt)
+            cleaned_cum_len.append(cleaned_cum_len[-1] + edge_len)
             if len(cleaned) >= 2:
                 cleaned_bboxes.append(_bbox(cleaned[-2], cleaned[-1]))
 
