@@ -311,6 +311,7 @@ class GRBLDevice(Service, Status):
         from platform import system
 
         is_linux = system() == "Linux"
+        is_linux = True # make it always true to show combo box 
         choices = [
             {
                 "attr": "serial_port",
