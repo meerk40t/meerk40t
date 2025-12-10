@@ -12,6 +12,7 @@ Key Features:
 - Linearization of curves for improved accuracy
 - Segment stitching with miter limit handling
 - Support for both radial (arc) and linear connectors
+- Performance-optimized "fast offset" algorithm using vectorization (NumPy) and spatial hashing
 
 Algorithm Overview:
 1. Decompose path into subpaths and detect nesting depth
@@ -768,7 +769,6 @@ def offset_path(self, path, offset_value=0):
     # As this overloads a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
-    # Radial connectors seem to have issues, so we don't use them for now...
     p = path_offset(
         path,
         offset_value=offset_value,
@@ -796,6 +796,12 @@ def path_offset(path, offset_value=0, interpolation=20, miter_limit=None, cleanu
 
     Semantics: Positive offset expands clockwise paths and shrinks
     counter-clockwise paths (matching full algorithm semantics).
+
+    Key Features:
+    - Vectorized operations using NumPy (if available) for speed.
+    - Spatial hashing for efficient self-intersection detection.
+    - Area-based heuristic for robust loop removal (handles complex shapes better).
+    - Adaptive interpolation for optimal segment sampling.
 
     Adaptive Interpolation:
     - For `Line` and `Close` segments, the number of interpolation points is
