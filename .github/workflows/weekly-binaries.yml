@@ -151,7 +151,42 @@ jobs:
         path: dist/MeerK40t-macos-${{ github.run_number }}.zip
         retention-days: 60
   
+  ensure-rocky8-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      actions: read
+    outputs:
+      available: ${{ steps.check_runner.outputs.available }}
+    steps:
+    - name: Install jq for JSON parsing
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+
+    - name: Check for self-hosted runner labeled rocky8 (wait up to 10 minutes)
+      id: check_runner
+      run: |
+        API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners"
+        INTERVAL=10
+        MAX_WAIT=$((10 * 60))
+        elapsed=0
+        available=false
+        while [ $elapsed -lt $MAX_WAIT ]; do
+          runners_json=$(curl -s -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$API_URL")
+          # Check for a runner that has label 'rocky8' and is online and not busy
+          if echo "$runners_json" | jq -r '.runners[] | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
+            available=true
+            break
+          fi
+          sleep $INTERVAL
+          elapsed=$((elapsed + INTERVAL))
+        done
+        echo "available=$available" >> $GITHUB_OUTPUT
+
   build-minimal-linux:
+    needs: ensure-rocky8-runner
+    if: needs.ensure-rocky8-runner.outputs.available == 'true'
     runs-on: rocky8
     steps:
     - name: Glibc
