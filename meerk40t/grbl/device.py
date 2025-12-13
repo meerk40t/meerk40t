@@ -311,7 +311,7 @@ class GRBLDevice(Service, Status):
         from platform import system
 
         is_linux = system() == "Linux"
-        is_linux = True # make it always true to show combo box 
+        is_linux = True  # make it always true to show combo box
         choices = [
             {
                 "attr": "serial_port",
@@ -1057,7 +1057,10 @@ class GRBLDevice(Service, Status):
             if filename is None:
                 raise CommandSyntaxError
             try:
-                with open(filename, "w") as f:
+                # Our lines already contain valid line endings.
+                # So we open the file with newline='' to prevent
+                # Python from altering them.
+                with open(filename, "w", newline="") as f:
                     # f.write(b"(MeerK40t)\n")
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
