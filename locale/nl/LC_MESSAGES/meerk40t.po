@@ -24807,3 +24807,25 @@ msgstr ""
 "Op Linux is dit \"/dev/<dev>\"\n"
 "Dit maakt gebruik van symlinks via UDEV-regels mogelijk.\n"
 "Op Windows is dit \"COM<n>\""
+
+#: meerk40t/core/elements/offset_mk.py:2334
+msgid "offset distance (positive expands CW path, negative shrinks)"
+msgstr ""
+"offsetafstand (positief vergroot het pad in wijzerszin, negatief verkleint "
+"het)"
+
+#: meerk40t/core/elements/offset_mk.py:2337
+msgid "uniform interpolation per segment (simple)"
+msgstr "uniforme interpolatie per segment (eenvoudig)"
+
+#: meerk40t/core/elements/offset_mk.py:2340
+msgid "maximum miter length factor (auto if omitted)"
+msgstr "maximale miter-lengtefactor (automatisch indien weggelaten)"
+
+#: meerk40t/core/elements/offset_mk.py:2343
+msgid "self-intersection check window (default 100)"
+msgstr "venster voor controle op zelfdoorsnijding (standaard 100)"
+
+#: meerk40t/core/elements/offset_mk.py:2347
+msgid "create an offset path using simplified fast algorithm"
+msgstr "maak een offsetpad met een vereenvoudigd snel algoritme"

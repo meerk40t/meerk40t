@@ -25005,3 +25005,26 @@ msgstr ""
 "En Linux esto es \"/dev/<dev>\"\n"
 "Esto permite usar enlaces simbólicos mediante reglas UDEV.\n"
 "En Windows esto es \"COM<n>\""
+
+#: meerk40t/core/elements/offset_mk.py:2334
+msgid "offset distance (positive expands CW path, negative shrinks)"
+msgstr ""
+"distancia de offset (positivo expande la trayectoria en sentido horario, "
+"negativo la reduce)"
+
+#: meerk40t/core/elements/offset_mk.py:2337
+msgid "uniform interpolation per segment (simple)"
+msgstr "interpolación uniforme por segmento (simple)"
+
+#: meerk40t/core/elements/offset_mk.py:2340
+msgid "maximum miter length factor (auto if omitted)"
+msgstr "factor máximo de longitud de mitra (automático si se omite)"
+
+#: meerk40t/core/elements/offset_mk.py:2343
+msgid "self-intersection check window (default 100)"
+msgstr "ventana de comprobación de auto-intersección (por defecto 100)"
+
+#: meerk40t/core/elements/offset_mk.py:2347
+msgid "create an offset path using simplified fast algorithm"
+msgstr ""
+"crear una trayectoria offset usando un algoritmo simplificado y rápido"

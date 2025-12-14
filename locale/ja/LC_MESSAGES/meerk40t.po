@@ -24059,3 +24059,23 @@ msgstr ""
 "Linux では通常 \"/dev/<dev>\" です。\n"
 "これにより UDEV ルールを使ったシンボリックリンクの利用が可能になります。\n"
 "Windows では \"COM<n>\" です。"
+
+#: meerk40t/core/elements/offset_mk.py:2334
+msgid "offset distance (positive expands CW path, negative shrinks)"
+msgstr "オフセット距離（正は時計回りのパスを拡張、負は縮小）"
+
+#: meerk40t/core/elements/offset_mk.py:2337
+msgid "uniform interpolation per segment (simple)"
+msgstr "セグメントごとの均一な補間（単純）"
+
+#: meerk40t/core/elements/offset_mk.py:2340
+msgid "maximum miter length factor (auto if omitted)"
+msgstr "最大マイター長係数（省略時は自動）"
+
+#: meerk40t/core/elements/offset_mk.py:2343
+msgid "self-intersection check window (default 100)"
+msgstr "自己交差チェックウィンドウ（デフォルト100）"
+
+#: meerk40t/core/elements/offset_mk.py:2347
+msgid "create an offset path using simplified fast algorithm"
+msgstr "単純化された高速アルゴリズムでオフセットパスを作成する"

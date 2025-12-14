@@ -24626,3 +24626,24 @@ msgstr ""
 "Linux'ta bu genellikle \"/dev/<dev>\"'dir.\n"
 "Bu, UDEV kuralları kullanılarak sembolik bağlantıların (symlink) kullanılmasına izin verir.\n"
 "Windows'ta bu \"COM<n>\"'dir."
+
+#: meerk40t/core/elements/offset_mk.py:2334
+msgid "offset distance (positive expands CW path, negative shrinks)"
+msgstr ""
+"ofset mesafesi (pozitif saat yönündeki yolu genişletir, negatif küçültür)"
+
+#: meerk40t/core/elements/offset_mk.py:2337
+msgid "uniform interpolation per segment (simple)"
+msgstr "segment başına eşit enterpolasyon (basit)"
+
+#: meerk40t/core/elements/offset_mk.py:2340
+msgid "maximum miter length factor (auto if omitted)"
+msgstr "maksimum miter uzunluk faktörü (atlanırsa otomatik)"
+
+#: meerk40t/core/elements/offset_mk.py:2343
+msgid "self-intersection check window (default 100)"
+msgstr "kendini kesişme kontrol penceresi (varsayılan 100)"
+
+#: meerk40t/core/elements/offset_mk.py:2347
+msgid "create an offset path using simplified fast algorithm"
+msgstr "basitleştirilmiş hızlı algoritma kullanarak bir ofset yol oluştur"
