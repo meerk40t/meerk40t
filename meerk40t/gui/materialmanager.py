@@ -393,10 +393,10 @@ class MaterialPanel(ScrolledPanel):
         self.laser_choices = [
             _("<All Lasertypes>"),
         ]
-        dev_infos = list(self.context.find("provider/friendly"))
+        self.dev_infos = list(self.context.find("provider/friendly"))
         # Gets a list of tuples (description, key, path)
-        dev_infos.sort(key=lambda e: e[0][1])
-        for e in dev_infos:
+        self.dev_infos.sort(key=lambda e: e[0][1])
+        for e in self.dev_infos:
             self.laser_choices.append(e[0][0])
 
         self.combo_lasertype = wxComboBox(
@@ -489,6 +489,7 @@ class MaterialPanel(ScrolledPanel):
         # size_it(label, 60, 100)
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_title = TextCtrl(self, wx.ID_ANY, "")
+        size_it(self.txt_entry_title, 60, 400)
         box1.Add(self.txt_entry_title, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wxButton(self, wx.ID_ANY, _("Set"))
@@ -515,7 +516,7 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_material = wxComboBox(
             self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
         )
-
+        size_it(self.txt_entry_material, 60, 400)
         box2.Add(self.txt_entry_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wxStaticText(self, wx.ID_ANY, _("Thickness"))
@@ -2081,6 +2082,71 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+        
+        def set_power_speed_values():
+            self.list_preview_power_mode = 0 # ppi
+            self.list_preview_speed_mode = 0 # mm/s
+            if self.active_material is None:
+                return
+            op_list, op_info = self.context.elements.load_persistent_op_list(
+                self.active_material,
+                use_settings=self.op_data,
+            )
+            if len(op_list) == 0:
+                return
+            laser_type = 0
+            for subsection in self.op_data.derivable(self.active_material):
+                if subsection.endswith(" info"):
+                    try:
+                        laser_type = int(self.op_data.read_persistent(int, subsection, "laser", 0))                       
+                    except ValueError:
+                        print (f"Invalid laser type for material {self.active_material}.{subsection}: {self.op_data.read_persistent(int, subsection, 'laser', 0)}")
+                        pass                
+
+                    break
+
+            # The laser_type is 0 for all lasers or a number indicating a specific laser type
+            if laser_type < 0 or laser_type > len(self.dev_infos):
+                laser_type = 0
+            
+            # if we have a specific laser type, then set the display values for speed/power
+            # if not check whether all of the defined lasers have a a common setting
+            to_check = []
+            if laser_type == 0: 
+                to_check = list(range(len(self.dev_infos)))
+            else:
+                to_check = [laser_type - 1]
+            available_devices = list(self.context.kernel.services("device"))
+            last_speed = None
+            last_power = None
+            for idx in to_check:
+                ltype = self.dev_infos[idx][2]
+                
+                for dev in available_devices:
+                    if not dev.path.startswith(ltype):
+                        continue    
+                    if hasattr(dev, "use_mm_min_for_speed_display"):
+                        sp = 1 if dev.use_mm_min_for_speed_display else 0
+                        if last_speed is None:
+                            last_speed = sp
+                        elif last_speed != sp:
+                            last_speed = 3 # mixed
+                    if hasattr(dev, "use_percent_for_power_display"):
+                        pw = 1 if dev.use_percent_for_power_display else 0
+                        if last_power is None:
+                            last_power = pw
+                        elif last_power != pw:
+                            last_power = 3 # mixed
+            if last_speed is None or last_speed == 3:
+                self.list_preview_speed_mode = 0 # default mm/s
+            else:
+                self.list_preview_speed_mode = last_speed                    
+                    
+            if last_power is None or last_power == 3:
+                self.list_preview_power_mode = 0 # default ppi  
+            else:
+                self.list_preview_power_mode = last_power                    
+
         def get_key(op_type, op_color):
             return f"{op_type}-{str(op_color)}"
 
@@ -2153,6 +2219,19 @@ class MaterialPanel(ScrolledPanel):
         note = ""
         ltype = 0
         if self.active_material is not None:
+            set_power_speed_values()
+            unit = "%" if self.list_preview_power_mode == 1 else "ppi"
+            col_info = self.list_preview.GetColumn(4)   
+            col_info.SetText(_("Power") + " [" + unit + "]")    
+            col_info.SetImage(-1)
+            self.list_preview.SetColumn(4, col_info)
+            col_info = self.list_preview.GetColumn(5)   
+            col_info.SetText(_("Power") + " [" + unit + "]")    
+            unit = "mm/min" if self.list_preview_speed_mode == 1 else "mm/s"
+            col_info.SetText(_("Speed") + " [" + unit  + "]")
+            col_info.SetImage(-1)
+            self.list_preview.SetColumn(5, col_info)
+            
             secdesc = ""
             idx = 0
             content = list(self.op_data.derivable(self.active_material))
@@ -2239,8 +2318,8 @@ class MaterialPanel(ScrolledPanel):
                 self.list_preview.SetItem(list_id, 1, info[0])
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
-                self.list_preview.SetItem(list_id, 4, power)
-                self.list_preview.SetItem(list_id, 5, speed)
+                self.list_preview.SetItem(list_id, 4, str(power))
+                self.list_preview.SetItem(list_id, 5, str(speed))
                 self.list_preview.SetItem(list_id, 6, frequency)
                 self.list_preview.SetItem(list_id, 7, passes)
                 self.list_preview.SetItem(list_id, 8, effects)
@@ -3098,8 +3177,8 @@ class MaterialPanel(ScrolledPanel):
     def on_resize(self, event):
         size = self.GetClientSize()
         if size[0] != 0 and size[1] != 0:
-            self.tree_library.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
-            self.list_preview.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
+            self.tree_library.SetMaxSize(wx.Size(max(10, size[0] - 200), int(0.4 * size[1])))
+            self.list_preview.SetMaxSize(wx.Size(max(10, size[0] - 200), int(0.4 * size[1])))
 
         # Resize the columns in the listctrl
         size = self.list_preview.GetSize()
