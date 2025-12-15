@@ -173,12 +173,24 @@ jobs:
         elapsed=0
         available=false
         while [ $elapsed -lt $MAX_WAIT ]; do
-          runners_json=$(curl -s -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$API_URL")
-          # Check for a runner that has label 'rocky8' and is online and not busy
-          if echo "$runners_json" | jq -r '.runners[] | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
-            available=true
-            break
+          if ! runners_json=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$API_URL"); then
+            echo "Warning: Failed to fetch runners (curl error). Retrying..." >&2
+            sleep $INTERVAL
+            elapsed=$((elapsed + INTERVAL))
+            continue
           fi
+
+          # Check for a runner that has label 'rocky8' and is online and not busy
+          # Use 'runners[]?' to avoid iterating over null if 'runners' is missing
+          if echo "$runners_json" | jq -e '.runners? and (.runners|type=="array")' >/dev/null 2>&1; then
+            if echo "$runners_json" | jq -r '.runners[]? | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
+              available=true
+              break
+            fi
+          else
+            echo "Warning: API response did not contain a 'runners' array. Retrying..." >&2
+          fi
+
           sleep $INTERVAL
           elapsed=$((elapsed + INTERVAL))
         done
