@@ -58,6 +58,7 @@ class OpBranchPanel(wx.Panel):
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
 
