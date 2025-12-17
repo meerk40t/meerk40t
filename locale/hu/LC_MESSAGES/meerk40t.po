@@ -24855,3 +24855,7 @@ msgstr "offset pálya létrehozása egyszerűsített gyors algoritmussal"
 #: meerk40t/core/elements/element_treeops.py:2765
 msgid "Define Job Start Position"
 msgstr "Munka kezdőpozíció beállítása"
+
+#: meerk40t/core/elements/element_treeops.py:2771
+msgid "Remove all existing placements"
+msgstr "Összes elhelyezés eltávolítása"

@@ -25132,3 +25132,7 @@ msgstr "crea un percorso offset usando un algoritmo semplificato e veloce"
 #: meerk40t/core/elements/element_treeops.py:2765
 msgid "Define Job Start Position"
 msgstr "Definire la posizione di inizio del lavoro"
+
+#: meerk40t/core/elements/element_treeops.py:2771
+msgid "Remove all existing placements"
+msgstr "Rimuovere i punti di inizio lavoro"
