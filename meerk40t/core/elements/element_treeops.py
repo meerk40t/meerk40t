@@ -2768,7 +2768,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Remove all placements"),
         node_type="branch ops",
-        help=_("Start job at current laserposition"),
+        help=_("Remove all existing placements"),
         grouping="OPS_40_ADDITION",
     )
     def remove_all_placements_1(node, **kwargs):
