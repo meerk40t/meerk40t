@@ -24074,3 +24074,13 @@ msgstr "自交检查窗口（默认 100)"
 #: meerk40t/core/elements/offset_mk.py:2347
 msgid "create an offset path using simplified fast algorithm"
 msgstr "使用简化的快速算法创建偏移路径"
+
+#: meerk40t/core/elements/element_treeops.py:2724
+#: meerk40t/core/elements/element_treeops.py:2745
+#: meerk40t/core/elements/element_treeops.py:2765
+msgid "Define Job Start Position"
+msgstr "定义作业起始位置"
+
+#: meerk40t/core/elements/element_treeops.py:2771
+msgid "Remove all existing placements"
+msgstr "移除所有位置"

@@ -24767,3 +24767,13 @@ msgstr "окно проверки самопересечения (по умол�
 msgid "create an offset path using simplified fast algorithm"
 msgstr ""
 "создать смещённый путь с использованием упрощённого быстрого алгоритма"
+
+#: meerk40t/core/elements/element_treeops.py:2724
+#: meerk40t/core/elements/element_treeops.py:2745
+#: meerk40t/core/elements/element_treeops.py:2765
+msgid "Define Job Start Position"
+msgstr "Задать стартовую позицию задания"
+
+#: meerk40t/core/elements/element_treeops.py:2771
+msgid "Remove all existing placements"
+msgstr "Удалить все размещения"

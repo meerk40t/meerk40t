@@ -25126,3 +25126,13 @@ msgstr "finestra di controllo auto-intersezione (predefinito 100)"
 #: meerk40t/core/elements/offset_mk.py:2347
 msgid "create an offset path using simplified fast algorithm"
 msgstr "crea un percorso offset usando un algoritmo semplificato e veloce"
+
+#: meerk40t/core/elements/element_treeops.py:2724
+#: meerk40t/core/elements/element_treeops.py:2745
+#: meerk40t/core/elements/element_treeops.py:2765
+msgid "Define Job Start Position"
+msgstr "Definire la posizione di inizio del lavoro"
+
+#: meerk40t/core/elements/element_treeops.py:2771
+msgid "Remove all existing placements"
+msgstr "Rimuovere i punti di inizio lavoro"

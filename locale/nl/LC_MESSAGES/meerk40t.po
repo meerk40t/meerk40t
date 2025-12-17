@@ -24829,3 +24829,13 @@ msgstr "venster voor controle op zelfdoorsnijding (standaard 100)"
 #: meerk40t/core/elements/offset_mk.py:2347
 msgid "create an offset path using simplified fast algorithm"
 msgstr "maak een offsetpad met een vereenvoudigd snel algoritme"
+
+#: meerk40t/core/elements/element_treeops.py:2724
+#: meerk40t/core/elements/element_treeops.py:2745
+#: meerk40t/core/elements/element_treeops.py:2765
+msgid "Define Job Start Position"
+msgstr "Startpositie van de taak instellen"
+
+#: meerk40t/core/elements/element_treeops.py:2771
+msgid "Remove all existing placements"
+msgstr "Alle plaatsingen verwijderen"
