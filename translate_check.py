@@ -1,7 +1,7 @@
 """
 translate_check.py
 
-This script scans the Meerk40t source tree for translatable strings and compares them with existing translations
+This script scans the MeerK40t source tree for translatable strings and compares them with existing translations
 for the specified locale(s). It can output a delta_{locale}.po file for new strings, validate .po files, and check encoding.
 
 Features:
@@ -442,9 +442,9 @@ def validate_po(
     po = polib.POFile()
     # create header
     po.metadata = {
-        "Project-Id-Version": "Meerk40t",
+        "Project-Id-Version": "MeerK40t",
         "Language": locale,
-        "Language-Team": "Meerk40t Translation Team",
+        "Language-Team": "MeerK40t Translation Team",
         "Content-Type": "text/plain; charset=UTF-8",
         "Content-Transfer-Encoding": "8bit",
         "X-Generator": "translate_check.py",
@@ -765,7 +765,7 @@ def main():
     """
 
     parser = argparse.ArgumentParser(
-        description="Scan and validate Meerk40t translation files."
+        description="Scan and validate MeerK40t translation files."
     )
     supported_locales = ", ".join(LOCALE_LONG_NAMES.keys())
     parser.add_argument(
@@ -815,7 +815,7 @@ def main():
             if "de" not in locales:
                 locales.add("de")
 
-    print_header("Meerk40t Translation Check Tool")
+    print_header("MeerK40t Translation Check Tool")
     print_info(f"Processing locales: {', '.join(sorted(locales))}")
     print()
 

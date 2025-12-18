@@ -1,7 +1,7 @@
 """
 translate.py
 
-This script manages and validates .po translation files for Meerk40t.
+This script manages and validates .po translation files for MeerK40t.
 
 Features:
     - Checks for mismatched curly braces and smart quotes in .po files
@@ -512,7 +512,7 @@ def main() -> None:
     Main entry point for the script. Parses CLI arguments and triggers compilation.
     """
     parser = argparse.ArgumentParser(
-        description="Check and compile Meerk40t .po translation files into .mo files."
+        description="Check and compile MeerK40t .po translation files into .mo files."
     )
     parser.add_argument(
         "locales",
@@ -541,7 +541,7 @@ def main() -> None:
         args.locales = locales
     for loc in args.locales:
         locales.add(loc)
-    print_header("Meerk40t Translation Tool")
+    print_header("MeerK40t Translation Tool")
     if args.locales:
         print_info(f"Processing locales: {', '.join(sorted(locales))}")
     else:
