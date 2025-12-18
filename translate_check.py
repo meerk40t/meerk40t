@@ -21,7 +21,7 @@ Arguments:
     -a, --auto       Try a translation using an online service
 
 Supported locales:
-    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, tr, zh
+    de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, ru, tr, zh, pl
 
 Some testcases:
  _("This is a test string.")
@@ -115,7 +115,8 @@ LOCALE_LONG_NAMES = {
     "ru": "Russian",
     "tr": "Turkish",
     "zh": "Chinese",
-}
+    "pl": "Polish",
+} 
 GETTEXT_PLURAL_FORMS = {
     "de": "nplurals=2; plural=(n != 1);",
     "es": "nplurals=2; plural=(n != 1);",
@@ -129,6 +130,7 @@ GETTEXT_PLURAL_FORMS = {
     "ru": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
     "tr": "nplurals=2; plural=(n != 1);",
     "zh": "nplurals=1; plural=0;",
+    "pl": "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
 }
 
 
