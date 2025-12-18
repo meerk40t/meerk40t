@@ -449,9 +449,9 @@ def integrate_delta_files(locales: set) -> None:
             for msgid in duplicate_msgids:
                 print(f"  - {msgid}")
         if empty_msgids:
-            print_warning(f"Untranslated msgid(s) found in delta file for {locale}:")
-            for msgid in empty_msgids:
-                print(f"  - {msgid}")
+            print_warning(f"Found {len(empty_msgids)} untranslated msgid(s) in delta file for {locale}:")
+            # for msgid in empty_msgids:
+            #     print(f"  - {msgid}")
 
         # Integrate delta into main, handling conflicts
         conflicts = []
