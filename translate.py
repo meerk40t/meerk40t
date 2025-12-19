@@ -21,55 +21,50 @@ Usage:
 import argparse
 import os
 import re
+import sys
 
 import polib
 
 LOCALE_DIR = "./locale"
 
-# ANSI escape codes for colors
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-BOLD = "\033[1m"
-ENDC = "\033[0m"
+# Determine whether output is a TTY. If not (redirected), disable ANSI codes.
+try:
+    is_tty = sys.stdout.isatty()
+except Exception:
+    is_tty = False
+
+# On Windows, enable ANSI VT processing when running in a real terminal.
+# This avoids a dependency on `colorama` by enabling terminal
+# virtual terminal (ANSI) processing via the Win32 API.
+if os.name == "nt" and is_tty:
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        h = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE = -11
+        mode = ctypes.c_uint()
+        if kernel32.GetConsoleMode(h, ctypes.byref(mode)):
+            ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+            kernel32.SetConsoleMode(h, mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+    except Exception:
+        # If anything fails, fall back silently (colors will simply not work)
+        pass
+
+if is_tty:
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    BOLD = "\033[1m"
+    ENDC = "\033[0m"
+else:
+    RED = GREEN = YELLOW = BLUE = BOLD = ENDC = ""
 
 
 def print_header(text):
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+    print(f"{BLUE}{BOLD}{'=' * 60}{ENDC}")
     print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
-
-
-def print_error(text):
-    print(f"{RED}ERROR: {text}{ENDC}")
-
-
-def print_warning(text):
-    print(f"{YELLOW}WARNING: {text}{ENDC}")
-
-
-def print_success(text):
-    print(f"{GREEN}{text}{ENDC}")
-
-
-def print_info(text):
-    print(f"{BLUE}{text}{ENDC}")
-
-
-# ANSI escape codes for colors
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-BOLD = "\033[1m"
-ENDC = "\033[0m"
-
-
-def print_header(text):
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
-    print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+    print(f"{BLUE}{BOLD}{'=' * 60}{ENDC}")
 
 
 def print_error(text):
@@ -134,7 +129,7 @@ def find_erroneous_translations(file_path: str) -> bool:
             if not are_curly_brackets_matched(line):
                 found_error = True
                 print_error(
-                    f"{file_path}\n  Line {i+1}: Mismatched curly braces\n  {line.strip()}"
+                    f"{file_path}\n  Line {i + 1}: Mismatched curly braces\n  {line.strip()}"
                 )
             # Smart quote check disabled - was incorrectly flagging valid files
             # if contain_smart_quotes(line):
@@ -449,7 +444,9 @@ def integrate_delta_files(locales: set) -> None:
             for msgid in duplicate_msgids:
                 print(f"  - {msgid}")
         if empty_msgids:
-            print_warning(f"Found {len(empty_msgids)} untranslated msgid(s) in delta file for {locale}:")
+            print_warning(
+                f"Found {len(empty_msgids)} untranslated msgid(s) in delta file for {locale}:"
+            )
             # for msgid in empty_msgids:
             #     print(f"  - {msgid}")
 

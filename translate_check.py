@@ -33,6 +33,7 @@ Some testcases:
 
 import argparse
 import os
+import sys
 from typing import List, Tuple
 
 import polib
@@ -43,13 +44,51 @@ except ImportError:
     chardet = None
 
 
-# ANSI color codes for terminal output
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-BOLD = "\033[1m"
-ENDC = "\033[0m"
+# Determine whether output is a TTY. If not (redirected), disable ANSI codes.
+try:
+    is_tty = sys.stdout.isatty()
+except Exception:
+    is_tty = False
+
+# On Windows, enable ANSI VT processing when running in a real terminal.
+# This avoids requiring external dependencies like `colorama`.
+if os.name == "nt" and is_tty:
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        h = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE = -11
+        mode = ctypes.c_uint()
+        if kernel32.GetConsoleMode(h, ctypes.byref(mode)):
+            ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+            kernel32.SetConsoleMode(h, mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+    except Exception:
+        pass
+
+if is_tty:
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    BOLD = "\033[1m"
+    ENDC = "\033[0m"
+else:
+    RED = GREEN = YELLOW = BLUE = BOLD = ENDC = ""
+
+# Decide whether to use Unicode symbols (check stdout encoding).
+stdout_encoding = (getattr(sys.stdout, "encoding", None) or "").lower()
+use_symbols = is_tty and ("utf" in stdout_encoding)
+
+if use_symbols:
+    SYM_INFO = "ℹ"
+    SYM_OK = "✓"
+    SYM_WARN = "⚠"
+    SYM_ERR = "✗"
+else:
+    SYM_INFO = "[i]"
+    SYM_OK = "[OK]"
+    SYM_WARN = "[!]"
+    SYM_ERR = "[x]"
 
 
 def print_header(text: str) -> None:
@@ -61,22 +100,22 @@ def print_header(text: str) -> None:
 
 def print_info(text: str) -> None:
     """Print an info message."""
-    print(f"{BLUE}ℹ{ENDC} {text}")
+    print(f"{BLUE}{SYM_INFO}{ENDC} {text}")
 
 
 def print_success(text: str) -> None:
     """Print a success message."""
-    print(f"{GREEN}✓{ENDC} {text}")
+    print(f"{GREEN}{SYM_OK}{ENDC} {text}")
 
 
 def print_warning(text: str) -> None:
     """Print a warning message."""
-    print(f"{YELLOW}⚠{ENDC} {text}")
+    print(f"{YELLOW}{SYM_WARN}{ENDC} {text}")
 
 
 def print_error(text: str) -> None:
     """Print an error message."""
-    print(f"{RED}✗{ENDC} {text}")
+    print(f"{RED}{SYM_ERR}{ENDC} {text}")
 
 
 try:
@@ -116,7 +155,7 @@ LOCALE_LONG_NAMES = {
     "tr": "Turkish",
     "zh": "Chinese",
     "pl": "Polish",
-} 
+}
 GETTEXT_PLURAL_FORMS = {
     "de": "nplurals=2; plural=(n != 1);",
     "es": "nplurals=2; plural=(n != 1);",
@@ -516,16 +555,15 @@ def validate_po(
                 new_msgstr = msgstr
                 for i, str_val in enumerate(msgstr_curly):
                     if str_val not in msgid_curly and i < len(msgid_curly):
+
                         def replace_nth(text, sub, repl, n):
                             matches = list(re.finditer(re.escape(sub), text))
                             if len(matches) > n:
                                 start, end = matches[n].span()
                                 return text[:start] + repl + text[end:]
                             return text
-                    
-                        new_msgstr = replace_nth(
-                            new_msgstr, str_val, msgid_curly[i], i
-                        )
+
+                        new_msgstr = replace_nth(new_msgstr, str_val, msgid_curly[i], i)
                 return new_msgstr
 
             new_msgstr = replace_if_not_found(msgstr, msgid_curly, msgstr_curly)
@@ -534,7 +572,7 @@ def validate_po(
                 if auto_correct:
                     entry.msgstr = new_msgstr
                 else:
-                    do_it_yourself = True   
+                    do_it_yourself = True
         po.append(entry)
         seen.add(msgid)
         written += 1
@@ -679,6 +717,7 @@ def fix_result_string(translated: str, original: str) -> str:
     # There might be erroneous double escapes added, we remove them
     translated = translated.replace("\\\\", "\\")
     return translated
+
 
 def perform_basic_checks(locales: List[str]) -> None:
     print_header("Checking Encoding")
