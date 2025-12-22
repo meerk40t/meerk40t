@@ -280,6 +280,7 @@ class LiveLightJob:
             "updating",
             "view;realized",
             "update_group_labels",
+            "element_property_reload",
         ):
             if start:
                 self.service.listen(method, self.on_emphasis_changed)
@@ -550,4 +551,6 @@ class LiveLightJob:
         # if not elements:
         #     elements = list(self.service.elements.elems())
         #     self.source = "elements"
+        # Remove entries where the hidden flag is set
+        elements = [e for e in elements if not getattr(e, "hidden", False)]
         return elements
