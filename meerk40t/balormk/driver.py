@@ -159,6 +159,29 @@ class BalorDriver:
         """
         self.laser = True
 
+    def pedal_inquiry(self):
+        """
+        This command expects to check the pedal status and wait if needed.
+
+        @return:
+        """
+        action = self.service.pedal_mode.lower()
+        if action == "ignore":
+            return
+        # Test the pedal status
+        con = self.connection
+        port_list = con.read_port()
+        if port_list is None:
+            return
+        # Only trigger on state changes
+        foot_pin = self.service.footpedal_pin
+        foot_state = (port_list[1] >> foot_pin) & 1
+        if foot_state == self.last_foot_state:
+            return
+        self.last_foot_state = foot_state
+
+        
+            
     def geometry(self, geom):
         """
         Called at the end of plot commands to ensure the driver can deal with them all as a group.
@@ -245,6 +268,8 @@ class BalorDriver:
                         d = min(dwell_time, 60000)
                         con.list_laser_on_point(int(d))
                         dwell_time -= d
+                    # Call pedal inquiry
+                    self.pedal_inquiry()
                     con.list_delay_time(int(self.service.delay_end / 10.0))
                 elif function == "wait":
                     dwell_time = (

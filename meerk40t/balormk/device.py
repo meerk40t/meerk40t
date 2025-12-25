@@ -355,6 +355,30 @@ class BalorDevice(Service, Status):
                 "signals": "balorpin",
             },
             {
+                "attr": "pedal_mode",
+                "object": self,
+                "default": "ignore",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "ignore",
+                    "pause",
+                    "stop",
+                ],
+                "display": [
+                    _("Ignore (only act on input operation)"),
+                    _("Pause/Resume Job"),
+                    _("Stop Job"),
+                ],
+                "label": _("Pedal action"),
+                "tip": _("What action should be taken when the foot pedal is pressed during a job execution?"),
+                # Hint for translation _("Parameters")
+                "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
+                "subsection": "_30_Pin-Index",
+                "signals": "balorpin",
+            },
+            {
                 "attr": "signal_updates",
                 "object": self,
                 "default": True,
