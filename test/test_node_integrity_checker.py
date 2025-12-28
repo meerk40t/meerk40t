@@ -19,10 +19,5 @@ class TestNodeIntegrityChecker(unittest.TestCase):
             f"Expected CYCLE error, got: {errors}"
         )
 
-
-if __name__ == "__main__":
-    unittest.main()
-
-
 if __name__ == "__main__":
     unittest.main()
