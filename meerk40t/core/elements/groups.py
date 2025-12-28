@@ -146,6 +146,25 @@ def init_commands(kernel):
             to_treat = [n for n in data if n.type not in ("file", "group")]
         else:
             to_treat = condensed_set(data)
+
+        # If the selection contains both an ancestor and one (or more) of its descendants,
+        # only keep the ancestor. Keeping both can lead to pathological regrouping where the
+        # new group is created *inside* a selected group and then that selected group gets
+        # appended into its own descendant, creating a parent-cycle.
+        if to_treat:
+            treat_set = set(to_treat)
+            filtered = []
+            for node in to_treat:
+                ancestor = node.parent
+                redundant = False
+                while ancestor is not None:
+                    if ancestor in treat_set:
+                        redundant = True
+                        break
+                    ancestor = ancestor.parent
+                if not redundant:
+                    filtered.append(node)
+            to_treat = filtered
         if not to_treat:
             channel(_("Nothing to group."))
             return
