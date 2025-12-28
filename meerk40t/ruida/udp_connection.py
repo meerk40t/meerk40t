@@ -76,8 +76,9 @@ class UDPConnection:
         self._shutdown = True
         while not self.is_shutdown:
             continue
-        self._handshake_thread.join()
-        self._handshake_thread = None
+        if self._handshake_thread is not None:
+            self._handshake_thread.join()
+            self._handshake_thread = None
         self.is_shutdown = True # Causes the handshaker to exit.
         self.socket.close()
         self.socket = None

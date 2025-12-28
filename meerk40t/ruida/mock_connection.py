@@ -49,7 +49,7 @@ class MockConnection:
     def close(self, index=0):
         """Closes device."""
         _ = self.channel._
-        device = self.devices[index]
+        device = self.devices.get(index)
         self.channel(_("Attempting disconnection from Mock."))
         if device is not None:
             self.channel(_("Mock Disconnection Successful.\n"))
