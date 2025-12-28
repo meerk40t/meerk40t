@@ -142,6 +142,7 @@ class PositionPanel(wx.Panel):
         self.org_h = None
         self.context.setting(str, "units_name", "mm")
         self.position_units = self.context.units_name
+        self._updating = False  # Guard flag to prevent reentry
 
         if self.position_units in ("in", "inches"):
             self.position_units = "inch"
@@ -330,6 +331,16 @@ class PositionPanel(wx.Panel):
     def update_position(self, reset):
         if not self.IsShown():
             return
+        # Guard against reentry
+        if self._updating:
+            return
+        self._updating = True
+        try:
+            self._do_update_position(reset)
+        finally:
+            self._updating = False
+
+    def _do_update_position(self, reset):
         # Quick check whether we are already in a deletion phase
         try:
             dummy = hasattr(self.text_h, "GetValue")
@@ -696,8 +707,8 @@ class PositionPanel(wx.Panel):
         except ValueError:
             try:
                 pos_x = Length(
-                    self.text_h.GetValue(),
-                    relative_length=self.context.device.view.height,
+                    self.text_x.GetValue(),
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -714,8 +725,8 @@ class PositionPanel(wx.Panel):
         except ValueError:
             try:
                 pos_y = Length(
-                    self.text_h.GetValue(),
-                    relative_length=self.context.device.view.width,
+                    self.text_y.GetValue(),
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )

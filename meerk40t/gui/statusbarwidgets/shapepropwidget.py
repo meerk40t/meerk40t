@@ -272,6 +272,7 @@ class PositionWidget(StatusBarWidget):
         self.org_y = None
         self.org_w = None
         self.org_h = None
+        self._updating = False  # Guard flag to prevent reentry
 
         self.text_x = TextCtrl(
             self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float"
@@ -499,6 +500,16 @@ class PositionWidget(StatusBarWidget):
         event.Skip()
 
     def update_position(self, reset):
+        # Guard against reentry
+        if self._updating:
+            return
+        self._updating = True
+        try:
+            self._do_update_position(reset)
+        finally:
+            self._updating = False
+
+    def _do_update_position(self, reset):
         more_than_one = False
         ct = 0
         for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):
@@ -720,8 +731,8 @@ class PositionWidget(StatusBarWidget):
         except ValueError:
             try:
                 pos_x = Length(
-                    self.text_h.GetValue(),
-                    relative_length=self.context.device.view.height,
+                    self.text_x.GetValue(),
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.units_name,
                 )
@@ -738,8 +749,8 @@ class PositionWidget(StatusBarWidget):
         except ValueError:
             try:
                 pos_y = Length(
-                    self.text_h.GetValue(),
-                    relative_length=self.context.device.view.width,
+                    self.text_y.GetValue(),
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.units_name,
                 )
