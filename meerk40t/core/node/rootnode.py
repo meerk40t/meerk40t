@@ -6,6 +6,8 @@ class RootNode(Node):
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
 
     The notifications are shallow. They refer *only* to the node in question, not to any children or parents.
+
+    RootNode enforces a strict structure: it only accepts children with types starting with "branch".
     """
 
     def __init__(self, context, **kwargs):
@@ -26,6 +28,14 @@ class RootNode(Node):
 
     def is_draggable(self):
         return False
+
+    def validate_child(self, child):
+        """
+        Enforces that only branch nodes can be added directly to the root.
+        """
+        if not child.type.startswith("branch"):
+            return False
+        return True
 
     def listen(self, listener):
         self.listeners.append(listener)

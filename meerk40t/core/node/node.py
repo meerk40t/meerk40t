@@ -562,16 +562,19 @@ class Node:
         while stack:
             node, expected_parent, entering = stack.pop()
             if entering:
+                # Cycle detection: if node is in current path, we found a back-edge.
                 if node in path:
                     errors.append(
-                        f"Cycle detected: node id={id(node)} type={getattr(node, 'type', None)}"
+                        f"CYCLE detected: node id={id(node)} type={getattr(node, 'type', None)}"
                     )
+                    # Don't add to visited or path; skip exploring children of this cycle.
                     continue
+                # Shared subtree: node visited twice via different parents.
                 if node in visited:
-                    # This indicates either a cycle or a shared-subtree (node appears under multiple parents)
                     errors.append(
-                        f"Node visited twice (shared subtree?): node id={id(node)} type={getattr(node, 'type', None)}"
+                        f"Node shared (appears under multiple parents): node id={id(node)} type={getattr(node, 'type', None)}"
                     )
+                    # Don't process again.
                     continue
 
                 visited.add(node)
@@ -628,6 +631,13 @@ class Node:
                                 errors.append(
                                     f"Reference node missing in target._references: ref id={id(node)} target_id={id(target)}"
                                 )
+
+                # Child validation check (e.g. RootNode only accepts branches)
+                for child in getattr(node, "_children", []):
+                    if not node.validate_child(child):
+                        errors.append(
+                            f"Invalid child for parent: parent_type={node.type} child_type={child.type} node_id={id(child)}"
+                        )
 
                 # Exit marker.
                 stack.append((node, expected_parent, False))
@@ -1381,6 +1391,16 @@ class Node:
     def count_children(self):
         return len(self._children)
 
+    def validate_child(self, child):
+        """
+        Checks if the child is valid to be added to this node.
+        Subclasses should override this to enforce specific tree structure constraints.
+        
+        @param child: The node attempting to be added as a child.
+        @return: True if the child is valid, False otherwise.
+        """
+        return True
+
     def append_child(self, new_child):
         """
         Moves the new_child node as the last child of the current node.
@@ -1388,6 +1408,9 @@ class Node:
 
         """
         if new_child is None:
+            return
+
+        if not self.validate_child(new_child):
             return
 
         # Prevent corrupting the tree by creating a parent-cycle.
@@ -1410,10 +1433,12 @@ class Node:
         if belonged_to_me:
             destination_siblings.insert(0, new_child)
             new_child._parent = new_parent
+            new_child.set_root(new_parent._root)
             new_child.notify_attached(new_child, pos=0)
         else:
             destination_siblings.append(new_child)  # Add child.
             new_child._parent = new_parent
+            new_child.set_root(new_parent._root)
             new_child.notify_attached(new_child)
 
     def insert_sibling(self, new_sibling, below=True):
@@ -1425,10 +1450,17 @@ class Node:
         if new_sibling is None:
             return
 
+        destination_parent = reference_sibling.parent
+        if destination_parent is None:
+            # Cannot insert sibling if reference has no parent (it's a root).
+            return
+
+        if not destination_parent.validate_child(new_sibling):
+            return
+
         # Prevent corrupting the tree by creating a parent-cycle.
         # If the destination parent is within new_sibling's subtree, reparenting would cycle.
-        destination_parent = reference_sibling.parent
-        if destination_parent is not None and destination_parent.is_a_child_of(new_sibling):
+        if destination_parent.is_a_child_of(new_sibling):
             return
         source_siblings = (
             None if new_sibling.parent is None else new_sibling.parent.children
@@ -1448,6 +1480,7 @@ class Node:
         new_sibling.notify_detached(new_sibling)
         destination_siblings.insert(reference_position, new_sibling)
         new_sibling._parent = reference_sibling._parent
+        new_sibling.set_root(reference_sibling._root)
         new_sibling.notify_attached(new_sibling, pos=reference_position)
 
     def replace_node(self, keep_children=None, *args, **kwargs):
@@ -1580,7 +1613,8 @@ class Node:
     def is_a_child_of(self, node):
         # Walk up the parent chain, but guard against potential corruption (cycles)
         # so this cannot infinite-loop.
-        candidate = self
+        # Note: a node is never a child of itself, so we check parents only.
+        candidate = self.parent
         visited = set()
         while candidate is not None and candidate not in visited:
             if candidate is node:
