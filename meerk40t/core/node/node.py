@@ -1436,6 +1436,9 @@ class Node:
         # Prevent corrupting the tree by creating a parent-cycle.
         # This happens if we try to append an ancestor (or self) under a descendant.
         # Example: parent.append_child(child); child.append_child(parent) -> cycle.
+        if new_child is self:
+            return
+
         if self.is_a_child_of(new_child):
             return
         new_parent = self
@@ -1480,6 +1483,9 @@ class Node:
 
         # Prevent corrupting the tree by creating a parent-cycle.
         # If the destination parent is within new_sibling's subtree, reparenting would cycle.
+        if destination_parent is new_sibling:
+            return
+
         if destination_parent.is_a_child_of(new_sibling):
             return
         source_siblings = (
