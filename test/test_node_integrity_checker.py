@@ -14,7 +14,14 @@ class TestNodeIntegrityChecker(unittest.TestCase):
         b._children.append(a)
 
         errors = a.tree_integrity_errors()
-        self.assertTrue(any("Cycle detected" in e for e in errors))
+        self.assertTrue(
+            any("CYCLE detected" in e for e in errors),
+            f"Expected CYCLE error, got: {errors}"
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 
 if __name__ == "__main__":
