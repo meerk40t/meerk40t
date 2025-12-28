@@ -257,6 +257,8 @@ class Undo:
                 while len(self._undo_stack) > self.levels:
                     self._undo_stack.pop(0)
                     self._undo_index -= 1
+                # Clamp _undo_index to valid range after pruning
+                self._undo_index = max(0, min(self._undo_index, len(self._undo_stack) - 1))
 
     def find(self, scope:str):
         # self.debug_me(f"Looking for {scope}")
