@@ -605,14 +605,13 @@ class Node:
                     )
 
                 # Duplicate child entries.
+                children = list(getattr(node, "_children", []))
                 try:
-                    children = list(getattr(node, "_children", []))
                     if len(children) != len(set(children)):
                         errors.append(
                             f"Duplicate child entry detected: parent id={id(node)} type={getattr(node, 'type', None)}"
                         )
                 except Exception:
-                    children = list(getattr(node, "_children", []))
                     errors.append(
                         f"Unable to evaluate children duplicates: parent id={id(node)} type={getattr(node, 'type', None)}"
                     )
@@ -634,21 +633,12 @@ class Node:
 
                 # Child validation check (e.g. RootNode only accepts branches)
                 # Only perform this check if the node class has overridden the base
-                # Node.validate_child implementation. The base implementation always
-                # returns True, so calling it for every child would add overhead without
-                # providing any additional validation value.
-                try:
-                    node_validator = type(node).validate_child
-                    base_validator = Node.validate_child
-                except AttributeError:
-                    node_validator = None
-                    base_validator = None
-
-                if node_validator is not None and node_validator is not base_validator:
-                    for child in getattr(node, "_children", []):
+                # Node.validate_child implementation.
+                if type(node).validate_child is not Node.validate_child:
+                    for child in children:
                         if not node.validate_child(child):
                             errors.append(
-                                f"Invalid child for parent: parent_type={node.type} child_type={child.type} node_id={id(child)}"
+                                f"Invalid child for parent: parent_type={node.type} child_type={getattr(child, 'type', str(type(child)))} node_id={id(child)}"
                             )
 
                 # Exit marker.
@@ -656,7 +646,7 @@ class Node:
                 for child in reversed(children):
                     stack.append((child, node, True))
 
-                if max_nodes is not None and len(visited) > max_nodes:
+                if max_nodes is not None and len(visited) >= max_nodes:
                     errors.append(
                         f"Traversal aborted after {max_nodes} nodes (tree too large or corrupted)."
                     )
@@ -1279,17 +1269,27 @@ class Node:
         @param root:
         @return:
         """
-        if self._root is root:
+        # Optimization: If self and all children already have this root, assume subtree is fine.
+        # This handles the common case of moving within same tree, while catching 1-level inconsistencies.
+        if self._root is root and all(c._root is root for c in self._children):
             return
 
         # Iterative traversal to avoid recursion depth issues
         stack = [self]
         while stack:
             node = stack.pop()
-            if node._root is root:
-                continue
-            node._root = root
-            stack.extend(node._children)
+            if node._root is not root:
+                node._root = root
+                stack.extend(node._children)
+            else:
+                # Node has correct root.
+                # If we are here, it means either:
+                # 1. We came from the top-level check failure (some child was wrong)
+                # 2. We are deep in the tree.
+                # To be robust against inconsistencies, we should check children if we are not sure.
+                # But checking all children is expensive.
+                # We assume that if we are traversing, we should fix everything.
+                stack.extend(node._children)
 
     def _flatten(self, node):
         """
