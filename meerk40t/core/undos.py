@@ -54,7 +54,9 @@ class Undo:
         self.tree = tree
         self.active = active
         self.levels = max(3, levels) # at least three
-        self._lock = threading.Lock()
+        # Re-entrant because some public methods acquire the lock and then call
+        # other helpers (e.g. validate()) that also lock.
+        self._lock = threading.RLock()
         self._undo_stack = []
         self._undo_index = -1
         self.mark("init")  # Set initial tree state.
@@ -121,8 +123,12 @@ class Undo:
         @return:
         """
         with self._lock:
+            # Calculate target BEFORE validate() which may modify _undo_index
             to_be_restored = index if index is not None else self._undo_index - 1
-            if to_be_restored == 0:
+            # Ensure we have a current-state snapshot when we have real history.
+            # This makes console undo/redo independent of any GUI calls to validate().
+            self.validate()
+            if to_be_restored < 0:
                 # At bottom of stack.
                 return False
             if len(self._undo_stack) == 0:
@@ -164,8 +170,18 @@ class Undo:
         Performs a redo operation restoring the tree state.
         """
         with self._lock:
+            if len(self._undo_stack) == 0:
+                return False
+            # Calculate target BEFORE validate() which may modify _undo_index
+            if index is None and self._undo_index >= len(self._undo_stack) - 1:
+                # Nothing to redo.
+                return False
             to_be_restored = index + 1 if index is not None else self._undo_index + 1
+            # Ensure we have a current-state snapshot when we have real history.
+            self.validate()
             to_be_restored = min(len(self._undo_stack) - 1, to_be_restored)
+            if to_be_restored == self._undo_index:
+                return False
             self.debug_me(f"Redo requested: {index} -> will restore #{to_be_restored}")
             self._undo_index = to_be_restored
             try:
@@ -216,7 +232,7 @@ class Undo:
     def redo_string(self, idx = -1, **kwargs):
         self.validate()
         if idx < 0:
-            idx = self._undo_index - 1
+            idx = self._undo_index
         return str(self._undo_stack[idx + 1].message) if self.has_redo() else ""
 
     def has_redo(self, *args):
@@ -224,14 +240,25 @@ class Undo:
         return self.active and self._undo_index < len(self._undo_stack) - 1
 
     def validate(self):
-        if self.active and self._undo_stack and self._undo_stack[-1].message != self.LAST_STATE:
-            # We store the current state, just to have something to fall back to if needed
-            if self._undo_index >= len(self._undo_stack) - 1:
-                self._undo_index += 1
-            # print ("** Validate called and appending last state **")
-            self._undo_stack.append(
-                UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
-            )
+        # Thread-safe: validate can be called from GUI enable rules, console, etc.
+        with self._lock:
+            # Only add LAST_STATE when we actually have history beyond the initial snapshot.
+            if (
+                self.active
+                and len(self._undo_stack) > 1
+                and self._undo_stack[-1].message != self.LAST_STATE
+            ):
+                # We store the current state, just to have something to fall back to if needed
+                if self._undo_index >= len(self._undo_stack) - 1:
+                    self._undo_index += 1
+                self._undo_stack.append(
+                    UndoState(self.tree.backup_tree(), message=self.LAST_STATE),
+                )
+                while len(self._undo_stack) > self.levels:
+                    self._undo_stack.pop(0)
+                    self._undo_index -= 1
+                # Clamp _undo_index to valid range after pruning
+                self._undo_index = max(0, min(self._undo_index, len(self._undo_stack) - 1))
 
     def find(self, scope:str):
         # self.debug_me(f"Looking for {scope}")
@@ -259,13 +286,32 @@ class Undo:
             self._undo_stack[index].message = message
             
     def states(self, scope:str):
+        """
+        Returns a generator of (index, state) tuples for display in undo/redo menus.
+        
+        @param scope: "undo" for states that can be undone to, "redo" for states that can be redone to
+        @return: Generator of (index, UndoState) tuples excluding the current state and boundaries
+        
+        Note: validate() is called first and may modify _undo_index, so we need to track
+        the original index before validation to correctly exclude the current state.
+        """
+        # Track current index BEFORE validate() modifies it
+        original_index = self._undo_index
         self.validate()
-        lower_end = 1 # Ignore First
-        upper_end = len(self._undo_stack) - 1 # Ignore last
+        
+        lower_end = 1  # Ignore First (init state)
+        upper_end = len(self._undo_stack) - 1  # Ignore last (LAST_STATE)
+        
         if scope == "undo":
-            upper_end = self._undo_index
+            # Undo states are BEFORE the original current state
+            # Use original_index because validate() may have incremented _undo_index
+            upper_end = original_index
         elif scope == "redo":
-            lower_end = self._undo_index
+            # Redo states are AFTER the current state
+            # After validate(), _undo_index points to current or LAST_STATE
+            # Redo states start at original_index + 1
+            lower_end = original_index + 1
+            
         return ((idx, self._undo_stack[idx]) for idx in range(lower_end, upper_end))
 
     def debug_tree(self, state):
