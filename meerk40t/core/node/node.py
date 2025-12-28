@@ -540,6 +540,122 @@ class Node:
                 # Fix: Check if reference target exists and has back-reference
             c._validate_tree()
 
+    def tree_integrity_errors(self, check_references=True, max_nodes=250000):
+        """Return a list of detected tree integrity issues.
+
+        This is intended as a diagnostic tool to find corruption like:
+        - parent cycles (which cause RecursionError in notify_* calls)
+        - parent/children pointer mismatches
+        - duplicate child entries (same object listed twice)
+        - root pointer inconsistencies
+
+        The traversal is iterative and cycle-safe.
+        """
+        errors = []
+
+        expected_root = self._root if getattr(self, "_root", None) is not None else self
+        visited = set()
+        path = set()
+
+        # (node, expected_parent, entering)
+        stack = [(self, None, True)]
+        while stack:
+            node, expected_parent, entering = stack.pop()
+            if entering:
+                # Cycle detection: if node is in current path, we found a back-edge.
+                if node in path:
+                    errors.append(
+                        f"CYCLE detected: node id={id(node)} type={getattr(node, 'type', None)}"
+                    )
+                    # Don't add to visited or path; skip exploring children of this cycle.
+                    continue
+                # Shared subtree: node visited twice via different parents.
+                if node in visited:
+                    errors.append(
+                        f"Node shared (appears under multiple parents): node id={id(node)} type={getattr(node, 'type', None)}"
+                    )
+                    # Don't process again.
+                    continue
+
+                visited.add(node)
+                path.add(node)
+
+                # Parent pointer sanity.
+                actual_parent = getattr(node, "_parent", None)
+                if expected_parent is not None and actual_parent is not expected_parent:
+                    errors.append(
+                        f"Parent mismatch: node id={id(node)} type={getattr(node, 'type', None)} expected_parent_id={id(expected_parent)} actual_parent_id={id(actual_parent) if actual_parent is not None else None}"
+                    )
+                if expected_parent is not None:
+                    try:
+                        if node not in expected_parent._children:
+                            errors.append(
+                                f"Missing from parent's children: node id={id(node)} type={getattr(node, 'type', None)} parent_id={id(expected_parent)}"
+                            )
+                    except Exception:
+                        errors.append(
+                            f"Unable to verify parent children list: node id={id(node)} type={getattr(node, 'type', None)}"
+                        )
+
+                # Root pointer sanity.
+                actual_root = getattr(node, "_root", None)
+                if actual_root is not expected_root:
+                    errors.append(
+                        f"Root mismatch: node id={id(node)} type={getattr(node, 'type', None)} expected_root_id={id(expected_root)} actual_root_id={id(actual_root) if actual_root is not None else None}"
+                    )
+
+                # Duplicate child entries.
+                children = list(getattr(node, "_children", []))
+                try:
+                    if len(children) != len(set(children)):
+                        errors.append(
+                            f"Duplicate child entry detected: parent id={id(node)} type={getattr(node, 'type', None)}"
+                        )
+                except Exception:
+                    errors.append(
+                        f"Unable to evaluate children duplicates: parent id={id(node)} type={getattr(node, 'type', None)}"
+                    )
+
+                # Reference back-link sanity.
+                if check_references:
+                    for ref in list(getattr(node, "_references", [])):
+                        if getattr(ref, "node", None) is not node:
+                            errors.append(
+                                f"Broken reference backlink: target id={id(node)} type={getattr(node, 'type', None)} ref_id={id(ref)}"
+                            )
+                    if getattr(node, "type", None) == "reference":
+                        target = getattr(node, "node", None)
+                        if target is not None and hasattr(target, "_references"):
+                            if node not in getattr(target, "_references", []):
+                                errors.append(
+                                    f"Reference node missing in target._references: ref id={id(node)} target_id={id(target)}"
+                                )
+
+                # Child validation check (e.g. RootNode only accepts branches)
+                # Only perform this check if the node class has overridden the base
+                # Node.validate_child implementation.
+                if type(node).validate_child is not Node.validate_child:
+                    for child in children:
+                        if not node.validate_child(child):
+                            errors.append(
+                                f"Invalid child for parent: parent_type={node.type} child_type={getattr(child, 'type', str(type(child)))} node_id={id(child)}"
+                            )
+
+                # Exit marker.
+                stack.append((node, expected_parent, False))
+                for child in reversed(children):
+                    stack.append((child, node, True))
+
+                if max_nodes is not None and len(visited) >= max_nodes:
+                    errors.append(
+                        f"Traversal aborted after {max_nodes} nodes (tree too large or corrupted)."
+                    )
+                    break
+            else:
+                path.discard(node)
+
+        return errors
+
     def _build_copy_nodes(self, links=None):
         """
         Creates a copy of each node, linked to the ID of the original node. This will create
@@ -1153,9 +1269,27 @@ class Node:
         @param root:
         @return:
         """
-        self._root = root
-        for c in self._children:
-            c.set_root(root)
+        # Optimization: If self and all children already have this root, assume subtree is fine.
+        # This handles the common case of moving within same tree, while catching 1-level inconsistencies.
+        if self._root is root and all(c._root is root for c in self._children):
+            return
+
+        # Iterative traversal to avoid recursion depth issues
+        stack = [self]
+        while stack:
+            node = stack.pop()
+            if node._root is not root:
+                node._root = root
+                stack.extend(node._children)
+            else:
+                # Node has correct root.
+                # If we are here, it means either:
+                # 1. We came from the top-level check failure (some child was wrong)
+                # 2. We are deep in the tree.
+                # To be robust against inconsistencies, we should check children if we are not sure.
+                # But checking all children is expensive.
+                # We assume that if we are traversing, we should fix everything.
+                stack.extend(node._children)
 
     def _flatten(self, node):
         """
@@ -1277,6 +1411,16 @@ class Node:
     def count_children(self):
         return len(self._children)
 
+    def validate_child(self, child):
+        """
+        Checks if the child is valid to be added to this node.
+        Subclasses should override this to enforce specific tree structure constraints.
+        
+        @param child: The node attempting to be added as a child.
+        @return: True if the child is valid, False otherwise.
+        """
+        return True
+
     def append_child(self, new_child):
         """
         Moves the new_child node as the last child of the current node.
@@ -1284,6 +1428,18 @@ class Node:
 
         """
         if new_child is None:
+            return
+
+        if not self.validate_child(new_child):
+            return
+
+        # Prevent corrupting the tree by creating a parent-cycle.
+        # This happens if we try to append an ancestor (or self) under a descendant.
+        # Example: parent.append_child(child); child.append_child(parent) -> cycle.
+        if new_child is self:
+            return
+
+        if self.is_a_child_of(new_child):
             return
         new_parent = self
         belonged_to_me = bool(new_child.parent is self)
@@ -1300,10 +1456,12 @@ class Node:
         if belonged_to_me:
             destination_siblings.insert(0, new_child)
             new_child._parent = new_parent
+            new_child.set_root(new_parent._root)
             new_child.notify_attached(new_child, pos=0)
         else:
             destination_siblings.append(new_child)  # Add child.
             new_child._parent = new_parent
+            new_child.set_root(new_parent._root)
             new_child.notify_attached(new_child)
 
     def insert_sibling(self, new_sibling, below=True):
@@ -1312,10 +1470,28 @@ class Node:
         If the node exists elsewhere in the tree it will be removed from that location.
         """
         reference_sibling = self
+        if new_sibling is None:
+            return
+
+        destination_parent = reference_sibling.parent
+        if destination_parent is None:
+            # Cannot insert sibling if reference has no parent (it's a root).
+            return
+
+        if not destination_parent.validate_child(new_sibling):
+            return
+
+        # Prevent corrupting the tree by creating a parent-cycle.
+        # If the destination parent is within new_sibling's subtree, reparenting would cycle.
+        if destination_parent is new_sibling:
+            return
+
+        if destination_parent.is_a_child_of(new_sibling):
+            return
         source_siblings = (
             None if new_sibling.parent is None else new_sibling.parent.children
         )
-        destination_siblings = reference_sibling.parent.children
+        destination_siblings = destination_parent.children
 
         if source_siblings:
             source_siblings.remove(new_sibling)
@@ -1330,6 +1506,7 @@ class Node:
         new_sibling.notify_detached(new_sibling)
         destination_siblings.insert(reference_position, new_sibling)
         new_sibling._parent = reference_sibling._parent
+        new_sibling.set_root(reference_sibling._root)
         new_sibling.notify_attached(new_sibling, pos=reference_position)
 
     def replace_node(self, keep_children=None, *args, **kwargs):
@@ -1460,10 +1637,15 @@ class Node:
             child.remove_node(fast=fast, destroy=destroy)
 
     def is_a_child_of(self, node):
-        candidate = self
-        while candidate is not None:
+        # Walk up the parent chain, but guard against potential corruption (cycles)
+        # so this cannot infinite-loop.
+        # Note: a node is never a child of itself, so we check parents only.
+        candidate = self.parent
+        visited = set()
+        while candidate is not None and candidate not in visited:
             if candidate is node:
                 return True
+            visited.add(candidate)
             candidate = candidate.parent
         return False
 

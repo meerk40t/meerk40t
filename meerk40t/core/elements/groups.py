@@ -19,6 +19,44 @@ def plugin(kernel, lifecycle=None):
         init_commands(kernel)
 
 
+def filter_redundant_ancestors(nodes):
+    """
+    Filter out nodes whose ancestors are also in the list.
+    
+    If the selection contains both an ancestor and one (or more) of its descendants,
+    only keep the ancestor.
+    
+    This check serves two purposes:
+    1. Logical Consistency: It prevents "flattening" the structure. If we grouped both
+       GroupA and its ChildB, ChildB would be moved out of GroupA into the new group,
+       becoming a sibling of GroupA. We want to preserve the hierarchy.
+    2. Redundancy: While node.append_child() now has built-in cycle prevention,
+       this filter avoids attempting operations that are structurally redundant.
+       
+    Args:
+        nodes: List of nodes to filter
+        
+    Returns:
+        List of nodes with redundant descendants removed
+    """
+    if not nodes:
+        return []
+        
+    treat_set = set(nodes)
+    filtered = []
+    for node in nodes:
+        ancestor = node.parent
+        redundant = False
+        while ancestor is not None:
+            if ancestor in treat_set:
+                redundant = True
+                break
+            ancestor = ancestor.parent
+        if not redundant:
+            filtered.append(node)
+    return filtered
+
+
 def init_commands(kernel):
     """
     Initialize console commands for group operations.
@@ -146,6 +184,8 @@ def init_commands(kernel):
             to_treat = [n for n in data if n.type not in ("file", "group")]
         else:
             to_treat = condensed_set(data)
+
+        to_treat = filter_redundant_ancestors(to_treat)
         if not to_treat:
             channel(_("Nothing to group."))
             return
