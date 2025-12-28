@@ -633,11 +633,23 @@ class Node:
                                 )
 
                 # Child validation check (e.g. RootNode only accepts branches)
-                for child in getattr(node, "_children", []):
-                    if not node.validate_child(child):
-                        errors.append(
-                            f"Invalid child for parent: parent_type={node.type} child_type={child.type} node_id={id(child)}"
-                        )
+                # Only perform this check if the node class has overridden the base
+                # Node.validate_child implementation. The base implementation always
+                # returns True, so calling it for every child would add overhead without
+                # providing any additional validation value.
+                try:
+                    node_validator = type(node).validate_child
+                    base_validator = Node.validate_child
+                except AttributeError:
+                    node_validator = None
+                    base_validator = None
+
+                if node_validator is not None and node_validator is not base_validator:
+                    for child in getattr(node, "_children", []):
+                        if not node.validate_child(child):
+                            errors.append(
+                                f"Invalid child for parent: parent_type={node.type} child_type={child.type} node_id={id(child)}"
+                            )
 
                 # Exit marker.
                 stack.append((node, expected_parent, False))
@@ -1267,9 +1279,17 @@ class Node:
         @param root:
         @return:
         """
-        self._root = root
-        for c in self._children:
-            c.set_root(root)
+        if self._root is root:
+            return
+
+        # Iterative traversal to avoid recursion depth issues
+        stack = [self]
+        while stack:
+            node = stack.pop()
+            if node._root is root:
+                continue
+            node._root = root
+            stack.extend(node._children)
 
     def _flatten(self, node):
         """

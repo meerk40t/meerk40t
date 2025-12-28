@@ -148,9 +148,14 @@ def init_commands(kernel):
             to_treat = condensed_set(data)
 
         # If the selection contains both an ancestor and one (or more) of its descendants,
-        # only keep the ancestor. Keeping both can lead to pathological regrouping where the
-        # new group is created *inside* a selected group and then that selected group gets
-        # appended into its own descendant, creating a parent-cycle.
+        # only keep the ancestor.
+        #
+        # This check serves two purposes:
+        # 1. Logical Consistency: It prevents "flattening" the structure. If we grouped both
+        #    GroupA and its ChildB, ChildB would be moved out of GroupA into the new group,
+        #    becoming a sibling of GroupA. We want to preserve the hierarchy.
+        # 2. Redundancy: While node.append_child() now has built-in cycle prevention,
+        #    this filter avoids attempting operations that are structurally redundant.
         if to_treat:
             treat_set = set(to_treat)
             filtered = []
