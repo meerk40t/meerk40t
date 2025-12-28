@@ -13,7 +13,7 @@ class TestUndoIndexLogic(unittest.TestCase):
         self.kernel = bootstrap()
         self.elements = self.kernel.elements
         self.undo = self.elements.undo
-        self.undo.debug_active = True  # Enable debug output
+        # self.undo.debug_active = True  # Uncomment for verbose debug output
 
     def tearDown(self):
         self.kernel.shutdown()
