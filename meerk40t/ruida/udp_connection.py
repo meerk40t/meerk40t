@@ -73,14 +73,18 @@ class UDPConnection:
     def close(self):
         if not self.is_open:
             return
+        # Signal the handshaker thread to shut down, then wait for it to finish
         self._shutdown = True
-        while not self.is_shutdown:
-            continue
-        self._handshake_thread.join()
-        self._handshake_thread = None
-        self.is_shutdown = True # Causes the handshaker to exit.
-        self.socket.close()
-        self.socket = None
+        if self._handshake_thread is not None:
+            # Avoid self-join deadlock: don't join if we're on the handshaker thread
+            if threading.current_thread() != self._handshake_thread:
+                self._handshake_thread.join()
+            self._handshake_thread = None
+        # Mark this connection as shutdown and close the socket resources
+        self.is_shutdown = True  # Causes the handshaker to exit / reflects shutdown state.
+        if self.socket is not None:
+            self.socket.close()
+            self.socket = None
         self.service.signal(
             "pipe;usb_status", "Disconnected")
         self.events("Disconnected")
@@ -322,7 +326,18 @@ class UDPConnection:
                             break
             self.is_shutdown = True
         except OSError:
+            # Avoid calling shutdown() here, since that may wait for this
+            # thread to set is_shutdown, causing a deadlock. Instead, mark
+            # the connection as shut down, close the socket, and exit the thread.
+            self._shutdown = True
+            self.is_shutdown = True
+            # Close the socket to release resources
+            if self.socket is not None:
+                try:
+                    self.socket.close()
+                except Exception:
+                    pass  # Best effort cleanup
+                self.socket = None
             self.service.signal(
                 "pipe;usb_status", "Ruida comms ERROR")
             self.events("Ruida comms error.")
-            self.shutdown()
