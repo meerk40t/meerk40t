@@ -284,13 +284,32 @@ class Undo:
             self._undo_stack[index].message = message
             
     def states(self, scope:str):
+        """
+        Returns a generator of (index, state) tuples for display in undo/redo menus.
+        
+        @param scope: "undo" for states that can be undone to, "redo" for states that can be redone to
+        @return: Generator of (index, UndoState) tuples excluding the current state and boundaries
+        
+        Note: validate() is called first and may modify _undo_index, so we need to track
+        the original index before validation to correctly exclude the current state.
+        """
+        # Track current index BEFORE validate() modifies it
+        original_index = self._undo_index
         self.validate()
-        lower_end = 1 # Ignore First
-        upper_end = len(self._undo_stack) - 1 # Ignore last
+        
+        lower_end = 1  # Ignore First (init state)
+        upper_end = len(self._undo_stack) - 1  # Ignore last (LAST_STATE)
+        
         if scope == "undo":
-            upper_end = self._undo_index
+            # Undo states are BEFORE the original current state
+            # Use original_index because validate() may have incremented _undo_index
+            upper_end = original_index
         elif scope == "redo":
-            lower_end = self._undo_index + 1
+            # Redo states are AFTER the current state
+            # After validate(), _undo_index points to current or LAST_STATE
+            # Redo states start at original_index + 1
+            lower_end = original_index + 1
+            
         return ((idx, self._undo_stack[idx]) for idx in range(lower_end, upper_end))
 
     def debug_tree(self, state):
