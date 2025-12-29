@@ -70,7 +70,6 @@ import re
 from contextlib import contextmanager
 from copy import copy
 
-import numpy
 import numpy as np
 
 # Import numba for JIT compilation optimization
@@ -3338,10 +3337,10 @@ class Geomstr:
                 return path
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
-        if isinstance(first_point, numpy.ndarray):
+        if isinstance(first_point, np.ndarray):
             points = list(first_point)
             first_point = points[0]
-        if isinstance(first_point, (list, tuple, numpy.ndarray)):
+        if isinstance(first_point, (list, tuple, np.ndarray)):
             points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
