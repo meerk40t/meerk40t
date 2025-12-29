@@ -73,12 +73,14 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     
     def send_error_page(self, status_code: int, message: str) -> None:
         """Send a formatted error page"""
+        # HTML-escape message to prevent XSS
+        safe_message = html_module.escape(message, quote=True)
         html_string = f"""<!DOCTYPE html>
 <html>
 <head><title>Error {status_code}</title></head>
 <body>
 <h1>Error {status_code}</h1>
-<p>{message}</p>
+<p>{safe_message}</p>
 </body>
 </html>"""
         self.send_html_response(html_string, status_code)
