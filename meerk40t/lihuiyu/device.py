@@ -843,12 +843,23 @@ class LihuiyuDevice(Service, Status):
             "pause",
             help=_("realtime pause/resume of the machine"),
         )
-        def realtime_pause(**kwgs):
+        def realtime_pause(channel, _, **kwgs):
             if self.driver.paused:
                 self.driver.resume()
             else:
                 self.driver.pause()
             self.signal("pause")
+
+        @self.console_command(
+            "resume",
+            help=_("realtime resume of the machine"),
+        )
+        def realtime_resume(channel, _,**kwgs):
+            if self.driver.paused:
+                self.driver.resume()
+                self.signal("pause")
+            else:
+                channel(_("Device is not paused"))
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwgs):

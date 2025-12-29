@@ -430,6 +430,17 @@ class RuidaDevice(Service, Status):
             self.signal("pause")
 
         @self.console_command(
+            "resume",
+            help=_("realtime resume of the machine"),
+        )
+        def realtime_resume(command, channel, _, data=None, **kwargs):
+            if self.driver.paused:
+                self.driver.resume()
+                self.signal("pause")
+            else:
+                channel(_("Device is not paused"))
+
+        @self.console_command(
             "ruida_connect",
             hidden=True,
             help=_("Connects to the device."),
