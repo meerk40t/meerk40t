@@ -1,3 +1,4 @@
+import html as html_module
 import socket
 import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,20 +20,27 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     Handles GET and POST requests with proper HTTP/1.1 protocol.
     """
     
-    # Class variable to store reference to WebServer instance
-    server_instance = None  # type: WebServer
+    def _get_server_instance(self):
+        """
+        Safely retrieve the associated WebServer instance from the HTTPServer.
+        This keeps server state scoped per HTTPServer instead of globally.
+        """
+        # self.server is the HTTPServer / ThreadingHTTPServer instance
+        return getattr(self.server, "server_instance", None)
     
     def log_message(self, format, *args):
         """Override to use kernel's logging instead of stderr"""
         # Only log non-GET requests to avoid spam from auto-refresh
         if self.command != 'GET':
-            if self.server_instance and self.server_instance.events_channel:
-                self.server_instance.events_channel(f"{self.address_string()} - {format % args}")
+            server_instance = self._get_server_instance()
+            if server_instance and server_instance.events_channel:
+                server_instance.events_channel(f"{self.address_string()} - {format % args}")
     
     def log_error(self, format, *args):
         """Override to use kernel's logging for errors"""
-        if self.server_instance and self.server_instance.events_channel:
-            self.server_instance.events_channel(f"ERROR: {self.address_string()} - {format % args}")
+        server_instance = self._get_server_instance()
+        if server_instance and server_instance.events_channel:
+            server_instance.events_channel(f"ERROR: {self.address_string()} - {format % args}")
     
     def send_response_headers(self, content_type="text/html", content_length=0):
         """Send common HTTP headers"""
@@ -53,7 +61,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     
     def send_error_page(self, status_code, message):
         """Send a formatted error page"""
-        html = f"""<!DOCTYPE html>
+        html_string = f"""<!DOCTYPE html>
 <html>
 <head><title>Error {status_code}</title></head>
 <body>
@@ -61,12 +69,13 @@ class WebRequestHandler(BaseHTTPRequestHandler):
 <p>{message}</p>
 </body>
 </html>"""
-        self.send_html_response(html, status_code)
+        self.send_html_response(html_string, status_code)
     
     def do_GET(self):
         """Handle GET requests"""
         try:
-            if self.server_instance is None:
+            server_instance = self._get_server_instance()
+            if server_instance is None:
                 self.send_error_page(500, "Server not properly initialized")
                 return
             
@@ -80,7 +89,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
                 command = query_params["cmd"][0]
             
             # Generate response
-            html_content = self.server_instance.build_html_page(command)
+            html_content = server_instance.build_html_page(command)
             self.send_html_response(html_content)
             
         except Exception as e:
@@ -90,7 +99,8 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Handle POST requests"""
         try:
-            if self.server_instance is None:
+            server_instance = self._get_server_instance()
+            if server_instance is None:
                 self.send_error_page(500, "Server not properly initialized")
                 return
             
@@ -107,13 +117,13 @@ class WebRequestHandler(BaseHTTPRequestHandler):
                 try:
                     job_idx_str, operation = job_cmd.split(':', 1)
                     job_idx = int(job_idx_str)
-                    result = self.server_instance.handle_job_command(job_idx, operation)
+                    result = server_instance.handle_job_command(job_idx, operation)
                     # Display result as message without executing as command
-                    html_content = self.server_instance.build_html_page(message=result)
+                    html_content = server_instance.build_html_page(message=result)
                     self.send_html_response(html_content)
                 except (ValueError, IndexError) as e:
                     error_msg = f"Error: Invalid job command format: {str(e)}"
-                    html_content = self.server_instance.build_html_page(message=error_msg)
+                    html_content = server_instance.build_html_page(message=error_msg)
                     self.send_html_response(html_content)
                 return
             
@@ -123,7 +133,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
                 command = post_params["cmd"][0]
             
             # Generate response
-            html_content = self.server_instance.build_html_page(command)
+            html_content = server_instance.build_html_page(command)
             self.send_html_response(html_content)
             
         except Exception as e:
@@ -361,10 +371,13 @@ class WebServer(Module):
         command_result = ""
         if command:
             self.send_command(command)
-            command_result = f"<div class='alert alert-success'>Command executed: <code>{command}</code></div>"
+            # HTML-escape command to prevent XSS
+            safe_command = html_module.escape(command, quote=True)
+            command_result = f"<div class='alert alert-success'>Command executed: <code>{safe_command}</code></div>"
         elif message:
-            # Display message without executing
-            command_result = f"<div class='alert alert-info'>{message}</div>"
+            # Display message without executing, HTML-escape to prevent XSS
+            safe_message = html_module.escape(message, quote=True)
+            command_result = f"<div class='alert alert-info'>{safe_message}</div>"
         
         # Build spooler table
         spooler_html = self._build_spooler_table()
@@ -1020,6 +1033,9 @@ class WebServer(Module):
         # Clear job map for this render
         self._job_map.clear()
         
+        # Use global counter across all devices to prevent key collisions
+        global_job_idx = 0
+        
         available_devices = self.context.kernel.services("device")
         for device in available_devices:
             spooler = device.spooler
@@ -1032,18 +1048,17 @@ class WebServer(Module):
                 except AttributeError:
                     return str(named_obj)
             
-            queue_idx = 0
             for idx, e in enumerate(spooler.queue):
-                queue_idx += 1
+                global_job_idx += 1
                 has_jobs = True
                 spool_obj = e
                 
-                # Store job reference for operations
-                self._job_map[queue_idx] = (device, spool_obj, spooler)
+                # Store job reference for operations (using global index)
+                self._job_map[global_job_idx] = (device, spool_obj, spooler)
                 
                 # Build row data
                 row_data = {
-                    "idx": queue_idx,
+                    "idx": global_job_idx,
                     "device": device.label,
                     "name": "",
                     "items": 1,
@@ -1222,8 +1237,8 @@ class WebServer(Module):
             # Create threaded HTTP server
             self.httpd = ThreadingHTTPServer((self.bind_address, self.port), WebRequestHandler)
             
-            # Set reference to this instance in the handler class
-            WebRequestHandler.server_instance = self
+            # Attach this WebServer instance to the HTTPServer (not the handler class)
+            self.httpd.server_instance = self
             
             self.events_channel(
                 _("Web server listening on {address}:{port}...").format(
