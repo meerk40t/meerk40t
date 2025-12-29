@@ -2,6 +2,7 @@ import html as html_module
 import socket
 import logging
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from math import isinf
@@ -180,10 +181,12 @@ class WebServer(Module):
         
         # Store job references for operations
         self._job_map = {}  # Maps display_idx to (device, job_object, spooler)
+        self._job_map_lock = threading.Lock()
         
         # Console output buffer (stores last 100 messages)
         self._console_buffer = []
         self._console_max_lines = 100
+        self._console_buffer_lock = threading.Lock()
         
         # Watch regular console channel for command output
         self.console_channel = self.context.channel("console")
@@ -208,12 +211,13 @@ class WebServer(Module):
     
     def _console_watcher(self, message: Any) -> None:
         """Watch console channel and buffer messages"""
-        # Add message to buffer
-        self._console_buffer.append(str(message))
-        
-        # Keep buffer at max size
-        if len(self._console_buffer) > self._console_max_lines:
-            self._console_buffer.pop(0)
+        with self._console_buffer_lock:
+            # Add message to buffer
+            self._console_buffer.append(str(message))
+            
+            # Keep buffer at max size
+            if len(self._console_buffer) > self._console_max_lines:
+                self._console_buffer.pop(0)
     
     def _ansi_to_html(self, text):
         """Convert ANSI escape codes to HTML formatting"""
@@ -288,10 +292,11 @@ class WebServer(Module):
         @param operation: Operation to perform (stop_job, remove_job, pause_device, resume_device)
         @return: Success message or error
         """
-        if job_idx not in self._job_map:
-            return f"Error: Job {job_idx} not found"
-        
-        device, job, spooler = self._job_map[job_idx]
+        with self._job_map_lock:
+            if job_idx not in self._job_map:
+                return f"Error: Job {job_idx} not found"
+            
+            device, job, spooler = self._job_map[job_idx]
         
         try:
             if operation == 'stop_job':
@@ -1053,10 +1058,11 @@ class WebServer(Module):
     
     def _get_console_output(self) -> str:
         """Get recent console output as HTML with ANSI codes converted"""
-        if not self._console_buffer:
-            return "No console output yet..."
-        # Return last 50 messages (or all if less)
-        recent = self._console_buffer[-50:]
+        with self._console_buffer_lock:
+            if not self._console_buffer:
+                return "No console output yet..."
+            # Return last 50 messages (or all if less)
+            recent = self._console_buffer[-50:]
         # Convert each line's ANSI codes to HTML
         html_lines = [self._ansi_to_html(line) for line in recent]
         return "<br>".join(html_lines)
@@ -1068,7 +1074,8 @@ class WebServer(Module):
         has_jobs = False
         
         # Clear job map for this render
-        self._job_map.clear()
+        with self._job_map_lock:
+            self._job_map.clear()
         
         # Use global counter across all devices to prevent key collisions
         global_job_idx = 0
@@ -1091,7 +1098,8 @@ class WebServer(Module):
                 spool_obj = e
                 
                 # Store job reference for operations (using global index)
-                self._job_map[global_job_idx] = (device, spool_obj, spooler)
+                with self._job_map_lock:
+                    self._job_map[global_job_idx] = (device, spool_obj, spooler)
                 
                 # Build row data
                 row_data = {
