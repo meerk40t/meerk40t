@@ -22,6 +22,7 @@ import argparse
 import os
 import re
 import sys
+from typing import List, Tuple, Set
 
 import polib
 
@@ -61,25 +62,25 @@ else:
     RED = GREEN = YELLOW = BLUE = BOLD = ENDC = ""
 
 
-def print_header(text):
+def print_header(text: str) -> None:
     print(f"{BLUE}{BOLD}{'=' * 60}{ENDC}")
     print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
     print(f"{BLUE}{BOLD}{'=' * 60}{ENDC}")
 
 
-def print_error(text):
+def print_error(text: str) -> None:
     print(f"{RED}ERROR: {text}{ENDC}")
 
 
-def print_warning(text):
+def print_warning(text: str) -> None:
     print(f"{YELLOW}WARNING: {text}{ENDC}")
 
 
-def print_success(text):
+def print_success(text: str) -> None:
     print(f"{GREEN}{text}{ENDC}")
 
 
-def print_info(text):
+def print_info(text: str) -> None:
     print(f"{BLUE}{text}{ENDC}")
 
 
@@ -230,7 +231,7 @@ def find_erroneous_translations(file_path: str) -> bool:
     return found_error
 
 
-def create_mo_files(force: bool, locales: set) -> list:
+def create_mo_files(force: bool, locales: Set[str]) -> List[Tuple[str, List[str]]]:
     """
     Recursively compiles all valid .po files into .mo files under ./locale/LC_MESSAGES.
     Skips files with errors. If force is True, always recompiles.
@@ -395,7 +396,7 @@ def create_mo_files(force: bool, locales: set) -> list:
     return data_files
 
 
-def integrate_delta_files(locales: set) -> None:
+def integrate_delta_files(locales: List[str]) -> None:
     """
     This code integrates translation updates from delta .po files (named delta_xx.po)
     into the main translation .po files for specified locales.

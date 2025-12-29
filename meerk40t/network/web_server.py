@@ -3,12 +3,13 @@ import socket
 import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from math import isinf
+from typing import Optional, Any, Dict, Tuple, List
 from urllib.parse import urlparse, parse_qs, unquote_plus
 from datetime import datetime
 
 from meerk40t.kernel import Module
 
-def plugin(kernel, lifecycle=None):
+def plugin(kernel, lifecycle: Optional[str] = None) -> None:
     if lifecycle == "register":
         _ = kernel.translation
         kernel.register("module/WebServer", WebServer)
@@ -20,7 +21,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     Handles GET and POST requests with proper HTTP/1.1 protocol.
     """
     
-    def _get_server_instance(self):
+    def _get_server_instance(self) -> Optional['WebServer']:
         """
         Safely retrieve the associated WebServer instance from the HTTPServer.
         This keeps server state scoped per HTTPServer instead of globally.
@@ -28,7 +29,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         # self.server is the HTTPServer / ThreadingHTTPServer instance
         return getattr(self.server, "server_instance", None)
     
-    def log_message(self, format, *args):
+    def log_message(self, format: str, *args: Any) -> None:
         """Override to use kernel's logging instead of stderr"""
         # Only log non-GET requests to avoid spam from auto-refresh
         if self.command != 'GET':
@@ -36,13 +37,13 @@ class WebRequestHandler(BaseHTTPRequestHandler):
             if server_instance and server_instance.events_channel:
                 server_instance.events_channel(f"{self.address_string()} - {format % args}")
     
-    def log_error(self, format, *args):
+    def log_error(self, format: str, *args: Any) -> None:
         """Override to use kernel's logging for errors"""
         server_instance = self._get_server_instance()
         if server_instance and server_instance.events_channel:
             server_instance.events_channel(f"ERROR: {self.address_string()} - {format % args}")
     
-    def send_response_headers(self, content_type="text/html", content_length=0):
+    def send_response_headers(self, content_type: str = "text/html", content_length: int = 0) -> None:
         """Send common HTTP headers"""
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(content_length))
@@ -52,14 +53,14 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.end_headers()
     
-    def send_html_response(self, html_content, status_code=200):
+    def send_html_response(self, html_content: str, status_code: int = 200) -> None:
         """Send HTML response with proper headers"""
         content = html_content.encode("utf-8")
         self.send_response(status_code)
         self.send_response_headers("text/html; charset=utf-8", len(content))
         self.wfile.write(content)
     
-    def send_error_page(self, status_code, message):
+    def send_error_page(self, status_code: int, message: str) -> None:
         """Send a formatted error page"""
         html_string = f"""<!DOCTYPE html>
 <html>
@@ -71,7 +72,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
 </html>"""
         self.send_html_response(html_string, status_code)
     
-    def do_GET(self):
+    def do_GET(self) -> None:
         """Handle GET requests"""
         try:
             server_instance = self._get_server_instance()
@@ -96,7 +97,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
             self.log_error(f"Error in GET: {e}")
             self.send_error_page(500, f"Internal Server Error: {str(e)}")
     
-    def do_POST(self):
+    def do_POST(self) -> None:
         """Handle POST requests"""
         try:
             server_instance = self._get_server_instance()
@@ -147,7 +148,7 @@ class WebServer(Module):
     Uses ThreadingHTTPServer for concurrent request handling.
     """
 
-    def __init__(self, context, name, port=23, bind_address="127.0.0.1"):
+    def __init__(self, context, name: str, port: int = 23, bind_address: str = "127.0.0.1") -> None:
         """
         Web Server initialization.
 
@@ -192,7 +193,7 @@ class WebServer(Module):
             self.run_server, thread_name=f"web-{port}", daemon=True
         )
     
-    def _console_watcher(self, message):
+    def _console_watcher(self, message: Any) -> None:
         """Watch console channel and buffer messages"""
         # Add message to buffer
         self._console_buffer.append(str(message))
@@ -266,7 +267,7 @@ class WebServer(Module):
         
         return ''.join(result)
 
-    def handle_job_command(self, job_idx, operation):
+    def handle_job_command(self, job_idx: int, operation: str) -> str:
         """
         Handle job-specific operations like stop, remove, pause, resume
         
@@ -322,13 +323,13 @@ class WebServer(Module):
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the server"""
         self.state = "terminate"
         if self.httpd:
             self.httpd.shutdown()
 
-    def module_close(self, *args, **kwargs):
+    def module_close(self, *args: Any, **kwargs: Any) -> None:
         """Clean up when module closes"""
         _ = self.context._
         self.events_channel(_("Shutting down server."))
@@ -349,7 +350,7 @@ class WebServer(Module):
                 pass
             self.httpd = None
     
-    def send_command(self, command):
+    def send_command(self, command: str) -> None:
         """Send command to kernel for execution"""
         if command:
             # Log to web debug channel
@@ -359,7 +360,7 @@ class WebServer(Module):
                 self.context(f"{command}\n")
             else:
                 self.handover(command)
-    def build_html_page(self, command=None, message=None):
+    def build_html_page(self, command: Optional[str] = None, message: Optional[str] = None) -> str:
         """
         Build the main HTML page with spooler info and command interface.
         
@@ -988,7 +989,7 @@ class WebServer(Module):
 </html>"""
         return html
 
-    def _build_device_controls(self):
+    def _build_device_controls(self) -> str:
         """Build device control buttons based on driver state"""
         html = ""
         try:
@@ -1014,7 +1015,7 @@ class WebServer(Module):
         
         return html
     
-    def _get_console_output(self):
+    def _get_console_output(self) -> str:
         """Get recent console output as HTML with ANSI codes converted"""
         if not self._console_buffer:
             return "No console output yet..."
@@ -1024,7 +1025,7 @@ class WebServer(Module):
         html_lines = [self._ansi_to_html(line) for line in recent]
         return "<br>".join(html_lines)
 
-    def _build_spooler_table(self):
+    def _build_spooler_table(self) -> str:
         """Build HTML table for spooler queue"""
         _ = self.context._
         rows = []
@@ -1226,7 +1227,7 @@ class WebServer(Module):
         html += "</tbody>\n</table>"
         return html
 
-    def run_server(self):
+    def run_server(self) -> None:
         """
         Run the HTTP server in a thread.
         Uses ThreadingHTTPServer for concurrent request handling.
