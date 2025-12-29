@@ -24084,3 +24084,43 @@ msgstr "定义作业起始位置"
 #: meerk40t/core/elements/element_treeops.py:2771
 msgid "Remove all existing placements"
 msgstr "移除所有位置"
+
+#: meerk40t/core/elements/tree_commands.py:98
+msgid "check tree integrity"
+msgstr "检查树完整性"
+
+#: meerk40t/core/elements/tree_commands.py:113
+msgid "No integrity issues detected."
+msgstr "未检测到完整性问题。"
+
+#: meerk40t/core/elements/tree_commands.py:115
+msgid "Integrity issues detected: {count}"
+msgstr "检测到完整性问题：{count}"
+
+#: meerk40t/gui/propertypanels/attributes.py:1070
+msgid "New X-coordinate of reference point (enter to apply)"
+msgstr "参考点的新的 X 坐标（按回车键应用）"
+
+#: meerk40t/gui/propertypanels/attributes.py:1073
+msgid "New Y-coordinate of reference point (enter to apply)"
+msgstr "参考点的新的 Y 坐标（按回车键应用）"
+
+#: meerk40t/lihuiyu/device.py:855 meerk40t/ruida/device.py:434
+msgid "realtime resume of the machine"
+msgstr "机器的实时恢复"
+
+#: meerk40t/lihuiyu/device.py:862 meerk40t/ruida/device.py:441
+msgid "Device is not paused"
+msgstr "设备未暂停"
+
+#: meerk40t/network/web_server.py:1229
+msgid "Web server listening on {address}:{port}..."
+msgstr "Web 服务器正在监听 {address}:{port}..."
+
+#: meerk40t/network/web_server.py:1238
+msgid "Could not start web server: {error}"
+msgstr "无法启动 Web 服务器：{error}"
+
+#: meerk40t/network/web_server.py:1245
+msgid "Web server stopped."
+msgstr "Web 服务器已停止。"

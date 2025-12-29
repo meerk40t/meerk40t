@@ -4,6 +4,7 @@ Ruida Device
 Ruida device interfacing. We do not send or interpret ruida code, but we can emulate ruidacode into cutcode and read
 ruida files (*.rd) and turn them likewise into cutcode.
 """
+
 import inspect
 
 from meerk40t.core.view import View
@@ -18,6 +19,7 @@ from .driver import RuidaDriver
 
 from .ruidasession import RuidaSession
 from .ruidatransport import TransportError
+
 
 class RuidaDevice(Service, Status):
     """
@@ -395,13 +397,15 @@ class RuidaDevice(Service, Status):
         )
         def interface_update(command, channel, _, data=None, **kwargs):
             try:
-                if self.active_session is not None and self.interface != self.active_session.interface:
+                if (
+                    self.active_session is not None
+                    and self.interface != self.active_session.interface
+                ):
                     self.driver.controller.pause_monitor()
                     self.active_session.shutdown()
                     self.active_session = None
 
-
-                if self.active_session is None: # Start or restart.
+                if self.active_session is None:  # Start or restart.
                     self.active_session = RuidaSession(self)
                     self.driver.controller.write = self.active_session.write
                     _swizzle = self.driver.controller.job.swizzle
@@ -428,6 +432,17 @@ class RuidaDevice(Service, Status):
             else:
                 self.driver.pause()
             self.signal("pause")
+
+        @self.console_command(
+            "resume",
+            help=_("realtime resume of the machine"),
+        )
+        def realtime_resume(command, channel, _, data=None, **kwargs):
+            if self.driver.paused:
+                self.driver.resume()
+                self.signal("pause")
+            else:
+                channel(_("Device is not paused"))
 
         @self.console_command(
             "ruida_connect",
@@ -628,6 +643,7 @@ class RuidaDevice(Service, Status):
     @property
     def tcp_port(self):
         return 5005
+
     # End cruft
 
     def location(self):
@@ -648,9 +664,9 @@ class RuidaDevice(Service, Status):
         return self.active_session.is_connecting if self.active_session else False
 
     def connect(self):
-        '''
+        """
         WARNING: this will not return until connected or error.
-        Call from a thread.'''
+        Call from a thread."""
         if self.active_session:
             try:
                 self.active_session.connect()
@@ -661,8 +677,7 @@ class RuidaDevice(Service, Status):
         if self.active_session is not None:
             self.active_session.update_connect_status()
         else:
-            self.signal(
-                "pipe;usb_status", "Disconnected")
+            self.signal("pipe;usb_status", "Disconnected")
 
     def abort_connect(self):
         if self.active_session:
@@ -672,9 +687,9 @@ class RuidaDevice(Service, Status):
         pass
 
     def set_timeout(self, seconds):
-        '''Set the interface timeout.
+        """Set the interface timeout.
 
-        Currently only the UDP interface supports this.'''
+        Currently only the UDP interface supports this."""
         self.active_session.set_timeout(seconds)
 
     @property

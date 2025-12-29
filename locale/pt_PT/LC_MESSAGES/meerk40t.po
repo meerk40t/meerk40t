@@ -24839,3 +24839,43 @@ msgstr "Definir a posição inicial do trabalho"
 #: meerk40t/core/elements/element_treeops.py:2771
 msgid "Remove all existing placements"
 msgstr "Remover todos os posicionamentos"
+
+#: meerk40t/core/elements/tree_commands.py:98
+msgid "check tree integrity"
+msgstr "verificar integridade da árvore"
+
+#: meerk40t/core/elements/tree_commands.py:113
+msgid "No integrity issues detected."
+msgstr "Nenhum problema de integridade detetado."
+
+#: meerk40t/core/elements/tree_commands.py:115
+msgid "Integrity issues detected: {count}"
+msgstr "Problemas de integridade detetados: {count}"
+
+#: meerk40t/gui/propertypanels/attributes.py:1070
+msgid "New X-coordinate of reference point (enter to apply)"
+msgstr "Nova coordenada X do ponto de referência (enter para aplicar)"
+
+#: meerk40t/gui/propertypanels/attributes.py:1073
+msgid "New Y-coordinate of reference point (enter to apply)"
+msgstr "Nova coordenada Y do ponto de referência (enter para aplicar)"
+
+#: meerk40t/lihuiyu/device.py:855 meerk40t/ruida/device.py:434
+msgid "realtime resume of the machine"
+msgstr "retoma em tempo real da máquina"
+
+#: meerk40t/lihuiyu/device.py:862 meerk40t/ruida/device.py:441
+msgid "Device is not paused"
+msgstr "O dispositivo não está em pausa"
+
+#: meerk40t/network/web_server.py:1229
+msgid "Web server listening on {address}:{port}..."
+msgstr "Servidor web a escutar em {address}:{port}..."
+
+#: meerk40t/network/web_server.py:1238
+msgid "Could not start web server: {error}"
+msgstr "Não foi possível iniciar o servidor web: {error}"
+
+#: meerk40t/network/web_server.py:1245
+msgid "Web server stopped."
+msgstr "Servidor web parado."
