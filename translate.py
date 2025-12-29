@@ -543,10 +543,9 @@ def main() -> None:
         print_info(f"Processing locales: {', '.join(sorted(locales))}")
     else:
         print_info("Processing all locales")
-
     if args.integrate:
-        integrate_delta_files(locales)
-    create_mo_files(args.force, locales)
+        integrate_delta_files(sorted(locales))
+    create_mo_files(args.force, sorted(locales))
 
 
 if __name__ == "__main__":

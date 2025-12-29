@@ -853,13 +853,13 @@ def main():
             print_error(f"Unknown locale '{loc}', using 'de' as default.")
             if "de" not in locales:
                 locales.add("de")
-
+    
     print_header("MeerK40t Translation Check Tool")
     print_info(f"Processing locales: {', '.join(sorted(locales))}")
     print()
 
     if args.check:
-        perform_basic_checks(locales)
+        perform_basic_checks(sorted(locales))
         return
 
     do_translate = args.auto and GOOGLETRANS
@@ -871,7 +871,7 @@ def main():
 
     check_results = []
     is_validation = args.validate
-    for loc in locales:
+    for loc in sorted(locales):
         print_info(
             f"Processing locale: {loc} ({LOCALE_LONG_NAMES.get(loc, 'Unknown')})"
         )
