@@ -24,8 +24,10 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     
     def log_message(self, format, *args):
         """Override to use kernel's logging instead of stderr"""
-        if self.server_instance and self.server_instance.events_channel:
-            self.server_instance.events_channel(f"{self.address_string()} - {format % args}")
+        # Only log non-GET requests to avoid spam from auto-refresh
+        if self.command != 'GET':
+            if self.server_instance and self.server_instance.events_channel:
+                self.server_instance.events_channel(f"{self.address_string()} - {format % args}")
     
     def log_error(self, format, *args):
         """Override to use kernel's logging for errors"""
@@ -158,14 +160,12 @@ class WebServer(Module):
         self._console_buffer = []
         self._console_max_lines = 100
         
-        # Create dedicated channel for web console output
-        self.console_channel = self.context.channel(f"web-console-{port}")
+        # Watch regular console channel for command output
+        self.console_channel = self.context.channel("console")
         self.console_channel.watch(self._console_watcher)
         
-        # Add initial message
-        self._console_buffer.append(f"Web Console initialized on port {port}")
-        self._console_buffer.append(f"Channel: web-console-{port}")
-        self._console_buffer.append("Send messages to this channel to display in web console")
+        # Create dedicated channel for web server debug messages (internal logging only, not displayed)
+        self.debug_channel = self.context.channel(f"web-debug-{port}")
         
         # Set up handover for command execution
         self.handover = None
@@ -189,6 +189,71 @@ class WebServer(Module):
         # Keep buffer at max size
         if len(self._console_buffer) > self._console_max_lines:
             self._console_buffer.pop(0)
+    
+    def _ansi_to_html(self, text):
+        """Convert ANSI escape codes to HTML formatting"""
+        import re
+        
+        # ANSI color mapping
+        ansi_colors = {
+            '30': '#000000', '31': '#cd3131', '32': '#0dbc79', '33': '#e5e510',
+            '34': '#2472c8', '35': '#bc3fbc', '36': '#11a8cd', '37': '#e5e5e5',
+            '90': '#666666', '91': '#f14c4c', '92': '#23d18b', '93': '#f5f543',
+            '94': '#3b8eea', '95': '#d670d6', '96': '#29b8db', '97': '#ffffff',
+        }
+        
+        # Remove ANSI codes and convert to HTML
+        result = []
+        current_color = None
+        is_bold = False
+        span_open = False
+        
+        # Split by ANSI escape sequences
+        parts = re.split(r'(\x1b\[[0-9;]*m)', text)
+        
+        for part in parts:
+            if part.startswith('\x1b['):
+                # Parse ANSI code
+                codes = part[2:-1].split(';')
+                for code in codes:
+                    if code == '0' or code == '':
+                        # Reset - close any open span
+                        if span_open:
+                            result.append('</span>')
+                            span_open = False
+                        current_color = None
+                        is_bold = False
+                    elif code == '1':
+                        # Bold
+                        is_bold = True
+                    elif code in ansi_colors:
+                        # Foreground color
+                        current_color = ansi_colors[code]
+                
+                # Close previous span if open
+                if span_open:
+                    result.append('</span>')
+                    span_open = False
+                
+                # Open new span with current styles
+                if current_color or is_bold:
+                    styles = []
+                    if current_color:
+                        styles.append(f'color: {current_color}')
+                    if is_bold:
+                        styles.append('font-weight: bold')
+                    result.append(f'<span style="{"; ".join(styles)}">')
+                    span_open = True
+            else:
+                # Regular text - escape HTML entities
+                escaped = part.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                result.append(escaped)
+        
+        # Always close any open span at the end of the line
+        if span_open:
+            result.append('</span>')
+        
+        return ''.join(result)
 
     def handle_job_command(self, job_idx, operation):
         """
@@ -271,8 +336,8 @@ class WebServer(Module):
     def send_command(self, command):
         """Send command to kernel for execution"""
         if command:
-            # Log to web console channel
-            self.console_channel(f"[CMD] {command}")
+            # Log to web debug channel
+            self.debug_channel(f"[WEB CMD] {command}")
             
             if self.handover is None:
                 self.context(f"{command}\n")
@@ -625,8 +690,6 @@ class WebServer(Module):
             line-height: 1.5;
             max-height: 400px;
             overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
             border: 1px solid #333;
         }}
         .console-output::-webkit-scrollbar {{
@@ -676,7 +739,7 @@ class WebServer(Module):
                     if (newConsoleOutput) {{
                         const consoleDiv = document.getElementById('console-output');
                         const wasScrolledToBottom = Math.abs(consoleDiv.scrollHeight - consoleDiv.scrollTop - consoleDiv.clientHeight) < 5;
-                        consoleDiv.textContent = newConsoleOutput.textContent;
+                        consoleDiv.innerHTML = newConsoleOutput.innerHTML;
                         // Auto-scroll to bottom if it was already at bottom
                         if (wasScrolledToBottom) {{
                             consoleDiv.scrollTop = consoleDiv.scrollHeight;
@@ -975,12 +1038,14 @@ class WebServer(Module):
         return html
     
     def _get_console_output(self):
-        """Get recent console output as text"""
+        """Get recent console output as HTML with ANSI codes converted"""
         if not self._console_buffer:
             return "No console output yet..."
         # Return last 50 messages (or all if less)
         recent = self._console_buffer[-50:]
-        return "\n".join(recent)
+        # Convert each line's ANSI codes to HTML
+        html_lines = [self._ansi_to_html(line) for line in recent]
+        return "<br>".join(html_lines)
 
     def _build_spooler_table(self):
         """Build HTML table for spooler queue"""
