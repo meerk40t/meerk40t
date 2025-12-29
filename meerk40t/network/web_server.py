@@ -1,13 +1,26 @@
+from __future__ import annotations
+
 import html as html_module
 import socket
 import logging
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 from math import isinf
 from typing import Optional, Any, Dict, Tuple, List
 from urllib.parse import urlparse, parse_qs, unquote_plus
 from datetime import datetime
 
 from meerk40t.kernel import Module
+
+# ThreadingHTTPServer was added in Python 3.7
+# For Python 3.6 compatibility, create it manually
+if sys.version_info >= (3, 7):
+    from http.server import ThreadingHTTPServer
+else:
+    class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+        """Threaded HTTP server for Python 3.6 compatibility."""
+        daemon_threads = True
 
 def plugin(kernel, lifecycle: Optional[str] = None) -> None:
     if lifecycle == "register":
@@ -21,7 +34,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     Handles GET and POST requests with proper HTTP/1.1 protocol.
     """
     
-    def _get_server_instance(self) -> Optional['WebServer']:
+    def _get_server_instance(self) -> Optional[WebServer]:
         """
         Safely retrieve the associated WebServer instance from the HTTPServer.
         This keeps server state scoped per HTTPServer instead of globally.
