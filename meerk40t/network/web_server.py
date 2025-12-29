@@ -108,11 +108,12 @@ class WebRequestHandler(BaseHTTPRequestHandler):
                     job_idx_str, operation = job_cmd.split(':', 1)
                     job_idx = int(job_idx_str)
                     result = self.server_instance.handle_job_command(job_idx, operation)
-                    html_content = self.server_instance.build_html_page(result)
+                    # Display result as message without executing as command
+                    html_content = self.server_instance.build_html_page(message=result)
                     self.send_html_response(html_content)
                 except (ValueError, IndexError) as e:
                     error_msg = f"Error: Invalid job command format: {str(e)}"
-                    html_content = self.server_instance.build_html_page(error_msg)
+                    html_content = self.server_instance.build_html_page(message=error_msg)
                     self.send_html_response(html_content)
                 return
             
@@ -294,11 +295,16 @@ class WebServer(Module):
                 # Resume the device
                 if hasattr(device.driver, 'resume'):
                     device.driver.resume()
-                elif hasattr(device.driver, 'pause'):  # Some drivers toggle with pause()
-                    device.driver.pause()
+                    return f"Resumed device {device.label}"
+                elif hasattr(device.driver, 'pause'):
+                    # Some drivers use pause() to toggle - check if already paused
+                    if getattr(device.driver, 'paused', False):
+                        device.driver.pause()  # Toggle from paused to running
+                        return f"Resumed device {device.label}"
+                    else:
+                        return f"Device {device.label} is not paused"
                 else:
                     return f"Device {device.label} cannot be resumed"
-                return f"Resumed device {device.label}"
             
             else:
                 return f"Unknown operation: {operation}"
@@ -343,11 +349,12 @@ class WebServer(Module):
                 self.context(f"{command}\n")
             else:
                 self.handover(command)
-    def build_html_page(self, command=None):
+    def build_html_page(self, command=None, message=None):
         """
         Build the main HTML page with spooler info and command interface.
         
         @param command: Command to execute and display result
+        @param message: Message to display without executing (for feedback)
         @return: Complete HTML page as string
         """
         # Execute command if provided
@@ -355,6 +362,9 @@ class WebServer(Module):
         if command:
             self.send_command(command)
             command_result = f"<div class='alert alert-success'>Command executed: <code>{command}</code></div>"
+        elif message:
+            # Display message without executing
+            command_result = f"<div class='alert alert-info'>{message}</div>"
         
         # Build spooler table
         spooler_html = self._build_spooler_table()
@@ -510,6 +520,11 @@ class WebServer(Module):
             background: #d4edda;
             border: 1px solid #c3e6cb;
             color: #155724;
+        }}
+        .alert-info {{
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
         }}
         .alert code {{
             background: rgba(0,0,0,0.1);
@@ -959,58 +974,7 @@ class WebServer(Module):
 </body>
 </html>"""
         return html
-    
-    def handle_job_command(self, job_idx, operation):
-        """
-        Handle job-specific operations like stop, remove, pause, resume
-        
-        @param job_idx: Display index of the job
-        @param operation: Operation to perform (stop_job, remove_job, pause_device, resume_device)
-        @return: Success message or error
-        """
-        if job_idx not in self._job_map:
-            return f"Error: Job {job_idx} not found"
-        
-        device, job, spooler = self._job_map[job_idx]
-        
-        try:
-            if operation == 'stop_job':
-                # Stop the specific job
-                if hasattr(job, 'stop'):
-                    job.stop()
-                    return f"Stopped job {job_idx}"
-                else:
-                    return f"Job {job_idx} cannot be stopped"
-            
-            elif operation == 'remove_job':
-                # Remove job from spooler queue
-                spooler.remove(job)
-                return f"Removed job {job_idx} from queue"
-            
-            elif operation == 'pause_device':
-                # Pause the device (affects all jobs)
-                if hasattr(device.driver, 'pause'):
-                    device.driver.pause()
-                    return f"Paused device {device.label}"
-                else:
-                    return f"Device {device.label} cannot be paused"
-            
-            elif operation == 'resume_device':
-                # Resume the device
-                if hasattr(device.driver, 'resume'):
-                    device.driver.resume()
-                elif hasattr(device.driver, 'pause'):  # Some drivers toggle with pause()
-                    device.driver.pause()
-                else:
-                    return f"Device {device.label} cannot be resumed"
-                return f"Resumed device {device.label}"
-            
-            else:
-                return f"Unknown operation: {operation}"
-        
-        except Exception as e:
-            return f"Error: {str(e)}"
-    
+
     def _build_device_controls(self):
         """Build device control buttons based on driver state"""
         html = ""
