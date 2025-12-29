@@ -32,7 +32,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     Handles GET and POST requests with proper HTTP/1.1 protocol.
     """
     
-    def _get_server_instance(self) -> Optional[WebServer]:
+    def _get_server_instance(self) -> Optional["WebServer"]:
         """
         Safely retrieve the associated WebServer instance from the HTTPServer.
         This keeps server state scoped per HTTPServer instead of globally.
