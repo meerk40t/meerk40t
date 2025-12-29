@@ -371,140 +371,107 @@ class WebServer(Module):
                 self.context(f"{command}\n")
             else:
                 self.handover(command)
-    def build_html_page(self, command: Optional[str] = None, message: Optional[str] = None) -> str:
-        """
-        Build the main HTML page with spooler info and command interface.
-        
-        @param command: Command to execute and display result
-        @param message: Message to display without executing (for feedback)
-        @return: Complete HTML page as string
-        """
-        # Execute command if provided
-        command_result = ""
-        if command:
-            self.send_command(command)
-            # HTML-escape command to prevent XSS
-            safe_command = html_module.escape(command, quote=True)
-            command_result = f"<div class='alert alert-success'>Command executed: <code>{safe_command}</code></div>"
-        elif message:
-            # Display message without executing, HTML-escape to prevent XSS
-            safe_message = html_module.escape(message, quote=True)
-            command_result = f"<div class='alert alert-info'>{safe_message}</div>"
-        
-        # Build spooler table
-        spooler_html = self._build_spooler_table()
-        
-        # Build device controls
-        device_controls = self._build_device_controls()
-        
-        # Get console output
-        console_output = self._get_console_output()
-        
-        # Build complete page
-        html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{self.context.kernel.name} - Web Console</title>
-    <style>
-        * {{
+    
+    def _get_html_styles(self) -> str:
+        """Generate CSS styles for the web interface"""
+        return """
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }}
-        body {{
+        }
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-        }}
-        .container {{
+        }
+        .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 10px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             overflow: hidden;
-        }}
-        .header {{
+        }
+        .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             text-align: center;
-        }}
-        .header h1 {{
+        }
+        .header h1 {
             font-size: 2em;
             margin-bottom: 10px;
-        }}
-        .header p {{
+        }
+        .header p {
             opacity: 0.9;
             font-size: 1.1em;
-        }}
-        .content {{
+        }
+        .content {
             padding: 30px;
-        }}
-        .section {{
+        }
+        .section {
             margin-bottom: 30px;
-        }}
-        .section h2 {{
+        }
+        .section h2 {
             color: #333;
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #667eea;
-        }}
-        .device-info {{
+        }
+        .device-info {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
-        }}
-        .device-info strong {{
+        }
+        .device-info strong {
             color: #667eea;
-        }}
-        table {{
+        }
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
             font-size: 0.9em;
-        }}
-        table th {{
+        }
+        table th {
             background: #667eea;
             color: white;
             padding: 12px 8px;
             text-align: left;
             font-weight: 600;
-        }}
-        table td {{
+        }
+        table td {
             padding: 10px 8px;
             border-bottom: 1px solid #e9ecef;
-        }}
-        table tr:hover {{
+        }
+        table tr:hover {
             background: #f8f9fa;
-        }}
-        table tr:last-child td {{
+        }
+        table tr:last-child td {
             border-bottom: none;
-        }}
-        .empty-state {{
+        }
+        .empty-state {
             text-align: center;
             padding: 40px;
             color: #6c757d;
-        }}
-        .command-form {{
+        }
+        .command-form {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 5px;
-        }}
-        .form-group {{
+        }
+        .form-group {
             margin-bottom: 15px;
-        }}
-        .form-group label {{
+        }
+        .form-group label {
             display: block;
             margin-bottom: 5px;
             color: #333;
             font-weight: 600;
-        }}
-        textarea {{
+        }
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e9ecef;
@@ -513,12 +480,12 @@ class WebServer(Module):
             font-size: 14px;
             resize: vertical;
             transition: border-color 0.3s;
-        }}
-        textarea:focus {{
+        }
+        textarea:focus {
             outline: none;
             border-color: #667eea;
-        }}
-        .btn {{
+        }
+        .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 30px;
@@ -528,43 +495,43 @@ class WebServer(Module):
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-        }}
-        .btn:hover {{
+        }
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }}
-        .btn:active {{
+        }
+        .btn:active {
             transform: translateY(0);
-        }}
-        .alert {{
+        }
+        .alert {
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
-        }}
-        .alert-success {{
+        }
+        .alert-success {
             background: #d4edda;
             border: 1px solid #c3e6cb;
             color: #155724;
-        }}
-        .alert-info {{
+        }
+        .alert-info {
             background: #d1ecf1;
             border: 1px solid #bee5eb;
             color: #0c5460;
-        }}
-        .alert code {{
+        }
+        .alert code {
             background: rgba(0,0,0,0.1);
             padding: 2px 6px;
             border-radius: 3px;
             font-family: 'Courier New', monospace;
-        }}
-        .footer {{
+        }
+        .footer {
             text-align: center;
             padding: 20px;
             background: #f8f9fa;
             color: #6c757d;
             font-size: 0.9em;
-        }}
-        .auto-refresh {{
+        }
+        .auto-refresh {
             background: #e7f3ff;
             padding: 10px;
             border-radius: 5px;
@@ -574,16 +541,16 @@ class WebServer(Module):
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }}
-        .refresh-status {{
+        }
+        .refresh-status {
             font-weight: 600;
-        }}
-        .refresh-controls {{
+        }
+        .refresh-controls {
             display: flex;
             gap: 10px;
             align-items: center;
-        }}
-        .refresh-btn {{
+        }
+        .refresh-btn {
             background: #0066cc;
             color: white;
             border: none;
@@ -591,46 +558,46 @@ class WebServer(Module):
             border-radius: 3px;
             cursor: pointer;
             font-size: 14px;
-        }}
-        .refresh-btn:hover {{
+        }
+        .refresh-btn:hover {
             background: #0052a3;
-        }}
-        .pause-icon {{
+        }
+        .pause-icon {
             cursor: pointer;
             font-size: 18px;
-        }}
-        .status-badge {{
+        }
+        .status-badge {
             display: inline-block;
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.85em;
             font-weight: 600;
             text-transform: uppercase;
-        }}
-        .status-running {{ background: #28a745; color: white; }}
-        .status-queued {{ background: #ffc107; color: #333; }}
-        .status-paused {{ background: #6c757d; color: white; }}
-        .status-error {{ background: #dc3545; color: white; }}
-        .status-idle {{ background: #e9ecef; color: #6c757d; }}
-        .progress-bar-container {{
+        }
+        .status-running { background: #28a745; color: white; }
+        .status-queued { background: #ffc107; color: #333; }
+        .status-paused { background: #6c757d; color: white; }
+        .status-error { background: #dc3545; color: white; }
+        .status-idle { background: #e9ecef; color: #6c757d; }
+        .progress-bar-container {
             width: 100%;
             height: 8px;
             background: #e9ecef;
             border-radius: 4px;
             overflow: hidden;
             margin-top: 4px;
-        }}
-        .progress-bar {{
+        }
+        .progress-bar {
             height: 100%;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             transition: width 0.3s ease;
-        }}
-        .job-controls {{
+        }
+        .job-controls {
             display: flex;
             gap: 5px;
             justify-content: center;
-        }}
-        .job-btn {{
+        }
+        .job-btn {
             background: #667eea;
             color: white;
             border: none;
@@ -639,13 +606,13 @@ class WebServer(Module):
             cursor: pointer;
             font-size: 12px;
             transition: background 0.2s;
-        }}
-        .job-btn:hover {{ background: #5568d3; }}
-        .job-btn.danger {{ background: #dc3545; }}
-        .job-btn.danger:hover {{ background: #c82333; }}
-        .job-btn.warning {{ background: #ffc107; color: #333; }}
-        .job-btn.warning:hover {{ background: #e0a800; }}
-        .device-status {{
+        }
+        .job-btn:hover { background: #5568d3; }
+        .job-btn.danger { background: #dc3545; }
+        .job-btn.danger:hover { background: #c82333; }
+        .job-btn.warning { background: #ffc107; color: #333; }
+        .job-btn.warning:hover { background: #e0a800; }
+        .device-status {
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -653,38 +620,38 @@ class WebServer(Module):
             border-radius: 5px;
             background: #f8f9fa;
             border: 2px solid #e9ecef;
-        }}
-        .status-dot {{
+        }
+        .status-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             animation: pulse 2s infinite;
-        }}
-        .status-dot.idle {{ background: #6c757d; animation: none; }}
-        .status-dot.busy {{ background: #28a745; }}
-        .status-dot.error {{ background: #dc3545; }}
-        @keyframes pulse {{
-            0%, 100% {{ opacity: 1; }}
-            50% {{ opacity: 0.5; }}
-        }}
-        .command-history {{
+        }
+        .status-dot.idle { background: #6c757d; animation: none; }
+        .status-dot.busy { background: #28a745; }
+        .status-dot.error { background: #dc3545; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .command-history {
             margin-bottom: 10px;
-        }}
-        .command-history select {{
+        }
+        .command-history select {
             width: 100%;
             padding: 8px;
             border: 2px solid #e9ecef;
             border-radius: 5px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
-        }}
-        .toast-container {{
+        }
+        .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 9999;
-        }}
-        .toast {{
+        }
+        .toast {
             background: white;
             padding: 15px 20px;
             margin-bottom: 10px;
@@ -693,15 +660,15 @@ class WebServer(Module):
             border-left: 4px solid #667eea;
             min-width: 300px;
             animation: slideIn 0.3s ease;
-        }}
-        .toast.success {{ border-left-color: #28a745; }}
-        .toast.error {{ border-left-color: #dc3545; }}
-        .toast.warning {{ border-left-color: #ffc107; }}
-        @keyframes slideIn {{
-            from {{ transform: translateX(400px); opacity: 0; }}
-            to {{ transform: translateX(0); opacity: 1; }}
-        }}
-        .copy-btn {{
+        }
+        .toast.success { border-left-color: #28a745; }
+        .toast.error { border-left-color: #dc3545; }
+        .toast.warning { border-left-color: #ffc107; }
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .copy-btn {
             background: transparent;
             border: 1px solid #667eea;
             color: #667eea;
@@ -710,17 +677,17 @@ class WebServer(Module):
             cursor: pointer;
             font-size: 11px;
             margin-left: 8px;
-        }}
-        .copy-btn:hover {{
+        }
+        .copy-btn:hover {
             background: #667eea;
             color: white;
-        }}
-        .keyboard-hint {{
+        }
+        .keyboard-hint {
             font-size: 0.85em;
             color: #6c757d;
             margin-top: 5px;
-        }}
-        .console-output {{
+        }
+        .console-output {
             background: #1e1e1e;
             color: #d4d4d4;
             padding: 15px;
@@ -731,158 +698,161 @@ class WebServer(Module):
             max-height: 400px;
             overflow-y: auto;
             border: 1px solid #333;
-        }}
-        .console-output::-webkit-scrollbar {{
+        }
+        .console-output::-webkit-scrollbar {
             width: 8px;
-        }}
-        .console-output::-webkit-scrollbar-track {{
+        }
+        .console-output::-webkit-scrollbar-track {
             background: #2d2d2d;
-        }}
-        .console-output::-webkit-scrollbar-thumb {{
+        }
+        .console-output::-webkit-scrollbar-thumb {
             background: #555;
             border-radius: 4px;
-        }}
-        .console-output::-webkit-scrollbar-thumb:hover {{
+        }
+        .console-output::-webkit-scrollbar-thumb:hover {
             background: #777;
-        }}
-    </style>
-    <script>
+        }
+        """
+    
+    def _get_html_scripts(self) -> str:
+        """Generate JavaScript code for the web interface"""
+        return """
         let refreshInterval = null;
         let isPaused = false;
         let countdown = 5;
         let commandHistory = JSON.parse(localStorage.getItem('commandHistory') || '[]');
         
-        function updateCountdown() {{
-            if (!isPaused) {{
+        function updateCountdown() {
+            if (!isPaused) {
                 countdown--;
-                if (countdown <= 0) {{
+                if (countdown <= 0) {
                     refreshJobTable();
                     countdown = 5;
-                }}
+                }
                 document.getElementById('countdown').textContent = countdown;
-            }}
-        }}
+            }
+        }
         
-        function refreshJobTable() {{
+        function refreshJobTable() {
             fetch(window.location.href)
                 .then(response => response.text())
-                .then(html => {{
+                .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const newJobsSection = doc.querySelector('#jobs-section');
                     const currentJobsSection = document.querySelector('#jobs-section');
-                    if (newJobsSection && currentJobsSection) {{
+                    if (newJobsSection && currentJobsSection) {
                         currentJobsSection.innerHTML = newJobsSection.innerHTML;
-                    }}
+                    }
                     // Update console output
                     const newConsoleOutput = doc.getElementById('console-output');
-                    if (newConsoleOutput) {{
+                    if (newConsoleOutput) {
                         const consoleDiv = document.getElementById('console-output');
                         const wasScrolledToBottom = Math.abs(consoleDiv.scrollHeight - consoleDiv.scrollTop - consoleDiv.clientHeight) < 5;
                         consoleDiv.innerHTML = newConsoleOutput.innerHTML;
                         // Auto-scroll to bottom if it was already at bottom
-                        if (wasScrolledToBottom) {{
+                        if (wasScrolledToBottom) {
                             consoleDiv.scrollTop = consoleDiv.scrollHeight;
-                        }}
-                    }}
-                }})
+                        }
+                    }
+                })
                 .catch(err => console.error('Refresh failed:', err));
-        }}
+        }
         
-        function togglePause() {{
+        function togglePause() {
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pause-btn');
             const status = document.getElementById('refresh-status');
-            if (isPaused) {{
+            if (isPaused) {
                 pauseBtn.textContent = '▶';
                 pauseBtn.title = 'Resume auto-refresh';
                 status.textContent = 'Auto-refresh paused';
-            }} else {{
+            } else {
                 pauseBtn.textContent = '⏸';
                 pauseBtn.title = 'Pause auto-refresh';
                 status.textContent = 'Auto-refresh active';
                 countdown = 5;
-            }}
-        }}
+            }
+        }
         
-        function manualRefresh() {{
+        function manualRefresh() {
             refreshJobTable();
             countdown = 5;
             document.getElementById('countdown').textContent = countdown;
-        }}
+        }
         
-        function showToast(message, type = 'success') {{
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast ${{type}}`;
+            toast.className = `toast ${type}`;
             toast.textContent = message;
             container.appendChild(toast);
             
-            setTimeout(() => {{
+            setTimeout(() => {
                 toast.style.opacity = '0';
                 setTimeout(() => container.removeChild(toast), 300);
-            }}, 3000);
-        }}
+            }, 3000);
+        }
         
-        function addToHistory(command) {{
-            if (command && !commandHistory.includes(command)) {{
+        function addToHistory(command) {
+            if (command && !commandHistory.includes(command)) {
                 commandHistory.unshift(command);
                 if (commandHistory.length > 10) commandHistory.pop();
                 localStorage.setItem('commandHistory', JSON.stringify(commandHistory));
                 updateHistoryDropdown();
-            }}
-        }}
+            }
+        }
         
-        function updateHistoryDropdown() {{
+        function updateHistoryDropdown() {
             const select = document.getElementById('history-select');
-            if (select) {{
+            if (select) {
                 select.innerHTML = '<option value="">-- Recent Commands --</option>';
-                commandHistory.forEach(cmd => {{
+                commandHistory.forEach(cmd => {
                     const option = document.createElement('option');
                     option.value = cmd;
                     option.textContent = cmd.substring(0, 50) + (cmd.length > 50 ? '...' : '');
                     select.appendChild(option);
-                }});
-            }}
-        }}
+                });
+            }
+        }
         
-        function loadHistoryCommand() {{
+        function loadHistoryCommand() {
             const select = document.getElementById('history-select');
             const textarea = document.getElementById('cmd');
-            if (select && textarea && select.value) {{
+            if (select && textarea && select.value) {
                 textarea.value = select.value;
                 textarea.focus();
-            }}
-        }}
+            }
+        }
         
-        function sendJobCommand(jobId, operation) {{
-            fetch(window.location.href, {{
+        function sendJobCommand(jobId, operation) {
+            fetch(window.location.href, {
                 method: 'POST',
-                headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                body: `job_cmd=${{encodeURIComponent(jobId + ':' + operation)}}`
-            }})
-            .then(() => {{
-                showToast(`Command sent: ${{operation}}`, 'success');
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `job_cmd=${encodeURIComponent(jobId + ':' + operation)}`
+            })
+            .then(() => {
+                showToast(`Command sent: ${operation}`, 'success');
                 refreshJobTable();
-            }})
+            })
             .catch(err => showToast('Command failed', 'error'));
-        }}
+        }
         
-        function sendDeviceCommand(command) {{
-            fetch(window.location.href, {{
+        function sendDeviceCommand(command) {
+            fetch(window.location.href, {
                 method: 'POST',
-                headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                body: `cmd=${{encodeURIComponent(command)}}`
-            }})
-            .then(() => {{
-                showToast(`Device command: ${{command}}`, 'success');
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `cmd=${encodeURIComponent(command)}`
+            })
+            .then(() => {
+                showToast(`Device command: ${command}`, 'success');
                 // Refresh entire page to update device state
-                setTimeout(() => {{ location.reload(); }}, 500);
-            }})
+                setTimeout(() => { location.reload(); }, 500);
+            })
             .catch(err => showToast('Command failed', 'error'));
-        }}
+        }
         
-        window.addEventListener('load', function() {{
+        window.addEventListener('load', function() {
             // Start countdown timer
             refreshInterval = setInterval(updateCountdown, 1000);
             
@@ -891,44 +861,54 @@ class WebServer(Module):
             
             // Pause auto-refresh when user is typing
             const textarea = document.getElementById('cmd');
-            if (textarea) {{
-                textarea.addEventListener('focus', function() {{
-                    if (!isPaused) {{
+            if (textarea) {
+                textarea.addEventListener('focus', function() {
+                    if (!isPaused) {
                         togglePause();
-                    }}
-                }});
+                    }
+                });
                 
                 // Keyboard shortcuts
-                textarea.addEventListener('keydown', function(e) {{
+                textarea.addEventListener('keydown', function(e) {
                     // Ctrl+Enter to submit
-                    if (e.ctrlKey && e.key === 'Enter') {{
+                    if (e.ctrlKey && e.key === 'Enter') {
                         e.preventDefault();
                         const form = textarea.closest('form');
-                        if (form) {{
+                        if (form) {
                             const cmd = textarea.value.trim();
                             if (cmd) addToHistory(cmd);
                             form.submit();
-                        }}
-                    }}
+                        }
+                    }
                     // Escape to clear
-                    if (e.key === 'Escape') {{
+                    if (e.key === 'Escape') {
                         textarea.value = '';
-                    }}
-                }});
-            }}
+                    }
+                });
+            }
             
             // Add submit listener to track commands
             const form = document.querySelector('form');
-            if (form) {{
-                form.addEventListener('submit', function(e) {{
+            if (form) {
+                form.addEventListener('submit', function(e) {
                     const cmd = textarea.value.trim();
                     if (cmd) addToHistory(cmd);
-                }});
-            }}
-        }});
-    </script>
-</head>
-<body>
+                });
+            }
+        });
+        """
+    
+    def _get_html_body(self, command_result: str, device_controls: str, 
+                       spooler_html: str, console_output: str) -> str:
+        """Generate the HTML body content
+        
+        @param command_result: HTML for command result/message display
+        @param device_controls: HTML for device control buttons
+        @param spooler_html: HTML for spooler table
+        @param console_output: HTML for console output
+        @return: Complete body HTML
+        """
+        return f"""
     <div class="toast-container" id="toast-container"></div>
     
     <div class="container">
@@ -996,6 +976,49 @@ class WebServer(Module):
             Powered by MeerK40t &copy; 2025 | Server running on port {self.port}
         </div>
     </div>
+        """
+    
+    def build_html_page(self, command: Optional[str] = None, message: Optional[str] = None) -> str:
+        """
+        Build the main HTML page with spooler info and command interface.
+        
+        @param command: Command to execute and display result
+        @param message: Message to display without executing (for feedback)
+        @return: Complete HTML page as string
+        """
+        # Execute command if provided
+        command_result = ""
+        if command:
+            self.send_command(command)
+            # HTML-escape command to prevent XSS
+            safe_command = html_module.escape(command, quote=True)
+            command_result = f"<div class='alert alert-success'>Command executed: <code>{safe_command}</code></div>"
+        elif message:
+            # Display message without executing, HTML-escape to prevent XSS
+            safe_message = html_module.escape(message, quote=True)
+            command_result = f"<div class='alert alert-info'>{safe_message}</div>"
+        
+        # Build components
+        spooler_html = self._build_spooler_table()
+        device_controls = self._build_device_controls()
+        console_output = self._get_console_output()
+        
+        # Assemble complete page
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{self.context.kernel.name} - Web Console</title>
+    <style>
+{self._get_html_styles()}
+    </style>
+    <script>
+{self._get_html_scripts()}
+    </script>
+</head>
+<body>
+{self._get_html_body(command_result, device_controls, spooler_html, console_output)}
 </body>
 </html>"""
         return html
