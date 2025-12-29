@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import html as html_module
 import socket
 import logging
