@@ -833,4 +833,85 @@ def plugin(kernel, lifecycle=None):
                 except ESP3DUploadError as e:
                     channel(_(f"Error: {e}"))
 
+            @kernel.console_option(
+                "confirm", "y", type=bool, action="store_true", help=_("Skip confirmation prompt")
+            )
+            @kernel.console_command(
+                "esp3d_clear_all",
+                help=_("Delete all files from ESP3D SD card"),
+                input_type=(None, "device"),
+            )
+            def esp3d_clear_all(command, channel, _, data=None, confirm=False, **kwargs):
+                """Delete all files from ESP3D SD card."""
+                from .esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+                
+                if not REQUESTS_AVAILABLE:
+                    channel(_("Error: 'requests' library not installed."))
+                    return
+                
+                device = data
+                if device is None:
+                    device = kernel.device
+                if device is None:
+                    channel(_("No device selected"))
+                    return
+                
+                if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                    channel(_("ESP3D upload is not enabled"))
+                    return
+                
+                try:
+                    username = device.esp3d_username if device.esp3d_username else None
+                    password = device.esp3d_password if device.esp3d_password else None
+                    
+                    with ESP3DConnection(
+                        device.esp3d_host,
+                        device.esp3d_port,
+                        username,
+                        password
+                    ) as esp3d:
+                        # Get list of files
+                        sd_info = esp3d.get_sd_info()
+                        files = sd_info.get("files", [])
+                        
+                        if not files:
+                            channel(_("SD card is already empty"))
+                            return
+                        
+                        # Confirm deletion
+                        if not confirm:
+                            channel(_(f"Found {len(files)} file(s) on SD card"))
+                            channel(_("Use 'esp3d_clear_all -y' to confirm deletion"))
+                            return
+                        
+                        channel(_(f"Deleting {len(files)} file(s)..."))
+                        deleted = 0
+                        failed = 0
+                        
+                        for f in files:
+                            name = f.get("name", "")
+                            size = f.get("size", "-1")
+                            
+                            # Skip directories
+                            if size == "-1":
+                                continue
+                            
+                            try:
+                                result = esp3d.delete_file(name, device.esp3d_path)
+                                if result["success"]:
+                                    deleted += 1
+                                    channel(_(f"  ✓ {name}"))
+                                else:
+                                    failed += 1
+                                    channel(_(f"  ✗ {name}: {result.get('message', 'Unknown error')}"))
+                            except ESP3DUploadError as e:
+                                failed += 1
+                                channel(_(f"  ✗ {name}: {e}"))
+                        
+                        channel(_(""))
+                        channel(_(f"Deleted: {deleted}, Failed: {failed}"))
+                        
+                except ESP3DUploadError as e:
+                    channel(_(f"Error: {e}"))
+
         init_esp3d_commands(kernel)
