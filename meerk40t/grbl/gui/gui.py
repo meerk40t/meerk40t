@@ -206,4 +206,3 @@ class GRBLGui:
     def __init__(self, context):
         self.context = context
         # This is a stub.
-n
