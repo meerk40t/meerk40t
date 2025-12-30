@@ -10,7 +10,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 from meerk40t.kernel import signal_listener
 
-from .grblespp3dconfig import ESP3DConfigPanel
+from .esp3dconfig import ESP3DConfigPanel
 
 _ = wx.GetTranslation
 

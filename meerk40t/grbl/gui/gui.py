@@ -16,7 +16,7 @@ def plugin(service, lifecycle):
         from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.grbl.gui.grblhardwareconfig import GRBLHardwareConfig
         from meerk40t.grbl.gui.grbloperationconfig import GRBLAdvancedPanel
-        from meerk40t.grbl.gui.grblespp3dfilemgr import register_panel_esp3d_files
+        from meerk40t.grbl.gui.esp3dfilemgr import register_panel_esp3d_files
         from meerk40t.gui.icons import (
             icons8_computer_support,
             icons8_connected,
@@ -157,10 +157,12 @@ def plugin(service, lifecycle):
             {
                 "label": _("ESP3D Upload+Run"),
                 "icon": icons8_save,
-                "tip": _("Upload current job to ESP3D and execute"),
+                "tip": _("Upload current job to ESP3D and execute") + "\n"
+                + _("(right click: upload only)"),
                 "help": "devicegrbl",
                 "rule_visible": lambda v: esp3d_is_enabled(),
                 "action": lambda v: service("esp3d_upload_run -e\n"),
+                "action_right": lambda v: service("esp3d_upload_run\n"),    
             },
         )
 
@@ -208,7 +210,7 @@ def plugin(service, lifecycle):
                 "tip": _("Manage files on ESP3D SD card"),
                 "help": "devicegrbl",
                 "rule_visible": lambda v: esp3d_is_enabled(),
-                "action": lambda v: service("pane show pane/esp3d_files\n"),
+                "action": lambda v: service("pane show esp3d_files\n"),
             },
         )
 

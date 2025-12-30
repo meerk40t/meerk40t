@@ -55,7 +55,7 @@ https://github.com/gnea/grbl/wiki
 - **`grblcontroller.py`** - Controller status and monitoring panels
 - **`grblhardwareconfig.py`** - Hardware parameter configuration
 - **`grbloperationconfig.py`** - Operation-specific settings panels
-- **`grblespp3dconfig.py`** - ESP3D upload configuration panel
+- **`esp3dconfig.py`** - ESP3D upload configuration panel
 
 ## Hardware Support
 

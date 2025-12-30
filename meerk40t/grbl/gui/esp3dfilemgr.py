@@ -24,7 +24,7 @@ def register_panel_esp3d_files(window, context):
     pane.dock_proportion = 400
     pane.control = panel
     panel.pane_aui = pane
-    pane.submenu = "_50_" + _("Device")
+    pane.submenu = "_10_" + _("Laser")
     pane.helptext = _("Manage files on ESP3D SD card")
 
     window.on_pane_create(pane)
