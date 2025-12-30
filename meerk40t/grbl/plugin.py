@@ -553,12 +553,14 @@ def plugin(kernel, lifecycle=None):
                     # Check if file was created and has content
                     if not os.path.exists(temp_path):
                         channel(_("Error: G-code generation failed - file not created"))
+                        busy.end()
                         return
                     
                     file_size = os.path.getsize(temp_path)
                     if file_size == 0:
                         channel(_("Error: G-code generation failed - empty file"))
                         os.remove(temp_path)
+                        busy.end()  
                         return
                     
                     channel(_("Generated {size} bytes of G-code").format(size=file_size))
