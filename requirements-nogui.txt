@@ -4,3 +4,4 @@ pyusb
 pyserial
 numpy<=1.26.4
 ezdxf
+requests>=2.25.0

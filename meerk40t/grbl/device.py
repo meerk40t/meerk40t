@@ -716,6 +716,93 @@ class GRBLDevice(Service, Status):
         ]
         self.register_choices("protocol", choices)
 
+        # ESP3D Settings for network-connected GRBL with ESP3D-WEBUI
+        choices = [
+            {
+                "attr": "esp3d_enabled",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Enable ESP3D Upload"),
+                "tip": _(
+                    "Enable uploading G-code files to network-connected GRBL via ESP3D-WEBUI"
+                ),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_00_Connection",
+            },
+            {
+                "attr": "esp3d_host",
+                "object": self,
+                "default": "192.168.1.100",
+                "type": str,
+                "label": _("ESP3D Host"),
+                "tip": _("IP address or hostname of the ESP3D device"),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_00_Connection",
+            },
+            {
+                "attr": "esp3d_port",
+                "object": self,
+                "default": 80,
+                "type": int,
+                "label": _("ESP3D Port"),
+                "tip": _("HTTP port of the ESP3D web interface (usually 80)"),
+                "lower": 1,
+                "upper": 65535,
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_00_Connection",
+            },
+            {
+                "attr": "esp3d_path",
+                "object": self,
+                "default": "/",
+                "type": str,
+                "label": _("ESP3D SD Path"),
+                "tip": _("Default path on SD card for uploaded files"),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_10_Settings",
+            },
+            {
+                "attr": "esp3d_username",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Username (optional)"),
+                "tip": _("Username for ESP3D authentication (leave empty if not required)"),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_20_Authentication",
+            },
+            {
+                "attr": "esp3d_password",
+                "object": self,
+                "default": "",
+                "type": str,
+                "label": _("Password (optional)"),
+                "tip": _("Password for ESP3D authentication (leave empty if not required)"),
+                "style": "password",
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_20_Authentication",
+            },
+            {
+                "attr": "esp3d_cleanup",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Cleanup Local Files"),
+                "tip": _("Automatically delete local G-code files after successful upload"),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_10_Settings",
+            },
+        ]
+        self.register_choices("esp3d", choices)
+
         self.driver = GRBLDriver(self)
         self.controller = GrblController(self)
         self.driver.out_pipe = self.controller.write

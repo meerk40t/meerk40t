@@ -16,6 +16,7 @@ def plugin(service, lifecycle):
         from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.grbl.gui.grblhardwareconfig import GRBLHardwareConfig
         from meerk40t.grbl.gui.grbloperationconfig import GRBLAdvancedPanel
+        from meerk40t.grbl.gui.esp3dfilemgr import register_panel_esp3d_files
         from meerk40t.gui.icons import (
             icons8_computer_support,
             icons8_connected,
@@ -25,6 +26,7 @@ def plugin(service, lifecycle):
             icons8_home_filled,
             icons8_info,
             icons8_pause,
+            icons8_save,
         )
 
         service.register("window/GRBLController", GRBLController)
@@ -145,6 +147,78 @@ def plugin(service, lifecycle):
                 "action_right": lambda v: service("physical_home\n"),
             },
         )
+
+        def esp3d_is_enabled():
+            """Check if ESP3D upload is enabled."""
+            return hasattr(service, "esp3d_enabled") and service.esp3d_enabled
+
+        service.register(
+            "button/control/ESP3DUpload",
+            {
+                "label": _("ESP3D Upload+Run"),
+                "icon": icons8_save,
+                "tip": _("Upload current job to ESP3D and execute") + "\n"
+                + _("(right click: upload only)"),
+                "help": "devicegrbl",
+                "rule_visible": lambda v: esp3d_is_enabled(),
+                "action": lambda v: service("esp3d_upload_run -e\n"),
+                "action_right": lambda v: service("esp3d_upload_run\n"),    
+            },
+        )
+
+        service.register(
+            "button/control/ESP3DPause",
+            {
+                "label": _("ESP3D Pause"),
+                "icon": icons8_pause,
+                "tip": _("Pause execution on ESP3D device"),
+                "help": "devicegrbl",
+                "rule_visible": lambda v: esp3d_is_enabled(),
+                "action": lambda v: service("esp3d_pause\n"),
+            },
+        )
+
+        service.register(
+            "button/control/ESP3DResume",
+            {
+                "label": _("ESP3D Resume"),
+                "icon": icons8_flash_on,
+                "tip": _("Resume paused execution on ESP3D device"),
+                "help": "devicegrbl",
+                "rule_visible": lambda v: esp3d_is_enabled(),
+                "action": lambda v: service("esp3d_resume\n"),
+            },
+        )
+
+        service.register(
+            "button/control/ESP3DStop",
+            {
+                "label": _("ESP3D Stop"),
+                "icon": icons8_emergency_stop_button,
+                "tip": _("Emergency stop execution on ESP3D device"),
+                "help": "devicegrbl",
+                "rule_visible": lambda v: esp3d_is_enabled(),
+                "action": lambda v: service("esp3d_stop\n"),
+            },
+        )
+
+        service.register(
+            "button/control/ESP3DFileManager",
+            {
+                "label": _("ESP3D Files"),
+                "icon": icons8_save,
+                "tip": _("Manage files on ESP3D SD card"),
+                "help": "devicegrbl",
+                "rule_visible": lambda v: esp3d_is_enabled(),
+                "action": lambda v: service("pane show esp3d_files\n"),
+            },
+        )
+
+        # Register ESP3D file manager panel
+        kernel = service.kernel
+        if hasattr(kernel, "register"):
+            kernel.register("wxpane/ESP3DFiles", register_panel_esp3d_files)
+
         service.add_service_delegate(GRBLGui(service))
 
 
