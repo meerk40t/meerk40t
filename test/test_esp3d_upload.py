@@ -129,11 +129,19 @@ class TestESP3DConnection(unittest.TestCase):
         """Test failed connection test."""
         from meerk40t.grbl.esp3d_upload import ESP3DConnection
         
-        # Create a proper exception class
+        # Create proper exception classes that inherit from BaseException
         class MockRequestException(Exception):
             pass
         
+        class MockTimeout(MockRequestException):
+            pass
+        
+        class MockConnectionError(MockRequestException):
+            pass
+        
         mock_requests.RequestException = MockRequestException
+        mock_requests.Timeout = MockTimeout
+        mock_requests.ConnectionError = MockConnectionError
         mock_requests.get.side_effect = MockRequestException("Connection refused")
         
         conn = ESP3DConnection("192.168.1.100", 80)
@@ -246,7 +254,7 @@ class TestESP3DUpload(unittest.TestCase):
     @patch('meerk40t.grbl.esp3d_upload.REQUESTS_AVAILABLE', True)
     @patch('meerk40t.grbl.esp3d_upload.requests')
     def test_upload_file_insufficient_space(self, mock_requests):
-        """Test upload failure due to insufficient space."""
+        """Test upload failure due to insufficient space with various file sizes."""
         from meerk40t.grbl.esp3d_upload import ESP3DConnection, ESP3DUploadError
         import tempfile
         
@@ -254,36 +262,50 @@ class TestESP3DUpload(unittest.TestCase):
         class MockRequestException(Exception):
             pass
         
-        # Create a temporary file (large enough to exceed free space)
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.gc') as f:
-            f.write("G0 X0 Y0\n" * 20000)  # File of exactly 180,000 bytes
-            temp_path = f.name
+        # Test multiple file sizes to ensure space checking works correctly
+        test_cases = [
+            (1024 * 10, 1024 * 5),      # 10KB file, 5KB free
+            (1024 * 100, 1024 * 50),    # 100KB file, 50KB free
+            (1024 * 1024, 1024 * 500),  # 1MB file, 500KB free
+        ]
         
-        try:
-            # Mock SD info with insufficient space (only 10KB = 10,240 bytes free vs 180KB file)
-            mock_sd_response = Mock()
-            mock_sd_response.status_code = 200
-            mock_sd_response.text = '{"total": "100 KB", "used": "90 KB", "files": [], "path": "/", "occupation": "90"}'
-            
-            mock_session = MagicMock()
-            mock_session.get.return_value = mock_sd_response
-            mock_requests.Session.return_value = mock_session
-            mock_requests.RequestException = MockRequestException
-            
-            # Test that ESP3DUploadError is raised
-            with ESP3DConnection("192.168.1.100", 80) as conn:
-                with self.assertRaises(ESP3DUploadError) as context:
-                    conn.upload_file(temp_path, "test.gc", "/")
+        for file_size_bytes, free_space_bytes in test_cases:
+            with self.subTest(file_size=file_size_bytes, free_space=free_space_bytes):
+                # Create a temporary file of the specified size
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.gc') as f:
+                    # Calculate how many lines needed for target size
+                    line = "G0 X0 Y0\n"
+                    lines_needed = file_size_bytes // len(line)
+                    f.write(line * lines_needed)
+                    temp_path = f.name
                 
-                # Check error message mentions space issue
-                error_msg = str(context.exception).lower()
-                self.assertTrue(
-                    "insufficient" in error_msg or "space" in error_msg,
-                    f"Expected space-related error, got: {context.exception}"
-                )
-        finally:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+                try:
+                    # Mock SD info with insufficient space
+                    total_kb = (free_space_bytes + 1024) // 1024  # Total slightly more than free
+                    used_kb = 1024  # Some used space
+                    mock_sd_response = Mock()
+                    mock_sd_response.status_code = 200
+                    mock_sd_response.text = f'{{"total": "{total_kb} KB", "used": "{used_kb} KB", "files": [], "path": "/", "occupation": "50"}}'
+                    
+                    mock_session = MagicMock()
+                    mock_session.get.return_value = mock_sd_response
+                    mock_requests.Session.return_value = mock_session
+                    mock_requests.RequestException = MockRequestException
+                    
+                    # Test that ESP3DUploadError is raised
+                    with ESP3DConnection("192.168.1.100", 80) as conn:
+                        with self.assertRaises(ESP3DUploadError) as context:
+                            conn.upload_file(temp_path, "test.gc", "/")
+                        
+                        # Check error message mentions space issue
+                        error_msg = str(context.exception).lower()
+                        self.assertTrue(
+                            "insufficient" in error_msg or "space" in error_msg,
+                            f"Expected space-related error for {file_size_bytes} bytes file, got: {context.exception}"
+                        )
+                finally:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
 
     @patch('meerk40t.grbl.esp3d_upload.REQUESTS_AVAILABLE', True)
     def test_upload_file_not_found(self):

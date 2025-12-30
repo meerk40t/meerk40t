@@ -363,14 +363,14 @@ def plugin(kernel, lifecycle=None):
                                         total_mb = sd_info["total"] / (1024 * 1024)
                                         used_mb = sd_info["used"] / (1024 * 1024)
                                         free_mb = sd_info["free"] / (1024 * 1024)
-                                        channel(_(f"SD Card: {used_mb:.2f} MB / {total_mb:.2f} MB used ({sd_info['occupation']}%)"))
-                                        channel(_(f"Free space: {free_mb:.2f} MB"))
+                                        channel(_("SD Card: {used:.2f} MB / {total:.2f} MB used ({occupation}%)").format(used=used_mb, total=total_mb, occupation=sd_info['occupation']))
+                                        channel(_("Free space: {free:.2f} MB").format(free=free_mb))
                                     except ESP3DUploadError as e:
-                                        channel(_(f"Warning: Could not get SD info: {e}"))
+                                        channel(_("Warning: Could not get SD info: {error}").format(error=e))
                                 else:
-                                    channel(_(f"✗ Connection failed: {result['message']}"))
+                                    channel(_("✗ Connection failed: {message}").format(message=result['message']))
                         except ESP3DUploadError as e:
-                            channel(_(f"✗ Error: {e}"))
+                            channel(_("✗ Error: {error}").format(error=e))
                         return
                     
                     elif action == "set":
@@ -385,41 +385,41 @@ def plugin(kernel, lifecycle=None):
                         
                         if param == "host":
                             device.esp3d_host = value
-                            channel(_(f"ESP3D host set to: {value}"))
+                            channel(_("ESP3D host set to: {value}").format(value=value))
                         elif param == "port":
                             try:
                                 device.esp3d_port = int(value)
-                                channel(_(f"ESP3D port set to: {value}"))
+                                channel(_("ESP3D port set to: {value}").format(value=value))
                             except ValueError:
                                 channel(_("Error: Port must be a number"))
                         elif param == "path":
                             device.esp3d_path = value
-                            channel(_(f"ESP3D path set to: {value}"))
+                            channel(_("ESP3D path set to: {value}").format(value=value))
                         elif param == "username":
                             device.esp3d_username = value
-                            channel(_(f"ESP3D username set to: {value}"))
+                            channel(_("ESP3D username set to: {value}").format(value=value))
                         elif param == "password":
                             device.esp3d_password = value
                             channel(_("ESP3D password set"))
                         elif param == "enabled":
                             device.esp3d_enabled = value.lower() in ("true", "1", "yes", "on")
-                            channel(_(f"ESP3D upload enabled: {device.esp3d_enabled}"))
+                            channel(_("ESP3D upload enabled: {enabled}").format(enabled=device.esp3d_enabled))
                         elif param == "cleanup":
                             device.esp3d_cleanup = value.lower() in ("true", "1", "yes", "on")
-                            channel(_(f"ESP3D cleanup enabled: {device.esp3d_cleanup}"))
+                            channel(_("ESP3D cleanup enabled: {enabled}").format(enabled=device.esp3d_cleanup))
                         else:
-                            channel(_(f"Unknown parameter: {param}"))
+                            channel(_("Unknown parameter: {param}").format(param=param))
                         return
                 
                 # Show current configuration
                 channel(_("ESP3D Configuration:"))
-                channel(_(f"  Enabled: {device.esp3d_enabled}"))
-                channel(_(f"  Host: {device.esp3d_host}"))
-                channel(_(f"  Port: {device.esp3d_port}"))
-                channel(_(f"  Path: {device.esp3d_path}"))
-                channel(_(f"  Username: {device.esp3d_username if device.esp3d_username else '(not set)'}"))
-                channel(_(f"  Password: {'***' if device.esp3d_password else '(not set)'}"))
-                channel(_(f"  Cleanup: {device.esp3d_cleanup}"))
+                channel(_("  Enabled: {enabled}").format(enabled=device.esp3d_enabled))
+                channel(_("  Host: {host}").format(host=device.esp3d_host))
+                channel(_("  Port: {port}").format(port=device.esp3d_port))
+                channel(_("  Path: {path}").format(path=device.esp3d_path))
+                channel(_("  Username: {username}").format(username=device.esp3d_username if device.esp3d_username else '(not set)'))
+                channel(_("  Password: {password}").format(password='***' if device.esp3d_password else '(not set)'))
+                channel(_("  Cleanup: {cleanup}").format(cleanup=device.esp3d_cleanup))
                 channel(_(""))
                 channel(_("Commands:"))
                 channel(_("  esp3d_config test - Test connection"))
@@ -475,19 +475,19 @@ def plugin(kernel, lifecycle=None):
                             
                             if size == "-1":
                                 # Directory
-                                channel(_(f"  [DIR]  {name}"))
+                                channel(_("  [DIR]  {name}").format(name=name))
                             else:
                                 # File
                                 time_str = f"  ({time})" if time else ""
-                                channel(_(f"  {name:30s} {size:>10s}{time_str}"))
+                                channel(_("  {name:30s} {size:>10s}{time_str}").format(name=name, size=size, time_str=time_str))
                         
                         channel(_(""))
                         total_mb = sd_info["total"] / (1024 * 1024)
                         used_mb = sd_info["used"] / (1024 * 1024)
-                        channel(_(f"Used: {used_mb:.2f} MB / {total_mb:.2f} MB ({sd_info['occupation']}%)"))
+                        channel(_("Used: {used:.2f} MB / {total:.2f} MB ({occupation}%)").format(used=used_mb, total=total_mb, occupation=sd_info['occupation']))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
             @kernel.console_option(
                 "filename", "f", type=str, help=_("Custom filename (8.3 format recommended)")
@@ -535,7 +535,7 @@ def plugin(kernel, lifecycle=None):
                     remote_filename = filename
                 else:
                     remote_filename = generate_8_3_filename("file", "gc")
-                    channel(_(f"Generated filename: {remote_filename}"))
+                    channel(_("Generated filename: {filename}").format(filename=remote_filename))
                 
                 # Create temporary file
                 temp_fd, temp_path = tempfile.mkstemp(suffix=".gc", prefix="meerk40t_esp3d_")
@@ -558,10 +558,10 @@ def plugin(kernel, lifecycle=None):
                         os.remove(temp_path)
                         return
                     
-                    channel(_(f"Generated {file_size} bytes of G-code"))
+                    channel(_("Generated {size} bytes of G-code").format(size=file_size))
                     
                     # Upload to ESP3D
-                    channel(_(f"Uploading to {device.esp3d_host}:{device.esp3d_port}..."))
+                    channel(_("Uploading to {host}:{port}...").format(host=device.esp3d_host, port=device.esp3d_port))
                     
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
@@ -579,7 +579,7 @@ def plugin(kernel, lifecycle=None):
                         )
                         
                         if result["success"]:
-                            channel(_(f"✓ Upload successful: {remote_filename}"))
+                            channel(_("✓ Upload successful: {filename}").format(filename=remote_filename))
                             
                             # Execute if requested
                             if execute:
@@ -588,14 +588,14 @@ def plugin(kernel, lifecycle=None):
                                 if exec_result["success"]:
                                     channel(_("✓ File execution started"))
                                 else:
-                                    channel(_(f"✗ Execution failed: {exec_result.get('message', 'Unknown error')}"))
+                                    channel(_("✗ Execution failed: {message}").format(message=exec_result.get('message', 'Unknown error')))
                         else:
-                            channel(_(f"✗ Upload failed: {result.get('message', 'Unknown error')}"))
+                            channel(_("✗ Upload failed: {message}").format(message=result.get('message', 'Unknown error')))
                     
                 except ESP3DUploadError as e:
-                    channel(_(f"✗ Error: {e}"))
+                    channel(_("✗ Error: {error}").format(error=e))
                 except Exception as e:
-                    channel(_(f"✗ Unexpected error: {e}"))
+                    channel(_("✗ Unexpected error: {error}").format(error=e))
                 finally:
                     # Cleanup local file if requested
                     if device.esp3d_cleanup and os.path.exists(temp_path):
@@ -645,15 +645,15 @@ def plugin(kernel, lifecycle=None):
                         username,
                         password
                     ) as esp3d:
-                        channel(_(f"Executing {filename} on device..."))
+                        channel(_("Executing {filename} on device...").format(filename=filename))
                         result = esp3d.execute_file(filename)
                         if result["success"]:
                             channel(_("✓ File execution started"))
                         else:
-                            channel(_(f"✗ Execution failed: {result.get('message', 'Unknown error')}"))
+                            channel(_("✗ Execution failed: {message}").format(message=result.get('message', 'Unknown error')))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
             @kernel.console_command(
                 "esp3d_delete",
@@ -697,12 +697,12 @@ def plugin(kernel, lifecycle=None):
                     ) as esp3d:
                         result = esp3d.delete_file(filename, device.esp3d_path)
                         if result["success"]:
-                            channel(_(f"✓ File deleted: {filename}"))
+                            channel(_("✓ File deleted: {filename}").format(filename=filename))
                         else:
-                            channel(_(f"✗ Delete failed: {result.get('message', 'Unknown error')}"))
+                            channel(_("✗ Delete failed: {message}").format(message=result.get('message', 'Unknown error')))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
             @kernel.console_command(
                 "esp3d_pause",
@@ -742,10 +742,10 @@ def plugin(kernel, lifecycle=None):
                         if result["success"]:
                             channel(_("✓ Pause command sent"))
                         else:
-                            channel(_(f"✗ Pause failed: {result.get('message', 'Unknown error')}"))
+                            channel(_("✗ Pause failed: {message}").format(message=result.get('message', 'Unknown error')))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
             @kernel.console_command(
                 "esp3d_resume",
@@ -785,10 +785,10 @@ def plugin(kernel, lifecycle=None):
                         if result["success"]:
                             channel(_("✓ Resume command sent"))
                         else:
-                            channel(_(f"✗ Resume failed: {result.get('message', 'Unknown error')}"))
+                            channel(_("✗ Resume failed: {message}").format(message=result.get('message', 'Unknown error')))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
             @kernel.console_command(
                 "esp3d_stop",
@@ -828,10 +828,10 @@ def plugin(kernel, lifecycle=None):
                         if result["success"]:
                             channel(_("✓ Stop command sent"))
                         else:
-                            channel(_(f"✗ Stop failed: {result.get('message', 'Unknown error')}"))
+                            channel(_("✗ Stop failed: {message}").format(message=result.get('message', 'Unknown error')))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
             @kernel.console_option(
                 "confirm", "y", type=bool, action="store_true", help=_("Skip confirmation prompt")
@@ -880,11 +880,11 @@ def plugin(kernel, lifecycle=None):
                         
                         # Confirm deletion
                         if not confirm:
-                            channel(_(f"Found {len(files)} file(s) on SD card"))
+                            channel(_("Found {count} file(s) on SD card").format(count=len(files)))
                             channel(_("Use 'esp3d_clear_all -y' to confirm deletion"))
                             return
                         
-                        channel(_(f"Deleting {len(files)} file(s)..."))
+                        channel(_("Deleting {count} file(s)...").format(count=len(files)))
                         deleted = 0
                         failed = 0
                         
@@ -900,18 +900,18 @@ def plugin(kernel, lifecycle=None):
                                 result = esp3d.delete_file(name, device.esp3d_path)
                                 if result["success"]:
                                     deleted += 1
-                                    channel(_(f"  ✓ {name}"))
+                                    channel(_("  ✓ {name}").format(name=name))
                                 else:
                                     failed += 1
-                                    channel(_(f"  ✗ {name}: {result.get('message', 'Unknown error')}"))
+                                    channel(_("  ✗ {name}: {message}").format(name=name, message=result.get('message', 'Unknown error')))
                             except ESP3DUploadError as e:
                                 failed += 1
-                                channel(_(f"  ✗ {name}: {e}"))
+                                channel(_("  ✗ {name}: {error}").format(name=name, error=e))
                         
                         channel(_(""))
-                        channel(_(f"Deleted: {deleted}, Failed: {failed}"))
+                        channel(_("Deleted: {deleted}, Failed: {failed}").format(deleted=deleted, failed=failed))
                         
                 except ESP3DUploadError as e:
-                    channel(_(f"Error: {e}"))
+                    channel(_("Error: {error}").format(error=e))
 
         init_esp3d_commands(kernel)

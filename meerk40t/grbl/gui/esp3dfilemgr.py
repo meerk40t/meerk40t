@@ -210,13 +210,13 @@ class ESP3DFileManagerPanel(wx.Panel):
 
                 file_count = self.list_files.GetItemCount()
                 self.text_status.AppendText(
-                    _(f"✓ Found {file_count} file(s)\n")
+                    _("✓ Found {count} file(s)\n").format(count=file_count)
                 )
 
         except ESP3DUploadError as e:
-            self.text_status.AppendText(_(f"✗ Error: {e}\n"))
+            self.text_status.AppendText(_("✗ Error: {error}\n").format(error=e))
         except Exception as e:
-            self.text_status.AppendText(_(f"✗ Unexpected error: {e}\n"))
+            self.text_status.AppendText(_("✗ Unexpected error: {error}\n").format(error=e))
 
     def on_execute(self, event):
         """Execute selected file."""
@@ -224,7 +224,7 @@ class ESP3DFileManagerPanel(wx.Panel):
         if not filename:
             return
 
-        self.text_status.SetValue(_(f"Executing {filename}...\n"))
+        self.text_status.SetValue(_("Executing {filename}...\n").format(filename=filename))
         wx.Yield()
 
         try:
@@ -256,13 +256,13 @@ class ESP3DFileManagerPanel(wx.Panel):
                     self.text_status.AppendText(_("✓ File execution started\n"))
                 else:
                     self.text_status.AppendText(
-                        _(f"✗ Execution failed: {result.get('message', 'Unknown error')}\n")
+                        _("✗ Execution failed: {message}\n").format(message=result.get('message', 'Unknown error'))
                     )
 
         except ESP3DUploadError as e:
-            self.text_status.AppendText(_(f"✗ Error: {e}\n"))
+            self.text_status.AppendText(_("✗ Error: {error}\n").format(error=e))
         except Exception as e:
-            self.text_status.AppendText(_(f"✗ Unexpected error: {e}\n"))
+            self.text_status.AppendText(_("✗ Unexpected error: {error}\n").format(error=e))
 
     def on_delete(self, event):
         """Delete selected file."""
@@ -273,7 +273,7 @@ class ESP3DFileManagerPanel(wx.Panel):
         # Confirm deletion
         dlg = wx.MessageDialog(
             self,
-            _(f"Delete file '{filename}'?"),
+            _("Delete file '{filename}'?").format(filename=filename),
             _("Confirm Delete"),
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
         )
@@ -283,7 +283,7 @@ class ESP3DFileManagerPanel(wx.Panel):
         if result != wx.ID_YES:
             return
 
-        self.text_status.SetValue(_(f"Deleting {filename}...\n"))
+        self.text_status.SetValue(_("Deleting {filename}...\n").format(filename=filename))
         wx.Yield()
 
         try:
@@ -312,18 +312,18 @@ class ESP3DFileManagerPanel(wx.Panel):
             ) as esp3d:
                 result = esp3d.delete_file(filename, device.esp3d_path)
                 if result["success"]:
-                    self.text_status.AppendText(_(f"✓ File deleted: {filename}\n"))
+                    self.text_status.AppendText(_("✓ File deleted: {filename}\n").format(filename=filename))
                     # Refresh list
                     self.on_refresh(None)
                 else:
                     self.text_status.AppendText(
-                        _(f"✗ Delete failed: {result.get('message', 'Unknown error')}\n")
+                        _("✗ Delete failed: {message}\n").format(message=result.get('message', 'Unknown error'))
                     )
 
         except ESP3DUploadError as e:
-            self.text_status.AppendText(_(f"✗ Error: {e}\n"))
+            self.text_status.AppendText(_("✗ Error: {error}\n").format(error=e))
         except Exception as e:
-            self.text_status.AppendText(_(f"✗ Unexpected error: {e}\n"))
+            self.text_status.AppendText(_("✗ Unexpected error: {error}\n").format(error=e))
 
     def on_clear_all(self, event):
         """Delete all files on SD card."""
@@ -340,7 +340,7 @@ class ESP3DFileManagerPanel(wx.Panel):
         # Confirm deletion
         dlg = wx.MessageDialog(
             self,
-            _(f"Delete ALL {file_count} file(s) from SD card?\n\nThis cannot be undone!"),
+            _("Delete ALL {count} file(s) from SD card?\n\nThis cannot be undone!").format(count=file_count),
             _("Confirm Clear All"),
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING
         )
@@ -350,7 +350,7 @@ class ESP3DFileManagerPanel(wx.Panel):
         if result != wx.ID_YES:
             return
 
-        self.text_status.SetValue(_(f"Deleting all files...\n"))
+        self.text_status.SetValue(_("Deleting all files...\n"))
         wx.Yield()
 
         try:
@@ -396,28 +396,28 @@ class ESP3DFileManagerPanel(wx.Panel):
                         result = esp3d.delete_file(name, device.esp3d_path)
                         if result["success"]:
                             deleted += 1
-                            self.text_status.AppendText(_(f"  ✓ {name}\n"))
+                            self.text_status.AppendText(_("  ✓ {name}\n").format(name=name))
                         else:
                             failed += 1
                             self.text_status.AppendText(
-                                _(f"  ✗ {name}: {result.get('message', 'Unknown error')}\n")
+                                _("  ✗ {name}: {message}\n").format(name=name, message=result.get('message', 'Unknown error'))
                             )
                     except ESP3DUploadError as e:
                         failed += 1
-                        self.text_status.AppendText(_(f"  ✗ {name}: {e}\n"))
+                        self.text_status.AppendText(_("  ✗ {name}: {error}\n").format(name=name, error=e))
 
                     wx.Yield()
 
                 self.text_status.AppendText(_("\n"))
-                self.text_status.AppendText(_(f"Deleted: {deleted}, Failed: {failed}\n"))
+                self.text_status.AppendText(_("Deleted: {deleted}, Failed: {failed}\n").format(deleted=deleted, failed=failed))
 
                 # Refresh list
                 self.on_refresh(None)
 
         except ESP3DUploadError as e:
-            self.text_status.AppendText(_(f"✗ Error: {e}\n"))
+            self.text_status.AppendText(_("✗ Error: {error}\n").format(error=e))
         except Exception as e:
-            self.text_status.AppendText(_(f"✗ Unexpected error: {e}\n"))
+            self.text_status.AppendText(_("✗ Unexpected error: {error}\n").format(error=e))
 
     def pane_show(self):
         """Called when panel is shown."""

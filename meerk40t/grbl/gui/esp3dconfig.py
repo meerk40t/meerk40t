@@ -116,24 +116,24 @@ class ESP3DConfigPanel(ScrolledPanel):
                         used_mb = sd_info["used"] / (1024 * 1024)
                         free_mb = sd_info["free"] / (1024 * 1024)
                         self.text_status.AppendText(
-                            _(f"SD Card: {used_mb:.2f} MB / {total_mb:.2f} MB used ({sd_info['occupation']}%)\n")
+                            _("SD Card: {used:.2f} MB / {total:.2f} MB used ({occupation}%)\n").format(used=used_mb, total=total_mb, occupation=sd_info['occupation'])
                         )
                         self.text_status.AppendText(
-                            _(f"Free space: {free_mb:.2f} MB\n")
+                            _("Free space: {free:.2f} MB\n").format(free=free_mb)
                         )
                     except ESP3DUploadError as e:
                         self.text_status.AppendText(
-                            _(f"Warning: Could not get SD info: {e}\n")
+                            _("Warning: Could not get SD info: {error}\n").format(error=e)
                         )
                 else:
                     self.text_status.AppendText(
-                        _(f"✗ Connection failed: {result['message']}\n")
+                        _("✗ Connection failed: {message}\n").format(message=result['message'])
                     )
 
         except ESP3DUploadError as e:
-            self.text_status.AppendText(_(f"✗ Error: {e}\n"))
+            self.text_status.AppendText(_("✗ Error: {error}\n").format(error=e))
         except Exception as e:
-            self.text_status.AppendText(_(f"✗ Unexpected error: {e}\n"))
+            self.text_status.AppendText(_("✗ Unexpected error: {error}\n").format(error=e))
 
     def on_list_files(self, event):
         """Handle list files button click."""
@@ -179,25 +179,25 @@ class ESP3DConfigPanel(ScrolledPanel):
 
                     if size == "-1":
                         # Directory
-                        self.text_status.AppendText(_(f"  [DIR]  {name}\n"))
+                        self.text_status.AppendText(_("  [DIR]  {name}\n").format(name=name))
                     else:
                         # File
                         time_str = f"  ({time})" if time else ""
                         self.text_status.AppendText(
-                            _(f"  {name:30s} {size:>10s}{time_str}\n")
+                            _("  {name:30s} {size:>10s}{time_str}\n").format(name=name, size=size, time_str=time_str)
                         )
 
                 self.text_status.AppendText(_("\n"))
                 total_mb = sd_info["total"] / (1024 * 1024)
                 used_mb = sd_info["used"] / (1024 * 1024)
                 self.text_status.AppendText(
-                    _(f"Used: {used_mb:.2f} MB / {total_mb:.2f} MB ({sd_info['occupation']}%)\n")
+                    _("Used: {used:.2f} MB / {total:.2f} MB ({occupation}%)\n").format(used=used_mb, total=total_mb, occupation=sd_info['occupation'])
                 )
 
         except ESP3DUploadError as e:
-            self.text_status.AppendText(_(f"Error: {e}\n"))
+            self.text_status.AppendText(_("Error: {error}\n").format(error=e))
         except Exception as e:
-            self.text_status.AppendText(_(f"Unexpected error: {e}\n"))
+            self.text_status.AppendText(_("Unexpected error: {error}\n").format(error=e))
 
     def pane_show(self):
         """Called when panel is shown."""

@@ -7,6 +7,7 @@ on network-connected GRBL lasers with ESP3D firmware.
 
 import os
 import time
+import random
 from urllib.parse import urlencode, quote
 
 try:
@@ -201,7 +202,10 @@ class ESP3DConnection:
             local_path: Path to local file
             remote_filename: Name for file on SD card (8.3 format recommended)
             remote_path: Target directory on SD card (default: "/")
-            progress_callback: Optional callback function(bytes_sent, total_bytes)
+            progress_callback: Optional callback function(bytes_sent, total_bytes).
+                Called with negative values (-1, -1) to signal warnings (e.g., 
+                when SD card space couldn't be verified but upload will continue).
+                During upload, called with (bytes_sent, total_bytes) for progress.
 
         Returns:
             dict: Upload result with success status and message
@@ -446,10 +450,10 @@ def generate_8_3_filename(base="file", extension="gc", counter=None):
     Args:
         base: Base name (will be truncated to fit)
         extension: File extension (3 chars max)
-        counter: Optional counter value, or None for timestamp-based
+        counter: Optional counter value, or None for timestamp+random-based
 
     Returns:
-        str: Filename in 8.3 format (e.g., "file0001.gc")
+        str: Filename in 8.3 format (e.g., "file0001.gc" or "file3a7f.gc")
     """
     extension = extension[:3]  # Max 3 chars for extension
     
@@ -457,8 +461,12 @@ def generate_8_3_filename(base="file", extension="gc", counter=None):
         # Use provided counter
         suffix = f"{counter:04d}"  # 4 digit counter
     else:
-        # Use timestamp-based counter
-        suffix = f"{int(time.time()) % 10000:04d}"
+        # Use timestamp (last 4 digits) + random hex (4 hex digits) for uniqueness
+        # This provides ~65k combinations per second instead of repeating every 2.7 hours
+        time_part = int(time.time()) % 10000  # Last 4 digits of timestamp
+        random_part = random.randint(0, 0xFFFF)  # 16-bit random number
+        # Combine: 2 digits time + 2 hex digits random for better distribution
+        suffix = f"{time_part % 100:02d}{random_part:04x}"[:4]
     
     # Calculate available space for base name (8 - len(suffix))
     max_base_len = 8 - len(suffix)
