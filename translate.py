@@ -22,12 +22,13 @@ import argparse
 import os
 import re
 import sys
+from tabnanny import verbose
 from typing import List, Tuple, Set
 
 import polib
 
 LOCALE_DIR = "./locale"
-
+VERBOSE = False
 # Determine whether output is a TTY. If not (redirected), disable ANSI codes.
 try:
     is_tty = sys.stdout.isatty()
@@ -277,8 +278,9 @@ def create_mo_files(force: bool, locales: Set[str]) -> List[Tuple[str, List[str]
 
     for d_local, d in zip(po_locales, po_dirs):
         if locales and d_local.lower() not in locales_lower:
-            print_info(f"Skipping locale {d_local}")
-            file_results.append((d_local, "Skipped", "Not in selected locales"))
+            if VERBOSE:
+                print_info(f"Skipping locale {d_local}")
+                file_results.append((d_local, "Skipped", "Not in selected locales"))
             continue
         print_info(f"Processing locale: {d_local}")
         mo_files = []
@@ -530,7 +532,16 @@ def main() -> None:
         action="store_true",
         help="Integrate delta_xx.po files into the main .po files",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output",
+    )
     args = parser.parse_args()
+    if args.verbose:
+        global VERBOSE
+        VERBOSE = True
     if "all" in args.locales:
         args.locales = []
     locales = set()
