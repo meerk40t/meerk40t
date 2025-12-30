@@ -187,7 +187,7 @@ class ESP3DConfigPanel(ScrolledPanel):
                             _("  {name:30s} {size:>10s}{time_str}\n").format(name=name, size=size, time_str=time_str)
                         )
 
-                self.text_status.AppendText(_("\n"))
+                self.text_status.AppendText("\n")
                 total_mb = sd_info["total"] / (1024 * 1024)
                 used_mb = sd_info["used"] / (1024 * 1024)
                 self.text_status.AppendText(

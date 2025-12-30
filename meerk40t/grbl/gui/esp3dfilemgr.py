@@ -449,7 +449,7 @@ class ESP3DFileManagerPanel(wx.Panel):
 
                     wx.Yield()
 
-                self.text_status.AppendText(_("\n"))
+                self.text_status.AppendText("\n")
                 self.text_status.AppendText(_("Deleted: {deleted}, Failed: {failed}\n").format(deleted=deleted, failed=failed))
 
                 # Refresh list
