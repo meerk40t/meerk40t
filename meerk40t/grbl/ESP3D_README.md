@@ -153,9 +153,9 @@ MeerK40t automatically generates 8.3 compliant filenames when no custom filename
 **Problem**: "SD card error" or "Cannot access SD card"
 
 **Solutions**:
-1. Verify SD card is properly inserted in ESP3D device
+1. Verify the SD card is properly inserted in the ESP3D device
 2. Check SD card format (FAT32 recommended)
-3. Try reformatting SD card
+3. Try reformatting the SD card
 4. Check SD card capacity (some devices have limits)
 
 ### Upload Failures
@@ -200,7 +200,7 @@ The feature uses these ESP3D-WEBUI HTTP endpoints:
 
 - ESP3D authentication credentials are stored in MeerK40t settings
 - Use authentication when operating on shared networks
-- Consider network security when exposing ESP3D to internet
+- Consider network security when exposing ESP3D to the internet
 
 ## Future Enhancements
 

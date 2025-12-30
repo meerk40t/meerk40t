@@ -241,6 +241,18 @@ class ESP3DFileManagerPanel(wx.Panel):
             if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
                 device = self.context.kernel.device
 
+            if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                self.text_status.AppendText(
+                    _("ESP3D upload is not enabled. Enable in settings.\n")
+                )
+                return
+
+            if not hasattr(device, "esp3d_host") or not device.esp3d_host:
+                self.text_status.AppendText(
+                    _("ESP3D host not configured. Set in device settings.\n")
+                )
+                return
+
             username = device.esp3d_username if device.esp3d_username else None
             password = device.esp3d_password if device.esp3d_password else None
 
@@ -299,6 +311,18 @@ class ESP3DFileManagerPanel(wx.Panel):
             device = self.context
             if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
                 device = self.context.kernel.device
+
+            if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                self.text_status.AppendText(
+                    _("ESP3D upload is not enabled. Enable in settings.\n")
+                )
+                return
+
+            if not hasattr(device, "esp3d_host") or not device.esp3d_host:
+                self.text_status.AppendText(
+                    _("ESP3D host not configured. Set in device settings.\n")
+                )
+                return
 
             username = device.esp3d_username if device.esp3d_username else None
             password = device.esp3d_password if device.esp3d_password else None
@@ -364,6 +388,23 @@ class ESP3DFileManagerPanel(wx.Panel):
 
             # Get device - context might be device itself or have kernel.device
             device = self.context
+            if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
+                device = self.context.kernel.device
+
+            if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                self.text_status.AppendText(
+                    _("ESP3D upload is not enabled. Enable in settings.\n")
+                )
+                return
+
+            if not hasattr(device, "esp3d_host") or not device.esp3d_host:
+                self.text_status.AppendText(
+                    _("ESP3D host not configured. Set in device settings.\n")
+                )
+                return
+
+            username = device.esp3d_username if device.esp3d_username else None
+            password = device.esp3d_password if device.esp3d_password else None
             if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
                 device = self.context.kernel.device
 

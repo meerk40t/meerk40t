@@ -203,9 +203,8 @@ class ESP3DConnection:
             remote_filename: Name for file on SD card (8.3 format recommended)
             remote_path: Target directory on SD card (default: "/")
             progress_callback: Optional callback function(bytes_sent, total_bytes).
-                Called with negative values (-1, -1) to signal warnings (e.g., 
-                when SD card space couldn't be verified but upload will continue).
-                During upload, called with (bytes_sent, total_bytes) for progress.
+                Currently only called with (-1, -1) when SD card space check fails
+                but upload will continue. Future enhancement: real progress tracking.
 
         Returns:
             dict: Upload result with success status and message
@@ -253,21 +252,12 @@ class ESP3DConnection:
                 
                 session = self.session if self.session else requests
                 
-                # Create a custom request with progress tracking if callback provided
-                if progress_callback:
-                    # Use requests-toolbelt if available, otherwise basic upload
-                    response = session.post(
-                        url,
-                        data=form_data,
-                        files=files_data,
-                        timeout=self.timeout * 3  # Longer timeout for upload
-                    )
-                else:
-                    response = session.post(
-                        url,
-                        data=form_data,
-                        files=files_data,
-                        timeout=self.timeout * 3
+                # Upload file to ESP3D
+                response = session.post(
+                    url,
+                    data=form_data,
+                    files=files_data,
+                    timeout=self.timeout * 3  # Longer timeout for upload
                     )
                 
                 response.raise_for_status()
@@ -346,13 +336,13 @@ class ESP3DConnection:
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Delete failed: {e}")
 
-    def execute_file(self, filename, path="/sd"):
+    def execute_file(self, filename, path="/"):
         """
         Execute a G-code file on the device.
 
         Args:
             filename: Name of file to execute
-            path: Path prefix (default: "/sd")
+            path: Path prefix (default: "/")
 
         Returns:
             dict: Execution result
