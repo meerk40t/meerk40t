@@ -27,6 +27,10 @@ class ESP3DEmulator(BaseHTTPRequestHandler):
     sd_total = 2 * 1024 * 1024 * 1024  # 2 GB
     sd_used = 0
     
+    # Execution state
+    execution_state = "idle"  # idle, running, paused
+    current_file = None
+    
     def log_message(self, format, *args):
         """Override to add timestamps to logs."""
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {format % args}")
@@ -90,6 +94,14 @@ class ESP3DEmulator(BaseHTTPRequestHandler):
     
     def handle_root(self):
         """Handle root page request."""
+        state_color = {
+            "idle": "#e8f5e9",
+            "running": "#fff3e0",
+            "paused": "#ffebee"
+        }.get(self.execution_state, "#e8f5e9")
+        
+        current_file_info = f"<div class='info'>Current file: {self.current_file}</div>" if self.current_file else ""
+        
         html = """
         <!DOCTYPE html>
         <html>
@@ -98,30 +110,45 @@ class ESP3DEmulator(BaseHTTPRequestHandler):
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 40px; }}
                 h1 {{ color: #333; }}
-                .status {{ background: #e8f5e9; padding: 20px; border-radius: 5px; }}
+                .status {{ background: {state_color}; padding: 20px; border-radius: 5px; }}
                 .info {{ margin: 10px 0; }}
+                .command {{ background: #f5f5f5; padding: 10px; border-radius: 3px; margin: 5px 0; }}
             </style>
         </head>
         <body>
             <h1>ESP3D-WEBUI Emulator</h1>
             <div class="status">
-                <h2>Status: Running</h2>
+                <h2>Server Status: Running</h2>
                 <div class="info">Emulating ESP3D-WEBUI API v3.0</div>
-                <div class="info">SD Card: {} files, {:.2f} MB used / {:.2f} MB total</div>
+                <div class="info">SD Card: {num_files} files, {used_mb:.2f} MB used / {total_mb:.2f} MB total</div>
+                <div class="info">Execution State: <strong>{exec_state}</strong></div>
+                {current_file}
             </div>
             <h3>Available Endpoints:</h3>
             <ul>
                 <li>GET /command?cmd=[ESP800] - Get system info</li>
+                <li>GET /command?cmd=? - Query current state (GRBL status)</li>
                 <li>GET /sdfiles?path=/ - List SD card files</li>
                 <li>POST /sdfiles - Upload file</li>
                 <li>GET /command?cmd=[ESP700]/sd/file.gc - Execute file</li>
+                <li>GET /command?cmd=! - Pause execution</li>
+                <li>GET /command?cmd=~ - Resume execution</li>
+                <li>GET /command?cmd=\\x18 - Stop/Reset execution</li>
             </ul>
+            <h3>Control Commands:</h3>
+            <div class="command">Status: <code>curl "http://localhost:8080/command?cmd=?"</code></div>
+            <div class="command">Pause: <code>curl "http://localhost:8080/command?cmd=!"</code></div>
+            <div class="command">Resume: <code>curl "http://localhost:8080/command?cmd=~"</code></div>
+            <div class="command">Stop: <code>curl "http://localhost:8080/command?cmd=%5Cx18"</code></div>
         </body>
         </html>
         """.format(
-            len(self.sd_files),
-            self.sd_used / (1024 * 1024),
-            self.sd_total / (1024 * 1024)
+            state_color=state_color,
+            num_files=len(self.sd_files),
+            used_mb=self.sd_used / (1024 * 1024),
+            total_mb=self.sd_total / (1024 * 1024),
+            exec_state=self.execution_state.upper(),
+            current_file=current_file_info
         )
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -151,7 +178,7 @@ class ESP3DEmulator(BaseHTTPRequestHandler):
         
         # [ESP800] - Get system info
         if cmd.startswith('[ESP800]'):
-            response = "ESP3D Emulator v1.0 | FW: 3.0.0-alpha | Chip: ESP32"
+            response = f"ESP3D Emulator v1.0 | FW: 3.0.0-alpha | Chip: ESP32 | State: {self.execution_state}"
             self.send_text_response(response)
         
         # [ESP700] - Execute file
@@ -162,10 +189,65 @@ class ESP3DEmulator(BaseHTTPRequestHandler):
             
             if filename in self.sd_files:
                 self.log_message(f"Executing file: {filename}")
-                response = f"ok\nExecuting: {filename}"
+                self.execution_state = "running"
+                self.current_file = filename
+                response = f"ok\nExecuting: {filename}\nState: {self.execution_state}"
                 self.send_text_response(response)
             else:
                 self.send_text_response(f"Error: File not found: {filename}", 404)
+        
+        # Pause command (!)
+        elif cmd == '!':
+            if self.execution_state == "running":
+                self.execution_state = "paused"
+                self.log_message(f"Paused execution (file: {self.current_file})")
+                response = f"ok\nPaused\nFile: {self.current_file}\nState: {self.execution_state}"
+            elif self.execution_state == "paused":
+                response = f"ok\nAlready paused\nFile: {self.current_file}\nState: {self.execution_state}"
+            else:
+                response = "ok\nNothing to pause\nState: idle"
+            self.send_text_response(response)
+        
+        # Resume command (~)
+        elif cmd == '~':
+            if self.execution_state == "paused":
+                self.execution_state = "running"
+                self.log_message(f"Resumed execution (file: {self.current_file})")
+                response = f"ok\nResumed\nFile: {self.current_file}\nState: {self.execution_state}"
+            elif self.execution_state == "running":
+                response = f"ok\nAlready running\nFile: {self.current_file}\nState: {self.execution_state}"
+            else:
+                response = "ok\nNothing to resume\nState: idle"
+            self.send_text_response(response)
+        
+        # Stop/Reset command (Ctrl-X / \x18)
+        elif cmd == '\x18' or cmd == '^X':
+            if self.execution_state in ["running", "paused"]:
+                old_file = self.current_file
+                self.execution_state = "idle"
+                self.current_file = None
+                self.log_message(f"Emergency stop (was: {old_file})")
+                response = f"ok\nEmergency stop\nStopped file: {old_file}\nState: {self.execution_state}"
+            else:
+                response = "ok\nAlready stopped\nState: idle"
+            self.send_text_response(response)
+        
+        # Status query command (?)
+        elif cmd == '?':
+            # Return GRBL-style status report
+            grbl_state = {
+                "idle": "Idle",
+                "running": "Run",
+                "paused": "Hold"
+            }.get(self.execution_state, "Idle")
+            
+            # Format: <State|MPos:0.000,0.000,0.000|WPos:0.000,0.000,0.000>
+            # Simplified for emulator - just report state
+            response = f"<{grbl_state}|MPos:0.000,0.000,0.000|WPos:0.000,0.000,0.000|FS:0,0>\n"
+            if self.current_file:
+                response += f"File: {self.current_file}\n"
+            response += "ok"
+            self.send_text_response(response)
         
         else:
             response = "ok"

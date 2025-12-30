@@ -704,4 +704,133 @@ def plugin(kernel, lifecycle=None):
                 except ESP3DUploadError as e:
                     channel(_(f"Error: {e}"))
 
+            @kernel.console_command(
+                "esp3d_pause",
+                help=_("Pause execution on ESP3D device"),
+                input_type=(None, "device"),
+            )
+            def esp3d_pause(command, channel, _, data=None, **kwargs):
+                """Pause execution on ESP3D device."""
+                from .esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+                
+                if not REQUESTS_AVAILABLE:
+                    channel(_("Error: 'requests' library not installed."))
+                    return
+                
+                device = data
+                if device is None:
+                    device = kernel.device
+                if device is None:
+                    channel(_("No device selected"))
+                    return
+                
+                if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                    channel(_("ESP3D upload is not enabled"))
+                    return
+                
+                try:
+                    username = device.esp3d_username if device.esp3d_username else None
+                    password = device.esp3d_password if device.esp3d_password else None
+                    
+                    with ESP3DConnection(
+                        device.esp3d_host,
+                        device.esp3d_port,
+                        username,
+                        password
+                    ) as esp3d:
+                        result = esp3d.pause()
+                        if result["success"]:
+                            channel(_("✓ Pause command sent"))
+                        else:
+                            channel(_(f"✗ Pause failed: {result.get('message', 'Unknown error')}"))
+                        
+                except ESP3DUploadError as e:
+                    channel(_(f"Error: {e}"))
+
+            @kernel.console_command(
+                "esp3d_resume",
+                help=_("Resume paused execution on ESP3D device"),
+                input_type=(None, "device"),
+            )
+            def esp3d_resume(command, channel, _, data=None, **kwargs):
+                """Resume paused execution on ESP3D device."""
+                from .esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+                
+                if not REQUESTS_AVAILABLE:
+                    channel(_("Error: 'requests' library not installed."))
+                    return
+                
+                device = data
+                if device is None:
+                    device = kernel.device
+                if device is None:
+                    channel(_("No device selected"))
+                    return
+                
+                if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                    channel(_("ESP3D upload is not enabled"))
+                    return
+                
+                try:
+                    username = device.esp3d_username if device.esp3d_username else None
+                    password = device.esp3d_password if device.esp3d_password else None
+                    
+                    with ESP3DConnection(
+                        device.esp3d_host,
+                        device.esp3d_port,
+                        username,
+                        password
+                    ) as esp3d:
+                        result = esp3d.resume()
+                        if result["success"]:
+                            channel(_("✓ Resume command sent"))
+                        else:
+                            channel(_(f"✗ Resume failed: {result.get('message', 'Unknown error')}"))
+                        
+                except ESP3DUploadError as e:
+                    channel(_(f"Error: {e}"))
+
+            @kernel.console_command(
+                "esp3d_stop",
+                help=_("Emergency stop execution on ESP3D device"),
+                input_type=(None, "device"),
+            )
+            def esp3d_stop(command, channel, _, data=None, **kwargs):
+                """Emergency stop execution on ESP3D device."""
+                from .esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+                
+                if not REQUESTS_AVAILABLE:
+                    channel(_("Error: 'requests' library not installed."))
+                    return
+                
+                device = data
+                if device is None:
+                    device = kernel.device
+                if device is None:
+                    channel(_("No device selected"))
+                    return
+                
+                if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
+                    channel(_("ESP3D upload is not enabled"))
+                    return
+                
+                try:
+                    username = device.esp3d_username if device.esp3d_username else None
+                    password = device.esp3d_password if device.esp3d_password else None
+                    
+                    with ESP3DConnection(
+                        device.esp3d_host,
+                        device.esp3d_port,
+                        username,
+                        password
+                    ) as esp3d:
+                        result = esp3d.stop()
+                        if result["success"]:
+                            channel(_("✓ Stop command sent"))
+                        else:
+                            channel(_(f"✗ Stop failed: {result.get('message', 'Unknown error')}"))
+                        
+                except ESP3DUploadError as e:
+                    channel(_(f"Error: {e}"))
+
         init_esp3d_commands(kernel)

@@ -373,6 +373,71 @@ class ESP3DConnection:
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Execute failed: {e}")
 
+    def send_command(self, command):
+        """
+        Send a raw command to the ESP3D device.
+
+        Args:
+            command: Command string to send
+
+        Returns:
+            dict: Command result
+        """
+        try:
+            url = f"{self.base_url}/command"
+            params = {"cmd": command}
+            
+            session = self.session if self.session else requests
+            response = session.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            
+            return {
+                "success": True,
+                "message": f"Command sent: {command}",
+                "response": response.text
+            }
+        except requests.RequestException as e:
+            raise ESP3DUploadError(f"Command failed: {e}")
+
+    def pause(self):
+        """
+        Pause current execution on the device.
+
+        Returns:
+            dict: Pause result
+        """
+        try:
+            # Send pause character (! for GRBL)
+            return self.send_command("!")
+        except ESP3DUploadError as e:
+            raise ESP3DUploadError(f"Pause failed: {e}")
+
+    def resume(self):
+        """
+        Resume paused execution on the device.
+
+        Returns:
+            dict: Resume result
+        """
+        try:
+            # Send resume character (~ for GRBL)
+            return self.send_command("~")
+        except ESP3DUploadError as e:
+            raise ESP3DUploadError(f"Resume failed: {e}")
+
+    def stop(self):
+        """
+        Emergency stop execution on the device.
+
+        Returns:
+            dict: Stop result
+        """
+        try:
+            # Send reset character (Ctrl-X for GRBL)
+            return self.send_command("\x18")
+        except ESP3DUploadError as e:
+            raise ESP3DUploadError(f"Stop failed: {e}")
+
 
 def generate_8_3_filename(base="file", extension="gc", counter=None):
     """
