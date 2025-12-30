@@ -16,6 +16,7 @@ def plugin(service, lifecycle):
         from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.grbl.gui.grblhardwareconfig import GRBLHardwareConfig
         from meerk40t.grbl.gui.grbloperationconfig import GRBLAdvancedPanel
+        from meerk40t.grbl.gui.grblespp3dfilemgr import register_panel_esp3d_files
         from meerk40t.gui.icons import (
             icons8_computer_support,
             icons8_connected,
@@ -198,6 +199,23 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("esp3d_stop\n"),
             },
         )
+
+        service.register(
+            "button/control/ESP3DFileManager",
+            {
+                "label": _("ESP3D Files"),
+                "icon": icons8_save,
+                "tip": _("Manage files on ESP3D SD card"),
+                "help": "devicegrbl",
+                "rule_visible": lambda v: esp3d_is_enabled(),
+                "action": lambda v: service("pane show pane/esp3d_files\n"),
+            },
+        )
+
+        # Register ESP3D file manager panel
+        kernel = service.kernel
+        if hasattr(kernel, "register"):
+            kernel.register("wxpane/ESP3DFiles", register_panel_esp3d_files)
 
         service.add_service_delegate(GRBLGui(service))
 
