@@ -529,6 +529,9 @@ def plugin(kernel, lifecycle=None):
                     return
                 
                 # Generate filename
+                busy = device.kernel.busyinfo
+                busy.start(msg=_("Preparing G-code for ESP3D upload..."))
+                busy.show()
                 if filename:
                     if not validate_filename_8_3(filename):
                         channel(_("Warning: Filename doesn't follow 8.3 convention. This may cause issues."))
@@ -561,6 +564,7 @@ def plugin(kernel, lifecycle=None):
                     channel(_("Generated {size} bytes of G-code").format(size=file_size))
                     
                     # Upload to ESP3D
+                    busy.change(msg=_("Uploading G-code to ESP3D..."))
                     channel(_("Uploading to {host}:{port}...").format(host=device.esp3d_host, port=device.esp3d_port))
                     
                     username = device.esp3d_username if device.esp3d_username else None
@@ -583,6 +587,7 @@ def plugin(kernel, lifecycle=None):
                             
                             # Execute if requested
                             if execute:
+                                busy.change(msg=_("Executing file on device..."))
                                 channel(_("Executing file on device..."))
                                 exec_result = esp3d.execute_file(remote_filename)
                                 if exec_result["success"]:
@@ -604,6 +609,7 @@ def plugin(kernel, lifecycle=None):
                             channel(_("Local file cleaned up"))
                         except OSError:
                             channel(_("Warning: Could not delete local temporary file"))
+                busy.end()
 
             @kernel.console_command(
                 "esp3d_run_file",
