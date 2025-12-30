@@ -14,7 +14,7 @@ MeerK40t is a plugin-based laser cutting software built around a **Kernel** ecos
 ### Core Architecture Pattern
 - **Kernel** (`meerk40t/kernel/`) - Central service bus providing signals, channels, settings, console commands
 - **Core** (`meerk40t/core/`) - MeerK40t-specific ecosystem requirements (elements tree, cutplan optimization, etc.)
-- **Device Drivers** (`meerk40t/{grbl,lihuiyu,ruida,moshi,newly}/`) - Hardware-specific laser control implementations
+- **Device Drivers** (`meerk40t/{grbl,lihuiyu,ruida,moshi,newly,balormk}/`) - Hardware-specific laser control implementations
 - **GUI** (`meerk40t/gui/`) - wxPython-based interface with AUI docking framework
 
 ### Critical Plugin Lifecycle
@@ -68,7 +68,7 @@ Each device type follows this structure:
 - `gui/` - Device-specific UI panels
 - `plugin.py` - Plugin lifecycle and registration
 
-**Example location**: `meerk40t/grbl/device.py` shows the complete pattern with 700+ lines of device choices registration.
+**Example location**: `meerk40t/grbl/device.py` shows the complete pattern with 1300+ lines of device choices registration.
 
 **How to add a new device driver**:
 1. Create a new directory under `meerk40t/` (e.g., `meerk40t/newdevice/`)
@@ -273,27 +273,6 @@ The device communication architecture follows this flow:
 - Implement proper error handling and reconnection logic
 - Use kernel channels for status updates to user
 - Handle thread safety for communication operations
-
-### GRBL Variant Detection
-
-`meerk40t/grbl/controller.py` implements GRBL variant detection. When working with GRBL variants:
-
-**Detection results must be applied to**:
-1. **Buffer size configuration**: Set `buffer_size` based on detected variant capabilities
-2. **Command compatibility checking**: Filter unsupported commands per variant
-3. **Timeout handling**: Adjust timeouts based on variant response characteristics
-
-**Implementation pattern**:
-```python
-# After variant detection
-variant = self.detect_grbl_variant()
-if variant == "grbl_1.1":
-    self.buffer_size = 128
-    self.supports_laser_mode = True
-elif variant == "grbl_0.9":
-    self.buffer_size = 127
-    self.supports_laser_mode = False
-```
 
 ## Common Conventions
 
@@ -629,6 +608,9 @@ mypy meerk40t/
 # Compile translations
 python translate.py
 
-# Check translation errors
-python translate_check.py
+# Check source code for new translatable strings
+python translate_check.py all
+
+# Check for translation errors
+python translate_check.py --validate all
 ```
