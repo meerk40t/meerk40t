@@ -348,8 +348,13 @@ class ESP3DConnection:
             dict: Execution result
         """
         try:
-            # ESP3D command to execute file: [ESP700]/sd/filename
-            full_path = f"{path}/{filename}" if not filename.startswith("/") else filename
+            # ESP3D command to execute file: [ESP700]/path/filename
+            if filename.startswith("/"):
+                full_path = filename
+            else:
+                # Normalize path to avoid double slashes
+                path_normalized = path.rstrip("/")
+                full_path = f"{path_normalized}/{filename}"
             command = f"[ESP700]{full_path}"
             
             url = f"{self.base_url}/command"
