@@ -2,6 +2,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
         default_telnet_port = kernel.root.setting(int, "default_telnet_port", 23)
+        default_webserver_port = kernel.root.setting(int, "default_webserver_port", 2080)
         @kernel.console_option(
             "port", "p", type=int, default=default_telnet_port, help=_("port to listen on.")
         )
@@ -24,10 +25,10 @@ def plugin(kernel, lifecycle=None):
             "q",
             type=bool,
             action="store_true",
-            help=_("shutdown current lhyserver"),
+            help=_("shutdown current consoleserver"),
         )
         @kernel.console_command(
-            "consoleserver", help=_("starts a console_server on port {port} (telnet)").format(port=default_telnet_port)
+            "consoleserver", help=_("starts a console-server on port {port} (telnet)").format(port=default_telnet_port)
         )
         def server_console(
             command,
@@ -115,7 +116,7 @@ def plugin(kernel, lifecycle=None):
                 server.events_channel.watch(console)
 
         @kernel.console_option(
-            "port", "p", type=int, default=2080, help=_("port to listen on.")
+            "port", "p", type=int, default=default_webserver_port, help=_("port to listen on.")
         )
         @kernel.console_option(
             "silent",
@@ -132,10 +133,10 @@ def plugin(kernel, lifecycle=None):
             help=_("shutdown current webserver"),
         )
         @kernel.console_command(
-            "webserver", help=_("starts a web-server on port 2080 (http)")
+            "webserver", help=_("starts a web-server (http, default port {port})").format(port=default_webserver_port)
         )
         def server_web(
-            command, channel, _, port=2080, silent=False, quit=False, **kwargs
+            command, channel, _, port=default_webserver_port, silent=False, quit=False, **kwargs
         ):
             root = kernel.root
             try:
