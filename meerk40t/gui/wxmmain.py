@@ -4066,53 +4066,73 @@ class MeerK40t(MWindow):
         # FILE MENU
         # ==========
 
-        menu_item = self.file_menu.Append(
-            wx.ID_NEW, _("&New\tCtrl-N"), _("Clear Operations, Elements and Notes")
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
-
-        self.file_menu.Append(
-            wx.ID_OPEN,
-            _("&Open Project\tCtrl-O"),
-            _("Clear existing elements and notes and open a new file")
-            + _(" (keep the Shift-Key pressed to be asked for a target location)"),
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
-
+        # Recent submenu (only when not a macOS frozen app)
         if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
             self.recent_file_menu = wx.Menu()
             self.recent_file_menu_item = self.file_menu.AppendSubMenu(
                 self.recent_file_menu, _("&Recent")
             )
-        menu_item = self.file_menu.Append(
-            wx.ID_ANY,
-            _("&Import File"),
-            _("Import another file into the same project")
-            + _(" (keep the Shift-Key pressed to be asked for a target location)"),
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_import, id=menu_item.GetId())
-        self.file_menu.AppendSeparator()
-        menu_item = self.file_menu.Append(
-            wx.ID_SAVE,
-            _("&Save\tCtrl-S"),
-            _("Save the project as an SVG file (overwriting any existing file)"),
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
-        menu_item = self.file_menu.Append(
-            wx.ID_SAVEAS,
-            _("Save &As\tCtrl-Shift-S"),
-            _("Save the project in a new SVG file"),
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
-        self.file_menu.AppendSeparator()
-        if platform.system() == "Darwin":
-            menu_item = self.file_menu.Append(
-                wx.ID_CLOSE, _("&Close Window\tCtrl-W"), _("Close Meerk40t")
-            )
-            self.Bind(wx.EVT_MENU, self.on_click_close, id=menu_item.GetId())
 
-        menu_item = self.file_menu.Append(wx.ID_EXIT, _("E&xit"), _("Close Meerk40t"))
-        self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
+        choices = [
+            {
+                "label": _("&New\tCtrl-N"),
+                "help": _("Clear Operations, Elements and Notes"),
+                "action": self.on_click_new,
+                "id": wx.ID_NEW,
+            },
+            {
+                "label": _("&Open Project\tCtrl-O"),
+                "help": _("Clear existing elements and notes and open a new file")
+                + _(" (keep the Shift-Key pressed to be asked for a target location)"),
+                "action": self.on_click_open,
+                "id": wx.ID_OPEN,
+            },
+            {
+                "label": _("&Import File"),
+                "help": _(
+                    "Import another file into the same project"
+                )
+                + _(" (keep the Shift-Key pressed to be asked for a target location)"),
+                "action": self.on_click_import,
+            },
+            {
+                "label": "",
+            },
+            {
+                "label": _("&Save\tCtrl-S"),
+                "help": _("Save the project as an SVG file (overwriting any existing file)"),
+                "action": self.on_click_save,
+                "id": wx.ID_SAVE,
+            },
+            {
+                "label": _("Save &As\tCtrl-Shift-S"),
+                "help": _("Save the project in a new SVG file"),
+                "action": self.on_click_save_as,
+                "id": wx.ID_SAVEAS,
+            },
+        ]
+
+        # macOS-only Close Window entry
+        if platform.system() == "Darwin":
+            choices.append(
+                {
+                    "label": _("&Close Window\tCtrl-W"),
+                    "help": _("Close Meerk40t"),
+                    "action": self.on_click_close,
+                    "id": wx.ID_CLOSE,
+                }
+            )
+
+        choices.append(
+            {
+                "label": _("E&xit"),
+                "help": _("Close Meerk40t"),
+                "action": self.on_click_exit,
+                "id": wx.ID_EXIT,
+            }
+        )
+
+        self._create_menu_from_choices(self.file_menu, choices)
         self.main_menubar.Append(self.file_menu, _("File"))
 
     def _update_status_menu(self, menu, choices, *args):
@@ -4679,10 +4699,10 @@ class MeerK40t(MWindow):
                 {
                     "id": "ruidacontrol",
                     "type": "device",
-                    "start_label": _("Start &Ruidaserver"),
-                    "start_tip": _("Start the ruidaserver for interaction with 3rd party software"),
+                    "start_label": _("Start &Ruida-Server"),
+                    "start_tip": _("Start ruidacontrol for interaction with 3rd party software"),
                     "start_cmd": "ruidacontrol",
-                    "stop_label": _("Stop &Ruidaserver"),
+                    "stop_label": _("Stop &Ruida-Server"),
                     "stop_tip": _("Stop the running ruidacontrol instance"),
                     "stop_cmd": "ruidacontrol -q",
                 },
@@ -4690,7 +4710,7 @@ class MeerK40t(MWindow):
                     "id": "grblcontrol",
                     "type": "device",
                     "start_label": _("Start &GRBL-Server"),
-                    "start_tip": _("Start the grblserver for interaction with 3rd party software"),
+                    "start_tip": _("Start grblcontrol for interaction with 3rd party software"),
                     "start_cmd": "grblcontrol",
                     "stop_label": _("Stop &GRBL-Server"),
                     "stop_tip": _("Stop the running grblcontrol instance"),
