@@ -1,9 +1,9 @@
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
-
+        default_telnet_port = kernel.root.setting(int, "default_telnet_port", 23)
         @kernel.console_option(
-            "port", "p", type=int, default=23, help=_("port to listen on.")
+            "port", "p", type=int, default=default_telnet_port, help=_("port to listen on.")
         )
         @kernel.console_option(
             "silent",
@@ -27,7 +27,7 @@ def plugin(kernel, lifecycle=None):
             help=_("shutdown current lhyserver"),
         )
         @kernel.console_command(
-            "consoleserver", help=_("starts a console_server on port 23 (telnet)")
+            "consoleserver", help=_("starts a console_server on port {port} (telnet)").format(port=default_telnet_port)
         )
         def server_console(
             command,
@@ -46,6 +46,10 @@ def plugin(kernel, lifecycle=None):
             # Variable to store input
             root.__console_buffer = ""
             try:
+                if not quit and root.get_open("console-server") is not None:
+                    channel("Console server already running.")
+                    return
+
                 server = root.open_as("module/TCPServer", "console-server", port=port)
                 if quit:
                     root.close("console-server")
@@ -128,13 +132,16 @@ def plugin(kernel, lifecycle=None):
             help=_("shutdown current webserver"),
         )
         @kernel.console_command(
-            "webserver", help=_("starts a web-serverconsole_server on port 2080 (http)")
+            "webserver", help=_("starts a web-server on port 2080 (http)")
         )
         def server_web(
             command, channel, _, port=2080, silent=False, quit=False, **kwargs
         ):
             root = kernel.root
             try:
+                if not quit and root.get_open("web-server") is not None:
+                    channel("Web server already running.")
+                    return
                 server = root.open_as("module/WebServer", "web-server", port=port)
                 if quit:
                     root.close("web-server")
