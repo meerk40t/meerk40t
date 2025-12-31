@@ -24911,3 +24911,15 @@ msgstr "実行中のgrblcontrolインスタンスを停止します"
 #: meerk40t/network/console_server.py:30
 msgid "starts a console_server on port {port} (telnet)"
 msgstr "ポート {port} でコンソールサーバーを開始します (telnet)"
+
+#: meerk40t/network/console_server.py:28
+msgid "shutdown current consoleserver"
+msgstr "現在のコンソールサーバーをシャットダウン"
+
+#: meerk40t/network/console_server.py:31
+msgid "starts a console-server on port {port} (telnet)"
+msgstr "ポート {port} でコンソールサーバーを開始します (telnet)"
+
+#: meerk40t/network/console_server.py:136
+msgid "starts a web-server (http, default port {port})"
+msgstr "Webサーバーを開始します (http、デフォルトポート {port})"

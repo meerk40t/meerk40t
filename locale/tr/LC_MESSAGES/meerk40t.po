@@ -25486,3 +25486,15 @@ msgstr "Çalışan grblcontrol örneğini durdurur"
 #: meerk40t/network/console_server.py:30
 msgid "starts a console_server on port {port} (telnet)"
 msgstr "{port} portunda bir konsol_sunucusu başlatır (telnet)"
+
+#: meerk40t/network/console_server.py:28
+msgid "shutdown current consoleserver"
+msgstr "mevcut konsol sunucusunu kapat"
+
+#: meerk40t/network/console_server.py:31
+msgid "starts a console-server on port {port} (telnet)"
+msgstr "{port} portunda bir konsol sunucusu başlatır (telnet)"
+
+#: meerk40t/network/console_server.py:136
+msgid "starts a web-server (http, default port {port})"
+msgstr "bir web sunucusu başlatır (http, varsayılan port {port})"

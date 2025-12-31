@@ -24906,3 +24906,15 @@ msgstr "停止运行中的 grblcontrol 实例"
 #: meerk40t/network/console_server.py:30
 msgid "starts a console_server on port {port} (telnet)"
 msgstr "在端口 {port} 上启动控制台服务器 (telnet)"
+
+#: meerk40t/network/console_server.py:28
+msgid "shutdown current consoleserver"
+msgstr "关闭当前控制台服务器"
+
+#: meerk40t/network/console_server.py:31
+msgid "starts a console-server on port {port} (telnet)"
+msgstr "在端口 {port} 上启动控制台服务器 (telnet)"
+
+#: meerk40t/network/console_server.py:136
+msgid "starts a web-server (http, default port {port})"
+msgstr "启动 Web 服务器 (http，默认端口 {port})"

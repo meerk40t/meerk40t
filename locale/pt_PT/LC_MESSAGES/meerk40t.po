@@ -25676,3 +25676,15 @@ msgstr "Para a instância grblcontrol em execução"
 #: meerk40t/network/console_server.py:30
 msgid "starts a console_server on port {port} (telnet)"
 msgstr "inicia um servidor_de_consola na porta {port} (telnet)"
+
+#: meerk40t/network/console_server.py:28
+msgid "shutdown current consoleserver"
+msgstr "desligar servidor de consola atual"
+
+#: meerk40t/network/console_server.py:31
+msgid "starts a console-server on port {port} (telnet)"
+msgstr "inicia um servidor de consola na porta {port} (telnet)"
+
+#: meerk40t/network/console_server.py:136
+msgid "starts a web-server (http, default port {port})"
+msgstr "inicia um servidor web (http, porta predefinida {port})"

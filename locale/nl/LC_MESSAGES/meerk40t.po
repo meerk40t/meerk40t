@@ -25669,3 +25669,15 @@ msgstr "Stopt de draaiende grblcontrolinstantie"
 #: meerk40t/network/console_server.py:30
 msgid "starts a console_server on port {port} (telnet)"
 msgstr "start een console_server op poort {port} (telnet)"
+
+#: meerk40t/network/console_server.py:28
+msgid "shutdown current consoleserver"
+msgstr "huidige consoleserver afsluiten"
+
+#: meerk40t/network/console_server.py:31
+msgid "starts a console-server on port {port} (telnet)"
+msgstr "start een consoleserver op poort {port} (telnet)"
+
+#: meerk40t/network/console_server.py:136
+msgid "starts a web-server (http, default port {port})"
+msgstr "start een webserver (http, standaardpoort {port})"
