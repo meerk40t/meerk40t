@@ -21638,8 +21638,8 @@ msgid "shutdown current webserver"
 msgstr "остановить текущий веб-сервер"
 
 #: meerk40t/network/console_server.py:131
-msgid "starts a web-serverconsole_server on port 2080 (http)"
-msgstr "запускает web-serverconsole_server на порту 2080 (http)"
+msgid "starts a web-server on port 2080 (http)"
+msgstr "запускает web-server на порту 2080 (http)"
 
 #: meerk40t/network/tcp_server.py:40 meerk40t/network/udp_server.py:57
 #: meerk40t/network/web_server.py:353
@@ -25534,3 +25534,80 @@ msgstr "Возобновление ESP3D"
 #: meerk40t/grbl/gui/gui.py:196
 msgid "ESP3D Stop"
 msgstr "Остановка ESP3D"
+
+#: meerk40t/gui/wxmmain.py:4668
+msgid "Network"
+msgstr "Сеть"
+
+#: meerk40t/gui/wxmmain.py:4681
+msgid "Start &Webserver on port {port}"
+msgstr "Запустить &веб-сервер на порту {port}"
+
+#: meerk40t/gui/wxmmain.py:4682
+msgid "Starts a webserver instance to control MeerK40t from a webbrowser"
+msgstr ""
+"Запускает экземпляр веб-сервера для управления MeerK40t из веб-браузера"
+
+#: meerk40t/gui/wxmmain.py:4684
+msgid "Stop &Webserver"
+msgstr "Остановить &веб-сервер"
+
+#: meerk40t/gui/wxmmain.py:4685
+msgid "Stops the running webserver instance"
+msgstr "Останавливает запущенный экземпляр веб-сервера"
+
+#: meerk40t/gui/wxmmain.py:4691
+msgid "Start &Telnet on port {port}"
+msgstr "Запустить &Telnet на порту {port}"
+
+#: meerk40t/gui/wxmmain.py:4692
+msgid "Starts a telnet instance to control MeerK40t from a terminal"
+msgstr "Запускает экземпляр Telnet для управления MeerK40t из терминала"
+
+#: meerk40t/gui/wxmmain.py:4694
+msgid "Stop &Telnet"
+msgstr "Остановить &Telnet"
+
+#: meerk40t/gui/wxmmain.py:4695
+msgid "Stops the running consoleserver instance"
+msgstr "Останавливает запущенный экземпляр сервера консоли"
+
+#: meerk40t/gui/wxmmain.py:4702
+msgid "Start &Ruida-Server"
+msgstr "Запустить сервер &Ruida"
+
+#: meerk40t/gui/wxmmain.py:4703
+msgid "Start ruidacontrol for interaction with 3rd party software"
+msgstr ""
+"Запускает ruidacontrol для взаимодействия с программным обеспечением третьих"
+" сторон"
+
+#: meerk40t/gui/wxmmain.py:4705
+msgid "Stop &Ruida-Server"
+msgstr "Остановить сервер &Ruida"
+
+#: meerk40t/gui/wxmmain.py:4706
+msgid "Stop the running ruidacontrol instance"
+msgstr "Останавливает запущенный экземпляр ruidacontrol"
+
+#: meerk40t/gui/wxmmain.py:4712
+msgid "Start &GRBL-Server"
+msgstr "Запустить сервер &GRBL"
+
+#: meerk40t/gui/wxmmain.py:4713
+msgid "Start grblcontrol for interaction with 3rd party software"
+msgstr ""
+"Запускает grblcontrol для взаимодействия с программным обеспечением третьих "
+"сторон"
+
+#: meerk40t/gui/wxmmain.py:4715
+msgid "Stop &GRBL-Server"
+msgstr "Остановить сервер &GRBL"
+
+#: meerk40t/gui/wxmmain.py:4716
+msgid "Stop the running grblcontrol instance"
+msgstr "Останавливает запущенный экземпляр grblcontrol"
+
+#: meerk40t/network/console_server.py:30
+msgid "starts a console_server on port {port} (telnet)"
+msgstr "запускает сервер_консоли на порту {port} (telnet)"

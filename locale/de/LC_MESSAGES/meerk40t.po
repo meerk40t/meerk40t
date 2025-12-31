@@ -22750,8 +22750,8 @@ msgid "shutdown current webserver"
 msgstr "Aktuellen Webserver herunterfahren"
 
 #: meerk40t/network/console_server.py:131
-msgid "starts a web-serverconsole_server on port 2080 (http)"
-msgstr "Startet einen Webserver-Konsole auf Port 2080 (http)"
+msgid "starts a web-server on port 2080 (http)"
+msgstr "Startet einen Webserver auf Port 2080 (http)"
 
 #: meerk40t/network/tcp_server.py:57
 msgid "Could not start listening."
@@ -25760,3 +25760,78 @@ msgstr "ESP3D Fortsetzen"
 #: meerk40t/grbl/gui/gui.py:196
 msgid "ESP3D Stop"
 msgstr "ESP3D Stopp"
+
+#: meerk40t/gui/wxmmain.py:4668
+msgid "Network"
+msgstr "Netzwerk"
+
+#: meerk40t/gui/wxmmain.py:4681
+msgid "Start &Webserver on port {port}"
+msgstr "Starte &Webserver auf Port {port}"
+
+#: meerk40t/gui/wxmmain.py:4682
+msgid "Starts a webserver instance to control MeerK40t from a webbrowser"
+msgstr ""
+"Startet eine Webserver-Instanz zur Steuerung von MeerK40t über einen "
+"Webbrowser"
+
+#: meerk40t/gui/wxmmain.py:4684
+msgid "Stop &Webserver"
+msgstr "Stoppe &Webserver"
+
+#: meerk40t/gui/wxmmain.py:4685
+msgid "Stops the running webserver instance"
+msgstr "Stoppt die laufende Webserver-Instanz"
+
+#: meerk40t/gui/wxmmain.py:4691
+msgid "Start &Telnet on port {port}"
+msgstr "Starte &Telnet auf Port {port}"
+
+#: meerk40t/gui/wxmmain.py:4692
+msgid "Starts a telnet instance to control MeerK40t from a terminal"
+msgstr ""
+"Startet eine Telnet-Instanz zur Steuerung von MeerK40t über ein Terminal"
+
+#: meerk40t/gui/wxmmain.py:4694
+msgid "Stop &Telnet"
+msgstr "Stoppe &Telnet"
+
+#: meerk40t/gui/wxmmain.py:4695
+msgid "Stops the running consoleserver instance"
+msgstr "Stoppt die laufende Konsolenserver-Instanz"
+
+#: meerk40t/gui/wxmmain.py:4702
+msgid "Start &Ruida-Server"
+msgstr "Starte &Ruida-Server"
+
+#: meerk40t/gui/wxmmain.py:4703
+msgid "Start ruidacontrol for interaction with 3rd party software"
+msgstr "Startet ruidacontrol für die Interaktion mit Drittanbieter-Software"
+
+#: meerk40t/gui/wxmmain.py:4705
+msgid "Stop &Ruida-Server"
+msgstr "Stoppe &Ruida-Server"
+
+#: meerk40t/gui/wxmmain.py:4706
+msgid "Stop the running ruidacontrol instance"
+msgstr "Stoppt die laufende ruidacontrol-Instanz"
+
+#: meerk40t/gui/wxmmain.py:4712
+msgid "Start &GRBL-Server"
+msgstr "Starte &GRBL-Server"
+
+#: meerk40t/gui/wxmmain.py:4713
+msgid "Start grblcontrol for interaction with 3rd party software"
+msgstr "Startet grblcontrol für die Interaktion mit Drittanbieter-Software"
+
+#: meerk40t/gui/wxmmain.py:4715
+msgid "Stop &GRBL-Server"
+msgstr "Stoppe &GRBL-Server"
+
+#: meerk40t/gui/wxmmain.py:4716
+msgid "Stop the running grblcontrol instance"
+msgstr "Stoppt die laufende grblcontrol-Instanz"
+
+#: meerk40t/network/console_server.py:30
+msgid "starts a console_server on port {port} (telnet)"
+msgstr "startet einen Konsolen-Server auf Port {port} (telnet)"
