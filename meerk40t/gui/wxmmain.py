@@ -3008,6 +3008,9 @@ class MeerK40t(MWindow):
     def window_menu(self):
         return False
 
+    def network_menu(self):
+        return False
+
     def __set_commands(self):
         context = self.context
         gui = self
@@ -3946,6 +3949,7 @@ class MeerK40t(MWindow):
         self.__set_pane_menu()
         self.__set_tool_menu()
         self.__set_window_menu()
+        self.__set_network_menu()
         self.__set_help_menu()
         self.add_language_menu()
 
@@ -4624,6 +4628,96 @@ class MeerK40t(MWindow):
         if platform.system() == "Darwin":
             wt_menu = wx.Menu()
             self.main_menubar.Append(wt_menu, _("Window"))
+
+    def __set_network_menu(self):
+        # ============
+        # NETWORK MENU
+        # ============
+        def run_command(command):
+            def handler(event):
+                self.context(f"{command}\n")
+                # Status may change, so we need to repopulate the menu
+                populate()
+
+            return handler
+        
+        def populate():
+            default_telnet_port = self.context.setting(int, "default_telnet_port", 23)
+            default_webserver_port = self.context.setting(int, "default_webserver_port", 8080)
+
+            label = _("Network")
+            self.network_menu = wx.Menu()
+            index = self.main_menubar.FindMenu(label)
+            if index != -1:
+                self.main_menubar.Replace(index, self.network_menu, label)
+            else:
+                self.main_menubar.Append(self.network_menu, label)
+
+            # Define network services in a concise data-driven way to avoid repetition
+            services = [
+                {
+                    "id": "web-server",
+                    "type": "root",
+                    "start_label": _("Start &Webserver on port {port}"),
+                    "start_tip": _("Starts a webserver instance to control MeerK40t from a webbrowser"),
+                    "start_cmd": lambda: f"webserver -p {default_webserver_port}",
+                    "stop_label": _("Stop &Webserver"),
+                    "stop_tip": _("Stops the running webserver instance"),
+                    "stop_cmd": "webserver -q",
+                },
+                {
+                    "id": "console-server",
+                    "type": "root",
+                    "start_label": _("Start &Telnet on port {port}"),
+                    "start_tip": _("Starts a telnet instance to control MeerK40t from a terminal"),
+                    "start_cmd": lambda: f"consoleserver -p {default_telnet_port}",
+                    "stop_label": _("Stop &Telnet"),
+                    "stop_tip": _("Stops the running consoleserver instance"),
+                    "stop_cmd": "consoleserver -q",
+                    "append_separator_after": True,
+                },
+                {
+                    "id": "ruidacontrol",
+                    "type": "device",
+                    "start_label": _("Start &Ruidaserver"),
+                    "start_tip": _("Start the ruidaserver for interaction with 3rd party software"),
+                    "start_cmd": "ruidacontrol",
+                    "stop_label": _("Stop &Ruidaserver"),
+                    "stop_tip": _("Stop the running ruidacontrol instance"),
+                    "stop_cmd": "ruidacontrol -q",
+                },
+                {
+                    "id": "grblcontrol",
+                    "type": "device",
+                    "start_label": _("Start &GRBL-Server"),
+                    "start_tip": _("Start the grblserver for interaction with 3rd party software"),
+                    "start_cmd": "grblcontrol",
+                    "stop_label": _("Stop &GRBL-Server"),
+                    "stop_tip": _("Stop the running grblcontrol instance"),
+                    "stop_cmd": "grblcontrol -q",
+                },
+            ]
+
+            for svc in services:
+                if svc["type"] == "root":
+                    running = self.context.kernel.root.get_open(svc["id"]) is not None
+                else:
+                    running = self.context.kernel.device.lookup(svc["id"]) is not None
+
+                if running:
+                    menuitem = self.network_menu.Append(wx.ID_ANY, svc["stop_label"], svc.get("stop_tip", ""))
+                    self.Bind(wx.EVT_MENU, run_command(svc["stop_cmd"]), id=menuitem.GetId())
+                else:
+                    # Some commands are defined as callables to include runtime values like ports
+                    start_cmd = svc["start_cmd"]() if callable(svc["start_cmd"]) else svc["start_cmd"]
+                    start_label = svc["start_label"].format(port=(default_webserver_port if svc["id"] == "web-server" else default_telnet_port))
+                    menuitem = self.network_menu.Append(wx.ID_ANY, start_label, svc.get("start_tip", ""))
+                    self.Bind(wx.EVT_MENU, run_command(start_cmd), id=menuitem.GetId())
+
+                if svc.get("append_separator_after"):
+                    self.network_menu.AppendSeparator()
+
+        populate()
 
     def __set_help_menu(self):
         # ==========
