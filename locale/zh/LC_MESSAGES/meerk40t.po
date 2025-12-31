@@ -21699,7 +21699,7 @@ msgid "shutdown current webserver"
 msgstr "关闭当前网络服务器"
 
 #: meerk40t/network/console_server.py:131
-msgid "starts a web-serverconsole_server on port 2080 (http)"
+msgid "starts a web-server on port 2080 (http)"
 msgstr "在端口 2080 (http) 启动一个网络服务器控制台服务器"
 
 #: meerk40t/newly/device.py:411
@@ -24834,3 +24834,87 @@ msgstr "ESP3D恢复"
 #: meerk40t/grbl/gui/gui.py:196
 msgid "ESP3D Stop"
 msgstr "ESP3D停止"
+
+#: meerk40t/gui/wxmmain.py:4668
+msgid "Network"
+msgstr "网络"
+
+#: meerk40t/gui/wxmmain.py:4681
+msgid "Start &Webserver on port {port}"
+msgstr "在端口 {port} 上启动 &Web 服务器"
+
+#: meerk40t/gui/wxmmain.py:4682
+msgid "Starts a webserver instance to control MeerK40t from a webbrowser"
+msgstr "启动一个 Web 服务器实例以从 Web 浏览器控制 MeerK40t"
+
+#: meerk40t/gui/wxmmain.py:4684
+msgid "Stop &Webserver"
+msgstr "停止 &Web 服务器"
+
+#: meerk40t/gui/wxmmain.py:4685
+msgid "Stops the running webserver instance"
+msgstr "停止运行中的 Web 服务器实例"
+
+#: meerk40t/gui/wxmmain.py:4691
+msgid "Start &Telnet on port {port}"
+msgstr "在端口 {port} 上启动 &Telnet"
+
+#: meerk40t/gui/wxmmain.py:4692
+msgid "Starts a telnet instance to control MeerK40t from a terminal"
+msgstr "启动一个 Telnet 实例以从终端控制 MeerK40t"
+
+#: meerk40t/gui/wxmmain.py:4694
+msgid "Stop &Telnet"
+msgstr "停止 &Telnet"
+
+#: meerk40t/gui/wxmmain.py:4695
+msgid "Stops the running consoleserver instance"
+msgstr "停止运行中的控制台服务器实例"
+
+#: meerk40t/gui/wxmmain.py:4702
+msgid "Start &Ruida-Server"
+msgstr "启动 &Ruida 服务器"
+
+#: meerk40t/gui/wxmmain.py:4703
+msgid "Start ruidacontrol for interaction with 3rd party software"
+msgstr "启动 ruidacontrol 以与第三方软件交互"
+
+#: meerk40t/gui/wxmmain.py:4705
+msgid "Stop &Ruida-Server"
+msgstr "停止 &Ruida 服务器"
+
+#: meerk40t/gui/wxmmain.py:4706
+msgid "Stop the running ruidacontrol instance"
+msgstr "停止运行中的 ruidacontrol 实例"
+
+#: meerk40t/gui/wxmmain.py:4712
+msgid "Start &GRBL-Server"
+msgstr "启动 &GRBL 服务器"
+
+#: meerk40t/gui/wxmmain.py:4713
+msgid "Start grblcontrol for interaction with 3rd party software"
+msgstr "启动 grblcontrol 以与第三方软件交互"
+
+#: meerk40t/gui/wxmmain.py:4715
+msgid "Stop &GRBL-Server"
+msgstr "停止 &GRBL 服务器"
+
+#: meerk40t/gui/wxmmain.py:4716
+msgid "Stop the running grblcontrol instance"
+msgstr "停止运行中的 grblcontrol 实例"
+
+#: meerk40t/network/console_server.py:30
+msgid "starts a console_server on port {port} (telnet)"
+msgstr "在端口 {port} 上启动控制台服务器 (telnet)"
+
+#: meerk40t/network/console_server.py:28
+msgid "shutdown current consoleserver"
+msgstr "关闭当前控制台服务器"
+
+#: meerk40t/network/console_server.py:31
+msgid "starts a console-server on port {port} (telnet)"
+msgstr "在端口 {port} 上启动控制台服务器 (telnet)"
+
+#: meerk40t/network/console_server.py:136
+msgid "starts a web-server (http, default port {port})"
+msgstr "启动 Web 服务器 (http，默认端口 {port})"
