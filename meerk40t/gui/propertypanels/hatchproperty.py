@@ -562,17 +562,8 @@ class HatchPropertyPanel(ScrolledPanel):
     def _calculate_hatch_lines_direct_grid(self, w, h):
         """Calculate hatch lines using Direct Grid algorithm for preview."""
         try:
-            # Import Direct Grid algorithm
-            import os
-            import sys
-
-            sys.path.insert(
-                0,
-                os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                ),
-            )
-            from direct_grid_fill import direct_grid_fill
+            # Use Geomstr's built-in Direct Grid algorithm
+            from meerk40t.core.geomstr import Geomstr
 
             # Create outline geometry like the original method
             paths = [
@@ -632,7 +623,7 @@ class HatchPropertyPanel(ScrolledPanel):
             distance *= 0.018
 
             # Generate hatch using Direct Grid
-            hatch_result = direct_grid_fill(
+            hatch_result = Geomstr.hatch_direct_grid(
                 outline_geom, angle, distance, unidirectional
             )
 

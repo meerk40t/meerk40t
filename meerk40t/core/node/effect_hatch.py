@@ -259,23 +259,6 @@ class HatchEffectNode(Node, Suppressable):
 
         self.set_dirty_bounds()
 
-    # def bbox(self, transformed=True, with_stroke=False):
-    #     geometry = self.as_geometry()
-    #     if transformed:
-    #         bounds = geometry.bbox(mx=self.matrix)
-    #     else:
-    #         bounds = geometry.bbox()
-    #     xmin, ymin, xmax, ymax = bounds
-    #     if with_stroke:
-    #         delta = float(self.implied_stroke_width) / 2.0
-    #         return (
-    #             xmin - delta,
-    #             ymin - delta,
-    #             xmax + delta,
-    #             ymax + delta,
-    #         )
-    #     return xmin, ymin, xmax, ymax
-
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
@@ -424,17 +407,9 @@ class HatchEffectNode(Node, Suppressable):
     ) -> Geomstr:
         """Use the optimized Direct Grid Fill algorithm for hatching."""
         try:
-            # Import our optimized algorithm
-            import os
-            import sys
-
-            sys.path.insert(
-                0, os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            )
-            from direct_grid_fill import direct_grid_fill
-
-            return direct_grid_fill(outlines, angle, distance, unidirectional)
-        except ImportError:
+            # Use Geomstr's built-in Direct Grid algorithm
+            return Geomstr.hatch_direct_grid(outlines, angle, distance, unidirectional)
+        except AttributeError:
             # Fallback to original algorithm if direct_grid_fill not available
             return Geomstr.hatch(
                 outlines, distance=distance, angle=angle, unidirectional=unidirectional
