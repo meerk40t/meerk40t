@@ -424,16 +424,8 @@ class HatchEffectNode(Node, Suppressable):
     ) -> Geomstr:
         """Use the optimized Direct Grid Fill algorithm for hatching."""
         try:
-            # Import our optimized algorithm
-            import os
-            import sys
-
-            sys.path.insert(
-                0, os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            )
-            from direct_grid_fill import direct_grid_fill
-
-            return direct_grid_fill(outlines, angle, distance, unidirectional)
+            # Use Geomstr's built-in Direct Grid algorithm
+            return Geomstr.hatch_direct_grid(outlines, angle, distance, unidirectional)
         except ImportError:
             # Fallback to original algorithm if direct_grid_fill not available
             return Geomstr.hatch(

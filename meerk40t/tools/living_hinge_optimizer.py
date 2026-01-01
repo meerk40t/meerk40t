@@ -7,12 +7,11 @@ This module provides optimized pattern generation specifically for living hinge 
 building on the analysis that living hinges require pattern-based rather than line-based approaches.
 """
 
-import sys
-import os
-import time
 import math
+import os
+import sys
+import time
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'meerk40t'))
 from meerk40t.core.geomstr import Geomstr
 
 class LivingHingeOptimizer:
@@ -292,5 +291,7 @@ def demonstrate_living_hinge_integration():
 
 
 if __name__ == "__main__":
+    # Add parent directory to path when running directly as a script
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
     LivingHingeOptimizer.benchmark_hinge_patterns()
     demonstrate_living_hinge_integration()
