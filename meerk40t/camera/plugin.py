@@ -412,6 +412,15 @@ def plugin(kernel, lifecycle=None):
                 return
 
             import time
+            
+            # Pre-initialize mimetypes to avoid macOS permission errors
+            try:
+                import mimetypes
+                mimetypes.init()
+            except (PermissionError, OSError):
+                import mimetypes
+                mimetypes.init(files=[])
+            
             from http.server import BaseHTTPRequestHandler, HTTPServer
             from socketserver import ThreadingMixIn
 

@@ -3,6 +3,17 @@ import socket
 import logging
 import sys
 import threading
+
+# Pre-initialize mimetypes to avoid macOS permission errors
+# On macOS, mimetypes.init() tries to read /etc/apache2/ which requires special permissions
+try:
+    import mimetypes
+    mimetypes.init()
+except (PermissionError, OSError):
+    # Fallback: initialize with common types only, skip system directories
+    import mimetypes
+    mimetypes.init(files=[])
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from math import isinf
