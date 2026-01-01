@@ -7,11 +7,15 @@ import threading
 
 # Workaround for macOS permission errors with mimetypes.init()
 # On macOS, mimetypes.init() tries to read /etc/apache2/ which may require special permissions.
-# We skip init() entirely and manually ensure the types we need are registered.
-# The mimetypes module has built-in defaults that cover most common types.
+# The problem: mimetypes.add_type() internally calls init() if not already initialized.
+# Solution: Mark the module as initialized before adding types, preventing filesystem access.
+# The module's hardcoded knownfiles will be skipped, but we add the types we need manually.
 if not mimetypes.inited:
-    # Add common web types we need, without calling init()
-    # These may already exist in the built-in defaults, but add_type is safe to call
+    # Mark as initialized to prevent init() from being called and reading system files
+    mimetypes.inited = True
+    mimetypes._db = mimetypes.MimeTypes()
+
+    # Add common web types we need
     _common_types = {
         ".html": "text/html",
         ".htm": "text/html",
@@ -31,6 +35,10 @@ if not mimetypes.inited:
         ".woff2": "font/woff2",
         ".ttf": "font/ttf",
         ".eot": "application/vnd.ms-fontobject",
+        ".mp3": "audio/mpeg",
+        ".mp4": "video/mp4",
+        ".webp": "image/webp",
+        ".zip": "application/zip",
     }
     for ext, mime_type in _common_types.items():
         mimetypes.add_type(mime_type, ext)
