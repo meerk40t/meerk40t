@@ -8,13 +8,12 @@ This module analyzes and implements optimal algorithms for two distinct use case
 2. Complex Pattern Filling (living hinges, flexible materials)
 """
 
-import sys
-import os
-import time
 import math
+import os
+import sys
+import time
 from typing import Optional
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'meerk40t'))
 from meerk40t.core.geomstr import Geomstr
 
 class DualAlgorithmStrategy:
@@ -397,4 +396,6 @@ def count_lines(geom: Geomstr) -> int:
 
 
 if __name__ == "__main__":
+    # Add parent directory to path when running directly as a script
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
     benchmark_dual_algorithms()
