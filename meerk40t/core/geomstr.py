@@ -70,7 +70,6 @@ import re
 from contextlib import contextmanager
 from copy import copy
 
-import numpy
 import numpy as np
 
 # Import numba for JIT compilation optimization
@@ -3338,10 +3337,10 @@ class Geomstr:
                 return path
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
-        if isinstance(first_point, numpy.ndarray):
+        if isinstance(first_point, np.ndarray):
             points = list(first_point)
             first_point = points[0]
-        if isinstance(first_point, (list, tuple, numpy.ndarray)):
+        if isinstance(first_point, (list, tuple, np.ndarray)):
             points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
@@ -3866,6 +3865,104 @@ class Geomstr:
         # Rotate result back to original orientation
         result.rotate(angle)
         return result
+
+    @classmethod
+    def hatch_spiral(cls, outer, angle=0, distance=10, center=None):
+        """
+        Create a spiral hatch pattern using a continuous spiral path.
+
+        This creates a single continuous spiral path that winds outward from the center point,
+        providing complete coverage without any intersecting lines.
+        The hatch lines are clipped to stay within the original shape boundaries.
+
+        @param outer: Outer shape to hatch (Geomstr object)
+        @param distance: Distance between spiral windings in units
+        @param center: Center point for spiral (complex). If None, uses shape centroid
+        @param angle: Angle of rotation for the spiral (in radians)
+        @return: Geomstr object containing spiral hatch geometry
+        """
+        if outer is None or outer.index == 0:
+            return cls()
+
+        shape = outer.segmented()
+        shape.rotate(angle)
+
+        spiral = cls()
+
+        # density = min(50, max(1, int(spacing / 2)))
+        # shape = cls()
+        # for sp in outer.as_subpaths():
+        #     for segs in sp.as_interpolated_segments(interpolate=density):
+        #         shape.polyline(segs)
+        #         shape.end()
+        # Calculate bounding box
+        min_x, min_y, max_x, max_y = shape.bbox()
+        if center is None:
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            total = complex(0, 0)
+            count = 0
+            count_start = True
+            found = []
+            for seg in shape.segments[: shape.index]:
+                start = seg[0]
+                end = seg[4]
+                segtype = shape._segtype(seg)
+                if segtype == TYPE_END:
+                    count_start = True
+                    continue
+                if segtype in NON_GEOMETRY_TYPES:
+                    continue
+                if count_start:
+                    count_start = False
+                    if start not in found:
+                        total += start
+                        count += 1
+                        found.append(start)
+                if end not in found:
+                    total += end
+                    count += 1
+                    found.append(end)
+            center = total / count if count > 0 else complex(center_x, center_y)  
+        center_x = center.real
+        center_y = center.imag
+
+        # Create a winding spiral that moves outward from the centerpoint 
+        # until it has reached points both outside the shape and the original boundary box
+        # Factor 1.5 as the thing could be rotated so diagonals count
+        cx = (max_x + min_x) / 2
+        cy = (max_y + min_y) / 2
+        left_x = cx - 1.5 * (max_x - min_x) / 2
+        right_x = cx + 1.5 * (max_x - min_x) / 2
+        top_y = cy - 1.5 * (max_y - min_y) / 2
+        bottom_y = cy + 1.5 * (max_y - min_y) / 2
+
+        x = center_x
+        y = center_y
+        count = 1
+        while x >= left_x and x <= right_x and y >= top_y and y <= bottom_y:
+            for dx, dy in ((-1, 0), (0, -1)):
+                next_x = x + dx * distance * count
+                next_y = y + dy * distance * count
+                spiral.line(complex(x, y), complex(next_x, next_y))
+                x = next_x
+                y = next_y
+            count += 1
+            for dx, dy in ((1, 0), (0, 1)):
+                next_x = x + dx * distance * count
+                next_y = y + dy * distance * count
+                spiral.line(complex(x, y), complex(next_x, next_y))
+                x = next_x
+                y = next_y
+            count += 1
+        # Use proper scanbeam-based clipping to stay within shape boundaries
+        clipper = Clip(shape)
+        result = clipper.clip(spiral)
+
+        result.rotate(-angle)
+
+        return result
+
 
     @classmethod
     def wobble(cls, algorithm, outer, radius, interval, speed, unit_factor=1):
@@ -8165,6 +8262,11 @@ class Geomstr:
         - a value of about 25 would reduce the effective resolution to about 1/1000 mm
         - a value of 65 to about 1 mil = 1/1000 inch
         """
+        # Constants for shape protection logic
+        CROSS_PRODUCT_TOLERANCE = 1e-6
+        OUTLIER_RATIO = 0.1
+        MAX_EPSILON_SHAPE_RATIO = 0.02
+        MIN_PROTECTED_EPSILON = 1e-5
 
         def _compute_distances(points, start, end):
             """Compute the distances between all points and the line defined by start and end.
@@ -8244,18 +8346,49 @@ class Geomstr:
                 return _is_triangle_shape(points)
 
             # 3. Regular polygon detection (pentagon, hexagon, octagon, etc.)
-            if 5 <= num_points <= 12:
-                return _is_regular_polygon(points)
+            if 5 <= num_points <= 12 and _is_regular_polygon(points):
+                return True
 
             # 4. Ellipse/circle detection (many points in roughly circular pattern)
-            if num_points >= 8:
-                return _is_elliptical_shape(points)
+            if num_points >= 8 and _is_elliptical_shape(points):
+                return True
 
             # 5. Star pattern detection
-            if num_points >= 6:
-                return _is_star_pattern(points)
+            if num_points >= 6 and _is_star_pattern(points):
+                return True
+
+            # 6. Convex shape detection (rounded rectangles, etc.)
+            if num_points >= 6 and _is_convex_shape(points):
+                return True
 
             return False
+
+        def _is_convex_shape(points):
+            """Detect if the shape is convex (or mostly convex)."""
+            n = len(points)
+            if n < 3:
+                return False
+
+            # Create shifted arrays for vectorized calculation
+            p_prev = np.roll(points, 1, axis=0)
+            p_curr = points
+            p_next = np.roll(points, -1, axis=0)
+
+            v1 = p_curr - p_prev
+            v2 = p_next - p_curr
+
+            # Cross product: x1*y2 - y1*x2
+            cp = v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0]
+
+            # Check signs
+            pos_count = np.sum(cp > CROSS_PRODUCT_TOLERANCE)
+            neg_count = np.sum(cp < -CROSS_PRODUCT_TOLERANCE)
+
+            # Allow some noise (10% outliers)
+            # A shape is convex if almost all turns are in the same direction (or straight)
+            # So we check if the number of turns in the WRONG direction is small.
+            allowed_outliers = OUTLIER_RATIO * n
+            return neg_count <= allowed_outliers or pos_count <= allowed_outliers
 
         def _is_rectangular_shape_detailed(points):
             """Enhanced rectangle detection with better tolerance handling."""
@@ -8375,7 +8508,7 @@ class Geomstr:
         def _safe_extract_angle(point, center):
             """Safely extract angle from point relative to center, handling both complex and array types."""
             try:
-                if hasattr(point, "real") and hasattr(point, "imag"):
+                if isinstance(point, complex) and isinstance(center, complex):
                     # Complex number
                     diff = point - center
                     return float(np.arctan2(diff.imag, diff.real))
@@ -8544,12 +8677,15 @@ class Geomstr:
                     protected_epsilon = (
                         epsilon * 0.05 * size_factor
                     )  # Much more conservative
-                    protected_epsilon = max(
-                        protected_epsilon, 0.1
-                    )  # Minimum protection
-                    protected_epsilon = min(
-                        protected_epsilon, 5.0
-                    )  # Maximum protection
+                    
+                    # Ensure protected_epsilon is not larger than a fraction of the shape size
+                    # For very small shapes, 0.1 might be too large
+                    max_allowed_epsilon = shape_size * MAX_EPSILON_SHAPE_RATIO  # Max 2% of shape size
+                    
+                    protected_epsilon = min(protected_epsilon, max_allowed_epsilon)
+                    
+                    # But keep a tiny absolute minimum to avoid infinite recursion or zero tolerance
+                    protected_epsilon = max(protected_epsilon, MIN_PROTECTED_EPSILON)
                 else:
                     protected_epsilon = min(epsilon * 0.1, 2.0)
                 mask = _mask(points, protected_epsilon)
@@ -9000,3 +9136,35 @@ class Geomstr:
                 newgeom.close()
             final.append(newgeom)
         return final
+
+    @staticmethod
+    def _line_intersection(p1, p2, p3, p4):
+        """
+        Find intersection point between two line segments p1-p2 and p3-p4.
+        Returns intersection point as complex number, or None if no intersection.
+        """
+        # Convert to real coordinates
+        x1, y1 = p1.real, p1.imag
+        x2, y2 = p2.real, p2.imag
+        x3, y3 = p3.real, p3.imag
+        x4, y4 = p4.real, p4.imag
+
+        # Calculate denominator
+        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+        # Lines are parallel
+        if abs(denom) < 1e-10:
+            return None
+
+        # Calculate intersection parameters
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+
+        # Check if intersection is within both line segments
+        if 0 <= t <= 1 and 0 <= u <= 1:
+            # Calculate intersection point
+            ix = x1 + t * (x2 - x1)
+            iy = y1 + t * (y2 - y1)
+            return complex(ix, iy)
+
+        return None

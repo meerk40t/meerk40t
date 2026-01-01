@@ -105,6 +105,24 @@ class Kernel(Settings):
 
     The Kernel stores a persistence object, thread interactions, contexts, a translation routine, a run_later operation,
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
+
+    Key Features:
+    - Plugin-based architecture with lifecycle management
+    - Thread-safe job scheduling and execution
+    - Signal-based inter-module communication
+    - Channel-based messaging system
+    - Settings persistence and configuration management
+    - Translation and internationalization support
+    - Graceful shutdown with thread cleanup
+
+    Thread Management:
+    - Daemon scheduler thread for background job processing
+    - Proper thread synchronization and shutdown handling
+    - Job queue management with configurable delays
+
+    Lifecycle:
+    - init → prerun → run → postrun → preshutdown → shutdown → end
+    - Supports restart capability with state preservation
     """
 
     def __init__(
@@ -188,6 +206,7 @@ class Kernel(Settings):
         self.scheduler_handles_default_thread_jobs = True
 
         self.state = "init"
+        self._shutdown_requested = False
 
         # Scheduler
         self.jobs = {}
@@ -226,6 +245,9 @@ class Kernel(Settings):
         self.show_aio_prompt = True
         self.silent_mode = False
         self.inhibitor = Inhibitor()
+
+        # Capabilities
+        self._capabilities = {}
 
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
@@ -1232,7 +1254,7 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler", daemon=True)
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -1313,6 +1335,26 @@ class Kernel(Settings):
     def postmain(self):
         pass
 
+    def shutdown(self):
+        """
+        Initiate kernel shutdown and wait for scheduler thread.
+        
+        This is a lightweight shutdown method that signals termination
+        and waits for the scheduler thread to complete. Used for quick
+        shutdowns like settings reset operations.
+        
+        For comprehensive shutdown with full cleanup, use the main
+        shutdown procedure (see below).
+        
+        Sets kernel state to "terminate" and waits up to 1 second
+        for the scheduler thread to finish.
+        """
+        self.state = "terminate"
+        self._shutdown = True
+        # Wait for the scheduler thread to finish
+        if hasattr(self, 'scheduler_thread') and self.scheduler_thread.is_alive():
+            self.scheduler_thread.join(timeout=1.0)
+
     def preshutdown(self):
         channel = self.channel("shutdown")
         _ = self.translation
@@ -1352,20 +1394,21 @@ class Kernel(Settings):
 
     def shutdown(self):
         """
-        Starts shutdown procedure.
+        Execute comprehensive kernel shutdown procedure.
 
-        Suspends all signals.
-        Each initialized context is flushed and shutdown.
-        Each opened module within the context is stopped and closed.
+        This is the main shutdown method that performs full cleanup:
+        - Suspends all signals
+        - Flushes and shuts down all contexts
+        - Stops and closes all opened modules
+        - Terminates all threads
+        - Cleans up residual listeners
 
-        All threads are stopped.
-
-        Any residual attached listeners are made warnings.
-
-        @return:
+        This method should be called during normal application shutdown
+        to ensure proper resource cleanup and state persistence.
         """
         channel = self.channel("shutdown")
         self.state = "end"  # Terminates the Scheduler.
+        self._shutdown_requested = True
 
         _ = self.translation
 
@@ -1510,8 +1553,8 @@ class Kernel(Settings):
         self._last_message = {}
         self.listeners = {}
         if (
-            self.scheduler_thread != threading.current_thread()
-        ):  # Join if not this thread.
+            self.scheduler_thread != threading.current_thread() and not self.scheduler_thread.daemon
+        ):  # Join if not this thread and not daemon.
             self.scheduler_thread.join()
         if channel:
             channel(_("Shutdown."))
@@ -1988,8 +2031,12 @@ class Kernel(Settings):
         Check each job, and if that job is scheduled to run. Executes that job.
         @return:
         """
+        if self._shutdown_requested:
+            return
         self.state = "active"
         while self.state != "end":
+            if self._shutdown_requested:
+                break
             time.sleep(self.delay)
             while self.state == "pause":
                 # The scheduler is paused.
@@ -4077,6 +4124,34 @@ class Kernel(Settings):
         """
         return console_command_remove(self, *args, **kwargs)
 
+    def add_capability(self, key, value):
+        """
+        Add a capability to the kernel.
+
+        @param key: capability name
+        @param value: capability value
+        @return:
+        """
+        self._capabilities[key] = value
+
+    def get_capability(self, key):
+        """
+        Retrieve a capability from the kernel.
+
+        @param key: capability name
+        @return:
+        """
+        return self._capabilities.get(key, None)
+    
+    def get_capabilities(self):
+        """
+        Retrieve all capabilities from the kernel.
+
+        @return: dictionary of capabilities
+        """
+        return self._capabilities.copy()    
+
+# ==========
 
 def lookup_listener(param):
     """
@@ -4113,3 +4188,4 @@ def signal_listener(param):
         return func
 
     return decor
+

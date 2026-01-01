@@ -1,18 +1,26 @@
 # Ruida
 
-Ruida classes deal with interactions between MeerK40t and Ruida-devices. Currently, this is limited to reading .rd files
-and accepting mock Ruida connections from software that connects through UDP connections. Including RDWorks, Lightburn,
-and a Ruida android application. As well as anything else that produces Ruida code. The parser is able to read every
-Ruida command known.
+Ruida classes deal with interactions between MeerK40t and Ruida-devices connected
+using either Ethernet (UDP) or USB (serial) devices.
 
+**NOTE:** The latest revision has been tested on Fedora Linux using a Ruida
+RDC6442S controller and a monport MP-570 CO2 laser. At this time no other
+controllers have been tested. Nor has there been any testing on Windows. In
+order for moves to behave as expected and for coordinates to be displayed
+correctly, Flip X must be enabled in the Ruida Configuration window.
+
+**NOTE:** Raster layers must be configured with an overscan of 0.
+
+## Untested
 Using `ruidacontrol` for example will make a socket connection to make the localhost appear as a ruida laser cutter. Any
 commands sent to it will be spooled and the resulting laser code will be sent to the locally configured active laser
 device.
 
 ## Overview
 
-The Ruida module provides comprehensive compatibility with Ruida DSP controllers and RDWorks software ecosystem. Unlike direct hardware drivers, this module primarily functions as:
+The Ruida module attempts to provide comprehensive compatibility with Ruida DSP controllers and RDWorks software ecosystem. Unlike direct hardware drivers, this module primarily functions as:
 
+**Untested**
 - **File Format Handler**: Complete parser for .rd (Ruida) files
 - **Protocol Emulator**: Simulates Ruida controllers for third-party software compatibility
 - **Bridge Interface**: Translates between Ruida protocol and MeerK40t's internal cutcode
@@ -37,7 +45,7 @@ The Ruida module follows a multi-layered architecture designed for protocol comp
 - **Real-time Processing**: Processes jog commands, status requests, and file transfers
 - **Coordinate Mapping**: Translates between Ruida and MeerK40t coordinate systems
 
-#### RuidaControl (`control.py`)
+#### RuidaControl (`controller.py`)
 - **Server Management**: Controls UDP server instances for different ports
 - **Traffic Routing**: Implements man-in-the-middle capabilities
 - **Bridge Protocol**: Supports LB2RD (Lightburn to Ruida) bridging
@@ -47,7 +55,7 @@ The Ruida module follows a multi-layered architecture designed for protocol comp
 - **Service Integration**: Registers as MeerK40t device service
 - **Configuration Management**: Handles device-specific settings
 - **File Loading**: Supports .rd file import with RDLoader
-- **Connection Multiplexing**: Supports multiple connection types (UDP, TCP, Serial, Mock)
+- **Connection Multiplexing**: Supports multiple connection types (UDP and USB/Serial)
 
 ### Driver Layer (`driver.py`)
 - **Cutcode Translation**: Converts Ruida commands to MeerK40t cutcode
@@ -55,14 +63,72 @@ The Ruida module follows a multi-layered architecture designed for protocol comp
 - **Real-time Control**: Handles jog movements and status updates
 - **Power/Speed Control**: Manages laser parameters during operation
 
+### Session Layer (`ruidasession.py`)
+- **Session**: Communication session management.
+- **Connect/Disconnect**:Automatically connects and reconnects to the Ruida
+  controller using either the UDP or USB/Serial transports.
+
+### Transport Layer (`ruidatransport.py` and `udp_transport.py` or `usb_transport.py`)
+- **Interface**: Communication device specific connection management.
+- **Networked**: UDP protocol.
+- **USB/Serial**: Connect via USB.
+
+### USB Serial Devices and Linux
+Many Linux distros do not reliably assign USB serial devices when the USB
+connection is lost and restored. This can occur when a cable is unplugged and
+then plugged back in or the device is turned off and then back on. This can be
+annoying at times causing one to reconfigure a connection in MeerK40t in order
+to re-establish the connection.
+
+To see if this is occurring on most distros one can watch the assignments using
+this command: `ls /dev/ttyU*`
+
+Typically the assignment will be `/dev/ttyUSB0` if the Ruida controller is the
+only USB serial device. After connection is lost and restored, the assignment can
+change to `/dev/ttyUSB1` or higher. Sometimes waiting for a couple of minutes
+while the controller is off will reset this assignment.
+
+To mitigate this problem, a UDEV rule can be used. The serial device for the
+known Ruida controllers is an FTDI device. Use `lsusb` while the controller is
+connected and powered on to confirm. The ID should be `0403:6001`. The `<serial>`
+number can be determined using the command:
+`udevadm info -a -n /dev/ttyUSBx | grep '{serial}' | head -n3`
+
+For example, the serial for an monport MP570 laser is: `AB0O3PGG`
+
+The `<name>` can be whatever makes sense for your situation.
+
+The corresponding UDEV rule is (note this may not work on all systems):
+`SUBSYSTEM=="tty",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6001",ATTRS{serial}=="<serial>",SYMLINK+="<name>"`
+
+Alternatively, the bus `<path>` can be used. To determine the path using the
+command:
+`udevadm info -a -n /dev/ttyUSB<x> | grep 'KERNELS' | head -n3`
+The last path is often the one to use. For example, the path for the test laser
+is: `1.9.3`. This will vary depending upon your PC and which port you have
+the Ruida controller connected to. As long as you maintain the same physical
+connection this will be consistent.
+
+The corresponding UDEV rule for this approach is:
+`KERNEL=="ttyUSB*",KERNELS=="<path>",SYMLINK+="<name>"`
+This creates a symlink to the USB device assigned when it is connected.
+
+I suggest having this rule in `/etc/udev/rules.d/99-lasers.rules`
+
+After making the change activate it using the command:
+`sudo udevadm control --reload-rules`
+
+
 ## Technical Features
 
 ### File Format Support
 
 #### RD File Processing
 - **Complete Parser**: Reads all known Ruida commands
-- **Magic Detection**: Automatically detects controller variant from file histogram
 - **Binary Decoding**: Handles Ruida's proprietary binary encoding
+
+**NOTE:** These features are currently untested.
+- **Magic Detection**: Automatically detects controller variant from file histogram
 - **Command Viewer**: Provides human-readable command interpretation
 
 ```python
@@ -94,8 +160,10 @@ The parser handles the complete Ruida command set including:
 
 #### Connection Types
 - **UDPConnection**: Primary network interface for external software
-- **TCPConnection**: Alternative TCP-based communication
 - **SerialConnection**: Direct serial connection to Ruida controllers
+
+**Unsupported by Ruida controllers.**
+- **TCPConnection**: Alternative TCP-based communication
 - **MockConnection**: Development and testing interface
 
 ### Bridge Protocols

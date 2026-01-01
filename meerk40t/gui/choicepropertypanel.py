@@ -37,8 +37,9 @@ class ChoicePropertyPanel(ScrolledPanel):
         - Support for complex layouts with pages, sections, and subsections
         - Real-time property synchronization with signal dispatching
         - Extensive customization through choice dictionary configuration
-        - Support for conditional enabling/disabling of controls
+        - Support for conditional enabling/disabling of controls (unified architecture)
         - Optimized parameter architecture with minimal redundancy
+        - Automatic listener management with proper cleanup on pane hide/show
 
     Choice Dictionary Configuration:
         Required Keys:
@@ -54,6 +55,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             "enabled": Whether control is enabled (default: True)
             "signals": Additional signals to emit on value change
             "width": Control width constraint
+            "help": Help text for the control
 
         Layout Keys:
             "page": Top-level grouping (creates labeled sections)
@@ -64,9 +66,22 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         Advanced Keys:
             "dynamic": Function called to update choice before UI creation
-            "conditional": Tuple (obj, attr[, value]) for conditional enabling
+            "conditional": Tuple (obj, attr[, value[, max]]) for conditional enabling
             "hidden": Show only in developer mode
             "ignore": Skip this choice entirely
+
+    Conditional Enabling:
+        The "conditional" key supports four patterns:
+        1. Boolean check (2-tuple):     (obj, "attr")
+           → Enables if getattr(obj, "attr") is truthy
+        2. Value equality (3-tuple):    (obj, "attr", value)
+           → Enables if getattr(obj, "attr") == value
+        3. Multiple values (3-tuple):   (obj, "attr", [v1, v2, v3])
+           → Enables if getattr(obj, "attr") matches any value in list
+        4. Range check (4-tuple):       (obj, "attr", min, max)
+           → Enables if min <= getattr(obj, "attr") <= max
+        
+        Note: Conditional listeners are automatically registered and deregistered with pane_hide/pane_show.
 
     Data Types and Default Controls:
         bool: Checkbox (style="button" creates action button)
@@ -86,14 +101,20 @@ class ChoicePropertyPanel(ScrolledPanel):
             "option": Combo with separate display/value lists
             "power": Power value with percentage/absolute modes
             "speed": Speed value with per-minute/per-second modes
+            "radio": Radio box selection
+            "flat": Flat-style text control
 
         Numeric Styles:
             "slider": Slider control (requires "min"/"max" keys)
             "binary": Bit manipulation checkboxes (requires "bits"/"mask" keys)
+            "info": Static text display (read-only)
 
         Boolean Styles:
             "button": Action button instead of checkbox
             "color": Color picker button (for str type)
+
+        Special Styles:
+            "chart": List/table control for editing complex data
 
     Special Configuration Flags:
         Power Controls:
@@ -132,13 +153,16 @@ class ChoicePropertyPanel(ScrolledPanel):
         - Subsections group controls horizontally with shared space
         - Weight determines relative width allocation within subsections
         - Leading "_sortkey_" in names is removed for display (allows custom sorting)
+        - entries_per_column: Distribute controls across multiple columns
 
     Event System:
         - Automatic signal dispatching on property changes
         - Property name used as signal identifier
         - Additional signals can be specified in "signals" key
         - Real-time synchronization between multiple panels editing same properties
-        - Conditional enabling based on other property values
+        - Conditional enabling automatically updates when conditions change
+        - Listeners automatically reestablished when pane is shown (pane_show)
+        - Listeners safely removed when pane is hidden (pane_hide)
 
     Constraints:
         The constraint parameter allows selective display:
@@ -147,6 +171,13 @@ class ChoicePropertyPanel(ScrolledPanel):
         - ["page1", "page2"]: Show only specified pages
         - ["-page1"]: Show all except specified pages
 
+    Internal Architecture:
+        - _create_control_using_dispatch(): Dispatch table for control creation
+        - _setup_choice_control_properties(): Set up all control properties (tooltips, help, enabling)
+        - _setup_control_enabling(): Unified method for all enabling logic (conditional + simple)
+        - _register_conditional_listener(): Register listeners for dynamic condition checking
+        - Listener management: All listeners stored for proper cleanup on pane_hide/pane_show
+
     Examples:
         Basic usage:
             choices = [
@@ -154,6 +185,31 @@ class ChoicePropertyPanel(ScrolledPanel):
                 {"object": obj, "attr": "enabled", "type": bool, "label": "Enabled"}
             ]
             panel = ChoicePropertyPanel(parent, choices=choices, context=context)
+
+        Conditional enabling (enable "power" only when "laser_active" is True):
+            choices = [
+                {"object": device, "attr": "laser_active", "type": bool, "label": "Laser Active"},
+                {
+                    "object": device, 
+                    "attr": "power", 
+                    "type": float,
+                    "label": "Power",
+                    "conditional": (device, "laser_active"),
+                    "style": "power"
+                }
+            ]
+
+        Conditional enabling with value check (enable "co2_settings" only for CO2 laser):
+            choices = [
+                {"object": device, "attr": "laser_type", "type": str, "style": "combo", 
+                 "choices": ["co2", "fiber", "uv"]},
+                {
+                    "object": device,
+                    "attr": "co2_settings",
+                    "type": str,
+                    "conditional": (device, "laser_type", "co2")
+                }
+            ]
 
         Advanced configuration:
             choice = {
@@ -165,7 +221,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 "percent": lambda: laser.power_mode == "percentage",
                 "tip": "Laser power setting",
                 "page": "Laser Settings",
-                "section": "Power Control"
+                "section": "Power Control",
+                "priority": "10_power"
             }
     """
 
@@ -599,103 +656,11 @@ class ChoicePropertyPanel(ScrolledPanel):
             if control is None:
                 continue  # We're binary or some other style without a specific control.
 
-            # Get enabled value
-            enabled = choice.get("enabled", True)  # Default to True if not specified
-
-            # If explicitly disabled, take precedence
-            if enabled is False:
-                control.Enable(False)
-            else:
-                # If enabled is True or not specified, check conditional logic
-                c_attr = None
-                c_obj = None
-                c_equals = None
-
-                try:
-                    conditional = choice["conditional"]
-                    if conditional is not None and len(conditional) == 2:
-                        c_obj, c_attr = conditional
-                        try:
-                            conditional_enabled = bool(getattr(c_obj, c_attr))
-                        except AttributeError:
-                            # Attribute doesn't exist, default to disabled
-                            conditional_enabled = False
-                        c_equals = True
-                        if isinstance(control, list):
-                            for ctrl in control:
-                                ctrl.Enable(conditional_enabled)
-                        else:
-                            control.Enable(conditional_enabled)
-                    elif conditional is not None and len(conditional) == 3:
-                        c_obj, c_attr, c_equals = conditional
-                        try:
-                            conditional_enabled = getattr(c_obj, c_attr) == c_equals
-                        except AttributeError:
-                            # Attribute doesn't exist, default to disabled
-                            conditional_enabled = False
-                        if isinstance(control, list):
-                            for ctrl in control:
-                                ctrl.Enable(conditional_enabled)
-                        else:
-                            control.Enable(conditional_enabled)
-                    elif conditional is not None and len(conditional) == 4:
-                        c_obj, c_attr, c_from, c_to = conditional
-                        try:
-                            conditional_enabled = (
-                                c_from <= getattr(c_obj, c_attr) <= c_to
-                            )
-                        except (AttributeError, TypeError):
-                            # Attribute doesn't exist or comparison error, default to disabled
-                            conditional_enabled = False
-                        c_equals = (c_from, c_to)
-                        if isinstance(control, list):
-                            for ctrl in control:
-                                ctrl.Enable(conditional_enabled)
-                        else:
-                            control.Enable(conditional_enabled)
-
-                    # Set up listener for conditional enabling if we have conditional logic
-                    if c_attr is not None and c_obj is not None:
-
-                        def on_enable_listener(param, ctrl, obj, eqs):
-                            def listen(origin, value, target=None):
-                                try:
-                                    if isinstance(eqs, (list, tuple)):
-                                        enable = bool(
-                                            eqs[0] <= getattr(obj, param) <= eqs[1]
-                                        )
-                                    else:
-                                        enable = bool(getattr(obj, param) == eqs)
-                                    if isinstance(ctrl, list):
-                                        for c in ctrl:
-                                            c.Enable(enable)
-                                    else:
-                                        ctrl.Enable(enable)
-                                except (IndexError, RuntimeError, AttributeError):
-                                    # Handle missing attributes or other errors gracefully
-                                    pass
-
-                            return listen
-
-                        listener = on_enable_listener(c_attr, control, c_obj, c_equals)
-                        self.listeners.append((c_attr, listener, c_obj))
-                        self.context.listen(c_attr, listener)
-
-                except KeyError:
-                    # No conditional logic, use the enabled value (True by default)
-                    if isinstance(control, list):
-                        # Handle binary controls which return a list of controls
-                        for ctrl in control:
-                            ctrl.Enable(enabled)
-                    else:
-                        control.Enable(enabled)
-                    # Now we listen to 'ourselves' as well to learn about changes somewhere else...
-
             if wants_listener:
                 # Use helper method for setting up update listener
                 self._setup_update_listener(choice, control, obj, choice_list)
 
-            # Use helper method for setting up control properties
+            # Use helper method for setting up control properties (including enabling state)
             self._setup_choice_control_properties(choice, control)
             last_page = this_page
             last_section = this_section
@@ -719,6 +684,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         """Helper method to update property value and dispatch signals."""
         has_settings = hasattr(obj, "settings") and param in obj.settings
         current_value = obj.settings[param] if has_settings else getattr(obj, param)
+        # print (f"Update property: {new_value} for attr: {param}, current: {current_value}")
 
         # Special handling for Angle comparison to avoid TypeError
         try:
@@ -829,17 +795,17 @@ class ChoicePropertyPanel(ScrolledPanel):
         if has_display:
             # Use display/choices separation like "option" style
             display_list = list(map(str, choice.get("display")))
-            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+            choice_list = list(choice.get("choices", [choice.get("default")]))
 
             # Handle value not in list
             try:
-                index = choice_list.index(str(data))
+                index = choice_list.index(data)
             except ValueError:
                 index = 0
                 if data is None:
                     data = choice.get("default")
                 display_list.insert(0, str(data))
-                choice_list.insert(0, str(data))
+                choice_list.insert(0, data)
 
             # Create the control
             control = wxComboBox(
@@ -854,18 +820,22 @@ class ChoicePropertyPanel(ScrolledPanel):
             control._choice_list = choice_list
         else:
             # Standard combo without display/choices separation
-            choice_list = list(map(str, choice.get("choices", [choice.get("default")])))
+            raw_choice_list = list(choice.get("choices", [choice.get("default")]))
+            display_choice_list = list(map(str, raw_choice_list))
 
             # Create the control
             control = wxComboBox(
                 self,
                 wx.ID_ANY,
-                choices=choice_list,
+                choices=display_choice_list,
                 style=combo_config["style"],
             )
 
             # Set display value
-            self._set_combo_value(control, data, data_type, choice_list)
+            self._set_combo_value(control, data, data_type, display_choice_list)
+            
+            # Store raw choices
+            control._choice_list = raw_choice_list
 
         # Apply width constraints
         if data_style == "combosmall":
@@ -990,7 +960,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         if data_style == "combosmall":
             exclusive = choice.get("exclusive", True)
             combo_config["style"] = (
-                wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN
+                wx.CB_DROPDOWN | wx.CB_READONLY if exclusive else wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
             )
         else:  # regular combo
             combo_config["style"] = wx.CB_DROPDOWN | wx.CB_READONLY
@@ -1603,7 +1573,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 {**choice, "style": data_style}
                 if factory == self._create_text_control
                 else choice,
-                lambda: None,  # Dummy handler for now
+                None,  # No handler for now
             )
             # Now bind the real handler after control is created
             if handler_factory is not None:
@@ -1611,11 +1581,15 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Bind appropriate event based on control type
                 if hasattr(control, "Bind"):
                     if data_style in ("combo", "combosmall"):
-                        control.Bind(wx.EVT_COMBOBOX, real_handler)
-                        if hasattr(control, "GetTextCtrl"):
-                            text_ctrl = control.GetTextCtrl()
-                            if text_ctrl:
-                                text_ctrl.Bind(wx.EVT_TEXT, real_handler)
+                        has_display = "display" in choice and choice["display"] != choice.get("choices")
+                        if has_display:
+                            combo_handler = self._make_combosmall_option_handler(control, choice)
+                        else:
+                            combo_handler = real_handler
+                        control.Bind(wx.EVT_COMBOBOX, combo_handler)
+                        if not choice.get("exclusive", True):
+                            control.Bind(wx.EVT_TEXT_ENTER, real_handler)
+                            control.Bind(wx.EVT_KILL_FOCUS, real_handler)
                     elif data_style == "radio":
                         control.Bind(wx.EVT_RADIOBOX, real_handler)
                     elif data_style == "slider":
@@ -2430,7 +2404,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         # Set tooltip
         tip = choice.get("tip")
-        if tip and not self.context.root.disable_tool_tips:
+        if tip and not self.context.root.setting(bool, "disable_tool_tips", False):
             control.SetToolTip(tip)
 
         # Set help text
@@ -2438,19 +2412,19 @@ class ChoicePropertyPanel(ScrolledPanel):
         if _help and hasattr(control, "SetHelpText"):
             control.SetHelpText(_help)
 
-        # Handle enabled state and conditional enabling
+        # Handle enabled state and conditional enabling using unified method
         enabled = choice.get("enabled", True)  # Default to True if not specified
 
         # If explicitly disabled, take precedence
         if enabled is False:
-            control.Enable(False)
-        else:
-            # If enabled is True or not specified, check conditional logic
-            if "conditional" in choice:
-                self._setup_conditional_enabling(choice, control)
+            if isinstance(control, list):
+                for ctrl in control:
+                    ctrl.Enable(False)
             else:
-                # No conditional logic, just use the enabled value
-                control.Enable(enabled)
+                control.Enable(False)
+        else:
+            # Use unified method for both conditional and regular enabling
+            self._setup_control_enabling(choice, control, enabled)
 
     def _setup_update_listener(self, choice, control, obj, choice_list):
         """Set up update listener for control synchronization."""
@@ -2532,7 +2506,37 @@ class ChoicePropertyPanel(ScrolledPanel):
             if ctrl.GetValue() != data:
                 ctrl.SetValue(data)
         elif dtype in (str, int, float) and dstyle in ("combo", "combosmall"):
-            if dtype == str:
+            # print (f"Update combo control with data: {data} for attr: {choice.get('attr')}")
+            if hasattr(ctrl, "_choice_list"):
+                try:
+                    idx = ctrl._choice_list.index(data)
+                    if ctrl.GetSelection() != idx:
+                        ctrl.SetSelection(idx)
+                except ValueError:
+                    # Value not found - extend lists
+                    # Check if we are currently editing this control
+                    has_focus = False
+                    if ctrl.HasFocus():
+                        has_focus = True
+                    elif hasattr(ctrl, "GetTextCtrl") and ctrl.GetTextCtrl() and ctrl.GetTextCtrl().HasFocus():
+                        has_focus = True
+                    
+                    # If user is typing and the value matches what they typed, don't update the list
+                    if has_focus and ctrl.GetValue() == str(data):
+                        return
+
+                    new_val = str(data)
+                    # Check if the string value is already in the control's list
+                    found_idx = ctrl.FindString(new_val)
+                    if found_idx != wx.NOT_FOUND:
+                        # It's already in the list, just select it
+                        ctrl.SetSelection(found_idx)
+                    else:
+                        # Not in list, insert it
+                        ctrl.Insert(new_val, 0)
+                        ctrl._choice_list.insert(0, data)
+                        ctrl.SetSelection(0)
+            elif dtype == str:
                 ctrl.SetValue(str(data))
             else:
                 least = None
@@ -2619,72 +2623,138 @@ class ChoicePropertyPanel(ScrolledPanel):
     def module_close(self, *args, **kwargs):
         self.pane_hide()
 
+    def _setup_control_enabling(self, choice, control, default_enabled=True):
+        """
+        Unified method to set up control enabling with optional conditional logic.
+
+        Handles both simple enabled/disabled state and complex conditional enabling based on:
+        - Boolean attribute check (2-tuple): Enable if attribute is truthy
+        - Value equality check (3-tuple): Enable if attribute equals specified value
+        - Multiple value check (3-tuple with list): Enable if attribute matches any value
+        - Range check (4-tuple): Enable if attribute is between min and max values
+
+        Args:
+            choice (dict): Choice configuration containing "conditional" key if needed
+            control: The control(s) to enable/disable (can be list for binary controls)
+            default_enabled (bool): Default enabled state if no conditional logic
+        """
+        # Check if conditional enabling is needed
+        if "conditional" not in choice:
+            # No conditional logic, just use the default enabled value
+            if isinstance(control, list):
+                for ctrl in control:
+                    ctrl.Enable(default_enabled)
+            else:
+                control.Enable(default_enabled)
+            return
+
+        conditional = choice.get("conditional")
+        if conditional is None or len(conditional) < 2:
+            # Invalid conditional tuple
+            if isinstance(control, list):
+                for ctrl in control:
+                    ctrl.Enable(default_enabled)
+            else:
+                control.Enable(default_enabled)
+            return
+
+        cond_obj, cond_attr = conditional[0], conditional[1]
+        equals_value = conditional[2] if len(conditional) > 2 else None
+        range_max = conditional[3] if len(conditional) > 3 else None
+
+        # Determine initial enabled state based on conditional logic
+        try:
+            current_value = getattr(cond_obj, cond_attr)
+            if range_max is not None and equals_value is not None:
+                # Range check: value should be between equals_value (min) and range_max
+                conditional_enabled = equals_value <= current_value <= range_max
+            elif equals_value is not None:
+                # Value equality check (including list of values)
+                if isinstance(equals_value, (list, tuple)) and not isinstance(equals_value, str):
+                    conditional_enabled = any(current_value == v for v in equals_value)
+                else:
+                    conditional_enabled = current_value == equals_value
+            else:
+                # Boolean attribute check
+                conditional_enabled = bool(current_value)
+        except (AttributeError, TypeError):
+            # If we can't get the value, default to disabled
+            conditional_enabled = False
+
+        # Apply initial state
+        if isinstance(control, list):
+            for ctrl in control:
+                ctrl.Enable(conditional_enabled)
+        else:
+            control.Enable(conditional_enabled)
+
+        # Set up listener for dynamic updates
+        self._register_conditional_listener(choice, control, cond_obj, cond_attr, equals_value, range_max)
+
+    def _register_conditional_listener(self, choice, control, cond_obj, cond_attr, equals_value, range_max):
+        """
+        Register a listener for conditional enabling that updates the control when the condition changes.
+
+        Args:
+            choice (dict): Choice configuration
+            control: The control(s) to enable/disable
+            cond_obj: The object containing the condition attribute
+            cond_attr (str): The attribute name to listen to
+            equals_value: The value(s) to compare for equality (None for boolean check)
+            range_max: The maximum value for range check (None if not a range check)
+        """
+        def on_conditional_change(origin, value, target=None):
+            def enable_control(enable):
+                if isinstance(control, list):
+                    for ctrl in control:
+                        ctrl.Enable(enable)
+                else:
+                    control.Enable(enable)
+                if self.context.kernel.is_shutdown:
+                    return
+
+            if target is None or target is not sourceobj:
+                return
+
+            if value is None:
+                enable_control(False)
+                return
+            try:
+                if range_max is not None and equals_value is not None:
+                    # Range check
+                    enable = equals_value <= value <= range_max
+                elif equals_value is not None:
+                    # Value equality check (including list of values)
+                    if isinstance(equals_value, (list, tuple)) and not isinstance(equals_value, str):
+                        enable = any(value == v for v in equals_value)
+                    else:
+                        enable = value == equals_value
+                else:
+                    # Boolean check
+                    enable = bool(value)
+                
+                enable_control(enable)
+            except (TypeError, ValueError, AttributeError):
+                # If comparison fails, disable control
+                enable_control(False)
+
+        # Register the listener with the context system
+        if self.context:
+            sourceobj = cond_obj    
+            self.context.listen(cond_attr, on_conditional_change)
+            self.listeners.append((cond_attr, on_conditional_change, cond_obj))
+
     def _setup_conditional_enabling(self, choice, control):
         """
+        Legacy wrapper for backward compatibility. Use _setup_control_enabling instead.
+        
         Set up conditional enabling for a control based on another control's value.
 
         Args:
             choice: The choice control that drives the enabling condition
             control: The control to be enabled/disabled
         """
-        # Only set up conditional logic if "conditional" key exists
-        if "conditional" not in choice:
-            return
-
-        conditional = choice["conditional"]
-        if conditional is None or len(conditional) < 2:
-            # Invalid conditional tuple - must have at least object and attribute
-            if conditional is not None and self.context:
-                channel = self.context.root.channel("console")
-                channel(
-                    f"Warning: Invalid conditional tuple with {len(conditional)} elements, expected at least 2\nchoice={choice}"
-                )
-            return
-
-        cond_obj, cond_attr = conditional[0], conditional[1]
-
-        # Check for equals condition (third element) or range condition (third and fourth elements)
-        equals_value = conditional[2] if len(conditional) > 2 else None
-        range_max = conditional[3] if len(conditional) > 3 else None
-
-        # Create a listener for the conditional attribute change
-        def on_conditional_change(origin, value, target=None):
-            if range_max is not None and equals_value is not None:
-                # Range check: value should be between equals_value (min) and range_max
-                try:
-                    control.Enable(equals_value <= value <= range_max)
-                except (TypeError, ValueError):
-                    # If comparison fails, disable control
-                    control.Enable(False)
-            elif equals_value is not None:
-                # Enable if value equals the specified value
-                control.Enable(value == equals_value)
-            else:
-                # Enable if value is truthy
-                control.Enable(bool(value))
-
-        # Register the listener with the context system to prevent memory leaks
-        if self.context:
-            self.context.listen(cond_attr, on_conditional_change)
-            self.listeners.append((cond_attr, on_conditional_change, cond_obj))
-
-            # Set initial state based on current value
-            try:
-                current_value = getattr(cond_obj, cond_attr, None)
-                if range_max is not None and equals_value is not None:
-                    # Range check: value should be between equals_value (min) and range_max
-                    try:
-                        control.Enable(equals_value <= current_value <= range_max)
-                    except (TypeError, ValueError):
-                        # If comparison fails, disable control
-                        control.Enable(False)
-                elif equals_value is not None:
-                    control.Enable(current_value == equals_value)
-                else:
-                    control.Enable(bool(current_value))
-            except Exception:
-                # If we can't get the current value, default to enabled
-                control.Enable(True)
+        self._setup_control_enabling(choice, control, default_enabled=True)
 
     def pane_hide(self):
         # print (f"hide called: {len(self.listeners)}")

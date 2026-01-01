@@ -1,0 +1,103 @@
+name: macOS Preliminary Build
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-macos-preliminary:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        pip install "opencv-python-headless<=4.8.1.78"
+        pip install -r requirements.txt
+        pip install -r requirements-optional-macos.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Install PyInstaller
+      run: |
+        pip install setuptools==65.5.1 pyinstaller
+
+    - name: Generate icons
+      run: |
+        brew install imagemagick
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
+        # Copy the generated .icns file to the expected location
+        cp meerk40t.icns .github/workflows/mac/meerk40t.icns
+
+    - name: Build MeerK40t macOS preliminary binary
+      run: |
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        mv meerk40t.py mk40t.py
+        # --target-architecture universal2   - does not work!
+        pyinstaller \
+          --hidden-import wx._adv \
+          --hidden-import wx._xml \
+          --hidden-import meerk40t \
+          --windowed \
+          --noconfirm \
+          -i .github/workflows/mac/meerk40t.icns \
+          --add-data 'locale/:locale/' \
+          --name MeerK40t \
+          mk40t.py
+        mv mk40t.py meerk40t.py
+
+        # Extract application metadata
+        APPNAME=$(python3 -c "
+        from meerk40t.main import APPLICATION_NAME
+        print(APPLICATION_NAME)
+        ")
+        MKVERSION=$(python3 -c "
+        from meerk40t.main import APPLICATION_VERSION
+        version_parts = APPLICATION_VERSION.split()
+        print(version_parts[1] if len(version_parts) > 1 else version_parts[0])
+        ")
+
+        echo "Setting app name to: $APPNAME"
+        echo "Setting app version to: $MKVERSION"
+
+        # Set version information in the app bundle
+        plutil -replace CFBundleName -string "$APPNAME" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleShortVersionString -string "$MKVERSION" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleVersion -string "$MKVERSION" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleIdentifier -string "org.tatarize.MeerK40t" dist/MeerK40t.app/Contents/Info.plist
+
+        cd dist
+        mv MeerK40t.app "MeerK40t-macos-preliminary-${{ github.run_number }}.app"
+        zip -r "../MeerK40t-macos-preliminary-${{ github.run_number }}.zip" "MeerK40t-macos-preliminary-${{ github.run_number }}.app"
+        cd ..
+        mv "MeerK40t-macos-preliminary-${{ github.run_number }}.zip" dist/
+
+    - name: Upload macOS preliminary binary to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/MeerK40t-macos-preliminary-${{ github.run_number }}.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload macOS preliminary binary as artifact
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-macos-preliminary
+        path: dist/MeerK40t-macos-preliminary-${{ github.run_number }}.zip

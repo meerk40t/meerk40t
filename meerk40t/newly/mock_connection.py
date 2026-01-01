@@ -6,6 +6,7 @@ any hardware.
 """
 
 import struct
+from time import sleep
 
 
 class MockConnection:
@@ -38,7 +39,7 @@ class MockConnection:
     def close(self, index=0):
         """Closes device."""
         _ = self.channel._
-        device = self.devices[index]
+        device = self.devices.get(index)
         self.channel(_("Attempting disconnection from Mock."))
         if device is not None:
             self.channel(_("Mock Disconnection Successful.\n"))
@@ -74,9 +75,16 @@ class MockConnection:
         packet_length = len(packet)
         length_data = struct.pack(">h", packet_length)
         self.channel(f"{length_data}")
+        # print (f"Will sleep for {min(3.0,packet_length * 0.01)} seconds to simulate packet size write delay. ")
+        sleep(min(3.0,packet_length * 0.01))
 
     def _read_confirmation(self, index=0, attempt=0):
         self.channel("1")
 
     def _write_bulk(self, index=0, packet: str = None):
+        if packet is None:
+            return
+        # print (f"Will bulk sleep for {min(3.0, len(packet) * 0.001)} seconds to simulate packet size write delay. ")
+        sleep(min(3.0, len(packet) * 0.001))
+
         self.channel(packet)

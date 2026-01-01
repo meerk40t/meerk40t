@@ -4,17 +4,6 @@ from meerk40t.kernel import kernel_console_command, service_console_command
 from test import bootstrap
 
 
-def test_plugin_service(kernel, lifecycle):
-    if lifecycle == "register":
-        service = kernel.elements
-        service.add_service_delegate(TestObject())
-
-
-def test_plugin_kernel(kernel, lifecycle):
-    if lifecycle == "register":
-        kernel.add_delegate(TestObject(), kernel)
-
-
 class TestObject:
     """
     Object flagged with service and kernel console commands.
@@ -30,10 +19,15 @@ class TestObject:
 
 
 class TestKernel(unittest.TestCase):
-    def test_object_service_commands(self):
+    def test_plugin_service_commands(self):
         """
         Test registration of service command via classbased decorator
         """
+        def test_plugin_service(kernel, lifecycle):
+            if lifecycle == "register":
+                service = kernel.elements
+                service.add_service_delegate(TestObject())
+
         kernel = bootstrap.bootstrap(plugins=[test_plugin_service])
         try:
             n = kernel.root("hello")
@@ -41,14 +35,20 @@ class TestKernel(unittest.TestCase):
         finally:
             kernel()
 
-    def test_object_kernel_commands(self):
+    def test_plugin_kernel_commands(self):
         """
         Test registration of kernel command via classbased decorator
         """
+        def test_plugin_kernel(kernel, lifecycle):
+            if lifecycle == "register":
+                # Register TestObject directly to kernel for kernel commands
+                kernel.add_delegate(TestObject(), kernel)
+
         kernel = bootstrap.bootstrap(plugins=[test_plugin_kernel])
         try:
-            n = kernel.root("hello")
-            self.assertEqual(n, 1)
+            # Test kernel command - should return ("elements", 1)
+            result = kernel.root("hello")
+            self.assertEqual(result, 1)
         finally:
             kernel()
 
@@ -245,5 +245,144 @@ class TestEchoCommand(unittest.TestCase):
             for echo in echo_commands:
                 print(f"Testing echo command: {echo}")
                 kernel.console(echo + "\n")
+        finally:
+            kernel()
+
+
+class TestSignalSystem(unittest.TestCase):
+
+    def test_basic_signal_functionality(self):
+        """Test that basic signal sending and receiving works"""
+        kernel = bootstrap.bootstrap()
+        try:
+            received_signals = []
+
+            def test_listener(origin, *message):
+                received_signals.append((origin, message))
+
+            # Register listener
+            kernel.listen('test_signal', test_listener)
+            # Process to add the listener
+            kernel.process_queue()
+
+            # Send signal
+            kernel.signal('test_signal', 'path', 'arg1', 'arg2')
+            kernel.process_queue()
+
+            # Verify signal was received
+            self.assertEqual(len(received_signals), 1)
+            self.assertEqual(received_signals[0], ('path', ('arg1', 'arg2')))
+        finally:
+            kernel()
+
+    def test_multiple_listeners_same_signal(self):
+        """Test that multiple listeners can register for the same signal"""
+        kernel = bootstrap.bootstrap()
+        try:
+            received1 = []
+            received2 = []
+
+            def listener1(origin, *message):
+                received1.append((origin, message))
+
+            def listener2(origin, *message):
+                received2.append((origin, message))
+
+            kernel.listen('shared_signal', listener1)
+            kernel.listen('shared_signal', listener2)
+            # Process to add the listeners
+            kernel.process_queue()
+
+            kernel.signal('shared_signal', 'path', 'data')
+            kernel.process_queue()
+
+            self.assertEqual(len(received1), 1)
+            self.assertEqual(len(received2), 1)
+            self.assertEqual(received1[0], ('path', ('data',)))
+            self.assertEqual(received2[0], ('path', ('data',)))
+        finally:
+            kernel()
+
+    def test_listener_removal(self):
+        """Test that listeners can be properly removed"""
+        kernel = bootstrap.bootstrap()
+        try:
+            received_signals = []
+
+            def test_listener(origin, *message):
+                received_signals.append((origin, message))
+
+            kernel.listen('removal_signal', test_listener)
+            # Process to add the listener
+            kernel.process_queue()
+
+            # Send signal
+            kernel.signal('removal_signal', 'path', 'data1')
+            kernel.process_queue()
+            self.assertEqual(len(received_signals), 1)
+
+            # Remove listener
+            kernel.unlisten('removal_signal', test_listener)
+
+            # Send another signal - should not be received
+            kernel.signal('removal_signal', 'path', 'data2')
+            kernel.process_queue()
+
+            # Should still only have 1 signal (the second should not have been received)
+            self.assertEqual(len(received_signals), 1)
+        finally:
+            kernel()
+
+    def test_exception_handling_in_listener_processing(self):
+        """Test that exceptions in listeners don't crash the signal system"""
+        kernel = bootstrap.bootstrap()
+        try:
+            received_signals = []
+
+            def good_listener(origin, *message):
+                received_signals.append(('good', origin, message))
+
+            def bad_listener(origin, *message):
+                raise RuntimeError("Test exception in listener")
+
+            kernel.listen('exception_signal', good_listener)
+            kernel.listen('exception_signal', bad_listener)
+            # Process to add the listeners
+            kernel.process_queue()
+
+            # Send signal - bad listener should not crash the system
+            kernel.signal('exception_signal', 'path', 'data')
+            kernel.process_queue()
+
+            # Good listener should still have received the signal
+            self.assertEqual(len(received_signals), 1)
+            self.assertEqual(received_signals[0][0], 'good')
+        finally:
+            kernel()
+
+    def test_unlisten_unregistered_listener(self):
+        """Test that unlistening an unregistered listener does not cause errors"""
+        kernel = bootstrap.bootstrap()
+        try:
+            def never_registered_listener(origin, *message):
+                pass
+
+            # Try to unlisten a listener that was never registered
+            # This should not raise an exception
+            kernel.unlisten('nonexistent_signal', never_registered_listener)
+            kernel.process_queue()
+
+            # Also test unlistening from a signal that exists but doesn't have this listener
+            kernel.listen('existing_signal', lambda origin, *message: None)
+            kernel.process_queue()
+
+            # Try to unlisten a different listener from the existing signal
+            kernel.unlisten('existing_signal', never_registered_listener)
+            kernel.process_queue()
+
+            # System should still function normally
+            kernel.signal('existing_signal', 'path', 'data')
+            kernel.process_queue()
+
         finally:
             kernel()

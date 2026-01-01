@@ -39,6 +39,19 @@ Notes and edge-cases
 - Sorting uses a deterministic secondary key (operation id) within the
     same type so the result is repeatable.
 
+Power and Speed Unit Detection
+------------------------------
+- The Material Manager will attempt to present power and speed values
+    using units that match the target device or the material's assigned
+    laser type. Devices can advertise preferences (for example,
+    `use_percent_for_power_display` or `use_mm_min_for_speed_display`) and
+    the preview will use those when available.
+- When a material is bound to a specific laser type, only devices that
+    match that type are considered when choosing the display units. If
+    multiple devices disagree on a preferred unit the preview falls back
+    to a sensible default and marks the result as a mixed case internally
+    (see `MIXED_MODE`).
+
 See the class `MaterialPanel` for details on public methods and the
 right-click menu handlers.
 """
@@ -74,6 +87,27 @@ from meerk40t.kernel.settings import Settings
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
+
+# Power and speed display modes used for the material preview list.
+# These control the unit labels and interpretation when showing
+# material operation presets in the Material Manager preview.
+#
+# POWER_AS_PPI: Power displayed as PPI (pulses per inch) - typically
+#               used for laser drivers that expose power as pulse rate.
+# POWER_AS_PERCENTAGE: Power shown as a percentage of laser output.
+#
+# SPEED_AS_MMS: Speed shown in mm/s (millimetres per second).
+# SPEED_AS_MMMIN: Speed shown in mm/min (millimetres per minute).
+#
+# MIXED_MODE indicates that multiple devices or settings disagree
+# about the preferred unit and a definitive single mode cannot be
+# chosen automatically; code will fall back to sensible defaults
+# when MIXED_MODE is encountered.
+POWER_AS_PPI = 0
+POWER_AS_PERCENTAGE = 1
+SPEED_AS_MMS = 0
+SPEED_AS_MMMIN = 1
+MIXED_MODE = 2
 
 
 class ImportDialog(wx.Dialog):
@@ -306,6 +340,16 @@ class MaterialPanel(ScrolledPanel):
         Type" (Image -> Raster -> Engrave -> Cut). Reordering is persisted
         by renaming subsections with sequential zero-padded suffixes.
 
+        Unit detection and preview behavior
+        - The preview list will display power and speed using units inferred
+            from the target device(s) or from the material's assigned laser
+            type. Device preferences such as `use_percent_for_power_display`
+            and `use_mm_min_for_speed_display` are consulted when available.
+        - If multiple devices disagree on the preferred units a mixed mode
+            is detected and a reasonable default is used instead (see
+            `MIXED_MODE` and the constants `POWER_AS_PPI`, `POWER_AS_PERCENTAGE`,
+            `SPEED_AS_MMS`, `SPEED_AS_MMMIN`).
+
     Important implementation notes
     - When deleting keys in a subsection, the settings key lists are
         materialized into Python lists first to avoid "dictionary changed
@@ -393,10 +437,10 @@ class MaterialPanel(ScrolledPanel):
         self.laser_choices = [
             _("<All Lasertypes>"),
         ]
-        dev_infos = list(self.context.find("provider/friendly"))
+        self.dev_infos = list(self.context.find("provider/friendly"))
         # Gets a list of tuples (description, key, path)
-        dev_infos.sort(key=lambda e: e[0][1])
-        for e in dev_infos:
+        self.dev_infos.sort(key=lambda e: e[0][1])
+        for e in self.dev_infos:
             self.laser_choices.append(e[0][0])
 
         self.combo_lasertype = wxComboBox(
@@ -433,7 +477,8 @@ class MaterialPanel(ScrolledPanel):
             context=self.context,
             list_name="list_materialmanager",
         )
-
+        self.list_preview_power_mode = POWER_AS_PPI  # 0 = ppi , 1 = percentage
+        self.list_preview_speed_mode = SPEED_AS_MMS  # 0 = mm/s , 1 = mm / min
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
         self.list_preview.AppendColumn(
             _("Operation"),
@@ -488,6 +533,7 @@ class MaterialPanel(ScrolledPanel):
         # size_it(label, 60, 100)
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_title = TextCtrl(self, wx.ID_ANY, "")
+        size_it(self.txt_entry_title, 60, 400)
         box1.Add(self.txt_entry_title, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wxButton(self, wx.ID_ANY, _("Set"))
@@ -514,7 +560,7 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_material = wxComboBox(
             self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
         )
-
+        size_it(self.txt_entry_material, 60, 400)
         box2.Add(self.txt_entry_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wxStaticText(self, wx.ID_ANY, _("Thickness"))
@@ -1231,7 +1277,7 @@ class MaterialPanel(ScrolledPanel):
             busy = self.context.kernel.busyinfo
             busy.start(msg=_("Deleting data"))
             for idx, entry in enumerate(self.display_list):
-                busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
+                busy.change(msg=f"{idx + 1}/{len(self.display_list)}", keep=1)
 
                 to_delete = False
                 prim_key = (
@@ -2080,6 +2126,72 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+        def set_power_speed_values():
+            self.list_preview_power_mode = POWER_AS_PPI  # ppi
+            self.list_preview_speed_mode = SPEED_AS_MMS  # mm/s
+            if self.active_material is None:
+                return
+            op_list, op_info = self.context.elements.load_persistent_op_list(
+                self.active_material,
+                use_settings=self.op_data,
+            )
+            if len(op_list) == 0:
+                return
+            laser_type = 0
+            for subsection in self.op_data.derivable(self.active_material):
+                if subsection.endswith(" info"):
+                    try:
+                        laser_type = int(
+                            self.op_data.read_persistent(int, subsection, "laser", 0)
+                        )
+                    except ValueError:
+                        # print (f"Invalid laser type for material {self.active_material}.{subsection}: {self.op_data.read_persistent(int, subsection, 'laser', 0)}")
+                        pass
+
+                    break
+
+            # The laser_type is 0 for all lasers or a number indicating a specific laser type
+            if laser_type < 0 or laser_type > len(self.dev_infos):
+                laser_type = 0
+
+            # if we have a specific laser type, then set the display values for speed/power
+            # if not check whether all of the defined lasers have a a common setting
+            to_check = []
+            if laser_type == 0:
+                to_check = list(range(len(self.dev_infos)))
+            else:
+                to_check = [laser_type - 1]
+            available_devices = list(self.context.kernel.services("device"))
+            last_speed = None
+            last_power = None
+            for idx in to_check:
+                ltype = self.dev_infos[idx][2]
+
+                for dev in available_devices:
+                    if not dev.path.startswith(ltype):
+                        continue
+                    if hasattr(dev, "use_mm_min_for_speed_display"):
+                        sp = 1 if dev.use_mm_min_for_speed_display else 0
+                        if last_speed is None:
+                            last_speed = sp
+                        elif last_speed != sp:
+                            last_speed = MIXED_MODE  # mixed
+                    if hasattr(dev, "use_percent_for_power_display"):
+                        pw = 1 if dev.use_percent_for_power_display else 0
+                        if last_power is None:
+                            last_power = pw
+                        elif last_power != pw:
+                            last_power = MIXED_MODE  # mixed
+            if last_speed is None or last_speed == MIXED_MODE:
+                self.list_preview_speed_mode = SPEED_AS_MMS  # default mm/s
+            else:
+                self.list_preview_speed_mode = last_speed
+
+            if last_power is None or last_power == MIXED_MODE:
+                self.list_preview_power_mode = POWER_AS_PPI  # default ppi
+            else:
+                self.list_preview_power_mode = last_power
+
         def get_key(op_type, op_color):
             return f"{op_type}-{str(op_color)}"
 
@@ -2152,6 +2264,21 @@ class MaterialPanel(ScrolledPanel):
         note = ""
         ltype = 0
         if self.active_material is not None:
+            set_power_speed_values()
+            unit = "%" if self.list_preview_power_mode == POWER_AS_PERCENTAGE else "ppi"
+            col_info = self.list_preview.GetColumn(4)
+            col_info.SetText(_("Power") + " [" + unit + "]")
+            col_info.SetImage(-1)
+            self.list_preview.SetColumn(4, col_info)
+            col_info = self.list_preview.GetColumn(5)
+            col_info.SetText(_("Power") + " [" + unit + "]")
+            unit = (
+                "mm/min" if self.list_preview_speed_mode == SPEED_AS_MMMIN else "mm/s"
+            )
+            col_info.SetText(_("Speed") + " [" + unit + "]")
+            col_info.SetImage(-1)
+            self.list_preview.SetColumn(5, col_info)
+
             secdesc = ""
             idx = 0
             content = list(self.op_data.derivable(self.active_material))
@@ -2220,11 +2347,24 @@ class MaterialPanel(ScrolledPanel):
                     else:
                         oplabel = ""
                     oplabel += f"({command})"
+                if self.list_preview_power_mode == POWER_AS_PERCENTAGE and power != "":
+                    try:
+                        pval = max(min(1000, float(power)), 0)
+                        power = pval / 10
+                    except ValueError:
+                        pass
+                if self.list_preview_speed_mode == SPEED_AS_MMMIN and speed != "":
+                    # Show as mm / min
+                    try:
+                        sval = float(speed)
+                        speed = sval * 60
+                    except ValueError:
+                        pass
                 self.list_preview.SetItem(list_id, 1, info[0])
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
-                self.list_preview.SetItem(list_id, 4, power)
-                self.list_preview.SetItem(list_id, 5, speed)
+                self.list_preview.SetItem(list_id, 4, str(power))
+                self.list_preview.SetItem(list_id, 5, str(speed))
                 self.list_preview.SetItem(list_id, 6, frequency)
                 self.list_preview.SetItem(list_id, 7, passes)
                 self.list_preview.SetItem(list_id, 8, effects)
@@ -2578,6 +2718,7 @@ class MaterialPanel(ScrolledPanel):
             Move an operation entry up, down, to top, or to bottom.
             direction: 'up', 'down', 'top', 'bottom'
             """
+
             def move_handler(*args):
                 settings = self.op_data
                 # Get all operation sections (excluding info sections)
@@ -2586,66 +2727,68 @@ class MaterialPanel(ScrolledPanel):
                     if subsection.endswith(" info"):
                         continue
                     op_sections.append(subsection)
-                
+
                 # Sort sections to match display order (alphabetical by section name)
                 op_sections.sort()
-                
+
                 if len(op_sections) <= 1:
                     # Nothing to move
                     return
-                
+
                 # Find the index of the current section
                 try:
                     current_idx = op_sections.index(sect)
                 except ValueError:
                     # Section not found
                     return
-                
+
                 # Determine target index based on direction
                 target_idx = current_idx
-                if direction == 'up' and current_idx > 0:
+                if direction == "up" and current_idx > 0:
                     target_idx = current_idx - 1
-                elif direction == 'down' and current_idx < len(op_sections) - 1:
+                elif direction == "down" and current_idx < len(op_sections) - 1:
                     target_idx = current_idx + 1
-                elif direction == 'top':
+                elif direction == "top":
                     target_idx = 0
-                elif direction == 'bottom':
+                elif direction == "bottom":
                     target_idx = len(op_sections) - 1
-                
+
                 if target_idx == current_idx:
                     # No movement needed
                     return
-                
+
                 # Store all operation data
                 op_data_list = []
                 for subsection in op_sections:
                     op_data = {}
                     for key in list(settings.keylist(subsection)):
-                        op_data[key] = settings.read_persistent(str, subsection, key, "")
+                        op_data[key] = settings.read_persistent(
+                            str, subsection, key, ""
+                        )
                     op_data_list.append(op_data)
-                
+
                 # Move the operation in the list
                 moved_op = op_data_list.pop(current_idx)
                 op_data_list.insert(target_idx, moved_op)
                 # print(f"Moved operation from index {current_idx} to {target_idx}")
                 # print(f"New operation order: {[op.get('id', '') for op in op_data_list]}")
-                
+
                 # Delete all old operation sections (but preserve info section)
                 for subsection in op_sections:
                     # Create a list of keys as we cannot modify while iterating
                     keys_to_delete = list(settings.keylist(subsection))
                     for key in keys_to_delete:
                         settings.delete_persistent(subsection, key)
-                
+
                 # Write back all operations with new numbering
                 for idx, op_data in enumerate(op_data_list):
                     section_name = f"{self.active_material} {idx + 1:0>6}"
                     for key, value in op_data.items():
                         settings.write_persistent(section_name, key, value)
-                
+
                 settings.write_configuration()
                 self.fill_preview()
-            
+
             sect = op_section
             return move_handler
 
@@ -2653,6 +2796,7 @@ class MaterialPanel(ScrolledPanel):
             """
             Sort all operations by their logical type order: Image -> Raster -> Engrave -> Cut
             """
+
             def sort_handler(*args):
                 settings = self.op_data
                 # Get all operation sections (excluding info sections)
@@ -2663,7 +2807,7 @@ class MaterialPanel(ScrolledPanel):
                     op_sections.append(subsection)
                 # Sort sections to match display order (alphabetical by section name)
                 op_sections.sort()
-                
+
                 # op_data_list = []
                 # for subsection in op_sections:
                 #     op_data = {}
@@ -2671,14 +2815,14 @@ class MaterialPanel(ScrolledPanel):
                 #     for key in list(settings.keylist(subsection)):
                 #         value = settings.read_persistent(str, subsection, key, "")
                 #         op_data[key] = value
-                #     op_data_list.append(op_data)    
+                #     op_data_list.append(op_data)
                 # print(op_sections)
                 # print (f"Current operation order: {[op.get('id', '')+'.'+op.get('type', '') for op in op_data_list]}")
-                
+
                 if len(op_sections) <= 1:
                     # Nothing to sort
                     return
-                
+
                 # Define the sort order
                 if by_burn_order:
                     type_order = {
@@ -2686,7 +2830,7 @@ class MaterialPanel(ScrolledPanel):
                         "op raster": 1,
                         "op engrave": 2,
                         "op cut": 3,
-                    }   
+                    }
                 else:
                     type_order = {
                         "op cut": 0,
@@ -2694,7 +2838,7 @@ class MaterialPanel(ScrolledPanel):
                         "op raster": 2,
                         "op image": 3,
                     }
-                
+
                 # Store all operation data with their types
                 op_data_list = []
                 for subsection in op_sections:
@@ -2706,9 +2850,10 @@ class MaterialPanel(ScrolledPanel):
                     # Get the type from the collected data
                     op_type = op_data.get("type", "")
                     op_data_list.append((op_type, op_data))
-                
+
                 # Sort operations by type order, then by ID, then by original index for stability
                 op_data_list_with_index = list(enumerate(op_data_list))
+
                 def get_sort_key(item):
                     original_index, (op_type, op_data) = item
                     # Get the sort order, default to 999 for unknown types
@@ -2717,27 +2862,27 @@ class MaterialPanel(ScrolledPanel):
                     op_id = op_data.get("id", "")
                     # Return tuple: primary sort by type, secondary sort by ID, then original index
                     return (type_priority, op_id, original_index)
-                
+
                 op_data_list_with_index.sort(key=get_sort_key)
                 op_data_list = [item[1] for item in op_data_list_with_index]
                 # print (f"New operation order: {[op[1].get('id', '') + '.' + op[0] for op in op_data_list]}")
-                
+
                 # Delete all old operation sections
                 for subsection in op_sections:
                     keys_to_delete = list(settings.keylist(subsection))
                     for key in keys_to_delete:
                         settings.delete_persistent(subsection, key)
-                
+
                 # Write back all operations with new numbering
                 for idx, (op_type, op_data) in enumerate(op_data_list):
                     section_name = f"{self.active_material} {idx + 1:0>6}"
                     for key, value in op_data.items():
                         settings.write_persistent(section_name, key, value)
-                
+
                 settings.write_configuration()
                 self.fill_preview()
-            return sort_handler
 
+            return sort_handler
 
         def on_menu_popup_newop(op_dict):
             def add_handler(*args):
@@ -2959,7 +3104,7 @@ class MaterialPanel(ScrolledPanel):
             self.Bind(wx.EVT_MENU, on_menu_popup_delete(key), item)
 
             menu.AppendSeparator()
-            
+
             # Move operations submenu - determine position to enable/disable items
             settings = self.op_data
             op_sections = []
@@ -2968,45 +3113,62 @@ class MaterialPanel(ScrolledPanel):
                     continue
                 op_sections.append(subsection)
             op_sections.sort()
-            
+
             current_idx = -1
             try:
                 current_idx = op_sections.index(key)
             except ValueError:
                 pass
-            
+
             total_ops = len(op_sections)
             is_first = current_idx == 0
             is_last = current_idx == total_ops - 1
             can_move = total_ops > 1 and current_idx >= 0
-            
+
             submenu_move = wx.Menu()
-            item_top = submenu_move.Append(wx.ID_ANY, _("Move to Top"), "", wx.ITEM_NORMAL)
+            item_top = submenu_move.Append(
+                wx.ID_ANY, _("Move to Top"), "", wx.ITEM_NORMAL
+            )
             item_top.Enable(can_move and not is_first)
-            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'top'), item_top)
-            
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, "top"), item_top)
+
             item_up = submenu_move.Append(wx.ID_ANY, _("Move Up"), "", wx.ITEM_NORMAL)
             item_up.Enable(can_move and not is_first)
-            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'up'), item_up)
-            
-            item_down = submenu_move.Append(wx.ID_ANY, _("Move Down"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, "up"), item_up)
+
+            item_down = submenu_move.Append(
+                wx.ID_ANY, _("Move Down"), "", wx.ITEM_NORMAL
+            )
             item_down.Enable(can_move and not is_last)
-            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'down'), item_down)
-            
-            item_bottom = submenu_move.Append(wx.ID_ANY, _("Move to Bottom"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, "down"), item_down)
+
+            item_bottom = submenu_move.Append(
+                wx.ID_ANY, _("Move to Bottom"), "", wx.ITEM_NORMAL
+            )
             item_bottom.Enable(can_move and not is_last)
-            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, 'bottom'), item_bottom)
-            
+            self.Bind(wx.EVT_MENU, on_menu_popup_move(key, "bottom"), item_bottom)
+
             # Add separator and sort option
             submenu_move.AppendSeparator()
-            item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by logical burn order"), "", wx.ITEM_NORMAL)
+            item_sort = submenu_move.Append(
+                wx.ID_ANY, _("Sort All by logical burn order"), "", wx.ITEM_NORMAL
+            )
             item_sort.Enable(total_ops > 1)
-            self.Bind(wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=True), item_sort)
-            item_sort = submenu_move.Append(wx.ID_ANY, _("Sort All by Cut/Engrave/Raster/Image order"), "", wx.ITEM_NORMAL)
+            self.Bind(
+                wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=True), item_sort
+            )
+            item_sort = submenu_move.Append(
+                wx.ID_ANY,
+                _("Sort All by Cut/Engrave/Raster/Image order"),
+                "",
+                wx.ITEM_NORMAL,
+            )
 
             item_sort.Enable(total_ops > 1)
-            self.Bind(wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=False), item_sort)
-            
+            self.Bind(
+                wx.EVT_MENU, on_menu_popup_sort_by_type(by_burn_order=False), item_sort
+            )
+
             menu.AppendSubMenu(submenu_move, _("Move"))
 
             menu.AppendSeparator()
@@ -3082,8 +3244,12 @@ class MaterialPanel(ScrolledPanel):
     def on_resize(self, event):
         size = self.GetClientSize()
         if size[0] != 0 and size[1] != 0:
-            self.tree_library.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
-            self.list_preview.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
+            self.tree_library.SetMaxSize(
+                wx.Size(max(10, size[0] - 200), int(0.4 * size[1]))
+            )
+            self.list_preview.SetMaxSize(
+                wx.Size(max(10, size[0] - 200), int(0.4 * size[1]))
+            )
 
         # Resize the columns in the listctrl
         size = self.list_preview.GetSize()
@@ -3162,6 +3328,9 @@ class MaterialPanel(ScrolledPanel):
                         new_data = float(new_data[:-1]) * 10.0
                     else:
                         new_data = float(new_data)
+                        if self.list_preview_power_mode == POWER_AS_PERCENTAGE:
+                            # percent mode
+                            new_data = new_data * 10.0
                     self.op_data.write_persistent(key, "power", new_data)
                     new_data = f"{new_data:.0f}"
                 except ValueError:
@@ -3171,6 +3340,8 @@ class MaterialPanel(ScrolledPanel):
                 # speed
                 try:
                     new_data = float(new_data)
+                    if self.list_preview_speed_mode == SPEED_AS_MMMIN:
+                        new_data /= 60
                     self.op_data.write_persistent(key, "speed", new_data)
                     new_data = f"{new_data:.1f}"
                 except ValueError:

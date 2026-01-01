@@ -445,12 +445,29 @@ class Planner(Service):
         self._plan = {}  # contains all cutplans, keyed by plan name
         self._states = {}  # contains all plan state dictionaries, keyed by plan name
         self._default_plan = "0"
-        self.do_optimization = True
+        # self.do_optimization = True
         self._plan_lock = threading.Lock()
 
+    @property
+    def do_optimization(self):
+        """
+        Get the optimization flag.
+        """
+        value = self.kernel.root.setting(bool, "do_optimization", True)
+        return value
+
+    @do_optimization.setter
+    def do_optimization(self, value):
+        """
+        Set the optimization flag.
+        """
+        self.kernel.root.setting(bool, "do_optimization", value)
+        self.kernel.root.do_optimization = value
+    
     def length(self, v):
         """
-        Convert a value to a float using the Length class (device-independent units).
+        Convert a value to a float using the Length class (device-indepen
+        dent units).
         """
         return float(Length(v))
 
@@ -818,6 +835,19 @@ class Planner(Service):
             if busy.shown:
                 busy.change(msg=_("Preprocessing"), keep=1)
                 busy.show()
+            anykerf = False
+            method = ""
+            for operation in data.plan:
+                if isinstance(operation, CutOpNode):
+                    kerf = getattr(operation, "kerf", None)
+                    if kerf is not None and kerf != 0:
+                        anykerf = True
+                        method = self.kernel.get_capability("offset_routine")
+                        if method is None:
+                            method = "unknown"
+                        break
+            if anykerf and channel:
+                channel(f"Kerf requirement detected, will adjust with {method}.")
 
             data.preprocess()
             self.update_stage(data.name, STAGE_PLAN_PREPROCESSED)

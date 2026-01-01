@@ -219,6 +219,9 @@ def scanline_fill(settings, outlines, matrix, limit=None):
     points = list(map(mx_counter, points))
     return points
 
+def spiral_fill(settings, outlines, matrix, limit=None):
+    points = eulerian_fill(settings, outlines, matrix, limit)
+    return points
 
 def circle(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
@@ -766,6 +769,7 @@ def plugin(kernel, lifecycle):
         context = kernel.root
         context.register("hatch/scanline", scanline_fill)
         context.register("hatch/eulerian", eulerian_fill)
+        context.register("hatch/spiral", spiral_fill)
         context.register("wobble/circle", circle)
         context.register("wobble/circle_right", circle_right)
         context.register("wobble/circle_left", circle_left)

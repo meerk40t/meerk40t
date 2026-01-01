@@ -124,6 +124,7 @@ class GcodeJob:
         self._driver = driver
         self.channel = channel
         self.reply = None
+        self.label = "Gcode Job"
         self.buffer = list()
 
         self.priority = priority

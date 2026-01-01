@@ -167,6 +167,19 @@ class BalorDevice(Service, Status):
                 "nonzero": True,
             },
             {
+                "attr": "power_invert",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Invert Power"),
+                "tip": _("UV lasers might require inverted power levels"),
+                # Hint for translation _("General")
+                "section": "_00_General",
+                "subsection": "_00_",
+                "priority": "20",
+                "conditional": (self, "source", "uv"),
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
@@ -461,6 +474,18 @@ class BalorDevice(Service, Status):
                 ),
                 "priority": "0",
             },
+            {
+                "attr": "restart_light_jobs",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Restart light jobs"),
+                "tip": _(
+                    "If enabled, light jobs will be restarted automatically after a job completes."
+                ),
+                "priority": "0",
+                "signals": "restart",
+            },
         ]
         self.register_choices("balor-redlight", choices)
 
@@ -515,7 +540,7 @@ class BalorDevice(Service, Status):
                 "trailer": "%",
                 "label": _("First Pulse Killer"),
                 "subsection": "_50_Miscellaneous",
-                "conditional": (self, "source", "co2"),
+                "conditional": (self, "source", ("co2", "uv")),
                 "tip": _("Percent of First Pulse Killer for co2 source"),
             },
             {
@@ -1012,6 +1037,8 @@ class BalorDevice(Service, Status):
         self.realize()
 
         self.spooler = Spooler(self)
+        if self.restart_light_jobs:
+            self.spooler.reinsert_stopped_priority_jobs = True
         self.driver = BalorDriver(self)
         self.spooler.driver = self.driver
 

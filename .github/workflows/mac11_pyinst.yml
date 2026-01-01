@@ -55,7 +55,7 @@ jobs:
     - name: Ensure latest pip and meerk40t-camera
       run: |
         python3.8 -m pip install --upgrade pip
-        python3.8 -m pip install wheel setuptools
+        python3.8 -m pip install wheel setuptools==65.5.1
         python3.8 -m pip install --no-use-pep517 pyinstaller==4.3
         python3.8 -m pip install numpy==1.23.5
         python3.8 -m pip install pyusb

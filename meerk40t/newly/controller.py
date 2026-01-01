@@ -1,6 +1,7 @@
 """
 Newly Controller
 """
+
 import math
 import struct
 import time
@@ -12,8 +13,86 @@ from meerk40t.newly.usb_connection import USBConnection
 
 class NewlyController:
     """
-    Newly Controller
+    Newly Laser Controller Interface
+
+    This class provides a complete hardware abstraction layer for Newly laser controllers,
+    handling USB communication, command translation, and device-specific parameter mapping.
+
+    Key Responsibilities:
+    - USB/Mock connection management with automatic retry logic
+    - Translation of logical laser operations (speed, power, movement) to device commands
+    - Vector and raster speed mapping using piecewise linear algorithms
+    - Power scaling from percentage values to device-specific ranges
+    - Command buffering and execution with error handling
+    - Real-time job management and mode switching
+
+    Device Constants:
+    The class defines comprehensive constants for device-specific parameters including:
+    - Vector speed mapping thresholds, offsets, and multipliers for different speed ranges
+    - Raster speed scaling and minimum values
+    - Power scaling factors for pulse and continuous modes
+    - Connection retry limits and timing parameters
+    - Bit processing constants for raster operations
+
+    Error Handling:
+    Connection errors and command failures are logged to usb_log channel rather than
+    being silently ignored, enabling better debugging and troubleshooting.
+
+    Usage:
+    The controller is instantiated with a service object and manages the complete
+    laser operation lifecycle from connection through job execution.
     """
+
+    # Device-specific constants for speed mapping
+    # Vector speed mapping thresholds (mm/min)
+    VECTOR_SPEED_HIGH_THRESHOLD = 93  # Above this, use linear mapping (speed/10)
+    VECTOR_SPEED_MEDIUM_THRESHOLD = 15  # Above this, use medium mapping
+    VECTOR_SPEED_LOW_THRESHOLD = 5  # Above this, use low mapping
+    VECTOR_SPEED_MINIMUM_THRESHOLD = 1  # Below this, use minimum mapping
+
+    # Vector speed mapping offsets (device-specific command values)
+    VECTOR_SPEED_HIGH_OFFSET = 0  # No offset for high speeds
+    VECTOR_SPEED_MEDIUM_OFFSET = 162  # Offset for medium speeds
+    VECTOR_SPEED_LOW_OFFSET = 147  # Offset for low speeds
+    VECTOR_SPEED_MINIMUM_OFFSET = 127  # Offset for minimum speeds
+
+    # Vector speed mapping multipliers
+    VECTOR_SPEED_HIGH_MULTIPLIER = 0.1  # Divide by 10 for high speeds
+    VECTOR_SPEED_MEDIUM_MULTIPLIER = 1.0  # No multiplier for medium speeds
+    VECTOR_SPEED_LOW_MULTIPLIER = 2.0  # Multiply by 2 for low speeds
+    VECTOR_SPEED_MINIMUM_MULTIPLIER = 5.0  # Multiply by 5 for minimum speeds
+    VECTOR_SPEED_SUBMINIMUM_MULTIPLIER = 10.0  # Multiply by 10 for sub-minimum speeds
+
+    # Raster speed constants
+    RASTER_SPEED_DIVISOR = 10  # Divide speed by 10 for raster commands
+    RASTER_SPEED_MINIMUM = 1  # Minimum raster speed value
+
+    # Power scaling constants
+    POWER_PULSE_DIVISOR = 10.0  # Divide pulse power by 10
+    POWER_SCALE_FACTOR = 1000.0  # Scale percentage to device units
+    POWER_MAX_VALUE = 255  # Maximum power value (8-bit)
+    POWER_PERCENT_SCALE = 100.0  # Convert percentage to decimal
+
+    # Connection and timing constants
+    CONNECTION_RETRY_LIMIT = 10  # Maximum connection attempts
+    CONNECTION_RETRY_DELAY = 0.3  # Delay between retries (seconds)
+    TIME_CHUNK_MAX = 255  # Maximum time chunk for device commands (milliseconds)
+
+    # Speed divisor for various movement commands
+    SPEED_COMMAND_DIVISOR = 10  # Divide speeds by 10 for device commands
+
+    # Bit processing constants
+    BITS_PER_BYTE = 8  # Number of bits in a byte for scanline calculations
+    DEFAULT_BIT_DEPTH = 1 
+    DEFAULT_BIT_WIDTH = 1 
+
+    # Default power values
+    DEFAULT_PULSE_POWER = 1000.0  # Default pulse power in device units
+    PERCENT_TO_DECIMAL = 100.0  # Convert percentage to decimal
+
+    STATUS_INITIALIZING = None
+    STATUS_NO_USB_FOUND = -1
+    STATUS_NO_MACHINE_FOUND = -2
 
     def __init__(
         self,
@@ -22,13 +101,24 @@ class NewlyController:
         y=0,
         force_mock=False,
     ):
+        """
+        Initialize the NewlyController.
+
+        Args:
+            service: The service object providing configuration and logging
+            x: Initial X position (default: 0)
+            y: Initial Y position (default: 0)
+            force_mock: Force use of mock connection for testing (default: False)
+        """
         self._machine_index = 0
         self.service = service
         self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
         self.usb_log = service.channel(f"{service.safe_label}/usb", buffer_size=500)
-        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
+        # Keep reference to prevent garbage collection with weak=True default
+        self._usb_status_handler = lambda e: service.signal("pipe;usb_status", e)
+        self.usb_log.watch(self._usb_status_handler)
 
         # Load Primary Pens
         self.sp0 = self.service.setting(int, "sp0", 0)
@@ -88,6 +178,7 @@ class NewlyController:
         self._realtime = False
 
         self.mode = "init"
+        self._status_code = self.STATUS_INITIALIZING
         self.paused = False
         self._command_buffer = []
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
@@ -112,6 +203,16 @@ class NewlyController:
         self.is_shutdown = True
 
     @property
+    def status(self):
+        if self._status_code is None or self._status_code == self.STATUS_INITIALIZING:
+            return "Initializing"
+        elif self._status_code == self.STATUS_NO_MACHINE_FOUND:
+            return "No Machine Found (zadig needed?)"
+        elif self._status_code == self.STATUS_NO_USB_FOUND:
+            return "No USB Found"
+        return f"Connected to machine #{self._status_code}"
+    
+    @property
     def connected(self):
         if self.connection is None:
             return False
@@ -125,18 +226,37 @@ class NewlyController:
 
     def abort_connect(self):
         self._abort_open = True
+        # Translation hint _("Connect Attempts Aborted")
         self.usb_log("Connect Attempts Aborted")
+        self.service.signal("pipe;usb_status", "Connect Attempts Aborted")  
 
     def disconnect(self):
         try:
             self.connection.close(self._machine_index)
-        except (ConnectionError, ConnectionRefusedError, AttributeError):
-            pass
+        except (ConnectionError, ConnectionRefusedError, AttributeError) as e:
+            self.usb_log(f"Error during disconnect: {e}")
         self.connection = None
+        self._status_code = self.STATUS_INITIALIZING
+        # Translation hint _("Connection closed")
+        self.service.signal("pipe;usb_status", "Connection closed")
         # Reset error to allow another attempt
         self.set_disable_connect(False)
 
     def connect_if_needed(self):
+        """
+        Establish connection to the laser controller if not already connected.
+
+        This method implements robust connection management with automatic retry logic:
+        - Uses mock connection if configured or forced
+        - Attempts USB connection otherwise
+        - Retries up to CONNECTION_RETRY_LIMIT times with CONNECTION_RETRY_DELAY between attempts
+        - Logs connection errors and disables automatic connections after repeated failures
+        - Raises ConnectionRefusedError if all connection attempts fail
+
+        Raises:
+            ConnectionRefusedError: When connection cannot be established after retries
+                                 or when automatic connections are disabled
+        """
         if self._disable_connect:
             # After many failures automatic connects are disabled. We require a manual connection.
             self.abort_connect()
@@ -157,6 +277,8 @@ class NewlyController:
             self.set_disable_connect(True)
             self.usb_log("Could not connect to the controller.")
             self.usb_log("Automatic connections disabled.")
+            # Translation hint _("Could not connect to the controller.")    
+            self.service.signal("pipe;usb_status", "Could not connect to the controller.")  
             raise ConnectionRefusedError("Could not connect to the controller.")
 
         self._is_opening = True
@@ -164,11 +286,14 @@ class NewlyController:
         count = 0
         while not self.connection.is_open(self._machine_index):
             try:
-                if self.connection.open(self._machine_index) < 0:
+                self._status_code = self.connection.open(self._machine_index)
+                if self._status_code < 0:
                     raise ConnectionError
                 self.init_laser()
+                # Translation hint _("Connection established")
+                self.service.signal("pipe;usb_status", "Connection established") 
             except (ConnectionError, ConnectionRefusedError):
-                time.sleep(0.3)
+                time.sleep(self.CONNECTION_RETRY_DELAY)
                 count += 1
                 # self.usb_log(f"Error-Routine pass #{count}")
                 if self.is_shutdown or self._abort_open:
@@ -177,14 +302,16 @@ class NewlyController:
                     return
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
-                if count >= 10:
+                if count >= self.CONNECTION_RETRY_LIMIT:
                     # We have failed too many times.
                     self._is_opening = False
                     self.set_disable_connect(True)
                     self.usb_log("Could not connect to the controller.")
                     self.usb_log("Automatic connections disabled.")
+                    # Translation hint _("Could not connect to the controller.")
+                    self.service.signal("pipe;usb_status", "Could not connect to the controller.")
                     raise ConnectionRefusedError("Could not connect to the controller.")
-                time.sleep(0.3)
+                time.sleep(self.CONNECTION_RETRY_DELAY)
                 continue
         self._is_opening = False
         self._abort_open = False
@@ -207,8 +334,17 @@ class NewlyController:
 
     def realtime_job(self, job=None):
         """
-        Starts a realtime job, which runs on file0
-        @return:
+        Start a realtime job that executes commands immediately on file0.
+
+        Realtime jobs bypass the normal job buffering system and execute commands
+        directly. This is used for immediate operations like homing, pausing, or
+        manual control commands that don't need to be queued.
+
+        Args:
+            job: Optional job object (currently unused)
+
+        Note:
+            Only works when controller is in 'init' mode. Switches to 'realtime' mode.
         """
         if self.mode != "init":
             return
@@ -342,8 +478,8 @@ class NewlyController:
         if self.service.pwm_enabled:
             self._set_pwm_freq = self.service.pwm_frequency
         self._set_relative = True
-        self._set_bit_depth = 1
-        self._set_bit_width = 1
+        self._set_bit_depth = self.DEFAULT_BIT_DEPTH
+        self._set_bit_width = self.DEFAULT_BIT_WIDTH
         self._set_speed = self.service.default_raster_speed
         self._set_power = self.service.default_raster_power
 
@@ -366,8 +502,8 @@ class NewlyController:
         try:
             self.connect_if_needed()
             self.connection.write(index=self._machine_index, data=cmd)
-        except ConnectionError:
-            pass
+        except ConnectionError as e:
+            self.usb_log(f"Error executing job: {e}")
         self._command_buffer.clear()
         self._clear_settings()
         self.service.laser_status = "idle"
@@ -452,7 +588,7 @@ class NewlyController:
         if cmd is None:
             return  # 0,0 goes nowhere.
         count = len(bits)
-        byte_length = int(math.ceil(count / 8))
+        byte_length = int(math.ceil(count / self.BITS_PER_BYTE))
         cmd += struct.pack(">i", count)[1:]
         binary = "".join([str(b) for b in bits])
         cmd += int(binary, 2).to_bytes(byte_length, "little")
@@ -475,12 +611,22 @@ class NewlyController:
 
     def raster(self, raster_cut: RasterCut):
         """
-        Run a raster cut with scanlines and default actions.
+        Execute a raster cut operation with optimized scanline processing.
 
-        @param raster_cut:
-        @return:
+        This method handles the complete raster engraving process including:
+        - Horizontal or vertical raster scanning based on cut orientation
+        - Bidirectional scanning with direction changes at scanline boundaries
+        - Automatic jog movements for large gaps to optimize travel time
+        - Bit-level scanline generation from raster data
+        - Command buffering and execution
+
+        The algorithm processes the raster plot point by point, building scanlines
+        of consecutive pixels and committing them when direction changes or Y-axis
+        movement is required.
+
+        Args:
+            raster_cut: RasterCut object containing plot data and settings
         """
-
         scanline = []
         increasing = True
 
@@ -584,7 +730,8 @@ class NewlyController:
         try:
             self.connect_if_needed()
             self.connection.write(index=self._machine_index, data=data)
-        except ConnectionError:
+        except ConnectionError as e:
+            self.usb_log(f"Error sending raw data: {e}")
             return
 
     def frame(self, x, y):
@@ -704,38 +851,69 @@ class NewlyController:
         self.close_job()
 
     def home_speeds(self, x_speed, y_speed, m_speed):
+        """
+        Set homing speeds for X, Y, and master axes.
+
+        @param x_speed: X-axis homing speed
+        @param y_speed: Y-axis homing speed
+        @param m_speed: Master axis homing speed
+        """
         self.realtime_job()
         self.mode = "home_speeds"
-        self(f"VX{int(round(x_speed / 10))}")
-        self(f"VY{int(round(y_speed / 10))}")
-        self(f"VM{int(round(m_speed / 10))}")
+        self(f"VX{int(round(x_speed / self.SPEED_COMMAND_DIVISOR))}")
+        self(f"VY{int(round(y_speed / self.SPEED_COMMAND_DIVISOR))}")
+        self(f"VM{int(round(m_speed / self.SPEED_COMMAND_DIVISOR))}")
         self.close_job()
 
     def z_relative(self, amount, speed=100):
+        """
+        Move Z-axis relatively by the specified amount.
+
+        @param amount: Relative Z movement amount
+        @param speed: Movement speed (default: 100)
+        """
         self.realtime_job()
         self.mode = "zmove"
-        self(f"CV{int(round(speed / 10))}")
+        self(f"CV{int(round(speed / self.SPEED_COMMAND_DIVISOR))}")
         self(f"CR{int(round(amount))}")
         self.close_job()
 
     def z_absolute(self, z_position, speed=100):
+        """
+        Move Z-axis to absolute position.
+
+        @param z_position: Absolute Z position
+        @param speed: Movement speed (default: 100)
+        """
         self.realtime_job()
         self.mode = "zmove"
-        self(f"CV{int(round(speed / 10))}")
+        self(f"CV{int(round(speed / self.SPEED_COMMAND_DIVISOR))}")
         self(f"CU{int(round(z_position))}")
         self.close_job()
 
     def w_relative(self, amount, speed=100):
+        """
+        Move W-axis relatively by the specified amount.
+
+        @param amount: Relative W movement amount
+        @param speed: Movement speed (default: 100)
+        """
         self.realtime_job()
         self.mode = "wmove"
-        self(f"WV{int(round(speed / 10))}")
+        self(f"WV{int(round(speed / self.SPEED_COMMAND_DIVISOR))}")
         self(f"WR{int(round(amount))}")
         self.close_job()
 
     def w_absolute(self, w_position, speed=100):
+        """
+        Move W-axis to absolute position.
+
+        @param w_position: Absolute W position
+        @param speed: Movement speed (default: 100)
+        """
         self.realtime_job()
         self.mode = "wmove"
-        self(f"WV{int(round(speed / 10))}")
+        self(f"WV{int(round(speed / self.SPEED_COMMAND_DIVISOR))}")
         self(f"WU{int(round(w_position))}")
         self.close_job()
 
@@ -766,9 +944,17 @@ class NewlyController:
         self.close_job()
 
     def wait(self, time_in_ms):
-        while time_in_ms > 255:
-            time_in_ms -= 255
-            self("TX255")
+        """
+        Send wait commands for the specified time in milliseconds.
+
+        Device commands can only handle time chunks up to TIME_CHUNK_MAX milliseconds,
+        so longer waits are split into multiple commands.
+
+        @param time_in_ms: Time to wait in milliseconds
+        """
+        while time_in_ms > self.TIME_CHUNK_MAX:
+            time_in_ms -= self.TIME_CHUNK_MAX
+            self(f"TX{self.TIME_CHUNK_MAX}")
         if time_in_ms > 0:
             self(f"TX{int(round(time_in_ms))}")
 
@@ -784,13 +970,13 @@ class NewlyController:
                 self._set_pwm_freq = settings.get("pwm_frequency")
             # self.set_settings(settings)
         else:
-            self._set_power = 1000.0
-        self._set_power *= self.service.max_pulse_power / 100.0
+            self._set_power = self.DEFAULT_PULSE_POWER
+        self._set_power *= self.service.max_pulse_power / self.PERCENT_TO_DECIMAL
         self._commit_pwmfreq()
         self._commit_power()
-        while time_in_ms > 255:
-            time_in_ms -= 255
-            self("TO255")
+        while time_in_ms > self.TIME_CHUNK_MAX:
+            time_in_ms -= self.TIME_CHUNK_MAX
+            self(f"TO{self.TIME_CHUNK_MAX}")
         if time_in_ms > 0:
             self(f"TO{int(round(time_in_ms))}")
 
@@ -921,7 +1107,7 @@ class NewlyController:
         self._set_pen = None
         if new_pen is None:
             # Nothing set, set default.
-            new_pen = 0
+            new_pen = self.DEFAULT_PEN
         if new_pen != self._pen:
             # PEN is different
             self._pen = new_pen
@@ -932,14 +1118,24 @@ class NewlyController:
     #######################
 
     def _map_power(self, power):
+        """
+        Map logical power percentage to device-specific power command value.
+
+        Power scaling depends on mode:
+        - Pulse mode: Divide by pulse divisor for higher precision
+        - Normal mode: Scale from percentage to 0-255 range using max power setting
+
+        @param power: Power as percentage (0-100) or device units
+        @return: Device command value (0-255)
+        """
         if self.mode == "pulse":
-            power /= 10.0
+            power /= self.POWER_PULSE_DIVISOR
             return int(round(power))
-        power /= 1000.0  # Scale to 0-1
+        power /= self.POWER_SCALE_FACTOR  # Scale to 0-1
         power *= self.service.max_power  # Scale by max power %
-        power *= 255.0 / 100.0  # range between 000 and 255
-        if power > 255:
-            return 255
+        power *= self.POWER_MAX_VALUE / self.POWER_PERCENT_SCALE  # Scale to 0-255 range
+        if power > self.POWER_MAX_VALUE:
+            return self.POWER_MAX_VALUE
         if power <= 0:
             return 0
         return int(round(power))
@@ -1025,22 +1221,51 @@ class NewlyController:
         return chart[-1]
 
     def _map_raster_speed(self, speed):
-        v = int(round(speed / 10))
+        """
+        Map logical speed (mm/min) to device-specific raster speed command value.
+
+        Raster speeds are scaled down by a divisor and clamped to a minimum value.
+
+        @param speed: Speed in mm/min
+        @return: Device command value
+        """
+        v = int(round(speed / self.RASTER_SPEED_DIVISOR))
         if v == 0:
-            v = 1
+            v = self.RASTER_SPEED_MINIMUM
         return v
 
     def _map_vector_speed(self, speed):
-        if speed >= 93:
-            return int(round(speed / 10))
-        if speed >= 15:
-            return 162 + int(round(speed))
-        if speed >= 5:
-            return 147 + int(round(speed * 2))
-        if speed >= 1:
-            return 132 + int(round(speed * 5))
+        """
+        Map logical speed (mm/min) to device-specific speed command value.
+
+        The Newly controller uses different speed mapping formulas for different speed ranges:
+        - High speeds (>= 93 mm/min): Linear mapping with divisor
+        - Medium speeds (>= 15 mm/min): Linear mapping with offset
+        - Low speeds (>= 5 mm/min): Linear mapping with offset and multiplier
+        - Minimum speeds (>= 1 mm/min): Linear mapping with offset and multiplier
+        - Sub-minimum speeds (< 1 mm/min): Linear mapping with offset and higher multiplier
+
+        @param speed: Speed in mm/min
+        @return: Device command value
+        """
+        if speed >= self.VECTOR_SPEED_HIGH_THRESHOLD:
+            return int(round(speed * self.VECTOR_SPEED_HIGH_MULTIPLIER))
+        if speed >= self.VECTOR_SPEED_MEDIUM_THRESHOLD:
+            return self.VECTOR_SPEED_MEDIUM_OFFSET + int(
+                round(speed * self.VECTOR_SPEED_MEDIUM_MULTIPLIER)
+            )
+        if speed >= self.VECTOR_SPEED_LOW_THRESHOLD:
+            return self.VECTOR_SPEED_LOW_OFFSET + int(
+                round(speed * self.VECTOR_SPEED_LOW_MULTIPLIER)
+            )
+        if speed >= self.VECTOR_SPEED_MINIMUM_THRESHOLD:
+            return self.VECTOR_SPEED_MINIMUM_OFFSET + int(
+                round(speed * self.VECTOR_SPEED_MINIMUM_MULTIPLIER)
+            )
         else:
-            return 127 + int(round(speed * 10))
+            return self.VECTOR_SPEED_MINIMUM_OFFSET + int(
+                round(speed * self.VECTOR_SPEED_SUBMINIMUM_MULTIPLIER)
+            )
 
     #######################
     # Commit Speed Chart

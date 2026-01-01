@@ -14,6 +14,7 @@ from meerk40t.gui.icons import (
     icons8_lock,
     icons8_unlock,
 )
+from meerk40t.gui.position_mixin import PositionDimensionMixin
 from meerk40t.gui.wxutils import TextCtrl, dip_size, wxStaticBitmap, wxStaticText
 
 from .statusbarwidget import StatusBarWidget
@@ -248,7 +249,7 @@ class FillruleWidget(StatusBarWidget):
         self.assign_fill("nonzero")
 
 
-class PositionWidget(StatusBarWidget):
+class PositionWidget(PositionDimensionMixin, StatusBarWidget):
     """
     Panel to change / assign the linecap of an element
     """
@@ -264,14 +265,9 @@ class PositionWidget(StatusBarWidget):
         self.node = None
         self.units = ("mm", "cm", "in", "mil", "%")
         self.unit_index = 0
-        self.position_x = 0.0
-        self.position_y = 0.0
-        self.position_h = 0.0
-        self.position_w = 0.0
-        self.org_x = None
-        self.org_y = None
-        self.org_w = None
-        self.org_h = None
+        
+        # Initialize position/dimension state from mixin
+        self._init_position_state()
 
         self.text_x = TextCtrl(
             self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float"
@@ -306,13 +302,11 @@ class PositionWidget(StatusBarWidget):
             resize=icon_size, use_theme=False
         )
 
-        self.offset_index = 0  # 0 to 8 tl tc tr cl cc cr bl bc br
-        self.offset_x = 0.0
-        self.offset_y = 0.0
+        # Offset/reference point setup
         self.button_param = wxStaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(icon_size, -1), style=wx.BORDER_NONE
         )
-        self.pos_bitmaps = self.calculate_icons(icon_size)
+        self.pos_bitmaps = self.calculate_position_icons(icon_size)
         self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
 
         self.Add(self.xy_lbl, 0, 0, 0)
@@ -401,49 +395,11 @@ class PositionWidget(StatusBarWidget):
             self.context.lock_active = value
             self.context.signal("lock_active")
 
-    # Position icon routines
-    def calculate_icons(self, bmap_size):
-        result = []
-        for y in range(3):
-            for x in range(3):
-                imgBit = wx.Bitmap(bmap_size, bmap_size)
-                dc = wx.MemoryDC(imgBit)
-                dc.SelectObject(imgBit)
-                dc.SetBackground(wx.WHITE_BRUSH)
-                dc.Clear()
-                dc.SetPen(wx.BLACK_PEN)
-                delta = (bmap_size - 1) / 3
-                for xx in range(4):
-                    dc.DrawLine(int(delta * xx), 0, int(delta * xx), int(bmap_size - 1))
-                    dc.DrawLine(0, int(delta * xx), int(bmap_size - 1), int(delta * xx))
-                # And now fill the area
-                dc.SetBrush(wx.BLACK_BRUSH)
-                dc.DrawRectangle(
-                    int(x * delta),
-                    int(y * delta),
-                    int(delta + 1),
-                    int(delta + 1),
-                )
-                # Now release dc
-                dc.SelectObject(wx.NullBitmap)
-                result.append(imgBit)
-        return result
+
 
     def on_button_param(self, event):
-        pt_mouse = event.GetPosition()
-        ob = event.GetEventObject()
-        rect_ob = ob.GetRect()
-        col = int(3 * pt_mouse[0] / rect_ob[2])
-        row = int(3 * pt_mouse[1] / rect_ob[3])
-        idx = 3 * row + col
-        # print(idx, col, row, pt_mouse, rect_ob)
-        self.offset_index = idx
-        if self.offset_index > 8:
-            self.offset_index = 0
-        x_offsets = (0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1)
-        y_offsets = (0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1)
-        self.offset_x = x_offsets[self.offset_index]
-        self.offset_y = y_offsets[self.offset_index]
+        # Use mixin method to handle reference point click
+        self.handle_reference_click(event)
         self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
         self.button_param.Refresh()
         self.update_position(True)
@@ -499,6 +455,10 @@ class PositionWidget(StatusBarWidget):
         event.Skip()
 
     def update_position(self, reset):
+        # Use mixin's reentry protection
+        self.protected_update(self._do_update_position, reset)
+
+    def _do_update_position(self, reset):
         more_than_one = False
         ct = 0
         for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):
@@ -550,8 +510,8 @@ class PositionWidget(StatusBarWidget):
             self.org_w = self.position_w
             self.org_h = self.position_h
 
-        pos_x = self.position_x + self.offset_x * self.position_w
-        pos_y = self.position_y + self.offset_y * self.position_h
+        # Use mixin method to calculate reference-adjusted position
+        pos_x, pos_y = self.calculate_reference_position()
         self.text_x.SetValue(f"{pos_x:.2f}")
         self.text_y.SetValue(f"{pos_y:.2f}")
         self.text_w.SetValue(f"{self.position_w:.2f}")
@@ -720,8 +680,8 @@ class PositionWidget(StatusBarWidget):
         except ValueError:
             try:
                 pos_x = Length(
-                    self.text_h.GetValue(),
-                    relative_length=self.context.device.view.height,
+                    self.text_x.GetValue(),
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.units_name,
                 )
@@ -738,8 +698,8 @@ class PositionWidget(StatusBarWidget):
         except ValueError:
             try:
                 pos_y = Length(
-                    self.text_h.GetValue(),
-                    relative_length=self.context.device.view.width,
+                    self.text_y.GetValue(),
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.units_name,
                 )

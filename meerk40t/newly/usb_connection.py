@@ -1,8 +1,38 @@
 """
 Newly USB Connection
 
-Performs the required interactions with the Newly backend through pyusb and libusb.
+This module provides USB communication capabilities for Newly laser devices using the pyusb library.
+It implements a robust connection interface with automatic error recovery and retry mechanisms.
+
+USB Protocol:
+- Vendor ID: 0x0471 (Philips)
+- Product ID: 0x0999 (Newly device)
+- Uses interrupt endpoints for control and bulk endpoints for data transfer
+- Implements a 3-step write protocol: length → confirmation → data
+
+Key Features:
+- Automatic device detection and enumeration
+- Kernel driver detachment/attachment for Linux compatibility
+- Interface claiming and configuration management
+- Robust error handling with connection recovery (max 3 attempts)
+- Packet-based data transmission with confirmation protocol
+- Configurable timeouts and retry limits
+
+Safety Mechanisms:
+- Prevents infinite recovery loops with attempt limits
+- Graceful degradation on connection failures
+- Proper resource cleanup on disconnection
+- Thread-safe connection state management
+
+Classes:
+    USBConnection: Main connection class implementing the connection interface
+
+Error Handling:
+- ConnectionRefusedError: Device not found or access denied
+- PermissionError: Insufficient USB permissions
+- ConnectionError: Connection recovery failed after max attempts
 """
+
 import struct
 import time
 
@@ -21,12 +51,44 @@ READ_BULK = 0x82
 
 
 class USBConnection:
+    """
+    USB connection handler for Newly laser devices.
+
+    This class manages the complete USB communication lifecycle including device discovery,
+    connection establishment, data transfer, and error recovery. It implements a robust
+    protocol with automatic retry and recovery mechanisms.
+
+    Attributes:
+        channel: Communication channel for logging and user feedback
+        devices: Dictionary mapping device indices to USB device objects
+        interface: Dictionary mapping device indices to USB interface objects
+        backend_error_code: Last USB backend error code encountered
+        timeout: USB operation timeout in milliseconds (default: 2000)
+        max_retries: Maximum retries per packet before attempting recovery (default: 10)
+        sleep_between_retries: Sleep time between retries in seconds (default: 0.5)
+
+    USB Protocol Details:
+        - Interrupt endpoint 0x01: Send packet length (big-endian 16-bit)
+        - Interrupt endpoint 0x81: Receive confirmation byte (expect 0x01)
+        - Bulk endpoint 0x02: Send actual data packet
+        - Bulk endpoint 0x82: Receive data from device
+
+    Safety Features:
+        - Maximum 3 connection recovery attempts to prevent infinite loops
+        - Graceful degradation on USB errors
+        - Proper resource cleanup on disconnection
+        - Packet-based transmission with confirmation protocol
+    """
+
     def __init__(self, channel):
         self.channel = channel
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 2000
+        self.max_retries = 3  # Maximum retries before attempting recovery
+        self.max_recovery_attempts = 3  # Limit connection recovery attempts
+        self.sleep_between_retries = 0.25  # Sleep time between retries
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -250,9 +312,11 @@ class USBConnection:
 
     def write(self, index=0, data=None):
         if data is None:
-            return
+            return True  # Nothing to write, consider it successful
         self.channel(f"USB SEND: {data}")
         data_remaining = len(data)
+        retries = 0
+        recovery_attempts = 0
         while data_remaining > 0:
             packet_length = min(0x1000, data_remaining)
             packet = data[:packet_length]
@@ -281,13 +345,39 @@ class USBConnection:
                     endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
                 )
                 if read is None or len(read) == 0:
-                    self.channel("No Confirmation Received.")
-                    time.sleep(2)
+                    self.channel("No Confirmation Received. Trying again.")
+                    time.sleep(self.sleep_between_retries)
+                    retries += 1
+                    if retries > self.max_retries:
+                        recovery_attempts += 1
+                        if recovery_attempts > self.max_recovery_attempts:
+                            self.channel(
+                                f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                            )
+                            raise ConnectionError(
+                                f"Failed to recover connection after {recovery_attempts} attempts"
+                            )
+                        self._recover_connection(index)
+                        retries = 0  # Start again after reopening.
+                    continue  # Try again.
                 else:
                     self.channel(f"Confirmation: {read}")
                     if read[0] != 1:
-                        time.sleep(2)
-                        continue
+                        self.channel("Bad Confirmation Received. Trying again.")
+                        time.sleep(self.sleep_between_retries)
+                        retries += 1
+                        if retries > self.max_retries:
+                            recovery_attempts += 1
+                            if recovery_attempts > self.max_recovery_attempts:
+                                self.channel(
+                                    f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                                )
+                                raise ConnectionError(
+                                    f"Failed to recover connection after {recovery_attempts} attempts"
+                                )
+                            self._recover_connection(index)
+                            retries = 0  # Start again after reopening.
+                        continue  # Try again.
 
                 #####################################
                 # Step #3, write the bulk data of the packet.
@@ -299,6 +389,7 @@ class USBConnection:
 
                 data = data[packet_length:]
                 data_remaining -= packet_length
+                retries = 0  # Reset retries on successful packet send.
             except usb.core.USBError as e:
                 """
                 The sending data protocol hit a core usb error. This will print the error and close and reopen the
@@ -306,21 +397,39 @@ class USBConnection:
                 """
                 self.backend_error_code = e.backend_error_code
                 self.channel(str(e))
-                try:
-                    self.close(index)
-                    self.open(index)
-                except ConnectionError:
-                    continue
+                recovery_attempts += 1
+                if recovery_attempts > self.max_recovery_attempts:
+                    self.channel(
+                        f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                    )
+                    raise ConnectionError(
+                        f"Failed to recover connection after {recovery_attempts} attempts"
+                    ) from e
+                self._recover_connection(index)
+                retries = 0  # Start again after reopening.
             except KeyError:
                 """
                 Keyerrors occur because the device wasn't open to begin with and self.devices[index] failed.
                 """
                 self.channel("Not connected.")
-                try:
-                    self.close(index)
-                except ConnectionError:
-                    continue
-                try:
-                    self.open(index)
-                except ConnectionError:
-                    continue
+                recovery_attempts += 1
+                if recovery_attempts > self.max_recovery_attempts:
+                    self.channel(
+                        f"Too many connection recovery attempts ({recovery_attempts}). Giving up."
+                    )
+                    raise ConnectionError(
+                        f"Failed to recover connection after {recovery_attempts} attempts"
+                    )
+                self._recover_connection(index)
+        return True  # Successfully wrote all data
+
+    def _recover_connection(self, index):
+        """Helper method to recover connection after errors."""
+        self.channel("Attempting to recover connection...")
+        self.close(index)
+        recovered = self.open(index)
+        if recovered < 0:  # Could not reopen.
+            self.channel("Connection recovery failed.")
+            raise ConnectionError("Unable to recover USB connection")
+        self.channel("Connection recovered successfully.")
+        return recovered

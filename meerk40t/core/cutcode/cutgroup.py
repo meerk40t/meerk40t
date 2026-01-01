@@ -171,7 +171,7 @@ class CutGroup(list, CutObject, ABC):
                     continue
 
                 # Yield segments according to complete_path rules
-                if complete_path and not grp.closed and isinstance(grp, CutGroup):
+                if complete_path and not grp.closed and isinstance(grp, CutGroup) and getattr(grp, 'original_op', None) not in ("op cut", "op engrave"):
                     if grp[0].burns_done < grp[0].passes:
                         yield grp[0]
                     if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
@@ -213,7 +213,7 @@ class CutGroup(list, CutObject, ABC):
                     processed_group_ids.add(id(grp))
 
                     # Yield segments according to complete_path rules
-                    if complete_path and not grp.closed and isinstance(grp, CutGroup):
+                    if complete_path and not grp.closed and isinstance(grp, CutGroup) and getattr(grp, 'original_op', None) not in ("op cut", "op engrave"):
                         if grp[0].burns_done < grp[0].passes:
                             yield grp[0]
                         if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
@@ -225,7 +225,7 @@ class CutGroup(list, CutObject, ABC):
 
             # If any groups remain, yield them anyway to ensure no cutcode is lost
             for grp in remaining_candidates:
-                if complete_path and not grp.closed and isinstance(grp, CutGroup):
+                if complete_path and not grp.closed and isinstance(grp, CutGroup) and getattr(grp, 'original_op', None) not in ("op cut", "op engrave"):
                     if grp[0].burns_done < grp[0].passes:
                         yield grp[0]
                     if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:

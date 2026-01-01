@@ -823,6 +823,7 @@ class JobPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.themes.set_window_colors(self)
+        self.last_selected = None
         self.list_plan = wxListCtrl(
             self,
             wx.ID_ANY,
@@ -895,6 +896,15 @@ class JobPanel(wx.Panel):
 
             info = _("{amount} items").format(amount=itemcount)
             self.list_plan.SetItem(item, 3, info)
+        # Reselect previous selection if possible
+        if self.last_selected is not None:
+            for idx in range(self.list_plan.GetItemCount()):
+                plan_name = self.list_plan.GetItemText(idx, 1)
+                if plan_name == self.last_selected:
+                    self.last_selected = None
+                    self.list_plan.Select(idx)
+                    self.on_selection(None)
+                    break
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -906,6 +916,7 @@ class JobPanel(wx.Panel):
         has_content = False
         if can_update:
             plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+            self.last_selected = plan_name
             try:
                 has_content = self.context.planner.has_content(plan_name)
             except KeyError:
@@ -970,6 +981,7 @@ class JobPanel(wx.Panel):
         if self.list_plan.GetFirstSelected() == -1:
             return
         plan_name = self.list_plan.GetItemText(self.list_plan.GetFirstSelected(), 1)
+        self.last_selected = plan_name
         if self.context.planner.do_optimization:
             cmd = f"plan{plan_name} clear copy preprocess validate blob preopt optimize finish\n"
         else:

@@ -1,7 +1,7 @@
 """
 translate.py
 
-This script manages and validates .po translation files for Meerk40t.
+This script manages and validates .po translation files for MeerK40t.
 
 Features:
     - Checks for mismatched curly braces and smart quotes in .po files
@@ -21,70 +21,67 @@ Usage:
 import argparse
 import os
 import re
+import sys
+from tabnanny import verbose
+from typing import List, Tuple, Set
 
 import polib
 
 LOCALE_DIR = "./locale"
+VERBOSE = False
+# Determine whether output is a TTY. If not (redirected), disable ANSI codes.
+try:
+    is_tty = sys.stdout.isatty()
+except Exception:
+    is_tty = False
 
-# ANSI escape codes for colors
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-BOLD = "\033[1m"
-ENDC = "\033[0m"
+# On Windows, enable ANSI VT processing when running in a real terminal.
+# This avoids a dependency on `colorama` by enabling terminal
+# virtual terminal (ANSI) processing via the Win32 API.
+if os.name == "nt" and is_tty:
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        h = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE = -11
+        mode = ctypes.c_uint()
+        if kernel32.GetConsoleMode(h, ctypes.byref(mode)):
+            ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+            kernel32.SetConsoleMode(h, mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+    except Exception:
+        # If anything fails, fall back silently (colors will simply not work)
+        pass
+
+if is_tty:
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    BOLD = "\033[1m"
+    ENDC = "\033[0m"
+else:
+    RED = GREEN = YELLOW = BLUE = BOLD = ENDC = ""
 
 
-def print_header(text):
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+def print_header(text: str) -> None:
+    print(f"{BLUE}{BOLD}{'=' * 60}{ENDC}")
     print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
+    print(f"{BLUE}{BOLD}{'=' * 60}{ENDC}")
 
 
-def print_error(text):
+def print_error(text: str) -> None:
     print(f"{RED}ERROR: {text}{ENDC}")
 
 
-def print_warning(text):
+def print_warning(text: str) -> None:
     print(f"{YELLOW}WARNING: {text}{ENDC}")
 
 
-def print_success(text):
+def print_success(text: str) -> None:
     print(f"{GREEN}{text}{ENDC}")
 
 
-def print_info(text):
-    print(f"{BLUE}{text}{ENDC}")
-
-
-# ANSI escape codes for colors
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-BOLD = "\033[1m"
-ENDC = "\033[0m"
-
-
-def print_header(text):
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
-    print(f"{BLUE}{BOLD}{text.center(60)}{ENDC}")
-    print(f"{BLUE}{BOLD}{'='*60}{ENDC}")
-
-
-def print_error(text):
-    print(f"{RED}ERROR: {text}{ENDC}")
-
-
-def print_warning(text):
-    print(f"{YELLOW}WARNING: {text}{ENDC}")
-
-
-def print_success(text):
-    print(f"{GREEN}{text}{ENDC}")
-
-
-def print_info(text):
+def print_info(text: str) -> None:
     print(f"{BLUE}{text}{ENDC}")
 
 
@@ -134,7 +131,7 @@ def find_erroneous_translations(file_path: str) -> bool:
             if not are_curly_brackets_matched(line):
                 found_error = True
                 print_error(
-                    f"{file_path}\n  Line {i+1}: Mismatched curly braces\n  {line.strip()}"
+                    f"{file_path}\n  Line {i + 1}: Mismatched curly braces\n  {line.strip()}"
                 )
             # Smart quote check disabled - was incorrectly flagging valid files
             # if contain_smart_quotes(line):
@@ -235,7 +232,7 @@ def find_erroneous_translations(file_path: str) -> bool:
     return found_error
 
 
-def create_mo_files(force: bool, locales: set) -> list:
+def create_mo_files(force: bool, locales: Set[str]) -> List[Tuple[str, List[str]]]:
     """
     Recursively compiles all valid .po files into .mo files under ./locale/LC_MESSAGES.
     Skips files with errors. If force is True, always recompiles.
@@ -265,6 +262,7 @@ def create_mo_files(force: bool, locales: set) -> list:
     data_files = []
     po_dirs = []
     po_locales = []
+    locales_lower = {loc.lower() for loc in locales}
     for locale_name in next(os.walk(LOCALE_DIR))[1]:
         po_dirs.append(f"{LOCALE_DIR}/{locale_name}/LC_MESSAGES/")
         po_locales.append(locale_name)
@@ -279,9 +277,10 @@ def create_mo_files(force: bool, locales: set) -> list:
     print_header("Compiling .po to .mo Files")
 
     for d_local, d in zip(po_locales, po_dirs):
-        if locales and d_local not in locales:
-            print_info(f"Skipping locale {d_local}")
-            file_results.append((d_local, "Skipped", "Not in selected locales"))
+        if locales and d_local.lower() not in locales_lower:
+            if VERBOSE:
+                print_info(f"Skipping locale {d_local}")
+                file_results.append((d_local, "Skipped", "Not in selected locales"))
             continue
         print_info(f"Processing locale: {d_local}")
         mo_files = []
@@ -399,7 +398,7 @@ def create_mo_files(force: bool, locales: set) -> list:
     return data_files
 
 
-def integrate_delta_files(locales: set) -> None:
+def integrate_delta_files(locales: List[str]) -> None:
     """
     This code integrates translation updates from delta .po files (named delta_xx.po)
     into the main translation .po files for specified locales.
@@ -448,9 +447,11 @@ def integrate_delta_files(locales: set) -> None:
             for msgid in duplicate_msgids:
                 print(f"  - {msgid}")
         if empty_msgids:
-            print_warning(f"Untranslated msgid(s) found in delta file for {locale}:")
-            for msgid in empty_msgids:
-                print(f"  - {msgid}")
+            print_warning(
+                f"Found {len(empty_msgids)} untranslated msgid(s) in delta file for {locale}:"
+            )
+            # for msgid in empty_msgids:
+            #     print(f"  - {msgid}")
 
         # Integrate delta into main, handling conflicts
         conflicts = []
@@ -511,7 +512,7 @@ def main() -> None:
     Main entry point for the script. Parses CLI arguments and triggers compilation.
     """
     parser = argparse.ArgumentParser(
-        description="Check and compile Meerk40t .po translation files into .mo files."
+        description="Check and compile MeerK40t .po translation files into .mo files."
     )
     parser.add_argument(
         "locales",
@@ -531,7 +532,16 @@ def main() -> None:
         action="store_true",
         help="Integrate delta_xx.po files into the main .po files",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output",
+    )
     args = parser.parse_args()
+    if args.verbose:
+        global VERBOSE
+        VERBOSE = True
     if "all" in args.locales:
         args.locales = []
     locales = set()
@@ -540,15 +550,14 @@ def main() -> None:
         args.locales = locales
     for loc in args.locales:
         locales.add(loc)
-    print_header("Meerk40t Translation Tool")
+    print_header("MeerK40t Translation Tool")
     if args.locales:
         print_info(f"Processing locales: {', '.join(sorted(locales))}")
     else:
         print_info("Processing all locales")
-
     if args.integrate:
-        integrate_delta_files(locales)
-    create_mo_files(args.force, locales)
+        integrate_delta_files(sorted(locales))
+    create_mo_files(args.force, sorted(locales))
 
 
 if __name__ == "__main__":

@@ -46,6 +46,7 @@ https://github.com/gnea/grbl/wiki
 - **`interpreter.py`** - Interactive GRBL command interpreter
 - **`loader.py`** - G-code file loading and parsing
 - **`control.py`** - GRBL control server for remote access
+- **`esp3d_upload.py`** - ESP3D-WEBUI file upload and execution (see [ESP3D_README.md](ESP3D_README.md))
 
 ### GUI Components (`gui/`)
 
@@ -54,6 +55,7 @@ https://github.com/gnea/grbl/wiki
 - **`grblcontroller.py`** - Controller status and monitoring panels
 - **`grblhardwareconfig.py`** - Hardware parameter configuration
 - **`grbloperationconfig.py`** - Operation-specific settings panels
+- **`esp3dconfig.py`** - ESP3D upload configuration panel
 
 ## Hardware Support
 
@@ -71,6 +73,7 @@ https://github.com/gnea/grbl/wiki
 - **Serial (USB)**: Direct USB connection using pyserial
 - **TCP Network**: Network connection to GRBL devices over TCP
 - **WebSocket**: WebSocket-based communication for web interfaces
+- **ESP3D Upload**: Wireless file upload to ESP3D-equipped devices (see [ESP3D_README.md](ESP3D_README.md))
 - **Mock**: Simulation mode for testing and development
 
 ### Laser Types

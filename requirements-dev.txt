@@ -9,3 +9,5 @@ pytest
 flake8
 polib
 chardet
+requests>=2.25.0
+websocket-client

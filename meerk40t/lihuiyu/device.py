@@ -697,14 +697,15 @@ class LihuiyuDevice(Service, Status):
         @self.console_argument("dy", type=Length, help=_("change in y"))
         @self.console_command(
             "move_at_speed",
-            help="move_at_speed <speed> <dx> <dy> : " + _("move the laser at a specific speed and distance"),
+            help="move_at_speed <speed> <dx> <dy> : "
+            + _("move the laser at a specific speed and distance"),
             all_arguments_required=True,
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
             def move_at_speed():
                 yield "set", "speed", speed
                 yield "program_mode"
-                yield "move_rel", dx.length_mil, dy.length_mil
+                yield "move_rel", dx.length_mil, dy.length_mil, False
                 yield "rapid_mode"
 
             if self.spooler.is_idle:
@@ -843,12 +844,23 @@ class LihuiyuDevice(Service, Status):
             "pause",
             help=_("realtime pause/resume of the machine"),
         )
-        def realtime_pause(**kwgs):
+        def realtime_pause(channel, _, **kwgs):
             if self.driver.paused:
                 self.driver.resume()
             else:
                 self.driver.pause()
             self.signal("pause")
+
+        @self.console_command(
+            "resume",
+            help=_("realtime resume of the machine"),
+        )
+        def realtime_resume(channel, _, **kwgs):
+            if self.driver.paused:
+                self.driver.resume()
+                self.signal("pause")
+            else:
+                channel(_("Device is not paused"))
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwgs):

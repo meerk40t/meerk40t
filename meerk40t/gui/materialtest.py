@@ -210,6 +210,10 @@ class TemplatePanel(wx.Panel):
 
     DESC_X_AXIS = "Descriptions X-Axis"
     DESC_Y_AXIS = "Descriptions Y-Axis"
+    MIN_PATTERN_SIZE = 0.001
+    MAX_PATTERN_SIZE = 50
+    MIN_GAP_SIZE = 0.0
+    MAX_GAP_SIZE = 50
 
     def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
@@ -330,9 +334,9 @@ class TemplatePanel(wx.Panel):
         self.text_min_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_max_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_dim_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_dim_1.set_range(0, 50)
+        self.text_dim_1.set_range(self.MIN_PATTERN_SIZE, self.MAX_PATTERN_SIZE)
         self.text_delta_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_delta_1.set_range(0, 50)
+        self.text_delta_1.set_range(self.MIN_GAP_SIZE, self.MAX_GAP_SIZE)
         self.list_options_1 = wxCheckListBox(
             self, wx.ID_ANY, label=_("Pick values"), majorDimension=3
         )
@@ -356,12 +360,12 @@ class TemplatePanel(wx.Panel):
         self.text_min_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_max_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_dim_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_dim_2.set_range(0, 50)
+        self.text_dim_2.set_range(self.MIN_PATTERN_SIZE, self.MAX_PATTERN_SIZE)
         self.list_options_2 = wxCheckListBox(
             self, wx.ID_ANY, label=_("Pick values"), majorDimension=3
         )
         self.text_delta_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_delta_2.set_range(0, 50)
+        self.text_delta_2.set_range(self.MIN_GAP_SIZE, self.MAX_GAP_SIZE)
         self.unit_param_2a = wxStaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wxStaticText(self, wx.ID_ANY, "")
 
@@ -645,15 +649,20 @@ class TemplatePanel(wx.Panel):
             _("Will create the corresponding values as labels at the sides of the grid")
         )
         self.check_use_vector_labels.SetToolTip(_("Use vector shapes for labels"))
-        
+        range_tooltip = _("Valid values between {min} and {max}").format(
+            min=self.MIN_PATTERN_SIZE, max=self.MAX_PATTERN_SIZE
+        )
+        gap_tooltip = _("Valid values between {min} and {max}").format(
+            min=self.MIN_GAP_SIZE, max=self.MAX_GAP_SIZE
+        )
         self.text_min_1.SetToolTip(_("Minimum value for 1st parameter"))
         self.text_max_1.SetToolTip(_("Maximum value for 1st parameter"))
         self.text_min_2.SetToolTip(_("Minimum value for 2nd parameter"))
         self.text_max_2.SetToolTip(_("Maximum value for 2nd parameter"))
-        self.text_dim_1.SetToolTip(_("Width of the to be created pattern"))
-        self.text_dim_2.SetToolTip(_("Height of the to be created pattern"))
-        self.text_delta_1.SetToolTip(_("Horizontal gap between patterns"))
-        self.text_delta_2.SetToolTip(_("Vertical gap between patterns"))
+        self.text_dim_1.SetToolTip(_("Width of the to be created pattern") + "\n" + range_tooltip)
+        self.text_dim_2.SetToolTip(_("Height of the to be created pattern") + "\n" + range_tooltip)
+        self.text_delta_1.SetToolTip(_("Horizontal gap between patterns") + "\n" + gap_tooltip)
+        self.text_delta_2.SetToolTip(_("Vertical gap between patterns") + "\n" + gap_tooltip)
 
         self.check_duplicate_shapes.SetToolTip(
             _("Add the shape a second time around the effect")
@@ -1302,8 +1311,12 @@ class TemplatePanel(wx.Panel):
                     return default
 
             count_1, count_2 = len(range1), len(range2)
-            dimension_1 = max(get_float(self.text_dim_1, -1), 5)
-            dimension_2 = max(get_float(self.text_dim_2, -1), 5)
+            dimension_1 = get_float(self.text_dim_1, 0)
+            dimension_2 = get_float(self.text_dim_2, 0)
+            if dimension_1 < self.MIN_PATTERN_SIZE or dimension_1 > self.MAX_PATTERN_SIZE:
+                dimension_1 = 5
+            if dimension_2 < self.MIN_PATTERN_SIZE or dimension_2 > self.MAX_PATTERN_SIZE:
+                dimension_2 = 5
             gap_1 = max(get_float(self.text_delta_1, -1), 0)
             gap_2 = max(get_float(self.text_delta_2, -1), 0)
 

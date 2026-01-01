@@ -4,6 +4,8 @@ import time
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.units import UNITS_PER_uM
 from meerk40t.svgelements import Color
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 
 from .exceptions import RuidaCommandError
 
@@ -122,8 +124,9 @@ U_FILE_ID = b"\xCA\x30"  # file_number(2)
 ZU_MAP = b"\xCA\x40"  # value(1)
 WORK_MODE_PART = b"\xCA\x41"  # part(1), mode(1)
 ACK = b"\xCC"
+NAK = b"\xCF"
 ERR = b"\xCD"
-KEEP_ALIVE = b"\xCE"
+ENQ = b"\xCE"
 END_OF_FILE = b"\xD7"
 START_PROCESS = b"\xD8\x00"
 STOP_PROCESS = b"\xD8\x01"
@@ -215,7 +218,41 @@ ELEMENT_ARRAY = b"\xF2\x05"  # v0(2), v1(2), v2(2), v3(2), v4(2), v5(2), v6(2)
 ELEMENT_ARRAY_ADD = b"\xF2\x06"  # abscoord(5), abscoord(5)
 ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
-MEM_CARD_ID = 0x02FE
+MEM_CARD_ID = b'\x05\x7E'
+CID_LUT = {
+    0x65106510: 'RDC6442S'
+}
+
+MEM_BED_SIZE_X = b'\x00\x26'
+MEM_BED_SIZE_Y = b'\x00\x36'
+
+
+MEM_MACHINE_STATUS = b'\x04\x00' # Returns status bits.
+# Status bits identified so far.
+MACHINE_STATUS_MOVING = 0x01000000
+MACHINE_STATUS_PART_END = 0x00000002
+MACHINE_STATUS_JOB_RUNNING = 0x00000001
+MACHINE_STATUS_TO_LABEL_LUT = {
+    MACHINE_STATUS_MOVING: 'Moving',
+    MACHINE_STATUS_PART_END: 'Part end',
+    MACHINE_STATUS_JOB_RUNNING: 'Job running',
+}
+
+MEM_CURRENT_X = b'\x04\x21'
+MEM_CURRENT_Y = b'\x04\x31'
+MEM_CURRENT_Z = b'\x04\x41'
+MEM_CURRENT_U = b'\x04\x51'
+REPLY_LABEL_LUT = {
+    MEM_CARD_ID: 'CardID',
+    MEM_MACHINE_STATUS: 'Status',
+    MEM_BED_SIZE_X: 'Bed X',
+    MEM_BED_SIZE_Y: 'Bed Y',
+    MEM_CURRENT_X: 'Current X',
+    MEM_CURRENT_Y: 'Current Y',
+    MEM_CURRENT_Z: 'Current Z',
+    MEM_CURRENT_U: 'Current U',
+}
+
 
 def encode_switch(state):
     assert state == 0 or state == 1
@@ -272,10 +309,6 @@ def encode_file_number(file_number):
     return encode14(file_number)
 
 
-def encode_mem(file_number):
-    return encode14(file_number)
-
-
 def encode_value(value):
     return encode32(value)
 
@@ -295,7 +328,7 @@ def encode_time(time):
 
 
 def encode_frequency(freq_hz):
-    return encode32(freq_hz)
+    return encode32(freq_hz * 1000)
 
 
 def signed35(v):
@@ -484,6 +517,7 @@ class RDJob:
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
+        self.label = "Ruida Job"
         self.reply = None
         self.buffer = list()
         self.plotcut = None
@@ -494,6 +528,8 @@ class RDJob:
         self.time_started = None
         self.runtime = 0
         self.label = f"RuidaJob-{self.time_submitted:.2f}"
+        self.low_power_warning = False
+        self.high_power_warning = False
 
         self._stopped = True
         self.enabled = True
@@ -515,6 +551,9 @@ class RDJob:
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
+        self.first_layer = True
+        self.first_move = True
+
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
@@ -535,7 +574,11 @@ class RDJob:
         if output is None:
             self.write_command(e)
         else:
-            output(e)
+            try:
+                output(e)
+            except ConnectionError:
+                # Drop when not connected.
+                pass
 
     @property
     def status(self):
@@ -1289,24 +1332,33 @@ class RDJob:
     def decode_reply(self, reply):
         '''Decode a reply which received in response to a command.
 
-        TODO: Migrate this to use the Ruida Protocol Analyzer decode state
-        machine (class RdDecoder).
-        https://github.com/StevenIsaacs/ruida-protocol-analyzer/tree/main
         '''
-        if reply[0] == 0xDA:
+        _mem = None
+        _v = None
+        _decoded = None
+        if len(reply) > 0 and reply[0] == 0xDA:
             if reply[1] == 0x01: # Response to command 0xDA 0x00.
-                if reply[2] == 0x05:
-                    if reply[3] == 0x7E: # CARD ID
-                        _cid_lut = {
-                            0x65106510: 'RDC64425'
-                        }
-                        _cid = decode35(reply[4:9])
-                        if _cid in _cid_lut:
-                            _card = _cid_lut[_cid]
-                        else:
-                            _card = "Unknown card."
-                        return f'CardID: {_cid:08X}: {_card}'
-        return None
+                _mem = reply[2:4]
+                if _mem == MEM_CARD_ID:
+                    _cid = decodeu35(reply[4:9])
+                    if _cid in CID_LUT:
+                        _card = CID_LUT[_cid]
+                    else:
+                        _card = "Unknown card."
+                    _v = f'{_card}: (0x{_cid:08X})'
+                    _decoded = f'{REPLY_LABEL_LUT[_mem]}: {_cid:08X}: {_card}'
+                elif _mem in (
+                        MEM_MACHINE_STATUS,
+                        MEM_BED_SIZE_X,
+                        MEM_BED_SIZE_Y,
+                        MEM_CURRENT_X,
+                        MEM_CURRENT_Y,
+                        MEM_CURRENT_Z,
+                        MEM_CURRENT_U,
+                        ):
+                    _v = decode35(reply[4:9])
+                    _decoded = f'{REPLY_LABEL_LUT[_mem]}: {_v:08X}'
+        return _mem, _v, _decoded
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
@@ -1320,14 +1372,20 @@ class RDJob:
         min_x = float("inf")
         min_y = float("inf")
         for item in layer:
-            try:
-                ny = item.upper()
-                nx = item.left()
+            if isinstance(item, RasterCut):
+                nx = item.offset_x
+                mx = nx + item.image.width * 100
+                ny = item.offset_y
+                my = ny + item.image.height * 100
+            else:
+                try:
+                    ny = item.upper()
+                    nx = item.left()
 
-                my = item.lower()
-                mx = item.right()
-            except AttributeError:
-                continue
+                    my = item.lower()
+                    mx = item.right()
+                except AttributeError:
+                    continue
 
             if mx > max_x:
                 max_x = mx
@@ -1337,11 +1395,16 @@ class RDJob:
                 min_x = nx
             if ny < min_y:
                 min_y = ny
+
         return min_x, min_y, max_x, max_y
 
     def write_header(self, data):
         if not data:
             return
+
+        self.low_power_warning = False
+        self.high_power_warning = False
+        self.first_layer = True
         # Optional: Set Tick count.
         self.ref_point_2()  # abs_pos
         self.set_absolute()
@@ -1353,10 +1416,10 @@ class RDJob:
         self.set_feed_auto_pause(0)
         b = self._calculate_layer_bounds(data)
         min_x, min_y, max_x, max_y = b
-        self.process_top_left(min_x, min_y)
-        self.process_bottom_right(max_x, max_y)
-        self.document_min_point(0, 0)  # Unknown
-        self.document_max_point(max_x, max_y)
+        self.process_top_left(max_x, min_y)
+        self.process_bottom_right(min_x, max_y)
+        self.document_min_point(max_x, min_y)  # Unknown
+        self.document_max_point(min_x, max_y)
         self.process_repeat(1, 1, 0, 0, 0, 0, 0)
         self.array_direction(0)
         last_settings = None
@@ -1440,13 +1503,31 @@ class RDJob:
         # self.encoder.array_even_distance(0)  # Unknown.
         self.array_repeat(1, 1, 0, 1123, -3328, 4, 3480)  # Unknown.
         # Layer and cut information.
+        self.first_move = True  # Force the first move in the file to be ABS.
+                                # TODO: This is a workaround for a problem
+                                # which occurs when the first move is a
+                                # move relative (less than 8.192mm).
 
-    def write_settings(self, current_settings):
+    def write_layer_end(self):
+        # End layer and cut information.
+        self.block_end()
+        self.layer_end()
+        self.en_laser_2_offset_0()
+
+    def write_settings(self, current_settings, raster=False):
+        if not self.first_layer:
+            self.write_layer_end()
         part = current_settings.get("part", 0)
         speed = current_settings.get("speed", 0)
         power = current_settings.get("power", 0) / 10.0
         air = current_settings.get("coolant", 0)
-        self.layer_end()
+        if raster:
+            _step_x = current_settings['raster_step_x']
+            _step_y = current_settings['raster_step_y']
+            if _step_x != 0:
+                self.work_mode_3()
+            elif _step_y != 0:
+                self.work_mode_1()
         self.layer_number_part(part)
         self.laser_device_0()
         if air == 1:
@@ -1456,29 +1537,31 @@ class RDJob:
         self.speed_laser_1(speed)
         self.laser_on_delay(0)
         self.laser_off_delay(0)
+        # TODO: Min and max are to reduce power when making direction changes
+        # requiring decel and accel.
         self.min_power_1(power)
         self.max_power_1(power)
         self.min_power_2(power)
         self.max_power_2(power)
         self.en_laser_tube_start(1)
-        self.en_ex_io(0)
+        # self.en_ex_io(0)
+        self.first_layer = False
 
     def write_tail(self):
-        # End layer and cut information.
-        self.array_end()
-        self.block_end()
+        self.write_layer_end()
         # self.encoder.set_setting(0x320, 142, 142)
         self.set_file_sum(self.file_sum() + 0xD7) # Account for the EOF.
         self.end_of_file()
 
     def jump(self, x, y, dx, dy):
-        if dx == 0 and dy == 0:
-            # We are not moving.
-            return
-
-        if abs(dx) > 8192 or abs(dy) > 8192:
+        if abs(dx) > 8192 or abs(dy) > 8192 or self.first_move:
             # Exceeds encoding limit, use abs.
             self.move_abs_xy(x, y)
+            self.first_move = False
+            return
+
+        if dx == 0 and dy == 0:
+            # We are not moving.
             return
 
         if dx == 0:
@@ -1510,6 +1593,11 @@ class RDJob:
             self.cut_rel_x(dx)
             return
         self.cut_rel_xy(dx, dy)
+
+    def _power(self, power):
+        self.high_power_warning  = (power > 70.0)
+        self.low_power_warning  = (power < 10.0)
+        return encode_power(power)
 
     #######################
     # Specific Commands
@@ -1552,52 +1640,52 @@ class RDJob:
         self(CUT_REL_Y, encode_relcoord(dy), output=output)
 
     def imd_power_1(self, power, output=None):
-        self(IMD_POWER_1, encode_power(power), output=output)
+        self(IMD_POWER_1, self._power(power), output=output)
 
     def imd_power_2(self, power, output=None):
-        self(IMD_POWER_2, encode_power(power), output=output)
+        self(IMD_POWER_2, self._power(power), output=output)
 
     def imd_power_3(self, power, output=None):
-        self(IMD_POWER_3, encode_power(power), output=output)
+        self(IMD_POWER_3, self._power(power), output=output)
 
     def imd_power_4(self, power, output=None):
-        self(IMD_POWER_4, encode_power(power), output=output)
+        self(IMD_POWER_4, self._power(power), output=output)
 
     def end_power_1(self, power, output=None):
-        self(END_POWER_1, encode_power(power), output=output)
+        self(END_POWER_1, self._power(power), output=output)
 
     def end_power_2(self, power, output=None):
-        self(END_POWER_2, encode_power(power), output=output)
+        self(END_POWER_2, self._power(power), output=output)
 
     def end_power_3(self, power, output=None):
-        self(END_POWER_3, encode_power(power), output=output)
+        self(END_POWER_3, self._power(power), output=output)
 
     def end_power_4(self, power, output=None):
-        self(END_POWER_4, encode_power(power), output=output)
+        self(END_POWER_4, self._power(power), output=output)
 
     def min_power_1(self, power, output=None):
-        self(MIN_POWER_1, encode_power(power), output=output)
+        self(MIN_POWER_1, self._power(power), output=output)
 
     def max_power_1(self, power, output=None):
-        self(MAX_POWER_1, encode_power(power), output=output)
+        self(MAX_POWER_1, self._power(power), output=output)
 
     def min_power_2(self, power, output=None):
-        self(MIN_POWER_2, encode_power(power), output=output)
+        self(MIN_POWER_2, self._power(power), output=output)
 
     def max_power_2(self, power, output=None):
-        self(MAX_POWER_2, encode_power(power), output=output)
+        self(MAX_POWER_2, self._power(power), output=output)
 
     def min_power_3(self, power, output=None):
-        self(MIN_POWER_3, encode_power(power), output=output)
+        self(MIN_POWER_3, self._power(power), output=output)
 
     def max_power_3(self, power, output=None):
-        self(MAX_POWER_3, encode_power(power), output=output)
+        self(MAX_POWER_3, self._power(power), output=output)
 
     def min_power_4(self, power, output=None):
-        self(MIN_POWER_4, encode_power(power), output=output)
+        self(MIN_POWER_4, self._power(power), output=output)
 
     def max_power_4(self, power, output=None):
-        self(MAX_POWER_4, encode_power(power), output=output)
+        self(MAX_POWER_4, self._power(power), output=output)
 
     def laser_interval(self, time, output=None):
         self(LASER_INTERVAL, encode_time(time), output=output)
@@ -1618,28 +1706,28 @@ class RDJob:
         self(LASER_OFF_DELAY2, encode_time(time), output=output)
 
     def min_power_1_part(self, part, power, output=None):
-        self(MIN_POWER_1_PART, encode_part(part), encode_power(power), output=output)
+        self(MIN_POWER_1_PART, encode_part(part), self._power(power), output=output)
 
     def max_power_1_part(self, part, power, output=None):
-        self(MAX_POWER_1_PART, encode_part(part), encode_power(power), output=output)
+        self(MAX_POWER_1_PART, encode_part(part), self._power(power), output=output)
 
     def min_power_2_part(self, part, power, output=None):
-        self(MIN_POWER_2_PART, encode_part(part), encode_power(power), output=output)
+        self(MIN_POWER_2_PART, encode_part(part), self._power(power), output=output)
 
     def max_power_2_part(self, part, power, output=None):
-        self(MAX_POWER_2_PART, encode_part(part), encode_power(power), output=output)
+        self(MAX_POWER_2_PART, encode_part(part), self._power(power), output=output)
 
     def min_power_3_part(self, part, power, output=None):
-        self(MIN_POWER_3_PART, encode_part(part), encode_power(power), output=output)
+        self(MIN_POWER_3_PART, encode_part(part), self._power(power), output=output)
 
     def max_power_3_part(self, part, power, output=None):
-        self(MAX_POWER_3_PART, encode_part(part), encode_power(power), output=output)
+        self(MAX_POWER_3_PART, encode_part(part), self._power(power), output=output)
 
     def min_power_4_part(self, part, power, output=None):
-        self(MIN_POWER_4_PART, encode_part(part), encode_power(power), output=output)
+        self(MIN_POWER_4_PART, encode_part(part), self._power(power), output=output)
 
     def max_power_4_part(self, part, power, output=None):
-        self(MAX_POWER_4_PART, encode_part(part), encode_power(power), output=output)
+        self(MAX_POWER_4_PART, encode_part(part), self._power(power), output=output)
 
     def through_power_1(self, power, output=None):
         """
@@ -1649,25 +1737,28 @@ class RDJob:
         @param output:
         @return:
         """
-        self(THROUGH_POWER_1, encode_power(power), output=output)
+        self(THROUGH_POWER_1, self._power(power), output=output)
 
     def through_power_2(self, power, output=None):
-        self(THROUGH_POWER_2, encode_power(power), output=output)
+        self(THROUGH_POWER_2, self._power(power), output=output)
 
     def through_power_3(self, power, output=None):
-        self(THROUGH_POWER_3, encode_power(power), output=output)
+        self(THROUGH_POWER_3, self._power(power), output=output)
 
     def through_power_4(self, power, output=None):
-        self(THROUGH_POWER_4, encode_power(power), output=output)
+        self(THROUGH_POWER_4, self._power(power), output=output)
 
     def frequency_part(self, laser, part, frequency, output=None):
-        self(
-            FREQUENCY_PART,
-            encode_index(laser),
-            encode_part(part),
-            encode_frequency(frequency),
-            output=output,
-        )
+        # Disabled -- This is not necessary and the frequency was not
+        # correct for the laser being used.
+        return
+        # self(
+        #     FREQUENCY_PART,
+        #     encode_index(laser),
+        #     encode_part(part),
+        #     encode_frequency(frequency),
+        #     output=output,
+        # )
 
     def speed_laser_1(self, speed, output=None):
         self(SPEED_LASER_1, encode_speed(speed), output=output)
@@ -1770,7 +1861,7 @@ class RDJob:
         self(ERR, output=output)
 
     def keep_alive(self, output=None):
-        self(KEEP_ALIVE, output=output)
+        self(ENQ, output=output)
 
     def end_of_file(self, output=None):
         self(END_OF_FILE, output=output)
@@ -1925,12 +2016,12 @@ class RDJob:
         )
 
     def get_setting(self, mem, output=None):
-        self(GET_SETTING, encode_mem(mem), output=output)
+        self(GET_SETTING, mem, output=output)
 
     def set_setting(self, mem, value, output=None):
         self(
             SET_SETTING,
-            encode_mem(mem),
+            mem,
             encode_value(value),
             encode_value(value),
             output=output,

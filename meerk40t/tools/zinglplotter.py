@@ -1,4 +1,4 @@
-from math import ceil, cos, floor, sin, sqrt, tan, tau
+from math import atan2, ceil, cos, floor, sin, sqrt, tan, tau
 
 from meerk40t.svgelements import Point
 
@@ -17,7 +17,7 @@ This work is MIT Licensed.
 
 class ZinglPlotter:
     @staticmethod
-    def plot_arc(arc):
+    def plot_arc_old(arc):
         """
         Plots an arc by converting it into a series of cubic Bézier curves and plotting those instead.
 
@@ -82,6 +82,83 @@ class ZinglPlotter:
             )
             p_start = Point(p_end)
             current_t = next_t
+
+    @staticmethod
+    def plot_arc(arc):
+        """
+        Pixel-perfect arc plotting using angular interpolation with deduplication.
+
+        This implements proper pixel-perfect arc plotting as recommended in the TODO comments,
+        avoiding the Bézier curve approximation used in plot_arc_old().
+
+        @param arc: Arc object with center, rx, ry, start, end, sweep properties
+                   - center: (x, y) center point of the ellipse
+                   - rx, ry: horizontal and vertical radii
+                   - start, end: start and end points on the arc
+                   - sweep: sweep angle in radians (positive = counterclockwise)
+        @return: yields integer x, y pixel coordinates along the arc in sweep order
+        """
+        # Handle degenerate cases
+        if abs(arc.sweep) < 1e-10:
+            # Very small sweep, just plot the start point
+            yield int(arc.start[0]), int(arc.start[1])
+            return
+
+        # Get arc parameters
+        cx = arc.center[0]
+        cy = arc.center[1]
+        rx = abs(arc.rx)
+        ry = abs(arc.ry)
+
+        # Handle zero radius cases
+        if rx < 1e-10 or ry < 1e-10:
+            # Degenerate to line
+            yield from ZinglPlotter.plot_line(
+                arc.start[0], arc.start[1], arc.end[0], arc.end[1]
+            )
+            return
+
+        # Get start angle
+        start_angle = arc.get_start_t()
+
+        # Calculate steps for pixel-perfect plotting
+        # Ensure consecutive points are at most 1 pixel apart
+        max_radius = max(rx, ry)
+        if max_radius > 1e-10:
+            # Angular step size that gives ~1 pixel spacing at maximum radius
+            max_angular_step = 1.0 / max_radius
+            steps = max(16, int(abs(arc.sweep) / max_angular_step) + 1)
+        else:
+            steps = 16  # fallback for degenerate case
+
+        # Use angular interpolation with pixel deduplication for pixel-perfect plotting
+        # Store points in order with their step index to maintain arc direction
+        seen = set()
+        points_ordered = []
+
+        for i in range(steps + 1):
+            t = i / steps
+            angle = start_angle + t * arc.sweep
+
+            # Calculate point on ellipse
+            cos_a = cos(angle)
+            sin_a = sin(angle)
+
+            px = cx + rx * cos_a
+            py = cy + ry * sin_a
+
+            # Convert to integer pixel coordinates
+            pix_x = int(px)
+            pix_y = int(py)
+
+            # Add to list if not already seen (maintain order, deduplicate)
+            if (pix_x, pix_y) not in seen:
+                seen.add((pix_x, pix_y))
+                points_ordered.append((pix_x, pix_y))
+
+        # Yield points in the order they were generated (preserves arc direction)
+        for px, py in points_ordered:
+            yield px, py
 
     @staticmethod
     def plot_line(x0, y0, x1, y1):
@@ -485,9 +562,13 @@ class ZinglPlotter:
         """
         Zingl-Bresenham cubic bezier draw algorithm
 
-        Plot any quadratic Bezier curve
+        Plot any cubic Bezier curve
 
-        yields x, y
+        @param x0, y0: Start point coordinates
+        @param x1, y1: First control point coordinates (can be fractional)
+        @param x2, y2: Second control point coordinates (can be fractional)
+        @param x3, y3: End point coordinates
+        @return: yields integer x, y pixel coordinates along the curve
         """
         x0 = int(x0)
         y0 = int(y0)
@@ -514,7 +595,7 @@ class ZinglPlotter:
         fy3 = 0
         t1 = xb * xb - xa * xc
         t2 = 0
-        t = [0] * 5
+        t = [0.0] * 5
         # /* sub-divide curve at gradient sign changes */
         if xa == 0:  # /* horizontal */
             if abs(xc) < 2 * abs(xb):

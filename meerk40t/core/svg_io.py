@@ -609,6 +609,9 @@ class SVGWriter:
                 "settings",
             ):
                 continue
+            # We dont write the effect key out, that needs to come from direct children
+            if key == "effect" and node.type in ("op engrave", "op cut"):
+                continue
             if hasattr(node, "settings"):
                 # Did we end up with default attributes defined in node.py? Remove them...
                 disallowed = ("type", "id", "label", "lock")

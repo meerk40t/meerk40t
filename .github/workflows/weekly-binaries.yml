@@ -151,7 +151,79 @@ jobs:
         path: dist/MeerK40t-macos-${{ github.run_number }}.zip
         retention-days: 60
   
+  ensure-rocky8-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      actions: read
+    outputs:
+      available: ${{ steps.check_runner.outputs.available }}
+    steps:
+    - name: Install jq for JSON parsing
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+
+    - name: Check for self-hosted runner labeled rocky8 (wait up to 10 minutes)
+      id: check_runner
+      run: |
+        REPO_API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners"
+        ORG_NAME="${GITHUB_REPOSITORY%%/*}"
+        ORG_API_URL="https://api.github.com/orgs/${ORG_NAME}/actions/runners"
+
+        INTERVAL=10
+        MAX_WAIT=$((10 * 60))
+        elapsed=0
+        available=false
+        while [ $elapsed -lt $MAX_WAIT ]; do
+          # Try repository-level runners first
+          if ! repo_json=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$REPO_API_URL"); then
+            echo "Warning: Failed to fetch repo runners (curl error)." >&2
+            repo_json=""
+          fi
+
+          # Then try organization-level runners
+          if ! org_json=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$ORG_API_URL"); then
+            echo "Warning: Failed to fetch org runners (curl error)." >&2
+            org_json=""
+          fi
+
+          # Debug counts for easier diagnosis
+          repo_count=0
+          org_count=0
+          if echo "$repo_json" | jq -e '.runners? and (.runners|type=="array")' >/dev/null 2>&1; then
+            repo_count=$(echo "$repo_json" | jq '.total_count // (.runners|length)')
+          fi
+          if echo "$org_json" | jq -e '.runners? and (.runners|type=="array")' >/dev/null 2>&1; then
+            org_count=$(echo "$org_json" | jq '.total_count // (.runners|length)')
+          fi
+          echo "Repo runners count: $repo_count, Org runners count: $org_count" >&2
+
+          # Check repo runners for a matching runner
+          if [ "$repo_count" -gt 0 ]; then
+            if echo "$repo_json" | jq -r '.runners[]? | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
+              available=true
+              break
+            fi
+          fi
+
+          # Check org runners for a matching runner
+          if [ "$org_count" -gt 0 ]; then
+            if echo "$org_json" | jq -r '.runners[]? | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
+              available=true
+              break
+            fi
+          fi
+
+          echo "No matching runner found yet. Retrying..." >&2
+          sleep $INTERVAL
+          elapsed=$((elapsed + INTERVAL))
+        done
+        echo "available=$available" >> $GITHUB_OUTPUT
+
   build-minimal-linux:
+    needs: ensure-rocky8-runner
+    if: needs.ensure-rocky8-runner.outputs.available == 'true'
     runs-on: rocky8
     steps:
     - name: Glibc
@@ -217,7 +289,7 @@ jobs:
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
-        pip install setuptools
+        pip install setuptools==65.5.1
         pip install pyinstaller wheel
         pip install numpy==1.26.4
         pip install pyusb
@@ -365,6 +437,18 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    - name: Extract version
+      id: extract_version
+      run: |
+        # Extract the base version from meerk40t.main
+        BASE_VERSION=$(python3 -c "
+        from meerk40t.main import APPLICATION_VERSION
+        version_parts = APPLICATION_VERSION.split()
+        print(version_parts[0])  # Get the base version (e.g., '0.9.8210')
+        ")
+        echo "BASE_VERSION=$BASE_VERSION" >> $GITHUB_ENV
+        echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Get merged PRs since last release
       id: get-prs
@@ -520,32 +604,63 @@ jobs:
         name: meerk40t-minimal-linux
         path: binaries/
 
-    - name: Debug List downloaded binaries
+    - name: Extract device support status from NOTES.md
+      id: extract_device_status
       run: |
-        echo "Contents of binaries directory:"
-        ls -la binaries/
-        echo "Available artifacts:"
-        ls -la
+        # Extract the Device Support Status section from NOTES.md
+        if [ -f "NOTES.md" ]; then
+          # Find the line number where "### Device Support Status" starts
+          start_line=$(grep -n "### Device Support Status" NOTES.md | head -1 | cut -d: -f1)
+          
+          if [ -n "$start_line" ]; then
+            # Extract from that line to the end of the file
+            tail -n +$start_line NOTES.md > device_status_temp.md
+            
+            # Convert to a multi-line string with proper escaping for GitHub Actions
+            # Use printf to handle newlines correctly
+            device_status=$(printf '%s\n' "$(cat device_status_temp.md)")
+            
+            # Escape any % characters that might interfere with GitHub Actions
+            device_status=$(echo "$device_status" | sed 's/%/%25/g')
+            
+            echo "device_status<<EOF" >> $GITHUB_OUTPUT
+            echo "$device_status" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Device support status extracted successfully"
+          else
+            echo "Device Support Status section not found in NOTES.md"
+            echo "device_status=" >> $GITHUB_OUTPUT
+          fi
+          
+          # Clean up
+          rm -f device_status_temp.md
+        else
+          echo "NOTES.md not found"
+          echo "device_status=" >> $GITHUB_OUTPUT
+        fi
 
     - name: Create weekly release
       id: create_release
       uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag_name: weekly-${{ github.run_number }}
-        name: Weekly Build ${{ github.run_number }}
+        tag_name: ${{ env.BASE_VERSION }}.${{ github.run_number }}
+        name: Weekly Build ${{ env.BASE_VERSION }}.${{ github.run_number }}
         body: |
-          ## 🚀 MeerK40t Weekly Build ${{ github.run_number }}
+          ## 🚀 MeerK40t Weekly Build ${{ env.BASE_VERSION }}.${{ github.run_number }}
 
           **Automated weekly binary build of MeerK40t - the open-source laser cutting software.**
 
           ### 📋 Build Information
+          - **Version**: ${{ env.BASE_VERSION }}.${{ github.run_number }}
           - **Commit**: [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
           - **Build**: # ${{ github.run_number }}
           - **Date**: ${{ github.event.repository.updated_at }}
           - **Branch**: `${{ github.ref_name }}`
 
           ${{ steps.get-prs.outputs.changes }}
+
+          ${{ steps.extract_device_status.outputs.device_status }}
 
           ### 📦 Downloads
 
