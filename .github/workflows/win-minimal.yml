@@ -40,6 +40,7 @@ jobs:
         pip install scip==1.10.0
         pip install pypotrace-windows
         pip install pyclipr
+        pip install requests
         pip install .
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
