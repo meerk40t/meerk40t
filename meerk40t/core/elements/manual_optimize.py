@@ -527,8 +527,8 @@ def _extract_path_info(geomstr, may_extend, may_reverse=True, channel=None):
         channel(f"  Path is {'closed' if is_closed else 'open'}")
 
     result = {
-        "start_points": [start_point],
-        "end_points": [end_point],
+        "start_points": [start_point] if not np.isnan(start_point) else [],
+        "end_points": [end_point] if not np.isnan(end_point) else [],
         "is_closed": is_closed,
         "segments": segments,
     }
@@ -537,8 +537,10 @@ def _extract_path_info(geomstr, may_extend, may_reverse=True, channel=None):
     if len(segments) > 1 and may_reverse:
         reversed_start = segments[-1][4]  # Last segment end becomes start
         reversed_end = segments[0][0]  # First segment start becomes end
-        result["start_points"].append(reversed_start)
-        result["end_points"].append(reversed_end)
+        if not np.isnan(reversed_start):
+            result["start_points"].append(reversed_start)
+        if not np.isnan(reversed_end):
+            result["end_points"].append(reversed_end)
 
     # If closed, add alternative start/end points for different starting segments
     if is_closed and len(segments) > 1:
@@ -554,8 +556,10 @@ def _extract_path_info(geomstr, may_extend, may_reverse=True, channel=None):
             alt_end = (
                 segments[segment_idx - 1][4] if segment_idx > 0 else segments[-1][4]
             )
-            result["start_points"].append(alt_start)
-            result["end_points"].append(alt_end)
+            if not np.isnan(alt_start):
+                result["start_points"].append(alt_start)
+            if not np.isnan(alt_end):
+                result["end_points"].append(alt_end)
 
     return result
 
@@ -1116,7 +1120,8 @@ def _calculate_total_travel_distance(path_info, channel=None, start_position=0j)
             # Find the minimum distance from start_position to any start point of the first path
             min_distance_to_first = min(
                 abs(start_point - start_position) for start_point in first_start_points
-            )
+                if not np.isnan(start_point)
+            ) if any(not np.isnan(p) for p in first_start_points) else 0.0
             total_distance += min_distance_to_first
 
             if channel:
@@ -1219,7 +1224,10 @@ def _calculate_path_to_path_distance_optimized(current_info, next_info):
     distances = np.abs(current_ends[:, np.newaxis] - next_starts)
 
     # Return minimum distance
-    return np.min(distances)
+    min_dist = np.nanmin(distances)
+    if np.isnan(min_dist):
+        return 0.0
+    return min_dist
 
 
 def _reshuffle_closed_geomstr(geomstr, start_segment_idx, channel=None):

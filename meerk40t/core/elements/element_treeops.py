@@ -2721,7 +2721,7 @@ def init_tree(kernel):
             )
         self.signal("updateop_tree")
 
-    @tree_submenu(_("Append special operation(s)"))
+    @tree_submenu(_("Define Job Start Position"))
     @tree_prompt("y", _("Y-Coordinate for placement to append?"))
     @tree_prompt("x", _("X-Coordinate for placement to append?"))
     @tree_operation(
@@ -2742,7 +2742,7 @@ def init_tree(kernel):
             )
         self.signal("updateop_tree")
 
-    @tree_submenu(_("Append special operation(s)"))
+    @tree_submenu(_("Define Job Start Position"))
     @tree_operation(
         _("Append relative placement"),
         node_type="branch ops",
@@ -2755,6 +2755,24 @@ def init_tree(kernel):
                 type="place current",
             )
         self.signal("updateop_tree")
+
+    def have_any_placements(node=None):
+        for child in self.ops():
+            if child.type in ("place point", "place current"):
+                return True
+        return False
+    
+    @tree_submenu(_("Define Job Start Position"))
+    @tree_separator_before()
+    @tree_conditional(lambda node: have_any_placements(node))
+    @tree_operation(
+        _("Remove all placements"),
+        node_type="branch ops",
+        help=_("Remove all existing placements"),
+        grouping="OPS_40_ADDITION",
+    )
+    def remove_all_placements_1(node, **kwargs):
+        remove_all_placements(node)
 
     @tree_operation(
         _("Remove all assignments from operations"),

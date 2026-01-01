@@ -11,12 +11,13 @@ There is no need to escape strings - neither in the response or when providing a
 
 For smaller delta_xx files, this works well:
 --------------------------------------------
-Look at all delta_xx.po files in the project root directory. Each file contains GNU gettext information. Translate all
-untranslated msgstr elements - establish the language from the file extension:
-the filename consists of a "delta_" start followed by a ISO language code, ended by a ".po" extension.
-Use for the translation proper terminology for a laser engraving software.
-One additional rule: strings inside curly brackets should not be translated and all curly brackets need to be reused.
-Repeat the process until all untranslated strings are translated.
+- Look at all delta_xx.po files in the project root directory. Each file contains GNU gettext information.
+- Translate all untranslated msgstr elements - establish the language from the file extension: the filename consists of a "delta_" start followed by an ISO language code, ended by a ".po" extension.
+- Use for the translation proper terminology appropriate for laser engraving software.
+- Strings inside curly brackets should not be translated and all curly brackets need to be reused.
+- Make sure strings are utf8 encoded
+- Optimize the token consumption by batching translation and update efforts
+- Repeat the process until all untranslated strings are translated.
 
 Use this prompt to translate tips.txt files:
 --------------------------------------------

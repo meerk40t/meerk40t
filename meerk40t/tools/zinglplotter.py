@@ -89,10 +89,14 @@ class ZinglPlotter:
         Pixel-perfect arc plotting using angular interpolation with deduplication.
 
         This implements proper pixel-perfect arc plotting as recommended in the TODO comments,
-        avoiding the Bézier curve approximation used in plot_arc().
+        avoiding the Bézier curve approximation used in plot_arc_old().
 
         @param arc: Arc object with center, rx, ry, start, end, sweep properties
-        @return: yields x, y coordinates along the arc
+                   - center: (x, y) center point of the ellipse
+                   - rx, ry: horizontal and vertical radii
+                   - start, end: start and end points on the arc
+                   - sweep: sweep angle in radians (positive = counterclockwise)
+        @return: yields integer x, y pixel coordinates along the arc in sweep order
         """
         # Handle degenerate cases
         if abs(arc.sweep) < 1e-10:
@@ -120,15 +124,17 @@ class ZinglPlotter:
         # Calculate steps for pixel-perfect plotting
         # Ensure consecutive points are at most 1 pixel apart
         max_radius = max(rx, ry)
-        if max_radius > 0:
+        if max_radius > 1e-10:
             # Angular step size that gives ~1 pixel spacing at maximum radius
             max_angular_step = 1.0 / max_radius
             steps = max(16, int(abs(arc.sweep) / max_angular_step) + 1)
         else:
-            steps = 16  # fallback
+            steps = 16  # fallback for degenerate case
 
         # Use angular interpolation with pixel deduplication for pixel-perfect plotting
-        points = set()  # Use set to avoid duplicate pixels
+        # Store points in order with their step index to maintain arc direction
+        seen = set()
+        points_ordered = []
 
         for i in range(steps + 1):
             t = i / steps
@@ -145,17 +151,14 @@ class ZinglPlotter:
             pix_x = int(px)
             pix_y = int(py)
 
-            # Add to set to avoid duplicates
-            points.add((pix_x, pix_y))
+            # Add to list if not already seen (maintain order, deduplicate)
+            if (pix_x, pix_y) not in seen:
+                seen.add((pix_x, pix_y))
+                points_ordered.append((pix_x, pix_y))
 
-        # Yield points in angular order from start point
-        if points:
-            # Sort points by angle from center, starting from the start angle
-            sorted_points = sorted(points, key=lambda p: (
-                (atan2(p[1] - cy, p[0] - cx) - start_angle) % tau
-            ))
-            for px, py in sorted_points:
-                yield px, py
+        # Yield points in the order they were generated (preserves arc direction)
+        for px, py in points_ordered:
+            yield px, py
 
     @staticmethod
     def plot_line(x0, y0, x1, y1):
@@ -559,9 +562,13 @@ class ZinglPlotter:
         """
         Zingl-Bresenham cubic bezier draw algorithm
 
-        Plot any quadratic Bezier curve
+        Plot any cubic Bezier curve
 
-        yields x, y
+        @param x0, y0: Start point coordinates
+        @param x1, y1: First control point coordinates (can be fractional)
+        @param x2, y2: Second control point coordinates (can be fractional)
+        @param x3, y3: End point coordinates
+        @return: yields integer x, y pixel coordinates along the curve
         """
         x0 = int(x0)
         y0 = int(y0)
@@ -588,7 +595,7 @@ class ZinglPlotter:
         fy3 = 0
         t1 = xb * xb - xa * xc
         t2 = 0
-        t = [0] * 5
+        t = [0.0] * 5
         # /* sub-divide curve at gradient sign changes */
         if xa == 0:  # /* horizontal */
             if abs(xc) < 2 * abs(xb):

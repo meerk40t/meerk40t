@@ -62,7 +62,8 @@ class WSOutput:
     def disconnect(self):
         self.controller.log("Disconnected", type="connection")
         self.service.signal("grbl;status", "disconnected")
-        self._stream.close()
+        if self._stream is not None:
+            self._stream.close()
         self._stream = None
 
     def write(self, data):

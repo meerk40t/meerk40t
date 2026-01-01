@@ -14,9 +14,9 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.newly.controller import NewlyController
-from meerk40t.core.geomstr import Geomstr
 
 
 class NewlyDriver:
@@ -325,7 +325,10 @@ class NewlyDriver:
 
                     # q.plot can have different on values, these are parsed
                     # Max power is the percent max power, scaled by the pixel power.
-                    con.mark(x, y, settings=q.settings, power=percent_power * on)
+                    if on == 0:
+                        con.goto(x, y)
+                    else:
+                        con.mark(x, y, settings=q.settings, power=percent_power * on)
                     con.update()
             elif isinstance(q, DwellCut):
                 last_x, last_y = con.get_last_xy()
@@ -379,13 +382,19 @@ class NewlyDriver:
             new_x = self.native_x * self.service.view.native_scale_x + dx
             new_y = self.native_y * self.service.view.native_scale_y + dy
             if new_x < 0:
-                dx = - self.native_x * self.service.view.native_scale_x
+                dx = -self.native_x * self.service.view.native_scale_x
             elif new_x > self.service.view.width:
-                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x 
+                dx = (
+                    self.service.view.width
+                    - self.native_x * self.service.view.native_scale_x
+                )
             if new_y < 0:
-                dy = - self.native_y * self.service.view.native_scale_y
+                dy = -self.native_y * self.service.view.native_scale_y
             elif new_y > self.service.view.height:
-                dy = self.service.view.height - self.native_y * self.service.view.native_scale_y
+                dy = (
+                    self.service.view.height
+                    - self.native_y * self.service.view.native_scale_y
+                )
 
         unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
 

@@ -14,25 +14,28 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.ruida.controller import RuidaController
-from meerk40t.core.geomstr import Geomstr
+from meerk40t.ruida.rdjob import (
+    MACHINE_STATUS_JOB_RUNNING,
+    MACHINE_STATUS_MOVING,
+    MACHINE_STATUS_PART_END,
+    MACHINE_STATUS_TO_LABEL_LUT,
+)
 
 
 class RuidaDriver(Parameters):
     def __init__(self, service, **kwargs):
         super().__init__(**kwargs)
         self.service = service
+        self.events = service.channel(f"{service.safe_label}/events")
         self.native_x = 0
         self.native_y = 0
-        # Coordinates reported by the device. These are set by the
-        # controller updaters.
-        self.device_x = 0
-        self.device_y = 0
 
         self.name = str(self.service)
 
@@ -48,6 +51,7 @@ class RuidaDriver(Parameters):
         self.power_dirty = True
         self._current_power = -1.0
 
+        self._jog_speed = 600.0
         self.speed_dirty = True
         self.absolute_dirty = True
         self._absolute = True
@@ -64,7 +68,9 @@ class RuidaDriver(Parameters):
             dict(), single=True, ppi=False, shift=False, group=True
         )
         self._aborting = False
-        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        # self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        self._signal_updates = False  # Disable because not in sync with actual
+        # position and causes jumping cursor.
 
     def __repr__(self):
         return f"RuidaDriver({self.name})"
@@ -162,6 +168,12 @@ class RuidaDriver(Parameters):
 
         @return:
         """
+        # Normally, only status updates move the cursor to avoid a bouncy cursor.
+        # When processing a job the status update is disabled and instead the
+        # cursor is updated to show plot progress.
+        self.events("Plotting")
+        self._signal_updates = self.service.setting(bool, "signal_updates", True)
+        self.controller.show_cursor = False
         # Write layer header information.
         self.controller.start_record()
         self.controller.job.write_header(self.queue)
@@ -176,8 +188,7 @@ class RuidaDriver(Parameters):
                 current_settings = q.settings
                 _raster = isinstance(q, RasterCut)
                 if current_settings is not last_settings:
-                    self.controller.job.write_settings(
-                        current_settings, _raster)
+                    self.controller.job.write_settings(current_settings, _raster)
                     last_settings = current_settings
             x = self.native_x
             y = self.native_y
@@ -246,13 +257,15 @@ class RuidaDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self._move(x, y, cut=True)
+                    self._move(x, y, cut=self.on_value > 0)
             else:
                 #  Rastercut
                 self.plot_planner.push(q)
+                _lines = 0
                 for x, y, on in self.plot_planner.gen():
                     while self.hold_work(0):
                         time.sleep(0.05)
+                    time.sleep(0)  # Yield control to other threads.
                     if on > 1:
                         # Special Command.
                         if isinstance(on, float):
@@ -278,12 +291,16 @@ class RuidaDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self._move(x, y, cut=True)
+                    _lines += 1
+                    _update = _lines % 100 == 0
+                    self._move(x, y, cut=self.on_value > 0, update=_update)
         self.queue.clear()
         self._set_queue_status(0, 0)
         # Ruida end data.
         self.controller.job.write_tail()
         self.controller.stop_record()
+        self.controller.show_cursor = self.service.setting(bool, "signal_updates", True)
+        self._signal_updates = False
         return False
 
     def move_abs(self, x, y):
@@ -294,10 +311,9 @@ class RuidaDriver(Parameters):
         @param y:
         @return:
         """
-        old_current = self.service.current
         job = self.controller.job
         out = self.controller.write
-        job.speed_laser_1(400.0, output=out)
+        job.speed_laser_1(self._jog_speed, output=out)
 
         x, y = self.service.view.position(x, y)
 
@@ -310,14 +326,7 @@ class RuidaDriver(Parameters):
             job.rapid_move_x(dx, output=out)
         else:
             job.rapid_move_xy(x, y, origin=True, output=out)  # Not relative
-        self.native_x = x
-        self.native_y = y
-        new_current = self.service.current
-        if self._signal_updates:
-            self.service.signal(
-                "driver;position",
-                (old_current[0], old_current[1], new_current[0], new_current[1]),
-            )
+        self.controller.wait_for_move(x, y)
 
     def move_rel(self, dx, dy, confined=False):
         """
@@ -328,21 +337,27 @@ class RuidaDriver(Parameters):
         @return:
         """
         if confined:
-            new_x = self.native_x * self.service.view.native_scale_x + dx
+            new_x = self.native_x * self.service.view.native_scale_x - dx
             new_y = self.native_y * self.service.view.native_scale_y + dy
             if new_x < 0:
-                dx = - self.native_x * self.service.view.native_scale_x
+                dx = -self.native_x * self.service.view.native_scale_x
             elif new_x > self.service.view.width:
-                dx = self.service.view.width - self.native_x * self.service.view.native_scale_x 
+                dx = (
+                    self.service.view.width
+                    - self.native_x * self.service.view.native_scale_x
+                )
             if new_y < 0:
-                dy = - self.native_y * self.service.view.native_scale_y
+                dy = -self.native_y * self.service.view.native_scale_y
             elif new_y > self.service.view.height:
-                dy = self.service.view.height - self.native_y * self.service.view.native_scale_y
+                dy = (
+                    self.service.view.height
+                    - self.native_y * self.service.view.native_scale_y
+                )
 
-        old_current = self.service.current
         job = self.controller.job
         out = self.controller.write
         dx, dy = self.service.view.position(dx, dy, vector=True)
+        job.speed_laser_1(self._jog_speed, output=out)
         if dx == 0:
             if dy != 0:
                 job.rapid_move_y(dy, output=out)
@@ -355,14 +370,7 @@ class RuidaDriver(Parameters):
                 origin=True,
                 output=out,
             )
-        self.native_x += dx
-        self.native_y += dy
-        new_current = self.service.current
-        if self._signal_updates:
-            self.service.signal(
-                "driver;position",
-                (old_current[0], old_current[1], new_current[0], new_current[1]),
-            )
+        self.controller.wait_for_move(self.native_x + dx, self.native_y + dy)
 
     def focusz(self):
         """
@@ -389,13 +397,11 @@ class RuidaDriver(Parameters):
         out = self.controller.write
         self.controller.gross_timeout()
         job.home_xy(output=out)
-        time.sleep(5)
-        while self.controller.is_busy:
-            time.sleep(0.25)
+        self.controller.update_machine_status(MACHINE_STATUS_MOVING)
+        self.controller.sync()
+        # time.sleep(0.5)
         self.controller.normal_timeout()
-        self.controller.sync_coords()
-        self.move_abs(10, 10)
-        self.home()
+        self.events("Idle")
 
     def rapid_mode(self):
         """
@@ -532,7 +538,7 @@ class RuidaDriver(Parameters):
     # PROTECTED DRIVER CODE
     ####################
 
-    def _move(self, x, y, cut=True):
+    def _move(self, x, y, cut=True, update=True):
         old_current = self.service.current
         job = self.controller.job
         if self.power_dirty:
@@ -560,7 +566,7 @@ class RuidaDriver(Parameters):
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
-        if self._signal_updates:
+        if update and self._signal_updates:
             self.service.signal(
                 "driver;position",
                 (old_current[0], old_current[1], new_current[0], new_current[1]),

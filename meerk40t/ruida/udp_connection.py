@@ -8,7 +8,7 @@ import struct
 import time
 import threading
 
-from meerk40t.ruida.rdjob import ACK, NAK, KEEP_ALIVE, ERR
+from meerk40t.ruida.rdjob import ACK, NAK, ENQ, ERR
 
 class UDPConnection:
     def __init__(self, service):
@@ -73,14 +73,18 @@ class UDPConnection:
     def close(self):
         if not self.is_open:
             return
+        # Signal the handshaker thread to shut down, then wait for it to finish
         self._shutdown = True
-        while not self.is_shutdown:
-            continue
-        self._handshake_thread.join()
-        self._handshake_thread = None
-        self.is_shutdown = True # Causes the handshaker to exit.
-        self.socket.close()
-        self.socket = None
+        if self._handshake_thread is not None:
+            # Avoid self-join deadlock: don't join if we're on the handshaker thread
+            if threading.current_thread() != self._handshake_thread:
+                self._handshake_thread.join()
+            self._handshake_thread = None
+        # Mark this connection as shutdown and close the socket resources
+        self.is_shutdown = True  # Causes the handshaker to exit / reflects shutdown state.
+        if self.socket is not None:
+            self.socket.close()
+            self.socket = None
         self.service.signal(
             "pipe;usb_status", "Disconnected")
         self.events("Disconnected")
@@ -159,7 +163,7 @@ class UDPConnection:
                 "pipe;usb_status", "Connecting")
             self.events("Connecting")
             self.open()
-            _enq = self._package(KEEP_ALIVE)
+            _enq = self._package(ENQ)
             while not self.connected and not self._shutdown:
                 self._ack_pending = True
                 self.socket.sendto(
@@ -176,7 +180,7 @@ class UDPConnection:
                             self._responding = True
                         elif _reply == NAK:
                             pass # Ignore this -- controller confused?
-                        elif _reply == KEEP_ALIVE:
+                        elif _reply == ENQ:
                             pass # At least it's talking.
                 except (socket.timeout, AttributeError):
                     # Still not responding.
@@ -192,7 +196,7 @@ class UDPConnection:
                     except (socket.timeout):
                         _spewing = False
             # Prime the pump to get things rolling.
-            self.send_q.put(KEEP_ALIVE, timeout=self._q_to)
+            self.send_q.put(ENQ, timeout=self._q_to)
             self.service.signal(
                 "pipe;usb_status", "Connected")
             self.events("Connected")
@@ -289,7 +293,7 @@ class UDPConnection:
                             self.socket.sendto(_packet,
                                    (self.service.address, self.send_port))
                             self.naks += 1
-                        elif _ack == KEEP_ALIVE:
+                        elif _ack == ENQ:
                             self.keep_alives += 1
                     else:
                         self.events('Reply data when expecting ACK.')
@@ -322,7 +326,18 @@ class UDPConnection:
                             break
             self.is_shutdown = True
         except OSError:
+            # Avoid calling shutdown() here, since that may wait for this
+            # thread to set is_shutdown, causing a deadlock. Instead, mark
+            # the connection as shut down, close the socket, and exit the thread.
+            self._shutdown = True
+            self.is_shutdown = True
+            # Close the socket to release resources
+            if self.socket is not None:
+                try:
+                    self.socket.close()
+                except Exception:
+                    pass  # Best effort cleanup
+                self.socket = None
             self.service.signal(
                 "pipe;usb_status", "Ruida comms ERROR")
             self.events("Ruida comms error.")
-            self.shutdown()

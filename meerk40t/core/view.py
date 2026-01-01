@@ -3,7 +3,6 @@ from meerk40t.svgelements import Matrix
 
 
 class View:
-    
     MARGIN_NONWORKING = True
 
     def __init__(
@@ -34,6 +33,12 @@ class View:
             dpi_x = dpi
         if dpi_y is None:
             dpi_y = dpi
+        if width is None or width == 0:
+            print(f"Warning: View given zero width, adjusting to 1 unit")
+            width = 1
+        if height is None or height == 0:
+            print(f"Warning: View given zero height, adjusting to 1 unit")
+            height = 1
         self.width = width
         self.height = height
         self.dpi_x = dpi_x
@@ -80,6 +85,12 @@ class View:
         self.reset()
 
     def set_dims(self, width, height):
+        if width is None or width == 0:
+            print(f"Warning: View given zero width, adjusting to 1 unit")
+            width = 1
+        if height is None or height == 0:
+            print(f"Warning: View given zero height, adjusting to 1 unit")
+            height = 1
         self.width = width
         self.height = height
         self.reset()

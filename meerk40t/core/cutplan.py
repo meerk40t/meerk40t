@@ -2677,7 +2677,7 @@ def short_travel_cutcode_legacy(
                 if (
                     abs(s[0] - curr.real) <= distance
                     and abs(s[1] - curr.imag) <= distance
-                    and (not complete_path or cut.closed or cut.first)
+                    and (not complete_path or cut.closed or cut.first or cut.original_op in ("op cut", "op engrave"))
                 ):
                     d = abs(complex(s[0], s[1]) - curr)
                     if d < distance:
@@ -2693,7 +2693,7 @@ def short_travel_cutcode_legacy(
                 if (
                     abs(e[0] - curr.real) <= distance
                     and abs(e[1] - curr.imag) <= distance
-                    and (not complete_path or cut.closed or cut.last)
+                    and (not complete_path or cut.closed or cut.last or cut.original_op in ("op cut", "op engrave"))
                 ):
                     d = abs(complex(e[0], e[1]) - curr)
                     if d < distance:
@@ -3360,7 +3360,19 @@ def _group_preserving_selection(context, complete_path, channel):
             best_start_distance = float("inf")
 
             for candidate_group in ready_groups:
-                group_cuts = list(candidate_group.flat())
+                if isinstance(candidate_group, CutGroup):
+                    group_cuts = list(
+                        candidate_group.candidate(
+                            complete_path=complete_path, grouped_inner=False
+                        )
+                    )
+                else:
+                    group_cuts = (
+                        [candidate_group]
+                        if candidate_group.burns_done < candidate_group.passes
+                        else []
+                    )
+
                 if not group_cuts:
                     continue
 
@@ -3388,7 +3400,12 @@ def _group_preserving_selection(context, complete_path, channel):
 
         # Optimize travel within the selected group
         # Only include cuts that still need burns (don't reset burns_done)
-        group_cuts = [cut for cut in group.flat() if cut.burns_done < cut.passes]
+        if isinstance(group, CutGroup):
+            group_cuts = list(
+                group.candidate(complete_path=complete_path, grouped_inner=False)
+            )
+        else:
+            group_cuts = [group] if group.burns_done < group.passes else []
 
         # Apply travel optimization to this group's cuts
         group_ordered = _simple_greedy_selection(group_cuts, (curr_x, curr_y))

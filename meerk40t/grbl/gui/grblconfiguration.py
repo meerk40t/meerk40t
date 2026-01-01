@@ -10,6 +10,8 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 from meerk40t.kernel import signal_listener
 
+from .esp3dconfig import ESP3DConfigPanel
+
 _ = wx.GetTranslation
 
 
@@ -252,6 +254,9 @@ class GRBLConfiguration(MWindow):
         panel_defaults = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-defaults"
         )
+        panel_esp3d = ESP3DConfigPanel(
+            self, wx.ID_ANY, context=self.context
+        )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -262,6 +267,7 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_global)
         self.panels.append(panel_effects)
         self.panels.append(panel_defaults)
+        self.panels.append(panel_esp3d)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
@@ -272,6 +278,7 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(panel_global, _("Advanced"))
         self.notebook_main.AddPage(panel_effects, _("Effects"))
         self.notebook_main.AddPage(panel_defaults, _("Operation Defaults"))
+        self.notebook_main.AddPage(panel_esp3d, _("ESP3D Upload"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_formatter, _("Display Options"))

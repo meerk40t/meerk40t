@@ -511,6 +511,8 @@ class Warnings:
                         dx += ds
 
                     for refnode in op.children:
+                        if not hasattr(refnode, "node"):
+                            continue
                         node = refnode.node
                         bb = getattr(node, "paint_bounds", None)
                         if bb is None:

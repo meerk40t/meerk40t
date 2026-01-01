@@ -151,7 +151,79 @@ jobs:
         path: dist/MeerK40t-macos-${{ github.run_number }}.zip
         retention-days: 60
   
+  ensure-rocky8-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      actions: read
+    outputs:
+      available: ${{ steps.check_runner.outputs.available }}
+    steps:
+    - name: Install jq for JSON parsing
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+
+    - name: Check for self-hosted runner labeled rocky8 (wait up to 10 minutes)
+      id: check_runner
+      run: |
+        REPO_API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners"
+        ORG_NAME="${GITHUB_REPOSITORY%%/*}"
+        ORG_API_URL="https://api.github.com/orgs/${ORG_NAME}/actions/runners"
+
+        INTERVAL=10
+        MAX_WAIT=$((10 * 60))
+        elapsed=0
+        available=false
+        while [ $elapsed -lt $MAX_WAIT ]; do
+          # Try repository-level runners first
+          if ! repo_json=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$REPO_API_URL"); then
+            echo "Warning: Failed to fetch repo runners (curl error)." >&2
+            repo_json=""
+          fi
+
+          # Then try organization-level runners
+          if ! org_json=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" "$ORG_API_URL"); then
+            echo "Warning: Failed to fetch org runners (curl error)." >&2
+            org_json=""
+          fi
+
+          # Debug counts for easier diagnosis
+          repo_count=0
+          org_count=0
+          if echo "$repo_json" | jq -e '.runners? and (.runners|type=="array")' >/dev/null 2>&1; then
+            repo_count=$(echo "$repo_json" | jq '.total_count // (.runners|length)')
+          fi
+          if echo "$org_json" | jq -e '.runners? and (.runners|type=="array")' >/dev/null 2>&1; then
+            org_count=$(echo "$org_json" | jq '.total_count // (.runners|length)')
+          fi
+          echo "Repo runners count: $repo_count, Org runners count: $org_count" >&2
+
+          # Check repo runners for a matching runner
+          if [ "$repo_count" -gt 0 ]; then
+            if echo "$repo_json" | jq -r '.runners[]? | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
+              available=true
+              break
+            fi
+          fi
+
+          # Check org runners for a matching runner
+          if [ "$org_count" -gt 0 ]; then
+            if echo "$org_json" | jq -r '.runners[]? | select(.status=="online" and (.busy==false) and (.labels[]?.name=="rocky8")) | .name' | grep -q '.'; then
+              available=true
+              break
+            fi
+          fi
+
+          echo "No matching runner found yet. Retrying..." >&2
+          sleep $INTERVAL
+          elapsed=$((elapsed + INTERVAL))
+        done
+        echo "available=$available" >> $GITHUB_OUTPUT
+
   build-minimal-linux:
+    needs: ensure-rocky8-runner
+    if: needs.ensure-rocky8-runner.outputs.available == 'true'
     runs-on: rocky8
     steps:
     - name: Glibc
@@ -217,7 +289,7 @@ jobs:
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
-        pip install setuptools
+        pip install setuptools==65.5.1
         pip install pyinstaller wheel
         pip install numpy==1.26.4
         pip install pyusb
