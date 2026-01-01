@@ -68,6 +68,7 @@ jobs:
         python3.8 -m pip install scipy==1.10.0
         python3.8 -m pip install --use-pep517 pyclipr
         python3.8 -m pip install numba
+        python3.8 -m pip install requests
         python3.8 -m pip install .
         python3.8 -m pip install meerk40t-camera opencv-python-headless==4.5.3.56
         python3.8 -m pip install meerk40t-barcodes

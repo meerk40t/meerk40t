@@ -25,6 +25,7 @@ jobs:
         . /home/jacob/py311/bin/activate
         pip install ezdxf pyserial
         pip install scipy
+        pip install requests
         pip install meerk40t-camera opencv-python-headless
         pip install pillow
         pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/rocky-8/wxPython-4.2.1-cp311-cp311-linux_x86_64.whl

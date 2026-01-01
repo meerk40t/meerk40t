@@ -1,14 +1,21 @@
 # Format at https://github.com/actions/labeler
 
 "Context: Config":
-- '*'
-- '.*/**/*'
+- 'pyproject.toml'
+- 'setup.py'
+- 'requirements*.txt'
+- 'setup.cfg'
+- '.github/**/*.yml'
+- '.github/**/*.yaml'
 
 "Context: Docs":
 - '**.md'
 
 "Context: Base":
 - 'meerk40t/*.py'
+
+"Context: Kernel":
+- 'meerk40t/kernel/**/*.py'
 
 "Context: Core":
 - 'meerk40t/core/**/*.py'
@@ -20,18 +27,30 @@
 - 'meerk40t/ruida/**/*.py'
 - 'meerk40t/moshi/**/*.py'
 - 'meerk40t/newly/**/*.py'
+- 'meerk40t/balormk/**/*.py'
+- 'meerk40t/ch341/**/*.py'
 
 "Context: GUI":
 - 'meerk40t/gui/**/*.py'
 
+"Context: Network":
+- 'meerk40t/network/**/*.py'
+
+"Context: Extra":
+- 'meerk40t/extra/**/*.py'
+
 "Context: Misc":
 - 'meerk40t/dxf/**/*.py'
-- 'meerk40t/extra/**/*.py'
+- 'meerk40t/camera/**/*.py'
+- 'meerk40t/cylinder/**/*.py'
+- 'meerk40t/fill/**/*.py'
 - 'meerk40t/image/**/*.py'
+- 'meerk40t/rotary/**/*.py'
 - 'meerk40t/tools/**/*.py'
 
 "Context: Tests":
 - 'test/**/*.py'
+- 'testgui/**/*.py'
 
 "Context: I18n":
 - 'locale/**/*'
