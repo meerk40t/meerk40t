@@ -1147,13 +1147,19 @@ class GRBLDevice(Service, Status):
                 # Our lines already contain valid line endings.
                 # So we open the file with newline='' to prevent
                 # Python from altering them.
+                old_routine_1 = self.driver.out_pipe
+                old_routine_2 = self.driver.out_real
                 with open(filename, "w", newline="") as f:
                     # f.write(b"(MeerK40t)\n")
+                    self.driver.out_pipe = f.write
+                    self.driver.out_real = f.write  # For safety, write to both pipes.  
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
                     driver.out_pipe = f.write
                     driver.out_real = f.write
                     job.execute()
+                self.driver.out_pipe = old_routine_1
+                self.driver.out_real = old_routine_2
                 channel(_("Export succeeded: {filename}").format(filename=filename))
 
             except (PermissionError, OSError):
