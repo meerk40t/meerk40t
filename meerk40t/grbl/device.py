@@ -1143,21 +1143,33 @@ class GRBLDevice(Service, Status):
         def gcode_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
+            # Save the existing driver output routines so they can always be restored.
+            old_routine_1 = self.driver.out_pipe
+            old_routine_2 = self.driver.out_real
+            success = False
             try:
                 # Our lines already contain valid line endings.
                 # So we open the file with newline='' to prevent
                 # Python from altering them.
                 with open(filename, "w", newline="") as f:
                     # f.write(b"(MeerK40t)\n")
+                    self.driver.out_pipe = f.write
+                    self.driver.out_real = f.write
+              
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
                     driver.out_pipe = f.write
                     driver.out_real = f.write
                     job.execute()
-                channel(_("Export succeeded: {filename}").format(filename=filename))
-
+                success = True
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
+            finally:
+                # Always restore original driver output routines.
+                self.driver.out_pipe = old_routine_1
+                self.driver.out_real = old_routine_2
+            if success:
+                channel(_("Export succeeded: {filename}").format(filename=filename))
 
         @self.console_command(
             "grblinterpreter", help=_("activate the grbl interpreter.")
