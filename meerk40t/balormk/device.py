@@ -363,7 +363,8 @@ class BalorDevice(Service, Status):
                 "choices": [
                     "ignore",
                     "pause_resume_toggle",
-                    "pause_while_pressed" "stop",
+                    "pause_while_pressed",
+                    "stop",
                 ],
                 "display": [
                     _("Ignore (only act on input operation)"),

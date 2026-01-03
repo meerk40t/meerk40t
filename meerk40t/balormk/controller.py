@@ -363,7 +363,7 @@ class GalvoController:
             )
         if self.connection is None:
             if self.service.setting(bool, "mock", False) or self.force_mock:
-                self.connection = MockConnection(self.usb_log)
+                self.connection = MockConnection(self.usb_log, device=self.service)
                 name = self.service.safe_label
                 self.connection.send = self.service.channel(f"{name}/send")
                 self.connection.recv = self.service.channel(f"{name}/recv")
@@ -937,7 +937,7 @@ class GalvoController:
         """
         if self._power == power:
             return
-        power = max(0, min(100, power)) # make sure it is in 0-100 range
+        power = max(0, min(100, power))  # make sure it is in 0-100 range
         self._power = power
         if self.source == "co2":
             if self._frequency is None or self._frequency == 0:
