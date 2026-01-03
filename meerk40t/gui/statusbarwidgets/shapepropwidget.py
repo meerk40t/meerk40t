@@ -287,7 +287,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
         # for these position/size fields. This avoids accidental double-handling when
         # a parent also binds EVT_TEXT_ENTER.
         for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
-            ctl._prevent_propagation = True
+            ctl.prevent_propagation = True
         self.unit_lbl = wxStaticText(
             self.parent, wx.ID_ANY, label=self.units[self.unit_index]
         )

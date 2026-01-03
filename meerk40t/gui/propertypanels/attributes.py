@@ -1018,7 +1018,7 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
         # position/dimension fields from propagating to parent panels or global handlers.
         # This avoids architectural event-propagation conflicts with higher-level shortcuts.
         for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
-            ctl._prevent_propagation = True
+            ctl.prevent_propagation = True
         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
 
         self.set_widgets(self.node)

@@ -702,6 +702,13 @@ class TextCtrl(wx.TextCtrl):
         # Keep user-provided action separately so we can guard calls
         self._user_action = action_routine
 
+        # If the caller explicitly provides None, treat this as disabling
+        # any action. In that case do not create a wrapper that would raise
+        # when invoked; instead keep _action_routine as None so it's a no-op.
+        if action_routine is None:
+            self._action_routine = None
+            return
+
         def guarded_action(*args, **kwargs):
             """
             Wrapper around the user-supplied action that debounces and records events.
@@ -716,6 +723,10 @@ class TextCtrl(wx.TextCtrl):
             other parts of the control logic and the ``event_generated()`` helper can
             determine which WX event caused the action to fire.
             """
+            # If the user action was cleared after this wrapper was created,
+            # bail out early instead of raising.
+            if self._user_action is None:
+                return None
             # Debounce / guard repeated invocations (50 ms)
             now = time.time()
             if (
@@ -741,6 +752,24 @@ class TextCtrl(wx.TextCtrl):
         or None in any other case
         """
         return self._event_generated
+
+    @property
+    def prevent_propagation(self):
+        """Public property to allow callers to control whether EVT_* events
+        (Enter / Kill Focus) are propagated to parent handlers.
+
+        Historically callers reached into ``_prevent_propagation`` directly; this
+        exposes a stable API while remaining backward compatible.
+        """
+        return getattr(self, "_prevent_propagation", False)
+
+    @prevent_propagation.setter
+    def prevent_propagation(self, value):
+        self._prevent_propagation = bool(value)
+
+    def set_prevent_propagation(self, value: bool):
+        """Compatibility setter: sets the prevent_propagation property."""
+        self.prevent_propagation = value
 
     def set_default_values(self, def_values):
         self._default_values = def_values
@@ -877,7 +906,7 @@ class TextCtrl(wx.TextCtrl):
     def on_leave_field(self, event):
         # Needs to be passed on
         # Only propagate if not explicitly disabled for this control
-        if not getattr(self, "_prevent_propagation", False):
+        if not self.prevent_propagation:
             event.Skip()
         self.prevalidate("leave")
         if self._action_routine is not None:
@@ -908,7 +937,7 @@ class TextCtrl(wx.TextCtrl):
 
     def on_enter(self, event):
         # Let others deal with it after me, unless propagation is disabled
-        if not getattr(self, "_prevent_propagation", False):
+        if not self.prevent_propagation:
             event.Skip()
         self.prevalidate("enter")
         if self._action_routine is not None:
@@ -937,20 +966,14 @@ class TextCtrl(wx.TextCtrl):
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT_ENTER
                     now = time.time()
-                    # Debounce repeated invocations across handlers (50 ms)
-                    if (
-                        self._last_action_called_time is None
-                        or (now - self._last_action_called_time) >= DEBOUNCE_INTERVAL
-                    ):
-                        self._last_action_called_time = now
-                        # Record this as an enter-generated action (from context menu)
-                        self._last_action_time = now
-                        self._last_action_type = wx.EVT_TEXT_ENTER
-                        try:
-                            self._action_routine()
-                        finally:
-                            self._event_generated = None
-                    else:
+                    # Record this as an enter-generated action (from context menu).
+                    # Let the guarded action routine perform debounce timing; do not set
+                    # _last_action_called_time here because that causes a double-debounce.
+                    self._last_action_time = now
+                    self._last_action_type = wx.EVT_TEXT_ENTER
+                    try:
+                        self._action_routine()
+                    finally:
                         self._event_generated = None
 
             return handler

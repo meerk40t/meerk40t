@@ -123,7 +123,7 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         # This matches the pattern used in other GUI panels where numeric entry fields
         # should not trigger global accelerators or higher-level handlers while editing.
         for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
-            ctl._prevent_propagation = True
+            ctl.prevent_propagation = True
         self.text_x.execute_action_on_change = False
         self.text_y.execute_action_on_change = False
         self.text_w.execute_action_on_change = False
