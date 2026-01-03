@@ -119,6 +119,9 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         self.text_y.SetActionRoutine(self.on_text_y_enter)
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
+        # Prevent propagation for the position panel fields
+        for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
+            ctl._prevent_propagation = True
         self.text_x.execute_action_on_change = False
         self.text_y.execute_action_on_change = False
         self.text_w.execute_action_on_change = False
@@ -139,8 +142,6 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         if self.position_units in ("in", "inches"):
             self.position_units = "inch"
         self._update_position()
-
-
 
     def pane_show(self, *args):
         self.context.listen("units", self.space_changed)

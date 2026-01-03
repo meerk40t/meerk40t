@@ -3,6 +3,7 @@ Mixin functions for wxMeerk40t
 """
 
 import platform
+import time
 from typing import List
 
 import wx
@@ -604,6 +605,14 @@ class TextCtrl(wx.TextCtrl):
         self._event_generated = None
         self._action_routine = None
         self._default_values = None
+        # Guard to prevent duplicate action calls when Enter triggers both
+        # EVT_TEXT_ENTER followed quickly by EVT_KILL_FOCUS.
+        self._last_action_time = None
+        self._last_action_type = None
+        # Additional debounce guard: timestamp of the last time we actually
+        # invoked the action routine. This prevents reentrance even when
+        # different event handlers invoke the routine in rapid succession.
+        self._last_action_called_time = None
 
         # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
@@ -672,8 +681,32 @@ class TextCtrl(wx.TextCtrl):
         and text_enter event, then consult
             ctrl.event_generated()
         this will give back wx.EVT_KILL_FOCUS or wx.EVT_TEXT_ENTER
+
+        We wrap the provided action in a guarded caller so that any caller
+        (control itself, a parent, or a script) will honor the debounce
+        and reentry protection implemented by TextCtrl.
         """
-        self._action_routine = action_routine
+        # Keep user-provided action separately so we can guard calls
+        self._user_action = action_routine
+
+        def guarded_action(*args, **kwargs):
+            # Debounce / guard repeated invocations (50 ms)
+            now = time.time()
+            if (
+                self._last_action_called_time is None
+                or (now - self._last_action_called_time) >= 0.05
+            ):
+                self._last_action_called_time = now
+                # Record type/time for downstream logic
+                self._last_action_time = now
+                # Attempt to infer event type if set
+                last_type = getattr(self, "_event_generated", None)
+                self._last_action_type = last_type
+                return self._user_action(*args, **kwargs)
+            # Too soon after last call: skip
+            return None
+
+        self._action_routine = guarded_action
 
     def event_generated(self):
         """
@@ -817,26 +850,49 @@ class TextCtrl(wx.TextCtrl):
 
     def on_leave_field(self, event):
         # Needs to be passed on
-        event.Skip()
+        # Only propagate if not explicitly disabled for this control
+        if not getattr(self, "_prevent_propagation", False):
+            event.Skip()
         self.prevalidate("leave")
         if self._action_routine is not None:
-            self._event_generated = wx.EVT_KILL_FOCUS
-            try:
-                self._action_routine()
-            finally:
-                self._event_generated = None
+            # Avoid duplicate action calls if an immediate prior text-enter occurred.
+            now = time.time()
+            if (
+                self._last_action_time is not None
+                and self._last_action_type == wx.EVT_TEXT_ENTER
+                and (now - self._last_action_time) < 0.3
+            ):
+                # Skip duplicate call from kill-focus following an enter
+                self._last_action_time = None
+                self._last_action_type = None
+            else:
+                # Debounce repeated invocations across handlers (50 ms)
+                # Let the guarded action routine perform debounce timing
+                self._event_generated = wx.EVT_KILL_FOCUS
+                try:
+                    self._action_routine()
+                finally:
+                    self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status
 
     def on_enter(self, event):
-        # Let others deal with it after me
-        event.Skip()
+        # Let others deal with it after me, unless propagation is disabled
+        if not getattr(self, "_prevent_propagation", False):
+            event.Skip()
         self.prevalidate("enter")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_TEXT_ENTER
+            # Record the action *type/time* so we can suppress a subsequent
+            # kill-focus-triggered duplicate call happening immediately after.
+            now = time.time()
+            self._last_action_time = now
+            self._last_action_type = wx.EVT_TEXT_ENTER
             try:
+                # Actual invocation is guarded by the wrapped action routine
+                # (see SetActionRoutine) which performs debounce and reentry protection.
                 self._action_routine()
             finally:
                 self._event_generated = None
@@ -852,9 +908,21 @@ class TextCtrl(wx.TextCtrl):
                 self.prevalidate("enter")
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT_ENTER
-                    try:
-                        self._action_routine()
-                    finally:
+                    now = time.time()
+                    # Debounce repeated invocations across handlers (50 ms)
+                    if (
+                        self._last_action_called_time is None
+                        or (now - self._last_action_called_time) >= 0.05
+                    ):
+                        self._last_action_called_time = now
+                        # Record this as an enter-generated action (from context menu)
+                        self._last_action_time = now
+                        self._last_action_type = wx.EVT_TEXT_ENTER
+                        try:
+                            self._action_routine()
+                        finally:
+                            self._event_generated = None
+                    else:
                         self._event_generated = None
 
             return handler

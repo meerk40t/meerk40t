@@ -265,7 +265,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
         self.node = None
         self.units = ("mm", "cm", "in", "mil", "%")
         self.unit_index = 0
-        
+
         # Initialize position/dimension state from mixin
         self._init_position_state()
 
@@ -283,6 +283,11 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
         self.text_h = TextCtrl(
             self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float"
         )
+        # Prevent TextCtrl-generated enter events from propagating up to parent handlers
+        # for these position/size fields. This avoids accidental double-handling when
+        # a parent also binds EVT_TEXT_ENTER.
+        for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
+            ctl._prevent_propagation = True
         self.unit_lbl = wxStaticText(
             self.parent, wx.ID_ANY, label=self.units[self.unit_index]
         )
@@ -394,8 +399,6 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
         if self.context.lock_active != value:
             self.context.lock_active = value
             self.context.signal("lock_active")
-
-
 
     def on_button_param(self, event):
         # Use mixin method to handle reference point click

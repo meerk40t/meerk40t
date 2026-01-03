@@ -940,7 +940,7 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
         self.context = context
         self.context.themes.set_window_colors(self)
         self.node = node
-        
+
         # Initialize position/dimension state from mixin
         self._init_position_state()
         self.text_x = TextCtrl(
@@ -989,12 +989,14 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
         self.btn_lock_ratio.bitmap_toggled = self.bitmap_locked
         self.btn_lock_ratio.bitmap_untoggled = self.bitmap_unlocked
         self.btn_lock_ratio.SetValue(self.context.lock_active)
-        
+
         # Add reference point button for 9-point grid
         icon_size = int(
             mkicons.STD_ICON_SIZE * self.context.root.bitmap_correction_scale / 2
         )
-        self.button_param = wxStaticBitmap(self, wx.ID_ANY, size=wx.Size(icon_size, icon_size))
+        self.button_param = wxStaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(icon_size, icon_size)
+        )
         self.pos_bitmaps = self.calculate_position_icons(icon_size)
         self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
         self.button_param.SetToolTip(
@@ -1012,6 +1014,9 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
         self.text_y.SetActionRoutine(self.on_text_y_enter)
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
+        # Prevent propagation of Enter events from these position/dimension fields
+        for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
+            ctl._prevent_propagation = True
         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
 
         self.set_widgets(self.node)
