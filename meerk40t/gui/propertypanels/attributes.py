@@ -1014,7 +1014,9 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
         self.text_y.SetActionRoutine(self.on_text_y_enter)
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
-        # Prevent propagation of Enter events from these position/dimension fields
+        # As in the statusbarwidget implementation, prevent Enter key events from these
+        # position/dimension fields from propagating to parent panels or global handlers.
+        # This avoids architectural event-propagation conflicts with higher-level shortcuts.
         for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
             ctl._prevent_propagation = True
         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)

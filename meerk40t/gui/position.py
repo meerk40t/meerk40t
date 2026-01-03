@@ -119,7 +119,9 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         self.text_y.SetActionRoutine(self.on_text_y_enter)
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
-        # Prevent propagation for the position panel fields
+        # Do not propagate key / focus events from these TextCtrls to parent panels.
+        # This matches the pattern used in other GUI panels where numeric entry fields
+        # should not trigger global accelerators or higher-level handlers while editing.
         for ctl in (self.text_x, self.text_y, self.text_w, self.text_h):
             ctl._prevent_propagation = True
         self.text_x.execute_action_on_change = False

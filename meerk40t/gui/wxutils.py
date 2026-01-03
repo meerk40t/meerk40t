@@ -15,6 +15,19 @@ from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
 
+# Timing constants for TextCtrl action handling
+# DEBOUNCE_INTERVAL: short interval used to debounce multiple, rapid programmatic or
+# user-invoked calls to the same action (e.g., two distinct Enter presses). A very
+# small interval (50 ms) prevents accidental rapid repeats but still allows two
+# separate user keypresses to be registered.
+DEBOUNCE_INTERVAL = 0.05  # seconds
+
+# DUPLICATE_ACTION_WINDOW: a slightly larger window used to suppress duplicate
+# actions caused by overlapping WX events (for example, EVT_TEXT_ENTER followed
+# shortly by EVT_KILL_FOCUS due to focus transitions). This needs to be longer
+# than the short debounce so these event-ordering duplicates are filtered while
+# still allowing legitimate quick repeated actions.
+DUPLICATE_ACTION_WINDOW = 0.3  # seconds
 
 ##############
 # DYNAMIC CHOICE
@@ -690,11 +703,24 @@ class TextCtrl(wx.TextCtrl):
         self._user_action = action_routine
 
         def guarded_action(*args, **kwargs):
+            """
+            Wrapper around the user-supplied action that debounces and records events.
+
+            Any calls occurring within 50 ms of the previous invocation are ignored to
+            prevent duplicate processing when multiple WX events fire in quick
+            succession (for example, overlapping focus and text-enter events or
+            repeated programmatic triggers).
+
+            When an action is accepted, the wrapper stores the call time and the last
+            generated event type (if available via ``self._event_generated``) so that
+            other parts of the control logic and the ``event_generated()`` helper can
+            determine which WX event caused the action to fire.
+            """
             # Debounce / guard repeated invocations (50 ms)
             now = time.time()
             if (
                 self._last_action_called_time is None
-                or (now - self._last_action_called_time) >= 0.05
+                or (now - self._last_action_called_time) >= DEBOUNCE_INTERVAL
             ):
                 self._last_action_called_time = now
                 # Record type/time for downstream logic
@@ -860,9 +886,11 @@ class TextCtrl(wx.TextCtrl):
             if (
                 self._last_action_time is not None
                 and self._last_action_type == wx.EVT_TEXT_ENTER
-                and (now - self._last_action_time) < 0.3
+                and (now - self._last_action_time) < DUPLICATE_ACTION_WINDOW
             ):
                 # Skip duplicate call from kill-focus following an enter
+                # This window intentionally exceeds the short DEBOUNCE_INTERVAL
+                # so we catch duplicates caused by event ordering/focus shifts.
                 self._last_action_time = None
                 self._last_action_type = None
             else:
@@ -912,7 +940,7 @@ class TextCtrl(wx.TextCtrl):
                     # Debounce repeated invocations across handlers (50 ms)
                     if (
                         self._last_action_called_time is None
-                        or (now - self._last_action_called_time) >= 0.05
+                        or (now - self._last_action_called_time) >= DEBOUNCE_INTERVAL
                     ):
                         self._last_action_called_time = now
                         # Record this as an enter-generated action (from context menu)
