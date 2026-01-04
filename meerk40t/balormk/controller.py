@@ -287,6 +287,7 @@ class GalvoController:
 
         self.mode = DRIVER_STATE_RAPID
         self._list_lock = threading.RLock()
+        self._send_lock = threading.RLock()
         self._active_list = None
         self._active_index = 0
         self._list_executing = False
@@ -301,6 +302,10 @@ class GalvoController:
     @property
     def source(self):
         return self.service.source
+
+    @property
+    def list_executing(self):
+        return self._list_executing
 
     @property
     def state(self):
@@ -423,16 +428,17 @@ class GalvoController:
             return ERR
         if not self.connection:
             return ERR
-        try:
-            self.connection.write(self._machine_index, data)
-        except ConnectionError:
-            return ERR
-        if read:
+        with self._send_lock:
             try:
-                r = self.connection.read(self._machine_index)
-                return struct.unpack("<4H", r)
-            except (ConnectionError, struct.error):
+                self.connection.write(self._machine_index, data)
+            except ConnectionError:
                 return ERR
+            if read:
+                try:
+                    r = self.connection.read(self._machine_index)
+                    return struct.unpack("<4H", r)
+                except (ConnectionError, struct.error):
+                    return ERR
 
     def status(self):
         b0, b1, b2, b3 = self.get_version()

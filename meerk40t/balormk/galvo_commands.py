@@ -845,7 +845,7 @@ def plugin(service, lifecycle):
     def galvo_liststatus(command, channel, _, remainder=None, **kwgs):
         reply = service.driver.connection.get_list_status()
         if reply is None:
-            channel("Not connected, cannot get serial number.")
+            channel("Not connected, cannot get list status.")
             return
         channel(f"Command replied: {reply}")
         for index, b in enumerate(reply):

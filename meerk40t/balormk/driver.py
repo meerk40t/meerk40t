@@ -24,6 +24,7 @@ from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.kernel import channel
 
 
 class BalorDriver:
@@ -874,10 +875,17 @@ class BalorDriver:
         """
         loop_count = 0
         print(threading.current_thread().name + ": Polling footpedal started...")
-        while self._pedal_thread_running and not self._shutdown:
+        while (self._pedal_thread_running and not self._shutdown) or self.connection.list_executing:
             print(
-                f"Pedal Polling: Loop {loop_count} starting, flags: running={self._pedal_thread_running}, shutdown={self._shutdown}"
+                f"Pedal Polling: Loop {loop_count} starting, flags: running={self._pedal_thread_running}, shutdown={self._shutdown}, listexecuting={self.connection.list_executing}"
             )
+            reply = self.connection.get_list_status()
+            if reply is None:
+                print("Not connected, cannot get list status.") 
+            else:
+                print(f"Command replied: {reply}")
+                for index, b in enumerate(reply):
+                    print(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
             loop_count += 1
             try:
                 # Check if we should poll (only if pedal mode is active)
