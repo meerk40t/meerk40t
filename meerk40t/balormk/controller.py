@@ -1511,7 +1511,7 @@ class GalvoController:
         elif is_running_state:
             return "running"
         else:
-            return f"idle (status_info=0b{status_info:016b})"
+            return "idle"
 
     def get_position_xy(self):
         return self._command(GetPositionXY)
