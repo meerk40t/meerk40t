@@ -77,10 +77,17 @@ class BalorDriver:
         return self.connection.connected
 
     def service_attach(self):
+        # Clear shutdown flag and ensure pedal polling thread is running for the lifetime of the service
+        # print ("BalorDriver: service_attach called, starting pedal polling thread.")
         self._shutdown = False
+        self.start_pedal_polling(origin="service_attach")
 
     def service_detach(self):
+        # Indicate we're shutting down and stop the pedal polling thread for good
+        # print ("BalorDriver: service_detach called, shutting down pedal polling thread.")
         self._shutdown = True
+        # Force stopping the thread when shutting down the service
+        self.stop_pedal_polling(origin="service_detach", force=True)
 
     def connect(self):
         try:
@@ -186,7 +193,6 @@ class BalorDriver:
             con.set_settings(sets)
             # LOOP CHECKS
             if self._abort_mission():
-                self.stop_pedal_polling(origin="geometry abort")
                 return
             while self.paused:
                 time.sleep(0.05)
@@ -210,7 +216,6 @@ class BalorDriver:
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="geometry abort in quad")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -243,7 +248,6 @@ class BalorDriver:
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="geometry abort in arc")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -258,9 +262,6 @@ class BalorDriver:
                     while dwell_time > 0:
                         # LOOP CHECKS
                         if self._abort_mission():
-                            self.stop_pedal_polling(
-                                origin="geometry abort in point dwell"
-                            )
                             return
                         while self.paused:
                             time.sleep(0.05)
@@ -275,9 +276,6 @@ class BalorDriver:
                     while dwell_time > 0:
                         # LOOP CHECKS
                         if self._abort_mission():
-                            self.stop_pedal_polling(
-                                origin="geometry abort in point wait"
-                            )
                             return
                         while self.paused:
                             time.sleep(0.05)
@@ -301,7 +299,6 @@ class BalorDriver:
                     con.port_set(sets.get("output_mask"), sets.get("output_value"))
                     con.list_write_port()
         con.list_delay_time(int(self.service.delay_end / 10.0))
-        self.stop_pedal_polling(origin="geometry end of plot")
         self._list_bits = None
         con.rapid_mode()
         self.service.laser_status = "idle"
@@ -373,7 +370,6 @@ class BalorDriver:
         current = 0
         for q in queue:
             current += 1
-            print(f"Processing cutcode #{current} of {total}")
             self._set_queue_status(current, total)
             settings = q.settings
             penbox = settings.get("penbox_value")
@@ -385,7 +381,6 @@ class BalorDriver:
             con.set_settings(settings)
             # LOOP CHECKS
             if self._abort_mission():
-                self.stop_pedal_polling(origin="abort mission")
                 return
             while self.paused:
                 time.sleep(0.05)
@@ -407,7 +402,6 @@ class BalorDriver:
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="abort mission in quad")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -429,7 +423,6 @@ class BalorDriver:
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="abort mission in cubic")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -442,7 +435,6 @@ class BalorDriver:
                 for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="abort mission in plot")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -482,7 +474,6 @@ class BalorDriver:
                 while dwell_time > 0:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="abort mission in dwell")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -495,7 +486,6 @@ class BalorDriver:
                 while dwell_time > 0:
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="abort mission in wait")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -522,7 +512,6 @@ class BalorDriver:
                 for x, y, on in self.plot_planner.gen():
                     # LOOP CHECKS
                     if self._abort_mission():
-                        self.stop_pedal_polling(origin="abort mission in plot")
                         return
                     while self.paused:
                         time.sleep(0.05)
@@ -578,7 +567,6 @@ class BalorDriver:
                                 con.power(percent_power * on)
                         con.mark(x, y)
         con.list_delay_time(int(self.service.delay_end / 10.0))
-        self.stop_pedal_polling(origin="end of plot")
         self._list_bits = None
         con.rapid_mode()
         self.service.laser_status = "idle"
@@ -835,7 +823,6 @@ class BalorDriver:
         Start the background footpedal polling thread.
         Polls every 0.5 seconds to check footpedal status.
         """
-        print(f"Starting footpedal polling thread... Origin: {origin}")
         if self._pedal_thread is not None and self._pedal_thread.is_alive():
             return  # Already running
 
@@ -845,15 +832,27 @@ class BalorDriver:
         )
         self._pedal_thread.start()
 
-    def stop_pedal_polling(self, origin=""):
+    def stop_pedal_polling(self, origin="", force: bool = False):
         """
         Stop the background footpedal polling thread.
+
+        By default, calls from within the driver's runtime (e.g. at plot end) will
+        not stop the global polling thread; stopping is only performed when
+        explicitly forced or when called from service teardown (origin="service_detach").
         """
-        print(f"Stopping footpedal polling thread... Origin: {origin}")
+        # Only stop the thread if explicitly requested or when shutting down the service
+        if not force and origin not in ("service_detach", "service_end"):
+            # Ignore transient stop requests so the thread runs for the lifetime of the service
+            return
+
         self._pedal_thread_running = False
         if self._pedal_thread is not None:
-            # Give the thread a chance to finish gracefully
+            # Give the worker a short time to exit; join with timeout
             self._pedal_thread.join(timeout=1.0)
+            if self._pedal_thread.is_alive():
+                self.service.channel(
+                    "Warning: Pedal polling thread did not exit within timeout; continuing."
+                )
             self._pedal_thread = None
 
     def _pedal_polling_worker(self):
@@ -873,39 +872,23 @@ class BalorDriver:
         - True: Bit state 0 means "pressed" (active-low)
         - False: Bit state 1 means "pressed" (active-high)
         """
-        loop_count = 0
-        print(threading.current_thread().name + ": Polling footpedal started...")
-        while (self._pedal_thread_running and not self._shutdown) or self.connection.list_executing:
-            print(
-                f"Pedal Polling: Loop {loop_count} starting, flags: running={self._pedal_thread_running}, shutdown={self._shutdown}, listexecuting={self.connection.list_executing}"
-            )
-            reply = self.connection.get_list_status()
-            if reply is None:
-                print("Not connected, cannot get list status.") 
-            else:
-                print(f"Command replied: {reply}")
-                for index, b in enumerate(reply):
-                    print(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
-            loop_count += 1
+        while self._pedal_thread_running and not self._shutdown:
+            # status = self.connection.get_execution_status()
             try:
                 # Check if we should poll (only if pedal mode is active)
                 action = self.service.pedal_mode.lower()
-                if (
-                    action != "ignore"
-                    and self.connection is not None
-                    and self.connection.connected
-                ):
+                if action != "ignore" and self.connected:
                     # Controller's _usb_lock automatically protects this USB communication
                     port_list = self.connection.read_port()
-                    print(f"Pedal Polling: port_list={port_list}")
+                    # print(f"Pedal Polling: port_list={port_list}")
 
                     if port_list is not None:
                         # Check footpedal state
                         foot_pin = self.service.footpedal_pin
                         foot_state = (port_list[1] >> foot_pin) & 1
-                        print(
-                            f"Pedal Polling: foot_state={foot_state} - last state={self.last_foot_state} "
-                        )
+                        # print(
+                        #     f"Pedal Polling: foot_state={foot_state} - last state={self.last_foot_state} "
+                        # )
 
                         # Only process state changes
                         if foot_state != self.last_foot_state:
@@ -935,9 +918,9 @@ class BalorDriver:
 
                             # Log the state change
                             state_label = "pressed" if is_pressed else "released"
-                            print(
-                                f"Pedal Polling: Footpedal {state_label} (bit={foot_state}) - action={action}"
-                            )
+                            # print(
+                            #     f"Pedal Polling: Footpedal {state_label} (bit={foot_state}) - action={action}"
+                            # )
 
                             # Execute action based on pedal mode
                             if action == "pause_resume_toggle":
@@ -945,13 +928,13 @@ class BalorDriver:
                                 if not was_pressed and is_pressed:
                                     if self.paused:
                                         self.resume()
-                                        print("Resuming job due to footpedal press.")
+                                        # print("Resuming job due to footpedal press.")
                                         self.service.channel(
                                             f"Footpedal pressed: Job resumed"
                                         )
                                     else:
                                         self.pause()
-                                        print("Pausing job due to footpedal press.")
+                                        # print("Pausing job due to footpedal press.")
                                         self.service.channel(
                                             f"Footpedal pressed: Job paused"
                                         )
@@ -962,7 +945,7 @@ class BalorDriver:
                                     # Just pressed - pause
                                     if not self.paused:
                                         self.pause()
-                                        print("Pausing job due to footpedal press.")
+                                        # print("Pausing job due to footpedal press.")
                                         self.service.channel(
                                             f"Footpedal pressed: Job paused"
                                         )
@@ -970,7 +953,8 @@ class BalorDriver:
                                     # Just released - resume
                                     if self.paused:
                                         self.resume()
-                                        print("Resuming job due to footpedal release.")
+
+                                        # print("Resuming job due to footpedal release.")
                                         self.service.channel(
                                             f"Footpedal released: Job resumed"
                                         )
@@ -979,11 +963,10 @@ class BalorDriver:
                                 # Emergency stop only on press
                                 if not was_pressed and is_pressed:
                                     self.reset()
-                                    print("Emergency stop due to footpedal press.")
+                                    # print("Emergency stop due to footpedal press.")
                                     self.service.channel(
                                         f"Footpedal pressed: Emergency stop"
                                     )
-                                    break
                             # Log non-action changes if logging enabled
                             if self.service.setting(bool, "log_pedal_events", False):
                                 self.service.channel(
@@ -995,20 +978,16 @@ class BalorDriver:
 
             except (AttributeError, TypeError, IndexError) as e:
                 # Handle errors gracefully (e.g., connection lost)
-                print(f"Pedal Polling: Ignored error: {e}")
+                # print(f"Pedal Polling: Ignored error: {e}")
                 pass
             except Exception as e:
                 # Log unexpected errors but keep thread alive
-                print(f"Pedal Polling: Error: {e}")
+                # print(f"Pedal Polling: Error: {e}")
                 self.service.channel(f"Pedal polling error: {e}")
 
             # Sleep for the configured interval
-            print(f"Will sleep for {self._pedal_poll_interval} seconds.")
+            # print(f"Will sleep for {self._pedal_poll_interval} seconds.")
             time.sleep(self._pedal_poll_interval)
-            print(
-                f"Pedal Polling: Loop {loop_count} completed. Status: running={self._pedal_thread_running}, shutdown={self._shutdown}"
-            )
-        print(f"Exit thread after {loop_count} loops.")
 
     def cylinder_validate(self):
         if self.service.cylinder_active:

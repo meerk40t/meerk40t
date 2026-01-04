@@ -1115,7 +1115,13 @@ class BalorDevice(Service, Status):
         return True
 
     def service_attach(self, *args, **kwargs):
+        if hasattr(self.driver, "service_attach"):
+            self.driver.service_attach()
         self.realize()
+
+    def service_detach(self, *args, **kwargs):
+        if hasattr(self.driver, "service_detach"):
+            self.driver.service_detach()
 
     @signal_listener("lens_size")
     @signal_listener("rotate")

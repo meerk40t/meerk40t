@@ -1496,6 +1496,23 @@ class GalvoController:
     def get_list_status(self):
         return self._command(GetListStatus)
 
+    def get_execution_status(self):
+        reply = self.get_list_status()
+        if reply is None:
+            return "disconnected"
+        status_info = reply[3] if len(reply) > 3 else 0
+        # Bit definitions (word 3):
+        #   0x0004 (bit 2) -> Running state indicator
+        #   0x0008 (bit 3) -> Paused state indicator
+        is_running_state = bool(status_info & 0x0004)
+        is_paused_state = bool(status_info & 0x0008)
+        if is_paused_state:
+            return "paused"
+        elif is_running_state:
+            return "running"
+        else:
+            return f"idle (status_info=0b{status_info:016b})"
+
     def get_position_xy(self):
         return self._command(GetPositionXY)
 
