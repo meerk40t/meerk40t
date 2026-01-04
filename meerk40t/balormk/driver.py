@@ -28,6 +28,35 @@ from meerk40t.kernel import channel
 
 
 class BalorDriver:
+    """Balor (Galvo) device driver.
+
+    Footpedal polling
+    -----------------
+    - The driver starts a long-lived footpedal polling thread on
+      `service_attach()` and stops it on `service_detach()` (service teardown).
+    - The polling thread only acts when the controller is connected and
+      `service.pedal_mode` != "ignore". That prevents the thread from
+      interfering when the device is disconnected.
+    - Supported pedal modes (configured via `service.pedal_mode`):
+      - "pause_resume_toggle": toggle pause/resume on press
+      - "pause_while_pressed": pause while pressed, resume on release
+      - "stop": emergency stop on press
+    - `service.pedal_active_low` controls semantics of the pedal bit
+      (True => bit 0 = pressed, False => bit 1 = pressed).
+    - Poll interval is `self._pedal_poll_interval` (default 0.5s).
+    - Thread lifecycle and termination:
+      - The worker loop checks `self._pedal_thread_running` and
+        `self._shutdown` and exits when `_shutdown` is True or the
+        running flag is cleared.
+      - `stop_pedal_polling(origin=..., force=True)` forces a stop
+        and waits briefly for the thread to exit; other internal
+        calls to stop are ignored so the thread persists for the
+        lifetime of the service.
+    - The worker signals changes using `service.signal("pedal_state", foot_state)`
+      and will emit channel messages when configured or on emergency stop.
+
+    """
+
     def __init__(self, service, force_mock=False):
         self.service = service
         self.native_x = 0x8000
