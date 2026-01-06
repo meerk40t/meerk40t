@@ -1,4 +1,8 @@
 import datetime
+import os
+import platform
+import shutil
+import socket
 from platform import system
 
 import wx
@@ -1583,10 +1587,6 @@ class InformationPanel(ScrolledPanel):
 
     def __set_properties(self):
         # Fill the content...
-        import os
-        import platform
-        import socket
-
         uname = platform.uname()
         info = ""
         info += f"System: {uname.system}" + "\n"
@@ -1628,17 +1628,16 @@ class InformationPanel(ScrolledPanel):
                 except (FileNotFoundError, IOError):
                     pass
             
-            # Window manager
+            # Desktop session
             wm = os.environ.get("XDG_SESSION_DESKTOP") or os.environ.get("DESKTOP_SESSION") or "Unknown"
-            info += f"\nWindow Manager: {wm}"
+            info += f"\nDesktop Session: {wm}"
             
             # Free disk space
             try:
-                import shutil
                 total, used, free = shutil.disk_usage("/")
                 free_gb = free / (1024**3)
                 info += f"\nFree Disk Space: {free_gb:.2f} GB"
-            except ImportError:
+            except (ImportError, OSError):
                 pass
         
         self.os_version.SetValue(info)

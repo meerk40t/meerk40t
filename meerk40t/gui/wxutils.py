@@ -604,7 +604,7 @@ class TextCtrl(wx.TextCtrl):
         self._event_generated = None
         self._action_routine = None
         self._default_values = None
-        self._last_action_time = 0.0
+        self._cooldown_active = False
 
         # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
@@ -691,19 +691,13 @@ class TextCtrl(wx.TextCtrl):
     def set_default_values(self, def_values):
         self._default_values = def_values
 
-    def _is_in_cooldown(self):
-        """Check if we're currently in cooldown period (300ms after last action)."""
-        import time
-        return (time.time() - self._last_action_time) < 0.3
+    def _start_cooldown(self):
+        """Activate cooldown and schedule automatic reset after 300ms."""
+        self._cooldown_active = True
+        wx.CallLater(300, self._end_cooldown)
 
-    def _update_last_action_time(self):
-        """Update the timestamp of the last action execution."""
-        import time
-        self._last_action_time = time.time()
-
-    def cancel_pending_action(self):
-        """Reset the cooldown by clearing the last action timestamp."""
-        self._last_action_time = 0.0
+    def _end_cooldown(self):
+        self._cooldown_active = False
 
     def get_warn_status(self, txt):
         status = ""
@@ -838,8 +832,9 @@ class TextCtrl(wx.TextCtrl):
         # Needs to be passed on
         event.Skip()
         self.prevalidate("leave")
-        if self._action_routine is not None and not self._is_in_cooldown():
-            self._update_last_action_time()
+        if self._action_routine is not None and (platform.system() != "Linux" or not self._cooldown_active):
+            if platform.system() == "Linux":
+                self._start_cooldown()
             self._event_generated = wx.EVT_KILL_FOCUS
             try:
                 self._action_routine()
@@ -854,8 +849,9 @@ class TextCtrl(wx.TextCtrl):
         # Let others deal with it after me
         event.Skip()
         self.prevalidate("enter")
-        if self._action_routine is not None and not self._is_in_cooldown():
-            self._update_last_action_time()
+        if self._action_routine is not None and (platform.system() != "Linux" or not self._cooldown_active):
+            if platform.system() == "Linux":
+                self._start_cooldown()
             self._event_generated = wx.EVT_TEXT_ENTER
             try:
                 self._action_routine()
