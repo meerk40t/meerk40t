@@ -604,6 +604,7 @@ class TextCtrl(wx.TextCtrl):
         self._event_generated = None
         self._action_routine = None
         self._default_values = None
+        self._cooldown_active = False
 
         # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
@@ -663,7 +664,11 @@ class TextCtrl(wx.TextCtrl):
     def SetActionRoutine(self, action_routine):
         """
         This routine will be called after a lost_focus / text_enter event,
-        it's a simple way of dealing with all the
+        with cooldown protection to prevent duplicate calls on Linux systems where
+        Enter key may trigger both events. Once an action is triggered, subsequent
+        events are ignored for 300ms to prevent duplicates.
+        
+        It's a simple way of dealing with all the
             ctrl.bind(wx.EVT_KILL_FOCUS / wx.EVT_TEXT_ENTER) things
         Yes, you can still have them, but you should call
             ctrl.prevalidate()
@@ -685,6 +690,14 @@ class TextCtrl(wx.TextCtrl):
 
     def set_default_values(self, def_values):
         self._default_values = def_values
+
+    def _start_cooldown(self):
+        """Activate cooldown and schedule automatic reset after 300ms."""
+        self._cooldown_active = True
+        wx.CallLater(300, self._end_cooldown)
+
+    def _end_cooldown(self):
+        self._cooldown_active = False
 
     def get_warn_status(self, txt):
         status = ""
@@ -819,7 +832,9 @@ class TextCtrl(wx.TextCtrl):
         # Needs to be passed on
         event.Skip()
         self.prevalidate("leave")
-        if self._action_routine is not None:
+        if self._action_routine is not None and (platform.system() != "Linux" or not self._cooldown_active):
+            if platform.system() == "Linux":
+                self._start_cooldown()
             self._event_generated = wx.EVT_KILL_FOCUS
             try:
                 self._action_routine()
@@ -834,7 +849,9 @@ class TextCtrl(wx.TextCtrl):
         # Let others deal with it after me
         event.Skip()
         self.prevalidate("enter")
-        if self._action_routine is not None:
+        if self._action_routine is not None and (platform.system() != "Linux" or not self._cooldown_active):
+            if platform.system() == "Linux":
+                self._start_cooldown()
             self._event_generated = wx.EVT_TEXT_ENTER
             try:
                 self._action_routine()
