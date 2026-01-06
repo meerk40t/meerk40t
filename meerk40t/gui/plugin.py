@@ -307,6 +307,21 @@ and a wxpython version <= 4.1.1."""
                 "signals": ("icons", "warn_state_update"),
             },
         ]
+        if platform.system() == "Linux":
+            choices.append(
+                {
+                    "attr": "suppress_sudo_warning",
+                    "object": kernel.root,
+                    "default": False,
+                    "type": bool,
+                    "label": _("Suppress sudo/admin warning"),
+                    "tip": _("Don't show the warning when running MeerK40t as root/admin on Linux"),
+                    "page": "Gui",
+                    # Hint for translation _("General")
+                    "section": "General",
+                }
+            )
+            
         kernel.register_choices("preferences", choices)
 
     elif lifecycle == "mainloop":
