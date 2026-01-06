@@ -1607,6 +1607,40 @@ class InformationPanel(ScrolledPanel):
             info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
         except socket.gaierror:
             info += "Ip-Address: localhost"
+        
+        # Linux-specific information
+        if uname.system == "Linux":
+            # Distribution and version
+            try:
+                import distro
+                dist_name = distro.name()
+                dist_version = distro.version()
+                info += f"\nDistribution: {dist_name} {dist_version}"
+            except ImportError:
+                # Fallback to parsing /etc/os-release
+                try:
+                    with open("/etc/os-release", "r") as f:
+                        for line in f:
+                            if line.startswith("PRETTY_NAME="):
+                                dist_info = line.split("=", 1)[1].strip().strip('"')
+                                info += f"\nDistribution: {dist_info}"
+                                break
+                except (FileNotFoundError, IOError):
+                    pass
+            
+            # Window manager
+            wm = os.environ.get("XDG_SESSION_DESKTOP") or os.environ.get("DESKTOP_SESSION") or "Unknown"
+            info += f"\nWindow Manager: {wm}"
+            
+            # Free disk space
+            try:
+                import shutil
+                total, used, free = shutil.disk_usage("/")
+                free_gb = free / (1024**3)
+                info += f"\nFree Disk Space: {free_gb:.2f} GB"
+            except ImportError:
+                pass
+        
         self.os_version.SetValue(info)
 
         info = f"{APPLICATION_NAME} v{APPLICATION_VERSION}"
