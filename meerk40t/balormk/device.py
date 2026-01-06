@@ -355,6 +355,54 @@ class BalorDevice(Service, Status):
                 "signals": "balorpin",
             },
             {
+                "attr": "pedal_mode",
+                "object": self,
+                "default": "ignore",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "ignore",
+                    "pause_resume_toggle",
+                    "pause_while_pressed",
+                    "stop",
+                ],
+                "display": [
+                    _("Ignore (only act on input operation)"),
+                    _("Pause/Resume Job on Press"),
+                    _("Pause While Pressed"),
+                    _("Stop Job"),
+                ],
+                "label": _("Pedal action"),
+                "tip": _(
+                    "What action should be taken when the foot pedal is pressed during a job execution?"
+                ),
+                # Hint for translation _("Parameters")
+                "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
+                "subsection": "_31_Footpedal",
+                "signals": "balorpin",
+            },
+            {
+                "attr": "pedal_active_low",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Active on low signal"),
+                "tip": _(
+                    "Should the pedal be considered pressed when the signal is low?"
+                ),
+                # Hint for translation _("Parameters")
+                "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
+                "subsection": "_31_Footpedal",
+                "conditional": (
+                    self,
+                    "pedal_mode",
+                    ("pause_resume_toggle", "pause_while_pressed", "stop"),
+                ),
+                "signals": "balorpin",
+            },
+            {
                 "attr": "signal_updates",
                 "object": self,
                 "default": True,
@@ -1067,7 +1115,13 @@ class BalorDevice(Service, Status):
         return True
 
     def service_attach(self, *args, **kwargs):
+        if hasattr(self.driver, "service_attach"):
+            self.driver.service_attach()
         self.realize()
+
+    def service_detach(self, *args, **kwargs):
+        if hasattr(self.driver, "service_detach"):
+            self.driver.service_detach()
 
     @signal_listener("lens_size")
     @signal_listener("rotate")

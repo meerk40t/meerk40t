@@ -5,6 +5,7 @@ The Driver has a set of different commands which are standardly sent and utilize
 driver.
 """
 
+import threading
 import time
 
 from usb.core import NoBackendError
@@ -23,9 +24,39 @@ from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.kernel import channel
 
 
 class BalorDriver:
+    """Balor (Galvo) device driver.
+
+    Footpedal polling
+    -----------------
+    - The driver starts a long-lived footpedal polling thread on
+      `service_attach()` and stops it on `service_detach()` (service teardown).
+    - The polling thread only acts when the controller is connected and
+      `service.pedal_mode` != "ignore". That prevents the thread from
+      interfering when the device is disconnected.
+    - Supported pedal modes (configured via `service.pedal_mode`):
+      - "pause_resume_toggle": toggle pause/resume on press
+      - "pause_while_pressed": pause while pressed, resume on release
+      - "stop": emergency stop on press
+    - `service.pedal_active_low` controls semantics of the pedal bit
+      (True => bit 0 = pressed, False => bit 1 = pressed).
+    - Poll interval is `self._pedal_poll_interval` (default 0.5s).
+    - Thread lifecycle and termination:
+      - The worker loop checks `self._pedal_thread_running` and
+        `self._shutdown` and exits when `_shutdown` is True or the
+        running flag is cleared.
+      - `stop_pedal_polling(origin=..., force=True)` forces a stop
+        and waits briefly for the thread to exit; other internal
+        calls to stop are ignored so the thread persists for the
+        lifetime of the service.
+    - The worker signals changes using `service.signal("pedal_state", foot_state)`
+      and will emit channel messages when configured or on emergency stop.
+
+    """
+
     def __init__(self, service, force_mock=False):
         self.service = service
         self.native_x = 0x8000
@@ -59,6 +90,12 @@ class BalorDriver:
         self._list_bits = None
         self.service.setting(bool, "signal_updates", True)
 
+        # Footpedal polling thread (uses controller's _usb_lock for synchronization)
+        self._pedal_thread = None
+        self._pedal_thread_running = False
+        self.last_foot_state = None
+        self._pedal_poll_interval = 0.5  # 0.5 seconds
+
     def __repr__(self):
         return f"BalorDriver({self.name})"
 
@@ -69,10 +106,17 @@ class BalorDriver:
         return self.connection.connected
 
     def service_attach(self):
+        # Clear shutdown flag and ensure pedal polling thread is running for the lifetime of the service
+        # print ("BalorDriver: service_attach called, starting pedal polling thread.")
         self._shutdown = False
+        self.start_pedal_polling(origin="service_attach")
 
     def service_detach(self):
+        # Indicate we're shutting down and stop the pedal polling thread for good
+        # print ("BalorDriver: service_detach called, shutting down pedal polling thread.")
         self._shutdown = True
+        # Force stopping the thread when shutting down the service
+        self.stop_pedal_polling(origin="service_detach", force=True)
 
     def connect(self):
         try:
@@ -171,6 +215,7 @@ class BalorDriver:
         con._dark_speed = None
         con._goto_speed = None
         con.program_mode()
+        self.start_pedal_polling(origin="geometry start of plot")
         self._list_bits = con._port_bits
         g = Geomstr()
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
@@ -178,6 +223,8 @@ class BalorDriver:
             # LOOP CHECKS
             if self._abort_mission():
                 return
+            while self.paused:
+                time.sleep(0.05)
             if segment_type == "line":
                 last_x, last_y = con.get_last_xy()
                 x, y = start.real, start.imag
@@ -242,6 +289,11 @@ class BalorDriver:
                         sets.get("dwell_time") * 100
                     )  # Dwell time in ms units in 10 us
                     while dwell_time > 0:
+                        # LOOP CHECKS
+                        if self._abort_mission():
+                            return
+                        while self.paused:
+                            time.sleep(0.05)
                         d = min(dwell_time, 60000)
                         con.list_laser_on_point(int(d))
                         dwell_time -= d
@@ -251,6 +303,11 @@ class BalorDriver:
                         sets.get("dwell_time") * 100
                     )  # Dwell time in ms units in 10 us
                     while dwell_time > 0:
+                        # LOOP CHECKS
+                        if self._abort_mission():
+                            return
+                        while self.paused:
+                            time.sleep(0.05)
                         d = min(dwell_time, 60000)
                         con.list_delay_time(int(d))
                         dwell_time -= d
@@ -298,6 +355,8 @@ class BalorDriver:
         while (
             self.connection and not self.connection.is_shutdown and not self._aborting
         ):
+            while self.paused:
+                time.sleep(0.05)
             read_port = self.connection.read_port()
             b = read_port[1]
             all_matched = True
@@ -331,6 +390,7 @@ class BalorDriver:
         con._dark_speed = None
         con._goto_speed = None
         con.program_mode()
+        self.start_pedal_polling(origin="start of plot")
         self._list_bits = con._port_bits
         last_on = None
         queue = self.queue
@@ -351,6 +411,8 @@ class BalorDriver:
             # LOOP CHECKS
             if self._abort_mission():
                 return
+            while self.paused:
+                time.sleep(0.05)
             if isinstance(q, LineCut):
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
@@ -439,6 +501,11 @@ class BalorDriver:
                 con.goto(start[0], start[1])
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
+                    # LOOP CHECKS
+                    if self._abort_mission():
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
                     d = min(dwell_time, 60000)
                     con.list_laser_on_point(int(d))
                     dwell_time -= d
@@ -446,6 +513,11 @@ class BalorDriver:
             elif isinstance(q, WaitCut):
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
+                    # LOOP CHECKS
+                    if self._abort_mission():
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
                     d = min(dwell_time, 60000)
                     con.list_delay_time(int(d))
                     dwell_time -= d
@@ -774,6 +846,177 @@ class BalorDriver:
             self.service.laser_status = "idle"
             return True
         return False
+
+    def start_pedal_polling(self, origin=""):
+        """
+        Start the background footpedal polling thread.
+        Polls every 0.5 seconds to check footpedal status.
+        """
+        if self._pedal_thread is not None and self._pedal_thread.is_alive():
+            return  # Already running
+
+        self._pedal_thread_running = True
+        self._pedal_thread = threading.Thread(
+            target=self._pedal_polling_worker, daemon=True, name="BalorPedalPolling"
+        )
+        self._pedal_thread.start()
+
+    def stop_pedal_polling(self, origin="", force: bool = False):
+        """
+        Stop the background footpedal polling thread.
+
+        By default, calls from within the driver's runtime (e.g. at plot end) will
+        not stop the global polling thread; stopping is only performed when
+        explicitly forced or when called from service teardown (origin="service_detach").
+        """
+        # Only stop the thread if explicitly requested or when shutting down the service
+        if not force and origin not in ("service_detach", "service_end"):
+            # Ignore transient stop requests so the thread runs for the lifetime of the service
+            return
+
+        self._pedal_thread_running = False
+        if self._pedal_thread is not None:
+            # Give the worker a short time to exit; join with timeout
+            self._pedal_thread.join(timeout=1.0)
+            if self._pedal_thread.is_alive():
+                self.service.channel(
+                    "Warning: Pedal polling thread did not exit within timeout; continuing."
+                )
+            self._pedal_thread = None
+
+    def _pedal_polling_worker(self):
+        """
+        Background worker thread that polls the footpedal status.
+        Runs every 0.5 seconds and checks for state changes.
+        The inquiry communication is automatically protected by
+        controller's list_lock.
+
+        Based on pedal_mode setting:
+        - "ignore": No action (only for input operations)
+        - "pause_resume_toggle": Toggle pause/resume job on press
+        - "pause_while_pressed": Pause while pressed, resume on release
+        - "stop": Abort job (emergency stop) on press
+
+        Based on pedal_active_low setting:
+        - True: Bit state 0 means "pressed" (active-low)
+        - False: Bit state 1 means "pressed" (active-high)
+        """
+        while self._pedal_thread_running and not self._shutdown:
+            # status = self.connection.get_execution_status()
+            try:
+                # Check if we should poll (only if pedal mode is active)
+                action = self.service.pedal_mode.lower()
+                if action != "ignore" and self.connected:
+                    # Controller's _usb_lock automatically protects this USB communication
+                    port_list = self.connection.read_port()
+                    # print(f"Pedal Polling: port_list={port_list}")
+
+                    if port_list is not None:
+                        # Check footpedal state
+                        foot_pin = self.service.footpedal_pin
+                        foot_state = (port_list[1] >> foot_pin) & 1
+                        # print(
+                        #     f"Pedal Polling: foot_state={foot_state} - last state={self.last_foot_state} "
+                        # )
+
+                        # Only process state changes
+                        if foot_state != self.last_foot_state:
+                            prev_state = self.last_foot_state
+                            self.last_foot_state = foot_state
+
+                            # Determine if pedal is now pressed based on configuration
+                            active_low = self.service.pedal_active_low
+
+                            # Determine what "pressed" means
+                            if active_low:
+                                # Active-low: bit 0 = pressed, bit 1 = released
+                                is_pressed = foot_state == 0
+                                was_pressed = (
+                                    (prev_state == 0)
+                                    if prev_state is not None
+                                    else False
+                                )
+                            else:
+                                # Active-high: bit 1 = pressed, bit 0 = released
+                                is_pressed = foot_state == 1
+                                was_pressed = (
+                                    (prev_state == 1)
+                                    if prev_state is not None
+                                    else False
+                                )
+
+                            # Log the state change
+                            state_label = "pressed" if is_pressed else "released"
+                            # print(
+                            #     f"Pedal Polling: Footpedal {state_label} (bit={foot_state}) - action={action}"
+                            # )
+
+                            # Execute action based on pedal mode
+                            if action == "pause_resume_toggle":
+                                # Toggle pause state only on press
+                                if not was_pressed and is_pressed:
+                                    if self.paused:
+                                        self.resume()
+                                        # print("Resuming job due to footpedal press.")
+                                        self.service.channel(
+                                            f"Footpedal pressed: Job resumed"
+                                        )
+                                    else:
+                                        self.pause()
+                                        # print("Pausing job due to footpedal press.")
+                                        self.service.channel(
+                                            f"Footpedal pressed: Job paused"
+                                        )
+
+                            elif action == "pause_while_pressed":
+                                # Pause while pressed, resume on release
+                                if is_pressed and not was_pressed:
+                                    # Just pressed - pause
+                                    if not self.paused:
+                                        self.pause()
+                                        # print("Pausing job due to footpedal press.")
+                                        self.service.channel(
+                                            f"Footpedal pressed: Job paused"
+                                        )
+                                elif not is_pressed and was_pressed:
+                                    # Just released - resume
+                                    if self.paused:
+                                        self.resume()
+
+                                        # print("Resuming job due to footpedal release.")
+                                        self.service.channel(
+                                            f"Footpedal released: Job resumed"
+                                        )
+
+                            elif action == "stop":
+                                # Emergency stop only on press
+                                if not was_pressed and is_pressed:
+                                    self.reset()
+                                    # print("Emergency stop due to footpedal press.")
+                                    self.service.channel(
+                                        f"Footpedal pressed: Emergency stop"
+                                    )
+                            # Log non-action changes if logging enabled
+                            if self.service.setting(bool, "log_pedal_events", False):
+                                self.service.channel(
+                                    f"Footpedal {state_label} (bit={foot_state})"
+                                )
+
+                            # Always signal state change for other listeners
+                            self.service.signal("pedal_state", foot_state)
+
+            except (AttributeError, TypeError, IndexError) as e:
+                # Handle errors gracefully (e.g., connection lost)
+                # print(f"Pedal Polling: Ignored error: {e}")
+                pass
+            except Exception as e:
+                # Log unexpected errors but keep thread alive
+                # print(f"Pedal Polling: Error: {e}")
+                self.service.channel(f"Pedal polling error: {e}")
+
+            # Sleep for the configured interval
+            # print(f"Will sleep for {self._pedal_poll_interval} seconds.")
+            time.sleep(self._pedal_poll_interval)
 
     def cylinder_validate(self):
         if self.service.cylinder_active:

@@ -7,9 +7,9 @@ from usb.core import NoBackendError
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.livelightjob import LiveLightJob
+from meerk40t.core.geomstr import Geomstr
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.core.geomstr import Geomstr
 
 
 def plugin(service, lifecycle):
@@ -839,17 +839,40 @@ def plugin(service, lifecycle):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
     @service.console_command(
-        "lstatus",
+        ("lstatus", "liststatus"),
         help=_("Checks the list status."),
     )
     def galvo_liststatus(command, channel, _, remainder=None, **kwgs):
         reply = service.driver.connection.get_list_status()
         if reply is None:
-            channel("Not connected, cannot get serial number.")
+            channel("Not connected, cannot get list status.")
             return
         channel(f"Command replied: {reply}")
         for index, b in enumerate(reply):
-            channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+            channel(f"Word {index}: 0x{b:04x} 0b{b:016b}")
+        # Interpret some values
+        status_info = reply[3] if len(reply) > 3 else 0
+        # Known examples for word 3:
+        # Idle  : 0x0220 0b0000001000100000
+        # Running: 0x0224 0b0000001000100100
+        # Paused : 0x0228 0b0000001000101000
+        # channel(f"Status word (word 3): 0x{status_info:04x} 0b{status_info:016b}")
+        # Bit definitions (word 3):
+        #   0x0004 (bit 2) -> Running state indicator
+        #   0x0008 (bit 3) -> Paused state indicator
+        is_running_state = bool(status_info & 0x0004)
+        is_paused_state = bool(status_info & 0x0008)
+        if is_paused_state:
+            exec_state = "Paused"
+        elif is_running_state:
+            exec_state = "Running"
+        else:
+            exec_state = "Idle"
+        channel(f"Execution state: {exec_state}")
+        channel(f"List Running: {'Yes' if (reply[2] & 0x0001) else 'No'}")
+        # Also show individual bit statuses for clarity
+        channel(f" - Running bit (0x0004): {'Set' if is_running_state else 'Clear'}")
+        channel(f" - Paused  bit (0x0008): {'Set' if is_paused_state else 'Clear'}")
 
     @service.console_command(
         "mark_time",

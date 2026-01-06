@@ -287,6 +287,7 @@ class GalvoController:
 
         self.mode = DRIVER_STATE_RAPID
         self._list_lock = threading.RLock()
+        self._send_lock = threading.RLock()
         self._active_list = None
         self._active_index = 0
         self._list_executing = False
@@ -301,6 +302,10 @@ class GalvoController:
     @property
     def source(self):
         return self.service.source
+
+    @property
+    def list_executing(self):
+        return self._list_executing
 
     @property
     def state(self):
@@ -363,7 +368,7 @@ class GalvoController:
             )
         if self.connection is None:
             if self.service.setting(bool, "mock", False) or self.force_mock:
-                self.connection = MockConnection(self.usb_log)
+                self.connection = MockConnection(self.usb_log, device=self.service)
                 name = self.service.safe_label
                 self.connection.send = self.service.channel(f"{name}/send")
                 self.connection.recv = self.service.channel(f"{name}/recv")
@@ -423,16 +428,17 @@ class GalvoController:
             return ERR
         if not self.connection:
             return ERR
-        try:
-            self.connection.write(self._machine_index, data)
-        except ConnectionError:
-            return ERR
-        if read:
+        with self._send_lock:
             try:
-                r = self.connection.read(self._machine_index)
-                return struct.unpack("<4H", r)
-            except (ConnectionError, struct.error):
+                self.connection.write(self._machine_index, data)
+            except ConnectionError:
                 return ERR
+            if read:
+                try:
+                    r = self.connection.read(self._machine_index)
+                    return struct.unpack("<4H", r)
+                except (ConnectionError, struct.error):
+                    return ERR
 
     def status(self):
         b0, b1, b2, b3 = self.get_version()
@@ -937,7 +943,7 @@ class GalvoController:
         """
         if self._power == power:
             return
-        power = max(0, min(100, power)) # make sure it is in 0-100 range
+        power = max(0, min(100, power))  # make sure it is in 0-100 range
         self._power = power
         if self.source == "co2":
             if self._frequency is None or self._frequency == 0:
@@ -1489,6 +1495,23 @@ class GalvoController:
 
     def get_list_status(self):
         return self._command(GetListStatus)
+
+    def get_execution_status(self):
+        reply = self.get_list_status()
+        if reply is None:
+            return "disconnected"
+        status_info = reply[3] if len(reply) > 3 else 0
+        # Bit definitions (word 3):
+        #   0x0004 (bit 2) -> Running state indicator
+        #   0x0008 (bit 3) -> Paused state indicator
+        is_running_state = bool(status_info & 0x0004)
+        is_paused_state = bool(status_info & 0x0008)
+        if is_paused_state:
+            return "paused"
+        elif is_running_state:
+            return "running"
+        else:
+            return "idle"
 
     def get_position_xy(self):
         return self._command(GetPositionXY)
