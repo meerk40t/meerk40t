@@ -24923,3 +24923,123 @@ msgstr "ポート {port} でコンソールサーバーを開始します (telne
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "Webサーバーを開始します (http、デフォルトポート {port})"
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"これはテスト文字列です\n"
+"複数行にまたがります。\n"
+"見えますか？"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "無視（入力操作のみに作用）"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "押下時にジョブを一時停止/再開"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "押下中に一時停止"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "ジョブを停止"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "ペダル動作"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr "ジョブ実行中にフットペダルが押された場合、どのようなアクションを実行しますか？"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "低信号でアクティブ"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr "信号が低い場合、ペダルが押されたと見なされますか？"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "sudo/admin警告を抑制"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr "LinuxでMeerK40tをroot/adminとして実行する場合、警告を表示しない"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"警告: MeerK40tをroot/管理者として実行中！\n"
+"\n"
+"MeerK40tを昇格された権限（sudo/adminモード）で実行すると、予期しない動作が発生する可能性があり、推奨されません。\n"
+"\n"
+"潜在的な問題:\n"
+"• ファイル権限が正しく設定されない可能性があります\n"
+"• 設定ファイルが通常のユーザーにアクセスできない可能性があります\n"
+"• USBデバイスアクセスが正しく動作しない可能性があります\n"
+"• システムの安定性が影響を受ける可能性があります\n"
+"\n"
+"USBデバイス設定:\n"
+"udevルールを設定することで、sudoなしでUSBデバイスにアクセスできます:"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr "sudoを使用せずに通常のユーザーとしてMeerK40tを実行することを強く推奨します。"
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "管理者/Root警告"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "この警告を再び表示しない"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "指示をコピー"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "指示がクリップボードにコピーされました！"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "成功"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "クリップボードにアクセスできませんでした。"
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"悪いニュースは、MeerK40tがクラッシュに遭遇し、開発者がこのバグについて謝罪していることです！\n"
+"\n"
+"良いニュースは、このバグを修正するために、クラッシュの詳細を匿名で送信することで私たちを助けられることです。"

@@ -24918,3 +24918,123 @@ msgstr "在端口 {port} 上启动控制台服务器 (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "启动 Web 服务器 (http，默认端口 {port})"
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"这是一个测试字符串\n"
+"跨越多行。\n"
+"看到了吗？"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "忽略（仅对输入操作起作用）"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "按下时暂停/恢复作业"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "按下时暂停"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "停止作业"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "踏板动作"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr "在作业执行期间按下脚踏板时应该采取什么行动？"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "低信号时激活"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr "当信号较低时，踏板是否应被视为按下？"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "抑制sudo/admin警告"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr "在Linux上以root/admin身份运行MeerK40t时不显示警告"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"警告：以root/管理员身份运行MeerK40t！\n"
+"\n"
+"使用提升的权限运行MeerK40t（sudo/admin模式）可能导致意外行为，不推荐这样做。\n"
+"\n"
+"潜在问题：\n"
+"• 文件权限可能设置不正确\n"
+"• 配置文件可能无法被普通用户访问\n"
+"• USB设备访问可能无法正常工作\n"
+"• 系统稳定性可能受到影响\n"
+"\n"
+"USB设备配置：\n"
+"要访问USB设备而无需sudo，您可以配置udev规则："
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr "强烈建议以普通用户身份运行MeerK40t，而不是使用sudo。"
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "管理员/Root警告"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "不再显示此警告"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "复制说明"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "说明已复制到剪贴板！"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "成功"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "无法访问剪贴板。"
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"坏消息是MeerK40t遇到了崩溃，开发人员为此bug道歉！\n"
+"\n"
+"好消息是您可以通过匿名向我们发送崩溃详情来帮助我们修复这个bug。"

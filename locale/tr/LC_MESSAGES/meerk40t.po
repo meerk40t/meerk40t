@@ -25498,3 +25498,127 @@ msgstr "{port} portunda bir konsol sunucusu başlatır (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "bir web sunucusu başlatır (http, varsayılan port {port})"
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"Bu bir test dizesidir\n"
+"birkaç satırı kapsar.\n"
+"Görüyor musun?"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "Yoksay (yalnızca giriş işleminde hareket et)"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "Basıldığında İşi Duraklat/Devam Ettir"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "Basıldığı Sürece Duraklat"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "İşi Durdur"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "Pedal eylemi"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr ""
+"Bir iş yürütme sırasında ayak pedalı basıldığında ne tür bir eylem "
+"alınmalıdır?"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "Düşük sinyalde aktif"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr "Sinyal düşük olduğunda pedal basılı olarak kabul edilmeli mi?"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "Sudo/admin uyarısını bastır"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr "MeerK40t'yi Linux'ta root/admin olarak çalıştırırken uyarıyı gösterme"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"UYARI: MeerK40t'yi root/yönetici olarak çalıştırıyor!\n"
+"\n"
+"MeerK40t'yi yükseltilmiş ayrıcalıklarla çalıştırmak (sudo/admin modu) beklenmedik davranışlara yol açabilir ve önerilmez.\n"
+"\n"
+"Potansiyel sorunlar:\n"
+"• Dosya izinleri yanlış ayarlanabilir\n"
+"• Yapılandırma dosyaları normal kullanıcılar tarafından erişilebilir olmayabilir\n"
+"• USB cihaz erişimi düzgün çalışmayabilir\n"
+"• Sistem kararlılığı etkilenebilir\n"
+"\n"
+"USB Cihaz Yapılandırması:\n"
+"USB cihazlara sudo olmadan erişmek için udev kurallarını yapılandırabilirsiniz:"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr ""
+"MeerK40t'yi sudo kullanmak yerine normal bir kullanıcı olarak çalıştırmak "
+"şiddetle önerilir."
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "Yönetici/Root Uyarısı"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "Bu uyarıyı tekrar gösterme"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "Talimatları Kopyala"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "Talimatlar panoya kopyalandı!"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "Başarılı"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "Panoya erişim başarısız."
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"Kötü haber şu ki MeerK40t bir çökme yaşadı ve geliştiriciler bu hata için özür diliyor!\n"
+"\n"
+"İyi haber şu ki bu hatayı anonim olarak bize çökme ayrıntılarını göndererek düzeltmemize yardımcı olabilirsiniz."

@@ -25890,3 +25890,128 @@ msgstr "inicia un servidor de consola en el puerto {port} (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "inicia un servidor web (http, puerto predeterminado {port})"
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"¡La mala noticia es que MeerK40t sufrió un fallo, ¡y los desarrolladores se disculpan por este error!\n"
+"\n"
+"La buena noticia es que puedes ayudarnos a corregir este error enviándonos los detalles del fallo de forma anónima."
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"Esta es una cadena de prueba\n"
+"que abarca varias líneas.\n"
+"¿Ves?"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "Ignorar (solo actuar en operación de entrada)"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "Pausar/Reanudar trabajo al presionar"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "Pausar mientras se presiona"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "Detener trabajo"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "Acción del pedal"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr ""
+"¿Qué acción se debe tomar cuando se presiona el pedal durante la ejecución "
+"de un trabajo?"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "Activo en señal baja"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr "¿Debe considerarse presionado el pedal cuando la señal es baja?"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "Suprimir advertencia de sudo/admin"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr ""
+"No mostrar la advertencia al ejecutar MeerK40t como root/admin en Linux"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"ADVERTENCIA: ¡Ejecutando MeerK40t como root/administrador!\n"
+"\n"
+"Ejecutar MeerK40t con privilegios elevados (modo sudo/admin) puede provocar comportamientos inesperados y no se recomienda.\n"
+"\n"
+"Problemas potenciales:\n"
+"• Los permisos de archivos pueden configurarse incorrectamente\n"
+"• Los archivos de configuración pueden no ser accesibles para usuarios normales\n"
+"• El acceso a dispositivos USB puede no funcionar correctamente\n"
+"• La estabilidad del sistema puede verse afectada\n"
+"\n"
+"Configuración de dispositivo USB:\n"
+"Para acceder a dispositivos USB sin sudo, puede configurar reglas udev:"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr ""
+"Se recomienda encarecidamente ejecutar MeerK40t como usuario normal en lugar"
+" de usar sudo."
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "Advertencia de administrador/root"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "No mostrar esta advertencia nuevamente"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "Copiar instrucciones"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "¡Instrucciones copiadas al portapapeles!"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "Éxito"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "Error al acceder al portapapeles."

@@ -25616,3 +25616,129 @@ msgstr "uruchamia serwer konsoli na porcie {port} (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "uruchamia serwer WWW (http, domyślny port {port})"
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"To jest ciąg testowy\n"
+"który rozciąga się na wiele linii.\n"
+"Widzisz?"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "Ignoruj (działaj tylko na operacji wejściowej)"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "Wstrzymaj/Wznów zadanie przy naciśnięciu"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "Wstrzymaj podczas naciśnięcia"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "Zatrzymaj zadanie"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "Akcja pedału"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr ""
+"Jaka akcja powinna zostać podjęta, gdy pedał nożny zostanie naciśnięty "
+"podczas wykonywania zadania?"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "Aktywny przy niskim sygnale"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr "Czy pedał powinien być uważany za naciśnięty, gdy sygnał jest niski?"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "Pomiń ostrzeżenie sudo/admin"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr ""
+"Nie pokazuj ostrzeżenia podczas uruchamiania MeerK40t jako root/admin na "
+"Linux"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"OSTRZEŻENIE: Uruchamianie MeerK40t jako root/administrator!\n"
+"\n"
+"Uruchamianie MeerK40t z podwyższonymi uprawnieniami (tryb sudo/admin) może prowadzić do nieoczekiwanego zachowania i nie jest zalecane.\n"
+"\n"
+"Potencjalne problemy:\n"
+"• Uprawnienia plików mogą być ustawione nieprawidłowo\n"
+"• Pliki konfiguracyjne mogą nie być dostępne dla zwykłych użytkowników\n"
+"• Dostęp do urządzeń USB może nie działać prawidłowo\n"
+"• Stabilność systemu może być zagrożona\n"
+"\n"
+"Konfiguracja urządzeń USB:\n"
+"Aby uzyskać dostęp do urządzeń USB bez sudo, możesz skonfigurować reguły udev:"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr ""
+"Zdecydowanie zaleca się uruchamianie MeerK40t jako zwykłego użytkownika "
+"zamiast używania sudo."
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "Ostrzeżenie administratora/root"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "Nie pokazuj ponownie tego ostrzeżenia"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "Kopiuj instrukcje"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "Instrukcje skopiowane do schowka!"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "Sukces"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "Nie udało się uzyskać dostępu do schowka."
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"Zła wiadomość jest taka, że MeerK40t napotkał awarię, a programiści przepraszają za ten błąd!\n"
+"\n"
+"Dobra wiadomość jest taka, że możesz pomóc nam naprawić ten błąd, wysyłając anonimowo szczegóły awarii."

@@ -25847,3 +25847,130 @@ msgstr "startet einen Konsolen-Server auf Port {port} (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "startet einen Webserver (http, Standardport {port})"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "Ignorieren (nur auf Eingabeoperation reagieren)"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "Job bei Druck pausieren/fortsetzen"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "Während des Drucks pausieren"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "Job stoppen"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "Fußpedal-Aktion"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr ""
+"Welche Aktion soll ausgeführt werden, wenn das Fußpedal während der "
+"Jobausführung gedrückt wird?"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "Aktiv bei niedrigem Signal"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr ""
+"Soll das Pedal als gedrückt betrachtet werden, wenn das Signal niedrig ist?"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "Sudo/Admin-Warnung unterdrücken"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr ""
+"Warnung nicht anzeigen, wenn MeerK40t als root/admin unter Linux ausgeführt "
+"wird"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"WARNUNG: MeerK40t wird als root/Administrator ausgeführt!\n"
+"\n"
+"MeerK40t mit erhöhten Berechtigungen (sudo/Admin-Modus) auszuführen kann zu unerwartetem Verhalten führen und wird nicht empfohlen.\n"
+"\n"
+"Mögliche Probleme:\n"
+"• Dateiberechtigungen können falsch gesetzt werden\n"
+"• Konfigurationsdateien sind möglicherweise für normale Benutzer nicht zugänglich\n"
+"• USB-Gerätezugriff funktioniert möglicherweise nicht ordnungsgemäß\n"
+"• Systemstabilität kann beeinträchtigt werden\n"
+"\n"
+"USB-Gerätekonfiguration:\n"
+"Um USB-Geräte ohne sudo zu verwenden, können Sie udev-Regeln konfigurieren:"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr ""
+"Es wird dringend empfohlen, MeerK40t als normaler Benutzer anstatt mit sudo "
+"auszuführen."
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "Administrator/Root-Warnung"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "Diese Warnung nicht mehr anzeigen"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "Anweisungen kopieren"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "Anweisungen in die Zwischenablage kopiert!"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "Erfolg"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "Zugriff auf Zwischenablage fehlgeschlagen."
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"Die schlechte Nachricht ist, dass MeerK40t einen Absturz erlebt hat, und die Entwickler entschuldigen sich für diesen Fehler!\n"
+"\n"
+"Die gute Nachricht ist, dass Sie uns helfen können, diesen Fehler zu beheben, indem Sie uns die Absturzdetails anonym senden."
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"Das ist ein Test-String\n"
+"der über mehrere Zeilen geht.\n"
+"Alles da?"

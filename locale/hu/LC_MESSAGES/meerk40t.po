@@ -25707,3 +25707,128 @@ msgstr "konzol-kiszolgálót indít a {port} porton (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "webkiszolgálót indít (http, alapértelmezett port {port})"
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"Ez egy teszt karakterlánc\n"
+"ami több sorra terjed ki.\n"
+"Látod?"
+
+#: meerk40t/balormk/device.py:370
+msgid "Ignore (only act on input operation)"
+msgstr "Figyelmen kívül hagyás (csak a bemeneti műveleten működik)"
+
+#: meerk40t/balormk/device.py:371
+msgid "Pause/Resume Job on Press"
+msgstr "Munka szüneteltetése/folytatása megnyomáskor"
+
+#: meerk40t/balormk/device.py:372
+msgid "Pause While Pressed"
+msgstr "Szüneteltetés megnyomás közben"
+
+#: meerk40t/balormk/device.py:373
+msgid "Stop Job"
+msgstr "Munka leállítása"
+
+#: meerk40t/balormk/device.py:375
+msgid "Pedal action"
+msgstr "Pedál művelet"
+
+#: meerk40t/balormk/device.py:378
+msgid ""
+"What action should be taken when the foot pedal is pressed during a job "
+"execution?"
+msgstr ""
+"Milyen műveletet kell végrehajtani, amikor a lábpedált megnyomják munka "
+"végrehajtása közben?"
+
+#: meerk40t/balormk/device.py:390
+msgid "Active on low signal"
+msgstr "Aktív alacsony jel esetén"
+
+#: meerk40t/balormk/device.py:393
+msgid "Should the pedal be considered pressed when the signal is low?"
+msgstr "A pedált megnyomottnak kell-e tekinteni, amikor a jel alacsony?"
+
+#: meerk40t/gui/plugin.py:317
+msgid "Suppress sudo/admin warning"
+msgstr "Sudo/admin figyelmeztetés elnyomása"
+
+#: meerk40t/gui/plugin.py:318
+msgid "Don't show the warning when running MeerK40t as root/admin on Linux"
+msgstr ""
+"Ne mutassa a figyelmeztetést, amikor MeerK40t root/admin-ként fut Linuxon"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"WARNING: Running MeerK40t as root/administrator!\n"
+"\n"
+"Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n"
+"\n"
+"Potential issues:\n"
+"• File permissions may be set incorrectly\n"
+"• Configuration files may not be accessible to regular users\n"
+"• USB device access may not work properly\n"
+"• System stability may be affected\n"
+"\n"
+"USB Device Configuration:\n"
+"To access USB devices without sudo, you can configure udev rules:"
+msgstr ""
+"FIGYELMEZTETÉS: MeerK40t futtatása root/adminisztrátorként!\n"
+"\n"
+"A MeerK40t futtatása emelt privilégiumokkal (sudo/admin mód) váratlan viselkedést okozhat és nem ajánlott.\n"
+"\n"
+"Lehetséges problémák:\n"
+"• A fájlengedélyek helytelenül állíthatók be\n"
+"• A konfigurációs fájlok nem lehetnek elérhetők a rendszeres felhasználók számára\n"
+"• Az USB eszközök hozzáférése nem működhet megfelelően\n"
+"• A rendszer stabilitása érintett lehet\n"
+"\n"
+"USB eszköz konfiguráció:\n"
+"Az USB eszközök sudo nélküli eléréséhez konfigurálhatja az udev szabályokat:"
+
+#: meerk40t/gui/wxmeerk40t.py:555
+msgid ""
+"It is strongly recommended to run MeerK40t as a regular user instead of "
+"using sudo."
+msgstr ""
+"Erősen ajánlott a MeerK40t futtatása rendszeres felhasználóként a sudo "
+"használata helyett."
+
+#: meerk40t/gui/wxmeerk40t.py:558
+msgid "Administrator/Root Warning"
+msgstr "Adminisztrátor/Root figyelmeztetés"
+
+#: meerk40t/gui/wxmeerk40t.py:577
+msgid "Don't show this warning again"
+msgstr "Ne mutassa ezt a figyelmeztetést újra"
+
+#: meerk40t/gui/wxmeerk40t.py:583
+msgid "Copy Instructions"
+msgstr "Utasítások másolása"
+
+#: meerk40t/gui/wxmeerk40t.py:616
+msgid "Instructions copied to clipboard!"
+msgstr "Utasítások másolva a vágólapra!"
+
+#: meerk40t/gui/wxmeerk40t.py:617
+msgid "Success"
+msgstr "Siker"
+
+#: meerk40t/gui/wxmeerk40t.py:619
+msgid "Failed to access clipboard."
+msgstr "Nem sikerült elérni a vágólapot."
+
+#: meerk40t/gui/wxmeerk40t.py:1613
+msgid ""
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n"
+"\n"
+"The good news is that you can help us fix this bug by anonymously sending us the crash details."
+msgstr ""
+"A rossz hír az, hogy a MeerK40t összeomlást tapasztalt, és a fejlesztők elnézést kérnek ezért a hibáért!\n"
+"\n"
+"A jó hír az, hogy segíthet nekünk kijavítani ezt a hibát az összeomlás részleteinek anonim elküldésével."
