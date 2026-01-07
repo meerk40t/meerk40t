@@ -43,6 +43,12 @@ try:
 except ImportError:
     chardet = None
 
+_ = lambda s: s  # Dummy translation function for testing
+
+MULTLINE_TESTCASE = _("""This is a test string
+that spans multiple lines.
+See?""")
+
 
 # Determine whether output is a TTY. If not (redirected), disable ANSI codes.
 try:
@@ -281,6 +287,38 @@ def read_source() -> Tuple[List[str], List[str]]:
                                 idx = 0
                                 line = "" if idx + 1 >= len(line) else line[idx + 1 :]
                                 continue
+                            elif line.startswith("'''") or line.startswith('"""'):
+                                # Handle triple-quoted strings (multiline)
+                                quote = line[:3]
+                                startidx = 3
+                                line_content = line[3:]
+                                # Look for closing triple quote on same line first
+                                idx = line_content.find(quote)
+                                if idx >= 0:
+                                    # Triple quote closes on same line
+                                    msgid += line_content[:idx]
+                                    line = line_content[idx + 3:]
+                                else:
+                                    # Triple quote spans multiple lines
+                                    msgid += line_content
+                                    # Read subsequent lines until we find the closing quote
+                                    while True:
+                                        localline += 1
+                                        next_line = f.readline()
+                                        if not next_line:
+                                            msgid_mode = False
+                                            line = ""
+                                            break
+                                        idx = next_line.find(quote)
+                                        if idx >= 0:
+                                            # Found closing quote
+                                            msgid += "\n" + next_line[:idx]
+                                            line = next_line[idx + 3:]
+                                            break
+                                        else:
+                                            # Still in multiline string
+                                            msgid += "\n" + next_line.rstrip('\n\r')
+                                continue
                             elif line.startswith("'"):
                                 quote = "'"
                                 startidx = 1
@@ -391,14 +429,46 @@ def read_po(locale: str) -> Tuple[List[str], List[Tuple[str, str]]]:
     return id_strings, pairs
 
 
+def format_po_string(text: str) -> str:
+    """
+    Format a string for .po file output, handling multiline strings properly.
+    
+    Args:
+        text: The string to format (already escaped)
+        
+    Returns:
+        Formatted string suitable for .po file
+    """
+    # Check if string contains actual newlines (not escape sequences)
+    if '\n' in text and '\\n' not in text:
+        # This is a real multiline string, format it properly
+        lines = text.split('\n')
+        if len(lines) > 1:
+            # Format as multiline: msgid ""\n"line1\n"\n"line2"
+            result = '""\n'
+            for i, line in enumerate(lines):
+                # Escape quotes in the line
+                escaped_line = line.replace('"', '\\"')
+                # Add \n only if not the last line
+                if i < len(lines) - 1:
+                    result += f'"{escaped_line}\\n"\n'
+                else:
+                    result += f'"{escaped_line}"\n'
+            return result.rstrip('\n')  # Remove final newline
+    # Single line or string with \n escape sequences
+    return f'"{text}"'
+
+
 def compare(
     locale: str,
     id_strings: List[str],
     id_strings_source: List[str],
     id_usage: List[str],
+    pairs: List[Tuple[str, str]] = None,
 ) -> Tuple[str, str]:
     """
     Compares source msgids with those in the .po file and writes new ones to delta_{locale}.po.
+    Only excludes strings that are already translated in the main .po file.
     Preserves existing translations from previous delta files.
     Returns (status, details) tuple for table display.
     """
@@ -417,34 +487,43 @@ def compare(
         except Exception as e:
             print(f"Warning: Could not read existing delta file {delta_file}: {e}")
 
+    # Create a set of strings that are TRANSLATED in the main .po file
+    # We should only exclude strings that actually have translations
+    translated_strings = set()
+    if pairs:
+        for msgid, msgstr in pairs:
+            # Only consider it translated if msgstr is not empty
+            if msgstr and msgstr.strip():
+                # Unescape to match source format
+                translated_strings.add(unescape_string(lf_coded(msgid)))
+
     with open(delta_file, "w", encoding="utf-8", errors="surrogateescape") as outp:
         for idx, key in enumerate(id_strings_source):
             if not key:
                 continue
             counts[0] += 1
-            if key in id_strings:
+            
+            # Normalize the source key for comparison
+            normalized_key = unescape_string(key)
+            
+            # Only exclude if the string is already translated in the main .po file
+            if normalized_key in translated_strings:
                 counts[1] += 1
             else:
                 counts[2] += 1
                 outp.write(f"{id_usage[idx]}\n")
-                last = ""
-                lkey = ""
-                for kchar in key:
-                    if kchar == '"' and last != "\\":
-                        lkey += "\\"  # escape the quote
-                    lkey += kchar
-                    last = kchar
-                outp.write(f'msgid "{lkey}"\n')
+                
+                # Format the msgid properly (key already contains raw content with actual newlines if any)
+                formatted_msgid = format_po_string(key)
+                outp.write(f'msgid {formatted_msgid}\n')
 
                 # Check if we have an existing translation for this msgid
-                # We need to unescape the key from source to match what polib gives us
                 unescaped_key = unescape_string(key)
                 if unescaped_key in existing_translations:
                     # Use existing translation
                     msgstr = existing_translations[unescaped_key]
-                    # Use the lf_coded function to properly escape the string
-                    escaped_msgstr = lf_coded(msgstr)
-                    outp.write(f'msgstr "{escaped_msgstr}"\n\n')
+                    formatted_msgstr = format_po_string(msgstr)
+                    outp.write(f'msgstr {formatted_msgstr}\n\n')
                 else:
                     # No existing translation, leave empty
                     outp.write('msgstr ""\n\n')
@@ -895,7 +974,7 @@ def main():
             check_results.append((loc, status, written, empty, duplicate, unused))
         else:
             print_info(f"Checking for new translation strings for locale {loc}...")
-            status, details = compare(loc, id_strings, id_strings_source, id_usage)
+            status, details = compare(loc, id_strings, id_strings_source, id_usage, pairs)
             check_results.append((loc, status, details))
 
             if do_translate and loc != "en":
