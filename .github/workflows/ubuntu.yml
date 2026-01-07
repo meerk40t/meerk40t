@@ -31,23 +31,17 @@ jobs:
         pip cache purge
         pip install setuptools==65.5.1
         pip install pyinstaller wheel
-        pip install numpy==1.26.4
-        pip install pyusb
-        pip install wheel
-        # pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
-        pip install potracer
-        pip install pypotrace
-        pip install pillow==9.5.0
-        pip install ezdxf
-        pip install pyserial
+        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        # Install core dependencies from requirements.txt
+        pip install -r requirements.txt
+        # Install pyclipr with PEP 517 to avoid deprecation warning
+        pip install --use-pep517 pyclipr
+        # Install Linux-specific optional dependencies
+        pip install -r requirements-optional-linux.txt
+        # Install additional packages not in requirements files
         pip install bitarray
-        # pip install scipy
-        pip install numba
-        pip install --no-cache-dir opencv-python-headless==4.5.3.56
-        # pip install meerk40t-camera
-        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
-        if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
-        pip install .
+        # Install project in development mode
+        pip install -e .
         pip install meerk40t-barcodes
 
     - name: pip list
