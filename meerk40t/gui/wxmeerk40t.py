@@ -507,6 +507,32 @@ class wxMeerK40t(wx.App, Module):
         wx.ToolTip.SetDelay(delay_ms)
         wx.ToolTip.SetReshow(0)
 
+    def _get_usb_config_instructions(self):
+        """Get the technical USB configuration instructions.
+        
+        Returns:
+            str: The USB device configuration steps
+        """
+        instructions = (
+            '# MeerK40t USB Device Configuration Instructions' ,
+            '# 1) Create file: /etc/udev/rules.d/99-meerk40t.rules',
+            '# 2) Add the following lines to the file:',
+            '# CH341 USB-to-serial chips (used by Lihuiyu laser controllers)',
+            'SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="*", MODE="0666"',
+            '# FTDI USB-to-serial chips (used by Ruida laser controllers)',
+            'SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="*", MODE="0666"',
+            '# BJJCZ galvo controllers',
+            'SUBSYSTEM=="usb", ATTR{idVendor}=="9588", ATTR{idProduct}=="*", MODE="0666"',
+            '# GSI Group galvo controllers',
+            'SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="*", MODE="0666"',
+            '# Philips chips (used by Newly controllers)',
+            'SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"',
+            '# 3) Commands to apply the rules:',
+            'sudo udevadm control --reload-rules && sudo udevadm trigger',
+            'sudo usermod -a -G dialout $USER',
+        )
+        return "\n".join(instructions)
+
     def _show_sudo_warning(self):
         """Show warning dialog when running as root/sudo on Linux."""
         # Check if user has suppressed this warning
@@ -514,31 +540,19 @@ class wxMeerK40t(wx.App, Module):
         if suppress_warning:
             return
             
-        message = _("""WARNING: Running MeerK40t as root/administrator!
-
-Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.
-
-Potential issues:
-• File permissions may be set incorrectly
-• Configuration files may not be accessible to regular users
-• USB device access may not work properly
-• System stability may be affected
-
-USB Device Configuration:
-To access USB devices without sudo, you can configure udev rules:
-
-1. Create a file: /etc/udev/rules.d/99-meerk40t.rules
-2. Add the following content:
-   SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="*", MODE="0666"
-   SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="*", MODE="0666"
-   SUBSYSTEM=="usb", ATTR{idVendor}=="9588", ATTR{idProduct}=="*", MODE="0666"
-   SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="*", MODE="0666"
-   SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"
-3. Reload udev rules: sudo udevadm control --reload-rules && sudo udevadm trigger
-4. Add your user to the 'dialout' group: sudo usermod -a -G dialout $USER
-
-It is strongly recommended to run MeerK40t as a regular user instead of using sudo.
-""")
+        # Build the full warning message with instructions
+        instructions = self._get_usb_config_instructions()
+        message = _(
+            "WARNING: Running MeerK40t as root/administrator!\n\n" +
+            "Running MeerK40t with elevated privileges (sudo/admin mode) may lead to unexpected behavior and is not recommended.\n\n" +
+            "Potential issues:\n" +
+            "• File permissions may be set incorrectly\n" +
+            "• Configuration files may not be accessible to regular users\n" +
+            "• USB device access may not work properly\n" + 
+            "• System stability may be affected\n\n" +
+            "USB Device Configuration:\n" +
+            "To access USB devices without sudo, you can configure udev rules:"
+        ) + "\n\n" + instructions +  "\n\n" + _("It is strongly recommended to run MeerK40t as a regular user instead of using sudo.")
 
         # Create a custom dialog with checkbox and copy button
         dlg = wx.Dialog(None, title=_("Administrator/Root Warning"), 
@@ -592,32 +606,11 @@ It is strongly recommended to run MeerK40t as a regular user instead of using su
         dlg.Destroy()
 
     def _copy_instructions_to_clipboard(self):
-        """Copy the USB configuration instructions to clipboard."""
-        instructions = """# MeerK40t USB Device Configuration
-# Create file: /etc/udev/rules.d/99-meerk40t.rules
-# These rules allow regular users to access MeerK40t-supported USB devices
-
-# CH341 USB-to-serial chips (used by Lihuiyu laser controllers)
-SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="*", MODE="0666"
-
-# FTDI USB-to-serial chips (used by Ruida laser controllers)
-SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="*", MODE="0666"
-
-# BJJCZ galvo controllers
-SUBSYSTEM=="usb", ATTR{idVendor}=="9588", ATTR{idProduct}=="*", MODE="0666"
-
-# GSI Group galvo controllers
-SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="*", MODE="0666"
-
-# Philips chips (used by Newly controllers)
-SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"
-
-# Commands to apply the rules:
-# sudo udevadm control --reload-rules && sudo udevadm trigger
-# sudo usermod -a -G dialout $USER"""
+        # Copy the USB configuration instructions to clipboard.
+        content = self._get_usb_config_instructions()
 
         if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(instructions))
+            wx.TheClipboard.SetData(wx.TextDataObject(content))
             wx.TheClipboard.Close()
             # Show feedback
             wx.MessageBox(_("Instructions copied to clipboard!"), 
@@ -640,6 +633,10 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"
         self.context.setting(bool, "single_instance_only", True)
         if self.context.kernel._was_restarted:
             return True
+        # Check for sudo/root on Linux and show warning
+        if platform.system() == "Linux" and os.geteuid() == 0:
+            self._show_sudo_warning()
+
         if self.context.single_instance_only and self.instance.IsAnotherRunning():
             dlg = wx.MessageDialog(
                 None,
@@ -1020,10 +1017,6 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"
         context = self.context
         kernel = context.kernel
 
-        # Check for sudo/root on Linux and show warning
-        if platform.system() == "Linux" and os.geteuid() == 0:
-            self._show_sudo_warning()
-
         try:  # pyinstaller internal location
             # pylint: disable=no-member
             _resource_path = os.path.join(sys._MEIPASS, "locale")
@@ -1307,7 +1300,8 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"
 
             def crash_value(variable, dtype):
                 return dtype(variable)
-
+            
+            channel(f"Intentionally crashing with type: {crashtype}")
             if crashtype is None:
                 crashtype = "dividebyzero"
             crashtype = crashtype.lower()
@@ -1614,9 +1608,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     # Ask to send file.
     message = _(
-        """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
-
-The good news is that you can help us fix this bug by anonymously sending us the crash details."""
+        "The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!\n\n" +
+        "The good news is that you can help us fix this bug by anonymously sending us the crash details."
     )
     message += "\n" + _(
         "Only the crash details below are sent. No data from your MeerK40t project is sent. No "
