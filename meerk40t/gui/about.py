@@ -108,22 +108,27 @@ class AboutPanel(wx.Panel):
         hsizer_pic_info.Add(self.meerk40t_about_text_header, 1, wx.EXPAND, 0)
         vsizer_main.Add(hsizer_pic_info, 1, wx.EXPAND, 0)
         # Simplify addition of future developers without need to translate every single time
-        # Ordered by the amount of commits (as of Jan 2024)
-        # tatarize ~ 11.800
-        # jpirnay ~ 3.200
-        # Sophist-UK ~ 500
-        # tiger12506 ~ 90
-        # joerlane ~ 50
-        # jaredly ~ 15
-        # frogmaster ~ 10
-        hall_of_fame = [
-            "Sophist-UK",
-            "tiger12506",
-            "jaredly",
-            "frogmaster",
-            "inspectionsbybob",
-            "jondale",
+        # Ordered by the amount of commits (as of Jan 2026)
+        contributor_data = [
+            # Name, commit count, to be included in hall of fame
+            ("tatarize", 12014, False),
+            ("jpirnay", 6778, False),
+            ("Sophist-UK", 542, True),
+            ("tiger12506", 94, True),   
+            ("joerlane", 52, False),
+            ("BetaEta84", 47, True),
+            ("Laserology", 22, True),
+            ("ristraus", 20, True),
+            ("jaredly", 16, True),
+            ("frogmaster", 9, True),
+            ("jondale", 9, True),
         ]
+        # Top 5 contributors, sorted by commits unless flagged otherwise
+        hall_of_fame = [
+            name for name, commits, include in sorted(contributor_data, key=lambda x: x[1], reverse=True) if include and commits >= 20
+        ]
+        if len(hall_of_fame) < len(contributor_data):
+            hall_of_fame.append(_("and others"))
         meerk40t_about_text = wxStaticText(
             self,
             wx.ID_ANY,
@@ -137,7 +142,7 @@ class AboutPanel(wx.Panel):
             + _(
                 "* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
             )
-            + _("* All the MeerKittens, {developer}. \n").format(
+            + _("* All the MeerKittens, {developer}.\n").format(
                 developer=", ".join(hall_of_fame)
             )
             + _(
