@@ -8,6 +8,7 @@ on network-connected GRBL lasers with ESP3D firmware.
 import os
 import time
 import random
+import json
 from urllib.parse import urlencode, quote
 
 try:
@@ -27,7 +28,7 @@ class ESP3DConnection:
     Manages HTTP connection to ESP3D-WEBUI for file upload and execution.
     """
 
-    def __init__(self, host, port=80, username=None, password=None, timeout=30, firmware="grbl"):
+    def __init__(self, host, port=80, username=None, password=None, timeout=30, firmware=None):
         """
         Initialize ESP3D connection.
 
@@ -37,16 +38,22 @@ class ESP3DConnection:
             username: Optional authentication username
             password: Optional authentication password
             timeout: Request timeout in seconds
-            firmware: Firmware type ("grbl", "marlin", etc.) to adjust paths
+            firmware: Firmware type ("grbl", "marlin", etc.) to adjust paths.
+                     If None, will auto-detect from device.
         """
         self.host = host
         self.port = port
         self.username = username
         self.password = password
         self.timeout = timeout
-        self.firmware = firmware.lower()
         self.base_url = f"http://{host}:{port}"
         
+        # Auto-detect firmware if not specified
+        if firmware is None:
+            self.firmware = self._detect_firmware()
+        else:
+            self.firmware = firmware.lower()
+            
         # Adjust base path based on firmware
         if self.firmware == "grbl":
             self.base_path = "/SD/"
@@ -59,6 +66,46 @@ class ESP3DConnection:
             raise ESP3DUploadError(
                 "requests library not available. Install with: pip install requests"
             )
+
+    def _detect_firmware(self):
+        """
+        Auto-detect firmware type from ESP3D device.
+        
+        Returns:
+            str: Firmware type ("grbl", "marlin", "smoothieware", "repetier", etc.)
+        """
+        import json
+        
+        try:
+            url = f"{self.base_url}/command"
+            params = {"cmd": "[ESP800]"}
+            
+            # Use requests directly since we don't have a session yet
+            response = requests.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            
+            data = json.loads(response.text)
+            
+            if data.get("status") == "ok" and "data" in data:
+                fw_target = data["data"].get("FWTarget", "").lower()
+                if fw_target:
+                    return fw_target
+            
+            # Fallback: try to parse from plain text response
+            text_response = response.text.strip()
+            if "FWTarget" in text_response:
+                # Parse FWTarget from text response
+                lines = text_response.split('\n')
+                for line in lines:
+                    if "FWTarget:" in line:
+                        fw_target = line.split(":", 1)[1].strip().lower()
+                        return fw_target
+                        
+        except Exception:
+            pass
+        
+        # Default to "grbl" if detection fails
+        return "grbl"
 
     def __enter__(self):
         """Context manager entry."""
@@ -106,6 +153,25 @@ class ESP3DConnection:
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
             
+            # Try to parse JSON response
+            try:
+                import json
+                data = json.loads(response.text)
+                if data.get("status") == "ok" and "data" in data:
+                    device_info = data["data"]
+                    return {
+                        "success": True,
+                        "status_code": response.status_code,
+                        "message": "Connection successful",
+                        "firmware": device_info.get("FWTarget", "unknown"),
+                        "firmware_version": device_info.get("FWVersion", "unknown"),
+                        "hostname": device_info.get("Hostname", "unknown"),
+                        "response": response.text[:200]  # First 200 chars
+                    }
+            except json.JSONDecodeError:
+                pass
+            
+            # Fallback for plain text response
             return {
                 "success": True,
                 "status_code": response.status_code,
