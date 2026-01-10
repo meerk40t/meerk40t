@@ -27,7 +27,7 @@ class ESP3DConnection:
     Manages HTTP connection to ESP3D-WEBUI for file upload and execution.
     """
 
-    def __init__(self, host, port=80, username=None, password=None, timeout=30):
+    def __init__(self, host, port=80, username=None, password=None, timeout=30, firmware="grbl"):
         """
         Initialize ESP3D connection.
 
@@ -37,13 +37,22 @@ class ESP3DConnection:
             username: Optional authentication username
             password: Optional authentication password
             timeout: Request timeout in seconds
+            firmware: Firmware type ("grbl", "marlin", etc.) to adjust paths
         """
         self.host = host
         self.port = port
         self.username = username
         self.password = password
         self.timeout = timeout
+        self.firmware = firmware.lower()
         self.base_url = f"http://{host}:{port}"
+        
+        # Adjust base path based on firmware
+        if self.firmware == "grbl":
+            self.base_path = "/SD/"
+        else:
+            self.base_path = "/"
+            
         self.session = None
 
         if not REQUESTS_AVAILABLE:
@@ -128,7 +137,7 @@ class ESP3DConnection:
         """
         try:
             url = f"{self.base_url}/sdfiles"
-            params = {"path": "/"}
+            params = {"path": self.base_path, "action": "list"}
             
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
@@ -178,30 +187,32 @@ class ESP3DConnection:
         except (json.JSONDecodeError, KeyError) as e:
             raise ESP3DUploadError(f"Failed to parse SD info: {e}")
 
-    def list_files(self, path="/"):
+    def list_files(self, path=None):
         """
         List files on SD card.
 
         Args:
-            path: Directory path to list
+            path: Directory path to list (default: base path)
 
         Returns:
             list: List of files with name, size, and time information
         """
+        if path is None:
+            path = self.base_path
         try:
             info = self.get_sd_info()
             return info.get("files", [])
         except ESP3DUploadError:
             raise
 
-    def upload_file(self, local_path, remote_filename, remote_path="/", progress_callback=None):
+    def upload_file(self, local_path, remote_filename, remote_path=None, progress_callback=None):
         """
         Upload a file to ESP3D SD card.
 
         Args:
             local_path: Path to local file
             remote_filename: Name for file on SD card (8.3 format recommended)
-            remote_path: Target directory on SD card (default: "/")
+            remote_path: Target directory on SD card (default: base path for firmware)
             progress_callback: Optional callback function(bytes_sent, total_bytes).
                 Currently only called with (-1, -1) when SD card space check fails
                 but upload will continue. Future enhancement: real progress tracking.
@@ -209,6 +220,8 @@ class ESP3DConnection:
         Returns:
             dict: Upload result with success status and message
         """
+        if remote_path is None:
+            remote_path = self.base_path
         if not os.path.exists(local_path):
             raise ESP3DUploadError(f"Local file not found: {local_path}")
 
@@ -306,17 +319,19 @@ class ESP3DConnection:
         except IOError as e:
             raise ESP3DUploadError(f"File read error: {e}")
 
-    def delete_file(self, filename, path="/"):
+    def delete_file(self, filename, path=None):
         """
         Delete a file from SD card.
 
         Args:
             filename: Name of file to delete
-            path: Directory path
+            path: Directory path (default: base path)
 
         Returns:
             dict: Deletion result
         """
+        if path is None:
+            path = self.base_path
         try:
             url = f"{self.base_url}/sdfiles"
             params = {
@@ -336,17 +351,19 @@ class ESP3DConnection:
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Delete failed: {e}")
 
-    def execute_file(self, filename, path="/"):
+    def execute_file(self, filename, path=None):
         """
         Execute a G-code file on the device.
 
         Args:
             filename: Name of file to execute
-            path: Path prefix (default: "/")
+            path: Path prefix (default: base path)
 
         Returns:
             dict: Execution result
         """
+        if path is None:
+            path = self.base_path
         try:
             # ESP3D command to execute file: [ESP700]/path/filename
             if filename.startswith("/"):
