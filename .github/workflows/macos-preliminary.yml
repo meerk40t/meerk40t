@@ -47,6 +47,13 @@ jobs:
 
         mv meerk40t.py mk40t.py
         # --target-architecture universal2   - does not work!
+        LOCALE_ARGS=""
+        for lang_dir in locale/*/; do
+            lang=$(basename "$lang_dir")
+            if [ -f "locale/$lang/LC_MESSAGES/meerk40t.mo" ]; then
+                LOCALE_ARGS="$LOCALE_ARGS --add-data locale/$lang/LC_MESSAGES/meerk40t.mo:locale/$lang/LC_MESSAGES/"
+            fi
+        done
         pyinstaller \
           --hidden-import wx._adv \
           --hidden-import wx._xml \
@@ -54,7 +61,7 @@ jobs:
           --windowed \
           --noconfirm \
           -i .github/workflows/mac/meerk40t.icns \
-          --add-data 'locale/:locale/' \
+          $LOCALE_ARGS \
           --name MeerK40t \
           mk40t.py
         mv mk40t.py meerk40t.py
