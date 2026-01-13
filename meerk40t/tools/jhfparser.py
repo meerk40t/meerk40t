@@ -86,9 +86,9 @@ class JhfFont:
             if (not line) or line == "\x1a":  # eof
                 return False
             line = line.rstrip()
-        return self._parse_glyph_line(line, glyphindex)
+        return self._parse_glyph_line(line, glyphindex, f)
 
-    def _parse_glyph_line(self, line, glyphindex):
+    def _parse_glyph_line(self, line, glyphindex, f=None):
         # read a Hershey format line
         glyphnum = int(line[0:5])  # glyphnum (junk in some .jhf files)
         nverts = int(line[5:8]) - 1
@@ -98,7 +98,7 @@ class JhfFont:
         nvertchars = len(vertchars)
 
         # join split lines in the Hershey data
-        while nverts * 2 > nvertchars:
+        while nverts * 2 > nvertchars and f is not None:
             nextline = f.readline().rstrip()
             line += nextline
             vertchars += nextline
