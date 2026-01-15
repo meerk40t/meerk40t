@@ -8,10 +8,10 @@ on network-connected GRBL lasers with ESP3D firmware.
 import os
 import time
 import random
-from urllib.parse import urlencode, quote
 
 try:
     import requests
+
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
@@ -19,15 +19,25 @@ except ImportError:
 
 class ESP3DUploadError(Exception):
     """Exception raised for ESP3D upload errors."""
+
     pass
 
 
 class ESP3DConnection:
     """
     Manages HTTP connection to ESP3D-WEBUI for file upload and execution.
+    Supports both standard ESP3D and MKS DLC32 firmware variants.
     """
 
-    def __init__(self, host, port=80, username=None, password=None, timeout=30):
+    def __init__(
+        self,
+        host,
+        port=80,
+        username=None,
+        password=None,
+        timeout=30,
+        firmware="mks-dlc32",
+    ):
         """
         Initialize ESP3D connection.
 
@@ -37,12 +47,14 @@ class ESP3DConnection:
             username: Optional authentication username
             password: Optional authentication password
             timeout: Request timeout in seconds
+            firmware: Firmware flavor - "standard" for official ESP3D, "mks-dlc32" for MakerBase variant
         """
         self.host = host
         self.port = port
         self.username = username
         self.password = password
         self.timeout = timeout
+        self.firmware = firmware
         self.base_url = f"http://{host}:{port}"
         self.session = None
 
@@ -69,11 +81,7 @@ class ESP3DConnection:
         Authenticate with ESP3D device.
         """
         login_url = f"{self.base_url}/login"
-        data = {
-            "SUBMIT": "yes",
-            "PASSWORD": self.password,
-            "USER": self.username
-        }
+        data = {"SUBMIT": "yes", "PASSWORD": self.password, "USER": self.username}
         try:
             response = self.session.post(login_url, data=data, timeout=self.timeout)
             response.raise_for_status()
@@ -92,33 +100,29 @@ class ESP3DConnection:
         try:
             url = f"{self.base_url}/command"
             params = {"cmd": "[ESP800]"}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             return {
                 "success": True,
                 "status_code": response.status_code,
                 "message": "Connection successful",
-                "response": response.text[:200]  # First 200 chars
+                "response": response.text[:200],  # First 200 chars
             }
         except requests.Timeout:
             return {
                 "success": False,
-                "message": "Connection timed out. Check host and port."
+                "message": "Connection timed out. Check host and port.",
             }
         except requests.ConnectionError as e:
             return {
                 "success": False,
-                "message": f"Connection error: Unable to reach host. {e}"
+                "message": f"Connection error: Unable to reach host. {e}",
             }
         except requests.RequestException as e:
-            return {
-                "success": False,
-                "message": f"Connection failed: {e}"
-            }
-
+            return {"success": False, "message": f"Connection failed: {e}"}
 
     def get_sd_info(self):
         """
@@ -128,27 +132,28 @@ class ESP3DConnection:
         try:
             url = f"{self.base_url}/upload"
             params = {"path": "/", "PAGEID": "0"}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             import json
+
             data = json.loads(response.text)
-            
+
             # Parse size strings to bytes
             def parse_size(size_str):
                 """Convert size string like '1.23 MB' to bytes."""
                 if not size_str or size_str == "-1":
                     return 0
-                    
+
                 units = {
                     "B": 1,
                     "KB": 1024,
                     "MB": 1024 * 1024,
-                    "GB": 1024 * 1024 * 1024
+                    "GB": 1024 * 1024 * 1024,
                 }
-                
+
                 parts = size_str.strip().split()
                 if len(parts) == 2:
                     try:
@@ -158,10 +163,10 @@ class ESP3DConnection:
                     except (ValueError, KeyError):
                         return 0
                 return 0
-            
+
             total = parse_size(data.get("total", "0"))
             used = parse_size(data.get("used", "0"))
-            
+
             return {
                 "success": True,
                 "total": total,
@@ -170,7 +175,7 @@ class ESP3DConnection:
                 "occupation": data.get("occupation", "0"),
                 "files": data.get("files", []),
                 "path": data.get("path", "/"),
-                "status": data.get("status", "unknown")
+                "status": data.get("status", "unknown"),
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Failed to get SD info: {e}")
@@ -193,7 +198,9 @@ class ESP3DConnection:
         except ESP3DUploadError:
             raise
 
-    def upload_file(self, local_path, remote_filename, remote_path="/", progress_callback=None):
+    def upload_file(
+        self, local_path, remote_filename, remote_path="/", progress_callback=None
+    ):
         """
         Upload a file to ESP3D SD card.
 
@@ -223,7 +230,7 @@ class ESP3DConnection:
                 response = session.post(
                     url,
                     files=files_data,
-                    timeout=self.timeout * 3  # Longer timeout for upload
+                    timeout=self.timeout * 3,  # Longer timeout for upload
                 )
                 response.raise_for_status()
 
@@ -232,7 +239,7 @@ class ESP3DConnection:
                     "success": True,
                     "message": f"File uploaded successfully: {remote_filename}",
                     "filename": remote_filename,
-                    "size": file_size
+                    "size": file_size,
                 }
 
         except requests.RequestException as e:
@@ -251,46 +258,72 @@ class ESP3DConnection:
                 "path": "/",
                 "action": "delete",
                 "filename": filename,
-                "PAGEID": "0"
+                "PAGEID": "0",
             }
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             # Note: Your firmware may not return JSON, but HTTP 200 means success
-            return {
-                "success": True,
-                "message": f"File deleted: {filename}"
-            }
+            return {"success": True, "message": f"File deleted: {filename}"}
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Delete failed: {e}")
+
     def execute_file(self, filename, path="/"):
         """
         Execute a G-code file on the device.
 
+        Firmware-specific behavior:
+        - MKS DLC32: Uses [ESP220]/filename command (verified working by contributor)
+        - Standard ESP3D: Uses [ESP700]/filename for LocalFS or SD file operations
+        - grblHAL: Uses ESP700 command (no brackets, space-separated arguments)
+
+        Note: MKS DLC32 has customized the ESP220 command for file execution,
+        which differs from standard ESP3D where ESP220 shows pin definitions.
+        grblHAL implements ESP3D-compatible commands natively in C code.
+
         Args:
             filename: Name of file to execute
-            path: Path prefix (ignored for OEM firmwares like MKS DLC32)
+            path: Path prefix (used differently based on firmware)
 
         Returns:
             dict: Execution result
         """
         try:
-            # Use the correct prefix and parameter for MKS DLC32 V2.1 firmware
-            command_text = f"[ESP220]/{filename}"
-            
-            url = f"{self.base_url}/command"
-            params = {"commandText": command_text}
-            
+            if self.firmware == "mks-dlc32":
+                # MKS DLC32 firmware uses customized ESP220 command for file execution
+                # This has been verified working by contributor with MKS DLC32 V2.1
+                command_text = f"[ESP220]/{filename}"
+                url = f"{self.base_url}/command"
+                params = {"commandText": command_text}
+            elif self.firmware == "grblhal":
+                # grblHAL uses ESP700 command without brackets, space-separated
+                # Format: ESP700 /path/to/filename
+                full_path = f"{path}{filename}" if not filename.startswith("/") else filename
+                command_text = f"ESP700 {full_path}"
+                url = f"{self.base_url}/command"
+                params = {"cmd": command_text}
+            else:
+                # Standard ESP3D firmware uses ESP700 for LocalFS file execution
+                # For SD card files on standard ESP3D, use SD card module commands
+                command_text = (
+                    f"[ESP700]{path}{filename}"
+                    if not filename.startswith("/")
+                    else f"[ESP700]{filename}"
+                )
+                url = f"{self.base_url}/command"
+                params = {"cmd": command_text}
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             return {
                 "success": True,
                 "message": f"File execution started: {filename}",
-                "response": response.text
+                "response": response.text,
+                "firmware": self.firmware,
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Execute failed: {e}")
@@ -308,15 +341,15 @@ class ESP3DConnection:
         try:
             url = f"{self.base_url}/command"
             params = {"cmd": command}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             return {
                 "success": True,
                 "message": f"Command sent: {command}",
-                "response": response.text
+                "response": response.text,
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Command failed: {e}")
@@ -374,7 +407,7 @@ def generate_8_3_filename(base="file", extension="gc", counter=None):
         str: Filename in 8.3 format (e.g., "file0001.gc" or "file3a7f.gc")
     """
     extension = extension[:3]  # Max 3 chars for extension
-    
+
     if counter is not None:
         # Use provided counter
         suffix = f"{counter:04d}"  # 4 digit counter
@@ -385,11 +418,11 @@ def generate_8_3_filename(base="file", extension="gc", counter=None):
         random_part = random.randint(0, 0xFFFF)  # 16-bit random number
         # Combine: 2 digits time + 2 hex digits random for better distribution
         suffix = f"{time_part % 100:02d}{random_part:04x}"[:4]
-    
+
     # Calculate available space for base name (8 - len(suffix))
     max_base_len = 8 - len(suffix)
     base = base[:max_base_len]
-    
+
     filename = f"{base}{suffix}.{extension}"
     return filename
 
@@ -406,20 +439,20 @@ def validate_filename_8_3(filename):
     """
     if not filename or "." not in filename:
         return False
-    
+
     parts = filename.rsplit(".", 1)
     if len(parts) != 2:
         return False
-    
+
     name, ext = parts
-    
+
     # Check length constraints
     if len(name) > 8 or len(ext) > 3:
         return False
-    
+
     # Check for invalid characters
     invalid_chars = set(' \\/:*?"<>|')
     if any(c in invalid_chars for c in filename):
         return False
-    
+
     return True

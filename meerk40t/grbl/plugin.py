@@ -347,12 +347,14 @@ def plugin(kernel, lifecycle=None):
                         try:
                             username = device.esp3d_username if device.esp3d_username else None
                             password = device.esp3d_password if device.esp3d_password else None
+                            firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                             
                             with ESP3DConnection(
                                 device.esp3d_host,
                                 device.esp3d_port,
                                 username,
-                                password
+                                password,
+                                firmware=firmware
                             ) as esp3d:
                                 result = esp3d.test_connection()
                                 if result["success"]:
@@ -452,12 +454,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         sd_info = esp3d.get_sd_info()
                         files = sd_info.get("files", [])
@@ -571,12 +575,14 @@ def plugin(kernel, lifecycle=None):
                     
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         result = esp3d.upload_file(
                             temp_path,
@@ -646,12 +652,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         channel(_("Executing {filename} on device...").format(filename=filename))
                         result = esp3d.execute_file(filename)
@@ -696,12 +704,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         result = esp3d.delete_file(filename, device.esp3d_path)
                         if result["success"]:
@@ -739,12 +749,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         result = esp3d.pause()
                         if result["success"]:
@@ -782,12 +794,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         result = esp3d.resume()
                         if result["success"]:
@@ -825,12 +839,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         result = esp3d.stop()
                         if result["success"]:
@@ -871,12 +887,14 @@ def plugin(kernel, lifecycle=None):
                 try:
                     username = device.esp3d_username if device.esp3d_username else None
                     password = device.esp3d_password if device.esp3d_password else None
+                    firmware = getattr(device, 'esp3d_firmware', 'mks-dlc32')
                     
                     with ESP3DConnection(
                         device.esp3d_host,
                         device.esp3d_port,
                         username,
-                        password
+                        password,
+                        firmware=firmware
                     ) as esp3d:
                         # Get list of files
                         sd_info = esp3d.get_sd_info()

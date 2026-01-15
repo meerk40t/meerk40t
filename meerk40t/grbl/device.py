@@ -732,6 +732,22 @@ class GRBLDevice(Service, Status):
                 "subsection": "_00_Connection",
             },
             {
+                "attr": "esp3d_firmware",
+                "object": self,
+                "default": "mks-dlc32",
+                "type": str,
+                "style": "combo",
+                "choices": ["standard", "mks-dlc32", "grblhal"],
+                "label": _("ESP3D Firmware Flavor"),
+                "tip": _(
+                    "Standard: Official ESP3D firmware. MKS DLC32: MakerBase customized ESP3D firmware. grblHAL: grblHAL firmware with WebUI plugin"
+                ),
+                "conditional": (self, "esp3d_enabled"),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_00_Connection",
+            },
+            {
                 "attr": "esp3d_host",
                 "object": self,
                 "default": "192.168.1.100",
@@ -772,7 +788,9 @@ class GRBLDevice(Service, Status):
                 "default": "",
                 "type": str,
                 "label": _("Username (optional)"),
-                "tip": _("Username for ESP3D authentication (leave empty if not required)"),
+                "tip": _(
+                    "Username for ESP3D authentication (leave empty if not required)"
+                ),
                 # Hint for translation _("ESP3D Upload")
                 "section": "_45_ESP3D Upload",
                 "subsection": "_20_Authentication",
@@ -783,7 +801,9 @@ class GRBLDevice(Service, Status):
                 "default": "",
                 "type": str,
                 "label": _("Password (optional)"),
-                "tip": _("Password for ESP3D authentication (leave empty if not required)"),
+                "tip": _(
+                    "Password for ESP3D authentication (leave empty if not required)"
+                ),
                 "style": "password",
                 # Hint for translation _("ESP3D Upload")
                 "section": "_45_ESP3D Upload",
@@ -795,7 +815,9 @@ class GRBLDevice(Service, Status):
                 "default": True,
                 "type": bool,
                 "label": _("Cleanup Local Files"),
-                "tip": _("Automatically delete local G-code files after successful upload"),
+                "tip": _(
+                    "Automatically delete local G-code files after successful upload"
+                ),
                 # Hint for translation _("ESP3D Upload")
                 "section": "_45_ESP3D Upload",
                 "subsection": "_10_Settings",
@@ -1155,7 +1177,7 @@ class GRBLDevice(Service, Status):
                     # f.write(b"(MeerK40t)\n")
                     self.driver.out_pipe = f.write
                     self.driver.out_real = f.write
-              
+
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
                     driver.out_pipe = f.write
