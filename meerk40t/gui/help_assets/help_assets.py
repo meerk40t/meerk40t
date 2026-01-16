@@ -729,6 +729,63 @@ Malzeme Kütüphanesi Yöneticisi, belirli bir malzeme ile istenen etkiyi sağla
 Bu tür bir malzeme ayarını MeerK40t topluluğu ile paylaşabilir ve başkalarının katkılarından yararlanmak için onların ayarlarını yükleyip kullanabilirsiniz.
 """
 
+polish_wordlist_howto = """
+Listy słów pozwalają na tworzenie elementów tekstowych w projekcie, które zawierają tekst zastępczy, zastępowany podczas wypalania zawartością z tej Listy słów. Możesz wtedy wypalić kilka elementów z różnym tekstem bez konieczności zmiany projektu za każdym razem.
+
+Zastępca składa się z nazwy w nawiasach klamrowych, np. '{IMIE}'. Używasz nazwy w Edytorze listy słów, aby powiązać ją z zastępcą, a zastępca zostanie zastąpiony tekstem, który wprowadzisz do powiązanej Zawartości listy słów.
+
+Jako przykład użycia tej funkcjonalności, wyobraź sobie, że chcesz stworzyć zestaw etykiet rezerwacji miejsc na kolację, każda z innym imieniem osoby. Po utworzeniu ścieżki cięcia dla obrysu etykiety z nazwiskiem, np. prostokąta, użyj narzędzia rysowania tekstu, aby utworzyć element tekstowy zawierający następujące:
+'To miejsce jest zarezerwowane dla {IMIE}'
+
+Następnie używasz tego edytora listy słów, aby utworzyć jedną lub więcej wpisów w następujący sposób:
+	|-----------|------|-------|
+	|    Nazwa  | Typ  | Indeks|
+	|-----------|------|-------|
+	| imie      | Tekst|   0   |
+	|-----------|------|-------|
+Następnie kliknij na wierszu 'imie' i dodaj kilka elementów do panelu Zawartości, np.:
+	Paweł
+	David
+	Andy
+Teraz, gdy wykonasz wypalanie, otrzymasz indywidualne etykiety miejsc z różnymi nazwami, np. 'To miejsce jest zarezerwowane dla Andy'.
+
+Możesz używać tyle różnych nazw zastępczych, ile chcesz w polach tekstowych w projekcie.
+
+Wartość 'Indeks' w tabeli Listy słów wskazuje, który wpis na liście Zawartości zostanie użyty następny, zero oznacza pierwszy wpis. Indeks jest automatycznie zwiększany o jeden na końcu każdego wypalania.
+
+Ale załóżmy, że dla efektywności chcesz teraz wypalić dwie etykiety rezerwacji miejsc jednocześnie, każda z innym imieniem z tej samej listy. W tym przypadku, jeśli pierwsza etykieta używa '{NAZWA#+0}', a druga '{NAZWA#+1}' (zwróć uwagę na znak plus). '{NAZWA}' lub '{NAZWA#+0}' używa bieżącego wpisu (wskazywanego przez wartość Indeksu), '{NAZWA#+1}' używa następnego wpisu po bieżącym itp.
+
+Przy powyższym użyciu możesz używać tych wartości tyle razy, ile chcesz w projekcie. Aby przesunąć indeks, musisz kliknąć przyciski Poprzedni / Następny na pasku narzędzi.
+
+Jako alternatywę dla ręcznego wprowadzania wartości listy słów za pomocą tego Edytora listy słów, możesz użyć standardowego pliku CSV rozdzielanego przecinkami. Nazwy zastępcze są zdefiniowane w standardowej linii nagłówka CSV (pierwsza linia w pliku CSV), a zawartość jest następnie pobierana ze wszystkich następnych linii. Najłatwiejszym sposobem utworzenia pliku CSV jest użycie arkusza kalkulacyjnego, np. Excel, jednak np. dla stron e-commerce Twoja strona może automatycznie utworzyć plik CSV z zamówień złożonych online przez klientów.
+
+Wpisy załadowane z pliku CSV są wyświetlane jako Typ CSV, i możesz ustawić wartości Indeksu dla wszystkich wpisów CSV jednocześnie.
+
+Uwaga: Jeśli Twój CSV nie ma linii nagłówka, kolumny będą nazwane 'column_1', 'column_2' itp.
+
+Lista słów zawiera również niektóre specjalne wpisy (które mogą być szczególnie przydatne dla projektów kalibracyjnych):
+	* 'version'   - Wersja Meerk40t
+	* 'date'      - Data rozpoczęcia wypalania
+	* 'time'      - Czas rozpoczęcia wypalania
+	* 'op_device' - Urządzenie, na którym wypalasz
+	* 'op_speed'  - Prędkość bieżącej operacji
+	* 'op_power'  - PPI bieżącej operacji
+	* 'op_dpi'    - DPI bieżącej (rastrowej) operacji
+	* 'op_passes' - Przejścia operacji bieżącej operacji
+
+Zastępcy dla 'date' i 'time' mogą również zawierać dyrektywy formatowania, które pozwalają formatować je zgodnie z lokalnymi konwencjami, np.
+	{date@%d.%m.%Y} - 31.12.2022
+	{time@%H:%M} - 23:59
+
+Dla kompletnego zestawu dyrektyw formatowania zobacz: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+"""
+
+polish_material_howto = """
+Menedżer Biblioteki Materiałów pozwala na tworzenie, utrzymywanie, używanie i zarządzanie operacjami, które są dostosowane do zapewnienia pożądanego efektu z danym materiałem (stąd nazwa Biblioteka Materiałów).
+Parametry, których chcesz używać, np. do cięcia akrylu, są bardzo różne od tych, których chcesz używać do grawerowania obrazu na łupku.
+Możesz udostępnić takie ustawienie materiału społeczności MeerK40t i możesz skorzystać z wkładów innych, ładując i używając ich ustawień.
+"""
+
 def asset(context, asset):
     language_map = {
         0: "english",
@@ -744,6 +801,7 @@ def asset(context, asset):
         10: "dutch",
         11: "russian",
         12: "turkish",
+        13: "polish",
     }
     lang = language_map.get(getattr(context, "language", 0), "english")
     text = ""

@@ -18,6 +18,7 @@ For smaller delta_xx files, this works well:
 - Make sure strings are utf8 encoded
 - Optimize the token consumption by batching translation and update efforts
 - Repeat the process until all untranslated strings are translated.
+- Batch translation efforts to minimize AI token consumption
 
 Use this prompt to translate tips.txt files:
 --------------------------------------------

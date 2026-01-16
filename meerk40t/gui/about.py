@@ -22,25 +22,29 @@ from .wxutils import (
 
 _ = wx.GetTranslation
 
-HEADER_TEXT = (
-    "MeerK40t is a free MIT Licensed open source project\n"
-    + "for lasering on K40 Devices.\n\n"
-    + "Participation in the project is highly encouraged.\n"
-    + "Past participation, and continuing participation is graciously thanked.\n"
-    + "This program is mostly the brainchild of Tatarize,\n"
-    + "who sincerely hoped his contributions would be but\n"
-    + "the barest trickle that becomes a raging river."
-)
-HEADER_TEXT_2 = "Since early 2024 jpirnay has taken on the role of lead developer\ntrying to fill in some awfully large shoes."
+def get_header_text():
+    return _(
+        "MeerK40t is a free MIT Licensed open source project\n"
+        + "for lasering on K40 Devices.\n\n"
+        + "Participation in the project is highly encouraged.\n"
+        + "Past participation, and continuing participation is graciously thanked.\n"
+        + "This program is mostly the brainchild of Tatarize,\n"
+        + "who sincerely hoped his contributions would be but\n"
+        + "the barest trickle that becomes a raging river."
+    )
 
-EULOGY_TEXT = (
-    "MeerK40t is the result of an incredible piece of work by David Olsen aka Tatarize.\n"
-    + "He created this program over 4 years allowing users across the world to get the best out of their K40 equipment (and additional lasertypes).\n\n"
-    + "Despite having no risk factors for getting cancer, he developed a tumor on his tongue that metastasized into his lungs before the doctors could stop it and passed away on July 26, 2024.\n"
-    + "He was a mentor, an inspiration and a friend - David you will be missed but you won't be forgotten.\n\n"
-    + "Please join the fight against cancer and consider donating to one of the many research and charity organisations across the world.\n\n"
-    + "If you are interested to read more about MeerK40t's development history then please refer to:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
-)
+def get_header_text_2():
+    return _("Since early 2024 jpirnay has taken on the role of lead developer\ntrying to fill in some awfully large shoes.")
+
+def get_eulogy_text():
+    return _(
+        "MeerK40t is the result of an incredible piece of work by David Olsen aka Tatarize.\n"
+        + "He created this program over 4 years allowing users across the world to get the best out of their K40 equipment (and additional lasertypes).\n\n"
+        + "Despite having no risk factors for getting cancer, he developed a tumor on his tongue that metastasized into his lungs before the doctors could stop it and passed away on July 26, 2024.\n"
+        + "He was a mentor, an inspiration and a friend - David you will be missed but you won't be forgotten.\n\n"
+        + "Please join the fight against cancer and consider donating to one of the many research and charity organisations across the world.\n\n"
+        + "If you are interested to read more about MeerK40t's development history then please refer to:\nhttps://github.com/meerk40t/meerk40t/wiki/History:-Major-Version-History,-Changes,-and-Reasons"
+    )
 
 class AboutPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -92,7 +96,7 @@ class AboutPanel(wx.Panel):
         self.meerk40t_about_text_header = wxStaticText(
             self,
             wx.ID_ANY,
-            _(HEADER_TEXT) + "\n" + _(HEADER_TEXT_2),
+            get_header_text() + "\n" + get_header_text_2(),
         )
 
         self.meerk40t_about_text_header.SetFont(
@@ -1490,7 +1494,7 @@ class DavidPanel(ScrolledPanel):
         )
         self.david_picture.SetSize(self.david_picture.GetBestSize())
         self.david_header = wxStaticText(self, wx.ID_ANY, "David Olsen (1982-2024)")
-        eulogy:str = _(EULOGY_TEXT)
+        eulogy:str = get_eulogy_text()
         if system() == "Darwin":
             # MacOS does not wrap labels around, so we need do it ourselves
             splitted = eulogy.split("\n")
