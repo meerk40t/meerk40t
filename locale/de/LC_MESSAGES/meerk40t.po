@@ -26001,7 +26001,7 @@ msgid ""
 "trying to fill in some awfully large shoes."
 msgstr ""
 "Seit Anfang 2024 hat jpirnay die Rolle des leitenden Entwicklers übernommen\n"
-"und versucht, in viel zu große Fußstapefen zu treten."
+"und versucht, in viel zu große Fußstapfen zu treten."
 
 #: meerk40t/gui/about.py:43
 msgid ""
