@@ -215,6 +215,7 @@ class WordlistPanel(wx.Panel):
             context=self.context,
             list_name="list_wordlist",
         )
+        self.grid_wordlist.SetMinSize(dip_size(self, 200, 100))
         sizer_grid_left.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 
         self.grid_content = wxListCtrl(
@@ -228,6 +229,7 @@ class WordlistPanel(wx.Panel):
             context=self.context,
             list_name="list_wordlist_content",
         )
+        self.grid_content.SetMinSize(dip_size(self, 200, 100))
 
         sizer_edit_wordlist_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_edit_content_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -336,6 +338,7 @@ class WordlistPanel(wx.Panel):
         sizer_grid_right.Add(self.grid_content, 1, wx.EXPAND, 0)
 
         self.txt_pattern = TextCtrl(self, wx.ID_ANY, "")
+        self.txt_pattern.SetMinSize(dip_size(self, 70, -1))
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_buttons.Add(self.txt_pattern, 1, wx.ALIGN_CENTER_VERTICAL, 0)
