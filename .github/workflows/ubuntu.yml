@@ -21,11 +21,10 @@ jobs:
         python-version: '3.9'
     - name: Install dependencies
       run: |
-        sudo apt install libgtk-3-dev cmake libeigen3-dev
-        sudo apt install libagg-dev libpotrace-dev
-        sudo apt install libpython3-dev
-        sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
-        sudo apt install libsdl2-dev libsm-dev libx11-dev
+        # Refresh package lists first to avoid missing package index/mirror issues
+        sudo apt-get update
+        # Combine installs and use -y to run non-interactively; --no-install-recommends keeps image smaller
+        sudo apt-get install -y --no-install-recommends libgtk-3-dev cmake libeigen3-dev libagg-dev libpotrace-dev libpython3-dev libwebkit2gtk-4.0-dev libsdl2-dev libsm-dev libx11-dev
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
