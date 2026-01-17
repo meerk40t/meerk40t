@@ -1,13 +1,19 @@
-#
+# Italian translation for Meerk40t
+# Project-Homepage: https://github.com/meerk40t/meerk40t
 msgid ""
 msgstr ""
-"Project-Id-Version: MeerK40t\n"
-"Language-Team: MeerK40t Translation Team\n"
+"Project-Id-Version: MeerK40t Translation Project\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 23-04-21 14:10UTC\n"
+"PO-Revision-Date: 30-12-25 17:45:00UTC\n"
+"Last-Translator: Betaeta\n"
+"Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Language: it\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: translate_check.py\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
+"Generated-By: Poboy 0.0.1\n"
 
 #: meerk40t/grbl/plugin.py:212 meerk40t/grbl/plugin.py:264
 #: meerk40t/lihuiyu/device.py:1093 meerk40t/network/console_server.py:6
@@ -5207,7 +5213,7 @@ msgstr "Cancella la variabile corrente"
 
 #: meerk40t/gui/wordlisteditor.py:356
 msgid "Backup Wordlist"
-msgstr "Backup Variabili di testo"
+msgstr "Salva Variabili di testo"
 
 #: meerk40t/gui/wordlisteditor.py:357
 msgid "Save current wordlist to disk"
@@ -5215,7 +5221,7 @@ msgstr "Salva l'elenco di Variabili di testo"
 
 #: meerk40t/gui/wordlisteditor.py:360
 msgid "Restore Wordlist"
-msgstr "Carica Variabili di testo"
+msgstr "Carica Variabili di testo salvate"
 
 #: meerk40t/gui/wordlisteditor.py:361
 msgid "Load wordlist from disk"
@@ -23054,8 +23060,7 @@ msgstr "Device Newly rilevato:"
 #: meerk40t/newly/usb_connection.py:126
 msgid "Newly devices were found. But something else was connected to them."
 msgstr ""
-"Sono stati trovati nuovi dispositivi, ma qualcos'altro era collegato ad "
-"essi."
+"Sono stati trovati nuovi dispositivi, ma qualcos'altro era collegato ad essi."
 
 #: meerk40t/newly/gui/newlycontroller.py:732
 #: meerk40t/newly/gui/newlycontroller.py:749
@@ -24225,8 +24230,7 @@ msgid ""
 msgstr ""
 "Nota bene: se si utilizzano contemporaneamente 'riduci i tempi di "
 "spostamento' e 'lavora prima gli interni', l'ottimizzazione dei percorsi "
-"avviene all'interno di ciascun livello gerarchico (interni prima degli "
-"esterni)."
+"avviene all'interno di ciascun livello gerarchico (interni prima degli esterni)."
 
 #: meerk40t/core/elements/element_treeops.py:2496
 msgid "Append Physical Home"
@@ -24287,8 +24291,7 @@ msgstr "Algoritmo:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1969
 msgid "- Diagonal: Starting in one corner traversing the image diagonally"
-msgstr ""
-"- Diagonale: Iniziando in un angolo attraversando l'immagine diagonalmente"
+msgstr "- Diagonale: Iniziando in un angolo attraversando l'immagine diagonalmente"
 
 #: meerk40t/tools/livinghinges.py:360
 msgid "Choose the generation algorithm"
@@ -24469,7 +24472,8 @@ msgstr "estrai la geometria dal piano"
 
 #: meerk40t/core/planner.py:897
 msgid "create the device specific format to send to the laser"
-msgstr "crea il formato specifico del dispositivo da inviare al laser"
+msgstr ""
+"crea il formato specifico del dispositivo da inviare al laser"
 
 #: meerk40t/core/planner.py:914
 msgid "prepare the plan for optimisation"
@@ -24934,7 +24938,8 @@ msgstr "Posizione di destinazione del laser"
 
 #: meerk40t/gui/propertypanels/generic_op_property.py:75
 msgid "Move the laser to the physical home position (engaging endstops)."
-msgstr "Sposta il laser nella posizione home fisica (attivando i finecorsa)."
+msgstr ""
+"Sposta il laser nella posizione home fisica (attivando i finecorsa)."
 
 #: meerk40t/gui/propertypanels/generic_op_property.py:138
 msgid "Console Command"
@@ -25147,7 +25152,8 @@ msgstr "finestra di controllo auto-intersezione (predefinito 100)"
 
 #: meerk40t/core/elements/offset_mk.py:2347
 msgid "create an offset path using simplified fast algorithm"
-msgstr "crea un percorso offset usando un algoritmo semplificato e veloce"
+msgstr ""
+"crea un percorso offset usando un algoritmo semplificato e veloce"
 
 #: meerk40t/core/elements/element_treeops.py:2724
 #: meerk40t/core/elements/element_treeops.py:2745
@@ -25256,7 +25262,8 @@ msgstr "Password (opzionale)"
 
 #: meerk40t/grbl/device.py:786
 msgid "Password for ESP3D authentication (leave empty if not required)"
-msgstr "Password per autenticazione ESP3D (lasciare vuoto se non richiesto)"
+msgstr ""
+"Password per autenticazione ESP3D (lasciare vuoto se non richiesto)"
 
 #: meerk40t/grbl/device.py:797
 msgid "Cleanup Local Files"
@@ -25298,8 +25305,7 @@ msgstr "Questo dispositivo non supporta il caricamento ESP3D"
 #: meerk40t/grbl/plugin.py:343 meerk40t/grbl/plugin.py:528
 msgid "ESP3D upload is not enabled. Enable in device settings."
 msgstr ""
-"Il caricamento ESP3D non è abilitato. Abilita nelle impostazioni del "
-"dispositivo."
+"Il caricamento ESP3D non è abilitato. Abilita nelle impostazioni del dispositivo."
 
 #: meerk40t/grbl/plugin.py:346
 msgid "Testing ESP3D connection..."
@@ -25335,8 +25341,7 @@ msgstr "Uso: esp3d_config set <parametro> <valore>"
 
 #: meerk40t/grbl/plugin.py:380
 msgid "Parameters: host, port, path, username, password, enabled, cleanup"
-msgstr ""
-"Parametri: host, porta, percorso, nome utente, password, abilitato, pulizia"
+msgstr "Parametri: host, porta, percorso, nome utente, password, abilitato, pulizia"
 
 #: meerk40t/grbl/plugin.py:388
 msgid "ESP3D host set to: {value}"
@@ -25466,7 +25471,8 @@ msgstr "Esegui file dopo caricamento"
 
 #: meerk40t/grbl/plugin.py:500
 msgid "Generate G-code, upload to ESP3D SD card, and optionally execute"
-msgstr "Genera G-code, carica sulla scheda SD ESP3D e opzionalmente esegui"
+msgstr ""
+"Genera G-code, carica sulla scheda SD ESP3D e opzionalmente esegui"
 
 #: meerk40t/grbl/plugin.py:533
 msgid "Preparing G-code for ESP3D upload..."
@@ -25649,7 +25655,8 @@ msgstr "Test Connessione"
 
 #: meerk40t/grbl/gui/esp3dconfig.py:43
 msgid "Test connection to ESP3D device and display SD card information"
-msgstr "Test connessione al dispositivo ESP3D e mostra informazioni scheda SD"
+msgstr ""
+"Test connessione al dispositivo ESP3D e mostra informazioni scheda SD"
 
 #: meerk40t/grbl/gui/esp3dconfig.py:47
 msgid "List Files"
@@ -25916,7 +25923,8 @@ msgstr "Avvia &Telnet sulla porta {port}"
 
 #: meerk40t/gui/wxmmain.py:4692
 msgid "Starts a telnet instance to control MeerK40t from a terminal"
-msgstr "Avvia un'istanza Telnet per controllare MeerK40t da un terminale"
+msgstr ""
+"Avvia un'istanza Telnet per controllare MeerK40t da un terminale"
 
 #: meerk40t/gui/wxmmain.py:4694
 msgid "Stop &Telnet"
@@ -25973,16 +25981,6 @@ msgstr "avvia un server console sulla porta {port} (telnet)"
 #: meerk40t/network/console_server.py:136
 msgid "starts a web-server (http, default port {port})"
 msgstr "avvia un server web (http, porta predefinita {port})"
-
-#: translate_check.py:50
-msgid ""
-"This is a test string\n"
-"that spans multiple lines.\n"
-"See?"
-msgstr ""
-"Questa è una stringa di test\n"
-"che si estende su più righe.\n"
-"Vedi?"
 
 #: meerk40t/balormk/device.py:370
 msgid "Ignore (only act on input operation)"
@@ -26099,6 +26097,16 @@ msgstr ""
 "La cattiva notizia è che MeerK40t ha riscontrato un crash, e gli sviluppatori si scusano per questo bug!\n"
 "\n"
 "La buona notizia è che puoi aiutarci a correggere questo bug inviandoci anonimamente i dettagli del crash."
+
+#: translate_check.py:50
+msgid ""
+"This is a test string\n"
+"that spans multiple lines.\n"
+"See?"
+msgstr ""
+"Questa è una stringa di test\n"
+"che si estende su più righe.\n"
+"Vedi?"
 
 #: meerk40t/gui/about.py:33
 msgid ""
