@@ -278,6 +278,8 @@ class ESP3DConnection:
         """
         try:
             # Use the correct prefix and parameter for MKS DLC32 V2.1 firmware
+            if filename.startswith("/"):
+                filename = filename[1:]
             command_text = f"[ESP220]/{filename}"
             
             url = f"{self.base_url}/command"
