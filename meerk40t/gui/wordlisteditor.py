@@ -548,13 +548,19 @@ class WordlistPanel(wx.Panel):
         choices = []
         selidx = 0
         self.grid_content.ClearAll()
-        self.cur_skey = skey.lower()
+        key_lower = skey.lower() if skey is not None else None
+        self.cur_skey = key_lower
         self.cur_index = None
         self.grid_content.InsertColumn(0, _("Content"))
 
-        for idx in range(2, len(self.wlist.content[skey])):
+        # If the key does not exist, leave the content empty and avoid KeyError
+        if key_lower is None or key_lower not in self.wlist.content:
+            self.cbo_index_single.Set(choices)
+            return
+
+        for idx in range(2, len(self.wlist.content[key_lower])):
             myidx = idx - 2
-            s_entry = str(self.wlist.content[skey][idx])
+            s_entry = str(self.wlist.content[key_lower][idx])
             choices.append(f"{myidx:3d} - {s_entry[:10]}")
             index = self.grid_content.InsertItem(
                 self.grid_content.GetItemCount(), s_entry
@@ -608,8 +614,10 @@ class WordlistPanel(wx.Panel):
         if index >= 0:
             # Is this a prevented value?
             skey = self.get_column_text(self.grid_wordlist, index, 0)
-            self.to_save_wordlist = (skey, 0)
-            if skey in self.wlist.prohibited:
+            skey_lower = skey.lower()
+            # Store lowercased key to avoid case-related mismatches
+            self.to_save_wordlist = (skey_lower, 0)
+            if skey_lower in self.wlist.prohibited:
                 msg = _("Can't rename internal variable {key}").format(key=skey)
                 self.edit_message(msg)
                 self.to_save_wordlist = None
@@ -621,14 +629,21 @@ class WordlistPanel(wx.Panel):
         if self.to_save_wordlist is None:
             self.edit_message(_("Update failed"))
         else:
-            skey = self.to_save_wordlist[0]
-            value = event.GetText().lower()
-            # We need to replace it...
-            self.wlist.rename_key(skey, value)
-            self.autosave()
-            self.cur_skey = value
-            self.refresh_grid_content(value, 0)
-            self.txt_pattern.SetValue(value)
+            old_skey = self.to_save_wordlist[0]
+            new_skey = event.GetText().lower()
+            # Attempt rename and handle failures gracefully
+            if not self.wlist.rename_key(old_skey, new_skey):
+                # Rename failed - show message and keep previous selection if possible
+                self.edit_message(_("Rename failed"))
+                if old_skey in self.wlist.content:
+                    self.cur_skey = old_skey
+                    self.refresh_grid_content(old_skey, 0)
+                    self.txt_pattern.SetValue(old_skey)
+            else:
+                self.autosave()
+                self.cur_skey = new_skey
+                self.refresh_grid_content(new_skey, 0)
+                self.txt_pattern.SetValue(new_skey)
 
         self.to_save_wordlist = None
         event.Allow()
