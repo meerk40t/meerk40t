@@ -21,11 +21,16 @@ jobs:
         python-version: '3.9'
     - name: Install dependencies
       run: |
-        sudo apt install libgtk-3-dev cmake libeigen3-dev
-        sudo apt install libagg-dev libpotrace-dev
-        sudo apt install libpython3-dev
-        sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
-        sudo apt install libsdl2-dev libsm-dev libx11-dev
+        # Ensure mirror overrides don't point to a local mirror file that can be stale or broken
+        sudo rm -f /etc/apt/apt-mirrors.txt || true
+        sudo sed -i 's|file:/etc/apt/apt-mirrors.txt|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list || true
+        sudo sed -i 's|file:/etc/apt/apt-mirrors.txt|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/*.list || true
+        # Refresh package lists and allow --fix-missing to recover transient index issues
+        sudo apt-get update --fix-missing || (sleep 5 && sudo apt-get update --fix-missing)
+        # Try installing packages with a retry loop to survive transient mirror failures
+        for i in 1 2 3; do \
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev cmake libeigen3-dev libagg-dev libpotrace-dev libpython3-dev libwebkit2gtk-4.0-dev libsdl2-dev libsm-dev libx11-dev && break || (echo "apt install failed; retrying..."; sleep 5); \
+        done
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
