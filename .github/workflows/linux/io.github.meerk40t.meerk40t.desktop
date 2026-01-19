@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=MeerK40t
+Exec=meerk40t
+Icon=meerk40t
+Type=Application
+Categories=Graphics;VectorGraphics;
+Comment=Laser Cutter Software
+Terminal=false

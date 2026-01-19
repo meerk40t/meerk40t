@@ -122,13 +122,15 @@ jobs:
           fi
         fi
 
-        # Copy desktop file
-        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
-        cp .github/workflows/linux/meerk40t.desktop AppDir/
-        chmod +x AppDir/meerk40t.desktop
+        # Copy desktop file (reverse-DNS filename avoids AppStream warnings)
+        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop \
+          AppDir/usr/share/applications/io.github.meerk40t.meerk40t.desktop
+        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop AppDir/
+        chmod +x AppDir/io.github.meerk40t.meerk40t.desktop
 
-        # Copy AppStream metainfo
-        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
+        # Copy AppStream metainfo 
+        cp .github/workflows/linux/meerk40t.appdata.xml \
+          AppDir/usr/share/metainfo/io.github.meerk40t.meerk40t.appdata.xml
 
         # Copy AppRun script
         cp .github/workflows/linux/AppRun AppDir/

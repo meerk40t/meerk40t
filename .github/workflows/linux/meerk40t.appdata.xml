@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>meerk40t</id>
+  <id>io.github.meerk40t.meerk40t</id>
   <name>MeerK40t</name>
   <summary>Laser Cutter Control Software</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="io.github.meerk40t">
+    <name>MeerK40t</name>
+  </developer>
+
+  <url type="homepage">https://github.com/meerk40t/meerk40t</url>
   <description>
-    <p>MeerK40t is a free and open-source laser cutter control software.</p>
+    <p>
+      MeerK40t is a free and open-source laser cutter control application for
+      designing, preparing, and sending jobs to a variety of supported laser
+      devices.
+    </p>
   </description>
-  <launchable type="desktop-id">meerk40t.desktop</launchable>
+  <launchable type="desktop-id">io.github.meerk40t.meerk40t.desktop</launchable>
+  <content_rating type="oars-1.1"/>
   <categories>
     <category>Graphics</category>
     <category>VectorGraphics</category>
