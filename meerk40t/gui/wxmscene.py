@@ -737,7 +737,8 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @context.console_command(
             "grid",
-            help="grid <target> <rows> <x_distance> <y_distance> <origin> : " + _("Shows a grid overlay on the scene"),
+            help="grid <target> <rows> <x_distance> <y_distance> <origin> : "
+            + _("Shows a grid overlay on the scene"),
             input_type="scene",
         )
         def show_grid(
@@ -884,7 +885,8 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_argument("pos", type=str, help=_("Position for magnetline"))
         @context.console_command(
             "magnet",
-            help="magnet <action> <axis> <position> : " + _("Sets/clears a magnet line on the scene"),
+            help="magnet <action> <axis> <position> : "
+            + _("Sets/clears a magnet line on the scene"),
             input_type=("scene", None),
         )
         def magnet_set(
@@ -958,7 +960,7 @@ class MeerK40tScenePanel(wx.Panel):
                     count = len(self.magnet_y)
                     self.magnet_y.clear()
                 self.save_magnets()
-                self.context.signal("refresh_scene", "Scene")
+                self.request_refresh()
                 channel(
                     _("Deleted {count} magnet lines on axis {axis}").format(
                         axis=axis, count=count
@@ -984,6 +986,7 @@ class MeerK40tScenePanel(wx.Panel):
                         if mvalue not in self.magnet_y:
                             self.magnet_y.append(mvalue)
                 self.save_magnets()
+                self.request_refresh()
                 channel(
                     _(
                         "Created {count} magnet lines on {axis}-axis between {min_len} and {max_len}"
@@ -994,7 +997,6 @@ class MeerK40tScenePanel(wx.Panel):
                         max_len=Length(max_v, digits=1).length_mm,
                     )
                 )
-                self.context.signal("refresh_scene", "Scene")
 
             elif action == "set":
                 done = False
@@ -1007,7 +1009,7 @@ class MeerK40tScenePanel(wx.Panel):
                         done = True
                         self.magnet_y.append(value)
                 self.save_magnets()
-                self.context.signal("refresh_scene", "Scene")
+                self.request_refresh()
                 if done:
                     channel(
                         _("Magnetline appended at {pos} on axis {axis}").format(
@@ -1027,7 +1029,7 @@ class MeerK40tScenePanel(wx.Panel):
                         done = True
                         self.magnet_y.remove(value)
                 self.save_magnets()
-                self.context.signal("refresh_scene", "Scene")
+                self.request_refresh()
                 if done:
                     channel(
                         _("Magnetline removed at {pos} on axis {axis}").format(
@@ -1093,8 +1095,10 @@ class MeerK40tScenePanel(wx.Panel):
             self.save_magnets()
 
     def save_magnets(self):
+        self.scene.signal(
+            "guide"
+        )  # The guide widget will draw the magnets, clear the cache
         try:
-            self.context.signal("guide")  # The guide widget will draw the magnets
             with open(self._magnet_file, "w") as f:
                 f.write(f"a={self.magnet_attraction}\n")
                 for x in self.magnet_x:
@@ -1142,6 +1146,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.magnet_x = []
         self.magnet_y = []
         self.save_magnets()
+        self.request_refresh()
 
     def clear_magnets_conditionally(self):
         # Depending on setting
@@ -1299,7 +1304,9 @@ class MeerK40tScenePanel(wx.Panel):
 
         def zoom_to_bed(event=None):
             zoom = self.context.zoom_margin
-            self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
+            self.context(
+                f"scene focus -a {-zoom}% {-zoom}% {zoom + 100}% {zoom + 100}%\n"
+            )
 
         def zoom_to_selected(event=None):
             bbox = self.context.elements.selected_area()
