@@ -185,13 +185,20 @@ class FontGlyphPicker(wx.Dialog):
                 wincol.green,
                 0,
             )
-            dc = wx.MemoryDC()
-            dc.SelectObject(bmp)
-            # dc.SetBackground(self._background)
-            # dc.SetBackground(wx.RED_BRUSH)
-            # dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            gc.dc = dc
+            if not bmp.IsOk():
+                # Fallback for systems where FromRGBA fails
+                bmp = wx.Bitmap(final_icon_width, final_icon_height)
+                dc = wx.MemoryDC()
+                dc.SelectObject(bmp)
+                dc.SetBackground(wx.Brush(wincol))
+                dc.Clear()
+                gc = wx.GraphicsContext.Create(dc)
+                gc.dc = dc
+            else:
+                dc = wx.MemoryDC()
+                dc.SelectObject(bmp)
+                gc = wx.GraphicsContext.Create(dc)
+                gc.dc = dc
 
             gp = geomstr_to_gcpath(gc, geom)
             m_x, m_y, p_w, p_h = gp.Box

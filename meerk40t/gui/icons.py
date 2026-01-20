@@ -574,10 +574,20 @@ class VectorIcon:
             blue,
             0,
         )
-        dc = wx.MemoryDC()
-        dc.SelectObject(bmp)
-        gc = wx.GraphicsContext.Create(dc)
-        gc.dc = dc
+        if not bmp.IsOk():
+            # Fallback for systems where FromRGBA fails
+            bmp = wx.Bitmap(final_icon_width, final_icon_height)
+            dc = wx.MemoryDC()
+            dc.SelectObject(bmp)
+            dc.SetBackground(wx.Brush(wincol))
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.dc = dc
+        else:
+            dc = wx.MemoryDC()
+            dc.SelectObject(bmp)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.dc = dc
         # Fill the complete canvas with a color
         if forced_background:
             gc.SetBrush(
