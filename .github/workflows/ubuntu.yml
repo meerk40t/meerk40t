@@ -12,42 +12,72 @@ on:
 jobs:
   build-ubuntu:
     runs-on: ubuntu-22.04
+
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
-    - name: Set up Python 3.9
+
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
-    - name: Install dependencies
+
+    - name: Cache Python packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
       run: |
-        # Ensure mirror overrides don't point to a local mirror file that can be stale or broken
-        sudo rm -f /etc/apt/apt-mirrors.txt || true
-        sudo sed -i 's|file:/etc/apt/apt-mirrors.txt|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list || true
-        sudo sed -i 's|file:/etc/apt/apt-mirrors.txt|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/*.list || true
-        # Refresh package lists and allow --fix-missing to recover transient index issues
-        sudo apt-get update --fix-missing || (sleep 5 && sudo apt-get update --fix-missing)
-        # Try installing packages with a retry loop to survive transient mirror failures
-        for i in 1 2 3; do \
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev cmake libeigen3-dev libagg-dev libpotrace-dev libpython3-dev libwebkit2gtk-4.0-dev libsdl2-dev libsm-dev libx11-dev && break || (echo "apt install failed; retrying..."; sleep 5); \
-        done
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          cmake \
+          libeigen3-dev \
+          libagg-dev \
+          libpotrace-dev \
+          python3-dev \
+          wget \
+          fuse \
+          libfuse2 \
+          desktop-file-utils \
+          imagemagick
+
+    - name: Install Python dependencies
+      run: |
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
         pip install setuptools==65.5.1
         pip install pyinstaller wheel
+        
+        # Install wxPython for Ubuntu 22.04
         pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        
         # Install core dependencies from requirements.txt
         pip install -r requirements.txt
+        
         # Install pyclipr with PEP 517 to avoid deprecation warning
         pip install --use-pep517 pyclipr
+        
         # Install Linux-specific optional dependencies
         pip install -r requirements-optional-linux.txt
+        
         # Install additional packages not in requirements files
         pip install bitarray
+        
         # Install project in development mode
         pip install -e .
         pip install meerk40t-barcodes
+
+    - name: Generate icons
+      run: |
+        # Generate icons using the build script
+        chmod +x tools/build_icon.sh
+        tools/build_icon.sh "w${{ github.run_number }}"
 
     - name: pip list
       run: |
@@ -55,21 +85,25 @@ jobs:
 
     - name: Build meerk40t
       run: |
-        mv meerk40t.py mk40t.py
-        mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
-        mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
-        pyinstaller .github/workflows/linux/meerk40t.spec
+        cd meerk40t
+        mv external_plugins.py external_plugins.unused
+        mv external_plugins_build.py external_plugins.py
+        cd ..
+
+        # Use the build spec which is known to work
+        pyinstaller .github/workflows/linux/meerk40t_build.spec
+
+        # Restore original files
+        cd meerk40t
+        mv external_plugins.py external_plugins_build.py
+        mv external_plugins.unused external_plugins.py
+        cd ..
+
+        # Rename for expected output
         mv dist/MeerK40t dist/MeerK40t-Ubuntu-Latest
-        mv mk40t.py meerk40t.py
-        mv meerk40t/external_plugins.py meerk40t/external_plugins_build.py
-        mv meerk40t/external_plugins.unused meerk40t/external_plugins.py
 
     - name: Create AppImage
       run: |
-        # Install AppImage tools
-        sudo apt-get update
-        sudo apt-get install -y wget fuse libfuse2
-
         # Download appimagetool
         wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         chmod +x appimagetool
@@ -79,31 +113,32 @@ jobs:
         mkdir -p AppDir/usr/lib
         mkdir -p AppDir/usr/share/applications
         mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/metainfo
 
         # Copy the PyInstaller executable
-        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        cp dist/MeerK40t-Ubuntu-Latest AppDir/usr/bin/meerk40t
+        chmod +x AppDir/usr/bin/meerk40t
 
-        # Copy icon
-        cp meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.ico
+        # Copy icon - should already be in PNG format from build_icon.sh
+        if [ -f "meerk40t.png" ]; then
+          # Copy to proper freedesktop.org location
+          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          # Also copy to AppDir root for desktop file to find it
+          cp meerk40t.png AppDir/meerk40t.png
+        else
+          # Fallback to ICO if needed
+          cp meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.ico
+        fi
 
-        # Create desktop file
-        cat > AppDir/usr/share/applications/meerk40t.desktop << 'EOF'
-        [Desktop Entry]
-        Name=MeerK40t
-        Exec=meerk40t
-        Icon=meerk40t
-        Type=Application
-        Categories=Graphics;
-        EOF
+        # Copy desktop file and other metadata from repo
+        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
+        cp .github/workflows/linux/meerk40t.desktop AppDir/
+        
+        # Copy AppStream metainfo
+        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
 
-        # Create AppRun script
-        cat > AppDir/AppRun << 'EOF'
-        #!/bin/bash
-        HERE="$(dirname "$(readlink -f "${0}")")"
-        export PATH="${HERE}/usr/bin:${PATH}"
-        export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
-        exec "${HERE}/usr/bin/meerk40t" "$@"
-        EOF
+        # Copy AppRun script
+        cp .github/workflows/linux/AppRun AppDir/
         chmod +x AppDir/AppRun
 
         # Create AppImage
@@ -112,10 +147,9 @@ jobs:
         # Move to dist directory
         mv MeerK40t-Ubuntu-Latest.AppImage dist/
 
-# Switched to using softprops/action-gh-release@v1
-# because it supports uploading to existing release based on current tag.
     - name: Upload Release Assets
       id: release
+      if: github.event_name == 'release'
       uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
