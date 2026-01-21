@@ -88,6 +88,70 @@ class GRBLDriver(Parameters):
         self.speed_scale = 1.0
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
+        # Command translation for different firmware types
+        self.command_translations = {
+            "grbl": {
+                "laser_on": "M3",
+                "laser_off": "M5",
+                "laser_mode": "M4",
+                "move_rapid": "G0",
+                "move_linear": "G1",
+                "dwell": "G4",
+                "units_mm": "G21",
+                "units_inches": "G20",
+                "absolute_mode": "G90",
+                "relative_mode": "G91",
+                "feedrate_mode": "G94",
+                "feedrate_inverse": "G93",
+                "home": "G28",
+                "set_position": "G92",
+            },
+            "marlin": {
+                "laser_on": "M3",
+                "laser_off": "M5",
+                "laser_mode": "M4",
+                "move_rapid": "G0",
+                "move_linear": "G1",
+                "dwell": "G4",
+                "units_mm": "G21",
+                "units_inches": "G20",
+                "absolute_mode": "G90",
+                "relative_mode": "G91",
+                "feedrate_mode": "G94",
+                "feedrate_inverse": "G93",
+                "home": "G28",
+                "set_position": "G92",
+            },
+            "custom": {
+                # Default to GRBL commands, can be customized
+                "laser_on": "M3",
+                "laser_off": "M5",
+                "laser_mode": "M4",
+                "move_rapid": "G0",
+                "move_linear": "G1",
+                "dwell": "G4",
+                "units_mm": "G21",
+                "units_inches": "G20",
+                "absolute_mode": "G90",
+                "relative_mode": "G91",
+                "feedrate_mode": "G94",
+                "feedrate_inverse": "G93",
+                "home": "G28",
+                "set_position": "G92",
+            }
+        }
+
+    def translate_command(self, command_key):
+        """
+        Translate a command key to the appropriate firmware-specific command.
+
+        @param command_key: The key for the command (e.g., 'laser_on', 'move_linear')
+        @return: The translated command string
+        """
+        firmware_type = self.service.setting(str, "firmware_type", "grbl")
+        translations = self.command_translations.get(firmware_type, self.command_translations["grbl"])
+        return translations.get(command_key, command_key)  # Return key if not found
+
     def __repr__(self):
         return f"GRBLDriver({self.name})"
 
@@ -264,8 +328,8 @@ class GRBLDriver(Parameters):
             spower = f" S{power:.1f}"
             self.power = power
             self.power_dirty = False
-            self(f"G1 {spower}{self.line_end}")
-        self(f"M5{self.line_end}")
+            self(f"{self.translate_command('move_linear')} {spower}{self.line_end}")
+        self(f"{self.translate_command('laser_off')}{self.line_end}")
 
     def laser_on(self, power=None, speed=None, *values):
         """
@@ -284,10 +348,10 @@ class GRBLDriver(Parameters):
             self.power = power
             self.power_dirty = False
         if speed is not None:
-            sspeed = f"G1 F{speed}{self.line_end}"
+            sspeed = f"{self.translate_command('move_linear')} F{speed}{self.line_end}"
             self.speed = speed
             self.speed_dirty = False
-        self(f"M3{spower}{self.line_end}{sspeed}")
+        self(f"{self.translate_command('laser_on')}{spower}{self.line_end}{sspeed}")
 
     def geometry(self, geom):
         """
@@ -302,9 +366,9 @@ class GRBLDriver(Parameters):
         self._g94_feedrate()
         self._clean()
         if self.service.use_m3:
-            self(f"M3{self.line_end}")
+            self(f"{self.translate_command('laser_on')}{self.line_end}")
         else:
-            self(f"M4{self.line_end}")
+            self(f"{self.translate_command('laser_mode')}{self.line_end}")
         first = True
         g = Geomstr()
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
@@ -399,8 +463,8 @@ class GRBLDriver(Parameters):
                 elif function == "output":
                     # GRBL has no core GPIO functionality
                     pass
-        self(f"G1 S0{self.line_end}")
-        self(f"M5{self.line_end}")
+        self(f"{self.translate_command('move_linear')} S0{self.line_end}")
+        self(f"{self.translate_command('laser_off')}{self.line_end}")
         self.clear_states()
         self.wait_finish()
         return False
@@ -425,9 +489,9 @@ class GRBLDriver(Parameters):
         self._g94_feedrate()
         self._clean()
         if self.service.use_m3:
-            self(f"M3{self.line_end}")
+            self(f"{self.translate_command('laser_on')}{self.line_end}")
         else:
-            self(f"M4{self.line_end}")
+            self(f"{self.translate_command('laser_mode')}{self.line_end}")
         first = True
         total = len(self.queue)
         current = 0
@@ -583,8 +647,8 @@ class GRBLDriver(Parameters):
         self.queue.clear()
         self._set_queue_status(0, 0)
 
-        self(f"G1 S0{self.line_end}")
-        self(f"M5{self.line_end}")
+        self(f"{self.translate_command('move_linear')} S0{self.line_end}")
+        self(f"{self.translate_command('laser_off')}{self.line_end}")
         self.clear_states()
         self.wait_finish()
         return False
@@ -657,7 +721,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self(f"M5{self.line_end}")
+        self(f"{self.translate_command('laser_off')}{self.line_end}")
 
     def program_mode(self, *values):
         """
@@ -665,7 +729,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self(f"M3{self.line_end}")
+        self(f"{self.translate_command('laser_on')}{self.line_end}")
 
     def raster_mode(self, *values):
         """
@@ -685,7 +749,7 @@ class GRBLDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self(f"G04 S{time_in_ms / 1000.0}{self.line_end}")
+        self(f"{self.translate_command('dwell')} S{time_in_ms / 1000.0}{self.line_end}")
 
     def wait_finish(self, *values):
         """
@@ -874,11 +938,11 @@ class GRBLDriver(Parameters):
             if self.power_dirty and self.service.use_g1_for_power:
                 if self.power is not None:
                     # Turn off laser before rapid move if power is changing
-                    line.append(f"G1 S{self.power * self.on_value:.1f}")
+                    line.append(f"{self.translate_command('move_linear')} S{self.power * self.on_value:.1f}")
                 self.power_dirty = False
-            line.append("G0")
+            line.append(self.translate_command("move_rapid"))
         else:
-            line.append("G1")
+            line.append(self.translate_command("move_linear"))
         x /= self.unit_scale
         y /= self.unit_scale
         line.append(f"X{x:.3f}")
@@ -911,25 +975,25 @@ class GRBLDriver(Parameters):
     def _clean_motion(self):
         if self.absolute_dirty:
             if self._absolute:
-                self(f"G90{self.line_end}")
+                self(f"{self.translate_command('absolute_mode')}{self.line_end}")
             else:
-                self(f"G91{self.line_end}")
+                self(f"{self.translate_command('relative_mode')}{self.line_end}")
         self.absolute_dirty = False
 
     def _clean_feed_mode(self):
         if self.feedrate_dirty:
             if self.feed_mode == 94:
-                self(f"G94{self.line_end}")
+                self(f"{self.translate_command('feedrate_mode')}{self.line_end}")
             else:
-                self(f"G93{self.line_end}")
+                self(f"{self.translate_command('feedrate_inverse')}{self.line_end}")
         self.feedrate_dirty = False
 
     def _clean_units(self):
         if self.units_dirty:
             if self.units == 20:
-                self(f"G20{self.line_end}")
+                self(f"{self.translate_command('units_inches')}{self.line_end}")
             else:
-                self(f"G21{self.line_end}")
+                self(f"{self.translate_command('units_mm')}{self.line_end}")
         self.units_dirty = False
 
     def _clean(self):

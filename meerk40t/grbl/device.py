@@ -637,6 +637,20 @@ class GRBLDevice(Service, Status):
                 "section": "_40_Validation",
             },
             {
+                "attr": "firmware_type",
+                "object": self,
+                "default": "grbl",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["grbl", "marlin", "custom"],
+                "label": _("Firmware Type"),
+                "tip": _(
+                    "Type of firmware running on the device. Affects command translation."
+                ),
+                # Hint for translation _("Validation")
+                "section": "_40_Validation",
+            },
+            {
                 "attr": "reset_on_connect",
                 "object": self,
                 "default": False,
