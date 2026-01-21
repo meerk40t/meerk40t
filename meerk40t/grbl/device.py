@@ -443,6 +443,17 @@ class GRBLDevice(Service, Status):
                 ),
             },
             {
+                "attr": "use_g1_for_power",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Use G1 before Rapid Moves"),
+                "section": "_5_Config",
+                "tip": _(
+                    "Uses G1 S0 to explicitly set the power to 0 instead of a G0 X Y S0 "
+                ),
+            },
+            {
                 "attr": "extended_alarm_clear",
                 "object": self,
                 "default": False,

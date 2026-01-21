@@ -871,6 +871,11 @@ class GRBLDriver(Parameters):
             self.native_y += y
         line = []
         if self.move_mode == 0:
+            if self.power_dirty and self.service.use_g1_for_power:
+                if self.power is not None:
+                    # Turn off laser before rapid move if power is changing
+                    line.append(f"G1 S{self.power * self.on_value:.1f}")
+                self.power_dirty = False
             line.append("G0")
         else:
             line.append("G1")
