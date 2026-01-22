@@ -251,6 +251,13 @@ class GRBLDriver(Parameters):
         )  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
+    
+    @staticmethod
+    def unit_str(value):
+        # Use minimal amount of decimals to represent the value
+        s = f"{value:.6f}"
+        s = s.rstrip("0").rstrip(".")
+        return s
 
     def laser_off(self, power=0, *values):
         """
@@ -261,7 +268,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         if power is not None:
-            spower = f" S{power:.2f}"
+            spower = f" S{self.unit_str(power)}"
             self.power = power
             self.power_dirty = False
             self(f"G1 {spower}{self.line_end}")
@@ -279,12 +286,12 @@ class GRBLDriver(Parameters):
         spower = ""
         sspeed = ""
         if power is not None:
-            spower = f" S{power:.2f}"
+            spower = f" S{self.unit_str(power)}"
             # We already established power, so no need for power_dirty
             self.power = power
             self.power_dirty = False
         if speed is not None:
-            sspeed = f"G1 F{speed}{self.line_end}"
+            sspeed = f"G1 F{self.unit_str(speed)}{self.line_end}"
             self.speed = speed
             self.speed_dirty = False
         self(f"M3{spower}{self.line_end}{sspeed}")
@@ -685,7 +692,7 @@ class GRBLDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self(f"G04 S{time_in_ms / 1000.0}{self.line_end}")
+        self(f"G04 S{self.unit_str(time_in_ms / 1000.0)}{self.line_end}")
 
     def wait_finish(self, *values):
         """
@@ -874,7 +881,7 @@ class GRBLDriver(Parameters):
             if self.power_dirty and self.service.use_g1_for_power:
                 if self.power is not None:
                     # Turn off laser before rapid move if power is changing
-                    line.append(f"G1 S{self.power * self.on_value:.2f}")
+                    line.append(f"G1 S{self.unit_str(self.power * self.on_value)}")
                 self.power_dirty = False
             line.append("G0")
         else:
@@ -895,10 +902,10 @@ class GRBLDriver(Parameters):
 
         if self.power_dirty:
             if self.power is not None:
-                line.append(f"S{self.power * self.on_value:.2f}")
+                line.append(f"S{self.unit_str(self.power * self.on_value)}")
             self.power_dirty = False
         if self.speed_dirty:
-            line.append(f"F{self.feed_convert(self.speed):.2f}")
+            line.append(f"F{self.unit_str(self.feed_convert(self.speed))}")
             self.speed_dirty = False
         self(" ".join(line) + self.line_end)
         new_current = self.service.current
