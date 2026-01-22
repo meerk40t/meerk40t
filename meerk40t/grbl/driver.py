@@ -325,7 +325,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         if power is not None:
-            spower = f" S{power:.1f}"
+            spower = f" S{power:.2f}"
             self.power = power
             self.power_dirty = False
             self(f"{self.translate_command('move_linear')} {spower}{self.line_end}")
@@ -343,7 +343,7 @@ class GRBLDriver(Parameters):
         spower = ""
         sspeed = ""
         if power is not None:
-            spower = f" S{power:.1f}"
+            spower = f" S{power:.2f}"
             # We already established power, so no need for power_dirty
             self.power = power
             self.power_dirty = False
@@ -938,7 +938,7 @@ class GRBLDriver(Parameters):
             if self.power_dirty and self.service.use_g1_for_power:
                 if self.power is not None:
                     # Turn off laser before rapid move if power is changing
-                    line.append(f"{self.translate_command('move_linear')} S{self.power * self.on_value:.1f}")
+                    line.append(f"{self.translate_command('move_linear')} S{self.power * self.on_value:.2f}")
                 self.power_dirty = False
             line.append(self.translate_command("move_rapid"))
         else:
@@ -959,10 +959,10 @@ class GRBLDriver(Parameters):
 
         if self.power_dirty:
             if self.power is not None:
-                line.append(f"S{self.power * self.on_value:.1f}")
+                line.append(f"S{self.power * self.on_value:.2f}")
             self.power_dirty = False
         if self.speed_dirty:
-            line.append(f"F{self.feed_convert(self.speed):.1f}")
+            line.append(f"F{self.feed_convert(self.speed):.2f}")
             self.speed_dirty = False
         self(" ".join(line) + self.line_end)
         new_current = self.service.current
