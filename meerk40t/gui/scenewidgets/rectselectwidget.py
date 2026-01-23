@@ -442,11 +442,10 @@ class RectSelectWidget(Widget):
                     ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                 )
                 other_points = self.scene.pane.grid.grid_points
-                total_points = len(other_points) + len(selected_points)
                 if (
                     other_points 
                     and selected_points
-                    and total_points <= MAX_POINTS_FOR_SNAPPING
+                    and len(other_points) + len(selected_points) <= MAX_POINTS_FOR_SNAPPING
                 ):
                     try:
                         np_other = np.asarray(other_points)
