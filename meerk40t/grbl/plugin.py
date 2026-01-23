@@ -548,7 +548,10 @@ def plugin(kernel, lifecycle=None):
                     
                     # Generate G-code
                     channel(_("Generating G-code..."))
-                    kernel.console(f"plan copy preprocess validate blob preopt optimize save_job {temp_path}\n")
+                    new_plan = kernel.planner.get_free_plan()
+                    opt = kernel.planner.do_optimization
+                    optstr = " preopt optimize" if opt else ""
+                    kernel.console(f"plan{new_plan} clear copy preprocess validate blob{optstr} save_job {temp_path}\n")
                     
                     # Check if file was created and has content
                     if not os.path.exists(temp_path):
