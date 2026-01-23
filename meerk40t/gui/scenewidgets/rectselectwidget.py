@@ -469,8 +469,9 @@ class RectSelectWidget(Widget):
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
             
             # Even then magnets win!
-            dx, dy = self.scene.pane.revised_magnet_bound(b)
-            move_to(dx, dy)
+            if not modifiers or "shift" not in modifiers:
+                dx, dy = self.scene.pane.revised_magnet_bound(b)
+                move_to(dx, dy)
 
         if modifiers is not None:
             if self.modifiers != modifiers:
