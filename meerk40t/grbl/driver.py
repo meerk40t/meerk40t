@@ -182,11 +182,11 @@ class GRBLDriver(Parameters):
                 "pause": "!",
                 "resume": "~",
                 "reset": "\x18",
-                "status_query": "?",
+                "status_query": "M114",   # Marlin position query
                 # System commands
                 "home_cycle": "G28",    # Marlin uses G28 for homing
-                "unlock": "M410",       # Marlin quickstop (closest to alarm clear, not full restart)
-                "alarm_clear": "M410",  # Marlin doesn't have direct equivalent to GRBL $X
+                "unlock": "M999",       # Marlin restart/clear after stop
+                "alarm_clear": "M999",  # Clear halted state
                 "firmware_restart": "M999",  # Full firmware restart (heavy operation)
                 "jog": "G0",            # Marlin doesn't have $J, uses G0
                 # Query commands (Marlin uses M-codes for queries)
@@ -1405,24 +1405,24 @@ class GRBLDriver(Parameters):
         """
         Check if the firmware supports realtime power/spindle override.
         
-        Returns True for GRBL, grblHAL, and Smoothieware (with grbl_mode).
-        Returns False for Marlin (no realtime override support).
+        Returns True for GRBL and grblHAL.
+        Returns False for Marlin and Smoothieware (no realtime override support confirmed).
         """
         firmware_type = self.service.settings.get("firmware_type", "grbl")
-        # Only GRBL, grblHAL, and Smoothieware support realtime overrides
-        return firmware_type in ("grbl", "grblhal", "smoothieware", "custom")
+        # Only GRBL and grblHAL support realtime overrides by default
+        return firmware_type in ("grbl", "grblhal", "custom")
 
     @property
     def has_adjustable_speed(self):
         """
         Check if the firmware supports realtime feed/speed override.
         
-        Returns True for GRBL, grblHAL, and Smoothieware (with grbl_mode).
-        Returns False for Marlin (no realtime override support).
+        Returns True for GRBL and grblHAL.
+        Returns False for Marlin and Smoothieware (no realtime override support confirmed).
         """
         firmware_type = self.service.settings.get("firmware_type", "grbl")
-        # Only GRBL, grblHAL, and Smoothieware support realtime overrides
-        return firmware_type in ("grbl", "grblhal", "smoothieware", "custom")
+        # Only GRBL and grblHAL support realtime overrides by default
+        return firmware_type in ("grbl", "grblhal", "custom")
 
     @property
     def supports_m4_dynamic_power(self):

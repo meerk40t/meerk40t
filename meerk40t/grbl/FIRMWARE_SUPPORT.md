@@ -106,8 +106,9 @@ The MeerK40t GRBL driver supports multiple firmware implementations through a co
 - No `$`-style system commands
 - Uses M-codes for queries instead of $ syntax
 - G28 for homing instead of $H
-- M999 for unlock instead of $X
+- M999 for unlock instead of $X (M410 is only a quick-stop)
 - No dedicated jogging command (uses G0 with space-separated parameters)
+- GRBL hardware-config UI is suppressed (uses $-commands that Marlin does not support)
 
 **Use When**: Running Marlin firmware on a 3D printer board adapted for laser/CNC use.
 
@@ -125,7 +126,7 @@ Coolant Control**: M7 (mist), M8 (flood), M9 (off)
 **Command Set**:
 - **Basic G-codes**: Same as GRBL
 - **Spindle/Laser**: M3, M4, M5 (same as GRBL)
-- **Realtime Commands**: Compatible with GRBL (!, ~, \x18, ?)
+- **Realtime Commands**: Compatible with GRBL (!, ~, \x18, ?) in grbl_mode
 - **System Commands**:
   - `G28` - Homing (replaces GRBL's `$H`)
   - `$X` - Alarm unlock (same as GRBL)
@@ -143,6 +144,7 @@ Coolant Control**: M7 (mist), M8 (flood), M9 (off)
 **Notes**: 
 - Enable `grbl_mode` in config for best GRBL compatibility
 - Supports most GRBL query commands when in grbl_mode
+- Realtime feed/power overrides (0x9x codes) are not advertised/guaranteed; treat as unsupported.
 
 ---
 

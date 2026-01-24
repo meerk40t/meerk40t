@@ -316,6 +316,14 @@ class GRBLConfiguration(MWindow):
     def hw_config(self, value):
         if not value:
             return
+        firmware_type = self.context.setting(str, "firmware_type", "grbl").lower()
+        if firmware_type == "marlin":
+            wx.MessageBox(
+                _("Hardware configuration is not available for Marlin firmware."),
+                _("Not supported"),
+                wx.OK | wx.ICON_INFORMATION,
+            )
+            return
         try:
             query_cmd = self.context.driver.translate_command("query_settings")
             self.context.driver(f"{query_cmd}{self.context.driver.line_end}")

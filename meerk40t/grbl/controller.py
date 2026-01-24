@@ -1041,6 +1041,14 @@ class GrblController:
                 continue
             elif response.startswith("<"):
                 self._process_status_message(response)
+            elif (
+                self.get_effective_firmware_type() == "marlin"
+                and ":" in response
+                and not response.startswith("[")
+                and not response.startswith("echo:")
+            ):
+                # Marlin status/position responses (e.g., M114)
+                self._process_status_message(response)
             elif response.startswith("["):
                 self._process_feedback_message(response)
                 continue
@@ -1411,6 +1419,10 @@ class GrblController:
         # Route to firmware-specific parser
         if firmware_type == "marlin":
             self._parse_marlin_settings(response)
+            # After receiving Marlin settings (M503), request status to finish validation
+            if self._validation_stage == 2:
+                self.validate_start(self.driver.translate_command("status_query"))
+                self._validation_stage = 3
             return
         
         # GRBL/grblHAL/Smoothieware format: $0=value
