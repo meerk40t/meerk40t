@@ -166,7 +166,7 @@ class GRBLEmulator:
             return self.service.settings.get("firmware_type", "grbl")
         return "grbl"
 
-    def _get_welcome_message(self):
+    def get_welcome_message(self):
         """Get firmware-specific welcome message"""
         firmware_type = self._get_firmware_type()
         if firmware_type == "grblhal":
@@ -289,7 +289,7 @@ class GRBLEmulator:
                     pass
                 self._buffer.clear()
                 if self.reply:
-                    self.reply(self._get_welcome_message())
+                    self.reply(self.get_welcome_message())
             elif c > 0x80:
                 if c == 0x84:
                     # Safety Door

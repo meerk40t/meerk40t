@@ -4,11 +4,6 @@ Grbl control. This code governs the interplay between the driver and the emulato
 import threading
 
 
-def greet():
-    yield "Grbl 1.1f ['$' for help]\r\n"
-    yield "[MSG:’$H’|’$X’ to unlock]\r\n"
-
-
 class GRBLControl:
     def __init__(self, root):
         self.root = root
@@ -46,16 +41,19 @@ class GRBLControl:
             server = root.open_as("module/TCPServer", "grbl", port=port)
             from meerk40t.grbl.emulator import GRBLEmulator
 
-            root.channel("grbl/send", pure=True).greet = greet
+            emulator = GRBLEmulator(root.device, root.device.view.matrix, service=root)
+            self.emulator = emulator
+
+            def dynamic_greet():
+                yield emulator.get_welcome_message()
+
+            root.channel("grbl/send", pure=True).greet = dynamic_greet
 
             channel(_("GRBL Mode."))
             if verbose:
                 console = root.channel("console")
                 root.channel("grbl").watch(console)
                 server.events_channel.watch(console)
-
-            emulator = GRBLEmulator(root.device, root.device.view.matrix, service=root)
-            self.emulator = emulator
 
             # Link emulator and server.
             tcp_recv_channel = root.channel("grbl/recv", pure=True)
