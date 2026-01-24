@@ -85,10 +85,34 @@ class GRBLDriver(Parameters):
         self.reply = None
         self.elements = None
         self.power_scale = 1.0
+        self.max_s_value = 1000  # Default GRBL max S value (configurable via $30)
+        self.detected_max_s = None  # Auto-detected from firmware settings
+
+        # Firmware-specific power ranges
+        self.firmware_power_ranges = {
+            "grbl": 1000,       # GRBL default (0-1000, configurable via $30)
+            "grblhal": 1000,    # grblHAL default (0-1000, configurable)
+            "marlin": 255,      # Marlin typical range (0-255)
+            "smoothieware": 1000, # Smoothieware (0-1000)
+            "custom": 1000,     # Custom default (user configurable)
+        }
         self.speed_scale = 1.0
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
 
         # Command translation for different firmware types
+        # This dictionary maps logical command names to firmware-specific G-code/control strings
+        # Includes:
+        #   - Basic G-code commands (G0, G1, G20, G21, G28, G90, G91, G92, G94, G93, M3, M4, M5)
+        #   - Realtime commands (!, ~, \x18, ?)
+        #   - System commands ($H, $X, $J=)
+        #   - Query commands ($, $$, $G, $#, $I, $N)
+        # Firmware support:
+        #   - grbl: Full GRBL 1.1 command set
+        #   - grblhal: grblHAL - modern GRBL evolution with extended commands
+        #   - marlin: Marlin firmware (mostly compatible, uses M999 for unlock instead of $X)
+        #   - smoothieware: Smoothieware firmware (GRBL-compatible in grbl_mode, uses G28 instead of $H)
+        #   - fluidnc: FluidNC - ESP32-based GRBL (fully GRBL-compatible, use grbl type)
+        #   - custom: User-customizable (defaults to GRBL)
         self.command_translations = {
             "grbl": {
                 "laser_on": "M3",
@@ -105,6 +129,35 @@ class GRBLDriver(Parameters):
                 "feedrate_inverse": "G93",
                 "home": "G28",
                 "set_position": "G92",
+                # Coolant control
+                "coolant_mist_on": "M7",   # Mist coolant ON
+                "coolant_flood_on": "M8",  # Flood coolant ON
+                "coolant_off": "M9",       # All coolant OFF
+                # Realtime commands (single-byte)
+                "pause": "!",           # Feed hold
+                "resume": "~",          # Cycle start/resume
+                "reset": "\x18",        # Soft reset (Ctrl-X)
+                "status_query": "?",    # Status report query
+                # System commands
+                "home_cycle": "$H",     # Run homing cycle
+                "unlock": "$X",         # Kill alarm lock
+                "jog": "$J=",           # Jogging mode prefix
+                # Query commands (for validation/status)
+                "query_help": "$",      # View help and check connection
+                "query_settings": "$$", # View all settings
+                "query_parser": "$G",   # View parser state (modal commands)
+                "query_params": "$#",   # View work coordinate parameters
+                "query_build": "$I",    # View build info
+                "query_startup": "$N",  # View startup blocks
+                # Realtime override commands (single-byte, instant response)
+                "override_reset": "\x99",        # Reset all overrides to 100%
+                "override_feed_inc": "\x9B",     # Increase feed override by 10%
+                "override_feed_dec": "\x9A",     # Decrease feed override by 10%
+                "override_feed_reset": "\x90",   # Reset feed override to 100%
+                "override_rapid_inc": "\x91",    # Increase rapid override by 25%
+                "override_rapid_dec": "\x92",    # Decrease rapid override by 25%
+                "override_spindle_inc": "\x9C",  # Increase spindle/laser override by 10%
+                "override_spindle_dec": "\x9D",  # Decrease spindle/laser override by 10%
             },
             "marlin": {
                 "laser_on": "M3",
@@ -121,6 +174,132 @@ class GRBLDriver(Parameters):
                 "feedrate_inverse": "G93",
                 "home": "G28",
                 "set_position": "G92",
+                # Coolant control (Marlin supports if enabled)
+                "coolant_mist_on": "M7",   # Mist coolant ON (if COOLANT_MIST enabled)
+                "coolant_flood_on": "M8",  # Flood coolant / Air Assist ON (if COOLANT_FLOOD or AIR_ASSIST)
+                "coolant_off": "M9",       # All coolant / Air Assist OFF
+                # Realtime commands (Marlin uses same as GRBL)
+                "pause": "!",
+                "resume": "~",
+                "reset": "\x18",
+                "status_query": "?",
+                # System commands
+                "home_cycle": "G28",    # Marlin uses G28 for homing
+                "unlock": "M410",       # Marlin quickstop (closest to alarm clear, not full restart)
+                "alarm_clear": "M410",  # Marlin doesn't have direct equivalent to GRBL $X
+                "firmware_restart": "M999",  # Full firmware restart (heavy operation)
+                "jog": "G0",            # Marlin doesn't have $J, uses G0
+                # Query commands (Marlin uses M-codes for queries)
+                "query_help": "M115",   # Firmware info (closest to GRBL $)
+                "query_settings": "M503", # Print settings (closest to GRBL $$)
+                "query_parser": "M115", # Marlin doesn't have exact equivalent
+                "query_params": "M114", # Get current position
+                "query_build": "M115",  # Build info
+                "query_startup": "M115", # No direct equivalent
+                # Realtime override commands (Marlin doesn't support these realtime overrides)
+                # Provided as no-ops for compatibility
+                "override_reset": "",        # Not supported in Marlin
+                "override_feed_inc": "",     # Not supported in Marlin
+                "override_feed_dec": "",     # Not supported in Marlin
+                "override_feed_reset": "",   # Not supported in Marlin
+                "override_rapid_inc": "",    # Not supported in Marlin
+                "override_rapid_dec": "",    # Not supported in Marlin
+                "override_spindle_inc": "",  # Not supported in Marlin (use M220/M221 for different purpose)
+                "override_spindle_dec": "",  # Not supported in Marlin
+            },
+            "grblhal": {
+                # grblHAL - Modern GRBL evolution, fully compatible with GRBL 1.1 commands
+                # Plus extensive additions (G33, G73, G81-G89, G96/G97, M62-M68, M70-M73, etc.)
+                "laser_on": "M3",
+                "laser_off": "M5",
+                "laser_mode": "M4",
+                "move_rapid": "G0",
+                "move_linear": "G1",
+                "dwell": "G4",
+                "units_mm": "G21",
+                "units_inches": "G20",
+                "absolute_mode": "G90",
+                "relative_mode": "G91",
+                "feedrate_mode": "G94",
+                "feedrate_inverse": "G93",
+                "home": "G28",
+                "set_position": "G92",
+                # Coolant control (full support in grblHAL)
+                "coolant_mist_on": "M7",   # Mist coolant ON
+                "coolant_flood_on": "M8",  # Flood coolant ON
+                "coolant_off": "M9",       # All coolant OFF
+                # Realtime commands (same as GRBL)
+                "pause": "!",
+                "resume": "~",
+                "reset": "\x18",
+                "status_query": "?",
+                # System commands (same as GRBL)
+                "home_cycle": "$H",
+                "unlock": "$X",
+                "alarm_clear": "$X",    # Clear alarm state
+                "jog": "$J=",
+                # Query commands (same as GRBL)
+                "query_help": "$",
+                "query_settings": "$$",
+                "query_parser": "$G",
+                "query_params": "$#",
+                "query_build": "$I",
+                "query_startup": "$N",
+                # Realtime override commands (same as GRBL)
+                "override_reset": "\x99",        # Reset all overrides to 100%
+                "override_feed_inc": "\x9B",     # Increase feed override by 10%
+                "override_feed_dec": "\x9A",     # Decrease feed override by 10%
+                "override_feed_reset": "\x90",   # Reset feed override to 100%
+                "override_rapid_inc": "\x91",    # Increase rapid override by 25%
+                "override_rapid_dec": "\x92",    # Decrease rapid override by 25%
+                "override_spindle_inc": "\x9C",  # Increase spindle/laser override by 10%
+                "override_spindle_dec": "\x9D",  # Decrease spindle/laser override by 10%
+            },
+            "smoothieware": {
+                "laser_on": "M3",
+                "laser_off": "M5",
+                "laser_mode": "M4",
+                "move_rapid": "G0",
+                "move_linear": "G1",
+                "dwell": "G4",
+                "units_mm": "G21",
+                "units_inches": "G20",
+                "absolute_mode": "G90",
+                "relative_mode": "G91",
+                "feedrate_mode": "G94",
+                "feedrate_inverse": "G93",
+                "home": "G28",
+                "set_position": "G92",
+                # Coolant control
+                "coolant_mist_on": "M7",   # Mist coolant ON
+                "coolant_flood_on": "M8",  # Flood coolant ON
+                "coolant_off": "M9",       # All coolant OFF
+                # Realtime commands (Smoothie compatible with GRBL)
+                "pause": "!",
+                "resume": "~",
+                "reset": "\x18",        # Ctrl-X for reset
+                "status_query": "?",    # Status query in GRBL mode
+                # System commands
+                "home_cycle": "G28",    # Smoothie uses G28 for homing
+                "unlock": "$X",         # Compatible with GRBL alarm clear
+                "alarm_clear": "$X",    # Clear alarm state in GRBL mode
+                "jog": "G0",            # Smoothie doesn't have $J, uses G0
+                # Query commands (Smoothie in GRBL mode supports these)
+                "query_help": "$",      # Help in GRBL mode
+                "query_settings": "$$", # Settings in GRBL mode
+                "query_parser": "$G",   # Parser state in GRBL mode
+                "query_params": "$#",   # Work coordinates in GRBL mode
+                "query_build": "$I",    # Build info in GRBL mode
+                "query_startup": "$N",  # Startup blocks in GRBL mode
+                # Realtime override commands (compatible with GRBL in grbl_mode)
+                "override_reset": "\x99",        # Reset all overrides to 100%
+                "override_feed_inc": "\x9B",     # Increase feed override by 10%
+                "override_feed_dec": "\x9A",     # Decrease feed override by 10%
+                "override_feed_reset": "\x90",   # Reset feed override to 100%
+                "override_rapid_inc": "\x91",    # Increase rapid override by 25%
+                "override_rapid_dec": "\x92",    # Decrease rapid override by 25%
+                "override_spindle_inc": "\x9C",  # Increase spindle/laser override by 10%
+                "override_spindle_dec": "\x9D",  # Decrease spindle/laser override by 10%
             },
             "custom": {
                 # Default to GRBL commands, can be customized
@@ -138,6 +317,36 @@ class GRBLDriver(Parameters):
                 "feedrate_inverse": "G93",
                 "home": "G28",
                 "set_position": "G92",
+                # Coolant control
+                "coolant_mist_on": "M7",   # Mist coolant ON
+                "coolant_flood_on": "M8",  # Flood coolant ON
+                "coolant_off": "M9",       # All coolant OFF
+                # Realtime commands
+                "pause": "!",
+                "resume": "~",
+                "reset": "\x18",
+                "status_query": "?",
+                # System commands
+                "home_cycle": "$H",
+                "unlock": "$X",
+                "alarm_clear": "$X",    # Clear alarm state
+                "jog": "$J=",
+                # Query commands
+                "query_help": "$",
+                "query_settings": "$$",
+                "query_parser": "$G",
+                "query_params": "$#",
+                "query_build": "$I",
+                "query_startup": "$N",
+                # Realtime override commands (default to GRBL)
+                "override_reset": "\x99",        # Reset all overrides to 100%
+                "override_feed_inc": "\x9B",     # Increase feed override by 10%
+                "override_feed_dec": "\x9A",     # Decrease feed override by 10%
+                "override_feed_reset": "\x90",   # Reset feed override to 100%
+                "override_rapid_inc": "\x91",    # Increase rapid override by 25%
+                "override_rapid_dec": "\x92",    # Decrease rapid override by 25%
+                "override_spindle_inc": "\x9C",  # Increase spindle/laser override by 10%
+                "override_spindle_dec": "\x9D",  # Decrease spindle/laser override by 10%
             }
         }
 
@@ -145,12 +354,50 @@ class GRBLDriver(Parameters):
         """
         Translate a command key to the appropriate firmware-specific command.
 
+        For "custom" firmware type, loads command values from settings with GRBL defaults as fallback.
+        This allows users to override individual commands via settings like:
+        - custom_command_laser_on = "M3"
+        - custom_command_home_cycle = "$H"
+        etc.
+
         @param command_key: The key for the command (e.g., 'laser_on', 'move_linear')
         @return: The translated command string
         """
         firmware_type = self.service.setting(str, "firmware_type", "grbl")
-        translations = self.command_translations.get(firmware_type, self.command_translations["grbl"])
-        return translations.get(command_key, command_key)  # Return key if not found
+        
+        if firmware_type == "custom":
+            # For custom firmware, load from settings with GRBL defaults as fallback
+            grbl_default = self.command_translations["grbl"].get(command_key, command_key)
+            setting_key = f"custom_command_{command_key}"
+            return self.service.setting(str, setting_key, grbl_default)
+        else:
+            # For predefined firmware types, use the translation table
+            translations = self.command_translations.get(firmware_type, self.command_translations["grbl"])
+            return translations.get(command_key, command_key)  # Return key if not found
+    
+    def jog_command(self, gcode_params):
+        """
+        Generate a jog command appropriate for the firmware type.
+        
+        For GRBL: Uses $J=G91G21X10F1000 format
+        For Marlin/Smoothieware: Uses G0 G91 G21 X10 F1000 format
+        
+        @param gcode_params: G-code parameters (e.g., "G91G21X10F1000")
+        @return: Formatted jog command string
+        """
+        firmware_type = self.service.setting(str, "firmware_type", "grbl")
+        jog_prefix = self.translate_command("jog")
+        
+        if jog_prefix == "$J=":
+            # GRBL style - keep format compact
+            return f"$J={gcode_params}"
+        else:
+            # Marlin/Smoothieware style - add spaces for compatibility
+            # Convert "G91G21X10F1000" to "G91 G21 X10 F1000"
+            import re
+            # Add spaces before G, M, X, Y, Z, F letters
+            formatted = re.sub(r'([GMXYZF])', r' \1', gcode_params).strip()
+            return formatted
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -316,6 +563,46 @@ class GRBLDriver(Parameters):
         self.wait(time_in_ms)
         self.laser_off()
 
+    def scale_power_to_firmware(self, power):
+        """
+        Scale power value (0-1000 internal) to firmware-specific S parameter range.
+        
+        GRBL uses 0-1000 (or 0 to $30 setting)
+        Marlin typically uses 0-255
+        
+        @param power: Internal power value (0-1000 range)
+        @return: Scaled power for firmware S parameter
+        """
+        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        
+        # Use detected max from $30 setting if available
+        if self.detected_max_s is not None:
+            target_max = self.detected_max_s
+        else:
+            target_max = self.firmware_power_ranges.get(firmware_type, 1000)
+        
+        # If target is different from our internal range, scale it
+        if target_max != 1000:
+            scaled = (power / 1000.0) * target_max
+            return scaled
+        
+        return power
+
+    def update_max_s_from_settings(self, settings_dict):
+        """
+        Update max S value from firmware settings.
+        For GRBL, this is $30 (maximum spindle speed).
+        
+        @param settings_dict: Dictionary of firmware settings
+        """
+        if 30 in settings_dict:
+            # GRBL $30 = maximum spindle speed (also max S value)
+            try:
+                self.detected_max_s = float(settings_dict[30])
+                self.service.signal("grbl:max_s", self.detected_max_s)
+            except (ValueError, TypeError):
+                pass
+
     def laser_off(self, power=0, *values):
         """
         Turn laser off in place.
@@ -325,7 +612,8 @@ class GRBLDriver(Parameters):
         @return:
         """
         if power is not None:
-            spower = f" S{power:.2f}"
+            scaled_power = self.scale_power_to_firmware(power)
+            spower = f" S{scaled_power:.2f}"
             self.power = power
             self.power_dirty = False
             self(f"{self.translate_command('move_linear')} {spower}{self.line_end}")
@@ -343,7 +631,8 @@ class GRBLDriver(Parameters):
         spower = ""
         sspeed = ""
         if power is not None:
-            spower = f" S{power:.2f}"
+            scaled_power = self.scale_power_to_firmware(power)
+            spower = f" S{scaled_power:.2f}"
             # We already established power, so no need for power_dirty
             self.power = power
             self.power_dirty = False
@@ -679,9 +968,9 @@ class GRBLDriver(Parameters):
         self.native_x = 0
         self.native_y = 0
         if self.service.has_endstops:
-            self(f"$H{self.line_end}")
+            self(f"{self.translate_command('home_cycle')}{self.line_end}")
         else:
-            self(f"G28{self.line_end}")
+            self(f"{self.translate_command('home')}{self.line_end}")
         new_current = self.service.current
         if self._signal_updates:
             self.service.signal(
@@ -699,7 +988,7 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         if self.service.rotary.active and self.service.rotary.suppress_home:
             return
-        self(f"G28{self.line_end}")
+        self(f"{self.translate_command('home')}{self.line_end}")
 
     def rapid_mode(self, *values):
         """
@@ -831,7 +1120,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = True
         # self(f"!{self.line_end}", real=True)
-        self(chr(0x21), real=True)  # Hex 21 = !
+        self(self.translate_command('pause'), real=True)
         # Let's make sure we reestablish power...
         self.power_dirty = True
         self.service.signal("pause")
@@ -847,7 +1136,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = False
         # self(f"~{self.line_end}", real=True)
-        self(chr(0x7E), real=True)  # hex 7e = ~
+        self(self.translate_command('resume'), real=True)
         self.service.signal("pause")
 
     def clear_states(self):
@@ -871,7 +1160,7 @@ class GRBLDriver(Parameters):
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
-        self(f"\x18{self.line_end}", real=True)
+        self(f"{self.translate_command('reset')}{self.line_end}", real=True)
         self._g94_feedrate()
         self._g21_units_mm()
         self._g90_absolute()
@@ -892,7 +1181,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self(f"$X{self.line_end}", real=True)
+        self(f"{self.translate_command('unlock')}{self.line_end}", real=True)
         if self.service.extended_alarm_clear:
             self.reset()
 
@@ -938,7 +1227,8 @@ class GRBLDriver(Parameters):
             if self.power_dirty and self.service.use_g1_for_power:
                 if self.power is not None:
                     # Turn off laser before rapid move if power is changing
-                    line.append(f"{self.translate_command('move_linear')} S{self.power * self.on_value:.2f}")
+                    scaled_power = self.scale_power_to_firmware(self.power * self.on_value)
+                    line.append(f"{self.translate_command('move_linear')} S{scaled_power:.2f}")
                 self.power_dirty = False
             line.append(self.translate_command("move_rapid"))
         else:
@@ -959,7 +1249,8 @@ class GRBLDriver(Parameters):
 
         if self.power_dirty:
             if self.power is not None:
-                line.append(f"S{self.power * self.on_value:.2f}")
+                scaled_power = self.scale_power_to_firmware(self.power * self.on_value)
+                line.append(f"S{scaled_power:.2f}")
             self.power_dirty = False
         if self.speed_dirty:
             line.append(f"F{self.feed_convert(self.speed):.2f}")
@@ -1059,16 +1350,16 @@ class GRBLDriver(Parameters):
         self.power_scale = factor
 
         # Grbl can only deal with factors between 10% and 200%
-        self("\x99\r", real=True)
+        self(f"{self.translate_command('override_reset')}\r", real=True)
         # Upward loop
         start = 1.0
         while start < 2.0 and start < factor:
-            self("\x9B\r", real=True)
+            self(f"{self.translate_command('override_feed_inc')}\r", real=True)
             start += 0.1
         # Downward loop
         start = 1.0
         while start > 0.0 and start > factor:
-            self("\x9A\r", real=True)
+            self(f"{self.translate_command('override_feed_dec')}\r", real=True)
             start -= 0.1
 
     def set_speed_scale(self, factor):
@@ -1078,24 +1369,40 @@ class GRBLDriver(Parameters):
         if self.speed_scale == factor:
             return
         self.speed_scale = factor
-        self("\x90\r", real=True)
+        self(f"{self.translate_command('override_feed_reset')}\r", real=True)
         start = 1.0
         while start < 2.0 and start < factor:
-            self("\x91\r", real=True)
+            self(f"{self.translate_command('override_rapid_inc')}\r", real=True)
             start += 0.1
         # Downward loop
         start = 1.0
         while start > 0.0 and start > factor:
-            self("\x92\r", real=True)
+            self(f"{self.translate_command('override_rapid_dec')}\r", real=True)
             start -= 0.1
 
-    @staticmethod
-    def has_adjustable_power():
-        return True
+    @property
+    def has_adjustable_power(self):
+        """
+        Check if the firmware supports realtime power/spindle override.
+        
+        Returns True for GRBL, grblHAL, and Smoothieware (with grbl_mode).
+        Returns False for Marlin (no realtime override support).
+        """
+        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        # Only GRBL, grblHAL, and Smoothieware support realtime overrides
+        return firmware_type in ("grbl", "grblhal", "smoothieware", "custom")
 
-    @staticmethod
-    def has_adjustable_speed():
-        return True
+    @property
+    def has_adjustable_speed(self):
+        """
+        Check if the firmware supports realtime feed/speed override.
+        
+        Returns True for GRBL, grblHAL, and Smoothieware (with grbl_mode).
+        Returns False for Marlin (no realtime override support).
+        """
+        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        # Only GRBL, grblHAL, and Smoothieware support realtime overrides
+        return firmware_type in ("grbl", "grblhal", "smoothieware", "custom")
 
     @property
     def execution_direct_list(self):
