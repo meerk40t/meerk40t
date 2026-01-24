@@ -649,8 +649,8 @@ class GRBLDevice(Service, Status):
                     "Choose: grbl (standard GRBL 1.1), grblhal (modern 32-bit GRBL), marlin (3D printer firmware), "
                     "smoothieware (Smoothie firmware), or custom (user-defined)."
                 ),
-                # Hint for translation _("Validation")
-                "section": "_40_Validation",
+                # Hint for translation _("Firmware type")
+                "section": "_05_Firmware type",
                 "signals": "firmware_changed",
             },
             {

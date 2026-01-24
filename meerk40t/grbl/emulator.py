@@ -84,9 +84,10 @@ lookup = {
 
 class GRBLEmulator:
     def __init__(
-        self, device=None, units_to_device_matrix=None, reply=None, channel=None
+        self, device=None, units_to_device_matrix=None, reply=None, channel=None, service=None
     ):
         self.device = device
+        self.service = service
         self.units_to_device_matrix = units_to_device_matrix
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
@@ -159,6 +160,34 @@ class GRBLEmulator:
     def __repr__(self):
         return "GRBLInterpreter()"
 
+    def _get_firmware_type(self):
+        """Get the configured firmware type from service settings"""
+        if self.service:
+            return self.service.settings.get("firmware_type", "grbl")
+        return "grbl"
+
+    def _get_welcome_message(self):
+        """Get firmware-specific welcome message"""
+        firmware_type = self._get_firmware_type()
+        if firmware_type == "grblhal":
+            return "grblHAL 1.1f ['$' for help]\r\n[MSG:'$H'|'$X' to unlock]\r\n"
+        elif firmware_type == "marlin":
+            return "Marlin 2.0.9.2\r\necho:  Last Updated: 2021-08-04\r\necho: | Author: (test build, default config)\r\necho:Compiled: Aug  4 2021\r\necho: Free Memory: 4690  PlannerBufferBytes: 1232\r\necho:V99 stored settings retrieved\r\necho:Steps per unit:\r\necho: M92 X80.00 Y80.00 Z400.00 E500.00\r\n"
+        elif firmware_type == "smoothieware":
+            return "Smoothieware\r\nok\r\n"
+        else:  # grbl or custom
+            return "Grbl 1.1f ['$' for help]\r\n[MSG:'$H'|'$X' to unlock]\r\n"
+
+    def _format_status(self, state, x, y, z, f, s):
+        """Format status response according to firmware type"""
+        firmware_type = self._get_firmware_type()
+        if firmware_type == "marlin":
+            # Marlin format: X:0.00 Y:0.00 Z:0.00 E:0.00 Count X:0 Y:0 Z:0
+            return f"X:{x:.2f} Y:{y:.2f} Z:{z:.2f} E:0.00 Count X:0 Y:0 Z:0\r\nok\r\n"
+        else:
+            # GRBL/grblHAL/Smoothieware format: <Idle|MPos:0.000,0.000,0.000|FS:0,0>
+            return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
+
     def reply_code(self, cmd):
         if cmd == -1:
             # Do not reply.
@@ -194,7 +223,7 @@ class GRBLEmulator:
             s = 0
         x /= self.job.scale
         y /= self.job.scale
-        return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
+        return self._format_status(state, x, y, z, f, s)
 
     def write(self, data):
         """
@@ -260,9 +289,7 @@ class GRBLEmulator:
                     pass
                 self._buffer.clear()
                 if self.reply:
-                    self.reply(
-                        "Grbl 1.1f ['$' for help]\r\n" "[MSG:’$H’|’$X’ to unlock]\r\n"
-                    )
+                    self.reply(self._get_welcome_message())
             elif c > 0x80:
                 if c == 0x84:
                     # Safety Door
@@ -391,17 +418,26 @@ class GRBLEmulator:
                 )
             return 0
         elif data == "$$":
-            for s in lookup:
-                v = self.settings.get(lookup[s], 0)
-                if isinstance(v, int):
-                    if self.reply:
-                        self.reply("$%d=%d\r\n" % (s, v))
-                elif isinstance(v, float):
-                    if self.reply:
-                        self.reply("$%d=%.3f\r\n" % (s, v))
-            # if self.reply:
-            #     self.reply("$298=donut\r\n")
-            #     self.reply("$299=\r\n")
+            firmware_type = self._get_firmware_type()
+            if firmware_type == "marlin":
+                # Marlin uses echo: format for settings
+                if self.reply:
+                    self.reply("echo:; Linear Units:\r\n")
+                    self.reply("echo:  M92 X80.00 Y80.00 Z400.00 E500.00\r\n")
+                    self.reply("echo:; Maximum feedrates (units/s):\r\n")
+                    self.reply("echo:  M203 X500.00 Y500.00 Z5.00 E25.00\r\n")
+                    self.reply("echo:; Maximum Acceleration (units/s2):\r\n")
+                    self.reply("echo:  M201 X500.00 Y500.00 Z100.00 E5000.00\r\n")
+            else:
+                # GRBL/grblHAL use $ format
+                for s in lookup:
+                    v = self.settings.get(lookup[s], 0)
+                    if isinstance(v, int):
+                        if self.reply:
+                            self.reply("$%d=%d\r\n" % (s, v))
+                    elif isinstance(v, float):
+                        if self.reply:
+                            self.reply("$%d=%.3f\r\n" % (s, v))
             return 0
         if GRBL_SET_RE.match(data):
             settings = list(GRBL_SET_RE.findall(data))[0]
