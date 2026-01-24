@@ -3,7 +3,7 @@ GRBL Device Plugin
 
 Registers the required files to run the GRBL device.
 """
-from meerk40t.grbl.control import GRBLControl, greet
+from meerk40t.grbl.control import GRBLControl
 from meerk40t.grbl.device import GRBLDevice, GRBLDriver
 from meerk40t.grbl.emulator import GRBLEmulator
 from meerk40t.grbl.gcodejob import GcodeJob
@@ -273,7 +273,7 @@ def plugin(kernel, lifecycle=None):
                 root.open_as("module/TCPServer", "grblmock", port=port)
                 tcp_recv_channel = root.channel("grblmock/recv", pure=True)
                 tcp_send_channel = root.channel("grblmock/send", pure=True)
-                tcp_send_channel.greet = greet
+                tcp_send_channel.greet = "Grbl 1.1f ['$' for help]\r\n"
 
                 def everything_ok(line):
                     for c in line:
