@@ -20,6 +20,9 @@ from meerk40t.gui.wxutils import dip_size, get_gc_full_scale, get_matrix_scale
 from meerk40t.core.geomstr import NON_GEOMETRY_TYPES
 
 
+MAX_POINTS_FOR_SNAPPING = 100000
+
+
 class RectSelectWidget(Widget):
     """
     SceneWidget
@@ -340,7 +343,7 @@ class RectSelectWidget(Widget):
             did_snap_to_point = False
             if (
                 self.scene.context.snap_points
-                and "shift" not in modifiers
+                and (not modifiers or "shift" not in modifiers)
                 and b is not None
             ):
                 gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
@@ -394,24 +397,37 @@ class RectSelectWidget(Widget):
                         if not ignore:
                             target.append(end)
                         last = end
-                # t2 = perf_counter()
-                if other_points and selected_points:
-                    np_other = np.asarray(other_points)
-                    np_selected = np.asarray(selected_points)
-                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+                
+                total_points = len(other_points) + len(selected_points)
+                if (
+                    other_points 
+                    and selected_points
+                    and total_points <= MAX_POINTS_FOR_SNAPPING
+                ):
+                    try:
+                        np_other = np.asarray(other_points)
+                        np_selected = np.asarray(selected_points)
+                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+                    except MemoryError:
+                        dist, pt1, pt2 = None, None, None
 
                     if dist is not None and dist < gap:
-                        did_snap_to_point = True
-                        dx = pt1.real - pt2.real
-                        dy = pt1.imag - pt2.imag
-                        move_to(dx, dy)
-                        # Get new value
-                        b = self.scene.context.elements._emphasized_bounds
+                        try:
+                            did_snap_to_point = True
+                            dx = pt1.real - pt2.real
+                            dy = pt1.imag - pt2.imag
+                            move_to(dx, dy)
+                            # Get new value
+                            b = self.scene.context.elements._emphasized_bounds
+                        except (IndexError, TypeError, AttributeError):
+                            # Fallback: skip snapping if coordinate conversion fails
+                            pass
+                        
                         # t3 = perf_counter()
                         # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
                 self.scene.context.snap_grid
-                and "shift" not in modifiers
+                and (not modifiers or "shift" not in modifiers)
                 and b is not None
                 and not did_snap_to_point
             ):
@@ -426,21 +442,34 @@ class RectSelectWidget(Widget):
                     ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                 )
                 other_points = self.scene.pane.grid.grid_points
-                if other_points and selected_points:
-                    np_other = np.asarray(other_points)
-                    np_selected = np.asarray(selected_points)
-                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                if (
+                    other_points 
+                    and selected_points
+                    and len(other_points) + len(selected_points) <= MAX_POINTS_FOR_SNAPPING
+                ):
+                    try:
+                        np_other = np.asarray(other_points)
+                        np_selected = np.asarray(selected_points)
+                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                    except MemoryError:
+                        dist, pt1, pt2 = None, None, None
+
                     if dist is not None and dist < gap:
-                        # did_snap_to_point = True
-                        dx = pt1[0] - pt2[0]
-                        dy = pt1[1] - pt2[1]
-                        move_to(dx, dy)
-                        # Get new value
-                        b = self.scene.context.elements._emphasized_bounds
+                        try:
+                            # did_snap_to_point = True
+                            dx = pt1[0] - pt2[0]
+                            dy = pt1[1] - pt2[1]
+                            move_to(dx, dy)
+                            # Get new value
+                            b = self.scene.context.elements._emphasized_bounds
+                        except (IndexError, TypeError, AttributeError):
+                            pass
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
-                # Even then magnets win!
+            
+            # Even then magnets win!
+            if not modifiers or "shift" not in modifiers:
                 dx, dy = self.scene.pane.revised_magnet_bound(b)
                 move_to(dx, dy)
 

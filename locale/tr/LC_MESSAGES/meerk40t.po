@@ -25682,3 +25682,15 @@ msgstr "ve diğerleri"
 #: meerk40t/gui/about.py:145
 msgid "* All the MeerKittens, {developer}.\n"
 msgstr "* Tüm MeerKittens, {developer}.\n"
+
+#: meerk40t/grbl/device.py:450
+msgid "Use G1 before Rapid Moves"
+msgstr "Hızlı Hareketlerden Önce G1 Kullan"
+
+#: meerk40t/grbl/device.py:454
+msgid "Uses G1 S0 to explicitly set the power to 0 instead of a G0 X Y S0 "
+msgstr "G0 X Y S0 yerine gücü açıkça 0'a ayarlamak için G1 S0 kullanır "
+
+#: meerk40t/gui/wordlisteditor.py:640
+msgid "Rename failed"
+msgstr "Yeniden adlandırma başarısız"

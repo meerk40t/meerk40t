@@ -1,0 +1,10 @@
+numpy
+wheel
+Pillow
+pyusb
+pyserial
+wxPython
+ezdxf>=0.14
+opencv-python-headless
+websocket-client
+requests>=2.25.0

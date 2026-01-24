@@ -25808,3 +25808,15 @@ msgstr "и другие"
 #: meerk40t/gui/about.py:145
 msgid "* All the MeerKittens, {developer}.\n"
 msgstr "* Все MeerKittens, {developer}.\n"
+
+#: meerk40t/grbl/device.py:450
+msgid "Use G1 before Rapid Moves"
+msgstr "Использовать G1 перед быстрыми перемещениями"
+
+#: meerk40t/grbl/device.py:454
+msgid "Uses G1 S0 to explicitly set the power to 0 instead of a G0 X Y S0 "
+msgstr "Использует G1 S0 для явной установки мощности на 0 вместо G0 X Y S0 "
+
+#: meerk40t/gui/wordlisteditor.py:640
+msgid "Rename failed"
+msgstr "Переименование не удалось"
