@@ -402,6 +402,20 @@ class GRBLDriver(Parameters):
     def __repr__(self):
         return f"GRBLDriver({self.name})"
 
+    def _format_number(self, value):
+        """
+        Format a number for G-code output, removing unnecessary trailing zeros.
+        
+        Examples:
+            1000.0 -> "1000" (removes .0 for whole numbers)
+            0.0 -> "0"
+            127.5 -> "127.5"
+            123.456 -> "123.456"
+        """
+        # Format with 6 decimal places then strip trailing zeros
+        formatted = f"{value:.6f}".rstrip('0').rstrip('.')
+        return formatted
+
     def __call__(self, e, real=False):
         if real:
             self.out_real(e)
@@ -613,7 +627,7 @@ class GRBLDriver(Parameters):
         """
         if power is not None:
             scaled_power = self.scale_power_to_firmware(power)
-            spower = f" S{scaled_power:.2f}"
+            spower = f" S{self._format_number(scaled_power)}"
             self.power = power
             self.power_dirty = False
             self(f"{self.translate_command('move_linear')} {spower}{self.line_end}")
@@ -632,7 +646,7 @@ class GRBLDriver(Parameters):
         sspeed = ""
         if power is not None:
             scaled_power = self.scale_power_to_firmware(power)
-            spower = f" S{scaled_power:.2f}"
+            spower = f" S{self._format_number(scaled_power)}"
             # We already established power, so no need for power_dirty
             self.power = power
             self.power_dirty = False
@@ -1234,7 +1248,7 @@ class GRBLDriver(Parameters):
                 if self.power is not None:
                     # Turn off laser before rapid move if power is changing
                     scaled_power = self.scale_power_to_firmware(self.power * self.on_value)
-                    line.append(f"{self.translate_command('move_linear')} S{scaled_power:.2f}")
+                    line.append(f"{self.translate_command('move_linear')} S{self._format_number(scaled_power)}")
                 self.power_dirty = False
             line.append(self.translate_command("move_rapid"))
         else:
@@ -1256,10 +1270,10 @@ class GRBLDriver(Parameters):
         if self.power_dirty:
             if self.power is not None:
                 scaled_power = self.scale_power_to_firmware(self.power * self.on_value)
-                line.append(f"S{scaled_power:.2f}")
+                line.append(f"S{self._format_number(scaled_power)}")
             self.power_dirty = False
         if self.speed_dirty:
-            line.append(f"F{self.feed_convert(self.speed):.2f}")
+            line.append(f"F{self._format_number(self.feed_convert(self.speed))}")
             self.speed_dirty = False
         self(" ".join(line) + self.line_end)
         new_current = self.service.current
