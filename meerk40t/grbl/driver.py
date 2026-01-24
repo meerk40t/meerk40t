@@ -178,11 +178,13 @@ class GRBLDriver(Parameters):
                 "coolant_mist_on": "M7",   # Mist coolant ON (if COOLANT_MIST enabled)
                 "coolant_flood_on": "M8",  # Flood coolant / Air Assist ON (if COOLANT_FLOOD or AIR_ASSIST)
                 "coolant_off": "M9",       # All coolant / Air Assist OFF
-                # Realtime commands (Marlin uses same as GRBL)
-                "pause": "!",
-                "resume": "~",
-                "reset": "\x18",
-                "status_query": "M114",   # Marlin position query
+                # Realtime commands (Marlin does not support standard GRBL realtime commands)
+                # We map them to empty strings to avoid errors.
+                # Note: M0/M1 are buffered pauses, not realtime.
+                "pause": "",
+                "resume": "",
+                "reset": "M410",        # M410 (Quickstop) is the best abort equivalent
+                "status_query": "M114",   # Marlin position query (Regular command sent as realtime)
                 # System commands
                 "home_cycle": "G28",    # Marlin uses G28 for homing
                 "unlock": "M999",       # Marlin restart/clear after stop
@@ -488,7 +490,10 @@ class GRBLDriver(Parameters):
         @return:
         """
         # TODO: To calculate status correctly we need to actually have access to the response
-        self.out_real("?")
+        # Send status query with line end (required for Marlin M114, good for GRBL buffer sync)
+        cmd = self.translate_command("status_query")
+        if cmd:
+            self.out_real(f"{cmd}{self.line_end}")
         return (self.native_x, self.native_y), "idle", "unknown"
 
     def move_abs(self, x, y):
