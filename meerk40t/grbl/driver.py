@@ -654,10 +654,9 @@ class GRBLDriver(Parameters):
         self._g90_absolute()
         self._g94_feedrate()
         self._clean()
-        if self.service.use_m3:
-            self(f"{self.translate_command('laser_on')}{self.line_end}")
-        else:
-            self(f"{self.translate_command('laser_mode')}{self.line_end}")
+        # Use M4 dynamic power if supported and not explicitly disabled
+        laser_cmd = self.get_laser_command(use_constant_power=self.service.use_m3)
+        self(f"{self.translate_command(laser_cmd)}{self.line_end}")
         first = True
         g = Geomstr()
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
@@ -989,6 +988,13 @@ class GRBLDriver(Parameters):
         if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self(f"{self.translate_command('home')}{self.line_end}")
+        
+        # For Marlin, G28 may not result in position (0,0)
+        # Set work coordinate to 0,0 explicitly
+        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        if firmware_type == "marlin":
+            # After G28, explicitly set current position as work zero
+            self(f"{self.translate_command('set_position')} X0 Y0{self.line_end}")
 
     def rapid_mode(self, *values):
         """
@@ -1403,6 +1409,40 @@ class GRBLDriver(Parameters):
         firmware_type = self.service.settings.get("firmware_type", "grbl")
         # Only GRBL, grblHAL, and Smoothieware support realtime overrides
         return firmware_type in ("grbl", "grblhal", "smoothieware", "custom")
+
+    @property
+    def supports_m4_dynamic_power(self):
+        """
+        Check if the firmware supports M4 dynamic power mode.
+        
+        M4 scales laser power based on actual speed vs programmed speed.
+        This ensures consistent laser energy per distance.
+        
+        Returns True for GRBL, grblHAL, and Smoothieware.
+        Returns False for Marlin (M4 support varies, generally not reliable).
+        """
+        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        # GRBL, grblHAL, and Smoothieware support M4 dynamic power
+        # Marlin support is inconsistent and version-dependent
+        return firmware_type in ("grbl", "grblhal", "smoothieware", "custom")
+
+    def get_laser_command(self, use_constant_power=None):
+        """
+        Get the appropriate laser on command based on power mode preference.
+        
+        @param use_constant_power: If True, use M3 (constant power).
+                                   If False and supported, use M4 (dynamic power).
+                                   If None, use service setting.
+        @return: Command key for laser on ("laser_on" for M3, "laser_mode" for M4)
+        """
+        if use_constant_power is None:
+            use_constant_power = self.service.use_m3
+        
+        # If constant power requested or M4 not supported, use M3
+        if use_constant_power or not self.supports_m4_dynamic_power:
+            return "laser_on"  # M3
+        
+        return "laser_mode"  # M4
 
     @property
     def execution_direct_list(self):
