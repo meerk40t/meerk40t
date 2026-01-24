@@ -4,6 +4,7 @@ GRBL Driver
 Governs the generic commands issued by laserjob and spooler and converts that into regular GRBL Gcode output.
 """
 
+import math
 import time
 
 from meerk40t.core.cutcode.cubiccut import CubicCut
@@ -35,6 +36,14 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+        self.last_warped_x = 0
+        self.last_warped_y = 0
+
+        self.cylinder_active = False
+        self.cylinder_x_axis = False
+        self.cylinder_y_axis = False
+        self.cylinder_radius_x = 0.0
+        self.cylinder_radius_y = 0.0
 
         self.mpos_x = 0
         self.mpos_y = 0
@@ -87,6 +96,44 @@ class GRBLDriver(Parameters):
         self.power_scale = 1.0
         self.speed_scale = 1.0
         self._signal_updates = self.service.setting(bool, "signal_updates", True)
+
+    def cylinder_validate(self):
+        self.cylinder_active = self.service.cylinder_active
+        self.cylinder_x_axis = self.service.cylinder_x_axis
+        self.cylinder_y_axis = self.service.cylinder_y_axis
+
+        if self.cylinder_active:
+            # Check X Axis
+            if self.service.cylinder_x_axis:
+                dx, dy = self.service.view.position(
+                    self.service.cylinder_x_diameter, 0, vector=True
+                )
+                self.cylinder_radius_x = abs(complex(dx, dy)) / 2.0
+            if self.service.cylinder_y_axis:
+                dx, dy = self.service.view.position(
+                    0, self.service.cylinder_y_diameter, vector=True
+                )
+                self.cylinder_radius_y = abs(complex(dx, dy)) / 2.0
+
+    def _warp(self, x, y):
+        if not self.cylinder_active:
+            return x, y
+
+        nx = x
+        ny = y
+
+        if self.cylinder_x_axis and self.cylinder_radius_x > 0:
+            # Cylinder is along X axis. Curve is in Y.
+            # Map Y to Y'.
+            # y corresponds to arc length.
+            # y' = r * sin(y / r)
+            ny = self.cylinder_radius_x * math.sin(y / self.cylinder_radius_x)
+
+        if self.cylinder_y_axis and self.cylinder_radius_y > 0:
+            # Cylinder is along Y axis. Curve is in X.
+            nx = self.cylinder_radius_y * math.sin(x / self.cylinder_radius_y)
+
+        return nx, ny
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -640,6 +687,8 @@ class GRBLDriver(Parameters):
         """
         self.native_x = 0
         self.native_y = 0
+        self.last_warped_x = 0
+        self.last_warped_y = 0
         if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self(f"G28{self.line_end}")
@@ -876,6 +925,17 @@ class GRBLDriver(Parameters):
         else:
             self.native_x += x
             self.native_y += y
+
+        target_x, target_y = self._warp(self.native_x, self.native_y)
+        if self._absolute:
+            x = target_x
+            y = target_y
+        else:
+            x = target_x - self.last_warped_x
+            y = target_y - self.last_warped_y
+        self.last_warped_x = target_x
+        self.last_warped_y = target_y
+
         line = []
         if self.move_mode == 0:
             if self.power_dirty and self.service.use_g1_for_power:
