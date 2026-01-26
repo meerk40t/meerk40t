@@ -31,6 +31,7 @@ from meerk40t.gui.wxutils import (
     wxComboBox,
     wxListCtrl,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -532,6 +533,7 @@ class LaserPanel(wx.Panel):
             self.context.signal("optimize", newval)
 
     @signal_listener("optimize")
+    @dispatch_to_main_thread
     def optimize_update(self, origin, *message):
         try:
             newvalue = bool(message[0])
@@ -544,6 +546,7 @@ class LaserPanel(wx.Panel):
             self.checkbox_optimize.SetValue(newvalue)
 
     @signal_listener("pwm_mode_changed")
+    @dispatch_to_main_thread
     def on_pwm_mode_changed(self, origin, *message):
         """
         This is called when the power scale of the device changes.
@@ -555,6 +558,7 @@ class LaserPanel(wx.Panel):
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
+    @dispatch_to_main_thread
     def on_device_changes(self, *args):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
@@ -579,6 +583,7 @@ class LaserPanel(wx.Panel):
         self.Layout()
 
     @signal_listener("device;connected")
+    @dispatch_to_main_thread
     def on_connectivity(self, *args):
         # There's no signal yet, but there should be one...
         self.update_override_controls()
@@ -599,10 +604,12 @@ class LaserPanel(wx.Panel):
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
+    @dispatch_to_main_thread
     def on_device_pause_toggle(self, origin, *args):
         self.set_pause_color()
 
     @signal_listener("laser_armed")
+    @dispatch_to_main_thread
     def signal_laser_arm(self, origin, *message):
         try:
             newval = bool(message[0])
@@ -614,6 +621,7 @@ class LaserPanel(wx.Panel):
             self.check_laser_arm()
 
     @signal_listener("laserpane_arm")
+    @dispatch_to_main_thread
     def check_laser_arm(self, *args):
         ctxt = self.context.kernel.root
         ctxt.setting(bool, "_laser_may_run", False)
@@ -907,6 +915,7 @@ class JobPanel(wx.Panel):
                     break
 
     @signal_listener("plan")
+    @dispatch_to_main_thread
     def plan_update(self, origin, *message):
         if self.shown:
             self.refresh_plan_list()
@@ -1100,6 +1109,7 @@ class OptimizePanel(wx.Panel):
         self.parent.add_module_delegate(self.optimize_panel)
 
     @signal_listener("optimize")
+    @dispatch_to_main_thread
     def optimize_update(self, origin, *message):
         try:
             newvalue = bool(message[0])

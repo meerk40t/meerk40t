@@ -4,7 +4,13 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
-from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox, wxComboBox
+from ..wxutils import (
+    TextCtrl,
+    set_ctrl_value,
+    wxCheckBox,
+    wxComboBox,
+    dispatch_to_main_thread,
+)
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
@@ -458,6 +464,7 @@ class HatchPropertyPanel(ScrolledPanel):
         self.travel_lines = None
         self.refresh_display()
 
+    @dispatch_to_main_thread
     def refresh_display(self):
         # print(
         #     f"Distance={self.node.distance} / {self.node.hatch_distance} / {self.node.settings.get('hatch_distance', '')}"
@@ -465,10 +472,7 @@ class HatchPropertyPanel(ScrolledPanel):
         # print(
         #     f"Angle={self.node.angle} / {self.node.hatch_angle} / {self.node.settings.get('hatch_angle', '')}"
         # )
-        if not wx.IsMainThread():
-            wx.CallAfter(self.refresh_in_ui)
-        else:
-            self.refresh_in_ui()
+        self.refresh_in_ui()
 
     def calculate_hatch_lines(self):
         # from time import perf_counter

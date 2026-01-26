@@ -10,6 +10,7 @@ from .wxutils import (
     wxButton,
     wxComboBox,
     wxListBox,
+    dispatch_to_main_thread,
 )
 
 _ = wx.GetTranslation
@@ -199,6 +200,7 @@ class PlannerPanel(wx.Panel):
         self.context(f"plan{self.plan_name} clear\n")
 
     @signal_listener("plan")
+    @dispatch_to_main_thread
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
         if stage is not None:
@@ -207,6 +209,7 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     @signal_listener("element_property_reload")
+    @dispatch_to_main_thread
     def on_element_property_update(self, origin, *args):
         self.update_gui()
 

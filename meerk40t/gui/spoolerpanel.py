@@ -22,6 +22,7 @@ from meerk40t.gui.wxutils import (
     wxComboBox,
     wxListCtrl,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import Job, signal_listener
 
@@ -370,7 +371,7 @@ class SpoolerPanel(wx.Panel):
                     line_items.append(str(info.get("device", "''")))
                     line_items.append(str(info.get("label", "''")))
                     line_items.append(
-                        f"{self.datestr(info.get('start_time',0))} {self.timestr(info.get('start_time',0), True)}"
+                        f"{self.datestr(info.get('start_time', 0))} {self.timestr(info.get('start_time', 0), True)}"
                     )
 
                     line_items.append(
@@ -387,7 +388,7 @@ class SpoolerPanel(wx.Panel):
                     line_items.append(str(info.get("passes", "''")))
                     line_items.append(str(info.get("status", "''")))
                     line_items.append(str(info.get("info", "''")))
-                    f.write(f'{";".join(line_items)}\n')
+                    f.write(f"{';'.join(line_items)}\n")
 
         except (PermissionError, OSError, FileNotFoundError):
             pass
@@ -1004,7 +1005,7 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(
                 list_id,
                 HC_STEPS,
-                f"{info.get('steps_done',0)}/{info.get('steps_total',0)}",
+                f"{info.get('steps_done', 0)}/{info.get('steps_total', 0)}",
             )
             self.list_job_history.SetItemData(list_id, idx)
         if has_data:
@@ -1046,10 +1047,12 @@ class SpoolerPanel(wx.Panel):
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
+    @dispatch_to_main_thread
     def on_device_pause_toggle(self, origin, *args):
         self.set_pause_color()
 
     @signal_listener("activate;device")
+    @dispatch_to_main_thread
     def on_activate_device(self, origin, device):
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
@@ -1072,12 +1075,14 @@ class SpoolerPanel(wx.Panel):
         self.set_pause_color()
 
     @signal_listener("spooler;completed")
+    @dispatch_to_main_thread
     def on_spooler_completed(self, origin, *args):
         self.refresh_history()
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")
     @signal_listener("spooler;realtime")
+    @dispatch_to_main_thread
     def on_spooler_update(self, origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()
@@ -1085,6 +1090,7 @@ class SpoolerPanel(wx.Panel):
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
     @signal_listener("pipe;usb_status")
+    @dispatch_to_main_thread
     def on_device_update(self, origin, *args):
         doit = True
         with self.update_lock:

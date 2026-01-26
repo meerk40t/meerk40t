@@ -6,7 +6,7 @@ from wx import aui
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dispatch_to_main_thread
 from meerk40t.kernel import signal_listener
 
 try:
@@ -360,6 +360,7 @@ class ConsolePanel(wx.ScrolledWindow):
             self.context.signal("console_update")
 
     @signal_listener("console_update")
+    @dispatch_to_main_thread
     def update_console_main(self, origin, *args):
         with self._buffer_lock:
             buffer = self._buffer

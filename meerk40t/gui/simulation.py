@@ -60,6 +60,7 @@ from .wxutils import (
     wxListBox,
     wxListCtrl,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from .zmatrix import ZMatrix
 
@@ -1117,7 +1118,7 @@ class SimulationPanel(wx.Panel, Job):
         self.running = False
         self.slided_in = True
         self.start_time = perf_counter()
-        self.debug(f"Init done: {perf_counter()-self.start_time}")
+        self.debug(f"Init done: {perf_counter() - self.start_time}")
 
     def reload_statistics(self):
         try:
@@ -1134,7 +1135,7 @@ class SimulationPanel(wx.Panel, Job):
         return
 
     def _startup(self):
-        self.debug(f"Startup: {perf_counter()-self.start_time}")
+        self.debug(f"Startup: {perf_counter() - self.start_time}")
         self.slided_in = True
         self.fit_scene_to_panel()
 
@@ -1652,7 +1653,7 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-        self.debug(f"Refresh simulated: {perf_counter()-self.start_time}")
+        self.debug(f"Refresh simulated: {perf_counter() - self.start_time}")
         # Stop animation
         if self.running:
             self._stop()
@@ -1730,16 +1731,17 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("device;modified")
     @signal_listener("plan")
-    def on_plan_change(self, origin, plan_name=None, status=None):
+    @dispatch_to_main_thread
+    def on_plan_change(self, origin, plan_name=None, status=None, **kwargs):
         def resend_signal():
-            self.debug(f"Resending signal: {perf_counter()-self.start_time}")
+            self.debug(f"Resending signal: {perf_counter() - self.start_time}")
             self.context.signal("plan", plan_name=self.plan_name, status=1)
 
         winsize = self.view_pane.GetSize()
         winsize1 = self.hscene_sizer.GetSize()
         winsize2 = self.GetSize()
         self.debug(
-            f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})"
+            f"Plan called : {perf_counter() - self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})"
         )
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
@@ -1770,6 +1772,7 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("refresh_simulation")
     def on_request_refresh(self, origin, *args):
+        # request_refresh is thread safe
         self.widget_scene.request_refresh()
 
     def show_wait(self, flag):
@@ -2025,6 +2028,7 @@ class SimulationPanel(wx.Panel, Job):
         @param args:
         @return:
         """
+        # request_refresh is thread safe
         if scene_name == "SimScene":
             self.request_refresh()
 
@@ -2564,7 +2568,8 @@ class Simulation(MWindow):
         yield self.panel
 
     @signal_listener("background")
-    def on_background_signal(self, origin, background):
+    @dispatch_to_main_thread
+    def on_background_signal(self, origin, background, **kwargs):
         if background is not None:
             background = wx.Bitmap.FromBuffer(*background)
         self.panel.widget_scene._signal_widget(

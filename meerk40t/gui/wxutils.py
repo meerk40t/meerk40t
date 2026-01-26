@@ -3,6 +3,7 @@ Mixin functions for wxMeerk40t
 """
 
 import platform
+import functools
 from typing import List
 
 import wx
@@ -13,6 +14,22 @@ from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Len
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
+
+
+def dispatch_to_main_thread(func):
+    """
+    Decorator to ensure that the decorated function is called on the main thread.
+    If called from a different thread, it uses wx.CallAfter to dispatch it to the main thread.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if not wx.IsMainThread():
+            wx.CallAfter(func, *args, **kwargs)
+            return
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 ##############
@@ -667,7 +684,7 @@ class TextCtrl(wx.TextCtrl):
         with cooldown protection to prevent duplicate calls on Linux systems where
         Enter key may trigger both events. Once an action is triggered, subsequent
         events are ignored for 300ms to prevent duplicates.
-        
+
         It's a simple way of dealing with all the
             ctrl.bind(wx.EVT_KILL_FOCUS / wx.EVT_TEXT_ENTER) things
         Yes, you can still have them, but you should call
@@ -832,7 +849,9 @@ class TextCtrl(wx.TextCtrl):
         # Needs to be passed on
         event.Skip()
         self.prevalidate("leave")
-        if self._action_routine is not None and (platform.system() != "Linux" or not self._cooldown_active):
+        if self._action_routine is not None and (
+            platform.system() != "Linux" or not self._cooldown_active
+        ):
             if platform.system() == "Linux":
                 self._start_cooldown()
             self._event_generated = wx.EVT_KILL_FOCUS
@@ -849,7 +868,9 @@ class TextCtrl(wx.TextCtrl):
         # Let others deal with it after me
         event.Skip()
         self.prevalidate("enter")
-        if self._action_routine is not None and (platform.system() != "Linux" or not self._cooldown_active):
+        if self._action_routine is not None and (
+            platform.system() != "Linux" or not self._cooldown_active
+        ):
             if platform.system() == "Linux":
                 self._start_cooldown()
             self._event_generated = wx.EVT_TEXT_ENTER

@@ -11,6 +11,7 @@ from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
     wxTreeCtrl,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -365,6 +366,7 @@ class DevicePanel(wx.Panel):
     @signal_listener("activate;device")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/available")
+    @dispatch_to_main_thread
     def refresh_device_tree(self, *args):
         self.devices = []
         names = []

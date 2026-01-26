@@ -32,6 +32,7 @@ from .wxutils import (
     wxComboBox,
     wxStaticBitmap,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 
 _ = wx.GetTranslation
@@ -438,7 +439,11 @@ class BasicOpPanel(wx.Panel):
         except RuntimeError:
             return
         self.operation_sizer = StaticBoxSizer(
-            self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL, context=self.context,
+            self.op_panel,
+            wx.ID_ANY,
+            _("Operations"),
+            wx.VERTICAL,
+            context=self.context,
         )
         self.op_panel.SetSizer(self.operation_sizer)
         elements = self.context.elements
@@ -459,21 +464,33 @@ class BasicOpPanel(wx.Panel):
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("A: Active = toggle whether the elements assigned to this operation will be burned or not"))
+        header.SetToolTip(
+            _(
+                "A: Active = toggle whether the elements assigned to this operation will be burned or not"
+            )
+        )
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wxStaticText(self.op_panel, wx.ID_ANY, label="S")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("S: Show = if inactive then you can suppress the drawing of the assigned elements"))
+        header.SetToolTip(
+            _(
+                "S: Show = if inactive then you can suppress the drawing of the assigned elements"
+            )
+        )
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wxStaticText(self.op_panel, wx.ID_ANY, label="C")
         self.context.themes.set_window_colors(header)
         header.SetMinSize(dip_size(self, 20, -1))
         header.SetMaxSize(dip_size(self, 20, -1))
-        header.SetToolTip(_("C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"))
+        header.SetToolTip(
+            _(
+                "C: Coolant = determines whether coolant remains / will be turned on / turned off at start of this operation"
+            )
+        )
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         unit = " [%]" if self.use_percent else ""
@@ -781,6 +798,7 @@ class BasicOpPanel(wx.Panel):
         self.ask_for_refill()
 
     @signal_listener("emphasized")
+    @dispatch_to_main_thread
     def signal_handler_emphasized(self, origin, *args, **kwargs):
         if not self.IsShown():
             # print ("Delay highlight_operations")
@@ -788,4 +806,6 @@ class BasicOpPanel(wx.Panel):
             return
         self.context.elements.set_start_time("BasicOpPanel")
         self.highlight_operations(source="emphasized")
-        self.context.elements.set_end_time("BasicOpPanel", message=f"vis={self.visible}")
+        self.context.elements.set_end_time(
+            "BasicOpPanel", message=f"vis={self.visible}"
+        )
