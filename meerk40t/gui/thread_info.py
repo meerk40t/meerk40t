@@ -9,6 +9,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import Job, signal_listener
 
@@ -147,10 +148,8 @@ class ThreadPanel(wx.Panel):
         self.list_job_threads.Refresh()
 
     @signal_listener("thread_update")
+    @dispatch_to_main_thread
     def on_thread_signal(self, origin, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_thread_signal, origin, *args)
-            return
         doit = True
         with self.update_lock:
             # Only update every 2 seconds or so

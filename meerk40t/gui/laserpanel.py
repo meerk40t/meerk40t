@@ -31,6 +31,7 @@ from meerk40t.gui.wxutils import (
     wxComboBox,
     wxListCtrl,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -532,10 +533,8 @@ class LaserPanel(wx.Panel):
             self.context.signal("optimize", newval)
 
     @signal_listener("optimize")
+    @dispatch_to_main_thread
     def optimize_update(self, origin, *message):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.optimize_update, origin, *message)
-            return
         try:
             newvalue = bool(message[0])
         except ValueError:
@@ -547,24 +546,20 @@ class LaserPanel(wx.Panel):
             self.checkbox_optimize.SetValue(newvalue)
 
     @signal_listener("pwm_mode_changed")
+    @dispatch_to_main_thread
     def on_pwm_mode_changed(self, origin, *message):
         """
         This is called when the power scale of the device changes.
         It updates the slider and label accordingly.
         """
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_pwm_mode_changed, origin, *message)
-            return
         self.update_override_controls()
 
     @signal_listener("device;modified")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
+    @dispatch_to_main_thread
     def on_device_changes(self, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_device_changes, *args)
-            return
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
@@ -588,10 +583,8 @@ class LaserPanel(wx.Panel):
         self.Layout()
 
     @signal_listener("device;connected")
+    @dispatch_to_main_thread
     def on_connectivity(self, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_connectivity, *args)
-            return
         # There's no signal yet, but there should be one...
         self.update_override_controls()
 
@@ -611,17 +604,13 @@ class LaserPanel(wx.Panel):
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
+    @dispatch_to_main_thread
     def on_device_pause_toggle(self, origin, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_device_pause_toggle, origin, *args)
-            return
         self.set_pause_color()
 
     @signal_listener("laser_armed")
+    @dispatch_to_main_thread
     def signal_laser_arm(self, origin, *message):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.signal_laser_arm, origin, *message)
-            return
         try:
             newval = bool(message[0])
         except ValueError:
@@ -632,10 +621,8 @@ class LaserPanel(wx.Panel):
             self.check_laser_arm()
 
     @signal_listener("laserpane_arm")
+    @dispatch_to_main_thread
     def check_laser_arm(self, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.check_laser_arm, *args)
-            return
         ctxt = self.context.kernel.root
         ctxt.setting(bool, "_laser_may_run", False)
         if self.context.root.laserpane_arm:
@@ -928,10 +915,8 @@ class JobPanel(wx.Panel):
                     break
 
     @signal_listener("plan")
+    @dispatch_to_main_thread
     def plan_update(self, origin, *message):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.plan_update, origin, *message)
-            return
         if self.shown:
             self.refresh_plan_list()
 
@@ -1124,10 +1109,8 @@ class OptimizePanel(wx.Panel):
         self.parent.add_module_delegate(self.optimize_panel)
 
     @signal_listener("optimize")
+    @dispatch_to_main_thread
     def optimize_update(self, origin, *message):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.optimize_update, origin, *message)
-            return
         try:
             newvalue = bool(message[0])
         except ValueError:

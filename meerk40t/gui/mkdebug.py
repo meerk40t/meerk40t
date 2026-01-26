@@ -36,6 +36,7 @@ from meerk40t.gui.wxutils import (
     wxStaticBitmap,
     wxStaticText,
     wxToggleButton,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Color
@@ -347,10 +348,8 @@ class DebugTreePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def _update_position(self, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self._update_position, *args)
-            return
+    @dispatch_to_main_thread
+    def _update_position(self, *args, **kwargs):
         self.context.elements.set_start_time("Emphasis mkdebug")
         self.update_position(True)
         self.context.elements.set_end_time("Emphasis mkdebug")
@@ -527,7 +526,8 @@ class DebugViewPanel(ScrolledPanel):
 
     @signal_listener("view;realized")
     @signal_listener("device;modified")
-    def on_view_change(self, origin, *args):
+    @dispatch_to_main_thread
+    def on_view_change(self, origin, *args, **kwargs):
         self.refresh_info()
         self.on_test_position(None)
 
@@ -1156,10 +1156,8 @@ class DebugSettingsPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def _update_position(self, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self._update_position, *args)
-            return
+    @dispatch_to_main_thread
+    def _update_position(self, *args, **kwargs):
         self.update_position(True)
 
     def update_position(self, reset):

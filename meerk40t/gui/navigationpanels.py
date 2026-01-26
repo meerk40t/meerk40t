@@ -60,6 +60,7 @@ from meerk40t.gui.wxutils import (
     wxBitmapButton,
     wxStaticBitmap,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import signal_listener
 
@@ -480,13 +481,13 @@ class ZMovePanel(wx.Panel):
 
     def z_move_down(self, distance):
         def handler():
-            self.context(f"z_move -{distance*0.1:.2f}mm")
+            self.context(f"z_move -{distance * 0.1:.2f}mm")
 
         return handler
 
     def z_move_up(self, distance):
         def handler():
-            self.context(f"z_move {distance*0.1:.2f}mm")
+            self.context(f"z_move {distance * 0.1:.2f}mm")
 
         return handler
 
@@ -514,10 +515,8 @@ class ZMovePanel(wx.Panel):
         self.navigation_sizer.Layout()
         self.Layout()
 
+    @dispatch_to_main_thread
     def on_update(self, origin, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_update, origin, *args)
-            return
         has_home = self.context.kernel.has_command("z_home")
         # print (f"Has_home for {self.context.device.name}: {has_home}")
         self.button_z_home.Show(has_home)
@@ -1058,10 +1057,8 @@ class Drag(wx.Panel):
     def on_button_repeat(self, origin, *args):
         self.set_timer_options()
 
+    @dispatch_to_main_thread
     def on_update(self, origin, pos):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_update, origin, pos)
-            return
         # bb = self.get_bbox()
         elements = self.context.elements
         bb = elements._emphasized_bounds
@@ -1461,10 +1458,8 @@ class Jog(wx.Panel):
                 break
         self.button_navigate_home.SetToolTip(tip)
 
+    @dispatch_to_main_thread
     def on_update(self, origin, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_update, origin, *args)
-            return
         self.set_home_logic()
         self.set_z_support()
         self.set_lockrail()
@@ -1769,10 +1764,8 @@ class MovePanel(wx.Panel):
         except ValueError:
             return
 
+    @dispatch_to_main_thread
     def update_position_info(self, origin, pos):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.update_position_info, origin, pos)
-            return
         # origin, pos
 
         if pos is None:
@@ -1915,10 +1908,8 @@ class PulsePanel(wx.Panel):
     def pane_hide(self, *args):
         self.context.unlisten("activate;device", self.on_update)
 
+    @dispatch_to_main_thread
     def on_update(self, origin, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_update, origin, *args)
-            return
         self.update_power_controls()
 
     def update_power_controls(self):
@@ -1933,7 +1924,7 @@ class PulsePanel(wx.Panel):
             dval = 50
         self.spin_pulse_duration.SetValue(dval)
         if self.context.device.setting(bool, "use_percent_for_power_display", False):
-            self.text_power.SetValue(f"{pval/10.0:.1f}")
+            self.text_power.SetValue(f"{pval / 10.0:.1f}")
             self.text_power.set_range(0, 100)
             self.text_power.SetToolTip(_("Set the power of the laser pulse in percent"))
             self.label_power.SetLabel("%")

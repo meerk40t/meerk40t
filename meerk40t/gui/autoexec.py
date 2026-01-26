@@ -1,6 +1,7 @@
 """
 This module offers the opportunity to define a couple of commands that will automatically be executed on a (main) file load
 """
+
 from platform import system
 
 import wx
@@ -8,7 +9,7 @@ from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_circled_play
 from .mwindow import MWindow
-from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox
+from .wxutils import TextCtrl, dip_size, wxButton, wxCheckBox, dispatch_to_main_thread
 
 _ = wx.GetTranslation
 
@@ -185,10 +186,8 @@ class AutoExecPanel(wx.Panel):
             self.button_execute.Enable(True)
         self.context.elements.signal("autoexec", self)
 
-    def on_autoexec_listen(self, origin, source=None):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_autoexec_listen, origin, source)
-            return
+    @dispatch_to_main_thread
+    def on_autoexec_listen(self, origin, source=None, **kwargs):
         if source is self:
             return
         commands = self.context.elements.last_file_autoexec

@@ -28,6 +28,7 @@ from ..gui.wxutils import (
     wxRadioBox,
     wxStaticBitmap,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
@@ -1622,10 +1623,8 @@ class Alignment(MWindow):
 
     @signal_listener("reference")
     @signal_listener("emphasized")
-    def on_emphasize_signal(self, origin, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.on_emphasize_signal, origin, *args)
-            return
+    @dispatch_to_main_thread
+    def on_emphasize_signal(self, origin, *args, **kwargs):
         has_emph = self.context.elements.has_emphasis()
         self.panel_align.show_stuff(has_emph)
         self.panel_distribution.show_stuff(has_emph)

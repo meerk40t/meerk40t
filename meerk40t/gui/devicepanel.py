@@ -11,6 +11,7 @@ from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
     wxTreeCtrl,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -365,10 +366,8 @@ class DevicePanel(wx.Panel):
     @signal_listener("activate;device")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/available")
+    @dispatch_to_main_thread
     def refresh_device_tree(self, *args):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.refresh_device_tree, *args)
-            return
         self.devices = []
         names = []
         for obj, name, sname in self.context.find("dev_info"):

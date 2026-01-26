@@ -25,6 +25,7 @@ from meerk40t.gui.wxutils import (
     wxRadioBox,
     wxStaticBitmap,
     wxStaticText,
+    dispatch_to_main_thread,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -644,7 +645,7 @@ class SpeedPpiPanel(wx.Panel):
             return
         try:
             value = float(self.text_power.GetValue())
-            self.power_sizer.SetLabel(_("Power (ppi)") + f" ({value/10:.1f}%)")
+            self.power_sizer.SetLabel(_("Power (ppi)") + f" ({value / 10:.1f}%)")
         except ValueError:
             return
 
@@ -1109,14 +1110,12 @@ class PanelStartPreference(wx.Panel):
         self.direction_lines = None
         wx.CallAfter(self.refresh_in_ui)
 
+    @dispatch_to_main_thread
     def refresh_display(self):
         if self._Buffer is None:
             self.set_buffer()
 
-        if not wx.IsMainThread():
-            wx.CallAfter(self.refresh_in_ui)
-        else:
-            self.refresh_in_ui()
+        self.refresh_in_ui()
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
