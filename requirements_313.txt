@@ -1,3 +1,5 @@
+# Use this file for Python 3.13 specific dependencies
+# Most notably, numpy can now be numpy 2.x
 numpy
 wheel
 Pillow
