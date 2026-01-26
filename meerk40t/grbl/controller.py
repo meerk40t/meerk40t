@@ -750,30 +750,6 @@ class GrblController:
                 daemon=True,
             )
 
-    def firmware_supports_validation_command(self, cmd_key):
-        """
-        Check if the current firmware type supports a given validation command.
-        Used to skip validation steps for firmware that doesn't support them.
-        
-        @param cmd_key: Command key (e.g., 'query_settings', 'query_parser')
-        @return: True if supported, False otherwise
-        """
-        firmware_type = self.get_effective_firmware_type()
-        
-        # Marlin limitations
-        if firmware_type == "marlin":
-            # Marlin doesn't support $ commands or $G parser state
-            if cmd_key in ("query_help", "query_parser"):
-                # M115 is used, but format is different
-                return True  # We handle it differently
-            if cmd_key == "query_settings":
-                return True  # M503 supported
-            if cmd_key == "status_query":
-                return True  # M114 for position
-        
-        # GRBL/grblHAL/Smoothieware support all validation commands
-        return True
-
     def skip_validation_stage(self, stage, reason):
         """
         Skip a validation stage and advance to the next one.

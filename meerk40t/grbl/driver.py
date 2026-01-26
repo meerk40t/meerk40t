@@ -399,7 +399,7 @@ class GRBLDriver(Parameters):
             import re
             # Add spaces before G, M, X, Y, Z, F letters
             formatted = re.sub(r'([GMXYZF])', r' \1', gcode_params).strip()
-            return formatted
+            return f"{jog_prefix} {formatted}".strip()
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -592,7 +592,7 @@ class GRBLDriver(Parameters):
         @param power: Internal power value (0-1000 range)
         @return: Scaled power for firmware S parameter
         """
-        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        firmware_type = self.service.setting(str, "firmware_type", "grbl")
         
         # Use detected max from $30 setting if available
         if self.detected_max_s is not None:
@@ -1010,7 +1010,7 @@ class GRBLDriver(Parameters):
         
         # For Marlin, G28 may not result in position (0,0)
         # Set work coordinate to 0,0 explicitly
-        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        firmware_type = self.service.setting(str, "firmware_type", "grbl")
         if firmware_type == "marlin":
             # After G28, explicitly set current position as work zero
             self(f"{self.translate_command('set_position')} X0 Y0{self.line_end}")
@@ -1144,8 +1144,9 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        # self(f"!{self.line_end}", real=True)
-        self(self.translate_command('pause'), real=True)
+        cmd = self.translate_command('pause')
+        if cmd:
+            self(cmd, real=True)
         # Let's make sure we reestablish power...
         self.power_dirty = True
         self.service.signal("pause")
@@ -1160,8 +1161,9 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        # self(f"~{self.line_end}", real=True)
-        self(self.translate_command('resume'), real=True)
+        cmd = self.translate_command('resume')
+        if cmd:
+            self(cmd, real=True)
         self.service.signal("pause")
 
     def clear_states(self):
@@ -1405,7 +1407,6 @@ class GRBLDriver(Parameters):
             self(f"{self.translate_command('override_rapid_dec')}\r", real=True)
             start -= 0.1
 
-    @property
     def has_adjustable_power(self):
         """
         Check if the firmware supports realtime power/spindle override.
@@ -1413,11 +1414,10 @@ class GRBLDriver(Parameters):
         Returns True for GRBL and grblHAL.
         Returns False for Marlin and Smoothieware (no realtime override support confirmed).
         """
-        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        firmware_type = self.service.setting(str, "firmware_type", "grbl")
         # Only GRBL and grblHAL support realtime overrides by default
         return firmware_type in ("grbl", "grblhal", "custom")
 
-    @property
     def has_adjustable_speed(self):
         """
         Check if the firmware supports realtime feed/speed override.
@@ -1425,7 +1425,7 @@ class GRBLDriver(Parameters):
         Returns True for GRBL and grblHAL.
         Returns False for Marlin and Smoothieware (no realtime override support confirmed).
         """
-        firmware_type = self.service.settings.get("firmware_type", "grbl")
+        firmware_type = self.service.setting(str, "firmware_type", "grbl")
         # Only GRBL and grblHAL support realtime overrides by default
         return firmware_type in ("grbl", "grblhal", "custom")
 

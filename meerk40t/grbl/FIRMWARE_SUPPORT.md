@@ -321,7 +321,7 @@ When adding or modifying firmware support:
 
 ## Future Firmware Support
 
-To add new firmware type:
+To add a new firmware type:
 
 1. Add entry to `command_translations` dictionary in `driver.py`
 2. Map all command keys to firmware-specific strings
