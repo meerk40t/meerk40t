@@ -1623,6 +1623,9 @@ class Alignment(MWindow):
     @signal_listener("reference")
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_emphasize_signal, origin, *args)
+            return
         has_emph = self.context.elements.has_emphasis()
         self.panel_align.show_stuff(has_emph)
         self.panel_distribution.show_stuff(has_emph)

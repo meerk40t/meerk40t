@@ -148,6 +148,9 @@ class ThreadPanel(wx.Panel):
 
     @signal_listener("thread_update")
     def on_thread_signal(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_thread_signal, origin, *args)
+            return
         doit = True
         with self.update_lock:
             # Only update every 2 seconds or so

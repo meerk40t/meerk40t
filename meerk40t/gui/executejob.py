@@ -200,6 +200,9 @@ class PlannerPanel(wx.Panel):
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.plan_update, origin, *message)
+            return
         plan_name, stage = message[0], message[1]
         if stage is not None:
             self.stage = stage
@@ -208,6 +211,9 @@ class PlannerPanel(wx.Panel):
 
     @signal_listener("element_property_reload")
     def on_element_property_update(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_element_property_update, origin, *args)
+            return
         self.update_gui()
 
     def update_gui(self):

@@ -1731,6 +1731,9 @@ class SimulationPanel(wx.Panel, Job):
     @signal_listener("device;modified")
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name=None, status=None):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_plan_change, origin, plan_name, status)
+            return
         def resend_signal():
             self.debug(f"Resending signal: {perf_counter()-self.start_time}")
             self.context.signal("plan", plan_name=self.plan_name, status=1)
@@ -1770,6 +1773,7 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("refresh_simulation")
     def on_request_refresh(self, origin, *args):
+        # request_refresh is thread safe
         self.widget_scene.request_refresh()
 
     def show_wait(self, flag):
@@ -2025,6 +2029,7 @@ class SimulationPanel(wx.Panel, Job):
         @param args:
         @return:
         """
+        # request_refresh is thread safe
         if scene_name == "SimScene":
             self.request_refresh()
 
@@ -2565,6 +2570,9 @@ class Simulation(MWindow):
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_background_signal, origin, background)
+            return
         if background is not None:
             background = wx.Bitmap.FromBuffer(*background)
         self.panel.widget_scene._signal_widget(

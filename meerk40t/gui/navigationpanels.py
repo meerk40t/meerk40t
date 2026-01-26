@@ -515,6 +515,9 @@ class ZMovePanel(wx.Panel):
         self.Layout()
 
     def on_update(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_update, origin, *args)
+            return
         has_home = self.context.kernel.has_command("z_home")
         # print (f"Has_home for {self.context.device.name}: {has_home}")
         self.button_z_home.Show(has_home)
@@ -1056,6 +1059,9 @@ class Drag(wx.Panel):
         self.set_timer_options()
 
     def on_update(self, origin, pos):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_update, origin, pos)
+            return
         # bb = self.get_bbox()
         elements = self.context.elements
         bb = elements._emphasized_bounds
@@ -1456,6 +1462,9 @@ class Jog(wx.Panel):
         self.button_navigate_home.SetToolTip(tip)
 
     def on_update(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_update, origin, *args)
+            return
         self.set_home_logic()
         self.set_z_support()
         self.set_lockrail()
@@ -1761,6 +1770,9 @@ class MovePanel(wx.Panel):
             return
 
     def update_position_info(self, origin, pos):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_position_info, origin, pos)
+            return
         # origin, pos
 
         if pos is None:
@@ -1904,6 +1916,9 @@ class PulsePanel(wx.Panel):
         self.context.unlisten("activate;device", self.on_update)
 
     def on_update(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_update, origin, *args)
+            return
         self.update_power_controls()
 
     def update_power_controls(self):

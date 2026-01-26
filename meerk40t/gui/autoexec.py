@@ -186,6 +186,9 @@ class AutoExecPanel(wx.Panel):
         self.context.elements.signal("autoexec", self)
 
     def on_autoexec_listen(self, origin, source=None):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_autoexec_listen, origin, source)
+            return
         if source is self:
             return
         commands = self.context.elements.last_file_autoexec

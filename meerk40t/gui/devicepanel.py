@@ -366,6 +366,9 @@ class DevicePanel(wx.Panel):
     @signal_listener("device;renamed")
     @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.refresh_device_tree, *args)
+            return
         self.devices = []
         names = []
         for obj, name, sname in self.context.find("dev_info"):

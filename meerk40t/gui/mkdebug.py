@@ -348,6 +348,9 @@ class DebugTreePanel(wx.Panel):
         # end wxGlade
 
     def _update_position(self, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self._update_position, *args)
+            return
         self.context.elements.set_start_time("Emphasis mkdebug")
         self.update_position(True)
         self.context.elements.set_end_time("Emphasis mkdebug")
@@ -1154,6 +1157,9 @@ class DebugSettingsPanel(wx.Panel):
         # end wxGlade
 
     def _update_position(self, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self._update_position, *args)
+            return
         self.update_position(True)
 
     def update_position(self, reset):

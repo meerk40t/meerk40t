@@ -782,6 +782,9 @@ class BasicOpPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def signal_handler_emphasized(self, origin, *args, **kwargs):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.signal_handler_emphasized, origin, *args, **kwargs)
+            return
         if not self.IsShown():
             # print ("Delay highlight_operations")
             self.pending_ops["highlight_operations"] = True

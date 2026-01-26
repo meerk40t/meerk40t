@@ -1047,10 +1047,16 @@ class SpoolerPanel(wx.Panel):
 
     @signal_listener("pause")
     def on_device_pause_toggle(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_device_pause_toggle, origin, *args)
+            return
         self.set_pause_color()
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_activate_device, origin, device)
+            return
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
         index = -1
@@ -1073,12 +1079,18 @@ class SpoolerPanel(wx.Panel):
 
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_spooler_completed, origin, *args)
+            return
         self.refresh_history()
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")
     @signal_listener("spooler;realtime")
     def on_spooler_update(self, origin, value, *args, **kwargs):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_spooler_update, origin, value, *args)
+            return
         self.update_spooler = True
         self.refresh_spooler_list()
 
@@ -1086,6 +1098,9 @@ class SpoolerPanel(wx.Panel):
     @signal_listener("emulator;position")
     @signal_listener("pipe;usb_status")
     def on_device_update(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.on_device_update, origin, *args)
+            return
         doit = True
         with self.update_lock:
             # Only update every 2 seconds or so

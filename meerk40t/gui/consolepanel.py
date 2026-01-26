@@ -361,6 +361,9 @@ class ConsolePanel(wx.ScrolledWindow):
 
     @signal_listener("console_update")
     def update_console_main(self, origin, *args):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_console_main, origin, *args)
+            return
         with self._buffer_lock:
             buffer = self._buffer
             self._buffer = ""
