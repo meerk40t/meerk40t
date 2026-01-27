@@ -26,8 +26,14 @@ class View:
         """
 
         if native_scale_x is not None:
+            if native_scale_x == 0:
+                print(f"Warning: native_scale_x cannot be zero, adjusting to 1")
+                native_scale_x = 1
             dpi_x = UNITS_PER_INCH / native_scale_x
         if native_scale_y is not None:
+            if native_scale_y == 0:
+                print(f"Warning: native_scale_y cannot be zero, adjusting to 1")
+                native_scale_y = 1
             dpi_y = UNITS_PER_INCH / native_scale_y
         if dpi_x is None:
             dpi_x = dpi
@@ -77,6 +83,12 @@ class View:
         @param native_scale_y:
         @return:
         """
+        if native_scale_x == 0:
+            print(f"Warning: native_scale_x cannot be zero, adjusting to 1")
+            native_scale_x = 1
+        if native_scale_y == 0:
+            print(f"Warning: native_scale_y cannot be zero, adjusting to 1")
+            native_scale_y = 1
         dpi_x = UNITS_PER_INCH / native_scale_x
         dpi_y = UNITS_PER_INCH / native_scale_y
         self.dpi_x = dpi_x
@@ -389,6 +401,9 @@ class View:
         @param dpi:
         @return:
         """
+        if dpi == 0:
+            print(f"Warning: dpi cannot be zero, returning (0, 0)")
+            return 0, 0
         # We require vectors so any positional offsets are non-contributing.
         unit_x = UNITS_PER_INCH
         unit_y = UNITS_PER_INCH

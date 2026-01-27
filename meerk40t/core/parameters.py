@@ -250,6 +250,9 @@ class Parameters:
 
     @dpi.setter
     def dpi(self, value):
+        if value == 0:
+            print(f"Warning: dpi cannot be zero, adjusting to 1")
+            value = 1
         self.settings["dpi"] = value
         self.__dict__["dpi"] = value
 

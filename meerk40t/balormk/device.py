@@ -1137,6 +1137,9 @@ class BalorDevice(Service, Status):
             unit_size = float(Length(self.lens_size))
         except ValueError:
             return
+        if unit_size == 0:
+            print(f"Warning: lens_size cannot be zero, skipping realize")
+            return
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 
