@@ -14,6 +14,7 @@ try:
     import requests
     REQUESTS_AVAILABLE = True
 except ImportError:
+    requests = None
     REQUESTS_AVAILABLE = False
 
 
