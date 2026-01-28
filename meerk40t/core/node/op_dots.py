@@ -217,7 +217,7 @@ class DotsOpNode(Node, Parameters):
         else:
             return False
 
-    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+    def would_classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
             _result = False
             if col1 is None and col2 is None:
@@ -243,7 +243,6 @@ class DotsOpNode(Node, Parameters):
             if self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node_for_reference(node):
-                    self.add_reference(node)
                     feedback.append("stroke")
                     feedback.append("fill")
                     return True, self.stopop, feedback
@@ -260,19 +259,28 @@ class DotsOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node_for_reference(node):
                                     result = True
-                                    self.add_reference(node)
                                     # Have classified but more classification might be needed
                                     feedback.append(attribute)
                     if result:
                         return True, self.stopop, feedback
                 else:  # empty ? Anything goes
                     if self.valid_node_for_reference(node):
-                        self.add_reference(node)
                         # Have classified but more classification might be needed
                         feedback.append("stroke")
                         feedback.append("fill")
                         return True, self.stopop, feedback
         return False, False, None
+
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        classified, should_break, feedback = self.would_classify(
+            node,
+            fuzzy=fuzzy,
+            fuzzydistance=fuzzydistance,
+            usedefault=usedefault,
+        )
+        if classified:
+            self.add_reference(node)
+        return classified, should_break, feedback
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

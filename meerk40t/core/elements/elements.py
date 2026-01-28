@@ -2930,11 +2930,19 @@ class Elemental(Service):
             return
         new_operations_added = False
         debug_set = {}
+        hits = {}
 
         def update_debug_set(debug_set, opnode):
             if opnode.type not in debug_set:
                 debug_set[opnode.type] = 0
             debug_set[opnode.type] = debug_set[opnode.type] + 1
+
+        def record_hit(opnode, element_node):
+            if opnode is None or element_node is None:
+                return
+            if opnode not in hits:
+                hits[opnode] = set()
+            hits[opnode].add(element_node)
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
             has_cut = False
@@ -3038,7 +3046,7 @@ class Elemental(Service):
                         debug(
                             f"For {op.type}.{op.id}: black={is_black}, perform={perform_classification}, flag={self.classify_black_as_raster}"
                         )
-                    if not (hasattr(op, "classify") and perform_classification):
+                    if not (hasattr(op, "would_classify") and perform_classification):
                         continue
                     classified = False
                     classifying_op = None
@@ -3068,7 +3076,7 @@ class Elemental(Service):
                             add_op_function(raster_candidate)
                             new_operations_added = True
 
-                        classified, should_break, feedback = raster_candidate.classify(
+                        classified, should_break, feedback = raster_candidate.would_classify(
                             node,
                             fuzzy=tempfuzzy,
                             fuzzydistance=fuzzydistance,
@@ -3077,13 +3085,14 @@ class Elemental(Service):
                         if classified:
                             classifying_op = raster_candidate
                             should_break = True
+                            record_hit(classifying_op, node)
                             if debug:
                                 debug(
                                     f"{node_desc} was color-raster-classified: {sstroke} {sfill} matching operation: {type(classifying_op).__name__}, break={should_break}"
                                 )
 
                     if not classified:
-                        classified, should_break, feedback = op.classify(
+                        classified, should_break, feedback = op.would_classify(
                             node,
                             fuzzy=tempfuzzy,
                             fuzzydistance=fuzzydistance,
@@ -3092,6 +3101,7 @@ class Elemental(Service):
                         if classified:
                             classifying_op = op
                     if classified:
+                        record_hit(classifying_op, node)
                         update_debug_set(debug_set, classifying_op)
                         if feedback is not None and "stroke" in feedback:
                             classif_info[0] = True
@@ -3164,7 +3174,7 @@ class Elemental(Service):
                 default_candidates = []
                 for op in operations:
                     if (
-                        hasattr(op, "classify")
+                        hasattr(op, "would_classify")
                         and getattr(op, "default", False)
                         and hasattr(op, "valid_node_for_reference")
                         and op.valid_node_for_reference(node)
@@ -3175,13 +3185,14 @@ class Elemental(Service):
                         f"For node {node_desc} there were {len(default_candidates)} default operations available, nb the very first will be taken!"
                     )
                 for op in default_candidates:
-                    classified, should_break, feedback = op.classify(
+                    classified, should_break, feedback = op.would_classify(
                         node,
                         fuzzy=fuzzy,
                         fuzzydistance=fuzzydistance,
                         usedefault=True,
                     )
                     if classified:
+                        record_hit(op, node)
                         update_debug_set(debug_set, op)
                         # Default ops fulfill stuff by definition
                         classif_info[0] = True
@@ -3488,11 +3499,18 @@ class Elemental(Service):
                     existing = False
                     if hasattr(op, "is_referenced"):
                         existing = op.is_referenced(node)
+                    if not existing:
+                        if op in hits and node in hits[op]:
+                            existing = True
 
                     if not existing:
-                        with self._node_lock:
-                            op.add_reference(node)
+                        record_hit(op, node)
                         update_debug_set(debug_set, op)
+
+        if hits:
+            with self._node_lock:
+                for op, nodes in hits.items():
+                    op.add_references(list(nodes), fast=True)
 
         self.remove_unused_default_copies()
         if debug:

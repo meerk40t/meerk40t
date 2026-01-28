@@ -284,7 +284,7 @@ class CutOpNode(Node, Parameters):
         else:
             return False
 
-    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+    def would_classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
             _result = False
             if col1 is None and col2 is None:
@@ -310,7 +310,6 @@ class CutOpNode(Node, Parameters):
             if self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node_for_reference(node):
-                    self.add_reference(node)
                     feedback.append("stroke")
                     feedback.append("fill")
                     return True, self.stopop, feedback
@@ -328,21 +327,30 @@ class CutOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node_for_reference(node):
                                     result = True
-                                    self.add_reference(node)
                                     # Have classified but more classification might be needed
                                     feedback.append(attribute)
                     if result:
                         return True, self.stopop, feedback
                 else:  # empty ? Anything goes
                     if self.valid_node_for_reference(node):
-                        self.add_reference(node)
                         # Have classified but more classification might be needed
                         feedback.append("stroke")
                         feedback.append("fill")
                         return True, self.stopop, feedback
         return False, False, None
 
-    def add_reference(self, node=None, pos=None, **kwargs):
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        classified, should_break, feedback = self.would_classify(
+            node,
+            fuzzy=fuzzy,
+            fuzzydistance=fuzzydistance,
+            usedefault=usedefault,
+        )
+        if classified:
+            self.add_reference(node)
+        return classified, should_break, feedback
+
+    def add_reference(self, node=None, pos=None, fast=False, **kwargs):
         # is the very first child an effect node?
         # if yes then we will put that reference under this one
         if node is None:
@@ -354,7 +362,7 @@ class CutOpNode(Node, Parameters):
             "effect "
         )
         effect = self._children[0] if first_is_effect else None
-        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        ref = self.add(node=node, type="reference", pos=pos, fast=fast, **kwargs)
         node._references.append(ref)
         if first_is_effect and not kwargs.get("ignore_effect", False):
             effect.append_child(ref)

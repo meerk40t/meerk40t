@@ -1221,6 +1221,19 @@ class Node:
         ref = self.add(node=node, type="reference", pos=pos, fast=fast, **kwargs)
         node._references.append(ref)
 
+    def add_references(self, nodes=None, fast=False, **kwargs):
+        """
+        Add multiple references in a single batch.
+
+        @param nodes: iterable of nodes to reference
+        @param fast: If True, suppress individual notify_attached signals
+        @return:
+        """
+        if nodes is None:
+            return
+        for node in nodes:
+            self.add_reference(node, fast=fast, **kwargs)
+
     def add_node(self, node, pos=None, fast=False):
         """
         Attach an already created node to the tree.

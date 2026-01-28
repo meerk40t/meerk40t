@@ -269,19 +269,29 @@ class ImageOpNode(Node, Parameters):
         else:
             return False
 
-    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+    def would_classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         if self.is_referenced(node):
             # No need to add it again...
             return False, False, None
 
         feedback = []
         if hasattr(node, "as_image"):
-            self.add_reference(node)
             # Have classified and no more classification are needed
             feedback.append("stroke")
             feedback.append("fill")
             return True, self.stopop, feedback
         return False, False, None
+
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        classified, should_break, feedback = self.would_classify(
+            node,
+            fuzzy=fuzzy,
+            fuzzydistance=fuzzydistance,
+            usedefault=usedefault,
+        )
+        if classified:
+            self.add_reference(node)
+        return classified, should_break, feedback
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
