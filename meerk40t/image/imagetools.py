@@ -2673,6 +2673,7 @@ def plugin(kernel, lifecycle=None):
                 data_out.append(rnode)
                 return idx
 
+            # _("Create lines")
             with context.elements.undoscope("Create lines"):
                 idx = 0
                 for path in multiple:

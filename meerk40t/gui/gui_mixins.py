@@ -158,6 +158,7 @@ class FormatPainter:
             if not data:
                 return
             effect_parent = get_effect_parent(self.template)
+            # _("Paste format")
             with self.context.elements.undoscope("Paste format"):
                 for node in data:
                     if node is self.template:

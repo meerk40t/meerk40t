@@ -401,6 +401,7 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
+        # _("Delete")   
         with self.undoscope("Delete"):
             self.remove_nodes(todelete[entry])
             self.validate_selected_area()

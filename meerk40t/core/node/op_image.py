@@ -38,12 +38,13 @@ from meerk40t.constants import (
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import OperationMixin
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
 
-class ImageOpNode(Node, Parameters):
+class ImageOpNode(OperationMixin, Node, Parameters):
     """
     Default object defining any operation done on the laser.
 
@@ -255,28 +256,20 @@ class ImageOpNode(Node, Parameters):
 
         return success
 
-    def is_referenced(self, node):
-        for e in self.children:
-            if e is node:
-                return True
-            if hasattr(e, "node") and e.node is node:
-                return True
-        return False
-
     def valid_node_for_reference(self, node):
+        """Override to check for as_image attribute instead of type"""
         if hasattr(node, "as_image"):
             return True
         else:
             return False
 
-    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+    def would_classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         if self.is_referenced(node):
             # No need to add it again...
             return False, False, None
 
         feedback = []
         if hasattr(node, "as_image"):
-            self.add_reference(node)
             # Have classified and no more classification are needed
             feedback.append("stroke")
             feedback.append("fill")
