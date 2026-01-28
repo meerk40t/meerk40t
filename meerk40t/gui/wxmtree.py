@@ -489,8 +489,8 @@ class TreePanel(wx.Panel):
         # starttime = time.time()
         if nodes is None:
             self.shadow_tree.refresh_tree(source=f"signal_{origin}")
-            endtime = time.time()  
-            print("Full refresh 1 in %.3f seconds (%.3f ms per node), cache hit rate %.1f%%" % (endtime - starttime, (endtime - starttime) * 1000 / len(nodes) if isinstance(nodes, (tuple, list)) and len(nodes) > 0 else 0, (self.shadow_tree.cache_hits / self.shadow_tree.cache_requests * 100) if self.shadow_tree.cache_requests > 0 else 0))   
+            # endtime = time.time()  
+            # print("Full refresh 1 in %.3f seconds (%.3f ms per node), cache hit rate %.1f%%" % (endtime - starttime, (endtime - starttime) * 1000 / len(nodes) if isinstance(nodes, (tuple, list)) and len(nodes) > 0 else 0, (self.shadow_tree.cache_hits / self.shadow_tree.cache_requests * 100) if self.shadow_tree.cache_requests > 0 else 0))   
 
             return
 
