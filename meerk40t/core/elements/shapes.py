@@ -492,13 +492,14 @@ def init_commands(kernel):
                 hatch_angle_delta=angle_delta.radians,
                 hatch_distance=distance,
             )
-            node.append_children(data)
+            node.append_children(data, fast=True)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
 
         self.set_emphasis([node])
         node.focus()
+        self.signal("rebuild_tree", "elements")
 
     @self.console_option("wtype", "w", type=str, default="circle")
     @self.console_option("radius", "r", type=str, default=None)
@@ -564,13 +565,14 @@ def init_commands(kernel):
                 wobble_radius=rlen.length_mm,
                 wobble_interval=ilen.length_mm,
             )
-            node.append_children(data)
+            node.append_children(data, fast=True)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
 
         self.set_emphasis([node])
         node.focus()
+        self.signal("rebuild_tree", "elements")
 
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")

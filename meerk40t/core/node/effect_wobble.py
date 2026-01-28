@@ -162,12 +162,12 @@ class WobbleEffectNode(Node, Suppressable):
             new_child.hidden = True
         return super().append_child(new_child)
 
-    def append_children(self, new_children):
+    def append_children(self, new_children, fast=False):
         if self.autohide:
             for new_child in new_children:
                 if hasattr(new_child, "hidden"):
                     new_child.hidden = True
-        return super().append_children(new_children)
+        return super().append_children(new_children, fast=fast)
 
     @property
     def radius(self):

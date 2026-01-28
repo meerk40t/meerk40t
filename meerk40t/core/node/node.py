@@ -1421,10 +1421,13 @@ class Node:
         """
         return True
 
-    def append_children(self, new_children):
+    def append_children(self, new_children, fast=False):
         """
         Moves the new_children nodes as the last children of the current node.
         Optimized for bulk operations.
+        
+        @param new_children: list of nodes to append
+        @param fast: if True, suppress notify_detached and notify_attached calls
         """
         if not new_children:
             return
@@ -1464,13 +1467,15 @@ class Node:
                 new_siblings = [c for c in source_siblings if c not in remove_set]
                 if len(new_siblings) != len(source_siblings):
                     source_siblings[:] = new_siblings
-                    for child in children_to_remove:
-                        child.notify_detached(child)
+                    if not fast:
+                        for child in children_to_remove:
+                            child.notify_detached(child)
             else:
                 for child in children_to_remove:
                     if child in source_siblings:
                         source_siblings.remove(child)
-                        child.notify_detached(child)
+                        if not fast:
+                            child.notify_detached(child)
 
         destination_siblings = self.children
         for new_child in valid_children:
@@ -1478,12 +1483,14 @@ class Node:
             if new_child.parent is self:
                  if new_child in destination_siblings:
                      destination_siblings.remove(new_child)
-                     new_child.notify_detached(new_child)
+                     if not fast:
+                        new_child.notify_detached(new_child)
 
             destination_siblings.append(new_child)
             new_child._parent = self
             new_child.set_root(self._root)
-            new_child.notify_attached(new_child)
+            if not fast:
+                new_child.notify_attached(new_child)
 
     def append_child(self, new_child):
         """
@@ -1573,10 +1580,14 @@ class Node:
         new_sibling.set_root(reference_sibling._root)
         new_sibling.notify_attached(new_sibling, pos=reference_position)
 
-    def insert_siblings(self, new_siblings, below=True):
+    def insert_siblings(self, new_siblings, below=True, fast=False):
         """
         Add the new_siblings nodes next to the current node.
         Optimized for bulk moves.
+        
+        @param new_siblings: list of nodes to insert
+        @param below: insert below current node (True) or above (False)
+        @param fast: if True, suppress notify_detached and notify_attached calls
         """
         if not new_siblings:
              return
@@ -1612,13 +1623,15 @@ class Node:
                 new_source = [c for c in source_siblings if c not in remove_set]
                 if len(new_source) != len(source_siblings):
                     source_siblings[:] = new_source
-                    for child in children_to_remove:
-                        child.notify_detached(child)
+                    if not fast:
+                        for child in children_to_remove:
+                            child.notify_detached(child)
             else:
                  for child in children_to_remove:
                     if child in source_siblings:
                         source_siblings.remove(child)
-                        child.notify_detached(child)
+                        if not fast:
+                            child.notify_detached(child)
 
         # Bulk Insert
         destination_siblings = destination_parent.children
@@ -1640,7 +1653,8 @@ class Node:
         for i, child in enumerate(valid_siblings):
              child._parent = destination_parent
              child.set_root(destination_parent._root)
-             child.notify_attached(child, pos=reference_position + i)
+             if not fast:
+                 child.notify_attached(child, pos=reference_position + i)
 
     def replace_node(self, keep_children=None, *args, **kwargs):
         """
@@ -1764,8 +1778,11 @@ class Node:
     def remove_all_children(self, fast=False, destroy=True):
         """
         Recursively removes all children of the current node.
+        Optimized to clear list first.
         """
-        for child in list(self.children):
+        children = list(self.children)
+        self.children.clear()
+        for child in children:
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
 

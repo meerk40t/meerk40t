@@ -225,7 +225,7 @@ def init_commands(kernel):
                 parent_node = minimal_parent(to_treat)
                 label = label if label is not None else "Group"
                 group_node = parent_node.add(type="group", label=label, expanded=True)
-                group_node.append_children(to_treat)
+                group_node.append_children(to_treat, fast=True)
                 channel(_("Grouped {count} elements.").format(count=len(data)))
                 classify_new(group_node)
         self.signal("rebuild_tree", "elements")
@@ -263,7 +263,7 @@ def init_commands(kernel):
         with self.undoscope("Ungroup elements"):
             with self.node_lock:
                 for gnode in to_treat:
-                    gnode.insert_siblings(list(gnode.children), below=False)
+                    gnode.insert_siblings(list(gnode.children), below=False, fast=True)
                     gnode.remove_node()  # Removing group/file node.
         self.signal("rebuild_tree", "elements")
 
@@ -320,7 +320,7 @@ def init_commands(kernel):
                 elif len(cl) == 1:
                     gnode = cl[0]
                     if gnode is not None and gnode.type == "group":
-                        gnode.insert_siblings(list(gnode.children))
+                        gnode.insert_siblings(list(gnode.children), fast=True)
                         gnode.remove_node()  # Removing group/file node.
                         needs_repetition = True
                 else:

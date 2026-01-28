@@ -2816,11 +2816,11 @@ def init_tree(kernel):
                 hatch_angle=hatch_angle,
                 pos=pos,
             )
-            group_node.append_children(list(self.elems(emphasized=True)))
+            group_node.append_children(list(self.elems(emphasized=True)), fast=True)
             if self.classify_new:
                 self.classify([group_node])
 
-        self.signal("updateelem_tree")
+        self.signal("rebuild_tree", "elements")
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
@@ -2896,11 +2896,11 @@ def init_tree(kernel):
                 wobble_interval=wobble_interval,
                 pos=pos,
             )
-            group_node.append_children(list(self.elems(emphasized=True)))
+            group_node.append_children(list(self.elems(emphasized=True)), fast=True)
             if self.classify_new:
                 self.classify([group_node])
 
-        self.signal("updateelem_tree")
+        self.signal("rebuild_tree", "elements")
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
@@ -2988,11 +2988,11 @@ def init_tree(kernel):
                 type="effect warp",
                 pos=pos,
             )
-            for e in list(self.elems(emphasized=True)):
-            group_node.append_children(list(self.elems(emphasized=True))
+            group_node.append_children(list(self.elems(emphasized=True)), fast=True)
+            if self.classify_new:
                 self.classify([group_node])
 
-        self.signal("updateelem_tree")
+        self.signal("rebuild_tree", "elements")
 
     @tree_operation(
         _("Duplicate operation(s)"),

@@ -183,12 +183,12 @@ class WarpEffectNode(Node, FunctionalParameter, Suppressable):
             new_child.hidden = True
         return super().append_child(new_child)
 
-    def append_children(self, new_children):
+    def append_children(self, new_children, fast=False):
         if self.autohide:
             for new_child in new_children:
                 if hasattr(new_child, "hidden"):
                     new_child.hidden = True
-        return super().append_children(new_children)
+        return super().append_children(new_children, fast=fast)
 
     def notify_translated(self, node=None, dx=0, dy=0, interim=False, **kwargs):
         Node.notify_translated(self, node, dx, dy, interim=interim, **kwargs)
