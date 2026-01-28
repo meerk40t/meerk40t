@@ -1,3 +1,4 @@
+import time
 import wx
 from wx import aui
 
@@ -485,33 +486,55 @@ class TreePanel(wx.Panel):
         """
         self.shadow_tree.cache_hits = 0
         self.shadow_tree.cache_requests = 0
-        self.shadow_tree.refresh_tree(source=f"signal_{origin}")
-        if nodes is not None:
-            if isinstance(nodes, (tuple, list)):
-                # All Standard nodes first
-                for node in nodes:
-                    if (
-                        node is not None
-                        and node._item is not None
-                        and node.type.startswith("elem ")
-                    ):
-                        self.shadow_tree.set_icon(node, force=True)
-                # Then all others
-                for node in nodes:
-                    if (
-                        node is not None
-                        and node._item is not None
-                        and not node.type.startswith("elem ")
-                    ):
-                        self.shadow_tree.set_icon(node, force=True)
-                # Show the first node, but if that's the root node then ignore stuff
-                node = nodes[0] if len(nodes) > 0 else None
-            else:
-                node = nodes
-                self.shadow_tree.set_icon(node, force=True)
-            rootitem = self.shadow_tree.wxtree.GetRootItem()
-            if node is not None and node._item is not None and node._item != rootitem:
-                self.shadow_tree.wxtree.EnsureVisible(node._item)
+        starttime = time.time()
+        if nodes is None:
+            self.shadow_tree.refresh_tree(source=f"signal_{origin}")
+            endtime = time.time()  
+            print("Full refresh 1 in %.3f seconds (%.3f ms per node), cache hit rate %.1f%%" % (endtime - starttime, (endtime - starttime) * 1000 / len(nodes) if isinstance(nodes, (tuple, list)) and len(nodes) > 0 else 0, (self.shadow_tree.cache_hits / self.shadow_tree.cache_requests * 100) if self.shadow_tree.cache_requests > 0 else 0))   
+
+            return
+
+        if self.shadow_tree.wxtree is None:
+            return
+        if isinstance(nodes, (tuple, list)):
+            if len(nodes) == 0:
+                return
+            # full_refresh = len(nodes) > 250
+            # if full_refresh:
+            #     self.shadow_tree.refresh_tree(source=f"signal_{origin}")
+            elem_nodes = []
+            other_nodes = []
+            for node in nodes:
+                if node is None or node._item is None:
+                    continue
+                if node.type.startswith("elem "):
+                    elem_nodes.append(node)
+                else:
+                    other_nodes.append(node)
+            self.shadow_tree.wxtree.Freeze()
+            try:
+                for node in elem_nodes:
+                    self.shadow_tree.set_icon(node, force=True)
+                    self.shadow_tree.set_enhancements(node)
+                for node in other_nodes:
+                    self.shadow_tree.set_icon(node, force=True)
+                    self.shadow_tree.set_enhancements(node)
+            finally:
+                self.shadow_tree.wxtree.Thaw()
+        else:
+            node = nodes
+            if node is not None and node._item is not None:
+                self.shadow_tree.wxtree.Freeze()
+                try:
+                    self.shadow_tree.set_icon(node, force=True)
+                    self.shadow_tree.set_enhancements(node)
+                finally:
+                    self.shadow_tree.wxtree.Thaw()
+                rootitem = self.shadow_tree.wxtree.GetRootItem()
+                if node._item is not None and node._item != rootitem:
+                    self.shadow_tree.wxtree.EnsureVisible(node._item)
+        endtime = time.time()  
+        print("Refreshed tree nodes in %.3f seconds (%.3f ms per node), cache hit rate %.1f%%" % (endtime - starttime, (endtime - starttime) * 1000 / len(nodes) if isinstance(nodes, (tuple, list)) and len(nodes) > 0 else 0, (self.shadow_tree.cache_hits / self.shadow_tree.cache_requests * 100) if self.shadow_tree.cache_requests > 0 else 0))   
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
