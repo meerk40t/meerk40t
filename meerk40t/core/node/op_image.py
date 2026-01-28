@@ -19,6 +19,7 @@ Methods:
     preprocess(context, matrix, plan): Preprocesses the operation for execution based on the provided context and matrix.
     as_cutobjects(closed_distance=15, passes=1): Generates cut objects for the image operation.
 """
+
 from copy import copy
 from math import isnan
 
@@ -201,10 +202,10 @@ class ImageOpNode(Node, Parameters):
         """Drop multiple nodes at once for better performance"""
         if not drag_nodes:
             return False
-        
+
         elements_to_add = []
         success = False
-        
+
         for drag_node in drag_nodes:
             if hasattr(drag_node, "as_image"):
                 if not drag_node.has_ancestor("branch reg"):
@@ -217,12 +218,12 @@ class ImageOpNode(Node, Parameters):
                     if hasattr(e, "as_image"):
                         elements_to_add.append(e)
                         success = True
-        
+
         # Batch add all references with fast=True to suppress individual signals
         if modify and elements_to_add:
             for elem in elements_to_add:
                 self.add_reference(elem, pos=None if flag else 0, fast=True)
-        
+
         return success
 
     def is_referenced(self, node):
@@ -670,7 +671,7 @@ class ImageOpNode(Node, Parameters):
                         cut.path = path
                         cut.original_op = self.type
                         cutcodes.append(cut)
-                        horizontal = not horizontal # revert back for next main pass
+                        horizontal = not horizontal  # revert back for next main pass
             else:
                 # Create Cut Object for regular image
                 image_filter = None

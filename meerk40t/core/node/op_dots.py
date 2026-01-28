@@ -75,15 +75,23 @@ class DotsOpNode(Node, Parameters):
             # Will be dealt with in elements -
             # we don't implement a more sophisticated routine here
             return False
-        if hasattr(drag_node, "as_geometry") and drag_node.type in self._allowed_elements_dnd:
+        if (
+            hasattr(drag_node, "as_geometry")
+            and drag_node.type in self._allowed_elements_dnd
+        ):
             return True
-        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+        elif (
+            drag_node.type == "reference"
+            and drag_node.node.type in self._allowed_elements_dnd
+        ):
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+            return not any(
+                e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes)
+            )
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -127,10 +135,10 @@ class DotsOpNode(Node, Parameters):
         """Drop multiple nodes at once for better performance"""
         if not drag_nodes:
             return False
-        
+
         elements_to_add = []
         success = False
-        
+
         for drag_node in drag_nodes:
             if hasattr(drag_node, "as_geometry"):
                 if (
@@ -145,12 +153,12 @@ class DotsOpNode(Node, Parameters):
                 for e in drag_node.flat(elem_nodes):
                     elements_to_add.append(e)
                     success = True
-        
+
         # Batch add all references with fast=True to suppress individual signals
         if modify and elements_to_add:
             for elem in elements_to_add:
                 self.add_reference(elem, pos=None if flag else 0, fast=True)
-        
+
         return success
 
     def has_color_attribute(self, attribute):
@@ -321,6 +329,11 @@ class DotsOpNode(Node, Parameters):
         self._bounds = None
         if self.output:
             if self._children:
-                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+                self._bounds = Node.union_bounds(
+                    self._children,
+                    bounds=self._bounds,
+                    ignore_locked=False,
+                    ignore_hidden=True,
+                )
             self._bounds_dirty = False
         return self._bounds

@@ -231,10 +231,10 @@ class RasterOpNode(Node, Parameters):
         """Drop multiple nodes at once for better performance"""
         if not drag_nodes:
             return False
-        
+
         elements_to_add = []
         success = False
-        
+
         for drag_node in drag_nodes:
             if drag_node.type.startswith("elem") and not drag_node.has_ancestor(
                 "branch reg"
@@ -247,12 +247,12 @@ class RasterOpNode(Node, Parameters):
                 for e in drag_node.flat(types=elem_nodes):
                     elements_to_add.append(e)
                     success = True
-        
+
         # Batch add all references with fast=True to suppress individual signals
         if modify and elements_to_add:
             for elem in elements_to_add:
                 self.add_reference(elem, pos=None if flag else 0, fast=True)
-        
+
         return success
 
     def has_color_attribute(self, attribute):

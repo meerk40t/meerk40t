@@ -180,10 +180,10 @@ class CutOpNode(Node, Parameters):
         """Drop multiple nodes at once for better performance"""
         if not drag_nodes:
             return False
-        
+
         elements_to_add = []
         success = False
-        
+
         for drag_node in drag_nodes:
             if hasattr(drag_node, "as_geometry"):
                 if (
@@ -199,12 +199,12 @@ class CutOpNode(Node, Parameters):
                     if e.type in self._allowed_elements_dnd:
                         elements_to_add.append(e)
                         success = True
-        
+
         # Batch add all references with fast=True to suppress individual signals
         if modify and elements_to_add:
             for elem in elements_to_add:
                 self.add_reference(elem, pos=None if flag else 0, fast=True)
-        
+
         return success
 
     def would_accept_drop(self, drag_nodes):

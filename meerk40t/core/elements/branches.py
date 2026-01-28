@@ -205,7 +205,9 @@ def init_commands(kernel):
         self(".operation* list\n")
 
     @self.console_command(
-        "operation.*", help="operation.* : " + _("selected operations"), output_type="ops"
+        "operation.*",
+        help="operation.* : " + _("selected operations"),
+        output_type="ops",
     )
     def operation_select(**kwargs):
         return "ops", list(self.ops(emphasized=True))
@@ -925,7 +927,10 @@ def init_commands(kernel):
     )
     @self.console_argument("speed", type=str, help=_("operation speed in mm/s"))
     @self.console_command(
-        "speed", help="speed <speed> : " + _("set the operation speed"), input_type="ops", output_type="ops"
+        "speed",
+        help="speed <speed> : " + _("set the operation speed"),
+        input_type="ops",
+        output_type="ops",
     )
     def op_speed(
         command,
@@ -1000,7 +1005,10 @@ def init_commands(kernel):
         help=_("Change power for each item in order"),
     )
     @self.console_command(
-        "power", help="power <ppi> : " + _("set the operation power"), input_type="ops", output_type="ops"
+        "power",
+        help="power <ppi> : " + _("set the operation power"),
+        input_type="ops",
+        output_type="ops",
     )
     def op_power(
         command,
@@ -1062,7 +1070,10 @@ def init_commands(kernel):
         help=_("Change speed for each item in order"),
     )
     @self.console_command(
-        "frequency", help="frequency <kHz> : " + _("set the operation frequency"), input_type="ops", output_type="ops"
+        "frequency",
+        help="frequency <kHz> : " + _("set the operation frequency"),
+        input_type="ops",
+        output_type="ops",
     )
     def op_frequency(
         command,
@@ -1106,7 +1117,10 @@ def init_commands(kernel):
 
     @self.console_argument("passes", type=int, help=_("Set operation passes"))
     @self.console_command(
-        "passes", help="passes <passes> : " + _("set the operation passes"), input_type="ops", output_type="ops"
+        "passes",
+        help="passes <passes> : " + _("set the operation passes"),
+        input_type="ops",
+        output_type="ops",
     )
     def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
         if passes is None:
@@ -1150,7 +1164,8 @@ def init_commands(kernel):
     )
     @self.console_command(
         "hatch-distance",
-        help="hatch-distance <distance> : " + _("set the hatch distance of the hatch operation"),
+        help="hatch-distance <distance> : "
+        + _("set the hatch distance of the hatch operation"),
         input_type="ops",
         output_type="ops",
     )

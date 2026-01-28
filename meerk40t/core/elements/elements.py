@@ -11,7 +11,6 @@ functionality, element classification, and the management of persistent
 operations and preferences.
 """
 
-
 import contextlib
 import os.path
 import threading
@@ -1189,7 +1188,9 @@ class Elemental(Service):
             min_time = None
             for child in parent.children:
                 child_time = getattr(child, "_emphasized_time", None)
-                if child_time is not None and (min_time is None or child_time < min_time):
+                if child_time is not None and (
+                    min_time is None or child_time < min_time
+                ):
                     min_time = child_time
             if min_time is not None:
                 parent._emphasized_time = min_time
@@ -1224,7 +1225,9 @@ class Elemental(Service):
                         selection.discard(child)
                     selection.add(parent)
 
-                    child_orders = [order_map.get(child) for child in children if child in order_map]
+                    child_orders = [
+                        order_map.get(child) for child in children if child in order_map
+                    ]
                     if child_orders:
                         order_map[parent] = min(child_orders)
                     else:
@@ -1245,7 +1248,11 @@ class Elemental(Service):
             return (base, node_depth(node))
 
         result = sorted(selection, key=sort_key)
-        while len(result) == 1 and expand_single_group_at_end and result[0].type in condensible_types:
+        while (
+            len(result) == 1
+            and expand_single_group_at_end
+            and result[0].type in condensible_types
+        ):
             # If we have just one group at the end then we expand the result to the children
             node = result[0]
             if len(node.children) == 0:
@@ -1585,7 +1592,7 @@ class Elemental(Service):
         op_tree = {}
         op_info = {}
         seclist = list(settings.derivable(name))
-        seclist.sort() # Make sure we load in the right order
+        seclist.sort()  # Make sure we load in the right order
         for section in seclist:
             if section.endswith("info"):
                 for key in settings.keylist(section):
@@ -2454,7 +2461,7 @@ class Elemental(Service):
             # Optimize for batch drop if all nodes go to same target
             nodes_to_drop = []
             nodes_needing_relocation = []
-            
+
             for drag_node in data:
                 to_be_refreshed.extend(drag_node.flat())
                 op_treatment = drop_node.type in op_parent_nodes and (
@@ -2479,21 +2486,23 @@ class Elemental(Service):
                         else:
                             to_classify.append(drag_node)
                     nodes_to_drop.append(drag_node)
-            
+
             # Batch relocate if needed
             if nodes_needing_relocation:
                 with self.node_lock:
                     self.elem_branch.drop_multi(nodes_needing_relocation, flag=flag)
-            
+
             # Batch drop to target
             if nodes_to_drop:
                 with self.node_lock:
-                    success = drop_node.drop_multi(nodes_to_drop, modify=True, flag=flag)
-            
+                    success = drop_node.drop_multi(
+                        nodes_to_drop, modify=True, flag=flag
+                    )
+
             if self.classify_new and to_classify:
                 self.classify(to_classify)
         # Signal tree rebuild after batch operations
-        if nodes_to_drop:
+        if nodes_to_drop or nodes_needing_relocation:
             self.signal("rebuild_tree", "elements")
         # Refresh the target node so any changes like color materialize...
         # print (f"Success: {success}\n{','.join(e.type for e in to_be_refreshed)}")
@@ -3429,10 +3438,10 @@ class Elemental(Service):
                             sameop = False
                         samecolor = False
                         if (
-                            hasattr(op, "color") and 
-                            hasattr(testop, "color") and 
-                            self._valid_color(op.color) and 
-                            self._valid_color(testop.color)
+                            hasattr(op, "color")
+                            and hasattr(testop, "color")
+                            and self._valid_color(op.color)
+                            and self._valid_color(testop.color)
                         ):
                             # print ("Comparing color %s to %s" % ( op.color, testop.color ))
                             if fuzzy:

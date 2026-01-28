@@ -2761,7 +2761,7 @@ def init_tree(kernel):
             if child.type in ("place point", "place current"):
                 return True
         return False
-    
+
     @tree_submenu(_("Define Job Start Position"))
     @tree_separator_before()
     @tree_conditional(lambda node: have_any_placements(node))
@@ -4641,6 +4641,7 @@ def init_tree(kernel):
             # Signal tree rebuild after batch operation
             if data:
                 self.signal("rebuild_tree", "all")
+
     @tree_conditional(lambda node: is_regmark(node))
     ## @tree_separator_before()
     @tree_operation(
@@ -4845,7 +4846,9 @@ def init_tree(kernel):
     @tree_operation(
         _("Split image into subimages"),
         node_type="elem image",
-        help=_("Split image into rectangular subimages of connected non-white regions (not lossless)"),
+        help=_(
+            "Split image into rectangular subimages of connected non-white regions (not lossless)"
+        ),
         grouping="70_ELEM_IMAGES",
     )
     def image_split_subimages(node, **kwargs):
