@@ -18,12 +18,13 @@ from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.elements.element_types import elem_nodes, elem_ref_nodes, op_nodes
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import OperationMixin
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
-class RasterOpNode(Node, Parameters):
+class RasterOpNode(OperationMixin, Node, Parameters):
     """
     Default object defining any raster operation done on the laser.
 
@@ -281,34 +282,6 @@ class RasterOpNode(Node, Parameters):
 
         return success
 
-    def has_color_attribute(self, attribute):
-        return attribute in self.allowed_attributes
-
-    def add_color_attribute(self, attribute):
-        if not attribute in self.allowed_attributes:
-            self.allowed_attributes.append(attribute)
-
-    def remove_color_attribute(self, attribute):
-        if attribute in self.allowed_attributes:
-            self.allowed_attributes.remove(attribute)
-
-    def has_attributes(self):
-        return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
-
-    def is_referenced(self, node):
-        for e in self.children:
-            if e is node:
-                return True
-            if hasattr(e, "node") and e.node is node:
-                return True
-        return False
-
-    def valid_node_for_reference(self, node):
-        if node.type in self._allowed_elements_dnd:
-            return True
-        else:
-            return False
-
     def would_classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
             _result = False
@@ -377,16 +350,6 @@ class RasterOpNode(Node, Parameters):
                             return True, self.stopop, feedback
         return False, False, None
 
-    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
-        classified, should_break, feedback = self.would_classify(
-            node,
-            fuzzy=fuzzy,
-            fuzzydistance=fuzzydistance,
-            usedefault=usedefault,
-        )
-        if classified:
-            self.add_reference(node)
-        return classified, should_break, feedback
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

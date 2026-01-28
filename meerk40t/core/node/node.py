@@ -1225,13 +1225,25 @@ class Node:
         """
         Add multiple references in a single batch.
 
-        @param nodes: iterable of nodes to reference
-        @param fast: If True, suppress individual notify_attached signals
+        @param nodes: iterable of nodes to reference (will be deduplicated)
+        @param fast: If True, suppress individual notify_attached signals for performance
         @return:
+        
+        Note: This method automatically deduplicates the input nodes to prevent
+        adding the same node multiple times. For optimal performance when adding
+        many references, use fast=True to suppress individual notification signals.
         """
         if nodes is None:
             return
+        # Deduplicate while preserving order (in case order matters for some operations)
+        seen = set()
+        unique_nodes = []
         for node in nodes:
+            if node not in seen:
+                seen.add(node)
+                unique_nodes.append(node)
+        
+        for node in unique_nodes:
             self.add_reference(node, fast=fast, **kwargs)
 
     def add_node(self, node, pos=None, fast=False):
