@@ -1135,10 +1135,11 @@ class Elemental(Service):
         droppable_nodes = []
         for n in data:
             if op_assign.can_drop(n):
-                if exclusive:
-                    for ref in list(n._references):
-                        ref.remove_node()
                 droppable_nodes.append(n)
+                if exclusive:
+                    with self._node_lock:
+                        for ref in list(n._references):
+                            ref.remove_node()
                 if (
                     impose == "to_elem"
                     and target_color is not None

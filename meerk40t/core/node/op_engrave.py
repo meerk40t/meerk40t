@@ -168,28 +168,56 @@ class EngraveOpNode(Node, Parameters):
             return False
 
         elements_to_add = []
+        ops_to_move = []
+        references_to_move = []
         success = False
 
         for drag_node in drag_nodes:
+            if drag_node.type in op_nodes:
+                if modify:
+                    ops_to_move.append(drag_node)
+                success = True
+                continue
+
+            if drag_node.type == "reference":
+                if drag_node.node.type not in self._allowed_elements_dnd:
+                    continue
+                if modify:
+                    references_to_move.append(drag_node)
+                success = True
+                continue
+
             if hasattr(drag_node, "as_geometry"):
                 if (
                     drag_node.type in self._allowed_elements_dnd
                     and not drag_node.has_ancestor("branch reg")
                 ):
-                    elements_to_add.append(drag_node)
+                    if modify:
+                        elements_to_add.append(drag_node)
                     success = True
-            elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+                continue
+
+            if drag_node.type in ("file", "group") and not drag_node.has_ancestor(
                 "branch reg"
             ):
+                found = False
                 for e in drag_node.flat(elem_nodes):
                     if e.type in self._allowed_elements_dnd:
-                        elements_to_add.append(e)
-                        success = True
+                        if modify:
+                            elements_to_add.append(e)
+                        found = True
+                if found:
+                    success = True
+                continue
 
-        # Batch add all references with fast=True to suppress individual signals
-        if modify and elements_to_add:
-            for elem in elements_to_add:
-                self.add_reference(elem, pos=None if flag else 0, fast=True)
+        if modify:
+            if ops_to_move:
+                self.insert_siblings(ops_to_move, fast=True)
+            if references_to_move:
+                self.append_children(references_to_move, fast=True)
+            if elements_to_add:
+                for elem in elements_to_add:
+                    self.add_reference(elem, pos=None if flag else 0, fast=True)
 
         return success
 
