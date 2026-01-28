@@ -1335,6 +1335,7 @@ class Elemental(Service):
         else:
             groupdx, groupdy = calc_dx_dy()
             # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
+        # _("Align")
         with self.undoscope("Align"):
             for q in data_to_align:
                 # print(f"Node to be treated: {q.type}")
@@ -2872,6 +2873,7 @@ class Elemental(Service):
 
         def post_classify_function(**kwargs):
             if self.classify_new and len(data) > 0:
+                # Translation hint _("Classify elements")
                 with self.undoscope("Classify elements"):
                     self.classify(data)
                 self.signal("tree_changed")

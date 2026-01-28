@@ -694,6 +694,7 @@ class HingePanel(wx.Panel):
             return
         if hasattr(path, "as_path"):
             path = path.as_path()
+        # _("Living hinge")
         with self.context.elements.undoscope("Living hinge"):
             node = self.context.elements.elem_branch.add(
                 path=path,
