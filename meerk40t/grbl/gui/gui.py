@@ -35,7 +35,9 @@ def plugin(service, lifecycle):
         service.register("window/Configuration", GRBLConfiguration)
         service.register("winpath/Configuration", service)
 
-        service.register("window/GrblHardwareConfig", GRBLHardwareConfig)
+        firmware_type = service.setting(str, "firmware_type", "grbl").lower()
+        if firmware_type != "marlin":
+            service.register("window/GrblHardwareConfig", GRBLHardwareConfig)
 
         service.register("property/RasterOpNode/GRBL", GRBLAdvancedPanel)
         service.register("property/CutOpNode/GRBL", GRBLAdvancedPanel)
