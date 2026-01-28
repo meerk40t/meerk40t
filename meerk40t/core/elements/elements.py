@@ -3411,7 +3411,12 @@ class Elemental(Service):
                         else:
                             sameop = False
                         samecolor = False
-                        if hasattr(op, "color") and hasattr(testop, "color"):
+                        if (
+                            hasattr(op, "color") and 
+                            hasattr(testop, "color") and 
+                            self._valid_color(op.color) and 
+                            self._valid_color(testop.color)
+                        ):
                             # print ("Comparing color %s to %s" % ( op.color, testop.color ))
                             if fuzzy:
                                 if (
