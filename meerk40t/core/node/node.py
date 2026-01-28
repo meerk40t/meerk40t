@@ -1421,6 +1421,70 @@ class Node:
         """
         return True
 
+    def append_children(self, new_children):
+        """
+        Moves the new_children nodes as the last children of the current node.
+        Optimized for bulk operations.
+        """
+        if not new_children:
+            return
+
+        valid_children = []
+        for new_child in new_children:
+            if new_child is None:
+                continue
+            if not self.validate_child(new_child):
+                continue
+            if new_child is self:
+                continue
+            if self.is_a_child_of(new_child):
+                continue
+            valid_children.append(new_child)
+
+        if not valid_children:
+            return
+
+        # Group by parent to optimize removal
+        siblings_by_parent = {}
+        for child in valid_children:
+            if child.parent:
+                siblings_by_parent.setdefault(child.parent, []).append(child)
+
+        for parent, children_to_remove in siblings_by_parent.items():
+            if parent is self:
+                # If we are moving children within the same parent, we just move them to the end.
+                continue
+
+            source_siblings = parent.children
+            
+            # Rebuild list if we are removing many
+            # This is O(N) where N is len(source_siblings)
+            if len(children_to_remove) > 5:
+                remove_set = set(children_to_remove)
+                new_siblings = [c for c in source_siblings if c not in remove_set]
+                if len(new_siblings) != len(source_siblings):
+                    source_siblings[:] = new_siblings
+                    for child in children_to_remove:
+                        child.notify_detached(child)
+            else:
+                for child in children_to_remove:
+                    if child in source_siblings:
+                        source_siblings.remove(child)
+                        child.notify_detached(child)
+
+        destination_siblings = self.children
+        for new_child in valid_children:
+            # Check if likely already there (optimize for same-parent-moves if logic added above)
+            if new_child.parent is self:
+                 if new_child in destination_siblings:
+                     destination_siblings.remove(new_child)
+                     new_child.notify_detached(new_child)
+
+            destination_siblings.append(new_child)
+            new_child._parent = self
+            new_child.set_root(self._root)
+            new_child.notify_attached(new_child)
+
     def append_child(self, new_child):
         """
         Moves the new_child node as the last child of the current node.
@@ -1508,6 +1572,75 @@ class Node:
         new_sibling._parent = reference_sibling._parent
         new_sibling.set_root(reference_sibling._root)
         new_sibling.notify_attached(new_sibling, pos=reference_position)
+
+    def insert_siblings(self, new_siblings, below=True):
+        """
+        Add the new_siblings nodes next to the current node.
+        Optimized for bulk moves.
+        """
+        if not new_siblings:
+             return
+             
+        reference_sibling = self
+        destination_parent = reference_sibling.parent
+        if destination_parent is None:
+            return
+
+        valid_siblings = []
+        for sibling in new_siblings:
+             if sibling is None: continue
+             if not destination_parent.validate_child(sibling): continue
+             if destination_parent is sibling: continue
+             if destination_parent.is_a_child_of(sibling): continue
+             valid_siblings.append(sibling)
+
+        if not valid_siblings:
+            return
+
+        # Bulk Remove
+        siblings_by_parent = {}
+        for child in valid_siblings:
+            if child.parent:
+                siblings_by_parent.setdefault(child.parent, []).append(child)
+
+        for parent, children_to_remove in siblings_by_parent.items():
+            source_siblings = parent.children
+            
+            # If removing from destination parent, indices might shift, but we rely on re-finding reference later
+            if len(children_to_remove) > 5:
+                remove_set = set(children_to_remove)
+                new_source = [c for c in source_siblings if c not in remove_set]
+                if len(new_source) != len(source_siblings):
+                    source_siblings[:] = new_source
+                    for child in children_to_remove:
+                        child.notify_detached(child)
+            else:
+                 for child in children_to_remove:
+                    if child in source_siblings:
+                        source_siblings.remove(child)
+                        child.notify_detached(child)
+
+        # Bulk Insert
+        destination_siblings = destination_parent.children
+        
+        # Re-find reference position as it might have moved if we removed siblings from the same list
+        try:
+            reference_position = destination_siblings.index(reference_sibling)
+            if below:
+                reference_position += 1
+        except ValueError:
+            reference_position = 0
+
+        # Insert all at once
+        current_len = len(destination_siblings)
+        destination_siblings[reference_position:reference_position] = valid_siblings
+        
+        # Verify correctness of object identity if needed, but python list slice assignment works reliably
+        
+        for i, child in enumerate(valid_siblings):
+             child._parent = destination_parent
+             child.set_root(destination_parent._root)
+             child.notify_attached(child, pos=reference_position + i)
 
     def replace_node(self, keep_children=None, *args, **kwargs):
         """
