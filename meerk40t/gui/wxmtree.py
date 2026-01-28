@@ -1,4 +1,3 @@
-import time
 import wx
 from wx import aui
 
@@ -484,18 +483,15 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
-        self.shadow_tree.cache_hits = 0
-        self.shadow_tree.cache_requests = 0
-        # starttime = time.time()
-        if nodes is None:
-            self.shadow_tree.refresh_tree(source=f"signal_{origin}")
-            # endtime = time.time()  
-            # print("Full refresh 1 in %.3f seconds (%.3f ms per node), cache hit rate %.1f%%" % (endtime - starttime, (endtime - starttime) * 1000 / len(nodes) if isinstance(nodes, (tuple, list)) and len(nodes) > 0 else 0, (self.shadow_tree.cache_hits / self.shadow_tree.cache_requests * 100) if self.shadow_tree.cache_requests > 0 else 0))   
-
-            return
-
         if self.shadow_tree.wxtree is None:
             return
+        self.shadow_tree.cache_hits = 0
+        self.shadow_tree.cache_requests = 0
+        if nodes is None:
+            self.shadow_tree.refresh_tree(source=f"signal_{origin}")
+
+            return
+
         if isinstance(nodes, (tuple, list)):
             if len(nodes) == 0:
                 return
@@ -533,8 +529,6 @@ class TreePanel(wx.Panel):
                 rootitem = self.shadow_tree.wxtree.GetRootItem()
                 if node._item is not None and node._item != rootitem:
                     self.shadow_tree.wxtree.EnsureVisible(node._item)
-        # endtime = time.time()  
-        # print("Refreshed tree nodes in %.3f seconds (%.3f ms per node), cache hit rate %.1f%%" % (endtime - starttime, (endtime - starttime) * 1000 / len(nodes) if isinstance(nodes, (tuple, list)) and len(nodes) > 0 else 0, (self.shadow_tree.cache_hits / self.shadow_tree.cache_requests * 100) if self.shadow_tree.cache_requests > 0 else 0))   
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
