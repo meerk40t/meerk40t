@@ -806,6 +806,27 @@ class Node:
         """
         return False
 
+    def drop_multi(self, drag_nodes, modify=True, flag=False):
+        """
+        Process multiple drag and drop nodes at once for better performance.
+        Default implementation falls back to individual drops.
+
+        Subclasses should override this to use append_children(fast=True) for bulk operations.
+
+        @param drag_nodes: List of nodes to drop
+        @param modify: Whether to modify the tree
+        @param flag: Additional flag parameter
+        @return: True if any node was successfully dropped
+        """
+        if not drag_nodes:
+            return False
+
+        success = False
+        for drag_node in drag_nodes:
+            if self.drop(drag_node, modify=modify, flag=flag):
+                success = True
+        return success
+
     def reverse(self):
         self._children.reverse()
         self.notify_reorder()
@@ -1182,13 +1203,14 @@ class Node:
         except AttributeError:
             pass
 
-    def add_reference(self, node=None, pos=None, **kwargs):
+    def add_reference(self, node=None, pos=None, fast=False, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         @param node:
         @param pos:
+        @param fast: If True, suppress individual notify_attached signals
         @return:
         """
         if node is None:
@@ -1196,10 +1218,10 @@ class Node:
         if not self.valid_node_for_reference(node):
             # We could raise a ValueError but that will break things...
             return
-        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        ref = self.add(node=node, type="reference", pos=pos, fast=fast, **kwargs)
         node._references.append(ref)
 
-    def add_node(self, node, pos=None):
+    def add_node(self, node, pos=None, fast=False):
         """
         Attach an already created node to the tree.
 
@@ -1207,6 +1229,7 @@ class Node:
 
         @param node:
         @param pos:
+        @param fast: If True, suppress notify_attached signal
         @return:
         """
         if node is None:
@@ -1222,7 +1245,8 @@ class Node:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
-        node.notify_attached(node, parent=self, pos=pos)
+        if not fast:
+            node.notify_attached(node, parent=self, pos=pos)
         return node
 
     def create(self, type, **kwargs):
@@ -1246,18 +1270,19 @@ class Node:
             self._root.notify_created(node)
         return node
 
-    def add(self, type=None, pos=None, **kwargs):
+    def add(self, type=None, pos=None, fast=False, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         @param type: Node type to be bootstrapped
         @param pos: Position within current node to add this node
+        @param fast: If True, suppress notify_attached signal
         @return:
         """
         node = self.create(type=type, **kwargs)
         if node is not None:
-            self.add_node(node, pos=pos)
+            self.add_node(node, pos=pos, fast=fast)
         else:
             print(f"Did not produce a valid node for type '{type}'")
         return node
@@ -1415,11 +1440,82 @@ class Node:
         """
         Checks if the child is valid to be added to this node.
         Subclasses should override this to enforce specific tree structure constraints.
-        
+
         @param child: The node attempting to be added as a child.
         @return: True if the child is valid, False otherwise.
         """
         return True
+
+    def append_children(self, new_children, fast=False):
+        """
+        Moves the new_children nodes as the last children of the current node.
+        Optimized for bulk operations.
+
+        @param new_children: list of nodes to append
+        @param fast: if True, suppress notify_detached and notify_attached calls
+        """
+        if not new_children:
+            return
+
+        valid_children = []
+        for new_child in new_children:
+            if new_child is None:
+                continue
+            if not self.validate_child(new_child):
+                continue
+            if new_child is self:
+                continue
+            if self.is_a_child_of(new_child):
+                continue
+            valid_children.append(new_child)
+
+        if not valid_children:
+            return
+
+        # Group by parent to optimize removal
+        siblings_by_parent = {}
+        for child in valid_children:
+            if child.parent:
+                siblings_by_parent.setdefault(child.parent, []).append(child)
+
+        for parent, children_to_remove in siblings_by_parent.items():
+            if parent is self:
+                # If we are moving children within the same parent, we just move them to the end.
+                continue
+
+            source_siblings = parent.children
+
+            # Rebuild list if we are removing many
+            # This is O(N) where N is len(source_siblings)
+            if len(children_to_remove) > 5:
+                remove_ids = {id(c) for c in children_to_remove}
+                new_siblings = [c for c in source_siblings if id(c) not in remove_ids]
+                if len(new_siblings) != len(source_siblings):
+                    source_siblings[:] = new_siblings
+                    if not fast:
+                        for child in children_to_remove:
+                            child.notify_detached(child)
+            else:
+                for child in children_to_remove:
+                    if child in source_siblings:
+                        source_siblings.remove(child)
+                        if not fast:
+                            child.notify_detached(child)
+
+        destination_siblings = self.children
+        for new_child in valid_children:
+            # Check if likely already there (optimize for same-parent-moves if logic added above)
+            if new_child.parent is self:
+                if new_child in destination_siblings:
+                    destination_siblings.remove(new_child)
+                    if not fast:
+                        new_child.notify_detached(new_child)
+
+            destination_siblings.append(new_child)
+            new_child._parent = self
+            new_child.set_root(self._root)
+            if not fast:
+                new_child.notify_attached(new_child)
 
     def append_child(self, new_child):
         """
@@ -1508,6 +1604,86 @@ class Node:
         new_sibling._parent = reference_sibling._parent
         new_sibling.set_root(reference_sibling._root)
         new_sibling.notify_attached(new_sibling, pos=reference_position)
+
+    def insert_siblings(self, new_siblings, below=True, fast=False):
+        """
+        Add the new_siblings nodes next to the current node.
+        Optimized for bulk moves.
+
+        @param new_siblings: list of nodes to insert
+        @param below: insert below current node (True) or above (False)
+        @param fast: if True, suppress notify_detached and notify_attached calls
+        """
+        if not new_siblings:
+            return
+
+        reference_sibling = self
+        destination_parent = reference_sibling.parent
+        if destination_parent is None:
+            return
+
+        valid_siblings = []
+        for sibling in new_siblings:
+            if sibling is None:
+                continue
+            if not destination_parent.validate_child(sibling):
+                continue
+            if destination_parent is sibling:
+                continue
+            if destination_parent.is_a_child_of(sibling):
+                continue
+            valid_siblings.append(sibling)
+
+        if not valid_siblings:
+            return
+
+        # Bulk Remove
+        siblings_by_parent = {}
+        for child in valid_siblings:
+            if child.parent:
+                siblings_by_parent.setdefault(child.parent, []).append(child)
+
+        for parent, children_to_remove in siblings_by_parent.items():
+            source_siblings = parent.children
+
+            # If removing from destination parent, indices might shift, but we rely on re-finding reference later
+            if len(children_to_remove) > 5:
+                remove_ids = {id(c) for c in children_to_remove}
+                new_source = [c for c in source_siblings if id(c) not in remove_ids]
+                if len(new_source) != len(source_siblings):
+                    source_siblings[:] = new_source
+                    if not fast:
+                        for child in children_to_remove:
+                            child.notify_detached(child)
+            else:
+                for child in children_to_remove:
+                    if child in source_siblings:
+                        source_siblings.remove(child)
+                        if not fast:
+                            child.notify_detached(child)
+
+        # Bulk Insert
+        destination_siblings = destination_parent.children
+
+        # Re-find reference position as it might have moved if we removed siblings from the same list
+        try:
+            reference_position = destination_siblings.index(reference_sibling)
+            if below:
+                reference_position += 1
+        except ValueError:
+            reference_position = 0
+
+        # Insert all at once
+        current_len = len(destination_siblings)
+        destination_siblings[reference_position:reference_position] = valid_siblings
+
+        # Verify correctness of object identity if needed, but python list slice assignment works reliably
+
+        for i, child in enumerate(valid_siblings):
+            child._parent = destination_parent
+            child.set_root(destination_parent._root)
+            if not fast:
+                child.notify_attached(child, pos=reference_position + i)
 
     def replace_node(self, keep_children=None, *args, **kwargs):
         """
@@ -1631,8 +1807,12 @@ class Node:
     def remove_all_children(self, fast=False, destroy=True):
         """
         Recursively removes all children of the current node.
+        Optimized to clear list first.
         """
-        for child in list(self.children):
+        children = list(self.children)
+        self.children.clear()
+        self.set_dirty_bounds()
+        for child in children:
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
 
@@ -1716,7 +1896,11 @@ class Node:
                 continue
 
             # Direct attribute access (avoid getattr overhead for common case)
-            box = getattr(e, "bounds", None) if attr == "bounds" else getattr(e, attr, None)
+            box = (
+                getattr(e, "bounds", None)
+                if attr == "bounds"
+                else getattr(e, attr, None)
+            )
             if box is None:
                 continue
 

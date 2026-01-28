@@ -36,5 +36,17 @@ class BranchElementsNode(Node):
             return True
         return False
 
+    def drop_multi(self, drag_nodes, modify=True, flag=False):
+        """Drop multiple nodes at once for better performance"""
+        if not drag_nodes:
+            return False
+
+        valid_nodes = [node for node in drag_nodes if self.can_drop(node)]
+
+        if valid_nodes and modify:
+            self.append_children(valid_nodes, fast=True)
+
+        return len(valid_nodes) > 0
+
     def is_draggable(self):
         return False

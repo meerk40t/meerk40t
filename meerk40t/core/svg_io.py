@@ -1804,8 +1804,7 @@ class SVGProcessor:
                         if node.type == "group" and (
                             node.id == "regmarks" or node.label == "regmarks"
                         ):
-                            for n in list(node.children):
-                                file_node.append_child(n)
+                            file_node.append_children(list(node.children), fast=True)
                             node.remove_node()  # Removing group/file node.
                         else:
                             file_node.append_child(node)
@@ -1814,9 +1813,10 @@ class SVGProcessor:
             regmark = self.elements.reg_branch
             for c in regmark.children:
                 if c.type == "group" and (c.id == "regmarks" or c.label == "regmarks"):
-                    for n in list(c.children):
-                        c.insert_sibling(n)
+                    c.insert_siblings(list(c.children), fast=True)
                     c.remove_node()  # Removing group/file node.
+            # Signal tree rebuild after bulk operations
+            self.elements.signal("rebuild_tree", "regmarks")
 
         needs_update = False
         for c in self.elements.flat():

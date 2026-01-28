@@ -22,26 +22,26 @@ def plugin(kernel, lifecycle=None):
 def filter_redundant_ancestors(nodes):
     """
     Filter out nodes whose ancestors are also in the list.
-    
+
     If the selection contains both an ancestor and one (or more) of its descendants,
     only keep the ancestor.
-    
+
     This check serves two purposes:
     1. Logical Consistency: It prevents "flattening" the structure. If we grouped both
        GroupA and its ChildB, ChildB would be moved out of GroupA into the new group,
        becoming a sibling of GroupA. We want to preserve the hierarchy.
     2. Redundancy: While node.append_child() now has built-in cycle prevention,
        this filter avoids attempting operations that are structurally redundant.
-       
+
     Args:
         nodes: List of nodes to filter
-        
+
     Returns:
         List of nodes with redundant descendants removed
     """
     if not nodes:
         return []
-        
+
     treat_set = set(nodes)
     filtered = []
     for node in nodes:
@@ -225,8 +225,7 @@ def init_commands(kernel):
                 parent_node = minimal_parent(to_treat)
                 label = label if label is not None else "Group"
                 group_node = parent_node.add(type="group", label=label, expanded=True)
-                for e in to_treat:
-                    group_node.append_child(e)
+                group_node.append_children(to_treat, fast=True)
                 channel(_("Grouped {count} elements.").format(count=len(data)))
                 classify_new(group_node)
         self.signal("rebuild_tree", "elements")
@@ -264,8 +263,7 @@ def init_commands(kernel):
         with self.undoscope("Ungroup elements"):
             with self.node_lock:
                 for gnode in to_treat:
-                    for n in list(gnode.children):
-                        gnode.insert_sibling(n, below=False)
+                    gnode.insert_siblings(list(gnode.children), below=False, fast=True)
                     gnode.remove_node()  # Removing group/file node.
         self.signal("rebuild_tree", "elements")
 
@@ -322,8 +320,7 @@ def init_commands(kernel):
                 elif len(cl) == 1:
                     gnode = cl[0]
                     if gnode is not None and gnode.type == "group":
-                        for n in list(gnode.children):
-                            gnode.insert_sibling(n)
+                        gnode.insert_siblings(list(gnode.children), fast=True)
                         gnode.remove_node()  # Removing group/file node.
                         needs_repetition = True
                 else:

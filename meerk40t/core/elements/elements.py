@@ -11,7 +11,6 @@ functionality, element classification, and the management of persistent
 operations and preferences.
 """
 
-
 import contextlib
 import os.path
 import threading
@@ -1132,13 +1131,15 @@ class Elemental(Service):
         set_fill_to_none = (
             op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
         )
+        # Collect nodes that can be dropped
+        droppable_nodes = []
         for n in data:
             if op_assign.can_drop(n):
-                with self._node_lock:
-                    if exclusive:
+                droppable_nodes.append(n)
+                if exclusive:
+                    with self._node_lock:
                         for ref in list(n._references):
                             ref.remove_node()
-                    op_assign.drop(n, modify=True)
                 if (
                     impose == "to_elem"
                     and target_color is not None
@@ -1148,6 +1149,10 @@ class Elemental(Service):
                     if set_fill_to_none and hasattr(n, "fill"):
                         n.fill = None
                     needs_refresh = True
+        # Batch drop all nodes
+        if droppable_nodes:
+            with self._node_lock:
+                op_assign.drop_multi(droppable_nodes, modify=True)
         # Refresh the operation so any changes like color materialize...
         self.signal("element_property_reload", op_assign)
         if needs_refresh:
@@ -1184,7 +1189,9 @@ class Elemental(Service):
             min_time = None
             for child in parent.children:
                 child_time = getattr(child, "_emphasized_time", None)
-                if child_time is not None and (min_time is None or child_time < min_time):
+                if child_time is not None and (
+                    min_time is None or child_time < min_time
+                ):
                     min_time = child_time
             if min_time is not None:
                 parent._emphasized_time = min_time
@@ -1219,7 +1226,9 @@ class Elemental(Service):
                         selection.discard(child)
                     selection.add(parent)
 
-                    child_orders = [order_map.get(child) for child in children if child in order_map]
+                    child_orders = [
+                        order_map.get(child) for child in children if child in order_map
+                    ]
                     if child_orders:
                         order_map[parent] = min(child_orders)
                     else:
@@ -1240,7 +1249,11 @@ class Elemental(Service):
             return (base, node_depth(node))
 
         result = sorted(selection, key=sort_key)
-        while len(result) == 1 and expand_single_group_at_end and result[0].type in condensible_types:
+        while (
+            len(result) == 1
+            and expand_single_group_at_end
+            and result[0].type in condensible_types
+        ):
             # If we have just one group at the end then we expand the result to the children
             node = result[0]
             if len(node.children) == 0:
@@ -1580,7 +1593,7 @@ class Elemental(Service):
         op_tree = {}
         op_info = {}
         seclist = list(settings.derivable(name))
-        seclist.sort() # Make sure we load in the right order
+        seclist.sort()  # Make sure we load in the right order
         for section in seclist:
             if section.endswith("info"):
                 for key in settings.keylist(section):
@@ -2446,6 +2459,10 @@ class Elemental(Service):
         to_be_refreshed = list(drop_node.flat())
         # _("Drag and drop")
         with self.undoscope("Drag and drop"):
+            # Optimize for batch drop if all nodes go to same target
+            nodes_to_drop = []
+            nodes_needing_relocation = []
+
             for drag_node in data:
                 to_be_refreshed.extend(drag_node.flat())
                 op_treatment = drop_node.type in op_parent_nodes and (
@@ -2460,9 +2477,7 @@ class Elemental(Service):
                     continue
                 if op_treatment and drag_node.has_ancestor("branch reg"):
                     # We need to first relocate the drag_node to the elem branch
-                    # print(f"Relocate {drag_node.type} to elem branch")
-                    with self.node_lock:
-                        self.elem_branch.drop(drag_node, flag=flag)
+                    nodes_needing_relocation.append(drag_node)
                 if drop_node.can_drop(drag_node):
                     # Is the drag node coming from the regmarks branch?
                     # If yes then we might need to classify.
@@ -2471,13 +2486,25 @@ class Elemental(Service):
                             to_classify.extend(iter(drag_node.flat(elem_nodes)))
                         else:
                             to_classify.append(drag_node)
-                    with self.node_lock:
-                        drop_node.drop(drag_node, modify=True, flag=flag)
-                    success = True
-                # else:
-                #     print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+                    nodes_to_drop.append(drag_node)
+
+            # Batch relocate if needed
+            if nodes_needing_relocation:
+                with self.node_lock:
+                    self.elem_branch.drop_multi(nodes_needing_relocation, flag=flag)
+
+            # Batch drop to target
+            if nodes_to_drop:
+                with self.node_lock:
+                    success = drop_node.drop_multi(
+                        nodes_to_drop, modify=True, flag=flag
+                    )
+
             if self.classify_new and to_classify:
                 self.classify(to_classify)
+        # Signal tree rebuild after batch operations
+        if nodes_to_drop or nodes_needing_relocation:
+            self.signal("rebuild_tree", "elements")
         # Refresh the target node so any changes like color materialize...
         # print (f"Success: {success}\n{','.join(e.type for e in to_be_refreshed)}")
         self.signal("element_property_reload", to_be_refreshed)
@@ -3412,10 +3439,10 @@ class Elemental(Service):
                             sameop = False
                         samecolor = False
                         if (
-                            hasattr(op, "color") and 
-                            hasattr(testop, "color") and 
-                            self._valid_color(op.color) and 
-                            self._valid_color(testop.color)
+                            hasattr(op, "color")
+                            and hasattr(testop, "color")
+                            and self._valid_color(op.color)
+                            and self._valid_color(testop.color)
                         ):
                             # print ("Comparing color %s to %s" % ( op.color, testop.color ))
                             if fuzzy:

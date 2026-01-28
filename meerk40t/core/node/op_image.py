@@ -19,6 +19,7 @@ Methods:
     preprocess(context, matrix, plan): Preprocesses the operation for execution based on the provided context and matrix.
     as_cutobjects(closed_distance=15, passes=1): Generates cut objects for the image operation.
 """
+
 from copy import copy
 from math import isnan
 
@@ -196,6 +197,63 @@ class ImageOpNode(Node, Parameters):
                     some_nodes = True
             return some_nodes
         return False
+
+    def drop_multi(self, drag_nodes, modify=True, flag=False):
+        """Drop multiple nodes at once for better performance"""
+        if not drag_nodes:
+            return False
+
+        elements_to_add = []
+        ops_to_move = []
+        references_to_move = []
+        success = False
+
+        for drag_node in drag_nodes:
+            if drag_node.type in op_nodes:
+                if modify:
+                    ops_to_move.append(drag_node)
+                success = True
+                continue
+
+            if drag_node.type == "reference":
+                # Check directly on the referenced node for as_image
+                if not hasattr(drag_node.node, "as_image"):
+                    continue
+                if modify:
+                    references_to_move.append(drag_node)
+                success = True
+                continue
+
+            if hasattr(drag_node, "as_image"):
+                if not drag_node.has_ancestor("branch reg"):
+                    if modify:
+                        elements_to_add.append(drag_node)
+                    success = True
+                continue
+
+            if drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+                "branch reg"
+            ):
+                found = False
+                for e in drag_node.flat(elem_nodes):
+                    if hasattr(e, "as_image"):
+                        if modify:
+                            elements_to_add.append(e)
+                        found = True
+                if found:
+                    success = True
+                continue
+
+        if modify:
+            if ops_to_move:
+                self.insert_siblings(ops_to_move, fast=True)
+            if references_to_move:
+                self.append_children(references_to_move, fast=True)
+            if elements_to_add:
+                for elem in elements_to_add:
+                    self.add_reference(elem, pos=None if flag else 0, fast=True)
+
+        return success
 
     def is_referenced(self, node):
         for e in self.children:
@@ -642,7 +700,7 @@ class ImageOpNode(Node, Parameters):
                         cut.path = path
                         cut.original_op = self.type
                         cutcodes.append(cut)
-                        horizontal = not horizontal # revert back for next main pass
+                        horizontal = not horizontal  # revert back for next main pass
             else:
                 # Create Cut Object for regular image
                 image_filter = None

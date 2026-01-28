@@ -492,14 +492,14 @@ def init_commands(kernel):
                 hatch_angle_delta=angle_delta.radians,
                 hatch_distance=distance,
             )
-            for n in data:
-                node.append_child(n)
+            node.append_children(data, fast=True)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
 
         self.set_emphasis([node])
         node.focus()
+        self.signal("rebuild_tree", "elements")
 
     @self.console_option("wtype", "w", type=str, default="circle")
     @self.console_option("radius", "r", type=str, default=None)
@@ -565,14 +565,14 @@ def init_commands(kernel):
                 wobble_radius=rlen.length_mm,
                 wobble_interval=ilen.length_mm,
             )
-            for n in data:
-                node.append_child(n)
+            node.append_children(data, fast=True)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
 
         self.set_emphasis([node])
         node.focus()
+        self.signal("rebuild_tree", "elements")
 
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
@@ -1327,7 +1327,8 @@ def init_commands(kernel):
     @self.console_argument("mlist", type=str, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
-        help="poly(gon|line) (Length Length)* : " + _("create a polygon or polyline element"),
+        help="poly(gon|line) (Length Length)* : "
+        + _("create a polygon or polyline element"),
         input_type=("elements", None),
         output_type="elements",
         all_arguments_required=True,
@@ -1422,7 +1423,8 @@ def init_commands(kernel):
     )
     @self.console_command(
         "stroke-width",
-        help="stroke-width <length> : " + _("set the stroke width of selected elements"),
+        help="stroke-width <length> : "
+        + _("set the stroke width of selected elements"),
         input_type=(
             None,
             "elements",
@@ -2043,8 +2045,12 @@ def init_commands(kernel):
             channel(_("Nothing Selected"))
             return
         selected = list(self.elems(emphasized=True))
-        frame_info = selected[0].display_label() if len(selected) == 1 else f"{len(selected)} elements"
-        
+        frame_info = (
+            selected[0].display_label()
+            if len(selected) == 1
+            else f"{len(selected)} elements"
+        )
+
         x_pos = bounds[0]
         y_pos = bounds[1]
         width = bounds[2] - bounds[0]
@@ -2061,7 +2067,7 @@ def init_commands(kernel):
                 height=height,
                 stroke=Color("red"),
                 type="elem rect",
-                label = f"Frame around {frame_info}"
+                label=f"Frame around {frame_info}",
             )
         self.set_emphasis([node])
         node.focus()
@@ -2182,7 +2188,10 @@ def init_commands(kernel):
     )
     @self.console_command(
         "scale",
-        help="scale <scale> [<scale-y>]? : " + _("scale selected elements (optionally different in y, and optionally from a point (default center of selection))"),
+        help="scale <scale> [<scale-y>]? : "
+        + _(
+            "scale selected elements (optionally different in y, and optionally from a point (default center of selection))"
+        ),
         input_type=(None, "elements"),
         output_type="elements",
     )
@@ -2613,7 +2622,8 @@ def init_commands(kernel):
     @self.console_argument("ty", type=str, help=_("translate_y value"))
     @self.console_command(
         "matrix",
-        help="matrix <sx> <kx> <ky> <sy> <tx> <ty> : " + _("set the transformation matrix of selected elements"),
+        help="matrix <sx> <kx> <ky> <sy> <tx> <ty> : "
+        + _("set the transformation matrix of selected elements"),
         input_type=(None, "elements"),
         output_type="elements",
     )

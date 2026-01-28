@@ -2761,7 +2761,7 @@ def init_tree(kernel):
             if child.type in ("place point", "place current"):
                 return True
         return False
-    
+
     @tree_submenu(_("Define Job Start Position"))
     @tree_separator_before()
     @tree_conditional(lambda node: have_any_placements(node))
@@ -2816,12 +2816,11 @@ def init_tree(kernel):
                 hatch_angle=hatch_angle,
                 pos=pos,
             )
-            for e in list(self.elems(emphasized=True)):
-                group_node.append_child(e)
+            group_node.append_children(list(self.elems(emphasized=True)), fast=True)
             if self.classify_new:
                 self.classify([group_node])
 
-        self.signal("updateelem_tree")
+        self.signal("rebuild_tree", "elements")
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
@@ -2897,12 +2896,11 @@ def init_tree(kernel):
                 wobble_interval=wobble_interval,
                 pos=pos,
             )
-            for e in list(self.elems(emphasized=True)):
-                group_node.append_child(e)
+            group_node.append_children(list(self.elems(emphasized=True)), fast=True)
             if self.classify_new:
                 self.classify([group_node])
 
-        self.signal("updateelem_tree")
+        self.signal("rebuild_tree", "elements")
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
@@ -2990,12 +2988,11 @@ def init_tree(kernel):
                 type="effect warp",
                 pos=pos,
             )
-            for e in list(self.elems(emphasized=True)):
-                group_node.append_child(e)
+            group_node.append_children(list(self.elems(emphasized=True)), fast=True)
             if self.classify_new:
                 self.classify([group_node])
 
-        self.signal("updateelem_tree")
+        self.signal("rebuild_tree", "elements")
 
     @tree_operation(
         _("Duplicate operation(s)"),
@@ -4639,11 +4636,11 @@ def init_tree(kernel):
                 if item.selected:
                     data.append(item)
             with self.node_lock:
-                for item in data:
-                    # No usecase for having a locked regmark element
-                    if hasattr(item, "lock"):
-                        item.lock = False
-                    drop_node.drop(item)
+                # Use batch drop for better performance
+                drop_node.drop_multi(data)
+            # Signal tree rebuild after batch operation
+            if data:
+                self.signal("rebuild_tree", "all")
 
     @tree_conditional(lambda node: is_regmark(node))
     ## @tree_separator_before()
@@ -4849,7 +4846,9 @@ def init_tree(kernel):
     @tree_operation(
         _("Split image into subimages"),
         node_type="elem image",
-        help=_("Split image into rectangular subimages of connected non-white regions (not lossless)"),
+        help=_(
+            "Split image into rectangular subimages of connected non-white regions (not lossless)"
+        ),
         grouping="70_ELEM_IMAGES",
     )
     def image_split_subimages(node, **kwargs):

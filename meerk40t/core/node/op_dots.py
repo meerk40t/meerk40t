@@ -75,15 +75,23 @@ class DotsOpNode(Node, Parameters):
             # Will be dealt with in elements -
             # we don't implement a more sophisticated routine here
             return False
-        if hasattr(drag_node, "as_geometry") and drag_node.type in self._allowed_elements_dnd:
+        if (
+            hasattr(drag_node, "as_geometry")
+            and drag_node.type in self._allowed_elements_dnd
+        ):
             return True
-        elif drag_node.type == "reference" and drag_node.node.type in self._allowed_elements_dnd:
+        elif (
+            drag_node.type == "reference"
+            and drag_node.node.type in self._allowed_elements_dnd
+        ):
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
             return True
         elif drag_node.type in ("file", "group"):
-            return not any(e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes))
+            return not any(
+                e.has_ancestor("branch reg") for e in drag_node.flat(elem_nodes)
+            )
         return False
 
     def drop(self, drag_node, modify=True, flag=False):
@@ -122,6 +130,64 @@ class DotsOpNode(Node, Parameters):
                 some_nodes = True
             return some_nodes
         return False
+
+    def drop_multi(self, drag_nodes, modify=True, flag=False):
+        """Drop multiple nodes at once for better performance"""
+        if not drag_nodes:
+            return False
+
+        elements_to_add = []
+        ops_to_move = []
+        references_to_move = []
+        success = False
+
+        for drag_node in drag_nodes:
+            if drag_node.type in op_nodes:
+                if modify:
+                    ops_to_move.append(drag_node)
+                success = True
+                continue
+
+            if drag_node.type == "reference":
+                if drag_node.node.type not in self._allowed_elements_dnd:
+                    continue
+                if modify:
+                    references_to_move.append(drag_node)
+                success = True
+                continue
+
+            if hasattr(drag_node, "as_geometry"):
+                if (
+                    drag_node.type in self._allowed_elements_dnd
+                    and not drag_node.has_ancestor("branch reg")
+                ):
+                    if modify:
+                        elements_to_add.append(drag_node)
+                    success = True
+                continue
+
+            if drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+                "branch reg"
+            ):
+                found = False
+                for e in drag_node.flat(elem_nodes):
+                    if modify:
+                        elements_to_add.append(e)
+                    found = True
+                if found:
+                    success = True
+                continue
+
+        if modify:
+            if ops_to_move:
+                self.insert_siblings(ops_to_move, fast=True)
+            if references_to_move:
+                self.append_children(references_to_move, fast=True)
+            if elements_to_add:
+                for elem in elements_to_add:
+                    self.add_reference(elem, pos=None if flag else 0, fast=True)
+
+        return success
 
     def has_color_attribute(self, attribute):
         return attribute in self.allowed_attributes
@@ -291,6 +357,11 @@ class DotsOpNode(Node, Parameters):
         self._bounds = None
         if self.output:
             if self._children:
-                self._bounds = Node.union_bounds(self._children, bounds=self._bounds, ignore_locked=False, ignore_hidden=True)
+                self._bounds = Node.union_bounds(
+                    self._children,
+                    bounds=self._bounds,
+                    ignore_locked=False,
+                    ignore_hidden=True,
+                )
             self._bounds_dirty = False
         return self._bounds
