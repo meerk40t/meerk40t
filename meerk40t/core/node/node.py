@@ -806,6 +806,27 @@ class Node:
         """
         return False
 
+    def drop_multi(self, drag_nodes, modify=True, flag=False):
+        """
+        Process multiple drag and drop nodes at once for better performance.
+        Default implementation falls back to individual drops.
+        
+        Subclasses should override this to use append_children(fast=True) for bulk operations.
+
+        @param drag_nodes: List of nodes to drop
+        @param modify: Whether to modify the tree
+        @param flag: Additional flag parameter
+        @return: True if any node was successfully dropped
+        """
+        if not drag_nodes:
+            return False
+        
+        success = False
+        for drag_node in drag_nodes:
+            if self.drop(drag_node, modify=modify, flag=flag):
+                success = True
+        return success
+
     def reverse(self):
         self._children.reverse()
         self.notify_reorder()
@@ -1182,13 +1203,14 @@ class Node:
         except AttributeError:
             pass
 
-    def add_reference(self, node=None, pos=None, **kwargs):
+    def add_reference(self, node=None, pos=None, fast=False, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         @param node:
         @param pos:
+        @param fast: If True, suppress individual notify_attached signals
         @return:
         """
         if node is None:
@@ -1196,10 +1218,10 @@ class Node:
         if not self.valid_node_for_reference(node):
             # We could raise a ValueError but that will break things...
             return
-        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        ref = self.add(node=node, type="reference", pos=pos, fast=fast, **kwargs)
         node._references.append(ref)
 
-    def add_node(self, node, pos=None):
+    def add_node(self, node, pos=None, fast=False):
         """
         Attach an already created node to the tree.
 
@@ -1207,6 +1229,7 @@ class Node:
 
         @param node:
         @param pos:
+        @param fast: If True, suppress notify_attached signal
         @return:
         """
         if node is None:
@@ -1222,7 +1245,8 @@ class Node:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
-        node.notify_attached(node, parent=self, pos=pos)
+        if not fast:
+            node.notify_attached(node, parent=self, pos=pos)
         return node
 
     def create(self, type, **kwargs):
@@ -1246,18 +1270,19 @@ class Node:
             self._root.notify_created(node)
         return node
 
-    def add(self, type=None, pos=None, **kwargs):
+    def add(self, type=None, pos=None, fast=False, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         @param type: Node type to be bootstrapped
         @param pos: Position within current node to add this node
+        @param fast: If True, suppress notify_attached signal
         @return:
         """
         node = self.create(type=type, **kwargs)
         if node is not None:
-            self.add_node(node, pos=pos)
+            self.add_node(node, pos=pos, fast=fast)
         else:
             print(f"Did not produce a valid node for type '{type}'")
         return node

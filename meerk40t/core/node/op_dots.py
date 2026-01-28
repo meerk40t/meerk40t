@@ -123,6 +123,36 @@ class DotsOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def drop_multi(self, drag_nodes, modify=True, flag=False):
+        """Drop multiple nodes at once for better performance"""
+        if not drag_nodes:
+            return False
+        
+        elements_to_add = []
+        success = False
+        
+        for drag_node in drag_nodes:
+            if hasattr(drag_node, "as_geometry"):
+                if (
+                    drag_node.type in self._allowed_elements_dnd
+                    and not drag_node.has_ancestor("branch reg")
+                ):
+                    elements_to_add.append(drag_node)
+                    success = True
+            elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+                "branch reg"
+            ):
+                for e in drag_node.flat(elem_nodes):
+                    elements_to_add.append(e)
+                    success = True
+        
+        # Batch add all references with fast=True to suppress individual signals
+        if modify and elements_to_add:
+            for elem in elements_to_add:
+                self.add_reference(elem, pos=None if flag else 0, fast=True)
+        
+        return success
+
     def has_color_attribute(self, attribute):
         return attribute in self.allowed_attributes
 

@@ -1541,8 +1541,10 @@ def init_commands(kernel):
     # ==========
     def move_nodes_to(target, nodes):
         with self.node_lock:
-            for elem in nodes:
-                target.drop(elem)
+            target.drop_multi(nodes)
+        # Signal tree rebuild after batch operation
+        if nodes:
+            self.signal("rebuild_tree", "all")
 
     @self.console_argument("cmd", type=str, help=_("free, clear, add"))
     @self.console_command(

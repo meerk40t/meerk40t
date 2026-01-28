@@ -4636,12 +4636,11 @@ def init_tree(kernel):
                 if item.selected:
                     data.append(item)
             with self.node_lock:
-                for item in data:
-                    # No usecase for having a locked regmark element
-                    if hasattr(item, "lock"):
-                        item.lock = False
-                    drop_node.drop(item)
-
+                # Use batch drop for better performance
+                drop_node.drop_multi(data)
+            # Signal tree rebuild after batch operation
+            if data:
+                self.signal("rebuild_tree", "all")
     @tree_conditional(lambda node: is_regmark(node))
     ## @tree_separator_before()
     @tree_operation(
