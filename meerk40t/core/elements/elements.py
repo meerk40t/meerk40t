@@ -2667,45 +2667,70 @@ class Elemental(Service):
         If any element is emphasized, all operations a references to that element are 'targeted'.
         """
         self.set_start_time("set_emphasis")
-        with self.signalfree("emphasized"):
-            for s in self._tree.flat():
-                if s.highlighted:
-                    s.highlighted = False
-                if s.targeted:
-                    s.targeted = False
-                if s.selected:
-                    s.selected = False
-                if not s.can_emphasize:
-                    continue
-                in_list = emphasize is not None and s in emphasize
-                if s.emphasized:
-                    if not in_list:
-                        s.emphasized = False
-                else:
-                    if in_list:
-                        s.emphasized = True
-                        s.selected = True
-            if emphasize is not None:
-                # Validate emphasize
-                old_first = self.first_emphasized
-                if old_first is not None and not old_first.emphasized:
-                    self.first_emphasized = None
-                    old_first = None
-                count = 0
-                for e in emphasize:
-                    count += 1
-                    if e.type == "reference":
-                        self.set_node_emphasis(e.node, True)
-                        e.highlighted = True
+        emphasize_set = set(emphasize) if emphasize is not None else set()
+        changed_nodes = set()
+        self.suppress_updates = True
+        try:
+            with self.signalfree("emphasized"):
+                for s in self._tree.flat():
+                    if s.highlighted:
+                        s.highlighted = False
+                        changed_nodes.add(s)
+                    if s.targeted:
+                        s.targeted = False
+                        changed_nodes.add(s)
+                    if s.selected:
+                        s.selected = False
+                        changed_nodes.add(s)
+                    if not s.can_emphasize:
+                        continue
+                    in_list = s in emphasize_set
+                    if s.emphasized:
+                        if not in_list:
+                            s.emphasized = False
+                            changed_nodes.add(s)
                     else:
-                        self.set_node_emphasis(e, True)
-                        e.selected = True
-                    # if hasattr(e, "object"):
-                    #     self.target_clones(self._tree, e, e.object)
-                    self.highlight_children(e)
-                if count > 1 and old_first is None:
-                    # It makes no sense to define a 'first' here, as all are equal
-                    self.first_emphasized = None
+                        if in_list:
+                            s.emphasized = True
+                            s.selected = True
+                            changed_nodes.add(s)
+                if emphasize is not None:
+                    # Validate emphasize
+                    old_first = self.first_emphasized
+                    if old_first is not None and not old_first.emphasized:
+                        self.first_emphasized = None
+                        old_first = None
+                    count = 0
+
+                    def _recursive_highlight(node):
+                        for child in node.children:
+                            if not child.highlighted:
+                                child.highlighted = True
+                                changed_nodes.add(child)
+                            _recursive_highlight(child)
+
+                    for e in emphasize:
+                        count += 1
+                        if e.type == "reference":
+                            self.set_node_emphasis(e.node, True)
+                            changed_nodes.add(e.node)
+                            e.highlighted = True
+                            changed_nodes.add(e)
+                        else:
+                            self.set_node_emphasis(e, True)
+                            changed_nodes.add(e)
+                            e.selected = True
+                            changed_nodes.add(e)
+                        # if hasattr(e, "object"):
+                        #     self.target_clones(self._tree, e, e.object)
+                        _recursive_highlight(e)
+                    if count > 1 and old_first is None:
+                        # It makes no sense to define a 'first' here, as all are equal
+                        self.first_emphasized = None
+        finally:
+            self.suppress_updates = False
+        if changed_nodes:
+            self.signal("refresh_tree", list(changed_nodes))
         self.set_end_time("set_emphasis")
 
     def center(self):
