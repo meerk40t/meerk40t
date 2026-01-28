@@ -275,6 +275,7 @@ class EngraveOpNode(Node, Parameters):
             if self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node_for_reference(node):
+                    self.add_reference(node)
                     feedback.append("stroke")
                     feedback.append("fill")
                     return True, self.stopop, feedback
