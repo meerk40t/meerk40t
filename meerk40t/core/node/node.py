@@ -1488,8 +1488,8 @@ class Node:
             # Rebuild list if we are removing many
             # This is O(N) where N is len(source_siblings)
             if len(children_to_remove) > 5:
-                remove_set = set(children_to_remove)
-                new_siblings = [c for c in source_siblings if c not in remove_set]
+                remove_ids = {id(c) for c in children_to_remove}
+                new_siblings = [c for c in source_siblings if id(c) not in remove_ids]
                 if len(new_siblings) != len(source_siblings):
                     source_siblings[:] = new_siblings
                     if not fast:
@@ -1648,8 +1648,8 @@ class Node:
 
             # If removing from destination parent, indices might shift, but we rely on re-finding reference later
             if len(children_to_remove) > 5:
-                remove_set = set(children_to_remove)
-                new_source = [c for c in source_siblings if c not in remove_set]
+                remove_ids = {id(c) for c in children_to_remove}
+                new_source = [c for c in source_siblings if id(c) not in remove_ids]
                 if len(new_source) != len(source_siblings):
                     source_siblings[:] = new_source
                     if not fast:
