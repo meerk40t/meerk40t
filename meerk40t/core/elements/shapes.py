@@ -492,8 +492,7 @@ def init_commands(kernel):
                 hatch_angle_delta=angle_delta.radians,
                 hatch_distance=distance,
             )
-            for n in data:
-                node.append_child(n)
+            node.append_children(data)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))
@@ -565,8 +564,7 @@ def init_commands(kernel):
                 wobble_radius=rlen.length_mm,
                 wobble_interval=ilen.length_mm,
             )
-            for n in data:
-                node.append_child(n)
+            node.append_children(data)
 
         # Newly created! Classification needed?
         post.append(classify_new([node]))

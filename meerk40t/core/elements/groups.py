@@ -320,8 +320,7 @@ def init_commands(kernel):
                 elif len(cl) == 1:
                     gnode = cl[0]
                     if gnode is not None and gnode.type == "group":
-                        for n in list(gnode.children):
-                            gnode.insert_sibling(n)
+                        gnode.insert_siblings(list(gnode.children))
                         gnode.remove_node()  # Removing group/file node.
                         needs_repetition = True
                 else:

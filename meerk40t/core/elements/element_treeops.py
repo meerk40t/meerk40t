@@ -2816,8 +2816,7 @@ def init_tree(kernel):
                 hatch_angle=hatch_angle,
                 pos=pos,
             )
-            for e in list(self.elems(emphasized=True)):
-                group_node.append_child(e)
+            group_node.append_children(list(self.elems(emphasized=True)))
             if self.classify_new:
                 self.classify([group_node])
 
@@ -2897,8 +2896,7 @@ def init_tree(kernel):
                 wobble_interval=wobble_interval,
                 pos=pos,
             )
-            for e in list(self.elems(emphasized=True)):
-                group_node.append_child(e)
+            group_node.append_children(list(self.elems(emphasized=True)))
             if self.classify_new:
                 self.classify([group_node])
 
@@ -2991,8 +2989,7 @@ def init_tree(kernel):
                 pos=pos,
             )
             for e in list(self.elems(emphasized=True)):
-                group_node.append_child(e)
-            if self.classify_new:
+            group_node.append_children(list(self.elems(emphasized=True))
                 self.classify([group_node])
 
         self.signal("updateelem_tree")
