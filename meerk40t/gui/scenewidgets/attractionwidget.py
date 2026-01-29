@@ -233,6 +233,8 @@ class AttractionWidget(Widget):
 
         if not snap_points and not snap_grid:
             # We are not going to snap.
+            self._pending_snap = None
+            self._cleanup_timer()
             return RESPONSE_CHAIN
 
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
