@@ -219,7 +219,7 @@ def init_commands(kernel):
             if result is None:
                 result = root
             return result
-
+        # _("Group elements")
         with self.undoscope("Group elements"):
             with self.node_lock:
                 parent_node = minimal_parent(to_treat)
@@ -329,7 +329,7 @@ def init_commands(kernel):
                             fnd = straighten(n)
                             amount += fnd
             return amount
-
+        # _("Simplify group")
         with self.undoscope("Simplify group"):
             res = 0
             for node in to_treat:

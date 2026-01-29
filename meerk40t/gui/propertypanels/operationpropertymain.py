@@ -947,6 +947,7 @@ class InfoPanel(wx.Panel):
         dlg.Destroy()
         if result == wx.ID_YES:
             elements = self.context.elements
+            # _("Re-Classify")
             with elements.undoscope("Re-Classify"):
                 with elements.node_lock:
                     myop = self.operation

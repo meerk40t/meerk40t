@@ -120,6 +120,7 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
             rect.selected = True
         
         # Move to regmarks (simulate console command)
+        # _("Move to regmarks")
         with self.elements.undoscope("Move to regmarks"):
             drop_node = self.elements.reg_branch
             data = [item for item in self.elements.elems_nodes() if item.selected]
@@ -165,6 +166,7 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
         for elem in unassigned:
             elem.selected = True
         
+        # _("Move to regmarks")
         with self.elements.undoscope("Move to regmarks"):
             drop_node = self.elements.reg_branch
             data = [item for item in self.elements.elems_nodes() if item.selected]
