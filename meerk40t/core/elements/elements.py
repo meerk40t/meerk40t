@@ -778,14 +778,16 @@ class Elemental(Service):
     @contextlib.contextmanager
     def signalfree(self, source):
         try:
-            last = self.suppress_signalling
+            previous_suppress = self.suppress_signalling
             self.suppress_signalling = True
-            self.stop_visual_updates()
+            if not previous_suppress:
+                self.stop_visual_updates()
             yield self
         finally:
-            self.resume_visual_updates()
-            self.suppress_signalling = False
-            self.signal(source)
+            if not previous_suppress:
+                self.resume_visual_updates()
+                self.signal(source)
+            self.suppress_signalling = previous_suppress
 
     @contextlib.contextmanager
     def static(self, source: str):
