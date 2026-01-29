@@ -55,6 +55,7 @@ class AttractionWidget(Widget):
         self.context.setting(int, "grid_attract_len", 15)
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", False)
+        self.context.setting(bool, "snap_instant", False)
         self._show_snap_points = False
         self.snap_idle_time = 0.2
         self._idle_timer = None
@@ -242,10 +243,14 @@ class AttractionWidget(Widget):
             return RESPONSE_CHAIN
 
         if event_type in ("move", "hover", "hover_start"):
-            self.scene.snap_display_points = []
-            self._show_snap_points = False
-            self._schedule_idle_update(self.my_x, self.my_y, snap_points, snap_grid)
-            return RESPONSE_CHAIN
+            # Check if instant snap calculation is enabled
+            if not ctx.snap_instant:
+                # Use delayed calculation (after idle period)
+                self.scene.snap_display_points = []
+                self._show_snap_points = False
+                self._schedule_idle_update(self.my_x, self.my_y, snap_points, snap_grid)
+                return RESPONSE_CHAIN
+            # Otherwise fall through to immediate calculation
 
         self._show_snap_points = True
 
