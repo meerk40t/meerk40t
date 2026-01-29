@@ -2667,8 +2667,18 @@ class Elemental(Service):
         If any element is emphasized, all operations a references to that element are 'targeted'.
         """
         self.set_start_time("set_emphasis")
-        emphasize_set = set(emphasize) if emphasize is not None else set()
+        emphasize_items = list(emphasize) if emphasize is not None else []
+        try:
+            emphasize_set = set(emphasize_items)
+        except TypeError:
+            emphasize_set = None
+
+        def _is_emphasized(node):
+            if emphasize_set is not None:
+                return node in emphasize_set
+            return node in emphasize_items
         changed_nodes = set()
+        previous_suppress = self.suppress_updates
         self.suppress_updates = True
         try:
             with self.signalfree("emphasized"):
@@ -2684,7 +2694,7 @@ class Elemental(Service):
                         changed_nodes.add(s)
                     if not s.can_emphasize:
                         continue
-                    in_list = s in emphasize_set
+                    in_list = _is_emphasized(s)
                     if s.emphasized:
                         if not in_list:
                             s.emphasized = False
@@ -2694,7 +2704,7 @@ class Elemental(Service):
                             s.emphasized = True
                             s.selected = True
                             changed_nodes.add(s)
-                if emphasize is not None:
+                if emphasize_items:
                     # Validate emphasize
                     old_first = self.first_emphasized
                     if old_first is not None and not old_first.emphasized:
@@ -2709,7 +2719,7 @@ class Elemental(Service):
                                 changed_nodes.add(child)
                             _recursive_highlight(child)
 
-                    for e in emphasize:
+                    for e in emphasize_items:
                         count += 1
                         if e.type == "reference":
                             self.set_node_emphasis(e.node, True)
@@ -2728,7 +2738,7 @@ class Elemental(Service):
                         # It makes no sense to define a 'first' here, as all are equal
                         self.first_emphasized = None
         finally:
-            self.suppress_updates = False
+            self.suppress_updates = previous_suppress
         if changed_nodes:
             self.signal("refresh_tree", list(changed_nodes))
         self.set_end_time("set_emphasis")

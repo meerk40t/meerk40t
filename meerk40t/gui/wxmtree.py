@@ -517,6 +517,18 @@ class TreePanel(wx.Panel):
                     self.shadow_tree.set_enhancements(node)
             finally:
                 self.shadow_tree.wxtree.Thaw()
+            rootitem = self.shadow_tree.wxtree.GetRootItem()
+            visible_node = None
+            for node in nodes:
+                if node is None or node._item is None or node._item == rootitem:
+                    continue
+                if getattr(node, "selected", False):
+                    visible_node = node
+                    break
+                if visible_node is None:
+                    visible_node = node
+            if visible_node is not None:
+                self.shadow_tree.wxtree.EnsureVisible(visible_node._item)
         else:
             node = nodes
             if node is not None and node._item is not None:
