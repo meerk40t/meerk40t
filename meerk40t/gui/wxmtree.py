@@ -494,6 +494,7 @@ class TreePanel(wx.Panel):
 
         if isinstance(nodes, (tuple, list)):
             if len(nodes) == 0:
+                self.shadow_tree.refresh_tree(source=f"signal_{origin}")
                 return
             # full_refresh = len(nodes) > 250
             # if full_refresh:

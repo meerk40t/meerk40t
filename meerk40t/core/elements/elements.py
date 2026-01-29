@@ -2679,7 +2679,13 @@ class Elemental(Service):
             if emphasize_set is not None:
                 return node in emphasize_set
             return node in emphasize_items
-        changed_nodes = set()
+        changed_nodes = []
+        seen_nodes = set()
+
+        def _mark_changed(node):
+            if node not in seen_nodes:
+                changed_nodes.append(node)
+                seen_nodes.add(node)
         previous_suppress = self.suppress_updates
         self.suppress_updates = True
         try:
@@ -2687,25 +2693,25 @@ class Elemental(Service):
                 for s in self._tree.flat():
                     if s.highlighted:
                         s.highlighted = False
-                        changed_nodes.add(s)
+                        _mark_changed(s)
                     if s.targeted:
                         s.targeted = False
-                        changed_nodes.add(s)
+                        _mark_changed(s)
                     if s.selected:
                         s.selected = False
-                        changed_nodes.add(s)
+                        _mark_changed(s)
                     if not s.can_emphasize:
                         continue
                     in_list = _is_emphasized(s)
                     if s.emphasized:
                         if not in_list:
                             s.emphasized = False
-                            changed_nodes.add(s)
+                            _mark_changed(s)
                     else:
                         if in_list:
                             s.emphasized = True
                             s.selected = True
-                            changed_nodes.add(s)
+                            _mark_changed(s)
                 if emphasize_items:
                     # Validate emphasize
                     old_first = self.first_emphasized
@@ -2718,21 +2724,21 @@ class Elemental(Service):
                         for child in node.children:
                             if not child.highlighted:
                                 child.highlighted = True
-                                changed_nodes.add(child)
+                                _mark_changed(child)
                             _recursive_highlight(child)
 
                     for e in emphasize_items:
                         count += 1
                         if e.type == "reference":
                             self.set_node_emphasis(e.node, True)
-                            changed_nodes.add(e.node)
+                            _mark_changed(e.node)
                             e.highlighted = True
-                            changed_nodes.add(e)
+                            _mark_changed(e)
                         else:
                             self.set_node_emphasis(e, True)
-                            changed_nodes.add(e)
+                            _mark_changed(e)
                             e.selected = True
-                            changed_nodes.add(e)
+                            _mark_changed(e)
                         # if hasattr(e, "object"):
                         #     self.target_clones(self._tree, e, e.object)
                         _recursive_highlight(e)
@@ -2742,7 +2748,7 @@ class Elemental(Service):
         finally:
             self.suppress_updates = previous_suppress
         if changed_nodes:
-            self.signal("refresh_tree", list(changed_nodes))
+            self.signal("refresh_tree", changed_nodes)
         self.set_end_time("set_emphasis")
 
     def center(self):
