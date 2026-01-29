@@ -483,35 +483,65 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        if self.shadow_tree.wxtree is None:
+            return
         self.shadow_tree.cache_hits = 0
         self.shadow_tree.cache_requests = 0
-        self.shadow_tree.refresh_tree(source=f"signal_{origin}")
-        if nodes is not None:
-            if isinstance(nodes, (tuple, list)):
-                # All Standard nodes first
-                for node in nodes:
-                    if (
-                        node is not None
-                        and node._item is not None
-                        and node.type.startswith("elem ")
-                    ):
-                        self.shadow_tree.set_icon(node, force=True)
-                # Then all others
-                for node in nodes:
-                    if (
-                        node is not None
-                        and node._item is not None
-                        and not node.type.startswith("elem ")
-                    ):
-                        self.shadow_tree.set_icon(node, force=True)
-                # Show the first node, but if that's the root node then ignore stuff
-                node = nodes[0] if len(nodes) > 0 else None
-            else:
-                node = nodes
-                self.shadow_tree.set_icon(node, force=True)
+        if nodes is None:
+            self.shadow_tree.refresh_tree(source=f"signal_{origin}")
+
+            return
+
+        if isinstance(nodes, (tuple, list)):
+            if len(nodes) == 0:
+                self.shadow_tree.refresh_tree(source=f"signal_{origin}")
+                return
+            # full_refresh = len(nodes) > 250
+            # if full_refresh:
+            #     self.shadow_tree.refresh_tree(source=f"signal_{origin}")
+            elem_nodes = []
+            other_nodes = []
+            for node in nodes:
+                if node is None or node._item is None:
+                    continue
+                if node.type.startswith("elem "):
+                    elem_nodes.append(node)
+                else:
+                    other_nodes.append(node)
+            self.shadow_tree.wxtree.Freeze()
+            try:
+                for node in elem_nodes:
+                    self.shadow_tree.set_icon(node, force=True)
+                    self.shadow_tree.set_enhancements(node)
+                for node in other_nodes:
+                    self.shadow_tree.set_icon(node, force=True)
+                    self.shadow_tree.set_enhancements(node)
+            finally:
+                self.shadow_tree.wxtree.Thaw()
             rootitem = self.shadow_tree.wxtree.GetRootItem()
-            if node is not None and node._item is not None and node._item != rootitem:
-                self.shadow_tree.wxtree.EnsureVisible(node._item)
+            visible_node = None
+            for node in nodes:
+                if node is None or node._item is None or node._item == rootitem:
+                    continue
+                if getattr(node, "selected", False):
+                    visible_node = node
+                    break
+                if visible_node is None:
+                    visible_node = node
+            if visible_node is not None:
+                self.shadow_tree.wxtree.EnsureVisible(visible_node._item)
+        else:
+            node = nodes
+            if node is not None and node._item is not None:
+                self.shadow_tree.wxtree.Freeze()
+                try:
+                    self.shadow_tree.set_icon(node, force=True)
+                    self.shadow_tree.set_enhancements(node)
+                finally:
+                    self.shadow_tree.wxtree.Thaw()
+                rootitem = self.shadow_tree.wxtree.GetRootItem()
+                if node._item is not None and node._item != rootitem:
+                    self.shadow_tree.wxtree.EnsureVisible(node._item)
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
