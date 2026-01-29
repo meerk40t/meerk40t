@@ -115,6 +115,24 @@ class AttractionWidget(Widget):
             }
         return self._cached_attraction_lengths[matrix_hash]
 
+    def final(self, context):
+        """
+        Cleanup method called when widget is being removed.
+        Ensures timer is properly stopped to prevent memory leaks.
+        """
+        self._cleanup_timer()
+        self._pending_snap = None
+
+    def _cleanup_timer(self):
+        """Stop and clear the idle timer if it exists."""
+        if self._idle_timer is not None:
+            try:
+                self._idle_timer.Stop()
+            except (AttributeError, RuntimeError):
+                # Timer may already be stopped or destroyed
+                pass
+            self._idle_timer = None
+
     def hit(self):
         """
         Hit-Logic - by definition: yes, I want to be involved.
@@ -123,35 +141,53 @@ class AttractionWidget(Widget):
         return HITCHAIN_PRIORITY_HIT
 
     def _schedule_idle_update(self, sx, sy, snap_points, snap_grid):
+        """Schedule snap point calculation after idle period."""
         if not snap_points and not snap_grid:
             return
+        
+        # Store pending snap parameters
         self._pending_snap = (sx, sy, snap_points, snap_grid)
         self._last_move_time = time.time()
-        if self._idle_timer is not None:
-            try:
-                self._idle_timer.Stop()
-            except AttributeError:
-                pass
+        
+        # Stop any existing timer to prevent race conditions
+        self._cleanup_timer()
+        
+        # Schedule new timer
         self._idle_timer = wx.CallLater(
             int(self.snap_idle_time * 1000), self._run_idle_update
         )
 
     def _run_idle_update(self):
+        """Execute deferred snap calculation after idle period has elapsed."""
         if self._pending_snap is None:
             return
+        
         sx, sy, snap_points, snap_grid = self._pending_snap
-        if (time.time() - self._last_move_time) < self.snap_idle_time:
-            remaining = self.snap_idle_time - (time.time() - self._last_move_time)
+        
+        # Check if enough time has actually elapsed (handles timer precision issues)
+        elapsed = time.time() - self._last_move_time
+        if elapsed < self.snap_idle_time:
+            # Reschedule for remaining time
+            remaining = self.snap_idle_time - elapsed
             if remaining < 0:
                 remaining = 0
+            # Clean up current timer before creating new one
+            self._idle_timer = None
             self._idle_timer = wx.CallLater(
                 int(remaining * 1000), self._run_idle_update
             )
             return
+        
+        # Clear timer reference since this execution is complete
+        self._idle_timer = None
+        
+        # Validate conditions before updating
         if self.scene.pane.ignore_snap:
             return
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
             return
+        
+        # Perform snap calculation and refresh display
         self.my_x = sx
         self.my_y = sy
         self._show_snap_points = True
