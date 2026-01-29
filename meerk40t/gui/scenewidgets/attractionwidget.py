@@ -4,6 +4,7 @@ list of widgets, to modify the later widget's events in the case of snapping.
 """
 
 from math import sqrt
+import time
 
 import wx
 
@@ -54,7 +55,12 @@ class AttractionWidget(Widget):
         self.context.setting(int, "grid_attract_len", 15)
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", False)
+        self.context.setting(bool, "snap_instant", False)
         self._show_snap_points = False
+        self.snap_idle_time = 0.2
+        self._idle_timer = None
+        self._last_move_time = 0.0
+        self._pending_snap = None
 
     def load_colors(self):
         """Load the current theme colors for the attraction widget."""
@@ -110,12 +116,84 @@ class AttractionWidget(Widget):
             }
         return self._cached_attraction_lengths[matrix_hash]
 
+    def final(self, context):
+        """
+        Cleanup method called when widget is being removed.
+        Ensures timer is properly stopped to prevent memory leaks.
+        """
+        self._cleanup_timer()
+        self._pending_snap = None
+
+    def _cleanup_timer(self):
+        """Stop and clear the idle timer if it exists."""
+        if self._idle_timer is not None:
+            try:
+                self._idle_timer.Stop()
+            except (AttributeError, RuntimeError):
+                # Timer may already be stopped or destroyed
+                pass
+            self._idle_timer = None
+
     def hit(self):
         """
         Hit-Logic - by definition: yes, I want to be involved.
         In fact, if there's widgets to be hit, this should be the first (even if it's not)
         """
         return HITCHAIN_PRIORITY_HIT
+
+    def _schedule_idle_update(self, sx, sy, snap_points, snap_grid):
+        """Schedule snap point calculation after idle period."""
+        if not snap_points and not snap_grid:
+            return
+        
+        # Store pending snap parameters
+        self._pending_snap = (sx, sy, snap_points, snap_grid)
+        self._last_move_time = time.time()
+        
+        # Stop any existing timer to prevent race conditions
+        self._cleanup_timer()
+        
+        # Schedule new timer
+        self._idle_timer = wx.CallLater(
+            int(self.snap_idle_time * 1000), self._run_idle_update
+        )
+
+    def _run_idle_update(self):
+        """Execute deferred snap calculation after idle period has elapsed."""
+        if self._pending_snap is None:
+            return
+        
+        sx, sy, snap_points, snap_grid = self._pending_snap
+        
+        # Check if enough time has actually elapsed (handles timer precision issues)
+        elapsed = time.time() - self._last_move_time
+        if elapsed < self.snap_idle_time:
+            # Reschedule for remaining time
+            remaining = self.snap_idle_time - elapsed
+            if remaining < 0:
+                remaining = 0
+            # Clean up current timer before creating new one
+            self._idle_timer = None
+            self._idle_timer = wx.CallLater(
+                int(remaining * 1000), self._run_idle_update
+            )
+            return
+        
+        # Clear timer reference since this execution is complete
+        self._idle_timer = None
+        
+        # Validate conditions before updating
+        if self.scene.pane.ignore_snap:
+            return
+        if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
+            return
+        
+        # Perform snap calculation and refresh display
+        self.my_x = sx
+        self.my_y = sy
+        self._show_snap_points = True
+        self.scene.calculate_display_points(sx, sy, snap_points, snap_grid)
+        self.scene.request_refresh()
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
@@ -155,6 +233,8 @@ class AttractionWidget(Widget):
 
         if not snap_points and not snap_grid:
             # We are not going to snap.
+            self._pending_snap = None
+            self._cleanup_timer()
             return RESPONSE_CHAIN
 
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
@@ -163,6 +243,16 @@ class AttractionWidget(Widget):
 
         if self.scene.pane.ignore_snap:
             return RESPONSE_CHAIN
+
+        if event_type in ("move", "hover", "hover_start"):
+            # Check if instant snap calculation is enabled
+            if not ctx.snap_instant:
+                # Use delayed calculation (after idle period)
+                self.scene.snap_display_points = []
+                self._show_snap_points = False
+                self._schedule_idle_update(self.my_x, self.my_y, snap_points, snap_grid)
+                return RESPONSE_CHAIN
+            # Otherwise fall through to immediate calculation
 
         self._show_snap_points = True
 
@@ -327,11 +417,13 @@ class AttractionWidget(Widget):
             delta = sqrt(dist_sq)
 
             # Determine if point is within snap range
-            distance = local_grid_attract_len if pt_type == TYPE_GRID else local_action_attract_len
+            distance = (
+                local_grid_attract_len if pt_type == TYPE_GRID else local_action_attract_len
+            )
             closeup = 1 if abs(dx) <= distance and abs(dy) <= distance else 0
 
-            # Track closest point
-            if closeup and delta < min_delta:
+            # Track closest visible point regardless of type
+            if delta < min_delta:
                 min_delta = delta
                 min_x, min_y, min_type = x, y, pt_type
 

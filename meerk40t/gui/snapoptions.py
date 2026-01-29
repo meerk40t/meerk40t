@@ -84,6 +84,13 @@ class SnapOptionPanel(wx.Panel):
             )
         )
 
+        self.check_snap_instant = wxCheckBox(self, wx.ID_ANY, _("Instant Snap Display"))
+        self.check_snap_instant.SetToolTip(
+            _("Calculate and display snap points immediately during mouse movement (may affect performance)") 
+            + "\n"
+            + _("If disabled, snap points are only calculated when the mouse is not moving")
+        )
+
         # Visibility
         sizer_snap_visibility = wx.BoxSizer(wx.VERTICAL)
         sizer_sub_visible = wx.BoxSizer(wx.HORIZONTAL)
@@ -120,6 +127,7 @@ class SnapOptionPanel(wx.Panel):
         sizer_snap.Add(sizer_snap_visibility, 0, wx.ALL | wx.EXPAND, 0)
         sizer_snap.Add(sizer_points, 0, wx.ALL | wx.EXPAND, 0)
         sizer_snap.Add(sizer_grid, 0, wx.EXPAND, 0)
+        sizer_snap.Add(self.check_snap_instant, 0, wx.ALL | wx.EXPAND, 0)
 
         self.SetSizer(sizer_snap)
         sizer_snap.Fit(self)
@@ -132,12 +140,14 @@ class SnapOptionPanel(wx.Panel):
         # Additionally defined in wxmmain and attraction widget
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", False)
+        self.context.setting(bool, "snap_instant", False)
         self.context.setting(int, "show_attract_len", 45)
         self.context.setting(int, "action_attract_len", 20)
         self.context.setting(int, "grid_attract_len", 15)
         # Bindings
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_grid, self.check_snap_grid)
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_points, self.check_snap_points)
+        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_instant, self.check_snap_instant)
         self.Bind(wx.EVT_SLIDER, self.on_slider_grid, self.slider_distance_grid)
         self.Bind(wx.EVT_SLIDER, self.on_slider_points, self.slider_distance_points)
         self.Bind(wx.EVT_SLIDER, self.on_slider_visibility, self.slider_visibility)
@@ -153,6 +163,11 @@ class SnapOptionPanel(wx.Panel):
         self.context.snap_points = state
         self.context.signal("snap_points", state)
         self.slider_distance_points.Enable(state)
+
+    def on_checkbox_instant(self, event):
+        state = self.check_snap_instant.GetValue()
+        self.context.snap_instant = state
+        self.context.signal("snap_instant", state)
 
     def update_slider_tooltip(self, control):
         state = control.GetValue()
@@ -188,6 +203,8 @@ class SnapOptionPanel(wx.Panel):
             self.check_snap_grid.SetValue(self.context.snap_grid)
         if self.check_snap_points.GetValue() != self.context.snap_points:
             self.check_snap_points.SetValue(self.context.snap_points)
+        if self.check_snap_instant.GetValue() != self.context.snap_instant:
+            self.check_snap_instant.SetValue(self.context.snap_instant)
         if self.slider_distance_grid.GetValue() != self.context.grid_attract_len:
             self.slider_distance_grid.SetValue(self.context.grid_attract_len)
         if self.slider_distance_points.GetValue() != self.context.action_attract_len:
@@ -203,6 +220,7 @@ class SnapOptionPanel(wx.Panel):
 
     @signal_listener("snap_points")
     @signal_listener("snap_grid")
+    @signal_listener("snap_instant")
     @signal_listener("grid_attract_len")
     @signal_listener("action_attract_len")
     @signal_listener("show_attract_len")

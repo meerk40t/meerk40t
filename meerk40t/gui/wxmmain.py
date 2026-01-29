@@ -1562,6 +1562,22 @@ class MeerK40t(MWindow):
                 # Hint for translation _("Magnetlines")
                 "subsection": "Magnetlines",
             },
+            {
+                "attr": "snap_instant",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Instant Snap Display"),
+                "tip": _(
+                    "Calculate and display snap points immediately during mouse movement (may affect performance)\n"
+                    "If disabled, snap points are only calculated when the mouse is not moving"
+                ),
+                "page": "Scene",
+                # Hint for translation _("Snap-Options")
+                "section": "Snap-Options",
+                # Hint for translation _("Instant Snap Display")
+                "subsection": "Instant Snap Display",
+            }
         ]
         for c in choices:
             c["help"] = "snap"
