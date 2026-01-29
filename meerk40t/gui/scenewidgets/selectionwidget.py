@@ -1801,6 +1801,7 @@ class MoveWidget(Widget):
 
             matrix = self.scene.widget_root.scene_widget.matrix
             did_snap_to_point = False
+            selected_points = []
 
             if (
                 self.scene.context.snap_points
@@ -1818,7 +1819,6 @@ class MoveWidget(Widget):
 
                 # t1 = perf_counter()
                 other_points = []
-                selected_points = []
                 for e in self.scene.context.elements.elems():
                     if hasattr(e, "hidden") and e.hidden:
                         continue
