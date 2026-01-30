@@ -83,6 +83,13 @@ class Wordlist:
         'Job #1'
         >>> wl.translate("Job #{counter}")  # Auto-increments
         'Job #2'
+
+    Notes:
+        - Keys are normalized (trimmed and lower-cased). Passing `None`, non-string,
+          or whitespace-only keys to methods is treated as invalid.
+        - Use `has_value(key, entry)` to check membership.
+        - `add_value_unique(key, entry, wtype=None)` will add only if the value is
+          not present and returns a tuple `(added: bool, reason: Optional[str])`.
     """
 
     def __init__(self, versionstr, directory=None):

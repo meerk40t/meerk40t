@@ -370,16 +370,55 @@ kernel.register("webhelp/tutorial", "https://meerk40t.org/tutorial")
 ```
 
 ### Wordlist System (`wordlist.py`)
-Dynamic text replacement for job customization:
+Dynamic text replacement for job customization.
+
+The Wordlist system provides dynamic variable substitution for text elements used in
+jobs (e.g., "Hello {NAME}"). It supports three *types* of variables:
+
+- **Static** (single string value)
+- **CSV/Array** (multiple values, with a current position)
+- **Counter** (integer that increments)
+
+Key points and API overview:
+
+- Keys are normalized (trimmed and lower-cased). Passing `None`, non-string, or
+  whitespace-only keys to set/get operations is treated as invalid and ignored.
+- Common helpers:
+  - `has_value(key, entry)` — returns `True` if the given entry exists for `key`.
+  - `add_value_unique(key, entry, wtype=None)` — attempts to add `entry` and
+    returns `(added: bool, reason: Optional[str])` where `reason` can be
+    `"duplicate"`, `"empty"`, or `"invalid_key"` (or `None` when successfully added).
+- Load/save and validation:
+  - `load_data(filename)` loads persisted JSON and records any issues; query
+    them with `get_load_warnings()` / `has_load_warnings()`.
+  - `validate_content()` performs structural checks and returns a list of issues found.
+
+Examples:
 
 ```python
-# Define replacement variables
-wordlist = {"NAME": "John Doe", "DATE": "2025-10-19"}
+# Simple use
+wl = Wordlist("1.2.3")
+wl.add("name", "John")
+print(wl.translate("Hello {name}"))  # "Hello John"
 
-# Use in text elements
-text = "Hello {NAME}, today is {DATE}"
+# add_value_unique returns a tuple
+added, reason = wl.add_value_unique("people", "Alice")
+if not added:
+    print("Not added:", reason)
+
+# Inspect load warnings after loading from a file
+wl.load_data("wordlist.json")
+if wl.has_load_warnings():
+    print(wl.get_load_warnings())
+
+# Validate current content
+issues = wl.validate_content()
+if issues:
+    for issue in issues:
+        print("Wordlist issue:", issue)
 ```
 
+This system is used by the GUI panel `WordlistPanel` and the mini controls `WordlistMiniPanel` for advancing and editing entries.
 ## Integration Patterns
 
 ### Service Registration
