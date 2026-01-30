@@ -766,7 +766,7 @@ class WordlistPanel(wx.Panel):
                 channel(msg)
                 for warning in self.wlist.get_warnings():
                     channel("  " + warning)
-            
+
             else:
                 msg = _("Restored from ") + self.wlist.default_filename
             self.edit_message(msg)

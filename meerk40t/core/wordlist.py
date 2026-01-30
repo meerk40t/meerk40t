@@ -634,7 +634,9 @@ class Wordlist:
                         continue
                     san = self._sanitize_entry(item)
                     if san is None:
-                        warnings.append(f"Skipping wordlist entry '{key}': malformed or invalid")
+                        warnings.append(
+                            f"Skipping wordlist entry '{key}': malformed or invalid"
+                        )
                         continue
                     new_content[nk] = san
                 # Ensure builtins exist (preserve defaults if not present)
@@ -645,7 +647,9 @@ class Wordlist:
                         )
                 self.content = new_content
             else:
-                warnings.append(f"wordlist file {filename} has non-dict top-level; ignoring")
+                warnings.append(
+                    f"wordlist file {filename} has non-dict top-level; ignoring"
+                )
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError) as e:
             warnings.append(f"Failed to load wordlist file {filename}: {e}")
             # Keep existing content on error
@@ -788,17 +792,20 @@ class Wordlist:
                 reader = csv.reader(StringIO(file_content), dialect)
                 raw_headers = next(reader)
                 # Clean BOM and whitespace from headers
-                cleaned = [h.lstrip("\ufeff").strip() if h is not None else "" for h in raw_headers]
+                cleaned = [
+                    h.lstrip("\ufeff").strip() if h is not None else ""
+                    for h in raw_headers
+                ]
 
                 headers = []
                 seen = {}
 
                 def make_unique(name, idx):
                     if name is None or name == "":
-                        base = f"column_{idx+1}"
+                        base = f"column_{idx + 1}"
                     else:
                         base = name
-                    base_norm = self._normalize_key(base) or f"column_{idx+1}"
+                    base_norm = self._normalize_key(base) or f"column_{idx + 1}"
                     # Ensure uniqueness
                     if base_norm in seen:
                         seen[base_norm] += 1
@@ -834,7 +841,9 @@ class Wordlist:
                         # Clean BOM and whitespace from data values too
                         clean_entry = entry.lstrip("\ufeff").strip()
                         # Append...
-                        self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV)
+                        self.set_value(
+                            skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV
+                        )
                     ct += 1
             except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
                 ct = 0
