@@ -25694,3 +25694,266 @@ msgstr "G0 X Y S0 yerine gücü açıkça 0'a ayarlamak için G1 S0 kullanır "
 #: meerk40t/gui/wordlisteditor.py:640
 msgid "Rename failed"
 msgstr "Yeniden adlandırma başarısız"
+
+#: meerk40t/core/elements/elements.py:2919
+msgid "Classify elements"
+msgstr "Öğeleri sınıflandır"
+
+#: meerk40t/core/elements/wordlist.py:224
+msgid "Warnings during load:"
+msgstr "Yükleme sırasında uyarılar:"
+
+#: meerk40t/core/elements/wordlist.py:298
+msgid "Warnings during CSV load:"
+msgstr "CSV yükleme sırasında uyarılar:"
+
+#: meerk40t/extra/vectrace.py:18
+msgid "Vectrace"
+msgstr "Vectrace"
+
+#: meerk40t/gui/gui_mixins.py:161
+msgid "Paste format"
+msgstr "Yapıştırma formatı"
+
+#: meerk40t/gui/snapoptions.py:87 meerk40t/gui/wxmmain.py:1570
+#: meerk40t/gui/wxmmain.py:1578
+msgid "Instant Snap Display"
+msgstr "Anlık Hizalama Görüntüleme"
+
+#: meerk40t/gui/snapoptions.py:89
+msgid ""
+"Calculate and display snap points immediately during mouse movement (may "
+"affect performance)"
+msgstr ""
+"Fare hareketi sırasında hizalama noktalarını hemen hesapla ve göster "
+"(performansı etkileyebilir)"
+
+#: meerk40t/gui/snapoptions.py:91
+msgid ""
+"If disabled, snap points are only calculated when the mouse is not moving"
+msgstr "Devre dışıysa, hizalama noktaları fare hareket etmediğinde hesaplanır"
+
+#: meerk40t/gui/wordlisteditor.py:269
+msgid "Filter:"
+msgstr "Filtre:"
+
+#: meerk40t/gui/wordlisteditor.py:409
+msgid "Jump"
+msgstr "Git"
+
+#: meerk40t/gui/wordlisteditor.py:410
+msgid "Jump to a specific index"
+msgstr "Belirli bir indekse git"
+
+#: meerk40t/gui/wordlisteditor.py:436
+msgid "Preview the translation of the pattern"
+msgstr "Desen çevirisini önizle"
+
+#: meerk40t/gui/wordlisteditor.py:565 meerk40t/gui/wordlisteditor.py:1064
+#: meerk40t/gui/wordlisteditor.py:1523
+msgid "Delete variable '{key}'?"
+msgstr "'{key}' değişkeni silinsin mi?"
+
+#: meerk40t/gui/wordlisteditor.py:583 meerk40t/gui/wordlisteditor.py:860
+#: meerk40t/gui/wordlisteditor.py:1127 meerk40t/gui/wordlisteditor.py:1196
+#: meerk40t/gui/wordlisteditor.py:1250
+msgid "No variable selected"
+msgstr "Değişken seçilmedi"
+
+#: meerk40t/gui/wordlisteditor.py:590 meerk40t/gui/wordlisteditor.py:1208
+msgid "Entry already exists"
+msgstr "Girdi zaten var"
+
+#: meerk40t/gui/wordlisteditor.py:592 meerk40t/gui/wordlisteditor.py:1202
+#: meerk40t/gui/wordlisteditor.py:1210
+msgid "Invalid entry"
+msgstr "Geçersiz girdi"
+
+#: meerk40t/gui/wordlisteditor.py:594 meerk40t/gui/wordlisteditor.py:1212
+msgid "Failed to add entry"
+msgstr "Girdi eklenemedi"
+
+#: meerk40t/gui/wordlisteditor.py:614 meerk40t/gui/wordlisteditor.py:1233
+msgid "Delete entry '{entry}'?"
+msgstr "'{entry}' girdisi silinsin mi?"
+
+#: meerk40t/gui/wordlisteditor.py:653
+msgid "Paste {n} entries into '{key}'?"
+msgstr "{n} girdiyi '{key}' içine yapıştıralım mı?"
+
+#: meerk40t/gui/wordlisteditor.py:654
+msgid "Confirm Paste"
+msgstr "Yapıştırmayı Onayla"
+
+#: meerk40t/gui/wordlisteditor.py:686
+msgid "Count"
+msgstr "Adet"
+
+#: meerk40t/gui/wordlisteditor.py:864
+msgid "Selected variable has no entries"
+msgstr "Seçilen değişkenin girdisi yok"
+
+#: meerk40t/gui/wordlisteditor.py:869
+msgid "Index:"
+msgstr "İndeks:"
+
+#: meerk40t/gui/wordlisteditor.py:870
+msgid "Enter the zero-based index to jump to:"
+msgstr "Gitmek için sıfır tabanlı indeksi girin:"
+
+#: meerk40t/gui/wordlisteditor.py:871
+msgid "Jump to index"
+msgstr "İndekse git"
+
+#: meerk40t/gui/wordlisteditor.py:886
+msgid "Invalid index"
+msgstr "Geçersiz indeks"
+
+#: meerk40t/gui/wordlisteditor.py:891
+msgid "Index out of range (0..{max})"
+msgstr "İndeks aralık dışında (0..{max})"
+
+#: meerk40t/gui/wordlisteditor.py:912
+msgid "Jump failed: {err}"
+msgstr "Atlama başarısız: {err}"
+
+#: meerk40t/gui/wordlisteditor.py:1011
+msgid "Add..."
+msgstr "Ekle..."
+
+#: meerk40t/gui/wordlisteditor.py:1012
+msgid "Edit..."
+msgstr "Düzenle..."
+
+#: meerk40t/gui/wordlisteditor.py:1027
+msgid "New variable name:"
+msgstr "Yeni değişken adı:"
+
+#: meerk40t/gui/wordlisteditor.py:1027
+msgid "Add Wordlist Variable"
+msgstr "Kelime listesi değişkeni ekle"
+
+#: meerk40t/gui/wordlisteditor.py:1033 meerk40t/gui/wordlisteditor.py:1473
+#: meerk40t/gui/wordlisteditor.py:1505
+msgid "Variable '%s' already exists"
+msgstr "'%s' isimli değişken zaten var"
+
+#: meerk40t/gui/wordlisteditor.py:1083
+msgid "Delete CSV File..."
+msgstr "CSV Dosyasını Sil..."
+
+#: meerk40t/gui/wordlisteditor.py:1131
+msgid "Variable not found"
+msgstr "Değişken bulunamadı"
+
+#: meerk40t/gui/wordlisteditor.py:1135 meerk40t/gui/wordlisteditor.py:1138
+msgid "Selected variable is not CSV-based"
+msgstr "Seçilen değişken CSV tabanlı değil"
+
+#: meerk40t/gui/wordlisteditor.py:1144
+msgid "Delete this entry and all other related CSV entries?"
+msgstr "Bu girdiyi ve ilişkili tüm CSV girdilerini sil?"
+
+#: meerk40t/gui/wordlisteditor.py:1164
+msgid "Deleted CSV file entries"
+msgstr "CSV dosyası girdileri silindi"
+
+#: meerk40t/gui/wordlisteditor.py:1175
+msgid "Add Entry..."
+msgstr "Girdi Ekle..."
+
+#: meerk40t/gui/wordlisteditor.py:1176
+msgid "Paste Entries"
+msgstr "Girdileri Yapıştır"
+
+#: meerk40t/gui/wordlisteditor.py:1180
+msgid "Edit Entry..."
+msgstr "Girdiyi Düzenle..."
+
+#: meerk40t/gui/wordlisteditor.py:1181
+msgid "Delete Entry"
+msgstr "Girdiyi Sil"
+
+#: meerk40t/gui/wordlisteditor.py:1199
+msgid "New entry value:"
+msgstr "Yeni girdi değeri:"
+
+#: meerk40t/gui/wordlisteditor.py:1199
+msgid "Add Entry"
+msgstr "Girdi Ekle"
+
+#: meerk40t/gui/wordlisteditor.py:1258
+msgid "Clipboard empty or unavailable"
+msgstr "Pano boş veya kullanılamıyor"
+
+#: meerk40t/gui/wordlisteditor.py:1262
+msgid "Clipboard empty"
+msgstr "Pano boş"
+
+#: meerk40t/gui/wordlisteditor.py:1284
+msgid "Pasted {a} entries, skipped {s} duplicates"
+msgstr "{a} girdi yapıştırıldı, {s} kopya atlandı"
+
+#: meerk40t/gui/wordlisteditor.py:1290
+msgid "Pasted {a} entries, skipped {s} duplicates, {i} invalid"
+msgstr "{a} girdi yapıştırıldı, {s} kopya atlandı, {i} geçersiz"
+
+#: meerk40t/gui/wordlisteditor.py:1332
+msgid "Invalid name"
+msgstr "Geçersiz isim"
+
+#: meerk40t/gui/wordlisteditor.py:1338
+msgid "Can't rename to internal variable name"
+msgstr "Dahili değişken adına yeniden adlandırılamaz"
+
+#: meerk40t/gui/wordlisteditor.py:1344
+msgid "A variable with that name already exists"
+msgstr "Bu ada sahip bir değişken zaten var"
+
+#: meerk40t/gui/wordlisteditor.py:1469 meerk40t/gui/wordlisteditor.py:1501
+msgid "Invalid variable name"
+msgstr "Geçersiz değişken adı"
+
+#: meerk40t/gui/wordlisteditor.py:1477 meerk40t/gui/wordlisteditor.py:1510
+msgid "Can't create internal variable {key}"
+msgstr "Dahili değişken {key} oluşturulamıyor"
+
+#: meerk40t/gui/wordlisteditor.py:1545
+msgid "Restored with warnings from "
+msgstr "Uyarılarla geri yüklendi: "
+
+#: meerk40t/gui/wordlisteditor.py:1552
+msgid "Restored from "
+msgstr "Geri yüklendi: "
+
+#: meerk40t/gui/wordlisteditor.py:1659 meerk40t/gui/wordlisteditor.py:1689
+msgid "Imported file with warnings, {col} fields, {row} rows"
+msgstr "Uyarılarla dosya içe aktarıldı, {col} alan, {row} satır"
+
+#: meerk40t/gui/wordlisteditor.py:1785
+msgid "Wordlist editor failed to initialize"
+msgstr "Kelime listesi düzenleyicisi başlatılamadı"
+
+#: meerk40t/gui/wordlisteditor.py:1796
+msgid "CSV Import panel failed to initialize"
+msgstr "CSV İçeri Aktarma paneli başlatılamadı"
+
+#: meerk40t/gui/wordlisteditor.py:1807
+msgid "About panel failed to initialize"
+msgstr "'Hakkında' paneli başlatılamadı"
+
+#: meerk40t/gui/wxmmain.py:1574
+msgid ""
+"Calculate and display snap points immediately during mouse movement (may affect performance)\n"
+"If disabled, snap points are only calculated when the mouse is not moving"
+msgstr ""
+"Fare hareketi sırasında hizalama noktalarını hemen hesapla ve göster (performansı etkileyebilir)\n"
+"Devre dışıysa, hizalama noktaları fare hareket etmediğinde hesaplanır"
+
+#: meerk40t/image/imagetools.py:2676
+msgid "Create lines"
+msgstr "Satırlar oluştur"
+
+#: meerk40t/tools/livinghinges.py:697
+msgid "Living hinge"
+msgstr "Esnek menteşe"

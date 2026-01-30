@@ -773,14 +773,14 @@ msgstr ""
 
 #: meerk40t/core/elements/elements.py:258
 msgid "Classify elements after creation"
-msgstr "Klassifiziere neu hinzugefügte Elemente"
+msgstr "Zuordnung neu hinzugefügter Elemente"
 
 #: meerk40t/core/elements/elements.py:261
 msgid ""
 "MK will immediately try to classify (automatically assign) an element as "
 "soon as it is created,"
 msgstr ""
-"MK versucht sofort nach Erstellen eines Elements dieses zu klassifizieren,"
+"MK versucht sofort nach Erstellen eines Elements dieses automatisch zuzuordnen,"
 
 #: meerk40t/core/elements/elements.py:265
 msgid ""
@@ -798,7 +798,7 @@ msgstr "Unscharfe Farb-Logik"
 msgid ""
 "Unticked: Classify elements into operations with an *exact* color match"
 msgstr ""
-"Abgewählt: MK achtet bei der Klassifizierung auf eine *exakte* "
+"Abgewählt: MK achtet bei der Zuordnung auf eine *exakte* "
 "Farbübereinstimmung"
 
 #: meerk40t/core/elements/elements.py:280
@@ -828,13 +828,13 @@ msgstr "Nutze 'Schwarz' als Kriterium für 'Raster' (wie bei Whisperer)"
 #: meerk40t/core/elements/elements.py:320
 msgid "Ticked: Classify will assign black elements to a raster operation"
 msgstr ""
-"Aktiv: Beim Klassifizieren werden schwarze Elemente zu einem "
+"Aktiv: Beim Zuordnen werden schwarze Elemente zu einem "
 "'Raster'-Arbeitsgang zugeordnet"
 
 #: meerk40t/core/elements/elements.py:324
 msgid "Unticked: Classify will assign black elements to an engrave operation"
 msgstr ""
-"Inaktiv: Beim Klassifizieren werden schwarze Elemente zu einem "
+"Inaktiv: Beim Zuordnen werden schwarze Elemente zu einem "
 "'Gravur'-Arbeitsgang zugeordnet"
 
 #: meerk40t/core/elements/elements.py:352
@@ -874,7 +874,7 @@ msgstr "Farbe übernehmen"
 
 #: meerk40t/core/elements/elements.py:409
 msgid "Classify after color-change"
-msgstr "Klassifizieren bei Farbänderung"
+msgstr "Neu-Zuordnung nach Farbänderung"
 
 #: meerk40t/core/elements/elements.py:410
 msgid "Whenever you change an elements color (stroke or fill),"
@@ -882,7 +882,7 @@ msgstr "Bei einer Änderung der Element-Farbe (Umriss oder Füllung)"
 
 #: meerk40t/core/elements/elements.py:414
 msgid "MK will then reclassify this element. You can turn this feature off"
-msgstr "wird MK das Element neu klassifizieren. Dies kann durch Deaktivieren"
+msgstr "wird MK das Element neu zuordnen. Dies kann durch Deaktivieren"
 
 #: meerk40t/core/elements/elements.py:416
 msgid "by disabling this option."
@@ -1596,7 +1596,7 @@ msgstr "Erneuere Klassifizierung"
 
 #: meerk40t/core/elements/element_treeops.py:2075
 msgid "Reclassify elements and create operations if necessary"
-msgstr "Erneute Klassifizierung mit Anlage neuer Arbeitsgänge"
+msgstr "Erneute Zuordnung mit Anlage neuer Arbeitsgänge"
 
 #: meerk40t/core/elements/element_treeops.py:2303
 #: meerk40t/gui/magnetoptions.py:124 meerk40t/gui/materialtest.py:55
@@ -1956,11 +1956,11 @@ msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:3657
 msgid "Inherit stroke and classify similar"
-msgstr "Nimm Umrissfarbe und klassifziere Ähnliche"
+msgstr "Nimm Umrissfarbe und ordne Ähnliche ebenfalls zu"
 
 #: meerk40t/core/elements/element_treeops.py:3674
 msgid "Inherit fill and classify similar"
-msgstr "Nimm Füllfarbe und klassifziere Ähnliche"
+msgstr "Nimm Füllfarbe und ordne Ähnliche ebenfalls zu"
 
 #: meerk40t/core/elements/element_treeops.py:3676
 msgid "Operation will inherit element fill color"
@@ -4501,7 +4501,7 @@ msgstr "Entferne alle Element aus {name}"
 #: meerk40t/gui/operation_info.py:287
 #: meerk40t/gui/propertypanels/operationpropertymain.py:909
 msgid "Re-Classify"
-msgstr "Re-Klassifiziere"
+msgstr "Neu-Zuordnung"
 
 #: meerk40t/gui/operation_info.py:303 meerk40t/gui/operation_info.py:314
 msgid "Operation Information"
@@ -7586,7 +7586,7 @@ msgstr " wird die exakte Farbübereinstimmung für die Zuordnung verwendet."
 msgid ""
 "When classifying elements, Default operations gain all appropriate elements "
 msgstr ""
-"Beim Klassifizieren der Elemente werden einem Standard-Arbeitsgang alle "
+"Beim Zuordnen der Elemente werden einem Standard-Arbeitsgang alle "
 "diejenigen Elemente zugeordnet, die nicht einem anderen Vorgang mit "
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:183
@@ -7863,7 +7863,7 @@ msgstr ""
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:101
 msgid "will classify all elements that have a fill"
-msgstr "alle Elemente klassifizieren, die entweder eine Füll-Farbe haben,"
+msgstr "alle Elemente zuordnen, die entweder eine Füll-Farbe haben,"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:103
 msgid "or stroke that are either black or white."
@@ -7888,7 +7888,7 @@ msgstr "Füllung"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:132
 msgid "If active, then this op will prevent further classification"
-msgstr "Falls aktiv, wird die Klassifizierung an dieser Stelle beendet"
+msgstr "Falls aktiv, wird die Zuordnung an dieser Stelle beendet"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:134
 msgid "from other ops if it could classify an element by itself."
@@ -8015,7 +8015,7 @@ msgstr "Berechne"
 #: meerk40t/gui/propertypanels/warpproperty.py:81
 #: meerk40t/gui/propertypanels/wobbleproperty.py:167
 msgid "Immediately classify after colour change"
-msgstr "Bei Farbänderung reklassifizieren"
+msgstr "Bei Farbänderung neu zordnen"
 
 #: meerk40t/gui/propertypanels/pathproperty.py:335
 msgid "Length"
@@ -11326,20 +11326,20 @@ msgstr "Wähle eine zuvor exportierte Sicherungsdatei aus"
 #: meerk40t/core/elements/element_treeops.py:1483
 #: meerk40t/core/elements/element_treeops.py:1485
 msgid "Enable all operations"
-msgstr "Alle Operationen aktivieren"
+msgstr "Alle Arbeitsgänge aktivieren"
 
 #: meerk40t/core/elements/element_treeops.py:1493
 #: meerk40t/core/elements/element_treeops.py:1495
 msgid "Disable all operations"
-msgstr "Alle Operationen deaktivieren"
+msgstr "Alle Arbeitsgänge deaktivieren"
 
 #: meerk40t/core/elements/element_treeops.py:1504
 msgid "Toggle all operations"
-msgstr "Alle Operationen umschalten"
+msgstr "Alle Arbeitsgänge umschalten"
 
 #: meerk40t/core/elements/element_treeops.py:1506
 msgid "Toggle enabled-status of all operations"
-msgstr "Aktiviert-Status aller Operationen umschalten"
+msgstr "Aktiviert-Status aller Arbeitsgänge umschalten"
 
 #: meerk40t/balormk/gui/gui.py:168
 msgid "Center selection on laserbed"
@@ -11423,7 +11423,7 @@ msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1633
 msgid "Delete {ecount} operations fully"
-msgstr "{ecount} Operationen vollständig löschen"
+msgstr "{ecount} Arbeitsgänge vollständig löschen"
 
 #: meerk40t/core/elements/element_treeops.py:1722
 msgid "Remove all elements that neither have a border nor a fill color"
@@ -11592,7 +11592,7 @@ msgstr "(Ja=Leeren und Erstellen, Nein=Bestehende behalten)"
 
 #: meerk40t/gui/simulation.py:95
 msgid "Decompile cutplan = make operations visible and editable again"
-msgstr "Cutplan zerlegen = mache Operationen wieder sicht- und editierbar"
+msgstr "Cutplan zerlegen = mache Arbeitsgänge wieder sicht- und editierbar"
 
 #: meerk40t/gui/simulation.py:453 meerk40t/gui/simulation.py:762
 msgid "Inserts this special operation before the current cutplan entry"
@@ -11922,7 +11922,7 @@ msgid ""
 "Right click: append to existing script"
 msgstr ""
 "Verwende Bildbearbeitungs-Script\n"
-"Rechtsclick: an bestehende Operationen anhängen"
+"Rechtsclick: an bestehende Arbeitsgänge anhängen"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:1227
 msgid "Remove all image operations"
@@ -12397,7 +12397,7 @@ msgstr "Klassifizierung für nicht zugeordnete Elemente"
 #: meerk40t/core/elements/element_treeops.py:2093 meerk40t/gui/wxmtree.py:218
 msgid "Classify unassigned elements and create operations if necessary"
 msgstr ""
-"Klassifiziere nicht zugeordnete Elemente und lege falls notwendig "
+"Zuweisung nicht zugeordneter Elemente und lege falls notwendig "
 "Arbeitsgänge an"
 
 #: meerk40t/core/elements/element_treeops.py:2111
@@ -12407,13 +12407,13 @@ msgstr "Nur vorhandene Arbeitsgänge nutzen"
 #: meerk40t/core/elements/element_treeops.py:2124
 msgid "Reclassify all elements and use only existing operations"
 msgstr ""
-"Erneuere Klassifizierung für alle Elemente und nutze nur bestehende "
+"Erneuere Zuordnung für alle Elemente und nutze nur bestehende "
 "Arbeitsgänge"
 
 #: meerk40t/core/elements/element_treeops.py:2142 meerk40t/gui/wxmtree.py:221
 msgid "Classify unassigned elements and use only existing operations"
 msgstr ""
-"Klassifiziere nicht zugeordnete Elemente und nutze nur bestehende "
+"Zuweisung nicht zugeordneter Elemente und nutze nur bestehende "
 "Arbeitsgänge"
 
 #: meerk40t/core/elements/element_treeops.py:2909
@@ -12985,7 +12985,7 @@ msgid ""
 "What is the highest reliable speed your laser is able to perform vector operations, i.e. engraving or cutting.\n"
 "You can finetune this in the Warning Sections of this configuration dialog."
 msgstr ""
-"Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser Vektor-Operationen (also Gravieren oder Schneiden) durchführen kann.\n"
+"Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser Vektor-Arbeitsgänge (also Gravieren oder Schneiden) durchführen kann.\n"
 "Diese Werte können neben einigen anderen im 'Warnungen'-Abschnitt noch feiner definiert werden."
 
 #: meerk40t/grbl/device.py:530 meerk40t/grbl/device.py:545
@@ -13001,7 +13001,7 @@ msgid ""
 "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
 "You can finetune this in the Warning Sections of this configuration dialog."
 msgstr ""
-"Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser Raster-Operationen (also Raster oder Bilder) durchführen kann.\n"
+"Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser Raster-Arbeitsgänge (also Raster oder Bilder) durchführen kann.\n"
 "Diese Werte können neben einigen anderen im 'Warnungen'-Abschnitt noch feiner definiert werden."
 
 #: meerk40t/grbl/device.py:633
@@ -13541,7 +13541,7 @@ msgstr "Es gibt Probleme mit dem Projekt"
 
 #: meerk40t/gui/gui_mixins.py:635
 msgid "- Vector operations are too fast."
-msgstr "- Vektor-Operationen sind zu schnell."
+msgstr "- Vektor-Arbeitsgänge sind zu schnell."
 
 #: meerk40t/gui/gui_mixins.py:637 meerk40t/gui/gui_mixins.py:647
 msgid "Could lead to erratic stepper behaviour and incomplete burns."
@@ -13551,7 +13551,7 @@ msgstr ""
 
 #: meerk40t/gui/gui_mixins.py:645
 msgid "- Raster operations are too fast."
-msgstr "- Raster-Operationen sind zu schnell."
+msgstr "- Raster-Arbeitsgänge sind zu schnell."
 
 #: meerk40t/gui/gui_mixins.py:656
 msgid "- Elements are lying outside the burnable area."
@@ -13563,7 +13563,7 @@ msgstr "Der Laserkopf könnte an die Begrenzungen fahren."
 
 #: meerk40t/gui/gui_mixins.py:669
 msgid "- Raster operations get very close to the edge."
-msgstr "- Raster-Operationen liegen sehr nahe am Rand."
+msgstr "- Raster-Arbeitsgänge liegen sehr nahe am Rand."
 
 #: meerk40t/gui/gui_mixins.py:685
 msgid "- Elements aren't assigned to an operation and will not be burnt"
@@ -14159,7 +14159,7 @@ msgstr "ansonsten werden diese erst nach Loslassen der Maustaste verarbeitet."
 
 #: meerk40t/gui/wxmmain.py:1668
 msgid "NB: This applies only for time-consuming updates"
-msgstr "NB: Dies gilt nur für zeitaufwendige Operationen"
+msgstr "NB: Dies gilt nur für zeitaufwendige Arbeitsgänge"
 
 #: meerk40t/image/imagetools.py:772
 msgid "Center image on import"
@@ -14545,7 +14545,7 @@ msgstr ""
 
 #: meerk40t/gui/basicops.py:449
 msgid "Suppress non-used operations"
-msgstr "Unterdrücke nicht verwendete Operationen"
+msgstr "Unterdrücke nicht verwendete Arbeitsgänge"
 
 #: meerk40t/gui/basicops.py:591
 msgid "Set coolant to on/off or leave unchanged (default)"
@@ -15985,7 +15985,7 @@ msgstr "Entferne den Schlüsselloch-Effekt"
 
 #: meerk40t/core/elements/elements.py:217
 msgid "Legacy Classify"
-msgstr "Alte Klassifizierung-Logik"
+msgstr "Alte Zuordnungs-Logik"
 
 #: meerk40t/core/elements/elements.py:490
 msgid "Reuse existing"
@@ -16784,7 +16784,7 @@ msgstr "Bild exportieren"
 
 #: meerk40t/gui/propertypanels/hatchproperty.py:336
 msgid "Color classify"
-msgstr "Reklassifizierung"
+msgstr "Zuordnung nach Farbe"
 
 #: meerk40t/gui/propertypanels/placementproperty.py:1133
 msgid "Create template"
@@ -17759,7 +17759,7 @@ msgstr "Rechtsclick: Autofocus der Z-Position"
 
 #: meerk40t/core/elements/elements.py:334
 msgid "Classify elements on fill"
-msgstr "Klasifizierung mittel Füllfarbe"
+msgstr "Zuordnung über Füllfarbe"
 
 #: meerk40t/core/elements/elements.py:337
 msgid ""
@@ -18670,7 +18670,7 @@ msgstr "Ungültiger Index für das Einfügen des Befehls."
 
 #: meerk40t/core/planner.py:999
 msgid "Returned Operations."
-msgstr "Zurückgegebene Operationen."
+msgstr "Zurückgegebene Arbeitsgänge."
 
 #: meerk40t/core/space.py:77
 msgid "tat"
@@ -18914,7 +18914,7 @@ msgstr "{index}: {name} - label = {label}"
 
 #: meerk40t/core/elements/branches.py:583
 msgid "Remove all elements from provided operations"
-msgstr "Entferne alle Elemente aus den angegebenen Operationen"
+msgstr "Entferne alle Elemente aus den angegebenen Arbeitsgänge"
 
 #: meerk40t/core/elements/branches.py:606
 #: meerk40t/core/elements/branches.py:1686
@@ -18991,7 +18991,7 @@ msgstr "Schrittweite für {name} ist aktuell: {dpi}"
 
 #: meerk40t/core/elements/branches.py:904
 msgid "No raster operations selected."
-msgstr "Keine Rasteroperationen ausgewählt."
+msgstr "Keine RasterArbeitsgänge ausgewählt."
 
 #: meerk40t/core/elements/branches.py:986
 msgid "power in pulses per inch (ppi, 1000=max)"
@@ -19031,7 +19031,7 @@ msgstr "Durchgänge für '{name}' geändert von {old_passes} auf {passes}"
 
 #: meerk40t/core/elements/branches.py:1135
 msgid "Set hatch-distance of operations"
-msgstr "Schraffurabstand der Operationen festlegen"
+msgstr "Schraffurabstand der Arbeitsgänge festlegen"
 
 #: meerk40t/core/elements/branches.py:1142
 msgid "Change hatch-distance by this amount."
@@ -19052,7 +19052,7 @@ msgstr ""
 
 #: meerk40t/core/elements/branches.py:1201
 msgid "Set hatch-angle of operations"
-msgstr "Schraffurwinkel der Operationen festlegen"
+msgstr "Schraffurwinkel der Arbeitsgänge festlegen"
 
 #: meerk40t/core/elements/branches.py:1207
 msgid "Change hatch-angle by this amount."
@@ -20115,7 +20115,7 @@ msgstr "Operationseigenschaft auf neuen Wert setzen"
 
 #: meerk40t/core/elements/shapes.py:1076
 msgid "No selected operations."
-msgstr "Keine ausgewählten Operationen."
+msgstr "Keine ausgewählten Arbeitsgänge."
 
 #: meerk40t/core/elements/shapes.py:1176
 msgid "Operation {name} has no property {field}"
@@ -20242,11 +20242,11 @@ msgstr "Pfade umwandeln"
 
 #: meerk40t/core/elements/shapes.py:2772
 msgid "classify elements into operations"
-msgstr "Elemente in Operationen klassifizieren"
+msgstr "Elemente in Arbeitsgänge zuordnen"
 
 #: meerk40t/core/elements/shapes.py:2803
 msgid "declassify selected elements"
-msgstr "Ausgewählte Elemente deklassifizieren"
+msgstr "Ausgewählte Elemente nicht länger zuordnen"
 
 #: meerk40t/core/elements/shapes.py:2832
 msgid "Tolerance to stitch paths together"
@@ -22439,7 +22439,7 @@ msgid ""
 "believed to be small enough to be undetectable, you may wish to leave this "
 "permanently checked."
 msgstr ""
-"Während die Pulsgruppierungsoption in den Operationen für diese Operation "
+"Während die Pulsgruppierungsoption in den Arbeitsgänge für diese Operation "
 "vor dem Start des Auftrags festgelegt wird und nicht während des Betriebs "
 "geändert werden kann, wird diese globale Pulsgruppierungsoption überprüft, "
 "während Anweisungen an den Laser gesendet werden, und kann während des "
@@ -23260,7 +23260,7 @@ msgstr "GUI-Verhalten"
 
 #: meerk40t/core/elements/elements.py:519
 msgid "Default Operations"
-msgstr "Standard-Operationen"
+msgstr "Standard-Arbeitsgänge"
 
 #: meerk40t/extra/hershey.py:820
 msgid "System font locations"
@@ -23828,7 +23828,7 @@ msgid ""
 "operations"
 msgstr ""
 "plan<?> copy / copy-selected: Daten von allen / nur von ausgewählten "
-"Operationen kopieren"
+"Arbeitsgänge kopieren"
 
 #: meerk40t/core/elements/grid.py:125
 msgid "Origin"
@@ -23904,7 +23904,7 @@ msgstr "Spule Daten {count}"
 
 #: meerk40t/core/planner.py:719 meerk40t/core/planner.py:780
 msgid "Adding trailing operations"
-msgstr "Füge nachfolgende Operationen hinzu"
+msgstr "Füge nachfolgende Arbeitsgänge hinzu"
 
 #: meerk40t/core/planner.py:744
 msgid "Copying data {count}"
@@ -23977,7 +23977,7 @@ msgstr "Gruppierung + Dateien"
 
 #: meerk40t/device/gui/formatterpanel.py:159
 msgid "Operations (Special)"
-msgstr "Operationen (Spezial)"
+msgstr "Arbeitsgänge (Spezial)"
 
 #: meerk40t/device/gui/formatterpanel.py:160
 msgid "Elements (Effects)"
@@ -24026,7 +24026,7 @@ msgstr "Elemente für optimalen Schnitt innerhalb einer Operation neu anordnen"
 
 #: meerk40t/core/elements/manual_optimize.py:115
 msgid "No operations to optimize"
-msgstr "Keine Operationen zum Optimieren vorhanden"
+msgstr "Keine Arbeitsgänge zum Optimieren vorhanden"
 
 #: meerk40t/core/elements/manual_optimize.py:431
 msgid "Geometric tolerance for containment analysis"
@@ -24035,12 +24035,12 @@ msgstr "Geometrische Toleranz für die Einschlussanalyse"
 #: meerk40t/core/elements/manual_optimize.py:435
 msgid "Optimize selected operations using containment-aware workflow"
 msgstr ""
-"Ausgewählte Operationen mit einschlussbasierter Workflow-Optimierung "
+"Ausgewählte Arbeitsgänge mit einschlussbasierter Workflow-Optimierung "
 "optimieren"
 
 #: meerk40t/core/elements/manual_optimize.py:447
 msgid "No operations selected for workflow optimization"
-msgstr "Keine Operationen für die Workflow-Optimierung ausgewählt"
+msgstr "Keine Arbeitsgänge für die Workflow-Optimierung ausgewählt"
 
 #: meerk40t/core/elements/manual_optimize.py:464
 msgid "Workflow Optimization Results:"
@@ -24357,7 +24357,7 @@ msgstr "den Plan als fertig betrachten"
 
 #: meerk40t/core/planner.py:976
 msgid "extract the operations from the plan back to the tree"
-msgstr "die Operationen aus dem Plan zurück in den Baum extrahieren"
+msgstr "die Arbeitsgänge aus dem Plan zurück in den Baum extrahieren"
 
 #: meerk40t/core/planner.py:1011
 msgid "extract a sublist from the plan"
@@ -24385,19 +24385,19 @@ msgstr "Den Laser relativ zu seiner aktuellen Position bewegen."
 
 #: meerk40t/core/elements/branches.py:208
 msgid "selected operations"
-msgstr "ausgewählte Operationen"
+msgstr "ausgewählte Arbeitsgänge"
 
 #: meerk40t/core/elements/branches.py:214
 msgid "all operations"
-msgstr "alle Operationen"
+msgstr "alle Arbeitsgänge"
 
 #: meerk40t/core/elements/branches.py:221
 msgid "non selected operations."
-msgstr "nicht ausgewählte Operationen."
+msgstr "nicht ausgewählte Arbeitsgänge."
 
 #: meerk40t/core/elements/branches.py:228
 msgid "selected operations."
-msgstr "ausgewählte Operationen."
+msgstr "ausgewählte Arbeitsgänge."
 
 #: meerk40t/core/elements/branches.py:235
 msgid "operation #0 and #2"
@@ -24614,7 +24614,7 @@ msgstr "eine wachsende Form erstellen"
 #: meerk40t/gui/materialmanager.py:1879
 #: meerk40t/gui/statusbarwidgets/defaultoperations.py:269
 msgid "Load operations from material"
-msgstr "Operationen aus Material laden"
+msgstr "Arbeitsgänge aus Material laden"
 
 #: meerk40t/gui/materialmanager.py:3130
 msgid "Move to Top"
@@ -24650,7 +24650,7 @@ msgstr "Setzt/löscht eine Magnetlinie auf der Szene"
 
 #: meerk40t/gui/statusbarwidgets/defaultoperations.py:403
 msgid "Sync to tree operations"
-msgstr "Mit Baumoperationen synchronisieren"
+msgstr "Mit angezeigten Arbeitsgängen synchronisieren"
 
 #: meerk40t/gui/statusbarwidgets/defaultoperations.py:408
 msgid "Keep order (as in tree)"
@@ -26048,3 +26048,267 @@ msgstr ""
 #: meerk40t/gui/wordlisteditor.py:640
 msgid "Rename failed"
 msgstr "Umbenennen fehlgeschlagen"
+
+#: meerk40t/core/elements/elements.py:2919
+msgid "Classify elements"
+msgstr "Elemente zuordnen"
+
+#: meerk40t/core/elements/wordlist.py:224
+msgid "Warnings during load:"
+msgstr "Warnungen während des Ladevorgangs:"
+
+#: meerk40t/core/elements/wordlist.py:298
+msgid "Warnings during CSV load:"
+msgstr "Warnungen beim CSV-Laden:"
+
+#: meerk40t/extra/vectrace.py:18
+msgid "Vectrace"
+msgstr "Vectrace"
+
+#: meerk40t/gui/gui_mixins.py:161
+msgid "Paste format"
+msgstr "Einfügeformat"
+
+#: meerk40t/gui/snapoptions.py:87 meerk40t/gui/wxmmain.py:1570
+#: meerk40t/gui/wxmmain.py:1578
+msgid "Instant Snap Display"
+msgstr "Sofortige Anzeige der Fangpunkte"
+
+#: meerk40t/gui/snapoptions.py:89
+msgid ""
+"Calculate and display snap points immediately during mouse movement (may "
+"affect performance)"
+msgstr ""
+"Fangpunkte sofort während der Mausbewegung berechnen und anzeigen (kann die "
+"Leistung beeinträchtigen)"
+
+#: meerk40t/gui/snapoptions.py:91
+msgid ""
+"If disabled, snap points are only calculated when the mouse is not moving"
+msgstr ""
+"Wenn deaktiviert, werden Fangpunkte nur berechnet, wenn die Maus stillsteht"
+
+#: meerk40t/gui/wordlisteditor.py:269
+msgid "Filter:"
+msgstr "Filter:"
+
+#: meerk40t/gui/wordlisteditor.py:409
+msgid "Jump"
+msgstr "Springen"
+
+#: meerk40t/gui/wordlisteditor.py:410
+msgid "Jump to a specific index"
+msgstr "Zu einem bestimmten Index springen"
+
+#: meerk40t/gui/wordlisteditor.py:436
+msgid "Preview the translation of the pattern"
+msgstr "Vorschau der Übersetzung des Musters"
+
+#: meerk40t/gui/wordlisteditor.py:565 meerk40t/gui/wordlisteditor.py:1064
+#: meerk40t/gui/wordlisteditor.py:1523
+msgid "Delete variable '{key}'?"
+msgstr "Variable '{key}' löschen?"
+
+#: meerk40t/gui/wordlisteditor.py:583 meerk40t/gui/wordlisteditor.py:860
+#: meerk40t/gui/wordlisteditor.py:1127 meerk40t/gui/wordlisteditor.py:1196
+#: meerk40t/gui/wordlisteditor.py:1250
+msgid "No variable selected"
+msgstr "Keine Variable ausgewählt"
+
+#: meerk40t/gui/wordlisteditor.py:590 meerk40t/gui/wordlisteditor.py:1208
+msgid "Entry already exists"
+msgstr "Eintrag existiert bereits"
+
+#: meerk40t/gui/wordlisteditor.py:592 meerk40t/gui/wordlisteditor.py:1202
+#: meerk40t/gui/wordlisteditor.py:1210
+msgid "Invalid entry"
+msgstr "Ungültiger Eintrag"
+
+#: meerk40t/gui/wordlisteditor.py:594 meerk40t/gui/wordlisteditor.py:1212
+msgid "Failed to add entry"
+msgstr "Einfügen des Eintrags fehlgeschlagen"
+
+#: meerk40t/gui/wordlisteditor.py:614 meerk40t/gui/wordlisteditor.py:1233
+msgid "Delete entry '{entry}'?"
+msgstr "Eintrag '{entry}' löschen?"
+
+#: meerk40t/gui/wordlisteditor.py:653
+msgid "Paste {n} entries into '{key}'?"
+msgstr "{n} Einträge in '{key}' einfügen?"
+
+#: meerk40t/gui/wordlisteditor.py:654
+msgid "Confirm Paste"
+msgstr "Einfügen bestätigen"
+
+#: meerk40t/gui/wordlisteditor.py:686
+msgid "Count"
+msgstr "Anzahl"
+
+#: meerk40t/gui/wordlisteditor.py:864
+msgid "Selected variable has no entries"
+msgstr "Die ausgewählte Variable hat keine Einträge"
+
+#: meerk40t/gui/wordlisteditor.py:869
+msgid "Index:"
+msgstr "Index:"
+
+#: meerk40t/gui/wordlisteditor.py:870
+msgid "Enter the zero-based index to jump to:"
+msgstr "Geben Sie den nullbasierten Index ein, zu dem gesprungen werden soll:"
+
+#: meerk40t/gui/wordlisteditor.py:871
+msgid "Jump to index"
+msgstr "Zum Index springen"
+
+#: meerk40t/gui/wordlisteditor.py:886
+msgid "Invalid index"
+msgstr "Ungültiger Index"
+
+#: meerk40t/gui/wordlisteditor.py:891
+msgid "Index out of range (0..{max})"
+msgstr "Index außerhalb des Bereichs (0..{max})"
+
+#: meerk40t/gui/wordlisteditor.py:912
+msgid "Jump failed: {err}"
+msgstr "Sprung fehlgeschlagen: {err}"
+
+#: meerk40t/gui/wordlisteditor.py:1011
+msgid "Add..."
+msgstr "Hinzufügen..."
+
+#: meerk40t/gui/wordlisteditor.py:1012
+msgid "Edit..."
+msgstr "Bearbeiten..."
+
+#: meerk40t/gui/wordlisteditor.py:1027
+msgid "New variable name:"
+msgstr "Neuer Variablenname:"
+
+#: meerk40t/gui/wordlisteditor.py:1027
+msgid "Add Wordlist Variable"
+msgstr "Wordlist-Variable hinzufügen"
+
+#: meerk40t/gui/wordlisteditor.py:1033 meerk40t/gui/wordlisteditor.py:1473
+#: meerk40t/gui/wordlisteditor.py:1505
+msgid "Variable '%s' already exists"
+msgstr "Variable '%s' existiert bereits"
+
+#: meerk40t/gui/wordlisteditor.py:1083
+msgid "Delete CSV File..."
+msgstr "CSV-Datei löschen..."
+
+#: meerk40t/gui/wordlisteditor.py:1131
+msgid "Variable not found"
+msgstr "Variable nicht gefunden"
+
+#: meerk40t/gui/wordlisteditor.py:1135 meerk40t/gui/wordlisteditor.py:1138
+msgid "Selected variable is not CSV-based"
+msgstr "Ausgewählte Variable ist nicht CSV-basiert"
+
+#: meerk40t/gui/wordlisteditor.py:1144
+msgid "Delete this entry and all other related CSV entries?"
+msgstr "Diesen Eintrag und alle zugehörigen CSV-Einträge löschen?"
+
+#: meerk40t/gui/wordlisteditor.py:1164
+msgid "Deleted CSV file entries"
+msgstr "CSV-Dateieinträge gelöscht"
+
+#: meerk40t/gui/wordlisteditor.py:1175
+msgid "Add Entry..."
+msgstr "Eintrag hinzufügen..."
+
+#: meerk40t/gui/wordlisteditor.py:1176
+msgid "Paste Entries"
+msgstr "Einträge einfügen"
+
+#: meerk40t/gui/wordlisteditor.py:1180
+msgid "Edit Entry..."
+msgstr "Eintrag bearbeiten..."
+
+#: meerk40t/gui/wordlisteditor.py:1181
+msgid "Delete Entry"
+msgstr "Eintrag löschen"
+
+#: meerk40t/gui/wordlisteditor.py:1199
+msgid "New entry value:"
+msgstr "Neuer Eintragswert:"
+
+#: meerk40t/gui/wordlisteditor.py:1199
+msgid "Add Entry"
+msgstr "Eintrag hinzufügen"
+
+#: meerk40t/gui/wordlisteditor.py:1258
+msgid "Clipboard empty or unavailable"
+msgstr "Zwischenablage leer oder nicht verfügbar"
+
+#: meerk40t/gui/wordlisteditor.py:1262
+msgid "Clipboard empty"
+msgstr "Zwischenablage leer"
+
+#: meerk40t/gui/wordlisteditor.py:1284
+msgid "Pasted {a} entries, skipped {s} duplicates"
+msgstr "{a} Einträge eingefügt, {s} Duplikate übersprungen"
+
+#: meerk40t/gui/wordlisteditor.py:1290
+msgid "Pasted {a} entries, skipped {s} duplicates, {i} invalid"
+msgstr "{a} Einträge eingefügt, {s} Duplikate übersprungen, {i} ungültig"
+
+#: meerk40t/gui/wordlisteditor.py:1332
+msgid "Invalid name"
+msgstr "Ungültiger Name"
+
+#: meerk40t/gui/wordlisteditor.py:1338
+msgid "Can't rename to internal variable name"
+msgstr "Kann nicht in einen internen Variablennamen umbenennen"
+
+#: meerk40t/gui/wordlisteditor.py:1344
+msgid "A variable with that name already exists"
+msgstr "Eine Variable mit diesem Namen existiert bereits"
+
+#: meerk40t/gui/wordlisteditor.py:1469 meerk40t/gui/wordlisteditor.py:1501
+msgid "Invalid variable name"
+msgstr "Ungültiger Variablenname"
+
+#: meerk40t/gui/wordlisteditor.py:1477 meerk40t/gui/wordlisteditor.py:1510
+msgid "Can't create internal variable {key}"
+msgstr "Interne Variable {key} kann nicht erstellt werden"
+
+#: meerk40t/gui/wordlisteditor.py:1545
+msgid "Restored with warnings from "
+msgstr "Wiederhergestellt mit Warnungen von "
+
+#: meerk40t/gui/wordlisteditor.py:1552
+msgid "Restored from "
+msgstr "Wiederhergestellt von "
+
+#: meerk40t/gui/wordlisteditor.py:1659 meerk40t/gui/wordlisteditor.py:1689
+msgid "Imported file with warnings, {col} fields, {row} rows"
+msgstr "Datei mit Warnungen importiert, {col} Felder, {row} Zeilen"
+
+#: meerk40t/gui/wordlisteditor.py:1785
+msgid "Wordlist editor failed to initialize"
+msgstr "Wortlisten-Editor konnte nicht initialisiert werden"
+
+#: meerk40t/gui/wordlisteditor.py:1796
+msgid "CSV Import panel failed to initialize"
+msgstr "CSV-Import-Panel konnte nicht initialisiert werden"
+
+#: meerk40t/gui/wordlisteditor.py:1807
+msgid "About panel failed to initialize"
+msgstr "Das 'Über'-Panel konnte nicht initialisiert werden"
+
+#: meerk40t/gui/wxmmain.py:1574
+msgid ""
+"Calculate and display snap points immediately during mouse movement (may affect performance)\n"
+"If disabled, snap points are only calculated when the mouse is not moving"
+msgstr ""
+"Fangpunkte sofort während der Mausbewegung berechnen und anzeigen (kann die Leistung beeinträchtigen)\n"
+"Wenn deaktiviert, werden Fangpunkte nur berechnet, wenn die Maus nicht bewegt wird"
+
+#: meerk40t/image/imagetools.py:2676
+msgid "Create lines"
+msgstr "Linien erstellen"
+
+#: meerk40t/tools/livinghinges.py:697
+msgid "Living hinge"
+msgstr "Flexibles Scharnier"
