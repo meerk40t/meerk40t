@@ -129,6 +129,7 @@ def init_commands(kernel):
             if value is None:
                 value = ""
             self.mywordlist.add(key, value)
+            self.signal("wordlist_modified")
         return "wordlist", key
 
     @self.console_argument("key", help=_("Wordlist value"))
@@ -149,6 +150,7 @@ def init_commands(kernel):
                 except ValueError:
                     value = 1
             self.mywordlist.add(key, value, 2)
+            self.signal("wordlist_modified")
         return "wordlist", key
 
     @self.console_argument("key", help=_("Wordlist value"))
@@ -180,6 +182,7 @@ def init_commands(kernel):
     def wordlist_set(command, channel, _, key=None, value=None, index=None, **kwargs):
         if key is not None and value is not None:
             self.mywordlist.set_value(skey=key, value=value, idx=index)
+            self.signal("wordlist_modified")
         else:
             channel(_("Not enough parameters given"))
         return "wordlist", key
@@ -197,6 +200,7 @@ def init_commands(kernel):
     )
     def wordlist_index(command, channel, _, key=None, index=None, **kwargs):
         self.mywordlist.set_index(skey=key, idx=index)
+        self.signal("wordlist_modified")
         return "wordlist", key
 
     @self.console_argument(
@@ -220,6 +224,7 @@ def init_commands(kernel):
             channel(_("Warnings during load:"))
             for warning in self.mywordlist.get_warnings():
                 channel("  " + warning)
+        self.signal("wordlist_modified")
         return "wordlist", ""
 
     @self.console_argument(
@@ -252,11 +257,17 @@ def init_commands(kernel):
             for skey in self.mywordlist.content:
                 channel(str(skey))
         else:
-            if key in self.mywordlist.content:
-                wordlist = self.mywordlist.content[key]
+            # Normalize the provided key so lookups are consistent with core wordlist behavior
+            skey = self.mywordlist._normalize_key(key)
+            if skey is None:
+                channel(_("Missing key"))
+                channel("----------")
+                return "wordlist", key
+            if skey in self.mywordlist.content:
+                wordlist = self.mywordlist.content[skey]
                 channel(
                     _("Wordlist {name} (Type={type}, Index={index}):").format(
-                        name=key, type=wordlist[0], index=wordlist[1] - 2
+                        name=skey, type=wordlist[0], index=wordlist[1] - 2
                     )
                 )
                 for idx, value in enumerate(wordlist[2:]):
@@ -287,6 +298,7 @@ def init_commands(kernel):
             channel(_("Warnings during CSV load:"))
             for warning in self.mywordlist.get_load_warnings():
                 channel("  " + warning)
+        self.signal("wordlist_modified")
         channel(_("Rows added: {rows}").format(rows=rows))
         channel(_("Values added: {values}").format(columns=columns))
         for name in names:
@@ -319,6 +331,7 @@ def init_commands(kernel):
         if usage:
             channel("Advancing wordlist indices")
             self.mywordlist.move_all_indices(1)
+            self.signal("wordlist_modified")
             self.signal("refresh_scene", "Scene")
         else:
             channel("Leaving wordlist indices untouched as no usage detected")

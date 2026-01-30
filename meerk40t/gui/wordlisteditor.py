@@ -39,7 +39,14 @@ class VirtualContentList(wxListCtrl):
     responsive.
     """
 
-    def __init__(self, parent, id=wx.ID_ANY, style=wx.LC_REPORT | wx.LC_VIRTUAL | wx.LC_SINGLE_SEL | wx.LC_EDIT_LABELS, context=None, list_name=None):
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        style=wx.LC_REPORT | wx.LC_VIRTUAL | wx.LC_SINGLE_SEL | wx.LC_EDIT_LABELS,
+        context=None,
+        list_name=None,
+    ):
         # Ensure the control is created with LC_VIRTUAL regardless of caller-supplied style
         style = style | wx.LC_VIRTUAL
         # Note: call super with positional id to match wrapper signature in wxutils.wxListCtrl
@@ -59,16 +66,14 @@ class VirtualContentList(wxListCtrl):
             pass
 
     def set_key(self, key, wlist, current=None):
-        """Bind the control to a specific wordlist key and set the visible count."""
+        """Bind the control to a specific wordlist key and set the current index.
+
+        Note: callers should update the item count with SetItemCount(total) after
+        calling this method to avoid redundant work.
+        """
         self.key = key
         self.wlist = wlist
         self.current = current
-        total = 0
-        if key in wlist.content:
-            total = max(0, len(wlist.content[key]) - 2)
-        self.SetItemCount(total)
-        # Refresh to ensure OnGetItemText/Attr are called for visible items
-        self.Refresh()
 
     def set_current(self, current):
         self.current = current
@@ -91,7 +96,6 @@ class VirtualContentList(wxListCtrl):
 
 
 _ = wx.GetTranslation
-
 
 
 def register_panel_wordlist(window, context):
@@ -589,6 +593,11 @@ class WordlistPanel(wx.Panel):
             return
         self.refresh_grid_content(skey, 0)
         self.autosave()
+        # Update the wordlist overview (counts)
+        try:
+            self.refresh_grid_wordlist()
+        except Exception:
+            pass
 
     def on_btn_edit_content_del(self, event):
         skey = self.cur_skey
@@ -608,6 +617,10 @@ class WordlistPanel(wx.Panel):
             self.wlist.delete_value(skey, index)
             self.refresh_grid_content(skey, 0)
             self.autosave()
+            try:
+                self.refresh_grid_wordlist()
+            except Exception:
+                pass
         dlg.Destroy()
 
     def on_btn_edit_content_edit(self, event):
@@ -644,15 +657,31 @@ class WordlistPanel(wx.Panel):
                     self.wlist.add_value(skey, entry, 0)
                 self.refresh_grid_content(skey, 0)
                 self.autosave()
+                try:
+                    self.refresh_grid_wordlist()
+                except Exception:
+                    pass
             dlg.Destroy()
 
     def refresh_grid_wordlist(self):
+        # Preserve selection so we can restore it after repopulating the grid
+        prev_selected = None
+        try:
+            sel_idx = self.grid_wordlist.GetFirstSelected()
+            if sel_idx >= 0:
+                prev_selected = self.get_column_text(
+                    self.grid_wordlist, sel_idx, 0
+                ).lower()
+        except Exception:
+            prev_selected = None
+
         self.current_entry = None
         self.grid_wordlist.ClearAll()
         self.cur_skey = None
         self.grid_wordlist.InsertColumn(0, _("Name"))
         self.grid_wordlist.InsertColumn(1, _("Type"))
         self.grid_wordlist.InsertColumn(2, _("Index"))
+        self.grid_wordlist.InsertColumn(3, _("Count"))
         typestr = [_("Text"), _("CSV"), _("Counter")]
         filt = getattr(self, "filter_text", "")
         if filt is None:
@@ -666,10 +695,28 @@ class WordlistPanel(wx.Panel):
             )
             self.grid_wordlist.SetItem(index, 1, typestr[self.wlist.content[skey][0]])
             self.grid_wordlist.SetItem(index, 2, str(self.wlist.content[skey][1] - 2))
+            # Number of entries (excluding the two control entries)
+            count = max(0, len(self.wlist.content[skey]) - 2)
+            self.grid_wordlist.SetItem(index, 3, str(count))
         self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE_USEHEADER)
         self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER)
+        self.grid_wordlist.SetColumnWidth(3, wx.LIST_AUTOSIZE_USEHEADER)
         self.grid_wordlist.resize_columns()
+
+        # Try to restore previous selection if possible
+        if prev_selected:
+            try:
+                for idx in range(self.grid_wordlist.GetItemCount()):
+                    if (
+                        self.get_column_text(self.grid_wordlist, idx, 0).lower()
+                        == prev_selected
+                    ):
+                        self.grid_wordlist.Select(idx, True)
+                        self.grid_wordlist.SetFocus()
+                        break
+            except Exception:
+                pass
 
     def get_column_text(self, grid, index, col):
         item = grid.GetItem(index, col)
@@ -680,6 +727,8 @@ class WordlistPanel(wx.Panel):
         grid.SetItem(index, col, value)
 
     def refresh_grid_content(self, skey, current):
+        import time
+
         self.cbo_index_single.Clear()
         choices = []
         selidx = 0
@@ -698,21 +747,62 @@ class WordlistPanel(wx.Panel):
             return
 
         total_items = max(0, len(self.wlist.content[key_lower]) - 2)
-        # Populate full choices list; the grid is virtual and will render items on demand
-        for idx in range(2, 2 + total_items):
+        # Prepare a small immediate-choice placeholder and arrange for lazy full population
+        placeholder_limit = min(10, total_items)
+        for idx in range(2, 2 + placeholder_limit):
             myidx = idx - 2
             s_entry = str(self.wlist.content[key_lower][idx])
             choices.append(f"{myidx:3d} - {s_entry[:10]}")
+        if total_items > placeholder_limit:
+            choices.append("...")
+        # Record count for lazy population when the user opens the dropdown
+        self._cbo_index_single_count = total_items
+        # Bind the dropdown event for lazy expansion if not already bound
+        if not hasattr(self, "_cbo_single_bound") or not self._cbo_single_bound:
+            try:
+                self.cbo_index_single.Bind(
+                    wx.EVT_COMBOBOX_DROPDOWN, self.on_cbo_index_single_dropdown
+                )
+                self._cbo_single_bound = True
+            except Exception:
+                try:
+                    self.cbo_index_single.Bind(
+                        wx.EVT_DROPDOWN, self.on_cbo_index_single_dropdown
+                    )
+                    self._cbo_single_bound = True
+                except Exception:
+                    # fallback: will keep the placeholder list
+                    pass
 
-        # Populate the combo and set grid to virtual mode
-        self.cbo_index_single.Set(choices)
-        if selidx >= 0 and selidx < len(choices):
-            self.cbo_index_single.SetSelection(selidx)
+        # Freeze UI updates to batch expensive operations
+        try:
+            self.Freeze()
+        except Exception:
+            pass
+        try:
+            self.grid_content.Freeze()
+        except Exception:
+            pass
+        try:
+            self.cbo_index_single.Freeze()
+        except Exception:
+            pass
 
         # Set the virtual list's key and highlight the current index
         self.grid_content.set_key(key_lower, self.wlist, current)
         # Set item count to total items (virtual mode will fetch content on demand)
         self.grid_content.SetItemCount(total_items)
+        # If a current index was provided, ensure it is selected and visible
+        if current is not None and 0 <= current < total_items:
+            try:
+                self.grid_content.Select(current, True)
+                self.grid_content.Focus()
+                try:
+                    self.grid_content.EnsureVisible(current)
+                except Exception:
+                    pass
+            except Exception:
+                pass
         # Populate combo and adjust column width
         self.cbo_index_single.Set(choices)
         if selidx >= 0 and selidx < len(choices):
@@ -720,6 +810,47 @@ class WordlistPanel(wx.Panel):
         wsize = self.grid_content.GetSize()
         self.grid_content.SetColumnWidth(0, wsize[0] - 10)
         self.grid_content.resize_columns()
+
+        # Thaw UI updates
+        try:
+            self.cbo_index_single.Thaw()
+        except Exception:
+            pass
+        try:
+            self.grid_content.Thaw()
+        except Exception:
+            pass
+        try:
+            self.Thaw()
+        except Exception:
+            pass
+
+    def on_cbo_index_single_dropdown(self, event):
+        # Lazily populate the single-index combo with the full list when opened
+        try:
+            count = getattr(self, "_cbo_index_single_count", 0)
+            if count and (
+                not self.cbo_index_single.GetItems()
+                or len(self.cbo_index_single.GetItems()) < count
+            ):
+                try:
+                    items = [
+                        f"{i:3d} - {str(self.wlist.content[self.cur_skey][i + 2])[:10]}"
+                        for i in range(count)
+                    ]
+                except Exception:
+                    items = [str(i) for i in range(count)]
+                try:
+                    self.cbo_index_single.Freeze()
+                except Exception:
+                    pass
+                self.cbo_index_single.Set(items)
+                try:
+                    self.cbo_index_single.Thaw()
+                except Exception:
+                    pass
+        finally:
+            event.Skip()
 
     def on_jump_index(self, event):
         """Prompt the user for an index and jump the grid to that index."""
@@ -744,26 +875,72 @@ class WordlistPanel(wx.Panel):
         except Exception:
             value = None
         # wx.GetNumberFromUser returns -1 on cancel in some versions
-        if value is None or value < 0:
+        if value is None or (isinstance(value, int) and value < 0):
+            return
+        try:
+            value = int(value)
+        except Exception:
+            # invalid input
+            self.edit_message(_("Invalid index"))
+            return
+        # Bound-check the value
+        if value < 0 or value >= total_items:
+            self.edit_message(
+                _("Index out of range (0..{max})").format(max=total_items - 1)
+            )
             return
         # Commit index and refresh
-        self.wlist.set_index(self.cur_skey, value)
-        self.refresh_grid_content(self.cur_skey, value)
-        # Ensure selection in virtual grid
         try:
-            self.grid_content.Select(value, True)
-            self.grid_content.Focus()
-        except Exception:
-            pass
+            self.wlist.set_index(self.cur_skey, value)
+            self.refresh_grid_content(self.cur_skey, value)
+            # Ensure selection in virtual grid (only if within bounds)
+            try:
+                self.grid_content.Select(value, True)
+                self.grid_content.Focus()
+                try:
+                    self.grid_content.EnsureVisible(value)
+                except Exception:
+                    # Some wx versions or controls may not implement EnsureVisible
+                    pass
+            except Exception:
+                # Selection may fail on some wx versions or if control not ready
+                pass
+        except Exception as e:
+            # Catch any unexpected error and report it instead of crashing
+            self.edit_message(_("Jump failed: {err}").format(err=str(e)))
+            return
         # Autosave if enabled
         self.autosave()
         wsize = self.grid_content.GetSize()
         self.grid_content.SetColumnWidth(0, wsize[0] - 10)
         self.grid_content.resize_columns()
 
-        self.cbo_index_single.Set(choices)
-        if selidx >= 0:
-            self.cbo_index_single.SetSelection(selidx)
+        # Ensure the single-index combo reflects the current selection.
+        try:
+            items = self.cbo_index_single.GetItems()
+            seltext = (
+                f"{value:3d} - {str(self.wlist.content[self.cur_skey][value + 2])[:10]}"
+            )
+            if seltext in items:
+                self.cbo_index_single.SetStringSelection(seltext)
+            else:
+                # If placeholder present or item missing, force full population then select
+                try:
+                    # Call the dropdown handler to populate the list lazily
+                    class DummyEvent:
+                        def Skip(self):
+                            pass
+
+                    self.on_cbo_index_single_dropdown(DummyEvent())
+                    items = self.cbo_index_single.GetItems()
+                    if seltext in items:
+                        self.cbo_index_single.SetStringSelection(seltext)
+                except Exception:
+                    # Never raise on UI update failures
+                    pass
+        except Exception:
+            # Be robust to missing controls or unexpected states
+            pass
 
     def on_single_index(self, event):
         skey = self.cur_skey
@@ -774,6 +951,16 @@ class WordlistPanel(wx.Panel):
         self.refresh_grid_content(skey, idx)
         # We need to refresh the main_index_column as well
         self.set_column_text(self.grid_wordlist, self.current_entry, 2, str(idx))
+        # Ensure the content grid selects and scrolls to the chosen index
+        try:
+            self.grid_content.Select(idx, True)
+            self.grid_content.Focus()
+            try:
+                self.grid_content.EnsureVisible(idx)
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def on_grid_wordlist(self, event):
         current_item = event.Index
@@ -856,9 +1043,7 @@ class WordlistPanel(wx.Panel):
                 return
             name = name.strip().lower()
             if name in self.wlist.content:
-                self.edit_message(
-                    _("Variable '%s' already exists") % name
-                )
+                self.edit_message(_("Variable '%s' already exists") % name)
                 return
             self.wlist.add_value(name, "---", 0)
             self.autosave()
@@ -882,7 +1067,9 @@ class WordlistPanel(wx.Panel):
                 return
             key = self.get_column_text(self.grid_wordlist, idx, 0)
             if key in self.wlist.prohibited:
-                self.edit_message(_("Can't delete internal variable {key}").format(key=key))
+                self.edit_message(
+                    _("Can't delete internal variable {key}").format(key=key)
+                )
                 return
             # Confirm deletion
             dlg = wx.MessageDialog(
@@ -957,6 +1144,10 @@ class WordlistPanel(wx.Panel):
                 return
             self.autosave()
             self.refresh_grid_content(self.cur_skey, 0)
+            try:
+                self.refresh_grid_wordlist()
+            except Exception:
+                pass
 
         def on_edit_entry(evt):
             idx = self.grid_content.GetFirstSelected()
@@ -978,6 +1169,10 @@ class WordlistPanel(wx.Panel):
                 self.wlist.delete_value(self.cur_skey, idx)
                 self.autosave()
                 self.refresh_grid_content(self.cur_skey, 0)
+                try:
+                    self.refresh_grid_wordlist()
+                except Exception:
+                    pass
             dlg.Destroy()
 
         def on_paste_entries(evt):
@@ -1002,7 +1197,9 @@ class WordlistPanel(wx.Panel):
             skipped = 0
             invalid = 0
             for entry in lines:
-                added_flag, reason = self.wlist.add_value_unique(self.cur_skey, entry, 0)
+                added_flag, reason = self.wlist.add_value_unique(
+                    self.cur_skey, entry, 0
+                )
                 if added_flag:
                     added += 1
                 else:
@@ -1015,13 +1212,15 @@ class WordlistPanel(wx.Panel):
             # Provide clearer summary including invalid entries
             if invalid == 0:
                 self.edit_message(
-                    _("Pasted {a} entries, skipped {s} duplicates").format(a=added, s=skipped)
+                    _("Pasted {a} entries, skipped {s} duplicates").format(
+                        a=added, s=skipped
+                    )
                 )
             else:
                 self.edit_message(
-                    _(
-                        "Pasted {a} entries, skipped {s} duplicates, {i} invalid"
-                    ).format(a=added, s=skipped, i=invalid)
+                    _("Pasted {a} entries, skipped {s} duplicates, {i} invalid").format(
+                        a=added, s=skipped, i=invalid
+                    )
                 )
 
         self.Bind(wx.EVT_MENU, on_add_entry, mi_add)
@@ -1036,6 +1235,7 @@ class WordlistPanel(wx.Panel):
             pos = self.grid_content.ScreenToClient(wx.GetMousePosition())
         self.PopupMenu(menu)
         menu.Destroy()
+
     def on_begin_edit_wordlist(self, event):
         index = self.grid_wordlist.GetFirstSelected()
         if index >= 0:
@@ -1090,10 +1290,10 @@ class WordlistPanel(wx.Panel):
                     self.autosave()
                     self.cur_skey = new_skey
                     self.refresh_grid_content(new_skey, 0)
-                    self.txt_pattern.SetValue(new_skey)
-
-        self.to_save_wordlist = None
-        event.Allow()
+                    try:
+                        self.refresh_grid_wordlist()
+                    except Exception:
+                        pass
 
     def on_begin_edit_content(self, event):
         index = self.grid_content.GetFirstSelected()
@@ -1111,6 +1311,10 @@ class WordlistPanel(wx.Panel):
             value = event.GetText()
             self.wlist.set_value(skey, value, index)
             self.autosave()
+            try:
+                self.refresh_grid_wordlist()
+            except Exception:
+                pass
         self.to_save_content = None
         event.Allow()
 
@@ -1125,14 +1329,53 @@ class WordlistPanel(wx.Panel):
                 i = len(self.wlist.content[skey]) - 2
                 if i > maxidx:
                     maxidx = i
+        # Store index range for lazy population on dropdown to keep UI snappy
         if maxidx >= 0:
-            # Populate the full index range; the combo holds simple strings and is cheap to populate
-            for i in range(maxidx):
-                self.cbo_Index.Append(str(i))
+            self._cbo_index_count = maxidx
+            # show a default 0 value; full population occurs when user opens the dropdown
+            self.cbo_Index.Clear()
             self.cbo_Index.SetValue("0")
+            # Bind dropdown event the first time
+            if not hasattr(self, "_cbo_index_bound") or not self._cbo_index_bound:
+                try:
+                    self.cbo_Index.Bind(
+                        wx.EVT_COMBOBOX_DROPDOWN, self.on_cbo_index_dropdown
+                    )
+                    self._cbo_index_bound = True
+                except Exception:
+                    # Some wx versions use EVT_DROPDOWN
+                    try:
+                        self.cbo_Index.Bind(wx.EVT_DROPDOWN, self.on_cbo_index_dropdown)
+                        self._cbo_index_bound = True
+                    except Exception:
+                        # Fallback: populate now
+                        items = [str(i) for i in range(maxidx)]
+                        self.cbo_Index.Set(items)
+                        self.cbo_Index.SetValue("0")
         self.cbo_Index.Enable(True)
         # Let's refresh the scene to acknowledge new changes
         self.context.signal("refresh_scene", "Scene")
+
+    def on_cbo_index_dropdown(self, event):
+        # Populate the index combobox lazily when the user opens the dropdown
+        try:
+            count = getattr(self, "_cbo_index_count", 0)
+            if count and (
+                not self.cbo_Index.GetItems() or len(self.cbo_Index.GetItems()) < count
+            ):
+                items = [str(i) for i in range(count)]
+                try:
+                    self.cbo_Index.Freeze()
+                except Exception:
+                    pass
+                self.cbo_Index.Set(items)
+                try:
+                    self.cbo_Index.Thaw()
+                except Exception:
+                    pass
+        finally:
+            # Let the event proceed so dropdown opens
+            event.Skip()
 
     def edit_message(self, text):
         self.lbl_message.Label = text
@@ -1161,7 +1404,9 @@ class WordlistPanel(wx.Panel):
             self.edit_message(_("Variable '%s' already exists") % skey)
             return
         if skey in self.wlist.prohibited:
-            self.edit_message(_("Can't create internal variable {key}").format(key=skey))
+            self.edit_message(
+                _("Can't create internal variable {key}").format(key=skey)
+            )
             return
         self.wlist.add_value(skey, "---", 0)
         self.autosave()
@@ -1192,7 +1437,9 @@ class WordlistPanel(wx.Panel):
             self.populate_gui()
             return
         if skey in self.wlist.prohibited:
-            self.edit_message(_("Can't create internal variable {key}").format(key=skey))
+            self.edit_message(
+                _("Can't create internal variable {key}").format(key=skey)
+            )
             return
         self.wlist.add_value(skey, 1, 2)
         self.autosave()
@@ -1243,6 +1490,9 @@ class WordlistPanel(wx.Panel):
         self.autosave()
         self.refresh_grid_wordlist()
 
+    @signal_listener("wordlist_modified")
+    def signal_wordlist_modified(self, origin, *args):
+        self.refresh_grid_wordlist()
 
 class ImportPanel(wx.Panel):
     """ImportPanel - User interface panel for laser cutting operations
@@ -1457,7 +1707,9 @@ class WordlistEditor(MWindow):
 
             traceback.print_exc()
             self.panel_editor = wx.Panel(self)
-            st = wx.StaticText(self.panel_editor, wx.ID_ANY, _("Wordlist editor failed to initialize"))
+            st = wx.StaticText(
+                self.panel_editor, wx.ID_ANY, _("Wordlist editor failed to initialize")
+            )
 
         try:
             self.panel_import = ImportPanel(self, wx.ID_ANY, context=self.context)
@@ -1466,7 +1718,9 @@ class WordlistEditor(MWindow):
 
             traceback.print_exc()
             self.panel_import = wx.Panel(self)
-            wx.StaticText(self.panel_import, wx.ID_ANY, _("CSV Import panel failed to initialize"))
+            wx.StaticText(
+                self.panel_import, wx.ID_ANY, _("CSV Import panel failed to initialize")
+            )
 
         try:
             self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)
@@ -1475,7 +1729,9 @@ class WordlistEditor(MWindow):
 
             traceback.print_exc()
             self.panel_about = wx.Panel(self)
-            wx.StaticText(self.panel_about, wx.ID_ANY, _("About panel failed to initialize"))
+            wx.StaticText(
+                self.panel_about, wx.ID_ANY, _("About panel failed to initialize")
+            )
 
         # Give panels a chance to set parent if they implement it
         try:

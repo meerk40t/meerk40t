@@ -882,8 +882,8 @@ class Wordlist:
                             # empty file
                             self._last_load_warnings = list(warnings)
                             return 0, 0, []
-                        # Clean BOM and whitespace from headers
-                        cleaned = [h.lstrip("\ufeff").strip() if h is not None else "" for h in raw_headers]
+                        # Clean BOM and whitespace from headers (remove BOM regardless of surrounding whitespace)
+                        cleaned = [ (h.replace("\ufeff", "") if h is not None else "").strip() for h in raw_headers ]
 
                         headers = []
                         seen = {}
@@ -927,7 +927,7 @@ class Wordlist:
                                     newkey = make_unique(None, idx)
                                     headers.append(newkey)
                                 skey = headers[idx]
-                                clean_entry = entry.lstrip("\ufeff").strip()
+                                clean_entry = entry.replace("\ufeff", "").strip()
                                 self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV)
                             ct += 1
                 except (OSError, PermissionError) as e:
@@ -951,11 +951,8 @@ class Wordlist:
                 except Exception:
                     pass
                 warnings.append(f"CSV raw headers: {raw_headers}")
-                # Clean BOM and whitespace from headers
-                cleaned = [
-                    h.lstrip("\ufeff").strip() if h is not None else ""
-                    for h in raw_headers
-                ]
+                # Clean BOM and whitespace from headers (remove BOM regardless of surrounding whitespace)
+                cleaned = [ (h.replace("\ufeff", "") if h is not None else "").strip() for h in raw_headers ]
 
                 headers = []
                 seen = {}
@@ -998,8 +995,8 @@ class Wordlist:
                             newkey = make_unique(None, idx)
                             headers.append(newkey)
                         skey = headers[idx]
-                        # Clean BOM and whitespace from data values too
-                        clean_entry = entry.lstrip("\ufeff").strip()
+                        # Clean BOM and whitespace from data values too (remove BOM regardless of surrounding whitespace)
+                        clean_entry = entry.replace("\ufeff", "").strip()
                         # Append...
                         self.set_value(
                             skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV
