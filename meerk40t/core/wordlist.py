@@ -83,6 +83,13 @@ class Wordlist:
         'Job #1'
         >>> wl.translate("Job #{counter}")  # Auto-increments
         'Job #2'
+
+    Notes:
+        - Keys are normalized (trimmed and lower-cased). Passing `None`, non-string,
+          or whitespace-only keys to methods is treated as invalid.
+        - Use `has_value(key, entry)` to check membership.
+        - `add_value_unique(key, entry, wtype=None)` will add only if the value is
+          not present and returns a tuple `(added: bool, reason: Optional[str])`.
     """
 
     def __init__(self, versionstr, directory=None):
@@ -124,10 +131,83 @@ class Wordlist:
         self._stack = []
         self.transaction_open = False
         self.content_backup = {}
+        self._last_load_warnings = []
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
         self.load_data(self.default_filename)
+
+    def _normalize_key(self, skey):
+        """Normalize and validate a key.
+
+        Returns a lowercase stripped key string, or None for invalid input (None, non-string, or empty/whitespace-only).
+        """
+        if skey is None or not isinstance(skey, str):
+            return None
+        s = skey.strip()
+        if s == "":
+            return None
+        return s.lower()
+
+    def _is_valid_entry(self, item):
+        """Quick structural validation of an entry loaded from JSON.
+
+        Returns True if item is a list with an allowed type and at least one data value.
+        """
+        if not isinstance(item, list):
+            return False
+        if len(item) < IDX_DATA_START + 1:
+            return False
+        try:
+            t = int(item[IDX_TYPE])
+        except Exception:
+            return False
+        if t not in (TYPE_STATIC, TYPE_CSV, TYPE_COUNTER):
+            return False
+        return True
+
+    def _sanitize_entry(self, item):
+        """Return a sanitized/normalized copy of an entry or None if it cannot be used.
+
+        - Coerces numeric fields, enforces correct lengths, and normalizes positions to valid ranges.
+        """
+        if not isinstance(item, list):
+            return None
+        if len(item) < IDX_DATA_START + 1:
+            return None
+        try:
+            t = int(item[IDX_TYPE])
+        except Exception:
+            return None
+        # reject unknown types
+        if t not in (TYPE_STATIC, TYPE_CSV, TYPE_COUNTER):
+            return None
+        # Position
+        pos = None
+        try:
+            pos = int(item[IDX_POSITION])
+        except Exception:
+            pos = IDX_DATA_START
+
+        if t == TYPE_COUNTER:
+            # Ensure we have a counter value and coerce to int
+            if len(item) <= IDX_DATA_START:
+                return None
+            try:
+                val = int(item[IDX_DATA_START])
+            except Exception:
+                val = 0
+            return [t, IDX_DATA_START, val]
+        else:
+            # Static or CSV: ensure at least one data value
+            data = list(item[IDX_DATA_START:]) if len(item) > IDX_DATA_START else [""]
+            # Normalize position to be within data range
+            maxpos = IDX_DATA_START + len(data) - 1
+            if pos < IDX_DATA_START:
+                pos = IDX_DATA_START
+            if pos > maxpos:
+                pos = maxpos
+            return [t, pos] + data
 
     def add(self, key, value, wtype=None):
         """
@@ -164,7 +244,9 @@ class Wordlist:
         Returns:
             str or None: Value at the specified index, or None if not found
         """
-        skey = skey.lower()
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return None
         result = None
         try:
             wordlist = self.content[skey]
@@ -178,11 +260,10 @@ class Wordlist:
         if idx is None or idx < 0:  # Default
             idx = wordlist[IDX_POSITION]
 
-        if idx <= len(wordlist):
-            try:
-                result = wordlist[idx]
-            except IndexError:
-                result = None
+        if idx < len(wordlist):
+            result = wordlist[idx]
+        else:
+            result = None
         return result
 
     def add_value(self, skey, value, wtype=None):
@@ -198,7 +279,9 @@ class Wordlist:
                 2 = counter (numeric value that increments)
                 If None, defaults to 0 for new variables
         """
-        skey = skey.lower()
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return
         if skey not in self.content:
             if wtype is None:
                 wtype = TYPE_STATIC
@@ -208,6 +291,43 @@ class Wordlist:
             ]  # incomplete, as it will be appended right after this
         self.content[skey].append(value)
 
+    def has_value(self, skey, entry):
+        """Return True if the variable contains an entry equal to `entry` (string comparison)."""
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return False
+        if skey not in self.content:
+            return False
+        try:
+            for v in self.content[skey][IDX_DATA_START:]:
+                if str(v) == str(entry):
+                    return True
+        except Exception:
+            return False
+        return False
+
+    def add_value_unique(self, skey, entry, wtype=None):
+        """
+        Add value only if it does not already exist.
+
+        Returns:
+            (bool, Optional[str]): (added, reason)
+                - (True, None): added successfully
+                - (False, 'invalid_key'): invalid or empty key
+                - (False, 'empty'): entry is None or empty/whitespace
+                - (False, 'duplicate'): entry already exists
+        """
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return False, "invalid_key"
+        # Reject empty entries
+        if entry is None or (isinstance(entry, str) and entry.strip() == ""):
+            return False, "empty"
+        if self.has_value(skey, entry):
+            return False, "duplicate"
+        self.add_value(skey, entry, wtype)
+        return True, None
+
     def delete_value(self, skey, idx):
         """
         Delete a value from a wordlist variable at the specified index.
@@ -216,7 +336,9 @@ class Wordlist:
             skey (str): Variable name (case-insensitive)
             idx (int): Zero-based index of the value to delete
         """
-        skey = skey.lower()
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return
         if skey not in self.content:
             return
         if idx is None or idx < 0:
@@ -254,7 +376,9 @@ class Wordlist:
         # Special treatment:
         # Index = None - use current
         # Index < 0 append
-        skey = skey.lower()
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return
         if skey not in self.content:
             # hasn't been there, so establish it
             if wtype is None:
@@ -279,7 +403,9 @@ class Wordlist:
             self.content[skey][idx] = value
 
     def set_index(self, skey, idx, wtype=None):
-        skey = skey.lower()
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return
 
         if isinstance(idx, str):
             relative = idx.startswith("+") or idx.startswith("-")
@@ -329,8 +455,11 @@ class Wordlist:
         if skey is None:
             for key in self.content:
                 self.content[key][IDX_POSITION] = IDX_DATA_START
-        else:
-            skey = skey.lower()
+            return
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return
+        if skey in self.content:
             self.content[skey][IDX_POSITION] = IDX_DATA_START
 
     def translate(self, pattern, increment=True):
@@ -478,7 +607,7 @@ class Wordlist:
             if "%" in result:
                 # Seems invalid!
                 result = "invalid"
-        except:
+        except Exception:
             result = "invalid"
         return result
 
@@ -492,7 +621,7 @@ class Wordlist:
             if "%" in result:
                 # Seems invalid!
                 result = "invalid"
-        except:
+        except Exception:
             result = "invalid"
 
         return result
@@ -536,12 +665,96 @@ class Wordlist:
         """
         if filename is None:
             filename = self.default_filename
+        warnings = []
         try:
             with open(filename) as f:
-                self.content = json.load(f)
-        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
-            pass
+                raw = json.load(f)
+            new_content = {}
+            if isinstance(raw, dict):
+                for key, item in raw.items():
+                    nk = self._normalize_key(key)
+                    if nk is None:
+                        warnings.append(f"Skipping wordlist entry '{key}': invalid key")
+                        continue
+                    san = self._sanitize_entry(item)
+                    if san is None:
+                        warnings.append(
+                            f"Skipping wordlist entry '{key}': malformed or invalid"
+                        )
+                        continue
+                    new_content[nk] = san
+                # Ensure builtins exist (preserve defaults if not present)
+                for k in self.prohibited:
+                    if k not in new_content:
+                        new_content[k] = self.content.get(
+                            k, [TYPE_STATIC, IDX_DATA_START, f"<{k}>"]
+                        )
+                self.content = new_content
+            else:
+                warnings.append(
+                    f"wordlist file {filename} has non-dict top-level; ignoring"
+                )
+        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError) as e:
+            warnings.append(f"Failed to load wordlist file {filename}: {e}")
+            # Keep existing content on error
         self.transaction_open = False
+        # Store last warnings for later inspection
+        self._last_load_warnings = list(warnings)
+        # No return value (callers should use get_warnings/has_warnings)
+
+    def get_load_warnings(self):
+        """Return a list of warnings produced by the last call to `load_data()`.
+
+        Returns a shallow copy of the last warnings list (may be empty).
+        """
+        return list(self._last_load_warnings)
+
+    def has_load_warnings(self):
+        """Return True if the last load produced any warnings."""
+        return len(self._last_load_warnings) > 0
+
+    # Convenience aliases - prefer using these for clearer intent
+    def get_warnings(self):
+        """Alias for :meth:`get_load_warnings()`.
+
+        Kept for API clarity: call this after ``load_data()`` to inspect any warnings.
+        """
+        return self.get_load_warnings()
+
+    def has_warnings(self):
+        """Alias for :meth:`has_load_warnings()`.
+
+        Call immediately after ``load_data()`` to know whether any warnings occurred.
+        """
+        return self.has_load_warnings()
+
+    def validate_content(self):
+        """Validate the current `content` and return a list of issues found.
+
+        This performs structural checks on each entry and returns human-readable
+        messages describing any problems (empty list if no issues).
+        """
+        issues = []
+        for key, item in list(self.content.items()):
+            if not self._is_valid_entry(item):
+                issues.append(f"Key '{key}': invalid structure or type")
+                continue
+            t = item[IDX_TYPE]
+            if t == TYPE_COUNTER:
+                # Check counter value is an integer
+                try:
+                    int(item[IDX_DATA_START])
+                except Exception:
+                    issues.append(f"Key '{key}': counter value is not integer")
+            else:
+                # For static/csv ensure position is within bounds
+                data_len = len(item) - IDX_DATA_START
+                pos = item[IDX_POSITION]
+                if pos < IDX_DATA_START or pos > IDX_DATA_START + data_len - 1:
+                    issues.append(
+                        f"Key '{key}': position {pos} out of range for data length {data_len}"
+                    )
+        return issues
 
     def save_data(self, filename):
         """
@@ -557,14 +770,19 @@ class Wordlist:
         self.transaction_open = False
 
     def delete(self, skey):
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return
         try:
             self.content.pop(skey)
         except KeyError:
             pass
 
     def rename_key(self, oldkey, newkey):
-        oldkey = oldkey.lower()
-        newkey = newkey.lower()
+        oldkey = self._normalize_key(oldkey)
+        newkey = self._normalize_key(newkey)
+        if oldkey is None or newkey is None:
+            return False
         if oldkey in self.prohibited:
             return False
         if oldkey == newkey:
@@ -574,7 +792,7 @@ class Wordlist:
         try:
             self.content[newkey] = self.content[oldkey]
             self.delete(oldkey)
-        except:
+        except Exception:
             return False
         return True
 
@@ -587,65 +805,209 @@ class Wordlist:
             self.delete(skey)
 
     def load_csv_file(self, filename, force_header=None):
+        """Load a CSV into wordlist entries.
+
+        Returns a tuple: (row_count, column_count, headers)
+        Any warnings (errors or issues) are recorded in
+        `self._last_load_warnings` and can be inspected with
+        `get_load_warnings()` / `has_load_warnings()`.
+        """
         self.empty_csv()
         ct = 0
         headers = []
+        warnings = []
         decoder = EncodingDetectFile()
         result = decoder.load(filename)
-        if result:
-            encoding, bom_marker, file_content = result
+        if not result:
+            warnings.append(f"Could not read CSV file {filename}")
+            self._last_load_warnings = list(warnings)
+            return 0, 0, []
 
-            try:
+        encoding, bom_marker, file_content = result
+
+        # Quick sanity check: unmatched quotes likely indicate malformed CSV
+        if file_content.count('"') % 2 != 0:
+            warnings.append(f"Malformed CSV file {filename}: unmatched quotes detected")
+            self._last_load_warnings = list(warnings)
+            return 0, 0, []
+
+        try:
+            # If the file is very large, switch to a streaming parse to avoid high memory use
+            MAX_STREAM_SIZE = 2 * 1024 * 1024  # 2 MB
+            MAX_ROWS = 100000  # safety upper bound to prevent extremely long imports
+
+            # Find a safe buffer that ends with a complete line
+            buffer_limit = min(1024, len(file_content))
+            last_newline = file_content.rfind("\n", 0, buffer_limit)
+            if last_newline > 0:
+                buffer = file_content[: last_newline + 1]  # Include the newline
+            else:
+                # Fallback to original behavior if no newline found
+                buffer = file_content[:buffer_limit]
+
+            if force_header is None:
+                try:
+                    has_header = csv.Sniffer().has_header(buffer)
+                except Exception:
+                    has_header = False
+                    warnings.append(
+                        f"CSV header detection failed for {filename}; treating as data"
+                    )
+            else:
+                has_header = force_header
+
+            dialect = None
+            # If caller explicitly set force_header, avoid running the sometimes expensive sniffer and use default excel dialect.
+            if force_header is None:
+                try:
+                    dialect = csv.Sniffer().sniff(buffer)
+                except Exception:
+                    # Fall back to default dialect and warn
+                    warnings.append(f"CSV dialect detection failed for {filename}; using default")
+                    dialect = csv.get_dialect("excel")
+            else:
+                dialect = csv.get_dialect("excel")
+
+            # If file content is large, or user file seems likely to be big, parse in streaming mode
+            if len(file_content) > MAX_STREAM_SIZE:
+                warnings.append(f"Large CSV file detected ({len(file_content)} bytes); using streaming parser to avoid high memory usage")
+                # Re-open the file using detected encoding and stream rows
+                try:
+                    with open(filename, "r", encoding=encoding, errors="replace") as fh:
+                        # Prepare CSV reader on the file handle using the sniffed dialect
+                        reader = csv.reader(fh, dialect)
+                        try:
+                            raw_headers = next(reader)
+                        except StopIteration:
+                            # empty file
+                            self._last_load_warnings = list(warnings)
+                            return 0, 0, []
+                        # Clean BOM and whitespace from headers (remove BOM regardless of surrounding whitespace)
+                        cleaned = [ (h.replace("\ufeff", "") if h is not None else "").strip() for h in raw_headers ]
+
+                        headers = []
+                        seen = {}
+
+                        def make_unique(name, idx):
+                            if name is None or name == "":
+                                base = f"column_{idx + 1}"
+                            else:
+                                base = name
+                            base_norm = self._normalize_key(base) or f"column_{idx + 1}"
+                            # Ensure uniqueness
+                            if base_norm in seen:
+                                seen[base_norm] += 1
+                                unique = f"{base_norm}_{seen[base_norm]}"
+                            else:
+                                seen[base_norm] = 1
+                                unique = base_norm
+                            return unique
+
+                        if not has_header:
+                            # Treat first row as data; create Column_N keys and store first row
+                            for idx, entry in enumerate(cleaned):
+                                skey = make_unique(None, idx)
+                                headers.append(skey)
+                                value = entry
+                                self.set_value(skey=skey, value=value, idx=-1, wtype=TYPE_CSV)
+                            ct = 1
+                        else:
+                            ct = 0
+                            for idx, h in enumerate(cleaned):
+                                skey = make_unique(h, idx)
+                                headers.append(skey)
+
+                        # Stream the remaining rows
+                        for row in reader:
+                            if ct >= MAX_ROWS:
+                                warnings.append(f"Import aborted: exceeded maximum row limit ({MAX_ROWS})")
+                                break
+                            for idx, entry in enumerate(row):
+                                if idx >= len(headers):
+                                    newkey = make_unique(None, idx)
+                                    headers.append(newkey)
+                                skey = headers[idx]
+                                clean_entry = entry.replace("\ufeff", "").strip()
+                                self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV)
+                            ct += 1
+                except (OSError, PermissionError) as e:
+                    warnings.append(f"Failed to open CSV file {filename} for streaming: {e}")
+                    self._last_load_warnings = list(warnings)
+                    return 0, 0, []
+            else:
                 # Use the already BOM-stripped content from EncodingDetectFile
                 from io import StringIO
 
-                # Find a safe buffer that ends with a complete line
-                # Look for the last newline within the first ~1024 characters
-                buffer_limit = min(1024, len(file_content))
-                last_newline = file_content.rfind("\n", 0, buffer_limit)
-                if last_newline > 0:
-                    buffer = file_content[: last_newline + 1]  # Include the newline
-                else:
-                    # Fallback to original behavior if no newline found
-                    buffer = file_content[:buffer_limit]
-
-                if force_header is None:
-                    has_header = csv.Sniffer().has_header(buffer)
-                else:
-                    has_header = force_header
-                # print (f"Header={has_header}, Force={force_header}")
-                dialect = csv.Sniffer().sniff(buffer)
                 reader = csv.reader(StringIO(file_content), dialect)
-                headers = next(reader)
-                # Clean BOM characters from headers
-                headers = [h.lstrip("\ufeff") for h in headers]
+                try:
+                    raw_headers = next(reader)
+                except StopIteration:
+                    # empty file
+                    self._last_load_warnings = list(warnings)
+                    return 0, 0, []
+                # Debug note: record detected delimiter and raw headers
+                # Debug: record detected delimiter and raw headers for dev diagnostics, but do not treat them as user-visible warnings
+                # print(f"CSV delimiter detected: {repr(dialect.delimiter)}")
+                # print(f"CSV raw headers: {raw_headers}")
+                # Clean BOM and whitespace from headers (remove BOM regardless of surrounding whitespace)
+                cleaned = [ (h.replace("\ufeff", "") if h is not None else "").strip() for h in raw_headers ]
+
+                headers = []
+                seen = {}
+
+                def make_unique(name, idx):
+                    if name is None or name == "":
+                        base = f"column_{idx + 1}"
+                    else:
+                        base = name
+                    base_norm = self._normalize_key(base) or f"column_{idx + 1}"
+                    # Ensure uniqueness
+                    if base_norm in seen:
+                        seen[base_norm] += 1
+                        unique = f"{base_norm}_{seen[base_norm]}"
+                    else:
+                        seen[base_norm] = 1
+                        unique = base_norm
+                    return unique
+
                 if not has_header:
-                    # Use Line as Data and set some default names
-                    for idx, entry in enumerate(headers):
-                        skey = f"Column_{idx + 1}"
-                        self.set_value(skey=skey, value=entry, idx=-1, wtype=TYPE_CSV)
-                        headers[idx] = skey.lower()
+                    # Treat first row as data; create Column_N keys and store first row
+                    for idx, entry in enumerate(cleaned):
+                        skey = make_unique(None, idx)
+                        headers.append(skey)
+                        # Clean data and append
+                        value = entry
+                        self.set_value(skey=skey, value=value, idx=-1, wtype=TYPE_CSV)
                     ct = 1
                 else:
                     ct = 0
-                    # Lowercase headers for return value
-                    headers = [h.lower() for h in headers]
+                    # Normalize headers and make unique
+                    for idx, h in enumerate(cleaned):
+                        skey = make_unique(h, idx)
+                        headers.append(skey)
+                # Now process remaining rows
                 for row in reader:
                     for idx, entry in enumerate(row):
-                        skey = headers[idx].lower().lstrip("\ufeff")
-                        # Clean BOM from data values too
-                        clean_entry = entry.lstrip("\ufeff")
+                        if idx >= len(headers):
+                            # New header for extra column
+                            newkey = make_unique(None, idx)
+                            headers.append(newkey)
+                        skey = headers[idx]
+                        # Clean BOM and whitespace from data values too (remove BOM regardless of surrounding whitespace)
+                        clean_entry = entry.replace("\ufeff", "").strip()
                         # Append...
                         self.set_value(
                             skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV
                         )
                     ct += 1
-            except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
-                ct = 0
-                headers = []
+        except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
+            ct = 0
+            headers = []
+            warnings.append(f"Failed to load CSV file {filename}: {e}")
+        # Save warnings for later inspection
+        self._last_load_warnings = list(warnings)
         colcount = len(headers)
         return ct, colcount, headers
-
     def wordlist_delta(self, orgtext, increase):
         newtext = str(orgtext)
         toreplace = []
