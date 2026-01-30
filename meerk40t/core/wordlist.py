@@ -284,6 +284,43 @@ class Wordlist:
             ]  # incomplete, as it will be appended right after this
         self.content[skey].append(value)
 
+    def has_value(self, skey, entry):
+        """Return True if the variable contains an entry equal to `entry` (string comparison)."""
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return False
+        if skey not in self.content:
+            return False
+        try:
+            for v in self.content[skey][IDX_DATA_START:]:
+                if str(v) == str(entry):
+                    return True
+        except Exception:
+            return False
+        return False
+
+    def add_value_unique(self, skey, entry, wtype=None):
+        """
+        Add value only if it does not already exist.
+
+        Returns:
+            (bool, Optional[str]): (added, reason)
+                - (True, None): added successfully
+                - (False, 'invalid_key'): invalid or empty key
+                - (False, 'empty'): entry is None or empty/whitespace
+                - (False, 'duplicate'): entry already exists
+        """
+        skey = self._normalize_key(skey)
+        if skey is None:
+            return False, "invalid_key"
+        # Reject empty entries
+        if entry is None or (isinstance(entry, str) and entry.strip() == ""):
+            return False, "empty"
+        if self.has_value(skey, entry):
+            return False, "duplicate"
+        self.add_value(skey, entry, wtype)
+        return True, None
+
     def delete_value(self, skey, idx):
         """
         Delete a value from a wordlist variable at the specified index.

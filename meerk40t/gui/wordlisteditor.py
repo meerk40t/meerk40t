@@ -197,6 +197,15 @@ class WordlistPanel(wx.Panel):
         sizer_index_left = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grid_left.Add(sizer_index_left, 0, wx.EXPAND, 0)
 
+        # Filter / Search for variables
+        sizer_search = wx.BoxSizer(wx.HORIZONTAL)
+        lbl_filter = wxStaticText(self, wx.ID_ANY, _("Filter:"))
+        self.txt_filter = TextCtrl(self, wx.ID_ANY, "")
+        self.txt_filter.SetMinSize(dip_size(self, 120, -1))
+        sizer_search.Add(lbl_filter, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_search.Add(self.txt_filter, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_grid_left.Add(sizer_search, 0, wx.EXPAND, 0)
+
         label_2 = wxStaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
         sizer_index_left.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.cbo_Index = wxComboBox(
@@ -350,6 +359,10 @@ class WordlistPanel(wx.Panel):
         self.btn_add_counter = wxButton(self, wx.ID_ANY, _("Add Counter"))
         sizer_buttons.Add(self.btn_add_counter, 0, 0, 0)
 
+        self.btn_preview = wxButton(self, wx.ID_ANY, _("Preview"))
+        self.btn_preview.SetToolTip(_("Preview the translation of the pattern"))
+        sizer_buttons.Add(self.btn_preview, 0, 0, 0)
+
         self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current wordlist entry"))
         sizer_buttons.Add(self.btn_delete, 0, 0, 0)
@@ -371,15 +384,17 @@ class WordlistPanel(wx.Panel):
         sizer_exit.Add(self.check_autosave, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.check_autosave.SetValue(self.context.wordlist_autosave)
 
+        sizer_message = wx.BoxSizer(wx.HORIZONTAL)
         self.lbl_message = wxStaticText(self, wx.ID_ANY, "")
-        sizer_exit.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_message.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_lower = wx.BoxSizer(wx.HORIZONTAL)
         sizer_lower.Add(sizer_buttons, 1, wx.ALL, 0)
-        sizer_lower.Add(sizer_exit, 1, wx.ALL, 0)
+        sizer_lower.Add(sizer_exit, 0, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_grids, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_lower, 0, wx.ALL, 0)
+        sizer_main.Add(sizer_message, 0, wx.ALL, 0)
 
         self.SetSizer(sizer_main)
         self.Layout()
@@ -403,6 +418,8 @@ class WordlistPanel(wx.Panel):
         self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_content)
         self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit_content)
         self.grid_content.Bind(wx.EVT_LEFT_DCLICK, self.on_content_dblclick)
+        self.grid_content.Bind(wx.EVT_CONTEXT_MENU, self.on_context_content)
+        self.grid_wordlist.Bind(wx.EVT_CONTEXT_MENU, self.on_context_wordlist)
         self.check_autosave.Bind(wx.EVT_CHECKBOX, self.on_checkbox_autosave)
 
         self.btn_edit_wordlist_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_del)
@@ -419,6 +436,10 @@ class WordlistPanel(wx.Panel):
         # Key handler for F2
         self.grid_content.Bind(wx.EVT_CHAR, self.on_key_grid)
         self.grid_wordlist.Bind(wx.EVT_CHAR, self.on_key_grid)
+        # Filter handler
+        self.txt_filter.Bind(wx.EVT_TEXT, self.on_filter_change)
+        # Preview handler
+        self.btn_preview.Bind(wx.EVT_BUTTON, self.on_preview)
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
@@ -465,9 +486,17 @@ class WordlistPanel(wx.Panel):
             msg = _("Can't delete internal variable {key}").format(key=key)
             self.edit_message(msg)
             return
-        self.wlist.delete(key)
-        self.autosave()
-        self.refresh_grid_wordlist()
+        dlg = wx.MessageDialog(
+            self,
+            _("Delete variable '{key}'?").format(key=key),
+            _("Confirm Delete"),
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+        )
+        if dlg.ShowModal() == wx.ID_YES:
+            self.wlist.delete(key)
+            self.autosave()
+            self.refresh_grid_wordlist()
+        dlg.Destroy()
 
     def on_btn_edit_wordlist_edit(self, event):
         index = self.grid_wordlist.GetFirstSelected()
@@ -477,8 +506,19 @@ class WordlistPanel(wx.Panel):
     def on_btn_edit_content_add(self, event):
         skey = self.cur_skey
         if skey is None:
+            self.edit_message(_("No variable selected"))
             return
-        self.wlist.add_value(self.cur_skey, "---", 0)
+        val = "---"
+        # Attempt to add value and report reason on failure
+        added, reason = self.wlist.add_value_unique(skey, val, 0)
+        if not added:
+            if reason == "duplicate":
+                self.edit_message(_("Entry already exists"))
+            elif reason == "empty":
+                self.edit_message(_("Invalid entry"))
+            else:
+                self.edit_message(_("Failed to add entry"))
+            return
         self.refresh_grid_content(skey, 0)
         self.autosave()
 
@@ -487,11 +527,20 @@ class WordlistPanel(wx.Panel):
         if skey is None:
             return
         index = self.grid_content.GetFirstSelected()
-        if index >= 0:
-            pass
-        self.wlist.delete_value(skey, index)
-        self.refresh_grid_content(skey, 0)
-        self.autosave()
+        if index < 0:
+            return
+        entry_text = self.get_column_text(self.grid_content, index, 0)
+        dlg = wx.MessageDialog(
+            self,
+            _("Delete entry '{entry}'?").format(entry=entry_text),
+            _("Confirm Delete"),
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+        )
+        if dlg.ShowModal() == wx.ID_YES:
+            self.wlist.delete_value(skey, index)
+            self.refresh_grid_content(skey, 0)
+            self.autosave()
+        dlg.Destroy()
 
     def on_btn_edit_content_edit(self, event):
         skey = self.cur_skey
@@ -516,10 +565,18 @@ class WordlistPanel(wx.Panel):
         msg = text_data.GetText()
         if msg is not None and len(msg) > 0:
             lines = msg.splitlines()
-            for entry in lines:
-                self.wlist.add_value(skey, entry, 0)
-            self.refresh_grid_content(skey, 0)
-            self.autosave()
+            dlg = wx.MessageDialog(
+                self,
+                _("Paste {n} entries into '{key}'?").format(n=len(lines), key=skey),
+                _("Confirm Paste"),
+                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION,
+            )
+            if dlg.ShowModal() == wx.ID_YES:
+                for entry in lines:
+                    self.wlist.add_value(skey, entry, 0)
+                self.refresh_grid_content(skey, 0)
+                self.autosave()
+            dlg.Destroy()
 
     def refresh_grid_wordlist(self):
         self.current_entry = None
@@ -529,7 +586,13 @@ class WordlistPanel(wx.Panel):
         self.grid_wordlist.InsertColumn(1, _("Type"))
         self.grid_wordlist.InsertColumn(2, _("Index"))
         typestr = [_("Text"), _("CSV"), _("Counter")]
+        filt = getattr(self, "filter_text", "")
+        if filt is None:
+            filt = ""
+        filt = filt.lower().strip()
         for skey in self.wlist.content:
+            if filt and filt not in skey.lower():
+                continue
             index = self.grid_wordlist.InsertItem(
                 self.grid_wordlist.GetItemCount(), skey
             )
@@ -611,10 +674,247 @@ class WordlistPanel(wx.Panel):
             self.cbo_index_single.SetSelection(index)
             self.on_single_index(event)
 
+    def on_filter_change(self, event):
+        self.filter_text = self.txt_filter.GetValue()
+        self.refresh_grid_wordlist()
+
+    def on_preview(self, event):
+        pattern = self.txt_pattern.GetValue()
+        if pattern is None:
+            pattern = ""
+        try:
+            out = self.wlist.translate(pattern)
+            self.edit_message("Preview: " + str(out))
+        except Exception as e:
+            self.edit_message("Preview failed: " + str(e))
+
     def on_grid_content(self, event):
         # Single Click
         event.Skip()
 
+    def on_context_wordlist(self, event):
+        """Context menu for the wordlist names (add / edit / remove)"""
+        sel = self.grid_wordlist.GetFirstSelected()
+        if sel < 0:
+            # No selection - offer Add option only
+            menu = wx.Menu()
+            mi_add = menu.Append(wx.ID_ANY, _("Add..."))
+
+            def on_add_no_sel(evt):
+                # Reuse add logic
+                on_add(evt)
+
+            self.Bind(wx.EVT_MENU, on_add_no_sel, mi_add)
+            pos = event.GetPosition()
+            if not pos:
+                pos = self.grid_wordlist.ScreenToClient(wx.GetMousePosition())
+            self.PopupMenu(menu)
+            menu.Destroy()
+            return
+
+        menu = wx.Menu()
+        mi_add = menu.Append(wx.ID_ANY, _("Add..."))
+        mi_edit = menu.Append(wx.ID_ANY, _("Edit..."))
+        mi_del = menu.Append(wx.ID_ANY, _("Delete"))
+        # Add small icons to menu items
+        try:
+            icon_size = max(16, int(get_default_icon_size(self.context) * 0.5))
+            mi_add.SetBitmap(icon_add_new.GetBitmap(resize=icon_size, buffer=1))
+            mi_edit.SetBitmap(icon_edit.GetBitmap(resize=icon_size, buffer=1))
+            mi_del.SetBitmap(icon_trash.GetBitmap(resize=icon_size, buffer=1))
+        except Exception:
+            # Ignore icon setting errors (fallback gracefully)
+            pass
+
+        def on_add(evt):
+            # Ask for a new variable name
+            name = wx.GetTextFromUser(
+                _("New variable name:"), _("Add Wordlist Variable"), parent=self
+            )
+            if name is None or name.strip() == "":
+                return
+            name = name.strip().lower()
+            if name in self.wlist.content:
+                self.edit_message(
+                    _("Variable '%s' already exists") % name
+                )
+                return
+            self.wlist.add_value(name, "---", 0)
+            self.autosave()
+            self.populate_gui()
+            # select the new key
+            for idx in range(self.grid_wordlist.GetItemCount()):
+                if self.get_column_text(self.grid_wordlist, idx, 0).lower() == name:
+                    self.grid_wordlist.Select(idx, True)
+                    self.grid_wordlist.SetFocus()
+                    self.refresh_grid_content(name, 0)
+                    break
+
+        def on_edit(evt):
+            idx = self.grid_wordlist.GetFirstSelected()
+            if idx >= 0:
+                self.grid_wordlist.EditLabel(idx)
+
+        def on_delete(evt):
+            idx = self.grid_wordlist.GetFirstSelected()
+            if idx < 0:
+                return
+            key = self.get_column_text(self.grid_wordlist, idx, 0)
+            if key in self.wlist.prohibited:
+                self.edit_message(_("Can't delete internal variable {key}").format(key=key))
+                return
+            # Confirm deletion
+            dlg = wx.MessageDialog(
+                self,
+                _("Delete variable '{key}'?").format(key=key),
+                _("Confirm Delete"),
+                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+            )
+            if dlg.ShowModal() == wx.ID_YES:
+                self.wlist.delete(key)
+                self.autosave()
+                self.populate_gui()
+            dlg.Destroy()
+
+        self.Bind(wx.EVT_MENU, on_add, mi_add)
+        self.Bind(wx.EVT_MENU, on_edit, mi_edit)
+        self.Bind(wx.EVT_MENU, on_delete, mi_del)
+
+        # Show the menu at the mouse location
+        pos = event.GetPosition()
+        if not pos:
+            pos = self.grid_wordlist.ScreenToClient(wx.GetMousePosition())
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def on_context_content(self, event):
+        """Context menu for the content list (add / edit / remove / paste)"""
+        sel = self.grid_content.GetFirstSelected()
+        # Allow Add/Paste when a variable is selected (even if no item selected)
+        if self.cur_skey is None and sel < 0:
+            return
+
+        menu = wx.Menu()
+        mi_add = menu.Append(wx.ID_ANY, _("Add Entry..."))
+        mi_paste = menu.Append(wx.ID_ANY, _("Paste Entries"))
+        mi_edit = None
+        mi_del = None
+        if sel >= 0:
+            mi_edit = menu.Append(wx.ID_ANY, _("Edit Entry..."))
+            mi_del = menu.Append(wx.ID_ANY, _("Delete Entry"))
+        # Set icons (best-effort)
+        try:
+            icon_size = max(16, int(get_default_icon_size(self.context) * 0.5))
+            mi_add.SetBitmap(icon_add_new.GetBitmap(resize=icon_size, buffer=1))
+            mi_paste.SetBitmap(icons8_paste.GetBitmap(resize=icon_size, buffer=1))
+            if mi_edit is not None:
+                mi_edit.SetBitmap(icon_edit.GetBitmap(resize=icon_size, buffer=1))
+            if mi_del is not None:
+                mi_del.SetBitmap(icon_trash.GetBitmap(resize=icon_size, buffer=1))
+        except Exception:
+            pass
+
+        def on_add_entry(evt):
+            if self.cur_skey is None:
+                self.edit_message(_("No variable selected"))
+                return
+            entry = wx.GetTextFromUser(
+                _("New entry value:"), _("Add Entry"), parent=self
+            )
+            if entry is None or entry.strip() == "":
+                self.edit_message(_("Invalid entry"))
+                return
+            # prevent duplicates and add atomically
+            added, reason = self.wlist.add_value_unique(self.cur_skey, entry, 0)
+            if not added:
+                if reason == "duplicate":
+                    self.edit_message(_("Entry already exists"))
+                elif reason == "empty":
+                    self.edit_message(_("Invalid entry"))
+                else:
+                    self.edit_message(_("Failed to add entry"))
+                return
+            self.autosave()
+            self.refresh_grid_content(self.cur_skey, 0)
+
+        def on_edit_entry(evt):
+            idx = self.grid_content.GetFirstSelected()
+            if idx >= 0:
+                self.grid_content.EditLabel(idx)
+
+        def on_delete_entry(evt):
+            idx = self.grid_content.GetFirstSelected()
+            if idx < 0:
+                return
+            entry_text = self.get_column_text(self.grid_content, idx, 0)
+            dlg = wx.MessageDialog(
+                self,
+                _("Delete entry '{entry}'?").format(entry=entry_text),
+                _("Confirm Delete"),
+                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+            )
+            if dlg.ShowModal() == wx.ID_YES:
+                self.wlist.delete_value(self.cur_skey, idx)
+                self.autosave()
+                self.refresh_grid_content(self.cur_skey, 0)
+            dlg.Destroy()
+
+        def on_paste_entries(evt):
+            # Paste and report adds/skips
+            if self.cur_skey is None:
+                self.edit_message(_("No variable selected"))
+                return
+            text_data = wx.TextDataObject()
+            success = False
+            if wx.TheClipboard.Open():
+                success = wx.TheClipboard.GetData(text_data)
+                wx.TheClipboard.Close()
+            if not success:
+                self.edit_message(_("Clipboard empty or unavailable"))
+                return
+            msg = text_data.GetText()
+            if msg is None or len(msg) == 0:
+                self.edit_message(_("Clipboard empty"))
+                return
+            lines = msg.splitlines()
+            added = 0
+            skipped = 0
+            invalid = 0
+            for entry in lines:
+                added_flag, reason = self.wlist.add_value_unique(self.cur_skey, entry, 0)
+                if added_flag:
+                    added += 1
+                else:
+                    if reason == "duplicate":
+                        skipped += 1
+                    else:
+                        invalid += 1
+            self.autosave()
+            self.refresh_grid_content(self.cur_skey, 0)
+            # Provide clearer summary including invalid entries
+            if invalid == 0:
+                self.edit_message(
+                    _("Pasted {a} entries, skipped {s} duplicates").format(a=added, s=skipped)
+                )
+            else:
+                self.edit_message(
+                    _(
+                        "Pasted {a} entries, skipped {s} duplicates, {i} invalid"
+                    ).format(a=added, s=skipped, i=invalid)
+                )
+
+        self.Bind(wx.EVT_MENU, on_add_entry, mi_add)
+        self.Bind(wx.EVT_MENU, on_paste_entries, mi_paste)
+        if mi_edit is not None:
+            self.Bind(wx.EVT_MENU, on_edit_entry, mi_edit)
+        if mi_del is not None:
+            self.Bind(wx.EVT_MENU, on_delete_entry, mi_del)
+
+        pos = event.GetPosition()
+        if not pos:
+            pos = self.grid_content.ScreenToClient(wx.GetMousePosition())
+        self.PopupMenu(menu)
+        menu.Destroy()
     def on_begin_edit_wordlist(self, event):
         index = self.grid_wordlist.GetFirstSelected()
         if index >= 0:
@@ -636,20 +936,40 @@ class WordlistPanel(wx.Panel):
             self.edit_message(_("Update failed"))
         else:
             old_skey = self.to_save_wordlist[0]
-            new_skey = event.GetText().lower()
-            # Attempt rename and handle failures gracefully
-            if not self.wlist.rename_key(old_skey, new_skey):
-                # Rename failed - show message and keep previous selection if possible
-                self.edit_message(_("Rename failed"))
+            new_skey = event.GetText().strip().lower()
+            # Validate new name
+            if new_skey == "":
+                self.edit_message(_("Invalid name"))
+                if old_skey in self.wlist.content:
+                    self.cur_skey = old_skey
+                    self.refresh_grid_content(old_skey, 0)
+                    self.txt_pattern.SetValue(old_skey)
+            elif new_skey in self.wlist.prohibited:
+                self.edit_message(_("Can't rename to internal variable name"))
+                if old_skey in self.wlist.content:
+                    self.cur_skey = old_skey
+                    self.refresh_grid_content(old_skey, 0)
+                    self.txt_pattern.SetValue(old_skey)
+            elif new_skey in self.wlist.content and new_skey != old_skey:
+                self.edit_message(_("A variable with that name already exists"))
                 if old_skey in self.wlist.content:
                     self.cur_skey = old_skey
                     self.refresh_grid_content(old_skey, 0)
                     self.txt_pattern.SetValue(old_skey)
             else:
-                self.autosave()
-                self.cur_skey = new_skey
-                self.refresh_grid_content(new_skey, 0)
-                self.txt_pattern.SetValue(new_skey)
+                # Attempt rename and handle failures gracefully
+                if not self.wlist.rename_key(old_skey, new_skey):
+                    # Rename failed - show message and keep previous selection if possible
+                    self.edit_message(_("Rename failed"))
+                    if old_skey in self.wlist.content:
+                        self.cur_skey = old_skey
+                        self.refresh_grid_content(old_skey, 0)
+                        self.txt_pattern.SetValue(old_skey)
+                else:
+                    self.autosave()
+                    self.cur_skey = new_skey
+                    self.refresh_grid_content(new_skey, 0)
+                    self.txt_pattern.SetValue(new_skey)
 
         self.to_save_wordlist = None
         event.Allow()
@@ -711,22 +1031,29 @@ class WordlistPanel(wx.Panel):
 
     def on_btn_add(self, event):
         skey = self.txt_pattern.GetValue()
-        if skey is not None and len(skey) > 0:
-            if skey in self.wlist.content:
-                self.wlist.delete(skey)
-            self.wlist.add_value(skey, "---", 0)
-            self.autosave()
-            self.populate_gui()
+        if skey is None or len(skey.strip()) == 0:
+            self.edit_message(_("Invalid variable name"))
+            return
+        skey = skey.strip().lower()
+        if skey in self.wlist.content:
+            self.edit_message(_("Variable '%s' already exists") % skey)
+            return
+        if skey in self.wlist.prohibited:
+            self.edit_message(_("Can't create internal variable {key}").format(key=skey))
+            return
+        self.wlist.add_value(skey, "---", 0)
+        self.autosave()
+        self.populate_gui()
         event.Skip()
 
     def on_patterntext_change(self, event):
         enab1 = False
         enab2 = False
-        newname = self.txt_pattern.GetValue().lower()
+        newname = self.txt_pattern.GetValue().strip()
         if len(newname) > 0:
             enab2 = True
             enab1 = True
-            if newname in self.wlist.content:
+            if newname.lower() in self.wlist.content:
                 enab1 = False
         self.btn_add.Enable(enab1)
         self.btn_add_counter.Enable(enab1)
@@ -734,20 +1061,36 @@ class WordlistPanel(wx.Panel):
 
     def on_add_counter(self, event):  # wxGlade: editWordlist.<event_handler>
         skey = self.txt_pattern.GetValue()
-        if skey is not None and len(skey) > 0:
-            if skey in self.wlist.content:
-                self.wlist.delete(skey)
-            self.wlist.add_value(skey, 1, 2)
-            self.autosave()
+        if skey is None or len(skey.strip()) == 0:
+            self.edit_message(_("Invalid variable name"))
+            return
+        skey = skey.strip().lower()
+        if skey in self.wlist.content:
+            self.edit_message(_("Variable '%s' already exists") % skey)
+            self.populate_gui()
+            return
+        if skey in self.wlist.prohibited:
+            self.edit_message(_("Can't create internal variable {key}").format(key=skey))
+            return
+        self.wlist.add_value(skey, 1, 2)
+        self.autosave()
         self.populate_gui()
         event.Skip()
 
     def on_btn_delete(self, event):
         skey = self.txt_pattern.GetValue()
         if skey is not None and len(skey) > 0:
-            self.wlist.delete(skey)
-            self.autosave()
-            self.populate_gui()
+            dlg = wx.MessageDialog(
+                self,
+                _("Delete variable '{key}'?").format(key=skey),
+                _("Confirm Delete"),
+                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+            )
+            if dlg.ShowModal() == wx.ID_YES:
+                self.wlist.delete(skey)
+                self.autosave()
+                self.populate_gui()
+            dlg.Destroy()
         event.Skip()
 
     def on_backup(self, event):
@@ -760,7 +1103,7 @@ class WordlistPanel(wx.Panel):
     def on_restore(self, event):
         if self.wlist.default_filename is not None:
             self.wlist.load_data(self.wlist.default_filename)
-            if self.wlist.has_warnings:
+            if self.wlist.has_warnings():
                 msg = _("Restored with warnings from ") + self.wlist.default_filename
                 channel = self.context.kernel.root.channel("console")
                 channel(msg)
