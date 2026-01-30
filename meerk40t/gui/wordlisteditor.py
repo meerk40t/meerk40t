@@ -1892,14 +1892,12 @@ class WordlistEditor(MWindow):
         Show a specific panel by name: 'editor', 'import', 'about'
         """
         name = name.lower()
-        print(f"Switching to panel: {name}")
         if name == "editor":
-            self.notebook_main.SelectPage(0)
+            self.notebook_main.SetSelection(0)
         elif name == "import":
-            self.notebook_main.SelectPage(1)
+            self.notebook_main.SetSelection(1)
         elif name == "about":
-            self.notebook_main.SelectPage(2)
-
+            self.notebook_main.SetSelection(2)
     @staticmethod
     def submenu():
         # Suppress to avoid double menu-appearance
