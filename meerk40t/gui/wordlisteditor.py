@@ -16,6 +16,8 @@ from .icons import (
     icons8_curly_brackets,
     icons8_paste,
 )
+from ..core.wordlist import TYPE_CSV
+
 from .mwindow import MWindow
 from .wxutils import (
     StaticBoxSizer,
@@ -1003,35 +1005,20 @@ class WordlistPanel(wx.Panel):
     def on_context_wordlist(self, event):
         """Context menu for the wordlist names (add / edit / remove)"""
         sel = self.grid_wordlist.GetFirstSelected()
-        if sel < 0:
-            # No selection - offer Add option only
-            menu = wx.Menu()
-            mi_add = menu.Append(wx.ID_ANY, _("Add..."))
 
-            def on_add_no_sel(evt):
-                # Reuse add logic
-                on_add(evt)
-
-            self.Bind(wx.EVT_MENU, on_add_no_sel, mi_add)
-            pos = event.GetPosition()
-            if not pos:
-                pos = self.grid_wordlist.ScreenToClient(wx.GetMousePosition())
-            self.PopupMenu(menu)
-            menu.Destroy()
-            return
-
+        # Build the base menu
         menu = wx.Menu()
         mi_add = menu.Append(wx.ID_ANY, _("Add..."))
         mi_edit = menu.Append(wx.ID_ANY, _("Edit..."))
         mi_del = menu.Append(wx.ID_ANY, _("Delete"))
-        # Add small icons to menu items
+
+        # Set icons (best-effort)
         try:
             icon_size = max(16, int(get_default_icon_size(self.context) * 0.5))
             mi_add.SetBitmap(icon_add_new.GetBitmap(resize=icon_size, buffer=1))
             mi_edit.SetBitmap(icon_edit.GetBitmap(resize=icon_size, buffer=1))
             mi_del.SetBitmap(icon_trash.GetBitmap(resize=icon_size, buffer=1))
         except Exception:
-            # Ignore icon setting errors (fallback gracefully)
             pass
 
         def on_add(evt):
@@ -1084,6 +1071,38 @@ class WordlistPanel(wx.Panel):
                 self.populate_gui()
             dlg.Destroy()
 
+        # Offer a bulk-delete CSV option when the selected key is CSV
+        try:
+            sel_key = None
+            if sel >= 0:
+                try:
+                    sel_key = self.get_column_text(self.grid_wordlist, sel, 0).lower()
+                except Exception:
+                    sel_key = None
+            if sel_key and sel_key in self.wlist.content and self.wlist.content[sel_key][0] == TYPE_CSV:
+                mi_delcsv = menu.Append(wx.ID_ANY, _("Delete CSV File..."))
+                try:
+                    icon_size = max(16, int(get_default_icon_size(self.context) * 0.5))
+                    mi_delcsv.SetBitmap(icon_trash.GetBitmap(resize=icon_size, buffer=1))
+                except Exception:
+                    pass
+
+                def _del_csv_handler(evt, key=sel_key):
+                    try:
+                        self.delete_csv_file(key, confirm=True)
+                    except Exception:
+                        pass
+
+                self.Bind(wx.EVT_MENU, _del_csv_handler, mi_delcsv)
+        except Exception:
+            pass
+
+        # If no selection, disable edit/delete options
+        if sel < 0:
+            mi_edit.Enable(False)
+            mi_del.Enable(False)
+
+        # Bind menu actions
         self.Bind(wx.EVT_MENU, on_add, mi_add)
         self.Bind(wx.EVT_MENU, on_edit, mi_edit)
         self.Bind(wx.EVT_MENU, on_delete, mi_del)
@@ -1094,6 +1113,56 @@ class WordlistPanel(wx.Panel):
             pos = self.grid_wordlist.ScreenToClient(wx.GetMousePosition())
         self.PopupMenu(menu)
         menu.Destroy()
+
+    def delete_csv_file(self, skey, confirm=True):
+        """Delete all CSV-style keys (the entire CSV import) related to a CSV selection.
+
+        Args:
+            skey (str): The selected key name (case-insensitive)
+            confirm (bool): If true, ask user for confirmation via dialog. Set False in tests.
+        Returns:
+            bool: True if deletion occurred, False otherwise.
+        """
+        if skey is None:
+            self.edit_message(_("No variable selected"))
+            return False
+        sk = skey.lower()
+        if sk not in self.wlist.content:
+            self.edit_message(_("Variable not found"))
+            return False
+        try:
+            if self.wlist.content[sk][0] != TYPE_CSV:
+                self.edit_message(_("Selected variable is not CSV-based"))
+                return False
+        except Exception:
+            self.edit_message(_("Selected variable is not CSV-based"))
+            return False
+
+        if confirm:
+            dlg = wx.MessageDialog(
+                self,
+                _("Delete this entry and all other related CSV entries?"),
+                _("Confirm Delete"),
+                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+            )
+            if dlg.ShowModal() != wx.ID_YES:
+                dlg.Destroy()
+                return False
+            dlg.Destroy()
+
+        # Remove all CSV entries
+        self.wlist.empty_csv()
+        self.autosave()
+        # Refresh UI
+        try:
+            self.populate_gui()
+        except Exception:
+            try:
+                self.refresh_grid_wordlist()
+            except Exception:
+                pass
+        self.edit_message(_("Deleted CSV file entries"))
+        return True
 
     def on_context_content(self, event):
         """Context menu for the content list (add / edit / remove / paste)"""
@@ -1601,6 +1670,7 @@ class ImportPanel(wx.Panel):
             if self.parent_panel is not None:
                 self.parent_panel.edit_message(msg)
                 self.parent_panel.populate_gui()
+                self.parent_panel.show_panel("editor")
             return True
         return False
 
@@ -1630,6 +1700,10 @@ class ImportPanel(wx.Panel):
             if self.parent_panel is not None:
                 self.parent_panel.edit_message(msg)
                 self.parent_panel.populate_gui()
+                try:
+                    self.parent_panel.show_panel("editor")
+                except Exception:
+                    pass
 
     def on_filetext_change(self, event):
         myfile = self.txt_filename.GetValue()
@@ -1812,6 +1886,19 @@ class WordlistEditor(MWindow):
 
     def populate_gui(self):
         self.panel_editor.populate_gui()
+
+    def show_panel(self, name):
+        """
+        Show a specific panel by name: 'editor', 'import', 'about'
+        """
+        name = name.lower()
+        print(f"Switching to panel: {name}")
+        if name == "editor":
+            self.notebook_main.SelectPage(0)
+        elif name == "import":
+            self.notebook_main.SelectPage(1)
+        elif name == "about":
+            self.notebook_main.SelectPage(2)
 
     @staticmethod
     def submenu():

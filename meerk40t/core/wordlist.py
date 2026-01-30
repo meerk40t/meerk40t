@@ -946,11 +946,9 @@ class Wordlist:
                     self._last_load_warnings = list(warnings)
                     return 0, 0, []
                 # Debug note: record detected delimiter and raw headers
-                try:
-                    warnings.append(f"CSV delimiter detected: {repr(dialect.delimiter)}")
-                except Exception:
-                    pass
-                warnings.append(f"CSV raw headers: {raw_headers}")
+                # Debug: record detected delimiter and raw headers for dev diagnostics, but do not treat them as user-visible warnings
+                # print(f"CSV delimiter detected: {repr(dialect.delimiter)}")
+                # print(f"CSV raw headers: {raw_headers}")
                 # Clean BOM and whitespace from headers (remove BOM regardless of surrounding whitespace)
                 cleaned = [ (h.replace("\ufeff", "") if h is not None else "").strip() for h in raw_headers ]
 
