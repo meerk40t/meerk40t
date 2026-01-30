@@ -607,7 +607,7 @@ class Wordlist:
             if "%" in result:
                 # Seems invalid!
                 result = "invalid"
-        except:
+        except Exception:
             result = "invalid"
         return result
 
@@ -621,7 +621,7 @@ class Wordlist:
             if "%" in result:
                 # Seems invalid!
                 result = "invalid"
-        except:
+        except Exception:
             result = "invalid"
 
         return result
@@ -792,7 +792,7 @@ class Wordlist:
         try:
             self.content[newkey] = self.content[oldkey]
             self.delete(oldkey)
-        except:
+        except Exception:
             return False
         return True
 
@@ -805,36 +805,152 @@ class Wordlist:
             self.delete(skey)
 
     def load_csv_file(self, filename, force_header=None):
+        """Load a CSV into wordlist entries.
+
+        Returns a tuple: (row_count, column_count, headers)
+        Any warnings (errors or issues) are recorded in
+        `self._last_load_warnings` and can be inspected with
+        `get_load_warnings()` / `has_load_warnings()`.
+        """
         self.empty_csv()
         ct = 0
         headers = []
+        warnings = []
         decoder = EncodingDetectFile()
         result = decoder.load(filename)
-        if result:
-            encoding, bom_marker, file_content = result
+        if not result:
+            warnings.append(f"Could not read CSV file {filename}")
+            self._last_load_warnings = list(warnings)
+            return 0, 0, []
 
-            try:
+        encoding, bom_marker, file_content = result
+
+        # Quick sanity check: unmatched quotes likely indicate malformed CSV
+        if file_content.count('"') % 2 != 0:
+            warnings.append(f"Malformed CSV file {filename}: unmatched quotes detected")
+            self._last_load_warnings = list(warnings)
+            return 0, 0, []
+
+        try:
+            # If the file is very large, switch to a streaming parse to avoid high memory use
+            MAX_STREAM_SIZE = 2 * 1024 * 1024  # 2 MB
+            MAX_ROWS = 100000  # safety upper bound to prevent extremely long imports
+
+            # Find a safe buffer that ends with a complete line
+            buffer_limit = min(1024, len(file_content))
+            last_newline = file_content.rfind("\n", 0, buffer_limit)
+            if last_newline > 0:
+                buffer = file_content[: last_newline + 1]  # Include the newline
+            else:
+                # Fallback to original behavior if no newline found
+                buffer = file_content[:buffer_limit]
+
+            if force_header is None:
+                try:
+                    has_header = csv.Sniffer().has_header(buffer)
+                except Exception:
+                    has_header = False
+                    warnings.append(
+                        f"CSV header detection failed for {filename}; treating as data"
+                    )
+            else:
+                has_header = force_header
+
+            dialect = None
+            # If caller explicitly set force_header, avoid running the sometimes expensive sniffer and use default excel dialect.
+            if force_header is None:
+                try:
+                    dialect = csv.Sniffer().sniff(buffer)
+                except Exception:
+                    # Fall back to default dialect and warn
+                    warnings.append(f"CSV dialect detection failed for {filename}; using default")
+                    dialect = csv.get_dialect("excel")
+            else:
+                dialect = csv.get_dialect("excel")
+
+            # If file content is large, or user file seems likely to be big, parse in streaming mode
+            if len(file_content) > MAX_STREAM_SIZE:
+                warnings.append(f"Large CSV file detected ({len(file_content)} bytes); using streaming parser to avoid high memory usage")
+                # Re-open the file using detected encoding and stream rows
+                try:
+                    with open(filename, "r", encoding=encoding, errors="replace") as fh:
+                        # Prepare CSV reader on the file handle using the sniffed dialect
+                        reader = csv.reader(fh, dialect)
+                        try:
+                            raw_headers = next(reader)
+                        except StopIteration:
+                            # empty file
+                            self._last_load_warnings = list(warnings)
+                            return 0, 0, []
+                        # Clean BOM and whitespace from headers
+                        cleaned = [h.lstrip("\ufeff").strip() if h is not None else "" for h in raw_headers]
+
+                        headers = []
+                        seen = {}
+
+                        def make_unique(name, idx):
+                            if name is None or name == "":
+                                base = f"column_{idx + 1}"
+                            else:
+                                base = name
+                            base_norm = self._normalize_key(base) or f"column_{idx + 1}"
+                            # Ensure uniqueness
+                            if base_norm in seen:
+                                seen[base_norm] += 1
+                                unique = f"{base_norm}_{seen[base_norm]}"
+                            else:
+                                seen[base_norm] = 1
+                                unique = base_norm
+                            return unique
+
+                        if not has_header:
+                            # Treat first row as data; create Column_N keys and store first row
+                            for idx, entry in enumerate(cleaned):
+                                skey = make_unique(None, idx)
+                                headers.append(skey)
+                                value = entry
+                                self.set_value(skey=skey, value=value, idx=-1, wtype=TYPE_CSV)
+                            ct = 1
+                        else:
+                            ct = 0
+                            for idx, h in enumerate(cleaned):
+                                skey = make_unique(h, idx)
+                                headers.append(skey)
+
+                        # Stream the remaining rows
+                        for row in reader:
+                            if ct >= MAX_ROWS:
+                                warnings.append(f"Import aborted: exceeded maximum row limit ({MAX_ROWS})")
+                                break
+                            for idx, entry in enumerate(row):
+                                if idx >= len(headers):
+                                    newkey = make_unique(None, idx)
+                                    headers.append(newkey)
+                                skey = headers[idx]
+                                clean_entry = entry.lstrip("\ufeff").strip()
+                                self.set_value(skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV)
+                            ct += 1
+                except (OSError, PermissionError) as e:
+                    warnings.append(f"Failed to open CSV file {filename} for streaming: {e}")
+                    self._last_load_warnings = list(warnings)
+                    return 0, 0, []
+            else:
                 # Use the already BOM-stripped content from EncodingDetectFile
                 from io import StringIO
 
-                # Find a safe buffer that ends with a complete line
-                # Look for the last newline within the first ~1024 characters
-                buffer_limit = min(1024, len(file_content))
-                last_newline = file_content.rfind("\n", 0, buffer_limit)
-                if last_newline > 0:
-                    buffer = file_content[: last_newline + 1]  # Include the newline
-                else:
-                    # Fallback to original behavior if no newline found
-                    buffer = file_content[:buffer_limit]
-
-                if force_header is None:
-                    has_header = csv.Sniffer().has_header(buffer)
-                else:
-                    has_header = force_header
-                # print (f"Header={has_header}, Force={force_header}")
-                dialect = csv.Sniffer().sniff(buffer)
                 reader = csv.reader(StringIO(file_content), dialect)
-                raw_headers = next(reader)
+                try:
+                    raw_headers = next(reader)
+                except StopIteration:
+                    # empty file
+                    self._last_load_warnings = list(warnings)
+                    return 0, 0, []
+                # Debug note: record detected delimiter and raw headers
+                try:
+                    warnings.append(f"CSV delimiter detected: {repr(dialect.delimiter)}")
+                except Exception:
+                    pass
+                warnings.append(f"CSV raw headers: {raw_headers}")
                 # Clean BOM and whitespace from headers
                 cleaned = [
                     h.lstrip("\ufeff").strip() if h is not None else ""
@@ -889,12 +1005,14 @@ class Wordlist:
                             skey=skey, value=clean_entry, idx=-1, wtype=TYPE_CSV
                         )
                     ct += 1
-            except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
-                ct = 0
-                headers = []
+        except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
+            ct = 0
+            headers = []
+            warnings.append(f"Failed to load CSV file {filename}: {e}")
+        # Save warnings for later inspection
+        self._last_load_warnings = list(warnings)
         colcount = len(headers)
         return ct, colcount, headers
-
     def wordlist_delta(self, orgtext, increase):
         newtext = str(orgtext)
         toreplace = []

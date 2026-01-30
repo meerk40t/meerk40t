@@ -283,6 +283,10 @@ def init_commands(kernel):
             return
 
         rows, columns, names = self.mywordlist.load_csv_file(new_file)
+        if self.mywordlist.has_load_warnings():
+            channel(_("Warnings during CSV load:"))
+            for warning in self.mywordlist.get_load_warnings():
+                channel("  " + warning)
         channel(_("Rows added: {rows}").format(rows=rows))
         channel(_("Values added: {values}").format(columns=columns))
         for name in names:

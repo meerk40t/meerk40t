@@ -30,7 +30,68 @@ from .wxutils import (
     wxStaticText,
 )
 
+
+class VirtualContentList(wxListCtrl):
+    """A virtual list control that fetches content on demand from a Wordlist.
+
+    It implements OnGetItemText and OnGetItemAttr so the control can display
+    very large lists without adding items to the control, keeping the UI
+    responsive.
+    """
+
+    def __init__(self, parent, id=wx.ID_ANY, style=wx.LC_REPORT | wx.LC_VIRTUAL | wx.LC_SINGLE_SEL | wx.LC_EDIT_LABELS, context=None, list_name=None):
+        # Ensure the control is created with LC_VIRTUAL regardless of caller-supplied style
+        style = style | wx.LC_VIRTUAL
+        # Note: call super with positional id to match wrapper signature in wxutils.wxListCtrl
+        super().__init__(parent, id, style=style, context=context, list_name=list_name)
+        self.key = None
+        self.wlist = None
+        self.current = None
+        # Use modern ItemAttr when available, fall back for older wx versions
+        try:
+            self._attr_current = wx.ItemAttr()
+        except AttributeError:
+            self._attr_current = wx.ListItemAttr()
+        try:
+            # Set the text color for the current item highlight
+            self._attr_current.SetTextColour(wx.RED)
+        except Exception:
+            pass
+
+    def set_key(self, key, wlist, current=None):
+        """Bind the control to a specific wordlist key and set the visible count."""
+        self.key = key
+        self.wlist = wlist
+        self.current = current
+        total = 0
+        if key in wlist.content:
+            total = max(0, len(wlist.content[key]) - 2)
+        self.SetItemCount(total)
+        # Refresh to ensure OnGetItemText/Attr are called for visible items
+        self.Refresh()
+
+    def set_current(self, current):
+        self.current = current
+        # Refresh visible items
+        self.Refresh()
+
+    # Methods called by wx for virtual lists
+    def OnGetItemText(self, item, col):
+        try:
+            if self.key is None or self.wlist is None:
+                return ""
+            return str(self.wlist.content[self.key][item + 2])
+        except Exception:
+            return ""
+
+    def OnGetItemAttr(self, item):
+        if item == self.current:
+            return self._attr_current
+        return None
+
+
 _ = wx.GetTranslation
+
 
 
 def register_panel_wordlist(window, context):
@@ -227,7 +288,8 @@ class WordlistPanel(wx.Panel):
         self.grid_wordlist.SetMinSize(dip_size(self, 200, 100))
         sizer_grid_left.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 
-        self.grid_content = wxListCtrl(
+        # Use a virtual list to avoid populating very large content lists on the UI thread
+        self.grid_content = VirtualContentList(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES
@@ -337,6 +399,11 @@ class WordlistPanel(wx.Panel):
         )
         sizer_index_right.Add(self.cbo_index_single, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        # Jump button allows direct numeric jump without populating huge comboboxes
+        self.btn_jump_index = wxButton(self, wx.ID_ANY, _("Jump"))
+        self.btn_jump_index.SetToolTip(_("Jump to a specific index"))
+        sizer_index_right.Add(self.btn_jump_index, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         dummylabel = wxStaticText(self, wx.ID_ANY, " ")
         sizer_index_right.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_index_right.Add(
@@ -433,6 +500,7 @@ class WordlistPanel(wx.Panel):
             wx.EVT_LEFT_DOWN, self.on_btn_edit_content_paste
         )
         self.cbo_index_single.Bind(wx.EVT_COMBOBOX, self.on_single_index)
+        self.btn_jump_index.Bind(wx.EVT_BUTTON, self.on_jump_index)
         # Key handler for F2
         self.grid_content.Bind(wx.EVT_CHAR, self.on_key_grid)
         self.grid_wordlist.Bind(wx.EVT_CHAR, self.on_key_grid)
@@ -615,27 +683,80 @@ class WordlistPanel(wx.Panel):
         self.cbo_index_single.Clear()
         choices = []
         selidx = 0
+        # For virtual list, clear columns and set a single Content column
         self.grid_content.ClearAll()
+        self.grid_content.InsertColumn(0, _("Content"))
         key_lower = skey.lower() if skey is not None else None
         self.cur_skey = key_lower
         self.cur_index = None
-        self.grid_content.InsertColumn(0, _("Content"))
 
         # If the key does not exist, leave the content empty and avoid KeyError
         if key_lower is None or key_lower not in self.wlist.content:
             self.cbo_index_single.Set(choices)
+            # ensure grid shows no rows
+            self.grid_content.set_key(None, self.wlist, None)
             return
 
-        for idx in range(2, len(self.wlist.content[key_lower])):
+        total_items = max(0, len(self.wlist.content[key_lower]) - 2)
+        # Populate full choices list; the grid is virtual and will render items on demand
+        for idx in range(2, 2 + total_items):
             myidx = idx - 2
             s_entry = str(self.wlist.content[key_lower][idx])
             choices.append(f"{myidx:3d} - {s_entry[:10]}")
-            index = self.grid_content.InsertItem(
-                self.grid_content.GetItemCount(), s_entry
+
+        # Populate the combo and set grid to virtual mode
+        self.cbo_index_single.Set(choices)
+        if selidx >= 0 and selidx < len(choices):
+            self.cbo_index_single.SetSelection(selidx)
+
+        # Set the virtual list's key and highlight the current index
+        self.grid_content.set_key(key_lower, self.wlist, current)
+        # Set item count to total items (virtual mode will fetch content on demand)
+        self.grid_content.SetItemCount(total_items)
+        # Populate combo and adjust column width
+        self.cbo_index_single.Set(choices)
+        if selidx >= 0 and selidx < len(choices):
+            self.cbo_index_single.SetSelection(selidx)
+        wsize = self.grid_content.GetSize()
+        self.grid_content.SetColumnWidth(0, wsize[0] - 10)
+        self.grid_content.resize_columns()
+
+    def on_jump_index(self, event):
+        """Prompt the user for an index and jump the grid to that index."""
+        if self.cur_skey is None:
+            self.edit_message(_("No variable selected"))
+            return
+        total_items = max(0, len(self.wlist.content[self.cur_skey]) - 2)
+        if total_items == 0:
+            self.edit_message(_("Selected variable has no entries"))
+            return
+        # Ask user for number
+        try:
+            value = wx.GetNumberFromUser(
+                _("Index:"),
+                _("Enter the zero-based index to jump to:"),
+                _("Jump to index"),
+                0,
+                0,
+                total_items - 1,
+                self,
             )
-            if idx == current + 2:
-                selidx = current
-                self.grid_content.SetItemTextColour(index, wx.RED)
+        except Exception:
+            value = None
+        # wx.GetNumberFromUser returns -1 on cancel in some versions
+        if value is None or value < 0:
+            return
+        # Commit index and refresh
+        self.wlist.set_index(self.cur_skey, value)
+        self.refresh_grid_content(self.cur_skey, value)
+        # Ensure selection in virtual grid
+        try:
+            self.grid_content.Select(value, True)
+            self.grid_content.Focus()
+        except Exception:
+            pass
+        # Autosave if enabled
+        self.autosave()
         wsize = self.grid_content.GetSize()
         self.grid_content.SetColumnWidth(0, wsize[0] - 10)
         self.grid_content.resize_columns()
@@ -1005,6 +1126,7 @@ class WordlistPanel(wx.Panel):
                 if i > maxidx:
                     maxidx = i
         if maxidx >= 0:
+            # Populate the full index range; the combo holds simple strings and is cheap to populate
             for i in range(maxidx):
                 self.cbo_Index.Append(str(i))
             self.cbo_Index.SetValue("0")
@@ -1214,9 +1336,18 @@ class ImportPanel(wx.Panel):
             ct, colcount, headers = self.wlist.load_csv_file(
                 myfile, force_header=force_header
             )
-            msg = _("Imported file, {col} fields, {row} rows").format(
-                col=colcount, row=ct
-            )
+            if self.wlist.has_warnings():
+                msg = _("Imported file with warnings, {col} fields, {row} rows").format(
+                    col=colcount, row=ct
+                )
+                channel = self.context.kernel.root.channel("console")
+                channel(msg)
+                for warning in self.wlist.get_warnings():
+                    channel("  " + warning)
+            else:
+                msg = _("Imported file, {col} fields, {row} rows").format(
+                    col=colcount, row=ct
+                )
             if self.parent_panel is not None:
                 self.parent_panel.edit_message(msg)
                 self.parent_panel.populate_gui()
@@ -1234,9 +1365,18 @@ class ImportPanel(wx.Panel):
             ct, colcount, headers = self.wlist.load_csv_file(
                 myfile, force_header=force_header
             )
-            msg = _("Imported file, {col} fields, {row} rows").format(
-                col=colcount, row=ct
-            )
+            if self.wlist.has_warnings():
+                msg = _("Imported file with warnings, {col} fields, {row} rows").format(
+                    col=colcount, row=ct
+                )
+                channel = self.context.kernel.root.channel("console")
+                channel(msg)
+                for warning in self.wlist.get_warnings():
+                    channel("  " + warning)
+            else:
+                msg = _("Imported file, {col} fields, {row} rows").format(
+                    col=colcount, row=ct
+                )
             if self.parent_panel is not None:
                 self.parent_panel.edit_message(msg)
                 self.parent_panel.populate_gui()
@@ -1309,13 +1449,47 @@ class WordlistEditor(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(500, 530, *args, **kwds)
 
-        self.panel_editor = WordlistPanel(self, wx.ID_ANY, context=self.context)
-        self.panel_import = ImportPanel(self, wx.ID_ANY, context=self.context)
-        self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)
+        # Create panels with resilience - if a panel fails to initialize, create a fallback panel
+        try:
+            self.panel_editor = WordlistPanel(self, wx.ID_ANY, context=self.context)
+        except Exception as e:
+            import traceback
 
-        self.panel_editor.set_parent(self)
-        self.panel_import.set_parent(self)
-        self.panel_about.set_parent(self)
+            traceback.print_exc()
+            self.panel_editor = wx.Panel(self)
+            st = wx.StaticText(self.panel_editor, wx.ID_ANY, _("Wordlist editor failed to initialize"))
+
+        try:
+            self.panel_import = ImportPanel(self, wx.ID_ANY, context=self.context)
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+            self.panel_import = wx.Panel(self)
+            wx.StaticText(self.panel_import, wx.ID_ANY, _("CSV Import panel failed to initialize"))
+
+        try:
+            self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+            self.panel_about = wx.Panel(self)
+            wx.StaticText(self.panel_about, wx.ID_ANY, _("About panel failed to initialize"))
+
+        # Give panels a chance to set parent if they implement it
+        try:
+            self.panel_editor.set_parent(self)
+        except Exception:
+            pass
+        try:
+            self.panel_import.set_parent(self)
+        except Exception:
+            pass
+        try:
+            self.panel_about.set_parent(self)
+        except Exception:
+            pass
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_curly_brackets.GetBitmap())
