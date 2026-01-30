@@ -216,6 +216,10 @@ def init_commands(kernel):
                 channel(_("No such file."))
                 return
         self.mywordlist.load_data(new_file)
+        if self.mywordlist.has_warnings():  
+            channel(_("Warnings during load:"))
+            for warning in self.mywordlist.get_warnings():
+                channel("  " + warning)
         return "wordlist", ""
 
     @self.console_argument(

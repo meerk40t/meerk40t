@@ -458,6 +458,8 @@ class WordlistPanel(wx.Panel):
 
     def on_btn_edit_wordlist_del(self, event):
         index = self.grid_wordlist.GetFirstSelected()
+        if index < 0:
+            return
         key = self.get_column_text(self.grid_wordlist, index, 0)
         if key in self.wlist.prohibited:
             msg = _("Can't delete internal variable {key}").format(key=key)
@@ -582,7 +584,7 @@ class WordlistPanel(wx.Panel):
     def on_single_index(self, event):
         skey = self.cur_skey
         idx = self.cbo_index_single.GetSelection()
-        if skey is None:
+        if skey is None or idx < 0:
             return
         self.wlist.set_index(skey, idx)
         self.refresh_grid_content(skey, idx)
@@ -591,15 +593,16 @@ class WordlistPanel(wx.Panel):
 
     def on_grid_wordlist(self, event):
         current_item = event.Index
-        self.current_entry = current_item
-        skey = self.get_column_text(self.grid_wordlist, current_item, 0).lower()
-        try:
-            current = int(self.get_column_text(self.grid_wordlist, current_item, 2))
-        except ValueError:
-            current = 0
+        if current_item >= 0:
+            self.current_entry = current_item
+            skey = self.get_column_text(self.grid_wordlist, current_item, 0).lower()
+            try:
+                current = int(self.get_column_text(self.grid_wordlist, current_item, 2))
+            except ValueError:
+                current = 0
 
-        self.refresh_grid_content(skey, current)
-        self.txt_pattern.SetValue(skey)
+            self.refresh_grid_content(skey, current)
+            self.txt_pattern.SetValue(skey)
         event.Skip()
 
     def on_content_dblclick(self, event):
@@ -757,7 +760,15 @@ class WordlistPanel(wx.Panel):
     def on_restore(self, event):
         if self.wlist.default_filename is not None:
             self.wlist.load_data(self.wlist.default_filename)
-            msg = _("Loaded from ") + self.wlist.default_filename
+            if self.wlist.has_warnings:
+                msg = _("Restored with warnings from ") + self.wlist.default_filename
+                channel = self.context.kernel.root.channel("console")
+                channel(msg)
+                for warning in self.wlist.get_warnings():
+                    channel("  " + warning)
+            
+            else:
+                msg = _("Restored from ") + self.wlist.default_filename
             self.edit_message(msg)
             self.populate_gui()
         event.Skip()
