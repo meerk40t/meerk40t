@@ -745,7 +745,7 @@ class SVGProcessor:
         reuse_operations=True,
     ):
         self.elements = elements
-        self.fastmode = self.elements.fastload
+        self.fastmode = getattr(self.elements, "fastload", False)
 
         self.operation_list = list()
         self.element_list = list()
@@ -1824,7 +1824,7 @@ class SVGProcessor:
                 if c.type == "group" and (c.id == "regmarks" or c.label == "regmarks"):
                     c.insert_siblings(list(c.children), fast=True)
                     c.remove_node()  # Removing group/file node.
-            # Signal tree rebuild after bulk operations
+            # Signal tree rebuild after bulk operations - in fastmode we do a full rebuild at the end.
             if not self.fastmode:
                 self.elements.signal("rebuild_tree", "regmarks")
 
@@ -1846,6 +1846,7 @@ class SVGProcessor:
         if needs_update:
             self.elements.process_keyhole_updates(None)
         if self.fastmode:
+            # Rebuild tree once at end: elements, regmarks and operations
             self.elements.signal("rebuild_tree")
 
 
