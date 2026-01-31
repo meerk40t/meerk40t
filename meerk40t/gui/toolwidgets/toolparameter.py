@@ -718,7 +718,7 @@ class ParameterTool(ToolWidget):
     def _tool_change(self):
         selected_node = None
         elements = self.scene.context.elements.elem_branch
-        for node in elements.flat(emphasized=True):
+        for node in elements.elems(emphasized=True):
             if (
                 hasattr(node, "functional_parameter")
                 and node.functional_parameter is not None

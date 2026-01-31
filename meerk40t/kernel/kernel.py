@@ -3934,6 +3934,23 @@ class Kernel(Settings):
                     lid_safe = lid_safe[:42] + '...'
                 channel(f"{idx:3d} {sig_safe:<35} {lid_safe:<45} {calls:6d} {total_time:12.3f} {avg:12.6f}")
 
+        # Flat tracker console command
+        @self.console_argument("action", type=str, default=None, help=_("Action: 'reset' to reset the counter"))
+        @self.console_command("flat-stats", help=_("Show or reset the global flat() call counter"))
+        def flat_stats(channel, _, remainder=None, action=None, **kwargs):
+            try:
+                total = self.elements.flat_tracker.get()
+            except Exception:
+                total = None
+            if action == 'reset':
+                try:
+                    self.elements.flat_tracker.reset()
+                except Exception:
+                    pass
+                channel(f"Flat calls: {total} (reset)")
+            else:
+                channel(f"Flat calls: {total}")
+
         # ==========
         # Threaded execution
         # ==========

@@ -309,7 +309,7 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
             return
         more_than_one = False
         ct = 0
-        for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for _e in self.context.elements.elems(emphasized=True):
             ct += 1
             if ct > 1:
                 more_than_one = True
@@ -441,7 +441,7 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         ):
             return
         if self.chk_individually.GetValue():
-            for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            for elem in self.context.elements.elems(emphasized=True):
                 # Skip elements that cannot be scaled
                 if not elem.can_scale:
                     continue
@@ -530,7 +530,7 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         ):
             return
         if self.chk_individually.GetValue():
-            for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            for elem in self.context.elements.elems(emphasized=True):
                 # Skip elements that cannot be moved
                 if not elem.can_move(self.context.elements.lock_allows_move):
                     continue

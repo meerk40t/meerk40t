@@ -659,6 +659,32 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
+        # Caches for flattened lists to avoid repeated full-tree traversals
+        self._elems_cache = None  # Cached list of element nodes
+        self._ops_cache = None    # Cached list of operation nodes
+
+        # Lightweight tracker for flat() calls (diagnostics)
+        class FlatTracker:
+            def __init__(self):
+                self.total_calls = 0
+                self.lock = threading.Lock()
+
+            def inc(self, n=1):
+                with self.lock:
+                    self.total_calls += n
+
+            def reset(self):
+                with self.lock:
+                    self.total_calls = 0
+
+            def get(self):
+                with self.lock:
+                    return self.total_calls
+
+        self.flat_tracker = FlatTracker()
+
+        # Register as a listener to the root node to invalidate caches on structural changes
+        self._tree.listen(self)
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         # Point / Segments selected.
@@ -1113,7 +1139,7 @@ class Elemental(Service):
             # Now that we have the colors let's iterate through all elements
             fuzzy = self.classify_fuzzy
             fuzzydistance = self.classify_fuzzydistance
-            for n in self.flat(types=elem_nodes):
+            for n in self.elems():
                 addit = False
                 if hasattr(n, attrib):
                     c = getattr(n, attrib)
@@ -1448,7 +1474,7 @@ class Elemental(Service):
         # No need for an opinfo dict
         self.save_persistent_operations("previous")
         self.op_data.write_configuration()
-        for e in self.flat():
+        for e in self.elems():
             e.unregister()
 
     def safe_section_name(self, name):
@@ -1840,7 +1866,7 @@ class Elemental(Service):
         emphasize_mode = False
         if data is None:
             emphasize_mode = True
-            data = list(self.flat(emphasized=True))
+            data = list(self.elems(emphasized=True))
         if len(data) == 0:
             return
         emph_data = [e for e in data]
@@ -2191,6 +2217,11 @@ class Elemental(Service):
                 self.classify(list(self.elems()))
 
     def flat(self, **kwargs):
+        try:
+            # Best-effort: increment elements-level flat call counter for diagnostics
+            self.flat_tracker.inc()
+        except Exception:
+            pass
         yield from self._tree.flat(**kwargs)
 
     def validate_ids(self, nodelist=None, generic=True):
@@ -2199,7 +2230,7 @@ class Elemental(Service):
         uid = {}
         missing = []
         if nodelist is None:
-            nodelist = list(self.flat())
+            nodelist = list(self.elems())
         for node in nodelist:
             if node.id in uid:
                 # ID already used. Clear.
@@ -2234,6 +2265,34 @@ class Elemental(Service):
         return self._tree.get(type="branch elems")
 
     def ops(self, **kwargs):
+        """Return operation nodes. Uses a simple per-instance cache when possible.
+
+        Cache is used when no depth is specified and no custom types filter is provided.
+        Property-based filters like emphasized/selected are applied on the cached list.
+        """
+        allowed_filters = {"emphasized", "selected", "targeted", "highlighted", "lock"}
+        # Cacheable if no depth and types not specified
+        cacheable = ("depth" not in kwargs or kwargs.get("depth") is None) and ("types" not in kwargs)
+
+        if cacheable:
+            if self._ops_cache is None:
+                # Build cache under lock
+                with self.node_lock:
+                    ops = self.op_branch
+                    self._ops_cache = [item for item in ops.flat(depth=1) if not item.type.startswith("branch") and not item.type.startswith("ref")]
+            # If only property filters provided, apply them on the cache
+            if not kwargs or set(kwargs.keys()).issubset(allowed_filters):
+                for item in self._ops_cache:
+                    skip = False
+                    for k, v in kwargs.items():
+                        if getattr(item, k) != v:
+                            skip = True
+                            break
+                    if not skip:
+                        yield item
+                return
+            # Otherwise fallthrough to full traversal
+
         operations = self.op_branch
         for item in operations.flat(depth=1, **kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):
@@ -2248,8 +2307,105 @@ class Elemental(Service):
             yield item
 
     def elems(self, **kwargs):
+        """Return element nodes. Uses a per-instance cache when possible to avoid repeated tree traversals.
+
+        Cache is used when no depth is specified and types is None or matches elem_nodes.
+        Property filters (emphasized/selected/targeted/highlighted/lock) are applied on the cached list.
+        """
+        allowed_filters = {"emphasized", "selected", "targeted", "highlighted", "lock"}
+        depth = kwargs.get("depth", None)
+        types_kw = kwargs.get("types", None)
+        cacheable = (depth is None) and (types_kw is None or types_kw == elem_nodes)
+
+        # If we can use the cache and it exists, apply property filters in memory
+        if cacheable and self._elems_cache is not None and set(kwargs.keys()).issubset(allowed_filters):
+            # Hoist filter lookups to locals to avoid repeated dict access in the loop
+            emph_filter = kwargs.get("emphasized", None) is not None
+            sel_filter = kwargs.get("selected", None) is not None
+            targ_filter = kwargs.get("targeted", None) is not None
+            high_filter = kwargs.get("highlighted", None) is not None
+            lock_filter = kwargs.get("lock", None) is not None
+            cache = self._elems_cache
+            for e in cache:
+                if emph_filter and e.emphasized != emph_filter:
+                    continue
+                if sel_filter and e.selected != sel_filter:
+                    continue
+                if targ_filter and e.targeted != targ_filter:
+                    continue
+                if high_filter and e.highlighted != high_filter:
+                    continue
+                if lock_filter and e.lock != lock_filter:
+                    continue
+                yield e
+            return
+
         elements = self.elem_branch
-        yield from elements.flat(types=elem_nodes, **kwargs)
+        # If cacheable and no filters, build and return cache
+        if cacheable and not kwargs:
+            if self._elems_cache is None:
+                with self.node_lock:
+                    # Use Elemental.flat() here so the elements-level flat_tracker is incremented
+                    self._elems_cache = list(self.flat(types=elem_nodes))
+            for e in self._elems_cache:
+                yield e
+            return
+
+        # Fallback to traversal for complex requests
+        # If caller provided explicit 'types' in kwargs, forward it directly to the branch
+        if "types" in kwargs:
+            yield from elements.flat(**kwargs)
+        else:
+            yield from self.flat(types=elem_nodes, **kwargs)
+
+    # Cache invalidation helpers and root notification handlers
+    def _is_in_branch(self, node, branch):
+        """Return True if node is descendant of branch."""
+        p = node
+        while p is not None:
+            if p is branch:
+                return True
+            p = p.parent
+        return False
+
+    def _invalidate_elems_cache(self, *args, **kwargs):
+        self._elems_cache = None
+
+    def _invalidate_ops_cache(self, *args, **kwargs):
+        self._ops_cache = None
+
+    def node_attached(self, node=None, **kwargs):
+        if node is None:
+            self._invalidate_elems_cache()
+            self._invalidate_ops_cache()
+            return
+        if self._is_in_branch(node, self.elem_branch):
+            self._invalidate_elems_cache()
+        if self._is_in_branch(node, self.op_branch):
+            self._invalidate_ops_cache()
+
+    def node_detached(self, node=None, **kwargs):
+        # Same invalidation behavior applies
+        self.node_attached(node=node, **kwargs)
+
+    def node_created(self, node=None, **kwargs):
+        self.node_attached(node=node, **kwargs)
+
+    def node_destroyed(self, node=None, **kwargs):
+        self.node_attached(node=node, **kwargs)
+
+    def altered(self, node=None, **kwargs):
+        # Structural alterations may affect caches; conservatively invalidate
+        self.node_attached(node=node, **kwargs)
+
+    def structure_changed(self, node=None, **kwargs):
+        """Handle coarse-grained tree structure changes, e.g., bulk moves/clears.
+
+        This is invoked by RootNode.notify_tree_structure_changed().
+        """
+        # Invalidate both caches unconditionally
+        self._invalidate_elems_cache()
+        self._invalidate_ops_cache()
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self.elem_branch
@@ -2531,7 +2687,7 @@ class Elemental(Service):
                     to_be_deleted += 1
         fastmode = to_be_deleted >= 100
         with self._node_lock:
-            for n in reversed(list(self.flat())):
+            for n in reversed(list(self.elems())):
                 if not hasattr(n, "_mark_delete"):
                     continue
                 if n.type in ("root", "branch elems", "branch reg", "branch ops"):
@@ -4525,7 +4681,7 @@ class Elemental(Service):
         return "|".join(filetypes)
 
     def find_node(self, identifier):
-        for node in self.flat():
+        for node in self.elems():
             if node.id == identifier:
                 return node
         return None

@@ -100,7 +100,7 @@ class InfoPanel(wx.Panel):
 
         count = 0
         if has_emph:
-            data = list(self.context.elements.flat(emphasized=True))
+            data = list(self.context.elements.elems(emphasized=True))
             count = len(data)
             self.lbl_info_main.SetLabel(
                 _("Selected elements: {count}").format(count=count)

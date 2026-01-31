@@ -712,20 +712,28 @@ class MKRibbonBarPanel(RibbonBarPanel):
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
         # self.context.elements.set_start_time("Ribbon rule")
+        if self.context.elements.suppress_updates:
+            return
         self.apply_enable_rules()
         # self.context.elements.set_end_time("Ribbon rule")
 
     @signal_listener("undoredo")
     def on_undostate_change(self, origin, *args):
+        if self.context.elements.suppress_updates:
+            return
         self.apply_enable_rules()
 
     @signal_listener("selected")
     @signal_listener("element_property_update")
     def on_selected_change(self, origin, node=None, *args):
+        if self.context.elements.suppress_updates:
+            return
         self.apply_enable_rules()
 
     @signal_listener("icons")
     def on_requested_change(self, origin, node=None, *args):
+        if self.context.elements.suppress_updates:
+            return
         self.apply_enable_rules()
         self.redrawn()
 

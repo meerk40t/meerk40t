@@ -1990,9 +1990,7 @@ class MeerK40t(MWindow):
             from meerk40t.core.elements.element_types import effect_nodes, elem_nodes
 
             result = False
-            for e in kernel.elements.flat(
-                types=elem_nodes + effect_nodes, emphasized=True
-            ):
+            for e in kernel.elements.elems(types=elem_nodes + effect_nodes, emphasized=True):
                 if (
                     hasattr(e, "functional_parameter")
                     and e.functional_parameter is not None

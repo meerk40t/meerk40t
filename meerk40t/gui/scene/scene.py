@@ -1090,7 +1090,7 @@ class Scene(Module, Job):
         # Minimum distance of 2 scaled pixels (spx) - provides appropriate snap tolerance 
         # that scales with zoom level, ensuring consistent snap behavior across different view scales
         minimum_distance = float(Length("2spx"))
-        for node in self.context.elements.flat(types=elem_nodes):
+        for node in self.context.elements.elems():
             # print(f"Debug: Processing node {node.type}")
             if hasattr(node, "as_geometry"):
                 geom = node.as_geometry()

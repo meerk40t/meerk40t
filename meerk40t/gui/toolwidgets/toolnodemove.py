@@ -49,7 +49,7 @@ class NodeMoveTool(ToolWidget):
         if event_type == "leftdown":
             offset = 5000
             points.clear()
-            for node in self.scene.context.elements.flat(emphasized=True):
+            for node in self.scene.context.elements.elems(emphasized=True):
                 if not hasattr(node, "as_geometry"):
                     continue
                 geom_transformed = node.as_geometry()

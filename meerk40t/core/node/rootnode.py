@@ -199,6 +199,20 @@ class RootNode(Node):
             if hasattr(listen, "altered"):
                 listen.altered(node, **kwargs)
 
+    def notify_tree_structure_changed(self, **kwargs):
+        """Notify listeners that the tree structure changed in bulk (e.g., bulk add/remove operations).
+
+        This deliberately passes node=None to allow listeners to distinguish a coarse-grained structural
+        change from a per-node attached/detached event.
+        """
+        for listen in self.listeners:
+            if hasattr(listen, "structure_changed"):
+                try:
+                    listen.structure_changed(node=None, **kwargs)
+                except Exception:
+                    pass
+
+
     def notify_expand(self, node=None, **kwargs):
         if node is None:
             node = self

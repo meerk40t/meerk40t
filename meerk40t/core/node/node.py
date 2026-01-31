@@ -1228,7 +1228,7 @@ class Node:
         @param nodes: iterable of nodes to reference (will be deduplicated)
         @param fast: If True, suppress individual notify_attached signals for performance
         @return:
-        
+
         Note: This method automatically deduplicates the input nodes to prevent
         adding the same node multiple times. For optimal performance when adding
         many references, use fast=True to suppress individual notification signals.
@@ -1242,7 +1242,7 @@ class Node:
             if node not in seen:
                 seen.add(node)
                 unique_nodes.append(node)
-        
+
         for node in unique_nodes:
             self.add_reference(node, fast=fast, **kwargs)
 
@@ -1272,6 +1272,14 @@ class Node:
             self._children.insert(pos, node)
         if not fast:
             node.notify_attached(node, parent=self, pos=pos)
+        else:
+            # If the caller suppressed per-node notifications for performance,
+            # send a coarse-grained structure notification so listeners can react.
+            if self._root is not None:
+                try:
+                    self._root.notify_tree_structure_changed()
+                except Exception:
+                    pass
         return node
 
     def create(self, type, **kwargs):
@@ -1541,6 +1549,15 @@ class Node:
             new_child.set_root(self._root)
             if not fast:
                 new_child.notify_attached(new_child)
+
+        # If we suppressed per-child notifications for performance (fast=True)
+        # emit a single, coarse-grained structural notification on the root so
+        # listeners (for example the elements service cache) can invalidate.
+        if fast and self._root is not None:
+            try:
+                self._root.notify_tree_structure_changed()
+            except Exception:
+                pass
 
     def append_child(self, new_child):
         """
@@ -1821,6 +1838,15 @@ class Node:
             self.notify_detached(self)
             if destroy:
                 self.notify_destroyed(self)
+        else:
+            # fast=True suppresses per-node detach/destroy notifications.
+            # Emit a single coarse-grained root notification so listeners can
+            # invalidate caches or otherwise react to structural change.
+            if self._root is not None:
+                try:
+                    self._root.notify_tree_structure_changed()
+                except Exception:
+                    pass
         if references:
             for ref in list(self._references):
                 ref.remove_node(fast=fast)
@@ -1840,6 +1866,11 @@ class Node:
         for child in children:
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
+        if fast and self._root is not None:
+            try:
+                self._root.notify_tree_structure_changed()
+            except Exception:
+                pass
 
     def is_a_child_of(self, node):
         # Walk up the parent chain, but guard against potential corruption (cycles)

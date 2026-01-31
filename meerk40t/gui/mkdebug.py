@@ -363,9 +363,9 @@ class DebugTreePanel(wx.Panel):
 
         txt1 = ""
         txt2 = ""
-        for node in self.context.elements.flat(selected=True):
+        for node in self.context.elements.elems(selected=True):
             txt1 += str(node) + "\n"
-        data = self.context.elements.flat(emphasized=True)
+        data = self.context.elements.elems(emphasized=True)
         for node in data:
             txt2 += (
                 f"{node.id} - {node.type} {node.display_label()} - {timestr(node._emphasized_time)}"

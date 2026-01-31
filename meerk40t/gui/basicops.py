@@ -170,7 +170,7 @@ class BasicOpPanel(wx.Panel):
         self.context.elements.classify_all_similar = newval
 
     def execute_single(self, targetop, attrib):
-        data = list(self.context.elements.flat(emphasized=True))
+        data = list(self.context.elements.elems(emphasized=True))
         idx = self.context.elements.classify_impose_default
         if idx == 1:
             impose = "to_op"
@@ -703,7 +703,7 @@ class BasicOpPanel(wx.Panel):
         highlight_fore = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
         highlight_back.ChangeLightness(32)
 
-        for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for elem in self.context.elements.elems(emphasized=True):
             for op in self.context.elements.ops():
                 for node in op.children:
                     if node.type == "reference":
