@@ -16,6 +16,7 @@ class RootNode(Node):
         self._root = self
         self.listeners = []
         self.context = context
+        self.pause_notify = False
         # Flag indicating the tree structure changed; listeners may set this
         # and services can invalidate caches lazily.
         self._structure_dirty = False

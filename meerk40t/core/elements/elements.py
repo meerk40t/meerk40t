@@ -827,7 +827,7 @@ class Elemental(Service):
     @contextlib.contextmanager
     def static(self, source: str):
         try:
-            self.stop_updates(source, False)
+            self.stop_updates(source)
             yield self
         finally:
             self.resume_updates(source)
@@ -854,7 +854,7 @@ class Elemental(Service):
             # flooding the scheduler with per-node events during bulk ops.
             if static:
                 # Pause per-node notifications
-                self.stop_updates(message, True)
+                self.stop_updates(message)
             self.do_undo = False
             yield self
         finally:
@@ -870,9 +870,9 @@ class Elemental(Service):
     def resume_visual_updates(self):
         self._tree.notify_frozen(False)
 
-    def stop_updates(self, source, stop_notify=False):
+    def stop_updates(self, source):
         # print (f"Stop update called from {source}")
-        self._tree.pause_notify = stop_notify
+        self._tree.pause_notify = True
         self.suppress_updates = True
         self.stop_visual_updates()
 
