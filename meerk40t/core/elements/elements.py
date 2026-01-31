@@ -2415,36 +2415,41 @@ class Elemental(Service):
 
     def node_attached(self, node=None, **kwargs):
         # Mark the whole tree as structurally dirty to allow lazy invalidation
-        try:
-            self._tree._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._tree._structure_dirty = True
+            except Exception:
+                pass
 
     def node_detached(self, node=None, **kwargs):
         # Mark dirty instead of immediate invalidation
-        try:
-            self._tree._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._tree._structure_dirty = True
+            except Exception:
+                pass
 
     def node_created(self, node=None, **kwargs):
-        try:
-            self._tree._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._tree._structure_dirty = True
+            except Exception:
+                pass
 
     def node_destroyed(self, node=None, **kwargs):
-        try:
-            self._tree._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._tree._structure_dirty = True
+            except Exception:
+                pass
 
     def altered(self, node=None, **kwargs):
         # Structural alterations may affect caches; mark dirty
-        try:
-            self._tree._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._tree._structure_dirty = True
+            except Exception:
+                pass
 
     def structure_changed(self, node=None, **kwargs):
         """Handle coarse-grained tree structure changes, e.g., bulk moves/clears.
@@ -2453,10 +2458,11 @@ class Elemental(Service):
         structurally dirty; the cache invalidation is deferred and performed
         lazily by `elems()`/`ops()` or when `_flush_structure_changes()` is called.
         """
-        try:
-            self._tree._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._tree._structure_dirty = True
+            except Exception:
+                pass
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self.elem_branch
@@ -2466,13 +2472,14 @@ class Elemental(Service):
         """Flush any pending structure change notifications by performing
         a single cache invalidation for elements and operations.
         """
-        if getattr(self._tree, "_structure_dirty", False):
-            self._invalidate_elems_cache()
-            self._invalidate_ops_cache()
-            try:
-                self._tree._structure_dirty = False
-            except Exception:
-                pass
+        with self.node_lock:
+            if getattr(self._tree, "_structure_dirty", False):
+                self._invalidate_elems_cache()
+                self._invalidate_ops_cache()
+                try:
+                    self._tree._structure_dirty = False
+                except Exception:
+                    pass
 
     def regmarks(self, **kwargs):
         elements = self.reg_branch
