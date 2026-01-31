@@ -41,6 +41,9 @@ Functions:
 """
 
 
+from time import time
+
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -58,9 +61,24 @@ def init_commands(kernel):
     @self.console_argument("filename", type=str)
     @self.console_command("load", help=_("load <file>"), all_arguments_required=True)
     def file_open(command, channel, _, filename, **kwargs):
+        from time import time 
         try:
+            t0 = time()
+            cb1 = self.count_elems()
             if self.load(filename):
                 channel(_("File loaded {filename}").format(filename=filename))
+                t1 = time()
+                cb2 = self.count_elems()
+                channel(
+                    _(
+                        "Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, added: {added}"
+                    ).format(
+                        load_time=t1 - t0,
+                        before=cb1,
+                        after=cb2,
+                        added=cb2 - cb1,
+                    )
+                )
             else:
                 channel(
                     _("Load handler not found: {filename}").format(filename=filename)
