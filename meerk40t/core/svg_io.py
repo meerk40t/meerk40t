@@ -893,6 +893,7 @@ class SVGProcessor:
                             setattr(node, prop, value)
                         except (ValueError, SyntaxError):
                             pass
+                        # print (f"{prop}: {lc} -> {getattr(node, prop, 'invalid')}")
 
     def check_for_label_display(self, node, element):
         """
