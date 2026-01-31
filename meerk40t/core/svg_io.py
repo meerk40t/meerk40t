@@ -745,6 +745,7 @@ class SVGProcessor:
         reuse_operations=True,
     ):
         self.elements = elements
+        self.fastmode = getattr(self.elements, "fastload", False)
 
         self.operation_list = list()
         self.element_list = list()
@@ -793,7 +794,7 @@ class SVGProcessor:
 
         context_node = self.elements.elem_branch
         with self.elements.node_lock:
-            file_node = context_node.add(type="file", filepath=pathname)
+            file_node = context_node.add(type="file", filepath=pathname, fast=self.fastmode)
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list, branch="elements")
@@ -823,7 +824,7 @@ class SVGProcessor:
                     for ref in refs.split(" "):
                         for e in self.element_list:
                             if e.id == ref:
-                                op.add_reference(e)
+                                op.add_reference(e, fast=self.fastmode)
 
         if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
@@ -1053,6 +1054,7 @@ class SVGProcessor:
                     SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
                     element.values.get(SVG_ATTR_TEXT_DOMINANT_BASELINE, "baseline"),
                 ),
+                fast=self.fastmode,
                 matrix=element.transform,
                 fill=element.fill,
                 stroke=element.stroke,
@@ -1115,6 +1117,7 @@ class SVGProcessor:
                 label=label,
                 lock=lock,
                 hidden=set_hidden,
+                fast=self.fastmode,
             )
             self.check_for_label_display(node, element)
             self.check_for_line_attributes(node, element)
@@ -1147,6 +1150,7 @@ class SVGProcessor:
                 label=label,
                 lock=lock,
                 hidden=set_hidden,
+                fast=self.fastmode,
             )
             self.check_for_label_display(node, element)
             self.check_for_line_attributes(node, element)
@@ -1199,6 +1203,7 @@ class SVGProcessor:
                 label=label,
                 lock=lock,
                 hidden=set_hidden,
+                fast=self.fastmode,
             )
             self.check_for_label_display(node, element)
             self.check_for_line_attributes(node, element)
@@ -1230,6 +1235,7 @@ class SVGProcessor:
                 label=label,
                 lock=lock,
                 hidden=set_hidden,
+                fast=self.fastmode,
             )
             self.check_for_label_display(node, element)
             self.check_for_line_attributes(node, element)
@@ -1283,6 +1289,7 @@ class SVGProcessor:
                 label=label,
                 lock=lock,
                 hidden=set_hidden,
+                fast=self.fastmode,
             )
             self.check_for_label_display(node, element)
             self.check_for_line_attributes(node, element)
@@ -1437,6 +1444,7 @@ class SVGProcessor:
                         depth_resolution=_depth_resolution,
                         keyhole_reference=_keyhole,
                         hidden=set_hidden,
+                        fast=self.fastmode,
                     )
                     self.check_for_label_display(node, element)
                     self.check_for_bound_information(node, element)
@@ -1533,10 +1541,10 @@ class SVGProcessor:
                     if node_type == "op hatch":
                         # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
                         node_type = "op engrave"
-                        op = self.elements.op_branch.add(type=node_type, **attrs)
-                        effect = op.add(type="effect hatch", **attrs)
+                        op = self.elements.op_branch.add(type=node_type, fast=self.fastmode, **attrs)
+                        effect = op.add(type="effect hatch", fast=self.fastmode, **attrs)
                     else:
-                        op = self.elements.op_branch.add(type=node_type, **attrs)
+                        op = self.elements.op_branch.add(type=node_type, fast=self.fastmode, **attrs)
                 op._ref_load = element.values.get("references")
 
                 if op is None or not hasattr(op, "type") or op.type is None:
@@ -1560,7 +1568,7 @@ class SVGProcessor:
                     "settings"
                 ]  # If settings was set, delete it, or it will mess things up
             with self.elements.node_lock:
-                elem = context_node.add(type=node_type, **attrs)
+                elem = context_node.add(type=node_type, fast=self.fastmode, **attrs)
             # This could be an elem point
             self.check_for_label_display(elem, element)
             self.check_for_bound_information(elem, element)
@@ -1626,6 +1634,7 @@ class SVGProcessor:
                     label=_label,
                     lock=_lock,
                     hidden=set_hidden,
+                    fast=self.fastmode,
                 )
                 self.check_for_label_display(node, element)
                 self.check_for_bound_information(node, element)
@@ -1757,7 +1766,7 @@ class SVGProcessor:
             if not already:
                 with self.elements.node_lock:
                     context_node = context_node.add(
-                        type=e_type, id=ident, label=_label, **e_dict
+                        type=e_type, id=ident, label=_label, fast=self.fastmode, **e_dict
                     )
                     self.check_for_label_display(context_node, element)
                     self.check_for_bound_information(context_node, element)
@@ -1798,7 +1807,7 @@ class SVGProcessor:
             # We need to add another filenode under regmarks and move all elements to it
             context_node = self.elements.reg_branch
             with self.elements.node_lock:
-                file_node = context_node.add(type="file", filepath=self.pathname)
+                file_node = context_node.add(type="file", fast=self.fastmode, filepath=self.pathname)
                 for node in self.regmark_list:
                     if node._parent is context_node:
                         if node.type == "group" and (
@@ -1815,8 +1824,9 @@ class SVGProcessor:
                 if c.type == "group" and (c.id == "regmarks" or c.label == "regmarks"):
                     c.insert_siblings(list(c.children), fast=True)
                     c.remove_node()  # Removing group/file node.
-            # Signal tree rebuild after bulk operations
-            self.elements.signal("rebuild_tree", "regmarks")
+            # Signal tree rebuild after bulk operations - in fastmode we do a full rebuild at the end.
+            if not self.fastmode:
+                self.elements.signal("rebuild_tree", "regmarks")
 
         needs_update = False
         for c in self.elements.flat():
@@ -1835,6 +1845,9 @@ class SVGProcessor:
 
         if needs_update:
             self.elements.process_keyhole_updates(None)
+        if self.fastmode:
+            # Rebuild tree once at end: elements, regmarks and operations
+            self.elements.signal("rebuild_tree")
 
 
 class SVGLoader:
