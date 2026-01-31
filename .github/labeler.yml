@@ -12,41 +12,41 @@
 - '**.md'
 
 "Context: Base":
-- 'meerk40t/*.py'
+- 'sefrocut/*.py'
 
 "Context: Kernel":
-- 'meerk40t/kernel/**/*.py'
+- 'sefrocut/kernel/**/*.py'
 
 "Context: Core":
-- 'meerk40t/core/**/*.py'
+- 'sefrocut/core/**/*.py'
 
 "Context: Devices":
-- 'meerk40t/device/**/*.py'
-- 'meerk40t/grbl/**/*.py'
-- 'meerk40t/lihuiyu/**/*.py'
-- 'meerk40t/ruida/**/*.py'
-- 'meerk40t/moshi/**/*.py'
-- 'meerk40t/newly/**/*.py'
-- 'meerk40t/balormk/**/*.py'
-- 'meerk40t/ch341/**/*.py'
+- 'sefrocut/device/**/*.py'
+- 'sefrocut/grbl/**/*.py'
+- 'sefrocut/lihuiyu/**/*.py'
+- 'sefrocut/ruida/**/*.py'
+- 'sefrocut/moshi/**/*.py'
+- 'sefrocut/newly/**/*.py'
+- 'sefrocut/balormk/**/*.py'
+- 'sefrocut/ch341/**/*.py'
 
 "Context: GUI":
-- 'meerk40t/gui/**/*.py'
+- 'sefrocut/gui/**/*.py'
 
 "Context: Network":
-- 'meerk40t/network/**/*.py'
+- 'sefrocut/network/**/*.py'
 
 "Context: Extra":
-- 'meerk40t/extra/**/*.py'
+- 'sefrocut/extra/**/*.py'
 
 "Context: Misc":
-- 'meerk40t/dxf/**/*.py'
-- 'meerk40t/camera/**/*.py'
-- 'meerk40t/cylinder/**/*.py'
-- 'meerk40t/fill/**/*.py'
-- 'meerk40t/image/**/*.py'
-- 'meerk40t/rotary/**/*.py'
-- 'meerk40t/tools/**/*.py'
+- 'sefrocut/dxf/**/*.py'
+- 'sefrocut/camera/**/*.py'
+- 'sefrocut/cylinder/**/*.py'
+- 'sefrocut/fill/**/*.py'
+- 'sefrocut/image/**/*.py'
+- 'sefrocut/rotary/**/*.py'
+- 'sefrocut/tools/**/*.py'
 
 "Context: Tests":
 - 'test/**/*.py'

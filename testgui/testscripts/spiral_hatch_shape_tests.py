@@ -50,7 +50,7 @@ if meerk40t_path:
     sys.path.insert(0, meerk40t_path)
     sys.path.insert(0, os.path.dirname(meerk40t_path))
 
-from meerk40t.core.geomstr import Geomstr, TYPE_LINE
+from sefrocut.core.geomstr import Geomstr, TYPE_LINE
 
 def create_shape_tests():
     """Test spiral hatch patterns with different shapes"""

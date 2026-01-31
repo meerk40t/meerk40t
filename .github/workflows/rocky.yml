@@ -17,7 +17,7 @@ jobs:
       run: |
         echo $(ldd --version)
 
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
 
     - name: Ensure dependencies installed
@@ -26,17 +26,17 @@ jobs:
         pip install ezdxf pyserial
         pip install scipy
         pip install requests
-        pip install meerk40t-camera opencv-python-headless
+        pip install sefrocut-camera opencv-python-headless
         pip install pillow
         pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/rocky-8/wxPython-4.2.1-cp311-cp311-linux_x86_64.whl
 
     - name: Build Meerk40t
       run: |
         . /home/jacob/py311/bin/activate
-        mv meerk40t.py mk40t.py
-        pyinstaller .github/workflows/linux/meerk40t.spec
-        mv mk40t.py meerk40t.py
-        mv dist/MeerK40t dist/MeerK40t-Linux
+        mv sefrocut.py mk40t.py
+        pyinstaller .github/workflows/linux/sefrocut.spec
+        mv mk40t.py sefrocut.py
+        mv dist/SefroCut dist/SefroCut-Linux
 
     - name: Set release version
       id: set_release_version
@@ -53,4 +53,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t-Linux
+          dist/SefroCut-Linux

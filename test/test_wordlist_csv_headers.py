@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from meerk40t.core.wordlist import Wordlist, TYPE_CSV
+from sefrocut.core.wordlist import Wordlist, TYPE_CSV
 
 
 class TestWordlistCSVHeaders(unittest.TestCase):

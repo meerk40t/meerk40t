@@ -136,7 +136,7 @@ MeerK40t-*.txt
 # Sourcery settings
 .sourcery.yaml
 .pre-commit-config.yaml
-meerk40t.spec
+sefrocut.spec
 mk40t.py
 
 # Local test files

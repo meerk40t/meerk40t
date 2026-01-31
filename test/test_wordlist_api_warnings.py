@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.core.wordlist import Wordlist, TYPE_COUNTER, TYPE_STATIC
+from sefrocut.core.wordlist import Wordlist, TYPE_COUNTER, TYPE_STATIC
 
 
 class TestWordlistAPIWarnings(unittest.TestCase):

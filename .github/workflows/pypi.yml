@@ -1,4 +1,4 @@
-name: Publish MeerK40t to PyPI 
+name: Publish SefroCut to PyPI 
 
 on: 
     workflow_dispatch:
@@ -35,14 +35,14 @@ jobs:
 
   publish-to-pypi:
     name: >-
-      Publish meerk40t to PyPI
+      Publish sefrocut to PyPI
     # if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
     needs:
     - build
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/meerk40t
+      url: https://pypi.org/p/sefrocut
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 

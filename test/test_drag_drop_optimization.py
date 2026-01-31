@@ -8,7 +8,7 @@ branches use the optimized drop_multi() method for better performance.
 import unittest
 import time
 from test.bootstrap import bootstrap
-from meerk40t.core.node.elem_rect import RectNode
+from sefrocut.core.node.elem_rect import RectNode
 
 
 class TestDragDropOptimization(unittest.TestCase):
@@ -122,8 +122,8 @@ class TestDragDropOptimization(unittest.TestCase):
 
     def test_drag_mixed_types(self):
         """Test dragging mixed element types"""
-        from meerk40t.core.node.elem_ellipse import EllipseNode
-        from meerk40t.core.node.elem_path import PathNode
+        from sefrocut.core.node.elem_ellipse import EllipseNode
+        from sefrocut.core.node.elem_path import PathNode
         
         # Create mixed types
         nodes = []
@@ -168,7 +168,7 @@ class TestDragDropOptimization(unittest.TestCase):
 
     def test_fallback_drop_multi(self):
         """Test that base Node.drop_multi() fallback works"""
-        from meerk40t.core.node.node import Node
+        from sefrocut.core.node.node import Node
         
         # Create a basic node (not a branch)
         node = Node()

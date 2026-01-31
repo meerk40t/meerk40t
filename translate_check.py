@@ -655,13 +655,13 @@ def validate_po(
         po.append(entry)
         seen.add(msgid)
         written += 1
-    po.save(f"./fixed_{locale}_meerk40t.po")
+    po.save(f"./fixed_{locale}_sefrocut.po")
     print_success(
         f"Validation for {locale} completed: written={written}, ignored_empty={ignored_empty}, ignored_duplicate={ignored_duplicate}, ignored_unused={ignored_unused}"
     )
     if do_it_yourself:
         print_warning(
-            f"Some entries had issues with curly brace placeholders. Please review 'fixed_{locale}_meerk40t.po' and correct them manually."
+            f"Some entries had issues with curly brace placeholders. Please review 'fixed_{locale}_sefrocut.po' and correct them manually."
         )
     return "Validated", written, ignored_empty, ignored_duplicate, ignored_unused
 

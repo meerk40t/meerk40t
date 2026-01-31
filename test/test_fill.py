@@ -1,7 +1,7 @@
 import unittest
 
-from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.svgelements import Matrix
+from sefrocut.fill.fills import eulerian_fill, scanline_fill
+from sefrocut.svgelements import Matrix
 from test import bootstrap
 
 

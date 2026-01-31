@@ -8,8 +8,8 @@ body:
       value: |
         Thank you for taking the time to report a bug!
 
-        This form should only be used to report genuine bugs inside MeerK40t,
-        and not as a means of requesting help on how to use MeerK40t.
+        This form should only be used to report genuine bugs inside SefroCut,
+        and not as a means of requesting help on how to use SefroCut.
 
         Please check that this is not going to be a duplicate before submitting it.
         If there is a similar bug already logged, please add your additions
@@ -41,16 +41,16 @@ body:
       description: Please copy and paste any relevant log output. This will not be formatted into paragraphs.
       render: shell
   - type: input
-    id: meerk40t_version
+    id: sefrocut_version
     attributes:
-      label: MeerK40t Version
-      description: What version of MeerK40t are you running?
+      label: SefroCut Version
+      description: What version of SefroCut are you running?
     validations:
       required: true
   - type: dropdown
-    id: meerk40t_type
+    id: sefrocut_type
     attributes:
-      label: MeerK40t Type
+      label: SefroCut Type
       description: How are you running Meerk40t?
       options:
         - Executable

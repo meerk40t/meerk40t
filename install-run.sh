@@ -27,5 +27,5 @@ else
     echo "Okay, skip these for now"
 fi
 
-python3 meerk40t.py 2>/dev/null
+python3 sefrocut.py 2>/dev/null
 read -p "Press enter to continue..."

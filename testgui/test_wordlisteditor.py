@@ -34,8 +34,8 @@ else:
 from types import SimpleNamespace
 
 from mock_context import MockContext
-from meerk40t.core.wordlist import Wordlist
-from meerk40t.gui.wordlisteditor import WordlistPanel
+from sefrocut.core.wordlist import Wordlist
+from sefrocut.gui.wordlisteditor import WordlistPanel
 
 
 class DummyEvent:

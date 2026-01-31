@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Tuple
 
 # Import all three CAG implementations
 try:
-    from meerk40t.core.geomstr import TYPE_LINE, BeamTable, Geomstr
+    from sefrocut.core.geomstr import TYPE_LINE, BeamTable, Geomstr
 
     GEOMSTR_AVAILABLE = True
 except ImportError:
@@ -32,7 +32,7 @@ except ImportError:
     GEOMSTR_AVAILABLE = False
 
 try:
-    from meerk40t.tools.polybool import Polygon, difference, intersect, union
+    from sefrocut.tools.polybool import Polygon, difference, intersect, union
 
     POLYBOOL_AVAILABLE = True
 except ImportError:

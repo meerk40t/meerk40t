@@ -7,10 +7,10 @@ from math import tau
 
 import numpy as np
 
-from meerk40t.fill.fills import scanline_fill
-from meerk40t.fill.patterns import set_diamond1, set_line
-from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
-from meerk40t.core.geomstr import (
+from sefrocut.fill.fills import scanline_fill
+from sefrocut.fill.patterns import set_diamond1, set_line
+from sefrocut.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
+from sefrocut.core.geomstr import (
     TYPE_LINE,
     TYPE_POINT,
     BeamTable,

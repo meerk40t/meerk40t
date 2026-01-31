@@ -1,6 +1,6 @@
 import unittest
-from meerk40t.core.node.node import Node
-from meerk40t.core.node.rootnode import RootNode
+from sefrocut.core.node.node import Node
+from sefrocut.core.node.rootnode import RootNode
 
 class TestNodeRootStructure(unittest.TestCase):
     def test_integrity_check_flags_invalid_root_children(self):

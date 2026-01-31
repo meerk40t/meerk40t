@@ -1,4 +1,4 @@
-# MeerK40t AI Coding Agent Instructions
+# SefroCut AI Coding Agent Instructions
 
 ## Environment & Platform Context
 
@@ -9,13 +9,13 @@
 
 ## Architecture Overview
 
-MeerK40t is a plugin-based laser cutting software built around a **Kernel** ecosystem. The system uses a sophisticated plugin lifecycle system where functionality is dynamically loaded and registered.
+SefroCut is a plugin-based laser cutting software built around a **Kernel** ecosystem. The system uses a sophisticated plugin lifecycle system where functionality is dynamically loaded and registered.
 
 ### Core Architecture Pattern
-- **Kernel** (`meerk40t/kernel/`) - Central service bus providing signals, channels, settings, console commands
-- **Core** (`meerk40t/core/`) - MeerK40t-specific ecosystem requirements (elements tree, cutplan optimization, etc.)
-- **Device Drivers** (`meerk40t/{grbl,lihuiyu,ruida,moshi,newly,balormk}/`) - Hardware-specific laser control implementations
-- **GUI** (`meerk40t/gui/`) - wxPython-based interface with AUI docking framework
+- **Kernel** (`sefrocut/kernel/`) - Central service bus providing signals, channels, settings, console commands
+- **Core** (`sefrocut/core/`) - SefroCut-specific ecosystem requirements (elements tree, cutplan optimization, etc.)
+- **Device Drivers** (`sefrocut/{grbl,lihuiyu,ruida,moshi,newly,balormk}/`) - Hardware-specific laser control implementations
+- **GUI** (`sefrocut/gui/`) - wxPython-based interface with AUI docking framework
 
 ### Critical Plugin Lifecycle
 All modules follow the plugin pattern with lifecycle hooks. The plugin function must be defined at module level:
@@ -37,20 +37,20 @@ Lifecycle phases (in order): `plugins` → `preregister` → `register` → `con
 
 ### Internal vs External Plugins
 
-**Internal Plugins** (`meerk40t/internal_plugins.py`):
-- Core functionality bundled with MeerK40t
+**Internal Plugins** (`sefrocut/internal_plugins.py`):
+- Core functionality bundled with SefroCut
 - Registered in `internal_plugins.py` during the `plugins` lifecycle phase
 - Examples: core, device drivers, GUI components, image tools
 - To add: Import and append to the plugins list in `internal_plugins.py`
 
-**External Plugins** (`meerk40t/external_plugins.py`):
+**External Plugins** (`sefrocut/external_plugins.py`):
 - Third-party extensions loaded via Python entry points
-- Entry point group: `meerk40t.extension`
+- Entry point group: `sefrocut.extension`
 - Automatically discovered at runtime (not in frozen builds)
 - To create: Define entry point in `setup.py` or `pyproject.toml`:
   ```python
   entry_points={
-      "meerk40t.extension": [
+      "sefrocut.extension": [
           "myplugin = mypackage.plugin:plugin",
       ],
   }
@@ -68,10 +68,10 @@ Each device type follows this structure:
 - `gui/` - Device-specific UI panels
 - `plugin.py` - Plugin lifecycle and registration
 
-**Example location**: `meerk40t/grbl/device.py` shows the complete pattern with 1300+ lines of device choices registration.
+**Example location**: `sefrocut/grbl/device.py` shows the complete pattern with 1300+ lines of device choices registration.
 
 **How to add a new device driver**:
-1. Create a new directory under `meerk40t/` (e.g., `meerk40t/newdevice/`)
+1. Create a new directory under `sefrocut/` (e.g., `sefrocut/newdevice/`)
 2. Implement `device.py`, `controller.py`, `driver.py` following existing driver patterns
 3. Create `plugin.py` with registration in the `register` lifecycle phase
 4. Register the device provider: `kernel.register("provider/device/newdevice", NewDevice)`
@@ -83,7 +83,7 @@ Console commands can be registered at the kernel level or service level. Use the
 
 **For Kernel-level commands** (available globally):
 ```python
-from meerk40t.kernel.functions import kernel_console_command
+from sefrocut.kernel.functions import kernel_console_command
 
 @kernel_console_command("command_name", help=_("Description"))
 def command_handler(command, channel, _, **kwargs):
@@ -94,7 +94,7 @@ def command_handler(command, channel, _, **kwargs):
 
 **For Service-level commands** (within a Service class):
 ```python
-from meerk40t.kernel.functions import console_command
+from sefrocut.kernel.functions import console_command
 
 class MyService(Service):
     def __init__(self, kernel):
@@ -126,7 +126,7 @@ def init_commands(kernel):
 Services are registered with domains and activated:
 
 ```python
-from meerk40t.kernel.service import Service
+from sefrocut.kernel.service import Service
 
 class MyService(Service):
     def __init__(self, kernel):
@@ -143,7 +143,7 @@ def plugin(kernel, lifecycle=None):
 Services extend the kernel context with domain-specific attributes accessible via `kernel.domain_name`.
 
 ### Node Tree Architecture
-The elements system uses a tree structure (`meerk40t/core/node/node.py`):
+The elements system uses a tree structure (`sefrocut/core/node/node.py`):
 - All objects inherit from `Node` with parent/children relationships
 - Use `union_bounds()` for calculating bounding boxes across node collections
 - Operations become nodes in the tree with type-specific behaviors
@@ -158,21 +158,21 @@ The elements system uses a tree structure (`meerk40t/core/node/node.py`):
 **Step-by-step process**:
 
 1. **Determine the appropriate module**:
-   - **Core functionality** → `meerk40t/core/` - Elements tree, cutplan, operations, node system
-   - **Device driver** → `meerk40t/{driver_name}/` - Hardware-specific implementations
-   - **GUI component** → `meerk40t/gui/` - wxPython interface components
-   - **Tool/utility** → `meerk40t/tools/` - Internal tools, or `meerk40t/extra/` - Optional features
-   - **Hardware abstraction** → `meerk40t/device/` - Base device classes
-   - **File format support** → `meerk40t/dxf/` - DXF import/export, SVG via `svgelements.py`
-   - **Network features** → `meerk40t/network/` - Network protocols and servers
-   - **Image processing** → `meerk40t/image/` - Image tools and processing
-   - **Fill patterns** → `meerk40t/fill/` - Fill pattern generators
+   - **Core functionality** → `sefrocut/core/` - Elements tree, cutplan, operations, node system
+   - **Device driver** → `sefrocut/{driver_name}/` - Hardware-specific implementations
+   - **GUI component** → `sefrocut/gui/` - wxPython interface components
+   - **Tool/utility** → `sefrocut/tools/` - Internal tools, or `sefrocut/extra/` - Optional features
+   - **Hardware abstraction** → `sefrocut/device/` - Base device classes
+   - **File format support** → `sefrocut/dxf/` - DXF import/export, SVG via `svgelements.py`
+   - **Network features** → `sefrocut/network/` - Network protocols and servers
+   - **Image processing** → `sefrocut/image/` - Image tools and processing
+   - **Fill patterns** → `sefrocut/fill/` - Fill pattern generators
 
 2. **Follow plugin pattern**:
    - Create or update `plugin.py` (or module `__init__.py`)
    - Implement `plugin(kernel, lifecycle=None)` function
    - Register components in appropriate lifecycle phase
-   - For internal plugins: Add to `meerk40t/internal_plugins.py` if it's a new top-level module
+   - For internal plugins: Add to `sefrocut/internal_plugins.py` if it's a new top-level module
 
 3. **Add console commands** (if needed):
    - Use appropriate decorator (`@kernel_console_command` or `@console_command`)
@@ -211,7 +211,7 @@ python -m unittest test.test_drivers_grbl.TestGRBLDriver.test_specific_method -v
 **Test file structure**:
 ```python
 import unittest
-from meerk40t.kernel import Kernel
+from sefrocut.kernel import Kernel
 
 class TestMyFeature(unittest.TestCase):
     def setUp(self):
@@ -237,7 +237,7 @@ class TestMyFeature(unittest.TestCase):
 
 ### Cut Planning Algorithm
 
-The `CutPlan` system (`meerk40t/core/cutplan.py`) handles complex optimization:
+The `CutPlan` system (`sefrocut/core/cutplan.py`) handles complex optimization:
 
 **Optimization stages**:
 1. **Inner-first optimization**: Burns inner closed paths before outer paths
@@ -269,7 +269,7 @@ The device communication architecture follows this flow:
 4. **Spooler** manages job queue and execution
 
 **When implementing device communication**:
-- Follow existing driver patterns (see `meerk40t/grbl/` as reference)
+- Follow existing driver patterns (see `sefrocut/grbl/` as reference)
 - Implement proper error handling and reconnection logic
 - Use kernel channels for status updates to user
 - Handle thread safety for communication operations
@@ -290,7 +290,7 @@ channel(_("Info: Operation complete"))     # Informational messages
 Device settings use choice dictionaries with specific structure:
 
 ```python
-from meerk40t.kernel import Kernel
+from sefrocut.kernel import Kernel
 
 class MyDevice(Service):
     def __init__(self, kernel):
@@ -361,10 +361,10 @@ The project uses multiple code quality tools configured in `pyproject.toml`:
 - **mypy**: Static type checking (excludes `svgelements.py`)
 
 **Before committing code**:
-1. Format with Black: `black meerk40t/`
-2. Sort imports: `isort meerk40t/`
-3. Check with flake8: `flake8 meerk40t/`
-4. Run pylint if needed: `pylint meerk40t/`
+1. Format with Black: `black sefrocut/`
+2. Sort imports: `isort sefrocut/`
+3. Check with flake8: `flake8 sefrocut/`
+4. Run pylint if needed: `pylint sefrocut/`
 
 **Code Style Guidelines**:
 - Follow PEP 8 Python style guidelines
@@ -397,7 +397,7 @@ def fast_function(data):
 ### External Software Integration
 - **Lightburn compatibility**: `ruidacontrol` command creates Ruida emulation
 - **GRBL TCP**: `grblcontrol` command for remote GRBL access
-- **File format support**: SVG, DXF import through dedicated modules (`meerk40t/dxf/`, SVG through `svgelements.py`)
+- **File format support**: SVG, DXF import through dedicated modules (`sefrocut/dxf/`, SVG through `svgelements.py`)
 
 ### Critical Performance Areas
 These areas are performance-critical and changes should be carefully tested:
@@ -503,19 +503,19 @@ pip install -r requirements-nogui.txt
 ```
 
 **Setup.py extras**:
-- `pip install meerk40t[all]` - All optional dependencies
-- `pip install meerk40t[gui]` - GUI dependencies only
-- `pip install meerk40t[cam]` - Camera support
-- `pip install meerk40t[dxf]` - DXF import/export
+- `pip install sefrocut[all]` - All optional dependencies
+- `pip install sefrocut[gui]` - GUI dependencies only
+- `pip install sefrocut[cam]` - Camera support
+- `pip install sefrocut[dxf]` - DXF import/export
 
 ## Application Entry Point
 
-The main application entry point is `meerk40t/main.py`:
+The main application entry point is `sefrocut/main.py`:
 - Defines `APPLICATION_NAME` and `APPLICATION_VERSION`
 - Version detection: Automatically appends "git", "src", or "pkg" based on environment
 - Command-line argument parsing for various modes (GUI, console, daemon, etc.)
 - Initializes Kernel and loads internal/external plugins
-- Entry point: `meerk40t.py` or `python -m meerk40t.main`
+- Entry point: `sefrocut.py` or `python -m sefrocut.main`
 
 **Key command-line arguments**:
 - `-z, --no-gui` - Run without GUI
@@ -527,12 +527,12 @@ The main application entry point is `meerk40t/main.py`:
 ## Quick Reference
 
 ### File Locations
-- **Core kernel**: `meerk40t/kernel/`
-- **Core functionality**: `meerk40t/core/` (elements, cutplan, operations)
-- **Device drivers**: `meerk40t/{grbl,lihuiyu,ruida,moshi,newly,balormk}/`
-- **GUI components**: `meerk40t/gui/`
-- **Tools**: `meerk40t/tools/` (internal) or `tools/` (build scripts)
-- **Extra features**: `meerk40t/extra/` (optional features)
+- **Core kernel**: `sefrocut/kernel/`
+- **Core functionality**: `sefrocut/core/` (elements, cutplan, operations)
+- **Device drivers**: `sefrocut/{grbl,lihuiyu,ruida,moshi,newly,balormk}/`
+- **GUI components**: `sefrocut/gui/`
+- **Tools**: `sefrocut/tools/` (internal) or `tools/` (build scripts)
+- **Extra features**: `sefrocut/extra/` (optional features)
 - **Tests**: `test/` (unit tests) and `testgui/` (GUI tests)
 - **Documentation**: Module `README.md` files
 - **Translations**: `locale/` directory
@@ -540,10 +540,10 @@ The main application entry point is `meerk40t/main.py`:
 
 ### Import Patterns
 ```python
-from meerk40t.kernel import Kernel
-from meerk40t.kernel.functions import kernel_console_command, console_command
-from meerk40t.kernel.service import Service
-from meerk40t.core.node.node import Node
+from sefrocut.kernel import Kernel
+from sefrocut.kernel.functions import kernel_console_command, console_command
+from sefrocut.kernel.service import Service
+from sefrocut.core.node.node import Node
 ```
 
 ### Lifecycle Phases
@@ -564,17 +564,17 @@ from meerk40t.core.node.node import Node
 ### Module Organization Guide
 
 **When to add code where**:
-- **`meerk40t/kernel/`** - Core kernel functionality (don't modify unless extending kernel itself)
-- **`meerk40t/core/`** - MeerK40t-specific core features (elements, operations, cutplan)
-- **`meerk40t/device/`** - Base device classes and device management
-- **`meerk40t/{driver}/`** - Specific device driver implementations
-- **`meerk40t/gui/`** - All wxPython GUI components
-- **`meerk40t/tools/`** - Internal tools and utilities used by the application
-- **`meerk40t/extra/`** - Optional features (coolant, vectrace, potrace, etc.)
-- **`meerk40t/image/`** - Image processing and tools
-- **`meerk40t/fill/`** - Fill pattern generators
-- **`meerk40t/dxf/`** - DXF file format support
-- **`meerk40t/network/`** - Network protocols and server functionality
+- **`sefrocut/kernel/`** - Core kernel functionality (don't modify unless extending kernel itself)
+- **`sefrocut/core/`** - SefroCut-specific core features (elements, operations, cutplan)
+- **`sefrocut/device/`** - Base device classes and device management
+- **`sefrocut/{driver}/`** - Specific device driver implementations
+- **`sefrocut/gui/`** - All wxPython GUI components
+- **`sefrocut/tools/`** - Internal tools and utilities used by the application
+- **`sefrocut/extra/`** - Optional features (coolant, vectrace, potrace, etc.)
+- **`sefrocut/image/`** - Image processing and tools
+- **`sefrocut/fill/`** - Fill pattern generators
+- **`sefrocut/dxf/`** - DXF file format support
+- **`sefrocut/network/`** - Network protocols and server functionality
 - **`tools/`** (root) - Build scripts and development utilities
 
 ### Code Quality Tools Quick Reference
@@ -582,25 +582,25 @@ from meerk40t.core.node.node import Node
 **Formatting**:
 ```powershell
 # Format code
-black meerk40t/
+black sefrocut/
 
 # Sort imports
-isort meerk40t/
+isort sefrocut/
 
 # Check formatting (dry run)
-black --check meerk40t/
+black --check sefrocut/
 ```
 
 **Linting**:
 ```powershell
 # Run flake8
-flake8 meerk40t/
+flake8 sefrocut/
 
 # Run pylint (may be slow)
-pylint meerk40t/
+pylint sefrocut/
 
 # Type checking
-mypy meerk40t/
+mypy sefrocut/
 ```
 
 **Translation**:

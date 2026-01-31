@@ -23,13 +23,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from test.bootstrap import bootstrap
 
-from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.groupnode import GroupNode
-from meerk40t.core.node.node import Node
-from meerk40t.core.node.op_cut import CutOpNode
-from meerk40t.core.node.refnode import ReferenceNode
-from meerk40t.svgelements import Matrix, Path
-from meerk40t.core.geomstr import Geomstr
+from sefrocut.core.node.elem_path import PathNode
+from sefrocut.core.node.groupnode import GroupNode
+from sefrocut.core.node.node import Node
+from sefrocut.core.node.op_cut import CutOpNode
+from sefrocut.core.node.refnode import ReferenceNode
+from sefrocut.svgelements import Matrix, Path
+from sefrocut.core.geomstr import Geomstr
 
 
 class TestNodeBackupRestore(unittest.TestCase):

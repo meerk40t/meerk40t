@@ -1,7 +1,7 @@
 import unittest
-from meerk40t.core.view import View
-from meerk40t.core.units import UNITS_PER_INCH, MM_PER_INCH, Length
-from meerk40t.svgelements import Matrix, Point
+from sefrocut.core.view import View
+from sefrocut.core.units import UNITS_PER_INCH, MM_PER_INCH, Length
+from sefrocut.svgelements import Matrix, Point
 
 
 class TestView(unittest.TestCase):

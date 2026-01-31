@@ -3,15 +3,15 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.linecut import LineCut
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.plotplanner import PlotPlanner
-from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Circle, Matrix, Path, Point
+from sefrocut.core.cutcode.cutcode import CutCode
+from sefrocut.core.cutcode.linecut import LineCut
+from sefrocut.core.node.elem_image import ImageNode
+from sefrocut.core.node.elem_path import PathNode
+from sefrocut.core.node.op_engrave import EngraveOpNode
+from sefrocut.core.node.op_raster import RasterOpNode
+from sefrocut.core.plotplanner import PlotPlanner
+from sefrocut.device.basedevice import PLOT_AXIS, PLOT_SETTING
+from sefrocut.svgelements import Circle, Matrix, Path, Point
 
 
 class TestPlotplanner(unittest.TestCase):

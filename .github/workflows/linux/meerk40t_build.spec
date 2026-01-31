@@ -11,8 +11,8 @@ wx_datas = collect_data_files("wx")
 wx_binaries = collect_dynamic_libs("wx")
 
 a = Analysis(
-    ["../../../meerk40t.py"],
-    pathex=["../../../build/meerk40t-import"],
+    ["../../../sefrocut.py"],
+    pathex=["../../../build/sefrocut-import"],
     binaries=wx_binaries,
     datas=wx_datas,
     hiddenimports=[
@@ -31,19 +31,19 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
-a.datas += [('locale/es/LC_MESSAGES/meerk40t.mo', 'locale/es/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/it/LC_MESSAGES/meerk40t.mo', 'locale/it/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/de/LC_MESSAGES/meerk40t.mo', 'locale/de/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/zh/LC_MESSAGES/meerk40t.mo', 'locale/zh/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/fr/LC_MESSAGES/meerk40t.mo', 'locale/fr/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/hu/LC_MESSAGES/meerk40t.mo', 'locale/hu/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/pt_BR/LC_MESSAGES/meerk40t.mo', 'locale/pt_BR/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/pt_PT/LC_MESSAGES/meerk40t.mo', 'locale/pt_PT/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/ja/LC_MESSAGES/meerk40t.mo', 'locale/ja/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/nl/LC_MESSAGES/meerk40t.mo', 'locale/nl/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/ru/LC_MESSAGES/meerk40t.mo', 'locale/ru/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/pl/LC_MESSAGES/meerk40t.mo', 'locale/pl/LC_MESSAGES/meerk40t.mo', 'DATA')]
-a.datas += [('locale/tr/LC_MESSAGES/meerk40t.mo', 'locale/tr/LC_MESSAGES/meerk40t.mo', 'DATA')]
+a.datas += [('locale/es/LC_MESSAGES/sefrocut.mo', 'locale/es/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/it/LC_MESSAGES/sefrocut.mo', 'locale/it/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/de/LC_MESSAGES/sefrocut.mo', 'locale/de/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/zh/LC_MESSAGES/sefrocut.mo', 'locale/zh/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/fr/LC_MESSAGES/sefrocut.mo', 'locale/fr/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/hu/LC_MESSAGES/sefrocut.mo', 'locale/hu/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/pt_BR/LC_MESSAGES/sefrocut.mo', 'locale/pt_BR/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/pt_PT/LC_MESSAGES/sefrocut.mo', 'locale/pt_PT/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/ja/LC_MESSAGES/sefrocut.mo', 'locale/ja/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/nl/LC_MESSAGES/sefrocut.mo', 'locale/nl/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/ru/LC_MESSAGES/sefrocut.mo', 'locale/ru/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/pl/LC_MESSAGES/sefrocut.mo', 'locale/pl/LC_MESSAGES/sefrocut.mo', 'DATA')]
+a.datas += [('locale/tr/LC_MESSAGES/sefrocut.mo', 'locale/tr/LC_MESSAGES/sefrocut.mo', 'DATA')]
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(pyz,
@@ -59,4 +59,4 @@ exe = EXE(pyz,
           upx=False,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False, icon='../../../meerk40t.ico')
+          console=False, icon='../../../sefrocut.ico')

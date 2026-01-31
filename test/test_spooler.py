@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.core.spoolers import SpoolerJob
+from sefrocut.core.spoolers import SpoolerJob
 from test import bootstrap
 
 

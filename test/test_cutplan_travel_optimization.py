@@ -30,15 +30,15 @@ from unittest.mock import MagicMock
 # Add the meerk40t directory to Python path to use local version
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.cutgroup import CutGroup
-from meerk40t.core.cutcode.linecut import LineCut
-from meerk40t.core.cutplan import (
+from sefrocut.core.cutcode.cutcode import CutCode
+from sefrocut.core.cutcode.cutgroup import CutGroup
+from sefrocut.core.cutcode.linecut import LineCut
+from sefrocut.core.cutplan import (
     CutPlan,
     inner_first_ident,
     short_travel_cutcode_optimized,
 )
-from meerk40t.svgelements import Point
+from sefrocut.svgelements import Point
 
 
 class MockKernel:

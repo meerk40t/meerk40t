@@ -56,7 +56,7 @@ else:
 
 from mock_context import MockContext
 
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from sefrocut.gui.choicepropertypanel import ChoicePropertyPanel
 
 
 class DummyObject:
@@ -161,8 +161,8 @@ class ChoicePropertyPanelTestCase(unittest.TestCase):
         self.assertFalse(self.obj.enabled)
 
     def test_all_types_and_styles(self):
-        from meerk40t.core.units import Angle, Length
-        from meerk40t.svgelements import Color
+        from sefrocut.core.units import Angle, Length
+        from sefrocut.svgelements import Color
 
         class Obj:
             def __init__(self):
@@ -778,8 +778,8 @@ class ChoicePropertyPanelTestCase(unittest.TestCase):
         Comprehensive test of all valid type and style combinations for ChoicePropertyPanel.
         Tests value setting, successful setting validation, and control behavior.
         """
-        from meerk40t.core.units import Angle, Length
-        from meerk40t.svgelements import Color
+        from sefrocut.core.units import Angle, Length
+        from sefrocut.svgelements import Color
 
         class ComprehensiveTestObject:
             def __init__(self):
@@ -1534,8 +1534,8 @@ class ChoicePropertyPanelTestCase(unittest.TestCase):
 
     def test_parallel_panel_with_special_types(self):
         """Test parallel panel synchronization with Length, Angle, and Color types."""
-        from meerk40t.core.units import Angle, Length
-        from meerk40t.svgelements import Color
+        from sefrocut.core.units import Angle, Length
+        from sefrocut.svgelements import Color
 
         class SpecialSyncObject:
             def __init__(self):

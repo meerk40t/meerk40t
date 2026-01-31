@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.kernel import kernel_console_command, service_console_command
+from sefrocut.kernel import kernel_console_command, service_console_command
 from test import bootstrap
 
 
@@ -101,7 +101,7 @@ class TestKernel(unittest.TestCase):
         """
         from PIL import Image
 
-        from meerk40t.core.treeop import tree_operations_for_node
+        from sefrocut.core.treeop import tree_operations_for_node
 
         image = Image.new("RGBA", (256, 256))
         from PIL import ImageDraw
@@ -159,7 +159,7 @@ class TestKernel(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         kernel.args = Args()
         try:
-            from meerk40t.external_plugins import plugin
+            from sefrocut.external_plugins import plugin
 
             q = plugin(kernel=kernel, lifecycle="plugins")
             print(q)
@@ -171,7 +171,7 @@ class TestGetSafePath(unittest.TestCase):
     def test_get_safe_path(self):
         import os
 
-        from meerk40t.kernel import get_safe_path
+        from sefrocut.kernel import get_safe_path
 
         """
         Tests the get_safe_path method for all o/ses

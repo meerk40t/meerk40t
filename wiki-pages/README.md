@@ -1,19 +1,19 @@
-# MeerK40t Help Wiki Generation
+# SefroCut Help Wiki Generation
 
-This directory contains automatically generated template pages for the MeerK40t online help system.
+This directory contains automatically generated template pages for the SefroCut online help system.
 
 ## What This Contains
 
-- **61 help page templates** - One for each unique help section found in the MeerK40t codebase
+- **61 help page templates** - One for each unique help section found in the SefroCut codebase
 - **OnlineHelp.md** - An index page that organizes help topics by category
 - **generate_help_wiki.py** - The script that generated these pages
 
-## How MeerK40t Help Works
+## How SefroCut Help Works
 
-MeerK40t uses a context-sensitive help system where UI elements can have help text assigned via `SetHelpText("sectionname")`. When users press F1 or click help buttons, the application constructs URLs like:
+SefroCut uses a context-sensitive help system where UI elements can have help text assigned via `SetHelpText("sectionname")`. When users press F1 or click help buttons, the application constructs URLs like:
 
 ```
-https://github.com/meerk40t/meerk40t/wiki/Online-Help:-sectionname
+https://github.com/sefrocut/sefrocut/wiki/Online-Help:-sectionname
 ```
 
 ## Updating Help Pages with Minimal Effort
@@ -22,8 +22,8 @@ https://github.com/meerk40t/meerk40t/wiki/Online-Help:-sectionname
 
 1. **Clone the wiki repository:**
    ```bash
-   git clone https://github.com/meerk40t/meerk40t.wiki.git
-   cd meerk40t.wiki
+   git clone https://github.com/sefrocut/sefrocut.wiki.git
+   cd sefrocut.wiki
    ```
 
 2. **Copy the generated pages:**
@@ -34,13 +34,13 @@ https://github.com/meerk40t/meerk40t/wiki/Online-Help:-sectionname
 3. **Commit and push:**
    ```bash
    git add .
-   git commit -m "Add comprehensive help pages for all MeerK40t features"
+   git commit -m "Add comprehensive help pages for all SefroCut features"
    git push
    ```
 
 ### Option 2: Manual Creation via GitHub Web Interface
 
-1. Go to https://github.com/meerk40t/meerk40t/wiki
+1. Go to https://github.com/sefrocut/sefrocut/wiki
 2. Click "New Page" for each template
 3. Copy/paste the content from the corresponding `.md` file
 4. Name each page exactly as shown (e.g., "Online-Help:-devices")
@@ -105,4 +105,4 @@ If new help sections are added to the codebase:
 - **Index generation**: Builds categorized index for easy navigation
 
 This system allows maintaining comprehensive help documentation with minimal ongoing effort while ensuring all features have corresponding help pages.</content>
-<parameter name="filePath">c:\_development\meerk40t\wiki-pages\README.md
+<parameter name="filePath">c:\_development\sefrocut\wiki-pages\README.md

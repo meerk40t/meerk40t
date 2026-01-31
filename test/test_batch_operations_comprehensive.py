@@ -12,8 +12,8 @@ Tests:
 import unittest
 import time
 from test.bootstrap import bootstrap
-from meerk40t.core.node.elem_rect import RectNode
-from meerk40t.core.node.elem_ellipse import EllipseNode
+from sefrocut.core.node.elem_rect import RectNode
+from sefrocut.core.node.elem_ellipse import EllipseNode
 
 
 class TestBatchOperationsComprehensive(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
     def test_classify_to_operation_batch(self):
         """Test batch classification of elements to operations via direct drop_multi"""
         # Create an engrave operation
-        from meerk40t.core.node.op_engrave import EngraveOpNode
+        from sefrocut.core.node.op_engrave import EngraveOpNode
         op = EngraveOpNode()
         self.elements.op_branch.add_node(op)
         
@@ -81,7 +81,7 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
             invalid_reg_nodes.append(rect)
 
         # Create operation node that will receive drops
-        from meerk40t.core.node.op_cut import CutOpNode
+        from sefrocut.core.node.op_cut import CutOpNode
         drop_node = CutOpNode()
         self.elements.op_branch.add_node(drop_node)
 
@@ -150,7 +150,7 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
             elements.append(rect)
         
         # Create operation
-        from meerk40t.core.node.op_cut import CutOpNode
+        from sefrocut.core.node.op_cut import CutOpNode
         op = CutOpNode()
         self.elements.op_branch.add_node(op)
         
@@ -202,7 +202,7 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
         drag_time = time.perf_counter() - start
         
         # Test 2: Assign remaining to operation using drop_multi
-        from meerk40t.core.node.op_engrave import EngraveOpNode
+        from sefrocut.core.node.op_engrave import EngraveOpNode
         op = EngraveOpNode()
         self.elements.op_branch.add_node(op)
         
@@ -228,11 +228,11 @@ class TestBatchOperationsComprehensive(unittest.TestCase):
         self.assertTrue(hasattr(self.elements.reg_branch, 'drop_multi'))
         
         # Operation nodes
-        from meerk40t.core.node.op_cut import CutOpNode
-        from meerk40t.core.node.op_engrave import EngraveOpNode
-        from meerk40t.core.node.op_dots import DotsOpNode
-        from meerk40t.core.node.op_image import ImageOpNode
-        from meerk40t.core.node.op_raster import RasterOpNode
+        from sefrocut.core.node.op_cut import CutOpNode
+        from sefrocut.core.node.op_engrave import EngraveOpNode
+        from sefrocut.core.node.op_dots import DotsOpNode
+        from sefrocut.core.node.op_image import ImageOpNode
+        from sefrocut.core.node.op_raster import RasterOpNode
         
         self.assertTrue(hasattr(CutOpNode(), 'drop_multi'))
         self.assertTrue(hasattr(EngraveOpNode(), 'drop_multi'))

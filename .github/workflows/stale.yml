@@ -41,11 +41,11 @@ jobs:
         stale-pr-label: 'stale'
         close-issue-message: |
             This issue has been automatically closed because it has not had recent activity. Thank you for your contributions.
-            If the issue has not been resolved, you can [find more information in our Wiki](https://github.com/meerk40t/meerk40t/wiki) or [continue the conversation on our Discord](https://discord.gg/vkDD3HdQq6).
+            If the issue has not been resolved, you can [find more information in our Wiki](https://github.com/sefrocut/sefrocut/wiki) or [continue the conversation on our Discord](https://discord.gg/vkDD3HdQq6).
 
         close-pr-message: |
             This PR has been automatically closed because it has not had recent activity. Thank you for your contributions.
-            If you believe the PR has merits, you can [find more information in our Wiki](https://github.com/meerk40t/meerk40t/wiki) or [continue the conversation on our Discord](https://discord.gg/vkDD3HdQq6).
+            If you believe the PR has merits, you can [find more information in our Wiki](https://github.com/sefrocut/sefrocut/wiki) or [continue the conversation on our Discord](https://discord.gg/vkDD3HdQq6).
         days-before-issue-stale: 180
         days-before-pr-stale: 90
         days-before-issue-close: 10

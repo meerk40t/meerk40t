@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.lihuiyu.laserspeed import (
+from sefrocut.lihuiyu.laserspeed import (
     LaserSpeed,
     decode_16bit,
     get_code_from_speed,

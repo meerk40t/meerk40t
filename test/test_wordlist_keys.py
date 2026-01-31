@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.core.wordlist import (
+from sefrocut.core.wordlist import (
     Wordlist,
     TYPE_CSV,
     IDX_POSITION,

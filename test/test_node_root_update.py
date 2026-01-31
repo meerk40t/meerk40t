@@ -1,6 +1,6 @@
 import unittest
-from meerk40t.core.node.node import Node
-from meerk40t.core.node.rootnode import RootNode
+from sefrocut.core.node.node import Node
+from sefrocut.core.node.rootnode import RootNode
 
 class TestNodeRootUpdate(unittest.TestCase):
     def test_append_child_updates_root(self):

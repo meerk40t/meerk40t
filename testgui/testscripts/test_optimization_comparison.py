@@ -63,8 +63,8 @@ if meerk40t_path:
     sys.path.insert(0, os.path.dirname(meerk40t_path))
 
 try:
-    from meerk40t.core.elements.manual_optimize import _calculate_total_travel_distance, _optimize_path_order_greedy_optimized, _optimize_path_order_greedy
-    from meerk40t.core.geomstr import Geomstr
+    from sefrocut.core.elements.manual_optimize import _calculate_total_travel_distance, _optimize_path_order_greedy_optimized, _optimize_path_order_greedy
+    from sefrocut.core.geomstr import Geomstr
     EARLY_TERMINATION_AVAILABLE = True
     PRODUCTION_OPTIMIZATION_AVAILABLE = True
 except ImportError:
@@ -143,7 +143,7 @@ def compare_optimization_approaches(test_name, path_info):
     print(f"Number of paths: {len(path_info)}")
 
     # Extract path information once
-    from meerk40t.core.elements.manual_optimize import _extract_path_info
+    from sefrocut.core.elements.manual_optimize import _extract_path_info
     channel, _ = create_test_channel()
 
     processed_path_info = []

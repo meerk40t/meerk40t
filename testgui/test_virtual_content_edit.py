@@ -9,8 +9,8 @@ if __name__ == "__main__":
         sys.path.insert(0, project_root)
 
 import wx
-from meerk40t.core.wordlist import Wordlist, TYPE_CSV
-from meerk40t.gui.wordlisteditor import WordlistPanel
+from sefrocut.core.wordlist import Wordlist, TYPE_CSV
+from sefrocut.gui.wordlisteditor import WordlistPanel
 
 
 class DummyThemes:

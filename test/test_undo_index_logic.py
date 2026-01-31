@@ -3,7 +3,7 @@ Test undo index logic in various scenarios to ensure correctness.
 """
 import unittest
 from test.bootstrap import bootstrap
-from meerk40t.core.undos import Undo
+from sefrocut.core.undos import Undo
 
 
 class TestUndoIndexLogic(unittest.TestCase):

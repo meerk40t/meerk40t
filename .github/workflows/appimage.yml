@@ -72,12 +72,12 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        cd meerk40t
+        cd sefrocut
         mv external_plugins.py external_plugins.unused
         mv external_plugins_build.py external_plugins.py
         cd ..
 
-        pyinstaller .github/workflows/linux/meerk40t_build.spec
+        pyinstaller .github/workflows/linux/sefrocut_build.spec
 
     - name: Create AppImage
       run: |
@@ -93,44 +93,44 @@ jobs:
         mkdir -p AppDir/usr/share/metainfo
 
         # Copy the executable
-        cp dist/MeerK40t AppDir/usr/bin/meerk40t
-        chmod +x AppDir/usr/bin/meerk40t
+        cp dist/SefroCut AppDir/usr/bin/sefrocut
+        chmod +x AppDir/usr/bin/sefrocut
 
         # Copy icon - should already be in PNG format from build_icon.sh
         echo "Checking for icon files..."
-        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files not found"
+        ls -la sefrocut.ico sefrocut.png 2>/dev/null || echo "Icon files not found"
 
-        if [ -f "meerk40t.png" ]; then
-          echo "Found meerk40t.png, copying to AppDir locations..."
+        if [ -f "sefrocut.png" ]; then
+          echo "Found sefrocut.png, copying to AppDir locations..."
           # Copy to proper freedesktop.org location
-          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          cp sefrocut.png AppDir/usr/share/icons/hicolor/256x256/apps/sefrocut.png
           # Also copy to AppDir root for desktop file to find it
-          cp meerk40t.png AppDir/meerk40t.png
+          cp sefrocut.png AppDir/sefrocut.png
           echo "Icon copy completed successfully"
         else
-          echo "WARNING: meerk40t.png not found. Checking if we can convert from ICO..."
-          if [ -f "meerk40t.ico" ]; then
+          echo "WARNING: sefrocut.png not found. Checking if we can convert from ICO..."
+          if [ -f "sefrocut.ico" ]; then
             echo "Attempting fallback conversion from ICO to PNG..."
-            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png 2>&1; then
-              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+            if convert sefrocut.ico AppDir/usr/share/icons/hicolor/256x256/apps/sefrocut.png 2>&1; then
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/sefrocut.png AppDir/sefrocut.png
               echo "Fallback conversion succeeded"
             else
               echo "WARNING: Fallback conversion failed. AppImage will not have a custom icon."
             fi
           else
-            echo "WARNING: Neither meerk40t.png nor meerk40t.ico found. AppImage will not have a custom icon."
+            echo "WARNING: Neither sefrocut.png nor sefrocut.ico found. AppImage will not have a custom icon."
           fi
         fi
 
         # Copy desktop file (reverse-DNS filename avoids AppStream warnings)
-        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop \
-          AppDir/usr/share/applications/io.github.meerk40t.meerk40t.desktop
-        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop AppDir/
-        chmod +x AppDir/io.github.meerk40t.meerk40t.desktop
+        cp .github/workflows/linux/io.github.sefrocut.sefrocut.desktop \
+          AppDir/usr/share/applications/io.github.sefrocut.sefrocut.desktop
+        cp .github/workflows/linux/io.github.sefrocut.sefrocut.desktop AppDir/
+        chmod +x AppDir/io.github.sefrocut.sefrocut.desktop
 
         # Copy AppStream metainfo 
-        cp .github/workflows/linux/meerk40t.appdata.xml \
-          AppDir/usr/share/metainfo/io.github.meerk40t.meerk40t.appdata.xml
+        cp .github/workflows/linux/sefrocut.appdata.xml \
+          AppDir/usr/share/metainfo/io.github.sefrocut.sefrocut.appdata.xml
 
         # Copy AppRun script
         cp .github/workflows/linux/AppRun AppDir/
@@ -142,7 +142,7 @@ jobs:
         else
           APPIMAGE_TAG="${{ github.sha }}"
         fi
-        ./appimagetool AppDir meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+        ./appimagetool AppDir sefrocut-${APPIMAGE_TAG}-x86_64.AppImage
 
     - name: Test AppImage
       run: |
@@ -152,9 +152,9 @@ jobs:
         else
           APPIMAGE_TAG="${{ github.sha }}"
         fi
-        chmod +x meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
+        chmod +x sefrocut-${APPIMAGE_TAG}-x86_64.AppImage
         # Note: Can't run GUI in headless environment, but we can check if it starts
-        timeout 15s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
+        timeout 15s ./sefrocut-${APPIMAGE_TAG}-x86_64.AppImage --version
         if [ $? -ne 0 ]; then
           echo "ERROR: AppImage failed to start or did not return version information."
           exit 1
@@ -164,8 +164,8 @@ jobs:
       if: github.event_name == 'release'
       run: |
         APPIMAGE_TAG="${{ github.event.release.tag_name }}"
-        if [ ! -f "meerk40t-${APPIMAGE_TAG}-x86_64.AppImage" ]; then
-          echo "ERROR: AppImage file meerk40t-${APPIMAGE_TAG}-x86_64.AppImage not found. Upload step will fail."
+        if [ ! -f "sefrocut-${APPIMAGE_TAG}-x86_64.AppImage" ]; then
+          echo "ERROR: AppImage file sefrocut-${APPIMAGE_TAG}-x86_64.AppImage not found. Upload step will fail."
           exit 1
         fi
 
@@ -175,7 +175,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          meerk40t-${{ github.event.release.tag_name }}-x86_64.AppImage
+          sefrocut-${{ github.event.release.tag_name }}-x86_64.AppImage
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -183,5 +183,5 @@ jobs:
       if: github.event_name == 'workflow_dispatch'
       uses: actions/upload-artifact@v4
       with:
-        name: meerk40t-appimage
-        path: meerk40t-${{ github.sha }}-x86_64.AppImage
+        name: sefrocut-appimage
+        path: sefrocut-${{ github.sha }}-x86_64.AppImage

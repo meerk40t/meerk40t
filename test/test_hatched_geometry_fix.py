@@ -13,9 +13,9 @@ candidate generation can proceed.
 """
 
 import unittest
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.cutgroup import CutGroup
-from meerk40t.core.cutcode.linecut import LineCut
+from sefrocut.core.cutcode.cutcode import CutCode
+from sefrocut.core.cutcode.cutgroup import CutGroup
+from sefrocut.core.cutcode.linecut import LineCut
 
 
 class TestHatchedGeometryFix(unittest.TestCase):

@@ -5,7 +5,7 @@ state = 0
 
 class TestRuida(unittest.TestCase):
     def test_magic_keys(self):
-        from meerk40t.ruida.rdjob import magic_keys
+        from sefrocut.ruida.rdjob import magic_keys
 
         keys = magic_keys()
         self.assertEqual(keys[b"\xd4\x89\r\xf7"], 0x88)

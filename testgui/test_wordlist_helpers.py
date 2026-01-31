@@ -6,13 +6,13 @@ import os
 import sys
 
 # When running this file directly, ensure that the project root is on sys.path
-# so `from meerk40t.core.wordlist import Wordlist` works outside discovery.
+# so `from sefrocut.core.wordlist import Wordlist` works outside discovery.
 if __name__ == "__main__":
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 
-from meerk40t.core.wordlist import Wordlist
+from sefrocut.core.wordlist import Wordlist
 
 
 class TestWordlistHelpers(unittest.TestCase):

@@ -5,8 +5,8 @@ from test import bootstrap
 
 import ezdxf
 
-from meerk40t.core.exceptions import BadFileError
-from meerk40t.dxf.dxf_io import DxfLoader
+from sefrocut.core.exceptions import BadFileError
+from sefrocut.dxf.dxf_io import DxfLoader
 
 
 class TestDXFImport(unittest.TestCase):

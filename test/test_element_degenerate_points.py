@@ -1,8 +1,8 @@
 import os
 import unittest
 
-from meerk40t.core.elements.element_types import elem_nodes
-from meerk40t.core.node.elem_point import PointNode
+from sefrocut.core.elements.element_types import elem_nodes
+from sefrocut.core.node.elem_point import PointNode
 from test import bootstrap
 
 

@@ -1,6 +1,6 @@
 
 import unittest
-from meerk40t.core.node.node import Node
+from sefrocut.core.node.node import Node
 
 class TestNodeSelfAppend(unittest.TestCase):
     def test_append_child_self_is_prevented(self):

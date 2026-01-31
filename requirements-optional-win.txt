@@ -1,7 +1,7 @@
 potracer
 pypotrace-windows
 pyclipr
-meerk40t-barcodes
+sefrocut-barcodes
 numba
 scipy>=1.12.0,<=1.14.0
 vtracer

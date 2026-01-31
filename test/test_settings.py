@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from meerk40t.kernel.settings import Settings
+from sefrocut.kernel.settings import Settings
 
 
 class TestSettings(unittest.TestCase):

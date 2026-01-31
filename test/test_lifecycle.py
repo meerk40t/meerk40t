@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.kernel import Kernel
+from sefrocut.kernel import Kernel
 
 state_1 = 0
 state_2 = 0

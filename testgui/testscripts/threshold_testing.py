@@ -78,7 +78,7 @@ else:
     )
 
 try:
-    from meerk40t.core.geomstr import (
+    from sefrocut.core.geomstr import (
         THRESHOLD_BBOX,
         THRESHOLD_CLOSE_GAPS,
         THRESHOLD_LENGTH,

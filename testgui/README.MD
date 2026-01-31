@@ -1,6 +1,6 @@
-# MeerK40t GUI Test Suite
+# SefroCut GUI Test Suite
 
-This directory contains specialized tests for MeerK40t's graphical user interface components. These tests focus on GUI functionality, wxPython widget interactions, and visual component behavior.
+This directory contains specialized tests for SefroCut's graphical user interface components. These tests focus on GUI functionality, wxPython widget interactions, and visual component behavior.
 
 ## Overview
 
@@ -456,4 +456,4 @@ xvfb-run -a python -m unittest testgui.test_gui_choicepropertypanel
 - Use proper tearDown methods
 - Monitor memory usage during test runs
 
-This GUI test suite ensures MeerK40t's user interface components maintain functionality and performance across different platforms and usage scenarios.
+This GUI test suite ensures SefroCut's user interface components maintain functionality and performance across different platforms and usage scenarios.

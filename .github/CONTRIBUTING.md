@@ -1,9 +1,9 @@
 # Contributing
 
-The team welcomes contributions to this repository from users of MeerK40t.
-These can be code improvements or language translations made as [Pull Requests](/meerk40t/meerk40t/pulls),
+The team welcomes contributions to this repository from users of SefroCut.
+These can be code improvements or language translations made as [Pull Requests](/sefrocut/sefrocut/pulls),
 wiki edits made directly,
-constructive suggestions or bug reports made using [Issues](/meerk40t/meerk40t/issues),
+constructive suggestions or bug reports made using [Issues](/sefrocut/sefrocut/issues),
 or comments against other people's Pull Requests or Issues.
 
 If your thoughts are not firmed up enough to make a formal submission,
@@ -17,7 +17,7 @@ Please note we have a [Code of Conduct](CODE_OF_CONDUCT.md), please follow it in
 Code improvements and language improvements need to be submitted as Pull Requests.
 Usually you will need to:
 
-1.  On GitHub, fork the [MeerK40t/MeerK40t repo](/meerk40t/meerk40t),
+1.  On GitHub, fork the [SefroCut/SefroCut repo](/sefrocut/sefrocut),
 2.  Use Git to clone your fork to your computer
 3.  Create a new Git branch for your changes
 4.  Code and test your changes
