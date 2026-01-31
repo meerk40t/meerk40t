@@ -216,7 +216,8 @@ class Kernel(Settings):
         self.signal_job = None
         self.listeners = {}
         self.listener_stats = {}
-        # Per-listener timing stats: { signal: { listener_id: [calls, messages, total_time] } }
+        # Per-listener timing stats (only tracked when debug_mode is active)
+        # { signal: { listener_id: [calls, messages, total_time] } }
         self.listener_call_stats = {}
         self._add_lock = threading.Lock()
         self._adding_listeners = []
@@ -2252,19 +2253,20 @@ class Kernel(Settings):
                         self.listener_stats[signal][1] += 1 # Messages
                         self.listener_stats[signal][2] += duration # Duration
 
-                        # Record per-listener statistics (for slow-call detection)
-                        try:
-                            lid = f"{listener.__module__}:{getattr(listener, '__name__', repr(listener))}"
-                        except Exception:
-                            lid = repr(listener)
-                        if signal not in self.listener_call_stats:
-                            self.listener_call_stats[signal] = {}
-                        if lid not in self.listener_call_stats[signal]:
-                            # [calls, messages, total_time]
-                            self.listener_call_stats[signal][lid] = [0, 0, 0.0]
-                        self.listener_call_stats[signal][lid][0] += 1
-                        self.listener_call_stats[signal][lid][1] += 1
-                        self.listener_call_stats[signal][lid][2] += duration
+                        # Record per-listener statistics (only when debug_mode is active)
+                        if getattr(self.root, 'debug_mode', False):
+                            try:
+                                lid = f"{listener.__module__}:{getattr(listener, '__name__', repr(listener))}"
+                            except Exception:
+                                lid = repr(listener)
+                            if signal not in self.listener_call_stats:
+                                self.listener_call_stats[signal] = {}
+                            if lid not in self.listener_call_stats[signal]:
+                                # [calls, messages, total_time]
+                                self.listener_call_stats[signal][lid] = [0, 0, 0.0]
+                            self.listener_call_stats[signal][lid][0] += 1
+                            self.listener_call_stats[signal][lid][1] += 1
+                            self.listener_call_stats[signal][lid][2] += duration
 
                     except RuntimeError as e:
                         print(
@@ -3895,13 +3897,21 @@ class Kernel(Settings):
 
         @self.console_argument("avg_threshold", type=float, help=_("Average time threshold in seconds"))
         @self.console_argument("total_threshold", type=float, help=_("Total time threshold in seconds"))
-        @self.console_command("signal-stats", help=_("List listeners exceeding thresholds (avg >=1s or total >=10s)"))
+        @self.console_command("signal-stats", help=_("List listeners exceeding thresholds (requires debug_mode)"))
         def signal_stats(channel, _, remainder=None, avg_threshold = None, total_threshold = None, **kwargs):
             """Show routines called by the signal processor that are slow.
 
             Usage: signal-stats [avg_threshold] [total_threshold]
             If thresholds are not provided, defaults are avg >= 1.0s, total >= 10.0s
+            
+            Note: Stats are only collected when debug_mode is active (set debug_mode True)
             """
+            # Check if debug mode is active
+            if not getattr(self.root, 'debug_mode', False):
+                channel(_("Signal stats are only collected when debug_mode is active."))
+                channel(_("To enable: set debug_mode True (requires restart)"))
+                return
+            
             # Default thresholds
             avg_thresh = 1.0 if avg_threshold is None else avg_threshold
             total_thresh = 10.0 if total_threshold is None else total_threshold
