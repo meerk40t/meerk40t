@@ -706,6 +706,10 @@ class Elemental(Service):
         # and recalculations until the end of the load 
         # Requires a full tree-rebuild at the end of the load
         self.setting(bool, "fastload", True)
+        # During heavy bulk operations (loads) the tree structure change notification
+        # may fire thousands of times (one per appended node). We use a root-level
+        # `_structure_dirty` flag (on the RootNode) to lazily invalidate cached lists
+        # when the tree changes. This avoids per-notification expensive work.
 
         undo_active = self.use_undo
         undo_levels = self.undo_levels
@@ -846,8 +850,10 @@ class Elemental(Service):
             self.undo.mark(message)
         source = message.replace(" ", "_")
         try:
+            # When `static` is requested, pause notification delivery to avoid
+            # flooding the scheduler with per-node events during bulk ops.
             if static:
-                self.stop_updates(message, False)
+                self.stop_updates(message, True)
             self.do_undo = False
             yield self
         finally:
@@ -2274,6 +2280,17 @@ class Elemental(Service):
         # Cacheable if no depth and types not specified
         cacheable = ("depth" not in kwargs or kwargs.get("depth") is None) and ("types" not in kwargs)
 
+        # Lazy invalidate caches if the root node marked the structure dirty
+        with self.node_lock:
+            if getattr(self._tree, "_structure_dirty", False):
+                self._ops_cache = None
+                self._elems_cache = None
+                # Clear the dirty flag on the root
+                try:
+                    self._tree._structure_dirty = False
+                except Exception:
+                    pass
+
         if cacheable:
             if self._ops_cache is None:
                 # Build cache under lock
@@ -2316,6 +2333,16 @@ class Elemental(Service):
         depth = kwargs.get("depth", None)
         types_kw = kwargs.get("types", None)
         cacheable = (depth is None) and (types_kw is None or types_kw == elem_nodes)
+
+        # Lazy invalidate caches if the root node marked the structure dirty
+        with self.node_lock:
+            if getattr(self._tree, "_structure_dirty", False):
+                self._elems_cache = None
+                self._ops_cache = None
+                try:
+                    self._tree._structure_dirty = False
+                except Exception:
+                    pass
 
         # If we can use the cache and it exists, apply property filters in memory
         if cacheable and self._elems_cache is not None and set(kwargs.keys()).issubset(allowed_filters):
@@ -2375,41 +2402,65 @@ class Elemental(Service):
         self._ops_cache = None
 
     def node_attached(self, node=None, **kwargs):
-        if node is None:
-            self._invalidate_elems_cache()
-            self._invalidate_ops_cache()
-            return
-        if self._is_in_branch(node, self.elem_branch):
-            self._invalidate_elems_cache()
-        if self._is_in_branch(node, self.op_branch):
-            self._invalidate_ops_cache()
+        # Mark the whole tree as structurally dirty to allow lazy invalidation
+        try:
+            self._tree._structure_dirty = True
+        except Exception:
+            pass
 
     def node_detached(self, node=None, **kwargs):
-        # Same invalidation behavior applies
-        self.node_attached(node=node, **kwargs)
+        # Mark dirty instead of immediate invalidation
+        try:
+            self._tree._structure_dirty = True
+        except Exception:
+            pass
 
     def node_created(self, node=None, **kwargs):
-        self.node_attached(node=node, **kwargs)
+        try:
+            self._tree._structure_dirty = True
+        except Exception:
+            pass
 
     def node_destroyed(self, node=None, **kwargs):
-        self.node_attached(node=node, **kwargs)
+        try:
+            self._tree._structure_dirty = True
+        except Exception:
+            pass
 
     def altered(self, node=None, **kwargs):
-        # Structural alterations may affect caches; conservatively invalidate
-        self.node_attached(node=node, **kwargs)
+        # Structural alterations may affect caches; mark dirty
+        try:
+            self._tree._structure_dirty = True
+        except Exception:
+            pass
 
     def structure_changed(self, node=None, **kwargs):
         """Handle coarse-grained tree structure changes, e.g., bulk moves/clears.
 
-        This is invoked by RootNode.notify_tree_structure_changed().
+        Invoked by RootNode.notify_tree_structure_changed(). We mark the tree as
+        structurally dirty; the cache invalidation is deferred and performed
+        lazily by `elems()`/`ops()` or when `_flush_structure_changes()` is called.
         """
-        # Invalidate both caches unconditionally
-        self._invalidate_elems_cache()
-        self._invalidate_ops_cache()
+        try:
+            self._tree._structure_dirty = True
+        except Exception:
+            pass
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self.elem_branch
         yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
+
+    def _flush_structure_changes(self):
+        """Flush any pending structure change notifications by performing
+        a single cache invalidation for elements and operations.
+        """
+        if getattr(self._tree, "_structure_dirty", False):
+            self._invalidate_elems_cache()
+            self._invalidate_ops_cache()
+            try:
+                self._tree._structure_dirty = False
+            except Exception:
+                pass
 
     def regmarks(self, **kwargs):
         elements = self.reg_branch
@@ -4597,6 +4648,9 @@ class Elemental(Service):
                             opcount_now = self.count_op()
                             self.remove_invalid_references()
                             self.remove_empty_groups()
+                            # Flush any pending structure changes that were coalesced
+                            # during the load to avoid excessive repeated invalidations.
+                            self._flush_structure_changes()
                             with self._node_lock:
                                 for e in self.elems_nodes():
                                     if e not in _stored_elements:

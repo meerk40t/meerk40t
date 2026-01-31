@@ -16,6 +16,9 @@ class RootNode(Node):
         self._root = self
         self.context = context
         self.listeners = []
+        # Flag indicating the tree structure changed; listeners may set this
+        # and services can invalidate caches lazily.
+        self._structure_dirty = False
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
@@ -52,6 +55,14 @@ class RootNode(Node):
     def notify_created(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        try:
+            self.context._structure_dirty = True
+        except Exception:
+            pass
+        # If notification delivery is paused, do not dispatch per-node events.
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_created"):
                 listen.node_created(node, **kwargs)
@@ -59,23 +70,44 @@ class RootNode(Node):
     def notify_destroyed(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        try:
+            self.context._structure_dirty = True
+        except Exception:
+            pass
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_destroyed"):
-                listen.node_destroyed(node, **kwargs)
+                listen.node_destroyed(node, **kwargs)  
 
     def notify_attached(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        try:
+            self.context._structure_dirty = True
+        except Exception:
+            pass
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_attached"):
-                listen.node_attached(node, **kwargs)
+                listen.node_attached(node, **kwargs)  
 
     def notify_detached(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        try:
+            self.context._structure_dirty = True
+        except Exception:
+            pass
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_detached"):
-                listen.node_detached(node, **kwargs)
+                listen.node_detached(node, **kwargs)  
 
     def notify_changed(self, node=None, **kwargs):
         if node is None:
@@ -205,6 +237,23 @@ class RootNode(Node):
         This deliberately passes node=None to allow listeners to distinguish a coarse-grained structural
         change from a per-node attached/detached event.
         """
+        # Mark dirty for lazy cache invalidation and immediately invalidate caches
+        # for callers that might inspect cached state synchronously.
+        try:
+            self.context._structure_dirty = True
+            try:
+                self.context._invalidate_elems_cache()
+            except Exception:
+                pass
+            try:
+                self.context._invalidate_ops_cache()
+            except Exception:
+                pass
+        except Exception:
+            pass
+        # If notifications are paused, skip dispatch of per-listener updates.
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "structure_changed"):
                 try:
