@@ -675,6 +675,11 @@ class Elemental(Service):
         self.setting(bool, "use_undo", True)
         self.setting(int, "undo_levels", 20)
         self.setting(bool, "filenode_selection", False)
+        # Fastload setting, this is used to speed up loading when many elements are present
+        # It effectlively prevents the triggering of events 
+        # and recalculations until the end of the load 
+        # Requires a full tree-rebuild at the end of the load
+        self.setting(bool, "fastload", True)
 
         undo_active = self.use_undo
         undo_levels = self.undo_levels
@@ -1642,7 +1647,7 @@ class Elemental(Service):
         @return:
         """
         # _("Load operations")
-        with self.undoscope("Load operations"):
+        with self.undoscope("Load operations", static=self.fastload):
             settings = self.op_data
             if clear:
                 self.clear_operations()
@@ -4417,7 +4422,8 @@ class Elemental(Service):
                     self.set_start_time("load")
                     self.set_start_time("full_load")
                     # _("Load elements")
-                    with self.undoscope("Load elements"):
+                    # No signals during load
+                    with self.undoscope("Load elements", static=self.fastload):
                         try:
                             # We could stop the attachment to shadowtree for the duration
                             # of the load to avoid unnecessary actions, this will provide
