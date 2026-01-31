@@ -676,7 +676,7 @@ class Elemental(Service):
         self.setting(int, "undo_levels", 20)
         self.setting(bool, "filenode_selection", False)
         # Fastload setting, this is used to speed up loading when many elements are present
-        # It effectlively prevents the triggering of events 
+        # It effectively prevents the triggering of events 
         # and recalculations until the end of the load 
         # Requires a full tree-rebuild at the end of the load
         self.setting(bool, "fastload", True)
