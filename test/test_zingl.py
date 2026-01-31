@@ -1,8 +1,8 @@
 import unittest
 from math import ceil
 
-from meerk40t.svgelements import Arc
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from sefrocut.svgelements import Arc
+from sefrocut.tools.zinglplotter import ZinglPlotter
 
 
 class TestZingl(unittest.TestCase):

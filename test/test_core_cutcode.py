@@ -3,16 +3,16 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.linecut import LineCut
-from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.op_cut import CutOpNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode
-from meerk40t.svgelements import Matrix, Path, Point
+from sefrocut.core.cutcode.cutcode import CutCode
+from sefrocut.core.cutcode.linecut import LineCut
+from sefrocut.core.cutcode.quadcut import QuadCut
+from sefrocut.core.cutcode.rastercut import RasterCut
+from sefrocut.core.node.elem_image import ImageNode
+from sefrocut.core.node.elem_path import PathNode
+from sefrocut.core.node.op_cut import CutOpNode
+from sefrocut.core.node.op_engrave import EngraveOpNode
+from sefrocut.core.node.op_image import ImageOpNode
+from sefrocut.svgelements import Matrix, Path, Point
 
 
 class TestCutcode(unittest.TestCase):

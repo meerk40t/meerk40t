@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from meerk40t.core.wordlist import Wordlist, TYPE_COUNTER
+from sefrocut.core.wordlist import Wordlist, TYPE_COUNTER
 
 
 class TestWordlistLoadData(unittest.TestCase):

@@ -3,9 +3,9 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import Matrix
+from sefrocut.core.node.elem_image import ImageNode
+from sefrocut.core.units import UNITS_PER_MM
+from sefrocut.svgelements import Matrix
 from test import bootstrap
 
 egv_rect = """Document type : LHYMICRO-GL file

@@ -54,8 +54,8 @@ else:
     )
 
 
-from meerk40t.core.elements.manual_optimize import _optimize_path_order_greedy, _calculate_total_travel_distance
-from meerk40t.core.geomstr import Geomstr
+from sefrocut.core.elements.manual_optimize import _optimize_path_order_greedy, _calculate_total_travel_distance
+from sefrocut.core.geomstr import Geomstr
 
 def create_test_channel():
     """Create a mock channel for debugging output"""
@@ -277,7 +277,7 @@ def test_path_optimization(header, testcase_func):
     channel, messages = create_test_channel()
 
     # Extract path information
-    from meerk40t.core.elements.manual_optimize import _extract_path_info
+    from sefrocut.core.elements.manual_optimize import _extract_path_info
 
     path_info = []
     for node, geom in paths:
@@ -342,7 +342,7 @@ def test_edge_cases():
     geom.quad(1+1j, 0.5+1j, 0+1j)
     geom.line(0+1j, 0+0j)
 
-    from meerk40t.core.elements.manual_optimize import _extract_path_info
+    from sefrocut.core.elements.manual_optimize import _extract_path_info
     info = _extract_path_info(geom, channel)
     path_info = [(MockNode("Mixed_Path", geom), geom, info)]
 

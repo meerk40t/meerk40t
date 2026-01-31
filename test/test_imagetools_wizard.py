@@ -5,7 +5,7 @@ import unittest
 #
 # from PIL import Image, ImageDraw
 #
-# from meerk40t.svgelements import Matrix, SVGImage
+# from sefrocut.svgelements import Matrix, SVGImage
 
 
 class TestRasterWizard(unittest.TestCase):

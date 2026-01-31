@@ -1,10 +1,10 @@
 # Meerk40t Test Suite
 
-This directory contains comprehensive automated tests for MeerK40t's various functionalities to prevent regressions after code changes and ensure system stability.
+This directory contains comprehensive automated tests for SefroCut's various functionalities to prevent regressions after code changes and ensure system stability.
 
 ## Test Frameworks
 
-MeerK40t supports multiple testing frameworks for flexibility and comprehensive coverage.
+SefroCut supports multiple testing frameworks for flexibility and comprehensive coverage.
 
 ### unittest (Primary Framework)
 
@@ -51,20 +51,20 @@ pytest test_kernel.py::TestKernel::test_object_service_commands
 pytest -v
 
 # Run with coverage
-pytest --cov=meerk40t
+pytest --cov=sefrocut
 
 # Run tests matching pattern
 pytest -k "kernel"
 
 # Generate HTML coverage report
-pytest --cov=meerk40t --cov-report=html
+pytest --cov=sefrocut --cov-report=html
 ```
 
 ## Test Structure and Patterns
 
 ### Bootstrap System
 
-All tests use a standardized bootstrap system (`bootstrap.py`) that creates a minimal MeerK40t kernel with essential plugins for testing.
+All tests use a standardized bootstrap system (`bootstrap.py`) that creates a minimal SefroCut kernel with essential plugins for testing.
 
 ```python
 from test import bootstrap
@@ -154,7 +154,7 @@ def test_console_command(self):
         kernel.console("version\n")
 
         # Verify output
-        self.assertTrue(any("MeerK40t" in line for line in output))
+        self.assertTrue(any("SefroCut" in line for line in output))
     finally:
         kernel()
 ```
@@ -247,7 +247,7 @@ from unittest.mock import Mock, patch
 
 def test_with_mock_device(self):
     """Test using mocked device"""
-    with patch('meerk40t.device.SomeDevice') as mock_device:
+    with patch('sefrocut.device.SomeDevice') as mock_device:
         mock_device.return_value.connect.return_value = True
 
         kernel = bootstrap.bootstrap()
@@ -271,7 +271,7 @@ Tests are automatically executed on pull requests and commits via GitHub Actions
 ### CI Configuration
 
 Tests run with specific environment configurations:
-- Isolated test profile (`MeerK40t_TEST`)
+- Isolated test profile (`SefroCut_TEST`)
 - Disabled settings persistence
 - Minimal plugin set for faster execution
 - No GUI components (headless testing)
@@ -383,4 +383,4 @@ time.sleep(0.1)  # Brief delay for async completion
 
 **Platform Differences**: Tests should work across Windows, macOS, and Linux
 
-This comprehensive test suite ensures MeerK40t maintains high quality and reliability across all supported platforms and use cases.
+This comprehensive test suite ensures SefroCut maintains high quality and reliability across all supported platforms and use cases.

@@ -1,11 +1,11 @@
-# MeerK40t Code of Conduct
+# SefroCut Code of Conduct
 
-This page is provided to set expectations about how all contributors to the MeerK40t project,
+This page is provided to set expectations about how all contributors to the SefroCut project,
 big or small, are expected to behave towards one another and to the project as a whole.
 
 ## Overview
 
-We want the MeerK40t project to be an open and welcoming environment.
+We want the SefroCut project to be an open and welcoming environment.
 We expect contributors to make participation a harassment-free experience
 but without limiting people's willingness or ability to engage in lively debate.
 

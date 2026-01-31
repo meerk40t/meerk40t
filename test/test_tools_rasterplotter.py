@@ -4,7 +4,7 @@ import unittest
 # from copy import copy
 from PIL import Image, ImageDraw
 
-from meerk40t.constants import (
+from sefrocut.constants import (
     RASTER_B2T,
     RASTER_CROSSOVER,
     RASTER_DIAGONAL,
@@ -16,7 +16,7 @@ from meerk40t.constants import (
     RASTER_SPIRAL,
     RASTER_T2B,
 )
-from meerk40t.tools.rasterplotter import RasterPlotter
+from sefrocut.tools.rasterplotter import RasterPlotter
 
 
 class TestRasterPlotter(unittest.TestCase):

@@ -1,8 +1,8 @@
 import os
 import unittest
 
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.units import Length
+from sefrocut.core.node.op_engrave import EngraveOpNode
+from sefrocut.core.units import Length
 from test import bootstrap
 
 

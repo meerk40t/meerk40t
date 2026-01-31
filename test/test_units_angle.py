@@ -1,7 +1,7 @@
 import unittest
 from math import tau
 
-from meerk40t.core.units import Angle
+from sefrocut.core.units import Angle
 
 
 class TestElementAngle(unittest.TestCase):

@@ -14,7 +14,7 @@ For smaller delta_xx files, this works well:
 - Look at all delta_xx.po files in the project root directory. Each file contains GNU gettext information.
 - Translate all untranslated msgstr elements - establish the language from the file extension: the filename consists of a "delta_" start followed by an ISO language code, ended by a ".po" extension.
 - Use for the translation proper terminology appropriate for laser engraving software. 
-- Look for already existing similar terms in the corresponding ./locale/xx/LC_MESSAGES/meerk40t.po file to maintain consistency.
+- Look for already existing similar terms in the corresponding ./locale/xx/LC_MESSAGES/sefrocut.po file to maintain consistency.
 - Strings inside curly brackets should not be translated and all curly brackets need to be reused.
 - Make sure strings are utf8 encoded
 - Optimize the token consumption by batching translation and update efforts

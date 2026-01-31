@@ -1,11 +1,11 @@
 import unittest
 from copy import copy
 
-from meerk40t.core.node.op_cut import CutOpNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_image import ImageOpNode
-from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.rootnode import RootNode
+from sefrocut.core.node.op_cut import CutOpNode
+from sefrocut.core.node.op_engrave import EngraveOpNode
+from sefrocut.core.node.op_image import ImageOpNode
+from sefrocut.core.node.op_raster import RasterOpNode
+from sefrocut.core.node.rootnode import RootNode
 from test import bootstrap
 
 

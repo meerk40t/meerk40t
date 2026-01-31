@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.sefrocut.sefrocut</id>
+  <name>SefroCut</name>
+  <summary>Laser Cutter Control Software</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="io.github.sefrocut">
+    <name>SefroCut</name>
+  </developer>
+
+  <url type="homepage">https://github.com/sefrocut/sefrocut</url>
+  <description>
+    <p>
+      SefroCut is a free and open-source laser cutter control application for
+      designing, preparing, and sending jobs to a variety of supported laser
+      devices.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.sefrocut.sefrocut.desktop</launchable>
+  <content_rating type="oars-1.1"/>
+  <categories>
+    <category>Graphics</category>
+    <category>VectorGraphics</category>
+  </categories>
+</component>

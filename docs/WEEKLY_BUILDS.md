@@ -1,6 +1,6 @@
 # Weekly Binary Builds
 
-This repository uses GitHub Actions to automatically build weekly binary releases of MeerK40t for Windows, macOS, and Linux.
+This repository uses GitHub Actions to automatically build weekly binary releases of SefroCut for Windows, macOS, and Linux.
 
 ## Workflows
 
@@ -24,9 +24,9 @@ This repository uses GitHub Actions to automatically build weekly binary release
 ## Binary Storage
 
 Weekly binaries are stored as GitHub releases with the following naming convention:
-- `MeerK40t-windows-{run_number}.exe` (Windows)
-- `MeerK40t-macos-{run_number}` (macOS)
-- `MeerK40t-linux-{run_number}` (Linux)
+- `SefroCut-windows-{run_number}.exe` (Windows)
+- `SefroCut-macos-{run_number}` (macOS)
+- `SefroCut-linux-{run_number}` (Linux)
 
 ## Manual Triggers
 

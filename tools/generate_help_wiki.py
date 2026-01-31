@@ -43,7 +43,7 @@ def check_existing_wiki_page(section):
     # Then check wiki repository if it exists
     wiki_filename = f"Online-Help-{section.lower()}.md"
     wiki_repo_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "meerk40t.wiki"
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sefrocut.wiki"
     )
 
     # Check if wiki repo exists
@@ -333,7 +333,7 @@ def analyze_module_for_help_section(filepath, help_section):
     lines = content.split("\n")
 
     # Look for wxPython UI elements with more flexible pattern matching
-    # This handles both standard wxPython widgets and custom meerk40t wxutils widgets
+    # This handles both standard wxPython widgets and custom sefrocut wxutils widgets
     ui_patterns = [
         # Standard wxPython widgets
         (r'wx\.Button\([^)]*?_\("([^"]+)"\)[^)]*\)', "Button"),
@@ -345,7 +345,7 @@ def analyze_module_for_help_section(filepath, help_section):
         (r'wx\.SpinCtrl\([^)]*?_\("([^"]+)"\)[^)]*\)', "Spin Control"),
         (r'wx\.TextCtrl\([^)]*?_\("([^"]+)"\)[^)]*\)', "Text Control"),
         (r'wx\.RadioBox\([^)]*?_\("([^"]+)"\)[^)]*\)', "Radio Box"),
-        # Custom meerk40t wxutils widgets
+        # Custom sefrocut wxutils widgets
         (r'wxButton\([^)]*?_\("([^"]+)"\)[^)]*\)', "Button"),
         (r'wxCheckBox\([^)]*?_\("([^"]+)"\)[^)]*\)', "Checkbox"),
         (r'wxRadioButton\([^)]*?_\("([^"]+)"\)[^)]*\)', "Radio Button"),
@@ -551,10 +551,10 @@ def find_related_help_sections(current_section, all_sections, help_context):
     # Find sections from same module
     current_module = None
     for file_path in current_files:
-        # Extract module path (e.g., meerk40t/grbl/gui/ -> grbl)
+        # Extract module path (e.g., sefrocut/grbl/gui/ -> grbl)
         parts = file_path.replace("\\", "/").split("/")
-        if "meerk40t" in parts:
-            idx = parts.index("meerk40t")
+        if "sefrocut" in parts:
+            idx = parts.index("sefrocut")
             if idx + 1 < len(parts):
                 current_module = parts[idx + 1]
                 break
@@ -564,8 +564,8 @@ def find_related_help_sections(current_section, all_sections, help_context):
             if section != current_section:
                 for file_path in files:
                     parts = file_path.replace("\\", "/").split("/")
-                    if "meerk40t" in parts:
-                        idx = parts.index("meerk40t")
+                    if "sefrocut" in parts:
+                        idx = parts.index("sefrocut")
                         if idx + 1 < len(parts) and parts[idx + 1] == current_module:
                             related.append(section)
                             break
@@ -1313,7 +1313,7 @@ def upload_to_wiki(wiki_dir="../wiki-pages", repo_url=None, commit_message=None)
             return False
 
     # Create wiki repository directory
-    wiki_repo_dir = "meerk40t.wiki"
+    wiki_repo_dir = "sefrocut.wiki"
     wiki_repo_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), wiki_repo_dir
     )
@@ -1443,9 +1443,9 @@ def get_repo_info():
                 if repo_name.endswith(".git"):
                     repo_name = repo_name[:-4]
             else:
-                repo_name = "meerk40t"
+                repo_name = "sefrocut"
         else:
-            repo_name = "meerk40t"
+            repo_name = "sefrocut"
 
         return {
             "url": repo_url,

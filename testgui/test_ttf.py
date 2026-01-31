@@ -13,7 +13,7 @@ from pathlib import Path
 # Add meerk40t to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "meerk40t"))
 
-from meerk40t.tools.ttfparser import TrueTypeFont
+from sefrocut.tools.ttfparser import TrueTypeFont
 
 
 def find_test_fonts():

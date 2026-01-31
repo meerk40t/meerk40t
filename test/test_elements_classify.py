@@ -1,7 +1,7 @@
 import unittest
 from random import Random
 
-from meerk40t.core.elements.element_types import elem_nodes, op_nodes
+from sefrocut.core.elements.element_types import elem_nodes, op_nodes
 from test import bootstrap
 
 

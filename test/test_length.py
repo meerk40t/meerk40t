@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.core.units import Length
+from sefrocut.core.units import Length
 
 
 class TestElementLength(unittest.TestCase):

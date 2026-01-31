@@ -10,7 +10,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
 
     - name: Set up Python 3.11
@@ -25,7 +25,7 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-optional-win.txt
         pip install .
-        pip install meerk40t-barcodes
+        pip install sefrocut-barcodes
 
     - name: Build PyInstaller bootloaders
       env:
@@ -44,31 +44,31 @@ jobs:
         # Generate icons using the build script
         tools\build_icon.cmd "w${{ github.run_number }}"
 
-    - name: Build MeerK40t Windows binary
+    - name: Build SefroCut Windows binary
       run: |
-        cd meerk40t
+        cd sefrocut
         move external_plugins.py external_plugins.unused
         move external_plugins_build.py external_plugins.py
         cd ..
 
-        move meerk40t.py mk40t.py
-        pyinstaller .github/workflows/win/meerk40t.spec
-        move mk40t.py meerk40t.py
+        move sefrocut.py mk40t.py
+        pyinstaller .github/workflows/win/sefrocut.spec
+        move mk40t.py sefrocut.py
 
         cd dist
-        move MeerK40t.exe "MeerK40t-windows-${{ github.run_number }}.exe"
+        move SefroCut.exe "SefroCut-windows-${{ github.run_number }}.exe"
 
     - name: Upload Windows binary
       uses: actions/upload-artifact@v4
       with:
-        name: meerk40t-windows
-        path: dist/MeerK40t-windows-${{ github.run_number }}.exe
+        name: sefrocut-windows
+        path: dist/SefroCut-windows-${{ github.run_number }}.exe
         retention-days: 60
 
   build-macos:
     runs-on: macos-latest
     steps:
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
 
     - name: Set up Python 3.9
@@ -82,7 +82,7 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-optional-macos.txt
         pip install .
-        pip install meerk40t-barcodes
+        pip install sefrocut-barcodes
 
     - name: Install PyInstaller
       run: |
@@ -95,36 +95,36 @@ jobs:
         chmod +x tools/build_icon.sh
         tools/build_icon.sh "w${{ github.run_number }}"
         # Copy the generated .icns file to the expected location
-        cp meerk40t.icns .github/workflows/mac/meerk40t.icns
+        cp sefrocut.icns .github/workflows/mac/sefrocut.icns
 
-    - name: Build MeerK40t macOS binary
+    - name: Build SefroCut macOS binary
       run: |
-        cd meerk40t
+        cd sefrocut
         mv external_plugins.py external_plugins.unused
         mv external_plugins_build.py external_plugins.py
         cd ..
 
-        mv meerk40t.py mk40t.py
+        mv sefrocut.py mk40t.py
         # --target-architecture universal2   - does not work!
         pyinstaller \
           --hidden-import wx._adv \
           --hidden-import wx._xml \
-          --hidden-import meerk40t \
+          --hidden-import sefrocut \
           --windowed \
           --noconfirm \
-          -i .github/workflows/mac/meerk40t.icns \
+          -i .github/workflows/mac/sefrocut.icns \
           --add-data 'locale/:locale/' \
-          --name MeerK40t \
+          --name SefroCut \
           mk40t.py
-        mv mk40t.py meerk40t.py
+        mv mk40t.py sefrocut.py
 
         # Extract application metadata
         APPNAME=$(python3 -c "
-        from meerk40t.main import APPLICATION_NAME
+        from sefrocut.main import APPLICATION_NAME
         print(APPLICATION_NAME)
         ")
         MKVERSION=$(python3 -c "
-        from meerk40t.main import APPLICATION_VERSION
+        from sefrocut.main import APPLICATION_VERSION
         version_parts = APPLICATION_VERSION.split()
         print(version_parts[1] if len(version_parts) > 1 else version_parts[0])
         ")
@@ -133,22 +133,22 @@ jobs:
         echo "Setting app version to: $MKVERSION"
 
         # Set version information in the app bundle
-        plutil -replace CFBundleName -string "$APPNAME" dist/MeerK40t.app/Contents/Info.plist
-        plutil -replace CFBundleShortVersionString -string "$MKVERSION" dist/MeerK40t.app/Contents/Info.plist
-        plutil -replace CFBundleVersion -string "$MKVERSION" dist/MeerK40t.app/Contents/Info.plist
-        plutil -replace CFBundleIdentifier -string "org.tatarize.MeerK40t" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleName -string "$APPNAME" dist/SefroCut.app/Contents/Info.plist
+        plutil -replace CFBundleShortVersionString -string "$MKVERSION" dist/SefroCut.app/Contents/Info.plist
+        plutil -replace CFBundleVersion -string "$MKVERSION" dist/SefroCut.app/Contents/Info.plist
+        plutil -replace CFBundleIdentifier -string "org.tatarize.SefroCut" dist/SefroCut.app/Contents/Info.plist
 
         cd dist
-        mv MeerK40t.app "MeerK40t-macos-${{ github.run_number }}.app"
-        zip -r "../MeerK40t-macos-${{ github.run_number }}.zip" "MeerK40t-macos-${{ github.run_number }}.app"
+        mv SefroCut.app "SefroCut-macos-${{ github.run_number }}.app"
+        zip -r "../SefroCut-macos-${{ github.run_number }}.zip" "SefroCut-macos-${{ github.run_number }}.app"
         cd ..
-        mv "MeerK40t-macos-${{ github.run_number }}.zip" dist/
+        mv "SefroCut-macos-${{ github.run_number }}.zip" dist/
 
     - name: Upload macOS binary
       uses: actions/upload-artifact@v4
       with:
-        name: meerk40t-macos
-        path: dist/MeerK40t-macos-${{ github.run_number }}.zip
+        name: sefrocut-macos
+        path: dist/SefroCut-macos-${{ github.run_number }}.zip
         retention-days: 60
   
   ensure-rocky8-runner:
@@ -230,7 +230,7 @@ jobs:
       run: |
         echo $(ldd --version)
 
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
 
     - name: Ensure dependencies installed
@@ -238,17 +238,17 @@ jobs:
         . /home/jacob/py311/bin/activate
         pip install ezdxf pyserial
         pip install scipy
-        pip install meerk40t-camera opencv-python-headless
+        pip install sefrocut-camera opencv-python-headless
         pip install pillow
         pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/rocky-8/wxPython-4.2.1-cp311-cp311-linux_x86_64.whl
 
     - name: Build Meerk40t
       run: |
         . /home/jacob/py311/bin/activate
-        mv meerk40t.py mk40t.py
-        pyinstaller .github/workflows/linux/meerk40t.spec
-        mv mk40t.py meerk40t.py
-        mv dist/MeerK40t "dist/MeerK40t-linux-minimal-${{ github.run_number }}"
+        mv sefrocut.py mk40t.py
+        pyinstaller .github/workflows/linux/sefrocut.spec
+        mv mk40t.py sefrocut.py
+        mv dist/SefroCut "dist/SefroCut-linux-minimal-${{ github.run_number }}"
 
     - name: Set release version
       id: set_release_version
@@ -262,14 +262,14 @@ jobs:
     - name: Upload minimal Linux binary
       uses: actions/upload-artifact@v4
       with:
-        name: meerk40t-minimal-linux
-        path: dist/MeerK40t-linux-minimal-${{ github.run_number }}
+        name: sefrocut-minimal-linux
+        path: dist/SefroCut-linux-minimal-${{ github.run_number }}
         retention-days: 60
 
   build-linux:
     runs-on: ubuntu-22.04
     steps:
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
 
     - name: Set up Python 3.9
@@ -304,11 +304,11 @@ jobs:
         # pip install scipy
         pip install numba
         pip install --no-cache-dir opencv-python-headless==4.5.3.56
-        # pip install meerk40t-camera
+        # pip install sefrocut-camera
         if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
         if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
         pip install .
-        pip install meerk40t-barcodes
+        pip install sefrocut-barcodes
 
     - name: Install PyInstaller
       run: |
@@ -321,16 +321,16 @@ jobs:
         chmod +x tools/build_icon.sh
         tools/build_icon.sh "w${{ github.run_number }}"
         echo "Icon generation completed. Checking results..."
-        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files were not created"
+        ls -la sefrocut.ico sefrocut.png 2>/dev/null || echo "Icon files were not created"
 
     - name: Build with PyInstaller
       run: |
-        cd meerk40t
+        cd sefrocut
         mv external_plugins.py external_plugins.unused
         mv external_plugins_build.py external_plugins.py
         cd ..
 
-        pyinstaller .github/workflows/linux/meerk40t_build.spec
+        pyinstaller .github/workflows/linux/sefrocut_build.spec
 
     - name: Create AppImage
       run: |
@@ -346,65 +346,65 @@ jobs:
         mkdir -p AppDir/usr/share/metainfo
 
         # Copy the executable
-        cp dist/MeerK40t AppDir/usr/bin/meerk40t
-        chmod +x AppDir/usr/bin/meerk40t
+        cp dist/SefroCut AppDir/usr/bin/sefrocut
+        chmod +x AppDir/usr/bin/sefrocut
 
         # Copy icon - should already be in PNG format from build_icon.sh
         echo "Checking for icon files..."
-        ls -la meerk40t.ico meerk40t.png 2>/dev/null || echo "Icon files not found"
+        ls -la sefrocut.ico sefrocut.png 2>/dev/null || echo "Icon files not found"
 
-        if [ -f "meerk40t.png" ]; then
-          echo "Found meerk40t.png, copying to AppDir locations..."
+        if [ -f "sefrocut.png" ]; then
+          echo "Found sefrocut.png, copying to AppDir locations..."
           # Copy to proper freedesktop.org location
-          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
+          cp sefrocut.png AppDir/usr/share/icons/hicolor/256x256/apps/sefrocut.png
           # Also copy to AppDir root for desktop file to find it
-          cp meerk40t.png AppDir/meerk40t.png
+          cp sefrocut.png AppDir/sefrocut.png
           echo "Icon copy completed successfully"
         else
-          echo "WARNING: meerk40t.png not found. Checking if we can convert from ICO..."
-          if [ -f "meerk40t.ico" ]; then
+          echo "WARNING: sefrocut.png not found. Checking if we can convert from ICO..."
+          if [ -f "sefrocut.ico" ]; then
             echo "Attempting fallback conversion from ICO to PNG..."
-            if convert meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png 2>&1; then
-              cp AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png AppDir/meerk40t.png
+            if convert sefrocut.ico AppDir/usr/share/icons/hicolor/256x256/apps/sefrocut.png 2>&1; then
+              cp AppDir/usr/share/icons/hicolor/256x256/apps/sefrocut.png AppDir/sefrocut.png
               echo "Fallback conversion succeeded"
             else
               echo "WARNING: Fallback conversion failed. AppImage will not have a custom icon."
             fi
           else
-            echo "WARNING: Neither meerk40t.png nor meerk40t.ico found. AppImage will not have a custom icon."
+            echo "WARNING: Neither sefrocut.png nor sefrocut.ico found. AppImage will not have a custom icon."
           fi
         fi
 
         # Copy desktop file (reverse-DNS filename avoids AppStream warnings)
-        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop \
-          AppDir/usr/share/applications/io.github.meerk40t.meerk40t.desktop
-        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop AppDir/
-        chmod +x AppDir/io.github.meerk40t.meerk40t.desktop
+        cp .github/workflows/linux/io.github.sefrocut.sefrocut.desktop \
+          AppDir/usr/share/applications/io.github.sefrocut.sefrocut.desktop
+        cp .github/workflows/linux/io.github.sefrocut.sefrocut.desktop AppDir/
+        chmod +x AppDir/io.github.sefrocut.sefrocut.desktop
 
         # Copy AppStream metainfo
-        cp .github/workflows/linux/meerk40t.appdata.xml \
-          AppDir/usr/share/metainfo/io.github.meerk40t.meerk40t.appdata.xml
+        cp .github/workflows/linux/sefrocut.appdata.xml \
+          AppDir/usr/share/metainfo/io.github.sefrocut.sefrocut.appdata.xml
 
         # Copy AppRun script
         cp .github/workflows/linux/AppRun AppDir/
         chmod +x AppDir/AppRun
 
         # Build AppImage
-        ./appimagetool AppDir "MeerK40t-linux-${{ github.run_number }}.AppImage"
+        ./appimagetool AppDir "SefroCut-linux-${{ github.run_number }}.AppImage"
 
     - name: Debug Check AppImage creation
       run: |
         echo "Current directory contents:"
         ls -la
         echo "Checking if AppImage exists:"
-        ls -la "MeerK40t-linux-${{ github.run_number }}.AppImage" 2>/dev/null || echo "AppImage not found!"
+        ls -la "SefroCut-linux-${{ github.run_number }}.AppImage" 2>/dev/null || echo "AppImage not found!"
 
     - name: Test AppImage
       run: |
         # Make AppImage executable and test basic functionality
-        chmod +x "MeerK40t-linux-${{ github.run_number }}.AppImage"
+        chmod +x "SefroCut-linux-${{ github.run_number }}.AppImage"
         # Note: Can't run GUI in headless environment, but we can check if it starts
-        timeout 15s ./"MeerK40t-linux-${{ github.run_number }}.AppImage" --version
+        timeout 15s ./"SefroCut-linux-${{ github.run_number }}.AppImage" --version
         if [ $? -ne 0 ]; then
           echo "ERROR: AppImage failed to start or did not return version information."
           exit 1
@@ -413,9 +413,9 @@ jobs:
     - name: Verify AppImage before upload
       run: |
         # Verify AppImage exists before upload
-        if [ -f "MeerK40t-linux-${{ github.run_number }}.AppImage" ]; then
+        if [ -f "SefroCut-linux-${{ github.run_number }}.AppImage" ]; then
           echo "AppImage found, proceeding with upload"
-          ls -la "MeerK40t-linux-${{ github.run_number }}.AppImage"
+          ls -la "SefroCut-linux-${{ github.run_number }}.AppImage"
         else
           echo "ERROR: AppImage not found!"
           ls -la
@@ -425,8 +425,8 @@ jobs:
     - name: Upload Linux AppImage
       uses: actions/upload-artifact@v4
       with:
-        name: meerk40t-linux
-        path: MeerK40t-linux-${{ github.run_number }}.AppImage
+        name: sefrocut-linux
+        path: SefroCut-linux-${{ github.run_number }}.AppImage
         retention-days: 60
 
   create-release:
@@ -435,7 +435,7 @@ jobs:
     if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success' || needs.build-minimal-linux.result == 'success')
     runs-on: ubuntu-22.04
     steps:
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -443,9 +443,9 @@ jobs:
     - name: Extract version
       id: extract_version
       run: |
-        # Extract the base version from meerk40t.main
+        # Extract the base version from sefrocut.main
         BASE_VERSION=$(python3 -c "
-        from meerk40t.main import APPLICATION_VERSION
+        from sefrocut.main import APPLICATION_VERSION
         version_parts = APPLICATION_VERSION.split()
         print(version_parts[0])  # Get the base version (e.g., '0.9.8210')
         ")
@@ -582,28 +582,28 @@ jobs:
       if: needs.build-windows.result == 'success'
       uses: actions/download-artifact@v4
       with:
-        name: meerk40t-windows
+        name: sefrocut-windows
         path: binaries/
 
     - name: Download macOS binary
       if: needs.build-macos.result == 'success'
       uses: actions/download-artifact@v4
       with:
-        name: meerk40t-macos
+        name: sefrocut-macos
         path: binaries/
 
     - name: Download Linux binary
       if: needs.build-linux.result == 'success'
       uses: actions/download-artifact@v4
       with:
-        name: meerk40t-linux
+        name: sefrocut-linux
         path: binaries/
 
     - name: Download minimal Linux binary
       if: needs.build-minimal-linux.result == 'success'
       uses: actions/download-artifact@v4
       with:
-        name: meerk40t-minimal-linux
+        name: sefrocut-minimal-linux
         path: binaries/
 
     - name: Extract device support status from NOTES.md
@@ -649,9 +649,9 @@ jobs:
         tag_name: ${{ env.BASE_VERSION }}.${{ github.run_number }}
         name: Weekly Build ${{ env.BASE_VERSION }}.${{ github.run_number }}
         body: |
-          ## 🚀 MeerK40t Weekly Build ${{ env.BASE_VERSION }}.${{ github.run_number }}
+          ## 🚀 SefroCut Weekly Build ${{ env.BASE_VERSION }}.${{ github.run_number }}
 
-          **Automated weekly binary build of MeerK40t - the open-source laser cutting software.**
+          **Automated weekly binary build of SefroCut - the open-source laser cutting software.**
 
           ### 📋 Build Information
           - **Version**: ${{ env.BASE_VERSION }}.${{ github.run_number }}
@@ -668,10 +668,10 @@ jobs:
 
           | Platform | Status | File | Description |
           |----------|--------|------|-------------|
-          ${{ needs.build-windows.result == 'success' && format('| **Windows** | ✅ Available | `MeerK40t-windows-{0}.exe` | 32-bit Windows executable |', github.run_number) || '| **Windows** | ❌ Failed | - | Build failed |'}}
-          ${{ needs.build-macos.result == 'success' && format('| **macOS** | ✅ Available | `MeerK40t-macos-{0}.app.zip` | macOS application bundle (zipped) |', github.run_number) || '| **macOS** | ❌ Failed | - | Build failed |'}}
-          ${{ needs.build-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-{0}.AppImage` | Linux AppImage (universal) |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
-          ${{ needs.build-minimal-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-minimal-{0}` | Linux binary |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-windows.result == 'success' && format('| **Windows** | ✅ Available | `SefroCut-windows-{0}.exe` | 32-bit Windows executable |', github.run_number) || '| **Windows** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-macos.result == 'success' && format('| **macOS** | ✅ Available | `SefroCut-macos-{0}.app.zip` | macOS application bundle (zipped) |', github.run_number) || '| **macOS** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-linux.result == 'success' && format('| **Linux** | ✅ Available | `SefroCut-linux-{0}.AppImage` | Linux AppImage (universal) |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-minimal-linux.result == 'success' && format('| **Linux** | ✅ Available | `SefroCut-linux-minimal-{0}` | Linux binary |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
 
           ### 🖥️ System Requirements
 
@@ -691,27 +691,27 @@ jobs:
           ### 🚀 Installation Instructions
 
           #### Windows
-          1. Download `MeerK40t-windows-${{ github.run_number }}.exe`
+          1. Download `SefroCut-windows-${{ github.run_number }}.exe`
           2. Run the executable (may show security warnings - allow it)
-          3. MeerK40t will start automatically
+          3. SefroCut will start automatically
 
           #### macOS
-          1. Download `MeerK40t-macos-${{ github.run_number }}.app.zip`
+          1. Download `SefroCut-macos-${{ github.run_number }}.app.zip`
           2. Extract the zip file
-          3. Move `MeerK40t.app` to your Applications folder
-          4. **First time only**: Right-click (or Control-click) on MeerK40t in Applications and select "Open"
+          3. Move `SefroCut.app` to your Applications folder
+          4. **First time only**: Right-click (or Control-click) on SefroCut in Applications and select "Open"
           5. Click "Open" in the security dialog to bypass Gatekeeper for this unsigned application
-          6. Run MeerK40t from Applications (subsequent launches will work normally)
+          6. Run SefroCut from Applications (subsequent launches will work normally)
 
           #### Linux (AppImage)
-          1. Download `MeerK40t-linux-${{ github.run_number }}.AppImage`
-          2. Make it executable: `chmod +x MeerK40t-linux-${{ github.run_number }}.AppImage`
-          3. Run: `./MeerK40t-linux-${{ github.run_number }}.AppImage`
+          1. Download `SefroCut-linux-${{ github.run_number }}.AppImage`
+          2. Make it executable: `chmod +x SefroCut-linux-${{ github.run_number }}.AppImage`
+          3. Run: `./SefroCut-linux-${{ github.run_number }}.AppImage`
 
           #### Linux (Binary)
-          1. Download `MeerK40t-linux-minimal-${{ github.run_number }}`
-          2. Make it executable: `chmod +x MeerK40t-linux-minimal-${{ github.run_number }}`
-          3. Run: `./MeerK40t-linux-minimal-${{ github.run_number }}`
+          1. Download `SefroCut-linux-minimal-${{ github.run_number }}`
+          2. Make it executable: `chmod +x SefroCut-linux-minimal-${{ github.run_number }}`
+          3. Run: `./SefroCut-linux-minimal-${{ github.run_number }}`
 
           ### ⚠️ Important Notes
 
@@ -725,8 +725,8 @@ jobs:
           Some platform builds failed. Only successfully built binaries are included in this release. Failed builds will be addressed in future releases.
           ' || '' }}
         files: |
-          ${{ needs.build-windows.result == 'success' && format('binaries/MeerK40t-windows-{0}.exe', github.run_number) || '' }}
-          ${{ needs.build-macos.result == 'success' && format('binaries/MeerK40t-macos-{0}.zip', github.run_number) || '' }}
-          ${{ needs.build-linux.result == 'success' && format('binaries/MeerK40t-linux-{0}.AppImage', github.run_number) || '' }}
-          ${{ needs.build-minimal-linux.result == 'success' && format('binaries/MeerK40t-linux-minimal-{0}', github.run_number) || '' }}
+          ${{ needs.build-windows.result == 'success' && format('binaries/SefroCut-windows-{0}.exe', github.run_number) || '' }}
+          ${{ needs.build-macos.result == 'success' && format('binaries/SefroCut-macos-{0}.zip', github.run_number) || '' }}
+          ${{ needs.build-linux.result == 'success' && format('binaries/SefroCut-linux-{0}.AppImage', github.run_number) || '' }}
+          ${{ needs.build-minimal-linux.result == 'success' && format('binaries/SefroCut-linux-minimal-{0}', github.run_number) || '' }}
         prerelease: true

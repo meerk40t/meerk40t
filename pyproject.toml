@@ -16,7 +16,7 @@ exclude = "svgelements.py"
 [tool.isort]
 profile = "black"
 line_length = 88
-src_paths =  ["meerk40t"]
+src_paths =  ["sefrocut"]
 
 
 [tool.black]

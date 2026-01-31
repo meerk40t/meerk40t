@@ -30,14 +30,14 @@ cmd=window open Simulation z 0
 
 tip=MeerK40t has multiple grid types that you can choose from, including a circular one...
 img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
-cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+cmd=https://github.com/sefrocut/sefrocut/wiki/Online-Help:-SCENE#Grids
 
 
 tip=Tired of aligning objects? Use the magnet feature, just doubleclick on the X- or Y-axis and establish a magnetline.
 Move an element close to that line and see what happens...
 Right click on the axis to set more options.
 img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
-cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+cmd=https://github.com/sefrocut/sefrocut/wiki/Online-Help:-SCENE#Magnets
 
 tip=You need a quick copy of an element? There are some options:
 a) Select an object, hold the Alt-key and move the object: and you have your copy
@@ -46,37 +46,37 @@ c) Use the copy and paste buttons in the toolbar
 
 tip=MeerK40t has a lot of frequently needed windows called panes (eg like the lasercontrol or the operations & element tree).
 You can move these panels freely around on the screen, but you can as well dock them to the sides: Move a panel to the side of your Meerk40t window and it will indicate with a shaded area that window can dock to the userinterface.
-img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
-cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+img=https://github.com/sefrocut/sefrocut/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/sefrocut/sefrocut/wiki/Online-Help:-GUI#Panels
 
 tip=Right click on the top operations node - the top node of operations has a special context menu, that does allow to access/set generic properties of operations
 img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
-cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+cmd=https://github.com/sefrocut/sefrocut/wiki/Online-Help%3A-TREE#Operations
 
 tip=MeerK40t has regmarks, a special category of elements, that will not be burned but will act as kind of visual guideline for object placement.
 You can move elements in out of the regmark zone by dragging them into or out of the regmark area in the tree.
 Elements in the regmark area are acting as a background, you can no longer directly interact with them on the Scene.
-cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+cmd=https://github.com/sefrocut/sefrocut/wiki/Online-Help%3A-TREE#Regmarks
 
 tip=You want to properly align an object on your laserbed? Why don't you add a camera to your setup.
 MeerK40t can use that camera to display the live picture on the scene background, simplifying alignment enormously.
 Click on the camera button in the toolbar and calibrate your camera picture.
 cmd=camdetect\n
-img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+img=https://github.com/sefrocut/sefrocut/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
 
 tip=You can store and reuse the settings for engraving, cutting etc. for a certain material (like 4mm plywood or acrylic).
 Use the Material Manager to manage the individual settings for the materials you use.
 cmd=window open MatManager
-img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+img=https://github.com/sefrocut/sefrocut/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
 
 tip=Did you know that you can share your perfect settings for a material with the MeerK40t community and that you can equally benefit from the contributions of others?
 Use the Material Manager to share and retrieve settings from the global MeerK40t Library.
 cmd=window open MatManager
-img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+img=https://github.com/sefrocut/sefrocut/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
 version=1.0
 
 tip=Do you need to convert a graphic into a vector object? Double click the graphic and use the vectorization panel...
-img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
+img=https://github.com/sefrocut/sefrocut/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38
 
 tip=If you want the content of a file that you load to be automatically placed at a specific point
 (e.g. aligned to the corners or at the center of the bed) then press and hold the Shift-key when selecting the file.

@@ -2,8 +2,8 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.svgelements import Matrix
+from sefrocut.core.node.elem_image import ImageNode
+from sefrocut.svgelements import Matrix
 from test import bootstrap
 
 

@@ -1,7 +1,7 @@
 
 import unittest
-from meerk40t.core.node.node import Node
-from meerk40t.core.elements.groups import filter_redundant_ancestors
+from sefrocut.core.node.node import Node
+from sefrocut.core.elements.groups import filter_redundant_ancestors
 from io import StringIO
 from contextlib import redirect_stdout
 

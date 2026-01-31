@@ -1,6 +1,6 @@
 
 import unittest
-from meerk40t.core.node.node import Node
+from sefrocut.core.node.node import Node
 
 class TestNodeIntegrityCheckerAdditionalCases(unittest.TestCase):
     def _assert_error_contains(self, errors, *substrings):

@@ -412,7 +412,7 @@ def integrate_delta_files(locales: List[str]) -> None:
     for locale in locales:
         print_info(f"Processing locale: {locale}")
         updates_applied = False
-        main_po_file = f"./locale/{locale}/LC_MESSAGES/meerk40t.po"
+        main_po_file = f"./locale/{locale}/LC_MESSAGES/sefrocut.po"
         delta_po_file = f"./delta_{locale}.po"
 
         if not os.path.exists(delta_po_file):

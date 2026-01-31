@@ -1,8 +1,8 @@
 import random
 import unittest
 
-from meerk40t.core.units import UNITS_PER_MIL, Length
-from meerk40t.core.view import View
+from sefrocut.core.units import UNITS_PER_MIL, Length
+from sefrocut.core.view import View
 
 
 class TestViewport(unittest.TestCase):

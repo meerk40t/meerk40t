@@ -1,4 +1,4 @@
-name: MeerK40t (Macintosh)
+name: SefroCut (Macintosh)
 ##Options for VM
 ##macos-10.15 or macos-latest
 ##macos-11
@@ -12,7 +12,7 @@ jobs:
   build-macos11:
     runs-on: macos-11
     steps:
-    - name: Checkout meerk40t
+    - name: Checkout sefrocut
       uses: actions/checkout@v4
 ##    - name: Set up Python 3.9
 ##      uses: actions/setup-python@v5
@@ -52,7 +52,7 @@ jobs:
         ## python3.8 -m pip install .
         ## cd ..
 
-    - name: Ensure latest pip and meerk40t-camera
+    - name: Ensure latest pip and sefrocut-camera
       run: |
         python3.8 -m pip install --upgrade pip
         python3.8 -m pip install wheel setuptools==65.5.1
@@ -70,18 +70,18 @@ jobs:
         python3.8 -m pip install numba
         python3.8 -m pip install requests
         python3.8 -m pip install .
-        python3.8 -m pip install meerk40t-camera opencv-python-headless==4.5.3.56
-        python3.8 -m pip install meerk40t-barcodes
+        python3.8 -m pip install sefrocut-camera opencv-python-headless==4.5.3.56
+        python3.8 -m pip install sefrocut-barcodes
 
     - name: pip list
       run: |
           python3.8 -m pip list
 
-    - name: Build meerk40t
+    - name: Build sefrocut
       id: build
       run: |
-        ## git clone https://github.com/meerk40t/meerk40t.git
-        ## cd meerk40t
+        ## git clone https://github.com/sefrocut/sefrocut.git
+        ## cd sefrocut
         ## git pull
         git clone https://github.com/ronaldoussoren/py2app.git
         cd py2app
@@ -90,14 +90,14 @@ jobs:
         python3.8 -m pip install .
         cd ..
             ##Set bundle version
-            ##Download the extra files here meerk40t.icns entitlements.plist setup_mac.py
+            ##Download the extra files here sefrocut.icns entitlements.plist setup_mac.py
             ##May need to compare extras_required vs. current version of setup.py
-            ##Unpack inside the meerk40t directory
+            ##Unpack inside the sefrocut directory
         cp .github/workflows/mac/setup_mac.py setup_mac.py
         cp .github/workflows/mac/entitlements.plist entitlements.plist
-        cp .github/workflows/mac/meerk40t.icns meerk40t.icns
+        cp .github/workflows/mac/sefrocut.icns sefrocut.icns
         cp .github/workflows/mac/libusb-1.0.dylib libusb-1.0.dylib
-        VERSION=$(python3.8 meerk40t.py -V)
+        VERSION=$(python3.8 sefrocut.py -V)
         MKVERSION=$(echo $VERSION | cut -d" " -f 2)
         sed -i "" "s|0.0.0|$MKVERSION|g" setup_mac.py
 
@@ -105,66 +105,66 @@ jobs:
         ## echo "::set-output name=mkversion::$(echo $MKVERSION)"
         echo "mkversion=$(echo $MKVERSION)" >> $GITHUB_OUTPUT
         ## python3.8 setup_mac.py py2app --dylib-excludes /usr/local/lib/libssl.1.1.dylib,/usr/local/lib/libcrypto.1.1.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/libfreetype.6.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/liblzma.5.dylib --frameworks libusb-1.0.dylib
-        mv meerk40t.py mk40t.py
-        python3.8 -m PyInstaller --hidden-import wx._adv --hidden-import wx._xml --hidden-import meerk40t --windowed --noconfirm -i meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
-        mv mk40t.py meerk40t.py
-        rm -rf dist/MeerK40t
+        mv sefrocut.py mk40t.py
+        python3.8 -m PyInstaller --hidden-import wx._adv --hidden-import wx._xml --hidden-import sefrocut --windowed --noconfirm -i sefrocut.icns --add-data 'locale/:locale/' --name SefroCut mk40t.py
+        mv mk40t.py sefrocut.py
+        rm -rf dist/SefroCut
         sed -i "" "s|$MKVERSION|0.0.0|g" setup_mac.py
         ## Backwards compatibility
-        rm dist/MeerK40t.app/Contents/MacOS/libusb-1.0.dylib
-        cp libusb-1.0.dylib dist/MeerK40t.app/Contents/MacOS/libusb-1.0.dylib
-        ## plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
-        plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/meerk40t.app/Contents/Info.plist
-        plutil -insert CFBundleDevelopmentRegion -string en dist/meerk40t.app/Contents/Info.plist
-        plutil -insert CFAppleHelpAnchor -string YES dist/meerk40t.app/Contents/Info.plist
-        plutil -replace CFBundleIdentifier -string org.tatarize.MeerK40t dist/meerk40t.app/Contents/Info.plist
-        plutil -replace CFBundleShortVersionString -string $MKVERSION dist/meerk40t.app/Contents/Info.plist
-        plutil -insert CFBundleSupportedPlatforms -string MacOSX dist/meerk40t.app/Contents/Info.plist
-        ## plutil -insert CFBundleTypeExtensions -string "*" dist/meerk40t.app/Contents/Info.plist
-        plutil -insert CFBundleTypeRole -string Editor dist/meerk40t.app/Contents/Info.plist
-        plutil -insert CFBundleVersion -string $MKVERSION dist/meerk40t.app/Contents/Info.plist
-        plutil -insert LSApplicationCategoryType -string public.app-category.utilities dist/meerk40t.app/Contents/Info.plist
-        ## plutil -insert LSFileQuarantineEnabled -string YES dist/meerk40t.app/Contents/Info.plist
-        ## plutil -insert NSAppleScriptEnabled -bool NO dist/meerk40t.app/Contents/Info.plist
-        plutil -insert NSHumanReadableCopyright -string "Copyright © 2019-2021 MeerK40t Developers, MIT License" dist/meerk40t.app/Contents/Info.plist
+        rm dist/SefroCut.app/Contents/MacOS/libusb-1.0.dylib
+        cp libusb-1.0.dylib dist/SefroCut.app/Contents/MacOS/libusb-1.0.dylib
+        ## plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/sefrocut.app/Contents/Info.plist
+        plutil -insert NSRequiresAquaSystemAppearance -bool NO dist/sefrocut.app/Contents/Info.plist
+        plutil -insert CFBundleDevelopmentRegion -string en dist/sefrocut.app/Contents/Info.plist
+        plutil -insert CFAppleHelpAnchor -string YES dist/sefrocut.app/Contents/Info.plist
+        plutil -replace CFBundleIdentifier -string org.tatarize.SefroCut dist/sefrocut.app/Contents/Info.plist
+        plutil -replace CFBundleShortVersionString -string $MKVERSION dist/sefrocut.app/Contents/Info.plist
+        plutil -insert CFBundleSupportedPlatforms -string MacOSX dist/sefrocut.app/Contents/Info.plist
+        ## plutil -insert CFBundleTypeExtensions -string "*" dist/sefrocut.app/Contents/Info.plist
+        plutil -insert CFBundleTypeRole -string Editor dist/sefrocut.app/Contents/Info.plist
+        plutil -insert CFBundleVersion -string $MKVERSION dist/sefrocut.app/Contents/Info.plist
+        plutil -insert LSApplicationCategoryType -string public.app-category.utilities dist/sefrocut.app/Contents/Info.plist
+        ## plutil -insert LSFileQuarantineEnabled -string YES dist/sefrocut.app/Contents/Info.plist
+        ## plutil -insert NSAppleScriptEnabled -bool NO dist/sefrocut.app/Contents/Info.plist
+        plutil -insert NSHumanReadableCopyright -string "Copyright © 2019-2021 SefroCut Developers, MIT License" dist/sefrocut.app/Contents/Info.plist
 
-        ## plutil -insert  -string  dist/meerk40t.app/Contents/Info.plist
-        ## plutil -replace  -string  dist/meerk40t.app/Contents/Info.plist
+        ## plutil -insert  -string  dist/sefrocut.app/Contents/Info.plist
+        ## plutil -replace  -string  dist/sefrocut.app/Contents/Info.plist
         SIG="-"
-        plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
+        plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/SefroCut.app/Contents/Info.plist
 
         ## Fix the numpy 32 bit issue inside the app bundle - or install numpy from source.
-        ## lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
-        ## rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
-        ## mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        ## lipo dist/SefroCut.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/SefroCut.app/Contents/MacOS/libgcc_s_new.1.dylib
+        ## rm dist/SefroCut.app/Contents/MacOS/libgcc_s.1.dylib
+        ## mv dist/SefroCut.app/Contents/MacOS/libgcc_s_new.1.dylib dist/SefroCut.app/Contents/MacOS/libgcc_s.1.dylib
 
         echo "Codesign for GITHUB"
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.zip
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/*.zip
 
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/wx/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/Python
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/PIL/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/random/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/linalg/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/fft/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/numpy/core/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/lib-dynload/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/ezdxf/acc/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/cv2/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.dylib
-        ## codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.so
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/MeerK40t
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/wx/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/Python
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/PIL/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/numpy/random/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/numpy/linalg/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/numpy/fft/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/numpy/core/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/lib-dynload/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/ezdxf/acc/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/cv2/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/*.dylib
+        ## codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/*.so
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app/Contents/MacOS/SefroCut
 
-        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app
-        ## codesign -s $SIG --deep --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/meerk40t.app
+        codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/SefroCut.app
+        ## codesign -s $SIG --deep --timestamp --entitlements entitlements.plist -i org.tatarize.SefroCut -o runtime --arch x86_64 dist/sefrocut.app
 
         echo "DMG Build..."
-        hdiutil create -volname "MeerK40t Mac" -srcfolder dist -ov MeerK40t_unsigned.dmg
+        hdiutil create -volname "SefroCut Mac" -srcfolder dist -ov SefroCut_unsigned.dmg
             ## GUI function check - Fails on runner (security settings).
-        ## open dist/MeerK40t.app
+        ## open dist/SefroCut.app
             ## Binary bundle CLI function check - Fails on runner (security settings).
-        ##. dist/MeerK40t.app/Contents/MacOS/MeerK40t -V
-            ##I don't do this part; mv dist/meerk40t dist/MeerK40t-Ubuntu-Latest
+        ##. dist/SefroCut.app/Contents/MacOS/SefroCut -V
+            ##I don't do this part; mv dist/sefrocut dist/SefroCut-Ubuntu-Latest
 
     - name: Directory contents
       run: |
@@ -181,4 +181,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          MeerK40t_unsigned.dmg
+          SefroCut_unsigned.dmg

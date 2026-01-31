@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=SefroCut
+Exec=sefrocut
+Icon=sefrocut
+Type=Application
+Categories=Graphics;VectorGraphics;
+Comment=Laser Cutter Software
+Terminal=false

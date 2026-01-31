@@ -1,6 +1,6 @@
 <!-----------------------------------------------
 
-Thank you for taking the time to report a MeerK40t bug or make an enhancement suggestion! 😄
+Thank you for taking the time to report a SefroCut bug or make an enhancement suggestion! 😄
 
 To help us avoid duplicates, please search open and closed issues before submitting a new one.
 If you find an existing issue that is close to the one you want to report,
@@ -33,7 +33,7 @@ This is a:
 
 ## YOUR ENVIRONMENT
 
-*   MeerK40t version:
+*   SefroCut version:
 *   OS: <!-- e.g. Windows 10 1904 or Ubuntu 5.4.0-26-generic x86_64 etc. ... -->
 *   Running from: <|-- e.g. Executable, package (PIP3/Pypi), downloaded source, git managed source
 

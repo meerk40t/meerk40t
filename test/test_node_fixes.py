@@ -9,7 +9,7 @@ This test file documents and verifies the following bug fixes:
 
 import unittest
 
-from meerk40t.core.node.node import Node
+from sefrocut.core.node.node import Node
 
 
 class TestNodeCyclePreventionFixes(unittest.TestCase):

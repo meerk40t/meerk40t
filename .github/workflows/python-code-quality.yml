@@ -84,32 +84,32 @@ jobs:
       id: pylint
       continue-on-error: true
       run: |
-        pylint -j 0 --output-format=text:artifacts/pylint.txt,colorized meerk40t
+        pylint -j 0 --output-format=text:artifacts/pylint.txt,colorized sefrocut
 
     - name: Analyse with flake8
       id: flake8
       continue-on-error: true
       run: |
-        pflake8 meerk40t --tee --output-file=artifacts/flake8.txt
+        pflake8 sefrocut --tee --output-file=artifacts/flake8.txt
 
     - name: Analyse with black
       id: black
       continue-on-error: true
       run: |
-        black --diff --color meerk40t
+        black --diff --color sefrocut
 
     - name: Analyse with isort
       id: isort
       continue-on-error: true
       run: |
-        isort meerk40t -c --diff
+        isort sefrocut -c --diff
 
 # MK Not strongly typed - mypy is not going to be run
 #    - name: Analyse with mypy
 #      id: mypy
 #      continue-on-error: true
 #      run: |
-#        mypy meerk40t
+#        mypy sefrocut
 #        exit 0
 
     - name: Upload analysis results
