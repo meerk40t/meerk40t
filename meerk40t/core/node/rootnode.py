@@ -15,6 +15,7 @@ class RootNode(Node):
         super().__init__(type="root", **kwargs)
         self._root = self
         self.listeners = []
+        self.context = context
         # Flag indicating the tree structure changed; listeners may set this
         # and services can invalidate caches lazily.
         self._structure_dirty = False
