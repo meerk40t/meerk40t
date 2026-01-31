@@ -14,7 +14,6 @@ class RootNode(Node):
         _ = context._
         super().__init__(type="root", **kwargs)
         self._root = self
-        self.context = context
         self.listeners = []
         # Flag indicating the tree structure changed; listeners may set this
         # and services can invalidate caches lazily.
@@ -57,7 +56,7 @@ class RootNode(Node):
             node = self
         # Mark structure dirty for lazy cache invalidation
         try:
-            self.context._structure_dirty = True
+            self._structure_dirty = True
         except Exception:
             pass
         # If notification delivery is paused, do not dispatch per-node events.
@@ -72,7 +71,7 @@ class RootNode(Node):
             node = self
         # Mark structure dirty for lazy cache invalidation
         try:
-            self.context._structure_dirty = True
+            self._structure_dirty = True
         except Exception:
             pass
         if getattr(self, "pause_notify", False):
@@ -86,7 +85,7 @@ class RootNode(Node):
             node = self
         # Mark structure dirty for lazy cache invalidation
         try:
-            self.context._structure_dirty = True
+            self._structure_dirty = True
         except Exception:
             pass
         if getattr(self, "pause_notify", False):
@@ -100,7 +99,7 @@ class RootNode(Node):
             node = self
         # Mark structure dirty for lazy cache invalidation
         try:
-            self.context._structure_dirty = True
+            self._structure_dirty = True
         except Exception:
             pass
         if getattr(self, "pause_notify", False):
@@ -237,20 +236,24 @@ class RootNode(Node):
         This deliberately passes node=None to allow listeners to distinguish a coarse-grained structural
         change from a per-node attached/detached event.
         """
-        # Mark dirty for lazy cache invalidation and immediately invalidate caches
-        # for callers that might inspect cached state synchronously.
+        # Mark dirty for lazy cache invalidation. Elements will flush caches lazily
+        # by inspecting the RootNode's `_structure_dirty` flag.
         try:
-            self.context._structure_dirty = True
-            try:
-                self.context._invalidate_elems_cache()
-            except Exception:
-                pass
-            try:
-                self.context._invalidate_ops_cache()
-            except Exception:
-                pass
+            self._structure_dirty = True
         except Exception:
             pass
+        # Immediately invalidate caches on listeners that expose invalidate hooks
+        for listen in self.listeners:
+            try:
+                if hasattr(listen, "_invalidate_elems_cache"):
+                    listen._invalidate_elems_cache()
+            except Exception:
+                pass
+            try:
+                if hasattr(listen, "_invalidate_ops_cache"):
+                    listen._invalidate_ops_cache()
+            except Exception:
+                pass
         # If notifications are paused, skip dispatch of per-listener updates.
         if getattr(self, "pause_notify", False):
             return

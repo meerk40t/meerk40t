@@ -853,11 +853,11 @@ class Elemental(Service):
             # When `static` is requested, pause notification delivery to avoid
             # flooding the scheduler with per-node events during bulk ops.
             if static:
+                # Pause per-node notifications
                 self.stop_updates(message, True)
             self.do_undo = False
             yield self
         finally:
-            if static:
                 self.resume_updates(source)
             if undo_active:
                 self.do_undo = True
