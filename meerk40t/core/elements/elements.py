@@ -659,6 +659,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
+        self._tree.node_lock = self.node_lock
         # Caches for flattened lists to avoid repeated full-tree traversals
         self._elems_cache = None  # Cached list of element nodes
         self._ops_cache = None  # Cached list of operation nodes

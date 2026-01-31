@@ -1,6 +1,15 @@
 from meerk40t.core.node.node import Node
 
 
+class DummyLock:
+    """Dummy lock that does nothing - for compatibility when no real locking is needed."""
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+
 class RootNode(Node):
     """
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
@@ -17,6 +26,8 @@ class RootNode(Node):
         self.listeners = []
         self.context = context
         self.pause_notify = False
+        # Dummy lock that can be overridden by Elements with a real threading.RLock
+        self.node_lock = DummyLock()
         # Flag indicating the tree structure changed; listeners may set this
         # and services can invalidate caches lazily.
         self._structure_dirty = False
@@ -57,10 +68,11 @@ class RootNode(Node):
         if node is None:
             node = self
         # Mark structure dirty for lazy cache invalidation
-        try:
-            self._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
         # If notification delivery is paused, do not dispatch per-node events.
         if getattr(self, "pause_notify", False):
             return
@@ -72,10 +84,11 @@ class RootNode(Node):
         if node is None:
             node = self
         # Mark structure dirty for lazy cache invalidation
-        try:
-            self._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
         if getattr(self, "pause_notify", False):
             return
         for listen in self.listeners:
@@ -86,10 +99,11 @@ class RootNode(Node):
         if node is None:
             node = self
         # Mark structure dirty for lazy cache invalidation
-        try:
-            self._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
         if getattr(self, "pause_notify", False):
             return
         for listen in self.listeners:
@@ -100,10 +114,11 @@ class RootNode(Node):
         if node is None:
             node = self
         # Mark structure dirty for lazy cache invalidation
-        try:
-            self._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
         if getattr(self, "pause_notify", False):
             return
         for listen in self.listeners:
@@ -242,10 +257,11 @@ class RootNode(Node):
         """
         # Mark dirty for lazy cache invalidation. Elements will flush caches lazily
         # by inspecting the RootNode's `_structure_dirty` flag.
-        try:
-            self._structure_dirty = True
-        except Exception:
-            pass
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
         # Immediately invalidate caches on listeners that expose invalidate hooks
         for listen in self.listeners:
             try:
