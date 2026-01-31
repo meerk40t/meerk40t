@@ -73,7 +73,7 @@ def init_commands(kernel):
     # ==========
     # ELEMENT/SHAPE COMMANDS
     # ==========
-    # OPTIMIZATION COMMANDS  
+    # OPTIMIZATION COMMANDS
     # ==========
     @self.console_option(
         "debug",
@@ -483,8 +483,6 @@ def init_commands(kernel):
         except Exception as e:
             channel(f"Error in workflow optimization: {e}")
             return "ops", data
-
-
 
 
 def display_label(node):
@@ -1118,10 +1116,15 @@ def _calculate_total_travel_distance(path_info, channel=None, start_position=0j)
 
         if first_start_points:
             # Find the minimum distance from start_position to any start point of the first path
-            min_distance_to_first = min(
-                abs(start_point - start_position) for start_point in first_start_points
-                if not np.isnan(start_point)
-            ) if any(not np.isnan(p) for p in first_start_points) else 0.0
+            min_distance_to_first = (
+                min(
+                    abs(start_point - start_position)
+                    for start_point in first_start_points
+                    if not np.isnan(start_point)
+                )
+                if any(not np.isnan(p) for p in first_start_points)
+                else 0.0
+            )
             total_distance += min_distance_to_first
 
             if channel:

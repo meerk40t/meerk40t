@@ -1829,7 +1829,7 @@ class SVGProcessor:
                 self.elements.signal("rebuild_tree", "regmarks")
 
         needs_update = False
-        for c in self.elements.flat():
+        for c in self.elements.elems():
             # All nodes including regmarks and elements
             if c.type == "elem image" and c.keyhole_reference is not None:
                 refnode = self.elements.find_node(c.keyhole_reference)

@@ -522,7 +522,7 @@ class TabEditTool(ToolWidget):
 
     def tool_change(self):
         self.reset()
-        for node in self.scene.context.elements.flat(emphasized=True):
+        for node in self.scene.context.elements.elems(emphasized=True):
             if not hasattr(node, "as_geometry") or not hasattr(node, "mktabpositions"):
                 continue
             self.set_node(node)

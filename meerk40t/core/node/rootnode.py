@@ -1,6 +1,15 @@
 from meerk40t.core.node.node import Node
 
 
+class DummyLock:
+    """Dummy lock that does nothing - for compatibility when no real locking is needed."""
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+
 class RootNode(Node):
     """
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
@@ -14,8 +23,14 @@ class RootNode(Node):
         _ = context._
         super().__init__(type="root", **kwargs)
         self._root = self
-        self.context = context
         self.listeners = []
+        self.context = context
+        self.pause_notify = False
+        # Dummy lock that can be overridden by Elements with a real threading.RLock
+        self.node_lock = DummyLock()
+        # Flag indicating the tree structure changed; listeners may set this
+        # and services can invalidate caches lazily.
+        self._structure_dirty = False
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
@@ -52,6 +67,15 @@ class RootNode(Node):
     def notify_created(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
+        # If notification delivery is paused, do not dispatch per-node events.
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_created"):
                 listen.node_created(node, **kwargs)
@@ -59,6 +83,14 @@ class RootNode(Node):
     def notify_destroyed(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_destroyed"):
                 listen.node_destroyed(node, **kwargs)
@@ -66,6 +98,14 @@ class RootNode(Node):
     def notify_attached(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_attached"):
                 listen.node_attached(node, **kwargs)
@@ -73,6 +113,14 @@ class RootNode(Node):
     def notify_detached(self, node=None, **kwargs):
         if node is None:
             node = self
+        # Mark structure dirty for lazy cache invalidation
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
+        if getattr(self, "pause_notify", False):
+            return
         for listen in self.listeners:
             if hasattr(listen, "node_detached"):
                 listen.node_detached(node, **kwargs)
@@ -181,7 +229,9 @@ class RootNode(Node):
 
         for listen in self.listeners:
             if hasattr(listen, "scaled"):
-                listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)  # , **kwargs)
+                listen.scaled(
+                    node, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim
+                )  # , **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
         """
@@ -198,6 +248,41 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "altered"):
                 listen.altered(node, **kwargs)
+
+    def notify_tree_structure_changed(self, **kwargs):
+        """Notify listeners that the tree structure changed in bulk (e.g., bulk add/remove operations).
+
+        This deliberately passes node=None to allow listeners to distinguish a coarse-grained structural
+        change from a per-node attached/detached event.
+        """
+        # Mark dirty for lazy cache invalidation. Elements will flush caches lazily
+        # by inspecting the RootNode's `_structure_dirty` flag.
+        with self.node_lock:
+            try:
+                self._structure_dirty = True
+            except Exception:
+                pass
+        # Immediately invalidate caches on listeners that expose invalidate hooks
+        for listen in self.listeners:
+            try:
+                if hasattr(listen, "_invalidate_elems_cache"):
+                    listen._invalidate_elems_cache()
+            except Exception:
+                pass
+            try:
+                if hasattr(listen, "_invalidate_ops_cache"):
+                    listen._invalidate_ops_cache()
+            except Exception:
+                pass
+        # If notifications are paused, skip dispatch of per-listener updates.
+        if getattr(self, "pause_notify", False):
+            return
+        for listen in self.listeners:
+            if hasattr(listen, "structure_changed"):
+                try:
+                    listen.structure_changed(node=None, **kwargs)
+                except Exception:
+                    pass
 
     def notify_expand(self, node=None, **kwargs):
         if node is None:

@@ -163,7 +163,7 @@ class AffineMover(Widget):
             matrix = self.current_affine_matrix()
             try:
                 m = ~self._matrix * matrix
-                for r in self.scene.context.elements.flat(emphasized=True):
+                for r in self.scene.context.elements.elems(emphasized=True):
                     if not hasattr(r, "matrix"):
                         # Not a thing that transforms.
                         continue

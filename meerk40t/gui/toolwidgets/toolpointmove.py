@@ -159,7 +159,7 @@ class PointMoveTool(ToolWidget):
     def tool_change(self):
         self.reset()
 
-        for node in self.scene.context.elements.flat(emphasized=True):
+        for node in self.scene.context.elements.elems(emphasized=True):
             if not hasattr(node, "as_geometry"):
                 continue
             geom_transformed = node.as_geometry()

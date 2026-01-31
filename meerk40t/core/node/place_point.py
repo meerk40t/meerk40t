@@ -4,6 +4,7 @@ A project may contain multiple such placements, for every placement
 a copy of the plan will be executed with the placement indicating
 the relative position
 """
+
 import ast
 from math import tau
 
@@ -326,4 +327,3 @@ class PlacePointNode(Node):
         default_map["enabled"] = "(Disabled) " if not self.output else ""
 
         return default_map
-

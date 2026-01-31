@@ -179,7 +179,7 @@ class OperationAssignWidget(StatusBarWidget):
         event.Skip()
 
     def execute_on(self, targetop, attrib):
-        data = list(self.context.elements.flat(emphasized=True))
+        data = list(self.context.elements.elems(emphasized=True))
         idx = self.context.elements.classify_impose_default
         if idx == 1:
             impose = "to_op"
@@ -314,7 +314,7 @@ class OperationAssignWidget(StatusBarWidget):
         self.parent.Freeze()
         self.assign_clear_old()
         idx = 0
-        for node in list(self.context.elements.flat(types=op_nodes)):
+        for node in list(self.context.elements.ops()):
             if node is None:
                 continue
             if node.type.startswith("op "):

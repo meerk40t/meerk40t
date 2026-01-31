@@ -215,6 +215,10 @@ class Kernel(Settings):
         # Signal Listener
         self.signal_job = None
         self.listeners = {}
+        self.listener_stats = {}
+        # Per-listener timing stats (only tracked when debug_mode is active)
+        # { signal: { listener_id: [calls, messages, total_time] } }
+        self.listener_call_stats = {}
         self._add_lock = threading.Lock()
         self._adding_listeners = []
         self._remove_lock = threading.Lock()
@@ -1552,6 +1556,8 @@ class Kernel(Settings):
                     )
         self._last_message = {}
         self.listeners = {}
+        self.listener_stats = {}
+        self.listener_call_stats = {}
         if (
             self.scheduler_thread != threading.current_thread() and not self.scheduler_thread.daemon
         ):  # Join if not this thread and not daemon.
@@ -2145,6 +2151,11 @@ class Kernel(Settings):
         @param path: Path of signal
         @param message: Message to send.
         """
+        if code not in self.listener_stats:
+            self.listener_stats[code] = [1, 0, 0]  # [calls, messages, duration]
+        else:
+            self.listener_stats[code][0] += 1 # Calls
+        # print(f"Signal queued: {code} {path} {message}: {self.listener_stats[code]}")
         with self._message_queue_lock:
             self._message_queue[code] = path, message
 
@@ -2162,15 +2173,25 @@ class Kernel(Settings):
         if not add:
             return
 
+        already_added = set()
         for signal, funct, lso in add:
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 listeners.append((funct, lso))
             else:
                 self.listeners[signal] = [(funct, lso)]
+            if signal not in self.listener_stats:
+                self.listener_stats[signal] = [0, 0, 0]  # [calls, messages, duration]
             if signal in self._last_message:
+                if signal not in already_added:
+                    already_added.add(signal)
+                    self.listener_stats[signal][0] += 1 # Calls
+
                 origin, message = self._last_message[signal]
+                self.listener_stats[signal][1] += 1 # Messages
+                t0 = time.time()
                 funct(origin, *message)
+                self.listener_stats[signal][2] += time.time() - t0 # Duration
 
     def _process_remove_listeners(self):
         """
@@ -2221,10 +2242,32 @@ class Kernel(Settings):
         for signal, payload in queue.items():
             origin, message = payload
             if signal in self.listeners:
+                if signal not in self.listener_stats:
+                    self.listener_stats[signal] = [1, 0, 0]  # [calls, messages, duration]
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
                     try:
+                        t0 = time.time()    
                         listener(origin, *message)
+                        duration = time.time() - t0
+                        self.listener_stats[signal][1] += 1 # Messages
+                        self.listener_stats[signal][2] += duration # Duration
+
+                        # Record per-listener statistics (only when debug_mode is active)
+                        if getattr(self.root, 'debug_mode', False):
+                            try:
+                                lid = f"{listener.__module__}:{getattr(listener, '__name__', repr(listener))}"
+                            except Exception:
+                                lid = repr(listener)
+                            if signal not in self.listener_call_stats:
+                                self.listener_call_stats[signal] = {}
+                            if lid not in self.listener_call_stats[signal]:
+                                # [calls, messages, total_time]
+                                self.listener_call_stats[signal][lid] = [0, 0, 0.0]
+                            self.listener_call_stats[signal][lid][0] += 1
+                            self.listener_call_stats[signal][lid][1] += 1
+                            self.listener_call_stats[signal][lid][2] += duration
+
                     except RuntimeError as e:
                         print(
                             f"Listener {listener} no longer available. Error in {signal}: {e}"
@@ -3795,10 +3838,52 @@ class Kernel(Settings):
         def send_signal(channel, _, signalname=None, signalargs=None, **kwargs):
             if signalname is None:
                 channel(_("Please provide a signal to send, attached listeners:"))
-                signal_keys = list(self.listeners.keys())
-                signal_keys.sort()
-                for idx, key in enumerate(signal_keys):
-                    channel(f"{idx}: {key}")
+                stats = list(self.listener_stats.keys())
+                # All signals, but show the ones used the longest, the most first
+                information = [
+                    (key, self.listener_stats.get(key, (0, 0, 0.0)))
+                    for key in stats
+                ]
+                # Sort by total_time desc, messages desc, then name ascending (tie-breaker)
+                information.sort(key=lambda item: (-item[1][2], -item[1][1], item[0]))
+                channel(_("Signal Statistics:"))
+                # Prepare a neat table: index, signal (truncated), requests, messages, total time, avg time
+                header = f"{'#':>3}  {'Signal':<35} {'Listen':<6} {'Requests':>8} {'Messages':>8} {'Total(s)':>12} {'Avg(s)':>12}"
+                channel(header)
+                channel('-' * len(header))
+                for idx, (key, (calls, messages, total_time)) in enumerate(information):
+                    avg = 0.0 if messages == 0 else total_time / messages
+                    # Make the signal name safe and truncate if it's too long
+                    key_safe = key.replace('\n', '\\n')
+                    if len(key_safe) > 35:
+                        key_safe = key_safe[:32] + '...'
+                    attached = 0 if key not in self.listeners else len(self.listeners[key])
+                    channel(f"{idx:3d}  {key_safe:<35} {attached:<6} {calls:8d} {messages:8d} {total_time:12.3f} {avg:12.6f}")
+
+                    # Per-listener breakdown (if available)
+                    lcs = getattr(self, 'listener_call_stats', {}) or {}
+                    if key in lcs and lcs[key]:
+                        # Build list of (lid, calls, total_time, avg) for listeners with messages
+                        listener_items = []
+                        for lid, data in lcs[key].items():
+                            lcalls = int(data[0])
+                            ltotal = float(data[2])
+                            if lcalls == 0:
+                                continue
+                            lavg = ltotal / lcalls if lcalls else 0.0
+                            listener_items.append((lid, lcalls, ltotal, lavg))
+                        if listener_items:
+                            # Sort by total_time descending
+                            listener_items.sort(key=lambda x: x[2], reverse=True)
+                            subheader = f"     {'Listener':<45} {'Calls':>6} {'Total(s)':>12} {'Avg(s)':>12}"
+                            channel(subheader)
+                            channel('     ' + '-' * (len(subheader) - 5))
+                            for lid, lcalls, ltotal, lavg in listener_items:
+                                lid_safe = lid.replace('\n', '\\n')
+                                if len(lid_safe) > 45:
+                                    lid_safe = lid_safe[:42] + '...'
+                                channel(f"     {lid_safe:<45} {lcalls:6d} {ltotal:12.3f} {lavg:12.6f}")
+                
                 return
             try:
                 if signalargs is None:
@@ -3809,6 +3894,72 @@ class Kernel(Settings):
             except (TypeError, RuntimeError) as e:
                 channel(f"Error while sending {signalname}, {signalargs}: {e}")
             return
+
+        @self.console_argument("avg_threshold", type=float, help=_("Average time threshold in seconds"))
+        @self.console_argument("total_threshold", type=float, help=_("Total time threshold in seconds"))
+        @self.console_command("signal-stats", help=_("List listeners exceeding thresholds (requires debug_mode)"))
+        def signal_stats(channel, _, remainder=None, avg_threshold = None, total_threshold = None, **kwargs):
+            """Show routines called by the signal processor that are slow.
+
+            Usage: signal-stats [avg_threshold] [total_threshold]
+            If thresholds are not provided, defaults are avg >= 1.0s, total >= 10.0s
+            
+            Note: Stats are only collected when debug_mode is active (set debug_mode True)
+            """
+            # Check if debug mode is active
+            if not getattr(self.root, 'debug_mode', False):
+                channel(_("Signal stats are only collected when debug_mode is active."))
+                channel(_("To enable: set debug_mode True (requires restart)"))
+                return
+            
+            # Default thresholds
+            avg_thresh = 1.0 if avg_threshold is None else avg_threshold
+            total_thresh = 10.0 if total_threshold is None else total_threshold
+
+            stats = []
+            lcs = getattr(self, 'listener_call_stats', {}) or {}
+            for signal, ldict in lcs.items():
+                for lid, data in ldict.items():
+                    calls = int(data[0])
+                    total_time = float(data[2])
+                    avg = total_time / calls if calls else 0.0
+                    if avg >= avg_thresh or total_time >= total_thresh:
+                        stats.append((signal, lid, calls, total_time, avg))
+
+            if not stats:
+                channel(_("No slow listeners found (avg >= {avg} or total >= {total}).").format(avg=avg_thresh, total=total_thresh))
+                return
+
+            # Sort by total_time descending
+            stats.sort(key=lambda x: x[3], reverse=True)
+            header = f"{'#':>3} {'Signal':<35} {'Listener':<45} {'Calls':>6} {'Total(s)':>12} {'Avg(s)':>12}"
+            channel(header)
+            channel('-' * len(header))
+            for idx, (signal, lid, calls, total_time, avg) in enumerate(stats):
+                sig_safe = signal.replace('\n', '\\n')
+                if len(sig_safe) > 35:
+                    sig_safe = sig_safe[:32] + '...'
+                lid_safe = lid.replace('\n', '\\n')
+                if len(lid_safe) > 45:
+                    lid_safe = lid_safe[:42] + '...'
+                channel(f"{idx:3d} {sig_safe:<35} {lid_safe:<45} {calls:6d} {total_time:12.3f} {avg:12.6f}")
+
+        # Flat tracker console command
+        @self.console_argument("action", type=str, default=None, help=_("Action: 'reset' to reset the counter"))
+        @self.console_command("flat-stats", help=_("Show or reset the global flat() call counter"))
+        def flat_stats(channel, _, remainder=None, action=None, **kwargs):
+            try:
+                total = self.elements.flat_tracker.get()
+            except Exception:
+                total = None
+            if action == 'reset':
+                try:
+                    self.elements.flat_tracker.reset()
+                except Exception:
+                    pass
+                channel(f"Flat calls: {total} (reset)")
+            else:
+                channel(f"Flat calls: {total}")
 
         # ==========
         # Threaded execution

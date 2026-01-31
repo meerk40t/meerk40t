@@ -247,7 +247,7 @@ class OperationAssignPanel(wx.Panel):
     def set_buttons(self, skip_layout=False):
         self._clear_old()
         idx = 0
-        for node in list(self.context.elements.flat(types=op_nodes)):
+        for node in list(self.context.elements.ops()):
             if node.type.startswith("op "):
                 self.op_nodes[idx] = node
                 self._set_button(node)
@@ -363,7 +363,7 @@ class OperationAssignPanel(wx.Panel):
         event.Skip()
 
     def execute_on(self, targetop, attrib):
-        data = list(self.context.elements.flat(emphasized=True))
+        data = list(self.context.elements.elems(emphasized=True))
         idx = self.cbo_apply_color.GetCurrentSelection()
         if idx == 1:
             impose = "to_op"

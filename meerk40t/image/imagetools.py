@@ -1957,7 +1957,7 @@ def plugin(kernel, lifecycle=None):
         # Collect nodes
         if data is None:
             data = [
-                e for e in context.elements.flat()
+                e for e in context.elements.elems()
                 if e.type == "elem image"
             ]
         if not data:
@@ -2426,7 +2426,7 @@ def plugin(kernel, lifecycle=None):
         # from PIL import Image
         if data is None:
             data = list(
-                e for e in elements.flat(emphasized=True) if e.type == "elem image"
+                e for e in elements.elems(emphasized=True) if e.type == "elem image"
             )
         if data is None or len(data) == 0:
             channel(_("No images selected"))
@@ -2536,7 +2536,7 @@ def plugin(kernel, lifecycle=None):
         if data is None:
             data = list(
                 e
-                for e in context.elements.flat(emphasized=True)
+                for e in context.elements.elems(emphasized=True)
                 if e.type == "elem image"
             )
         if len(data) == 0:
@@ -2610,7 +2610,7 @@ def plugin(kernel, lifecycle=None):
         if data is None:
             data = list(
                 e
-                for e in context.elements.flat(emphasized=True)
+                for e in context.elements.elems(emphasized=True)
                 if e.type == "elem image"
             )
         if len(data) == 0:

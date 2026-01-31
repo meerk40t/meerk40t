@@ -252,7 +252,7 @@ def init_commands(kernel):
         # print ("selected")
         # for n in self.flat():
         #     print ("Node: %s, selected=%s, emphasized=%s" % (n.type, n.selected, n.emphasized))
-        return "tree", list(self.flat(selected=True))
+        return "tree", list(self.elems(selected=True))
 
     @self.console_command(
         "emphasized",
@@ -264,7 +264,7 @@ def init_commands(kernel):
         """
         Set tree list to emphasized node
         """
-        return "tree", list(self.flat(emphasized=True))
+        return "tree", list(self.elems(emphasized=True))
 
     @self.console_command(
         "highlighted",
@@ -276,7 +276,7 @@ def init_commands(kernel):
         """
         Set tree list to highlighted nodes
         """
-        return "tree", list(self.flat(highlighted=True))
+        return "tree", list(self.elems(highlighted=True))
 
     @self.console_command(
         "targeted",
@@ -288,7 +288,7 @@ def init_commands(kernel):
         """
         Set tree list to highlighted nodes
         """
-        return "tree", list(self.flat(targeted=True))
+        return "tree", list(self.elems(targeted=True))
 
     @self.console_command(
         "delete",
@@ -401,7 +401,7 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
-        # _("Delete")   
+        # _("Delete")
         with self.undoscope("Delete"):
             self.remove_nodes(todelete[entry])
             self.validate_selected_area()
@@ -438,7 +438,7 @@ def init_commands(kernel):
         """
         Delegate to either ops or elements depending on the current node emphasis
         """
-        for item in self.flat(emphasized=True):
+        for item in self.elems(emphasized=True):
             if item.type.startswith("op"):
                 return "ops", list(self.ops(emphasized=True))
             if item.type in elem_nodes or item.type in ("group", "file"):

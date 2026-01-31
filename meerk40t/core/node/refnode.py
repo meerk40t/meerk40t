@@ -32,11 +32,11 @@ class ReferenceNode(Node):
     def can_drop(self, drag_node):
         # Dragging element into element.
         return bool(
-            hasattr(drag_node, "as_geometry") or 
-            hasattr(drag_node, "as_image") or 
-            drag_node.type == "reference"
+            hasattr(drag_node, "as_geometry")
+            or hasattr(drag_node, "as_image")
+            or drag_node.type == "reference"
         )
-    
+
     def drop(self, drag_node, modify=True, flag=False):
         # Dragging element into element.
         if not self.can_drop(drag_node):

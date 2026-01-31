@@ -461,7 +461,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
     def _do_update_position(self, reset):
         more_than_one = False
         ct = 0
-        for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for _e in self.context.elements.elems(emphasized=True):
             ct += 1
             if ct > 1:
                 more_than_one = True

@@ -275,9 +275,7 @@ class RectSelectWidget(Widget):
                     return
             allowlockmove = self.scene.context.elements.lock_allows_move
             with self.scene.context.elements.undofree():
-                for e in self.scene.context.elements.flat(
-                    types=elem_nodes, emphasized=True
-                ):
+                for e in self.scene.context.elements.elems(emphasized=True):
                     if not e.can_move(allowlockmove):
                         continue
                     e.matrix.post_translate(dx, dy)

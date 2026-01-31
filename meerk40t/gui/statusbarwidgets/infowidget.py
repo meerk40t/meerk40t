@@ -252,7 +252,7 @@ class InformationWidget(SimpleInfoWidget):
             ct = 0
             total_length = 0
             _mm = float(Length("1mm"))
-            mydata = list(elements.flat(types=elem_nodes, emphasized=True))
+            mydata = list(elements.elems(emphasized=True))
             ct = len(mydata)
             if ct <= 100:
                 info_type = ""

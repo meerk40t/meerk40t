@@ -65,7 +65,7 @@ def init_commands(kernel):
                 idx = int(index)
             except ValueError:
                 idx = self.undo.find(index)
-            if  (idx < 0 or idx > len(self.undo._undo_stack)):
+            if idx < 0 or idx > len(self.undo._undo_stack):
                 channel(f"Invalid index: {index}, performing standard undo")
                 index = None
             else:
@@ -90,7 +90,7 @@ def init_commands(kernel):
                 idx = int(index)
             except ValueError:
                 idx = self.undo.find(index)
-            if  (idx < 0 or idx > len(self.undo._undo_stack)):
+            if idx < 0 or idx > len(self.undo._undo_stack):
                 channel(f"Invalid index: {index}, performing standard redo")
                 index = None
             else:

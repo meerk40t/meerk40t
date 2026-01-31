@@ -29,7 +29,6 @@ Functions:
     A tuple containing the type of operations and the added placement.
 """
 
-
 from meerk40t.core.units import Angle as UAngle
 from meerk40t.core.units import Length
 

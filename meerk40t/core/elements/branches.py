@@ -589,7 +589,7 @@ def init_commands(kernel):
     def operation_empty(channel, _, data=None, **kwargs):
         if data is None:
             data = list()
-            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+            for item in list(self.ops(selected=True, cascade=False)):
                 data.append(item)
         # _("Clear operations")
         with self.undoscope("Clear operations"):

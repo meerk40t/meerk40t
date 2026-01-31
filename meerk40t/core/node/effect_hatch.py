@@ -120,11 +120,13 @@ class HatchEffectNode(Node, Suppressable):
         """
         try:
             pattern = descriptor.split("|")
-            # Make sure we have enough parts, check get_effect_descriptor for format    
+            # Make sure we have enough parts, check get_effect_descriptor for format
             targetlen = len(self.get_effect_descriptor().split("|"))
             while len(pattern) < targetlen:
                 # add default values for missing parameters
-                pattern.append("0")  # Default unidirectional / include_outlines to False
+                pattern.append(
+                    "0"
+                )  # Default unidirectional / include_outlines to False
             (
                 typeinfo,
                 hatchtype,
@@ -142,7 +144,12 @@ class HatchEffectNode(Node, Suppressable):
                 self.hatch_angle_delta = hatchangledelta
                 self.loops = loops
                 self.unidirectional = unidirectional == "1"
-                self.include_outlines = str(include_outlines).strip().lower() in ("1", "true", "yes", "on")
+                self.include_outlines = str(include_outlines).strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                )
                 self.recalculate()
         except ValueError:
             pass
@@ -355,9 +362,9 @@ class HatchEffectNode(Node, Suppressable):
             if self.hatch_type == "spiral":
                 path.append(
                     Geomstr.hatch_spiral(
-                        outlines, 
-                        angle=self._angle + p * self._angle_delta, 
-                        distance=self._distance
+                        outlines,
+                        angle=self._angle + p * self._angle_delta,
+                        distance=self._distance,
                     )
                 )
             else:

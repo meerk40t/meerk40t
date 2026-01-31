@@ -718,7 +718,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_command("reference")
         def make_reference(**kwgs):
             # Take first emphasized element
-            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            for e in self.context.elements.elems(emphasized=True):
                 self.reference_object = e
                 break
             self.context.signal("reference")
@@ -1040,7 +1040,7 @@ class MeerK40tScenePanel(wx.Panel):
                     channel(_("Magnetline was not existing"))
 
     def toggle_ref_obj(self):
-        for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
+        for e in self.scene.context.elements.elems(emphasized=True):
             if self.reference_object == e:
                 self.reference_object = None
             else:
@@ -1055,7 +1055,7 @@ class MeerK40tScenePanel(wx.Panel):
         """
         found = False
         if self._reference:
-            for e in self.context.elements.flat(types=elem_nodes):
+            for e in self.context.elements.elems():
                 # Here we ignore the lock-status of an element
                 if e is self._reference:
                     found = True
