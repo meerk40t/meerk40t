@@ -40,7 +40,6 @@ Functions:
     None
 """
 
-
 from time import time
 
 
@@ -61,7 +60,8 @@ def init_commands(kernel):
     @self.console_argument("filename", type=str)
     @self.console_command("load", help=_("load <file>"), all_arguments_required=True)
     def file_open(command, channel, _, filename, **kwargs):
-        from time import time 
+        from time import time
+
         try:
             t0 = time()
             cb1 = self.count_elems()

@@ -14,7 +14,7 @@ def plugin(kernel, lifecycle=None):
         ignore_offset = kernel.root.setting(bool, "ignore_clipper", False)
         if ignore_offset:
             # print ("Clipper offset plugin disabled by user setting.")
-            return True # always invalidate aka dont use
+            return True  # always invalidate aka dont use
         try:
             import pyclipr
         except ImportError:
@@ -623,6 +623,7 @@ def init_commands(kernel):
     # so that any new instance of this class will be able to use the
     # new functionality.
     from meerk40t.core.node.op_cut import CutOpNode
+
     CutOpNode.offset_routine = offset_path
     kernel.add_capability("offset_routine", "Clipper")
 

@@ -41,7 +41,7 @@ class BlobNode(Node):
         return False
 
     @staticmethod
-    def hex_view(data, data_type, info=''):
+    def hex_view(data, data_type, info=""):
         """
         Render a hex dump with an optional info header.
 
@@ -77,7 +77,7 @@ class BlobNode(Node):
         return header1 + header2 + "".join(hex_data)
 
     @staticmethod
-    def ascii_view(data, data_type, info=''):
+    def ascii_view(data, data_type, info=""):
         """
         Render an ascii view with an optional info header.
 

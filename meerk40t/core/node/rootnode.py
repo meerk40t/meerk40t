@@ -78,7 +78,7 @@ class RootNode(Node):
             return
         for listen in self.listeners:
             if hasattr(listen, "node_destroyed"):
-                listen.node_destroyed(node, **kwargs)  
+                listen.node_destroyed(node, **kwargs)
 
     def notify_attached(self, node=None, **kwargs):
         if node is None:
@@ -92,7 +92,7 @@ class RootNode(Node):
             return
         for listen in self.listeners:
             if hasattr(listen, "node_attached"):
-                listen.node_attached(node, **kwargs)  
+                listen.node_attached(node, **kwargs)
 
     def notify_detached(self, node=None, **kwargs):
         if node is None:
@@ -106,7 +106,7 @@ class RootNode(Node):
             return
         for listen in self.listeners:
             if hasattr(listen, "node_detached"):
-                listen.node_detached(node, **kwargs)  
+                listen.node_detached(node, **kwargs)
 
     def notify_changed(self, node=None, **kwargs):
         if node is None:
@@ -212,7 +212,9 @@ class RootNode(Node):
 
         for listen in self.listeners:
             if hasattr(listen, "scaled"):
-                listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim)  # , **kwargs)
+                listen.scaled(
+                    node, sx=sx, sy=sy, ox=ox, oy=oy, interim=interim
+                )  # , **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
         """
@@ -263,7 +265,6 @@ class RootNode(Node):
                     listen.structure_changed(node=None, **kwargs)
                 except Exception:
                     pass
-
 
     def notify_expand(self, node=None, **kwargs):
         if node is None:

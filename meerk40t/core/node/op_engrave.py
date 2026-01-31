@@ -276,7 +276,6 @@ class EngraveOpNode(OperationMixin, Node, Parameters):
                         return True, self.stopop, feedback
         return False, False, None
 
-
     def add_reference(self, node=None, pos=None, fast=False, **kwargs):
         # is the very first child an effect node?
         # if yes then we will put that reference under this one

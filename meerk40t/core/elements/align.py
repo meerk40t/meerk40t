@@ -188,6 +188,7 @@ Functions:
 from meerk40t.svgelements import Viewbox
 from .element_types import elem_nodes
 
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":

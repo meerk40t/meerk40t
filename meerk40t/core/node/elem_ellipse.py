@@ -421,4 +421,3 @@ class EllipseNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable
         new_settings["matrix"] = Matrix()
         node = self.replace_node(keep_children=True, **new_settings)
         return node
-    

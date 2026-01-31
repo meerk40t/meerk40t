@@ -661,7 +661,7 @@ class Elemental(Service):
         self._tree = RootNode(self)
         # Caches for flattened lists to avoid repeated full-tree traversals
         self._elems_cache = None  # Cached list of element nodes
-        self._ops_cache = None    # Cached list of operation nodes
+        self._ops_cache = None  # Cached list of operation nodes
 
         # Lightweight tracker for flat() calls (diagnostics)
         class FlatTracker:
@@ -702,8 +702,8 @@ class Elemental(Service):
         self.setting(int, "undo_levels", 20)
         self.setting(bool, "filenode_selection", False)
         # Fastload setting, this is used to speed up loading when many elements are present
-        # It effectively prevents the triggering of events 
-        # and recalculations until the end of the load 
+        # It effectively prevents the triggering of events
+        # and recalculations until the end of the load
         # Requires a full tree-rebuild at the end of the load
         self.setting(bool, "fastload", True)
         # During heavy bulk operations (loads) the tree structure change notification
@@ -858,6 +858,7 @@ class Elemental(Service):
             self.do_undo = False
             yield self
         finally:
+            if static:
                 self.resume_updates(source)
             if undo_active:
                 self.do_undo = True
@@ -2278,7 +2279,9 @@ class Elemental(Service):
         """
         allowed_filters = {"emphasized", "selected", "targeted", "highlighted", "lock"}
         # Cacheable if no depth and types not specified
-        cacheable = ("depth" not in kwargs or kwargs.get("depth") is None) and ("types" not in kwargs)
+        cacheable = ("depth" not in kwargs or kwargs.get("depth") is None) and (
+            "types" not in kwargs
+        )
 
         # Lazy invalidate caches if the root node marked the structure dirty
         with self.node_lock:
@@ -2296,7 +2299,12 @@ class Elemental(Service):
                 # Build cache under lock
                 with self.node_lock:
                     ops = self.op_branch
-                    self._ops_cache = [item for item in ops.flat(depth=1) if not item.type.startswith("branch") and not item.type.startswith("ref")]
+                    self._ops_cache = [
+                        item
+                        for item in ops.flat(depth=1)
+                        if not item.type.startswith("branch")
+                        and not item.type.startswith("ref")
+                    ]
             # If only property filters provided, apply them on the cache
             if not kwargs or set(kwargs.keys()).issubset(allowed_filters):
                 for item in self._ops_cache:
@@ -2345,7 +2353,11 @@ class Elemental(Service):
                     pass
 
         # If we can use the cache and it exists, apply property filters in memory
-        if cacheable and self._elems_cache is not None and set(kwargs.keys()).issubset(allowed_filters):
+        if (
+            cacheable
+            and self._elems_cache is not None
+            and set(kwargs.keys()).issubset(allowed_filters)
+        ):
             # Hoist filter lookups to locals to avoid repeated dict access in the loop
             emph_filter = kwargs.get("emphasized", None) is not None
             sel_filter = kwargs.get("selected", None) is not None
@@ -2892,6 +2904,7 @@ class Elemental(Service):
             if emphasize_set is not None:
                 return node in emphasize_set
             return node in emphasize_items
+
         changed_nodes = []
         seen_nodes = set()
 
@@ -2899,6 +2912,7 @@ class Elemental(Service):
             if node not in seen_nodes:
                 changed_nodes.append(node)
                 seen_nodes.add(node)
+
         previous_suppress = self.suppress_updates
         self.suppress_updates = True
         try:
@@ -3306,7 +3320,9 @@ class Elemental(Service):
                     # Support both would_classify (new) and classify (legacy) for backward compatibility
                     has_would_classify = hasattr(op, "would_classify")
                     has_classify = hasattr(op, "classify")
-                    if not ((has_would_classify or has_classify) and perform_classification):
+                    if not (
+                        (has_would_classify or has_classify) and perform_classification
+                    ):
                         continue
                     classified = False
                     classifying_op = None
@@ -3337,21 +3353,25 @@ class Elemental(Service):
                             new_operations_added = True
 
                         if hasattr(raster_candidate, "would_classify"):
-                            classified, should_break, feedback = raster_candidate.would_classify(
-                                node,
-                                fuzzy=tempfuzzy,
-                                fuzzydistance=fuzzydistance,
-                                usedefault=False,
+                            classified, should_break, feedback = (
+                                raster_candidate.would_classify(
+                                    node,
+                                    fuzzy=tempfuzzy,
+                                    fuzzydistance=fuzzydistance,
+                                    usedefault=False,
+                                )
                             )
                             if classified:
                                 record_hit(raster_candidate, node)
                         else:
                             # Fallback for legacy operations
-                            classified, should_break, feedback = raster_candidate.classify(
-                                node,
-                                fuzzy=tempfuzzy,
-                                fuzzydistance=fuzzydistance,
-                                usedefault=False,
+                            classified, should_break, feedback = (
+                                raster_candidate.classify(
+                                    node,
+                                    fuzzy=tempfuzzy,
+                                    fuzzydistance=fuzzydistance,
+                                    usedefault=False,
+                                )
                             )
                         if classified:
                             classifying_op = raster_candidate
