@@ -14,6 +14,7 @@ LockWidget: Widget to lock and unlock the given object.
 """
 
 import math
+import time
 
 import numpy as np
 import wx
@@ -1632,6 +1633,18 @@ class MoveWidget(Widget):
         self.total_dy = 0
         self.update()
 
+        # User-configurable setting for showing snap preview
+        # Registers the setting and uses default True
+        self.scene.context.setting(bool, "snap_preview", True)
+
+        # Snap preview runtime cache and state
+        self._snap_cache = None
+        self._snap_preview = None  # dict with preview info or None
+        self._last_preview_pos = (0.0, 0.0)
+        self._last_preview_time = 0.0
+        self._preview_min_move = 1e-3  # threshold for recompute
+
+
     def set_size(self, msize, rotsize):
         self.action_size = rotsize
         self.half_x = rotsize / 2
@@ -1777,22 +1790,43 @@ class MoveWidget(Widget):
             elements.classify(copy_nodes)
 
     def process_draw(self, gc):
-        # print (f"MoveWidget: process_draw called, tool_running={self.master.tool_running}, visible={self.visible} - extent:{self.left},{self.top} - {self.right},{self.bottom} ")
-        if self.master.tool_running or not self.visible:
+        # Draw little handle and optionally snap preview while dragging
+        if not self.visible:
             return
 
-        self.update()  # make sure coords are valid
-        gc.SetPen(self.master.handle_pen)
-        brush = wx.Brush(
-            self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID
-        )
-        gc.SetBrush(brush)
-        gc.DrawRectangle(
-            self.left + self.half_x - self.drawhalf,
-            self.top + self.half_y - self.drawhalf,
-            2 * self.drawhalf,
-            2 * self.drawhalf,
-        )
+        # Draw the usual handle only when not actively running the tool to keep drawing cheap
+        if not self.master.tool_running:
+            self.update()  # make sure coords are valid
+            gc.SetPen(self.master.handle_pen)
+            brush = wx.Brush(
+                self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID
+            )
+            gc.SetBrush(brush)
+            gc.DrawRectangle(
+                self.left + self.half_x - self.drawhalf,
+                self.top + self.half_y - self.drawhalf,
+                2 * self.drawhalf,
+                2 * self.drawhalf,
+            )
+
+        # Draw snap preview even when tool_running to give immediate feedback
+        try:
+            enabled = self.scene.context.setting(bool, "snap_preview", True)
+        except Exception:
+            enabled = True
+        if enabled and self._snap_preview is not None:
+            try:
+                pen = wx.Pen()
+                pen.SetColour(wx.Colour(255, 0, 0))
+                pen.SetStyle(wx.PENSTYLE_DOT)
+                gc.SetPen(pen)
+                gc.SetBrush(wx.TRANSPARENT_BRUSH)
+                p1 = self._snap_preview.get("from")
+                p2 = self._snap_preview.get("to")
+                if p1 is not None and p2 is not None:
+                    gc.StrokeLine(p1[0], p1[1], p2[0], p2[1])
+            except Exception:
+                pass
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1821,6 +1855,244 @@ class MoveWidget(Widget):
                     self.translate(dx, dy)
                 elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+
+    # --- Snap preview helpers ---
+    def _gather_snap_cache(self, b):
+        """Gather static point caches at the start of a drag operation.
+
+        This collects non-moving data (non-selected element points, grid points)
+        and the selected element points at the start position so preview updates
+        can be cheap and incremental.
+        """
+        if b is None:
+            return
+        matrix = self.scene.widget_root.scene_widget.matrix
+        gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
+        other_points = []
+        selected_points = []
+        for e in self.scene.context.elements.elems():
+            if hasattr(e, "hidden") and e.hidden:
+                continue
+            target = selected_points if e.emphasized else other_points
+            if not hasattr(e, "as_geometry"):
+                continue
+            geom = e.as_geometry()
+            lastpt = None
+            for idx, seg in enumerate(geom.segments[: geom.index]):
+                seg_type = geom._segtype(seg)
+                if seg_type == TYPE_END:
+                    lastpt = None
+                if seg_type in NON_GEOMETRY_TYPES:
+                    continue
+                startpt = seg[0]
+                endpt = seg[4]
+                if np.isnan(startpt) or np.isnan(endpt):
+                    continue
+                midpt = geom.position(idx, 0.5)
+
+                def add_it(pt, last):
+                    if last is not None and pt == last:
+                        return last
+                    xx = pt.real
+                    yy = pt.imag
+                    ignore = (
+                        xx < b[0] - gap
+                        or xx > b[2] + gap
+                        or yy < b[1] - gap
+                        or yy > b[3] + gap
+                    )
+                    if not ignore:
+                        last = pt
+                        target.append(pt)
+                    return last
+
+                lastpt = add_it(startpt, lastpt)
+                lastpt = add_it(midpt, lastpt)
+                lastpt = add_it(endpt, lastpt)
+
+        self._snap_cache = {
+            "other_points": np.asarray(other_points),
+            "selected_points_start": np.asarray(selected_points),
+            "grid_points": self.scene.pane.grid.grid_points,
+            "start_total_dx": self.total_dx,
+            "start_total_dy": self.total_dy,
+        }
+
+    def _clear_snap_cache(self):
+        self._snap_cache = None
+        self._snap_preview = None
+
+    def _update_snap_preview(self, b):
+        """Compute the snap preview (fast) based on cached data and current delta."""
+        if self._snap_cache is None:
+            self._gather_snap_cache(b)
+        if self._snap_cache is None:
+            self._snap_preview = None
+            return
+
+        # matrix and gaps
+        matrix = self.scene.widget_root.scene_widget.matrix
+        gap_point = self.scene.context.action_attract_len / get_matrix_scale(matrix)
+        gap_grid = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
+
+        # Compute shifted selected points
+        dsx = self.total_dx - self._snap_cache.get("start_total_dx", 0)
+        dsy = self.total_dy - self._snap_cache.get("start_total_dy", 0)
+        sel_start = self._snap_cache.get("selected_points_start")
+        if sel_start is None or sel_start.size == 0:
+            sel_shifted = None
+        else:
+            # sel_start is an array of complex
+            sel_shifted = sel_start + (dsx + 1j * dsy)
+
+        # 0) Magnet preview precedence: if there's a magnet action, show magnet preview and skip other checks
+        try:
+            dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
+        except Exception:
+            dx_m, dy_m = 0, 0
+        if dx_m != 0 or dy_m != 0:
+            pane = self.scene.pane
+            # Compute anchor selection same as existing logic
+            if pane.grid.tick_distance > 0:
+                s = f"{pane.grid.tick_distance}{self.scene.context.units_name}"
+                try:
+                    len_tick = float(Length(s))
+                except Exception:
+                    len_tick = 1
+            else:
+                len_tick = 1
+            if pane._magnet_attraction is None:
+                pane._magnet_attraction = 1
+            attraction_len = 1 / 3 * pane._magnet_attraction * pane._magnet_attraction * len_tick
+
+            # If Pane provides magnet_attracted_x/y use the same logic as revised_magnet_bound to pick anchors.
+            if hasattr(pane, "magnet_attracted_x") and hasattr(pane, "magnet_attracted_y"):
+                delta_x1, x1 = pane.magnet_attracted_x(b[0], pane.magnet_attract_x)
+                delta_x2, x2 = pane.magnet_attracted_x(b[2], pane.magnet_attract_x)
+                delta_x3, x3 = pane.magnet_attracted_x((b[0] + b[2]) / 2, pane.magnet_attract_c)
+                delta_y1, y1 = pane.magnet_attracted_y(b[1], pane.magnet_attract_y)
+                delta_y2, y2 = pane.magnet_attracted_y(b[3], pane.magnet_attract_y)
+                delta_y3, y3 = pane.magnet_attracted_y((b[1] + b[3]) / 2, pane.magnet_attract_c)
+
+                # Choose x anchor
+                if delta_x3 < delta_x1 and delta_x3 < delta_x2 and delta_x3 < attraction_len and x3 is not None:
+                    anchor_x = (b[0] + b[2]) / 2
+                elif delta_x1 < delta_x2 and delta_x1 < delta_x3 and delta_x1 < attraction_len and x1 is not None:
+                    anchor_x = b[0]
+                elif delta_x2 < delta_x1 and delta_x2 < delta_x3 and delta_x2 < attraction_len and x2 is not None:
+                    anchor_x = b[2]
+                else:
+                    anchor_x = (b[0] + b[2]) / 2
+
+                # Choose y anchor
+                if delta_y3 < delta_y1 and delta_y3 < delta_y2 and delta_y3 < attraction_len and y3 is not None:
+                    anchor_y = (b[1] + b[3]) / 2
+                elif delta_y1 < delta_y2 and delta_y1 < delta_y3 and delta_y1 < attraction_len and y1 is not None:
+                    anchor_y = b[1]
+                elif delta_y2 < delta_y1 and delta_y2 < delta_y3 and delta_y2 < attraction_len and y2 is not None:
+                    anchor_y = b[3]
+                else:
+                    anchor_y = (b[1] + b[3]) / 2
+            else:
+                # Pane doesn't expose helpers (tests/mocks); default to center anchor
+                anchor_x = (b[0] + b[2]) / 2
+                anchor_y = (b[1] + b[3]) / 2
+
+            src = (anchor_x, anchor_y)
+            dst = (anchor_x + dx_m, anchor_y + dy_m)
+            self._snap_preview = {"type": "magnet", "from": src, "to": dst}
+            return
+
+        # 1) Point snapping
+        if (
+            self.scene.context.snap_points
+            and sel_shifted is not None
+            and self._snap_cache.get("other_points") is not None
+        ):
+            try:
+                op = self._snap_cache.get("other_points")
+                sp = sel_shifted
+                if op.size > 0 and sp.size > 0:
+                    dist, pt1, pt2 = shortest_distance(op, sp, False)
+                    if dist is not None and dist < gap_point:
+                        # preview from pt2 (selected) -> pt1 (other)
+                        self._snap_preview = {"type": "point", "from": (pt2.real, pt2.imag), "to": (pt1.real, pt1.imag)}
+                        return
+            except Exception:
+                pass
+
+        # 2) Grid snapping (corners + center)
+        if self.scene.context.snap_grid and b is not None:
+            selected_corners = (
+                (b[0], b[1]),
+                (b[2], b[1]),
+                (b[0], b[3]),
+                (b[2], b[3]),
+                ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+            )
+            gp = self._snap_cache.get("grid_points")
+            if gp and len(gp) > 0:
+                try:
+                    np_other = np.asarray(gp)
+                    np_selected = np.asarray(selected_corners)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                    if dist is not None and dist < gap_grid:
+                        # preview from pt2 (selected corner) -> pt1 (grid)
+                        self._snap_preview = {"type": "grid", "from": (pt2[0], pt2[1]), "to": (pt1[0], pt1[1])}
+                        return
+                except Exception:
+                    pass
+
+        # 3) Magnet preview
+        dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
+        if dx_m != 0 or dy_m != 0:
+            # Determine the anchor point used by revised_magnet_bound logic
+            # Recompute magnet attraction deltas to discover which side/center is chosen
+            pane = self.scene.pane
+            # Compute attraction length same as revised_magnet_bound
+            if pane.grid.tick_distance > 0:
+                s = f"{pane.grid.tick_distance}{self.scene.context.units_name}"
+                len_tick = float(Length(s))
+                attraction_len = 1 / 3 * pane._magnet_attraction * pane._magnet_attraction * len_tick
+            else:
+                attraction_len = float(Length("1mm"))
+
+            delta_x1, x1 = pane.magnet_attracted_x(b[0], pane.magnet_attract_x)
+            delta_x2, x2 = pane.magnet_attracted_x(b[2], pane.magnet_attract_x)
+            delta_x3, x3 = pane.magnet_attracted_x((b[0] + b[2]) / 2, pane.magnet_attract_c)
+            delta_y1, y1 = pane.magnet_attracted_y(b[1], pane.magnet_attract_y)
+            delta_y2, y2 = pane.magnet_attracted_y(b[3], pane.magnet_attract_y)
+            delta_y3, y3 = pane.magnet_attracted_y((b[1] + b[3]) / 2, pane.magnet_attract_c)
+
+            # Choose x anchor
+            if delta_x3 < delta_x1 and delta_x3 < delta_x2 and delta_x3 < attraction_len and x3 is not None:
+                anchor_x = (b[0] + b[2]) / 2
+            elif delta_x1 < delta_x2 and delta_x1 < delta_x3 and delta_x1 < attraction_len and x1 is not None:
+                anchor_x = b[0]
+            elif delta_x2 < delta_x1 and delta_x2 < delta_x3 and delta_x2 < attraction_len and x2 is not None:
+                anchor_x = b[2]
+            else:
+                # No horizontal magnet chosen; use center x
+                anchor_x = (b[0] + b[2]) / 2
+
+            # Choose y anchor
+            if delta_y3 < delta_y1 and delta_y3 < delta_y2 and delta_y3 < attraction_len and y3 is not None:
+                anchor_y = (b[1] + b[3]) / 2
+            elif delta_y1 < delta_y2 and delta_y1 < delta_y3 and delta_y1 < attraction_len and y1 is not None:
+                anchor_y = b[1]
+            elif delta_y2 < delta_y1 and delta_y2 < delta_y3 and delta_y2 < attraction_len and y2 is not None:
+                anchor_y = b[3]
+            else:
+                # No vertical magnet chosen; use center y
+                anchor_y = (b[1] + b[3]) / 2
+
+            src = (anchor_x, anchor_y)
+            dst = (anchor_x + dx_m, anchor_y + dy_m)
+            self._snap_preview = {"type": "magnet", "from": src, "to": dst}
+            return
+
+        # None
+        self._snap_preview = None
 
     def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
@@ -1889,6 +2161,9 @@ class MoveWidget(Widget):
             # )
 
         if event == TOOL_RESULT_END:  # end
+            # Clear any transient preview state
+            self._snap_preview = None
+            self._snap_cache = None
             # Cleanup - we check for:
             # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
             # b) Use the distance of the 4 corners and the center to a grid point -> take the smallest distance
@@ -1903,25 +2178,19 @@ class MoveWidget(Widget):
                 b = elements.selected_area()
 
             matrix = self.scene.widget_root.scene_widget.matrix
-            did_snap_to_point = False
-            selected_points = []
 
+            # Collect candidate snaps (point, grid, magnet) and pick the closest
+            candidates = []
+
+            # Point snaps
             if (
                 self.scene.context.snap_points
                 and (not modifiers or "shift" not in modifiers)
                 and b is not None
             ):
                 gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
-                # We gather all points of non-selected elements,
-                # but only those that lie within the boundaries
-                # of the selected area
-                # We compare every point of the selected elements
-                # with the points of the non-selected elements (provided they
-                # lie within the selection area plus boundary) and look for
-                # the closest distance.
-
-                # t1 = perf_counter()
                 other_points = []
+                selected_points = []
                 for e in self.scene.context.elements.elems():
                     if hasattr(e, "hidden") and e.hidden:
                         continue
@@ -1965,7 +2234,6 @@ class MoveWidget(Widget):
                         lastpt = add_it(startpt, lastpt)
                         lastpt = add_it(midpt, lastpt)
                         lastpt = add_it(endpt, lastpt)
-                # t2 = perf_counter()
                 total_points = len(other_points) + len(selected_points)
                 if (
                     other_points is not None
@@ -1984,31 +2252,19 @@ class MoveWidget(Widget):
                     if dist is not None and dist < gap:
                         if pt1 is not None and pt2 is not None:
                             try:
-                                dx = pt1.real - pt2.real
-                                dy = pt1.imag - pt2.imag
-
-                                self.total_dx = 0
-                                self.total_dy = 0
-                                move_to(dx, dy, interim=False)
-                                did_snap_to_point = True
+                                dx = float(pt1.real - pt2.real)
+                                dy = float(pt1.imag - pt2.imag)
+                                candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
                             except (IndexError, TypeError, AttributeError):
-                                # Fallback: skip snapping if coordinate conversion fails
-                                did_snap_to_point = False
+                                pass
 
-                # t3 = perf_counter()
-                # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
-                if did_snap_to_point:
-                    # Even then magnets win!
-                    self.check_for_magnets()
+            # Grid snaps
             if (
                 self.scene.context.snap_grid
                 and (not modifiers or "shift" not in modifiers)
                 and b is not None
-                and not did_snap_to_point
             ):
-                # t1 = perf_counter()
                 gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
-                # Check for corner points + center:
                 selected_points = (
                     (b[0], b[1]),
                     (b[2], b[1]),
@@ -2033,26 +2289,37 @@ class MoveWidget(Widget):
 
                     if dist is not None and dist < gap:
                         if pt1 is not None and pt2 is not None:
-                            # Convert to real coordinates - pt1 and pt2 are ndarray
                             try:
-                                dx = pt1[0] - pt2[0]
-                                dy = pt1[1] - pt2[1]
-
-                                self.total_dx = 0
-                                self.total_dy = 0
-                                move_to(dx, dy, interim=False)
-                                did_snap_to_point = True
+                                dx = float(pt1[0] - pt2[0])
+                                dy = float(pt1[1] - pt2[1])
+                                candidates.append({"type": "grid", "dist": float(dist), "dx": dx, "dy": dy})
                             except (IndexError, TypeError, AttributeError):
-                                # Fallback: skip snapping if coordinate conversion fails
-                                did_snap_to_point = False
+                                pass
 
-                # t2 = perf_counter()
-                # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
-                if did_snap_to_point:
-                    # Even then magnets win!
-                    self.check_for_magnets()
+            # Magnet snaps take precedence: if a magnet action exists apply it and skip other snap tests
+            if not self.master.key_shift_pressed:
+                dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
+                if dx_m != 0 or dy_m != 0:
+                    try:
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(float(dx_m), float(dy_m), interim=False)
+                    except Exception:
+                        pass
+                    # We applied the magnet snap, skip other snap logic
+                    update_elements(self.scene)
+                    return
 
-            if not did_snap_to_point:
+            # Choose best candidate
+            if candidates:
+                best = min(candidates, key=lambda c: c["dist"])
+                try:
+                    self.total_dx = 0
+                    self.total_dy = 0
+                    move_to(best["dx"], best["dy"], interim=False)
+                except Exception:
+                    pass
+            else:
                 if nearest_snap is None:
                     move_to(lastdx, lastdy, interim=False)
                 else:
@@ -2061,7 +2328,7 @@ class MoveWidget(Widget):
                         lastdy - self.master.offset_y,
                         interim=False,
                     )
-                self.check_for_magnets()
+
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
             #     # Did we actually move?
             #     # Remember this, it is still okay
@@ -2075,7 +2342,7 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
             update_elements(self.scene)
-        elif event == TOOL_RESULT_ABORT:  # abort
+        elif event == TOOL_RESULT_ABORT:  # abort / start of drag
             if modifiers and "alt" in modifiers:
                 self.create_duplicate()
             self.scene.pane.modif_active = True
@@ -2086,8 +2353,45 @@ class MoveWidget(Widget):
             elements.undo.mark("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
+            # Initialize snap preview cache at the start of drag.
+            try:
+                b = elements._emphasized_bounds
+                if b is None:
+                    b = elements.selected_area()
+                self._gather_snap_cache(b)
+            except Exception:
+                self._snap_cache = None
+            # Reset preview
+            self._snap_preview = None
         elif event == TOOL_RESULT_MOVE:  # move
             move_to(dx, dy, interim=True)
+            # Update preview intelligently (avoid recomputing too often)
+            try:
+                enabled = self.scene.context.setting(bool, "snap_preview", True)
+            except Exception:
+                enabled = True
+            if enabled:
+                b = elements._emphasized_bounds
+                if b is None:
+                    b = elements.selected_area()
+                # Only update if bounds exist
+                if b is not None:
+                    # Throttle updates: recompute if movement passes threshold
+                    dx_elapsed = abs(self.total_dx - (self._snap_cache.get("start_total_dx") if self._snap_cache else 0))
+                    dy_elapsed = abs(self.total_dy - (self._snap_cache.get("start_total_dy") if self._snap_cache else 0))
+                    if (
+                        (abs(self.total_dx - self._last_preview_pos[0]) + abs(self.total_dy - self._last_preview_pos[1])
+                         > self._preview_min_move)
+                        or (time.time() - self._last_preview_time) > 0.05
+                    ):
+                        try:
+                            self._update_snap_preview(b)
+                            self._last_preview_pos = (self.total_dx, self.total_dy)
+                            self._last_preview_time = time.time()
+                            # Request refresh so preview is visible
+                            self.scene.request_refresh()
+                        except Exception:
+                            pass
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
 
