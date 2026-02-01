@@ -238,29 +238,30 @@ class RectSelectWidget(Widget):
                 x = x[0]
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
-        def shortest_distance(p1, p2, tuplemode):
-            """
-            Calculates the shortest distance between two arrays of 2-dimensional points.
-            """
-            try:
-                # Calculate the Euclidean distance between each point in p1 and p2
-                if tuplemode:
-                    # For an array of tuples:
-                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-                else:
-                    # For an array of complex numbers
-                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+        # Use the memory-safe nearest-neighbor helper which uses a KD-tree if SciPy is available
+        try:
+            from meerk40t.core.spatial import shortest_distance
 
-                # Find the minimum distance and its corresponding indices
-                min_dist = np.min(dist)
-                if np.isnan(min_dist):
-                    return None, 0, 0
-                min_indices = np.argwhere(dist == min_dist)
-
-                # Return the coordinates of the two points
-                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-            except Exception:  # out of memory eg
-                return None, None, None
+            def shortest_distance(p1, p2, tuplemode):
+                try:
+                    return shortest_distance(p1, p2, tuplemode)
+                except Exception:
+                    return None, None, None
+        except Exception:
+            # Fallback: keep original naive implementation if import fails
+            def shortest_distance(p1, p2, tuplemode):
+                try:
+                    if tuplemode:
+                        dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                    else:
+                        dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+                    min_dist = np.min(dist)
+                    if np.isnan(min_dist):
+                        return None, 0, 0
+                    min_indices = np.argwhere(dist == min_dist)
+                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+                except Exception:
+                    return None, None, None
 
         def move_to(dx, dy):
             if dx == 0 and dy == 0:

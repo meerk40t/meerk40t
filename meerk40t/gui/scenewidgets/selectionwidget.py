@@ -18,6 +18,8 @@ import math
 import numpy as np
 import wx
 
+from meerk40t.core.spatial import shortest_distance, shortest_distance_chunked, _cKDTree  # noqa: E402
+
 from meerk40t.core.elements.element_types import elem_group_nodes, elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
@@ -74,6 +76,129 @@ def calculate_handle_offsets_and_deltas(
     dx = max(0, 2 * half - inner_wd_half)
     dy = max(0, 2 * half - inner_ht_half)
     return offset_x, offset_y, dx, dy
+
+
+def shortest_distance_chunked(p1, p2, tuplemode, max_mem=20_000_000):
+    """
+    Block-wise nearest neighbor search using pure numpy.
+    Returns (min_dist, pt_from_p1, pt_from_p2).
+
+    Arguments:
+        p1, p2: array-like of points. If tuplemode is False these are
+            1-D complex arrays. If tuplemode is True these are (N,2) float arrays.
+        max_mem: approx maximum bytes to use for distance matrix chunk (default 20MB).
+    """
+    try:
+        a1 = np.asarray(p1)
+        a2 = np.asarray(p2)
+    except Exception:
+        return None, None, None
+    if a1.size == 0 or a2.size == 0:
+        return None, None, None
+
+    # Normalize to Nx2 float arrays for distance computation
+    complex_input = False
+    if not tuplemode:
+        # Expect complex arrays
+        if np.iscomplexobj(a1) or np.iscomplexobj(a2):
+            complex_input = True
+            p1_xy = np.column_stack((a1.real, a1.imag))
+            p2_xy = np.column_stack((a2.real, a2.imag))
+        else:
+            # Fallback: try to interpret as float pairs
+            p1_xy = np.asarray(a1)
+            p2_xy = np.asarray(a2)
+    else:
+        p1_xy = np.asarray(a1)
+        p2_xy = np.asarray(a2)
+
+    # Ensure correct shapes
+    if p1_xy.ndim == 1:
+        p1_xy = p1_xy.reshape(-1, 2)
+    if p2_xy.ndim == 1:
+        p2_xy = p2_xy.reshape(-1, 2)
+
+    n1 = p1_xy.shape[0]
+    n2 = p2_xy.shape[0]
+
+    # Prefer scipy cKDTree when available for speed; fall back to chunked approach
+    swapped = False
+    if n1 > n2:
+        p1_xy, p2_xy = p2_xy, p1_xy
+        n1, n2 = n2, n1
+        swapped = True
+
+    # Try KD-tree first if available
+    if _cKDTree is not None:
+        try:
+            tree = _cKDTree(p2_xy)
+            dists, idxs = tree.query(p1_xy, k=1)
+            # find the global minimum
+            min_i = int(np.argmin(dists))
+            min_j = int(idxs[min_i])
+            min_dist = float(dists[min_i])
+            # Map indices back depending on swap
+            if not swapped:
+                idx1 = min_i
+                idx2 = min_j
+            else:
+                idx1 = min_j
+                idx2 = min_i
+            try:
+                pt1 = a1[idx1]
+                pt2 = a2[idx2]
+            except Exception:
+                pt1 = p1_xy[min_i] if not swapped else p2_xy[min_j]
+                pt2 = p2_xy[min_j] if not swapped else p1_xy[min_i]
+            return min_dist, pt1, pt2
+        except Exception:
+            # Fall through to chunked approach on any KD-tree error
+            pass
+
+    # Compute chunk size to keep memory usage bounded: chunk*n2*8 bytes
+    bytes_per_val = 8
+    max_cells = max(1, int(max_mem / bytes_per_val))
+    chunk_size = max(1, min(n1, int(max_cells / max(1, n2))))
+
+    min_sq = np.inf
+    min_i = -1
+    min_j = -1
+    for start in range(0, n1, chunk_size):
+        chunk = p1_xy[start : start + chunk_size]
+        # differences: shape (chunk, n2)
+        dx = chunk[:, None, 0] - p2_xy[None, :, 0]
+        dy = chunk[:, None, 1] - p2_xy[None, :, 1]
+        d2 = dx * dx + dy * dy
+        # find local minimum
+        local_idx = np.argmin(d2)
+        local_min = d2.flat[local_idx]
+        if local_min < min_sq:
+            min_sq = local_min
+            local_row, local_col = divmod(local_idx, n2)
+            min_i = start + local_row
+            min_j = local_col
+
+    if min_i == -1 or np.isnan(min_sq):
+        return None, None, None
+
+    min_dist = float(np.sqrt(min_sq))
+    # Map indices back to original arrays depending on swap
+    if not swapped:
+        idx1 = min_i
+        idx2 = min_j
+    else:
+        idx1 = min_j
+        idx2 = min_i
+
+    try:
+        pt1 = a1[idx1]
+        pt2 = a2[idx2]
+    except Exception:
+        # Fallback to returning float tuples
+        pt1 = p1_xy[min_i] if not swapped else p2_xy[min_j]
+        pt2 = p2_xy[min_j] if not swapped else p1_xy[min_i]
+
+    return min_dist, pt1, pt2
 
 
 def process_event(
@@ -1770,30 +1895,8 @@ class MoveWidget(Widget):
             # c) Regular snap-check
             # d) Use magnet lines
 
-            def shortest_distance(p1, p2, tuplemode):
-                """
-                Calculates the shortest distance between two arrays of 2-dimensional points.
-                """
-                try:
-                    # Calculate the Euclidean distance between each point in p1 and p2
-                    if tuplemode:
-                        # For an array of tuples:
-                        dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-                    else:
-                        # For an array of complex numbers
-                        dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
-                    # Find the minimum distance and its corresponding indices
-                    min_dist = np.min(dist)
-                    if np.isnan(min_dist):
-                        # print (f"Encountered the infamous bug: {p1} {p2}")
-                        # Still need an example when that happens
-                        return None, 0, 0
-                    min_indices = np.argwhere(dist == min_dist)
-
-                    # Return the coordinates of the two points
-                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-                except Exception:  # out of memory eg
-                    return None, None, None
+            # Use chunked nearest neighbor search implemented in shortest_distance_chunked
+            # to avoid memory blowup for large point sets.
 
             b = elements._emphasized_bounds
             if b is None:
