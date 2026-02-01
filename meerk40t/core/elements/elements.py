@@ -855,7 +855,7 @@ class Elemental(Service):
             # flooding the scheduler with per-node events during bulk ops.
             if static:
                 # Pause per-node notifications
-                self.stop_updates(message)
+                self.stop_updates(message, False)
             self.do_undo = False
             yield self
         finally:
@@ -871,9 +871,9 @@ class Elemental(Service):
     def resume_visual_updates(self):
         self._tree.notify_frozen(False)
 
-    def stop_updates(self, source):
+    def stop_updates(self, source, stop_notify=False):
         # print (f"Stop update called from {source}")
-        self._tree.pause_notify = True
+        self._tree.pause_notify = stop_notify
         self.suppress_updates = True
         self.stop_visual_updates()
 
@@ -2691,6 +2691,11 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
+        target = "elements"
+        if drop_node.has_ancestor("branch ops"):
+            target = "operations"
+        elif drop_node.has_ancestor("branch reg"):
+            target = "all" # Probably from both elements and regmarks
         to_be_refreshed = list(drop_node.flat())
         # _("Drag and drop")
         with self.undoscope("Drag and drop"):
@@ -2725,6 +2730,7 @@ class Elemental(Service):
 
             # Batch relocate if needed
             if nodes_needing_relocation:
+                target = "all"
                 with self.node_lock:
                     self.elem_branch.drop_multi(nodes_needing_relocation, flag=flag)
 
@@ -2739,7 +2745,7 @@ class Elemental(Service):
                 self.classify(to_classify)
         # Signal tree rebuild after batch operations
         if nodes_to_drop or nodes_needing_relocation:
-            self.signal("rebuild_tree", "elements")
+            self.signal("rebuild_tree", target)
         # Refresh the target node so any changes like color materialize...
         # print (f"Success: {success}\n{','.join(e.type for e in to_be_refreshed)}")
         self.signal("element_property_reload", to_be_refreshed)

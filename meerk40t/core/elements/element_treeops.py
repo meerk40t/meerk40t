@@ -2032,6 +2032,7 @@ def init_tree(kernel):
                 for i in range(copies):
                     snode.parent.add_reference(snode.node, pos=index)
                 snode.modified()
+        self.signal("rebuild_tree", "operations")
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_operation(
