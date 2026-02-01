@@ -169,7 +169,7 @@ class GRBLControllerPanel(wx.Panel):
         if self.service.has_endstops:
             self.gcode_commands.append(
                 (
-                    "$H",
+                    self.service.driver.translate_command("home_cycle"),
                     _("Physical Home"),
                     _("Send laser to physical home-position"),
                     None,
@@ -177,16 +177,16 @@ class GRBLControllerPanel(wx.Panel):
             )
         else:
             self.gcode_commands.append(
-                ("G28", _("Home"), _("Send laser to logical home-position"), None)
+                (self.service.driver.translate_command("home"), _("Home"), _("Send laser to logical home-position"), None)
             )
         self.gcode_commands.extend(
             [
-                ("\x18", _("Reset"), _("Reset laser"), None),
-                ("?", _("Status"), _("Query status"), None),
-                ("$X", _("Clear Alarm"), _("Kills alarms and locks"), None),
-                ("$#", _("Gcode"), _("Display active Gcode-parameters"), None),
-                ("$$", _("GRBL"), _("Display active GRBL-parameters"), None),
-                ("$I", _("Info"), _("Show Build-Info"), None),
+                (self.service.driver.translate_command("reset"), _("Reset"), _("Reset laser"), None),
+                (self.service.driver.translate_command("status_query"), _("Status"), _("Query status"), None),
+                (self.service.driver.translate_command("unlock"), _("Clear Alarm"), _("Kills alarms and locks"), None),
+                (self.service.driver.translate_command("query_params"), _("Gcode"), _("Display active Gcode-parameters"), None),
+                (self.service.driver.translate_command("query_settings"), _("GRBL"), _("Display active GRBL-parameters"), None),
+                (self.service.driver.translate_command("query_build"), _("Info"), _("Show Build-Info"), None),
             ]
         )
         for entry in self.gcode_commands:
@@ -344,8 +344,10 @@ class GRBLControllerPanel(wx.Panel):
     def send_gcode(self, gcode_cmd):
         def handler(event):
             self.service(f"gcode_realtime {gcode_cmd}")
-            if gcode_cmd == "$X" and self.service.extended_alarm_clear:
-                self.service("gcode_realtime \x18")
+            unlock_cmd = self.service.driver.translate_command("unlock")
+            reset_cmd = self.service.driver.translate_command("reset")
+            if gcode_cmd == unlock_cmd and self.service.extended_alarm_clear:
+                self.service(f"gcode_realtime {reset_cmd}")
 
         return handler
 

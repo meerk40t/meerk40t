@@ -291,15 +291,19 @@ def plugin(kernel, lifecycle):
 
         def base_coolant_grbl_m7(context, mode):
             if mode:
-                context("gcode M7\n")
+                cmd = context.driver.translate_command("coolant_mist_on")
+                context(f"gcode {cmd}\n")
             else:
-                context("gcode M9\n")
+                cmd = context.driver.translate_command("coolant_off")
+                context(f"gcode {cmd}\n")
 
         def base_coolant_grbl_m8(context, mode):
             if mode:
-                context("gcode M8\n")
+                cmd = context.driver.translate_command("coolant_flood_on")
+                context(f"gcode {cmd}\n")
             else:
-                context("gcode M9\n")
+                cmd = context.driver.translate_command("coolant_off")
+                context(f"gcode {cmd}\n")
 
         context.coolant.register_coolant_method(
             "popup", base_coolant_popup, config_function=None, label=_("Warnmessage")
