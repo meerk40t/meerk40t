@@ -3841,8 +3841,7 @@ class Elemental(Service):
             debug("Summary:")
             for key, count in debug_set.items():
                 debug(f"{count} items assigned to {key}")
-        if new_operations_added:
-            self.signal("tree_changed")
+        self.signal("rebuild_tree", "operations")
 
     def add_classify_op(self, op):
         """
