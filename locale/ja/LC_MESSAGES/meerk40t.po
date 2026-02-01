@@ -25376,3 +25376,45 @@ msgstr "線を作成"
 #: meerk40t/tools/livinghinges.py:697
 msgid "Living hinge"
 msgstr "可動ヒンジ"
+
+#: meerk40t/kernel/kernel.py:3849
+msgid "Signal Statistics:"
+msgstr "シグナル統計:"
+
+#: meerk40t/kernel/kernel.py:3898
+msgid "Average time threshold in seconds"
+msgstr "平均時間しきい値(秒)"
+
+#: meerk40t/kernel/kernel.py:3899
+msgid "Total time threshold in seconds"
+msgstr "総観時間しきい値(秒)"
+
+#: meerk40t/kernel/kernel.py:3900
+msgid "List listeners exceeding thresholds (requires debug_mode)"
+msgstr "しきい値を超えるリスナー一覧 (debug_modeが必需)"
+
+#: meerk40t/kernel/kernel.py:3911
+msgid "Signal stats are only collected when debug_mode is active."
+msgstr "シグナル統計はdebug_modeアクティブ時のみ収集されます。"
+
+#: meerk40t/kernel/kernel.py:3912
+msgid "To enable: set debug_mode True (requires restart)"
+msgstr "有効化するには: 'set debug_mode True' (再起動必需)"
+
+#: meerk40t/kernel/kernel.py:3930
+msgid "No slow listeners found (avg >= {avg} or total >= {total})."
+msgstr "遅いリスナーが見つかりません (平均 >= {avg} または総数 >= {total})。"
+
+#: meerk40t/kernel/kernel.py:3948
+msgid "Action: 'reset' to reset the counter"
+msgstr "動作: カウンターをリセットするには'reset'"
+
+#: meerk40t/kernel/kernel.py:3949
+msgid "Show or reset the global flat() call counter"
+msgstr "グローバル flat() コールカウンターを表示をリセット"
+
+#: meerk40t/core/elements/files.py:75
+msgid ""
+"Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, "
+"added: {added}"
+msgstr "読込時間: {load_time:.3f}s、変更前の要素: {before}、変更後: {after}、追加済み: {added}"

@@ -25371,3 +25371,45 @@ msgstr "创建线条"
 #: meerk40t/tools/livinghinges.py:697
 msgid "Living hinge"
 msgstr "活铰链"
+
+#: meerk40t/core/elements/files.py:75
+msgid ""
+"Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, "
+"added: {added}"
+msgstr "加载时间: {load_time:.3f}s、之前元素: {before}、之后: {after}、添加: {added}"
+
+#: meerk40t/kernel/kernel.py:3849
+msgid "Signal Statistics:"
+msgstr "信号统计:"
+
+#: meerk40t/kernel/kernel.py:3898
+msgid "Average time threshold in seconds"
+msgstr "平均时间阈值(秒)"
+
+#: meerk40t/kernel/kernel.py:3899
+msgid "Total time threshold in seconds"
+msgstr "总时间阈值(秒)"
+
+#: meerk40t/kernel/kernel.py:3900
+msgid "List listeners exceeding thresholds (requires debug_mode)"
+msgstr "列出超过阈值的按钮 (需要debug_mode)"
+
+#: meerk40t/kernel/kernel.py:3911
+msgid "Signal stats are only collected when debug_mode is active."
+msgstr "信号统计仅在debug_mode为活动时收集。"
+
+#: meerk40t/kernel/kernel.py:3912
+msgid "To enable: set debug_mode True (requires restart)"
+msgstr "启用: 'set debug_mode True' (需要重新启动)"
+
+#: meerk40t/kernel/kernel.py:3930
+msgid "No slow listeners found (avg >= {avg} or total >= {total})."
+msgstr "找不到缓慢的按钮 (平均 >= {avg} 或总计 >= {total})。"
+
+#: meerk40t/kernel/kernel.py:3948
+msgid "Action: 'reset' to reset the counter"
+msgstr "操作: 'reset' 以重置计数器"
+
+#: meerk40t/kernel/kernel.py:3949
+msgid "Show or reset the global flat() call counter"
+msgstr "显示或重置flat()具常汾汾的计数器"

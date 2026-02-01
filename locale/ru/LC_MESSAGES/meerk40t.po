@@ -26084,3 +26084,48 @@ msgstr "Создать линии"
 #: meerk40t/tools/livinghinges.py:697
 msgid "Living hinge"
 msgstr "Гибкая петля"
+
+#: meerk40t/core/elements/files.py:75
+msgid ""
+"Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, "
+"added: {added}"
+msgstr ""
+"Время загрузки: {load_time:.3f}с, Элементы до: {before}, после: {after}, "
+"добавлено: {added}"
+
+#: meerk40t/kernel/kernel.py:3849
+msgid "Signal Statistics:"
+msgstr "Статистика сигналов:"
+
+#: meerk40t/kernel/kernel.py:3898
+msgid "Average time threshold in seconds"
+msgstr "Средний порог времени в секунд"
+
+#: meerk40t/kernel/kernel.py:3899
+msgid "Total time threshold in seconds"
+msgstr "Общий порог времени в секунд"
+
+#: meerk40t/kernel/kernel.py:3900
+msgid "List listeners exceeding thresholds (requires debug_mode)"
+msgstr "Пересказывать послушателей, превышающих пороги (требует debug_mode)"
+
+#: meerk40t/kernel/kernel.py:3911
+msgid "Signal stats are only collected when debug_mode is active."
+msgstr "Статистика сигналов собирается только когда debug_mode активен."
+
+#: meerk40t/kernel/kernel.py:3912
+msgid "To enable: set debug_mode True (requires restart)"
+msgstr "Чтобы включить: 'set debug_mode True' (требует перезагрузки)"
+
+#: meerk40t/kernel/kernel.py:3930
+msgid "No slow listeners found (avg >= {avg} or total >= {total})."
+msgstr ""
+"Не найдено медленных послушателей (среднее >= {avg} или общее >= {total})."
+
+#: meerk40t/kernel/kernel.py:3948
+msgid "Action: 'reset' to reset the counter"
+msgstr "Действие: 'reset' для сброса счетчика"
+
+#: meerk40t/kernel/kernel.py:3949
+msgid "Show or reset the global flat() call counter"
+msgstr "Показать или сбросить глобальный счетчик вызовов flat()"

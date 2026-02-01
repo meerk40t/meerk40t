@@ -26147,3 +26147,49 @@ msgstr "Lijnen aanmaken"
 #: meerk40t/tools/livinghinges.py:697
 msgid "Living hinge"
 msgstr "Levend scharnier"
+
+#: meerk40t/core/elements/files.py:75
+msgid ""
+"Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, "
+"added: {added}"
+msgstr ""
+"Laadtijd: {load_time:.3f}s, Elementen voor: {before}, na: {after}, "
+"toegevoegd: {added}"
+
+#: meerk40t/kernel/kernel.py:3849
+msgid "Signal Statistics:"
+msgstr "Signaalstatistieken:"
+
+#: meerk40t/kernel/kernel.py:3898
+msgid "Average time threshold in seconds"
+msgstr "Gemiddelde tijdsdrempel in seconden"
+
+#: meerk40t/kernel/kernel.py:3899
+msgid "Total time threshold in seconds"
+msgstr "Totale tijdsdrempel in seconden"
+
+#: meerk40t/kernel/kernel.py:3900
+msgid "List listeners exceeding thresholds (requires debug_mode)"
+msgstr "Luisteraars vermelden die drempels overschrijden (vereist debug_mode)"
+
+#: meerk40t/kernel/kernel.py:3911
+msgid "Signal stats are only collected when debug_mode is active."
+msgstr ""
+"Signaalstatistieken worden alleen verzameld wanneer debug_mode actief is."
+
+#: meerk40t/kernel/kernel.py:3912
+msgid "To enable: set debug_mode True (requires restart)"
+msgstr "Om in te schakelen: 'set debug_mode True' (vereist herstart)"
+
+#: meerk40t/kernel/kernel.py:3930
+msgid "No slow listeners found (avg >= {avg} or total >= {total})."
+msgstr ""
+"Geen trage luisteraars gevonden (gemiddelde >= {avg} of totaal >= {total})."
+
+#: meerk40t/kernel/kernel.py:3948
+msgid "Action: 'reset' to reset the counter"
+msgstr "Actie: 'reset' om teller terug te zetten"
+
+#: meerk40t/kernel/kernel.py:3949
+msgid "Show or reset the global flat() call counter"
+msgstr "Globale teller voor flat()-aanroepen weergeven of instellen"

@@ -780,7 +780,8 @@ msgid ""
 "MK will immediately try to classify (automatically assign) an element as "
 "soon as it is created,"
 msgstr ""
-"MK versucht sofort nach Erstellen eines Elements dieses automatisch zuzuordnen,"
+"MK versucht sofort nach Erstellen eines Elements dieses automatisch "
+"zuzuordnen,"
 
 #: meerk40t/core/elements/elements.py:265
 msgid ""
@@ -798,8 +799,7 @@ msgstr "Unscharfe Farb-Logik"
 msgid ""
 "Unticked: Classify elements into operations with an *exact* color match"
 msgstr ""
-"Abgewählt: MK achtet bei der Zuordnung auf eine *exakte* "
-"Farbübereinstimmung"
+"Abgewählt: MK achtet bei der Zuordnung auf eine *exakte* Farbübereinstimmung"
 
 #: meerk40t/core/elements/elements.py:280
 msgid "Ticked: Allow a certain color-distance for classification"
@@ -828,8 +828,8 @@ msgstr "Nutze 'Schwarz' als Kriterium für 'Raster' (wie bei Whisperer)"
 #: meerk40t/core/elements/elements.py:320
 msgid "Ticked: Classify will assign black elements to a raster operation"
 msgstr ""
-"Aktiv: Beim Zuordnen werden schwarze Elemente zu einem "
-"'Raster'-Arbeitsgang zugeordnet"
+"Aktiv: Beim Zuordnen werden schwarze Elemente zu einem 'Raster'-Arbeitsgang "
+"zugeordnet"
 
 #: meerk40t/core/elements/elements.py:324
 msgid "Unticked: Classify will assign black elements to an engrave operation"
@@ -7586,8 +7586,8 @@ msgstr " wird die exakte Farbübereinstimmung für die Zuordnung verwendet."
 msgid ""
 "When classifying elements, Default operations gain all appropriate elements "
 msgstr ""
-"Beim Zuordnen der Elemente werden einem Standard-Arbeitsgang alle "
-"diejenigen Elemente zugeordnet, die nicht einem anderen Vorgang mit "
+"Beim Zuordnen der Elemente werden einem Standard-Arbeitsgang alle diejenigen"
+" Elemente zugeordnet, die nicht einem anderen Vorgang mit "
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:183
 msgid "not matched to an existing operation of the same colour, "
@@ -12397,8 +12397,8 @@ msgstr "Klassifizierung für nicht zugeordnete Elemente"
 #: meerk40t/core/elements/element_treeops.py:2093 meerk40t/gui/wxmtree.py:218
 msgid "Classify unassigned elements and create operations if necessary"
 msgstr ""
-"Zuweisung nicht zugeordneter Elemente und lege falls notwendig "
-"Arbeitsgänge an"
+"Zuweisung nicht zugeordneter Elemente und lege falls notwendig Arbeitsgänge "
+"an"
 
 #: meerk40t/core/elements/element_treeops.py:2111
 msgid "Use only existing operations"
@@ -12407,14 +12407,12 @@ msgstr "Nur vorhandene Arbeitsgänge nutzen"
 #: meerk40t/core/elements/element_treeops.py:2124
 msgid "Reclassify all elements and use only existing operations"
 msgstr ""
-"Erneuere Zuordnung für alle Elemente und nutze nur bestehende "
-"Arbeitsgänge"
+"Erneuere Zuordnung für alle Elemente und nutze nur bestehende Arbeitsgänge"
 
 #: meerk40t/core/elements/element_treeops.py:2142 meerk40t/gui/wxmtree.py:221
 msgid "Classify unassigned elements and use only existing operations"
 msgstr ""
-"Zuweisung nicht zugeordneter Elemente und nutze nur bestehende "
-"Arbeitsgänge"
+"Zuweisung nicht zugeordneter Elemente und nutze nur bestehende Arbeitsgänge"
 
 #: meerk40t/core/elements/element_treeops.py:2909
 #: meerk40t/core/elements/element_treeops.py:2927
@@ -26312,3 +26310,50 @@ msgstr "Linien erstellen"
 #: meerk40t/tools/livinghinges.py:697
 msgid "Living hinge"
 msgstr "Flexibles Scharnier"
+
+#: meerk40t/core/elements/files.py:75
+msgid ""
+"Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, "
+"added: {added}"
+msgstr ""
+"Ladezeit: {load_time:.3f}s, Elemente vorher: {before}, nachher: {after}, "
+"hinzugefügt: {added}"
+
+#: meerk40t/kernel/kernel.py:3849
+msgid "Signal Statistics:"
+msgstr "Signalstatistiken:"
+
+#: meerk40t/kernel/kernel.py:3898
+msgid "Average time threshold in seconds"
+msgstr "Durchschnittliche Zeitschwelle in Sekunden"
+
+#: meerk40t/kernel/kernel.py:3899
+msgid "Total time threshold in seconds"
+msgstr "Gesamtzeitschwelle in Sekunden"
+
+#: meerk40t/kernel/kernel.py:3900
+msgid "List listeners exceeding thresholds (requires debug_mode)"
+msgstr ""
+"Listener auflisten, die Schwellenwerte überschreiten (erfordert debug_mode)"
+
+#: meerk40t/kernel/kernel.py:3911
+msgid "Signal stats are only collected when debug_mode is active."
+msgstr "Signalstatistiken werden nur erfasst, wenn debug_mode aktiv ist."
+
+#: meerk40t/kernel/kernel.py:3912
+msgid "To enable: set debug_mode True (requires restart)"
+msgstr "Zum Aktivieren: debug_mode auf True setzen (erfordert Neustart)"
+
+#: meerk40t/kernel/kernel.py:3930
+msgid "No slow listeners found (avg >= {avg} or total >= {total})."
+msgstr ""
+"Keine langsamen Listener gefunden (Durchschnitt >= {avg} oder Summe >= "
+"{total})."
+
+#: meerk40t/kernel/kernel.py:3948
+msgid "Action: 'reset' to reset the counter"
+msgstr "Aktion: 'reset' um Zähler zurückzusetzen"
+
+#: meerk40t/kernel/kernel.py:3949
+msgid "Show or reset the global flat() call counter"
+msgstr "Globalen flat()-Aufrufszähler anzeigen oder zurücksetzen"

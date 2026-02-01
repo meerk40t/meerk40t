@@ -26169,3 +26169,47 @@ msgstr "Vonalak létrehozása"
 #: meerk40t/tools/livinghinges.py:697
 msgid "Living hinge"
 msgstr "Rugalmas csukló"
+
+#: meerk40t/core/elements/files.py:75
+msgid ""
+"Load time: {load_time:.3f}s, Elements before: {before}, after: {after}, "
+"added: {added}"
+msgstr ""
+"Betöltési idő: {load_time:.3f}s, Elemek előtt: {before}, utána: {after}, "
+"hozzáadva: {added}"
+
+#: meerk40t/kernel/kernel.py:3849
+msgid "Signal Statistics:"
+msgstr "Jel statisztikája:"
+
+#: meerk40t/kernel/kernel.py:3898
+msgid "Average time threshold in seconds"
+msgstr "Átlagos időküzséb másodpercben"
+
+#: meerk40t/kernel/kernel.py:3899
+msgid "Total time threshold in seconds"
+msgstr "Teljes időküzséb másodpercben"
+
+#: meerk40t/kernel/kernel.py:3900
+msgid "List listeners exceeding thresholds (requires debug_mode)"
+msgstr "Felsorolja az küzsébét meghaladó hallárokat (debug_mode szükséges)"
+
+#: meerk40t/kernel/kernel.py:3911
+msgid "Signal stats are only collected when debug_mode is active."
+msgstr "Jel statisztikája csak akkor gyűjtődik, ha debug_mode aktív."
+
+#: meerk40t/kernel/kernel.py:3912
+msgid "To enable: set debug_mode True (requires restart)"
+msgstr "Engedélyezéshez: 'set debug_mode True' (újraindítás szükséges)"
+
+#: meerk40t/kernel/kernel.py:3930
+msgid "No slow listeners found (avg >= {avg} or total >= {total})."
+msgstr "Nem található lassabb hallár (átlag >= {avg} vagy teljes >= {total})."
+
+#: meerk40t/kernel/kernel.py:3948
+msgid "Action: 'reset' to reset the counter"
+msgstr "Művelet: 'reset' a számláló alaphelyzetbe állításához"
+
+#: meerk40t/kernel/kernel.py:3949
+msgid "Show or reset the global flat() call counter"
+msgstr "Mutatja vagy alaphelyzetbe állítja a globális flat() hívásokat"
