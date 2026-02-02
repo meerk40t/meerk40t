@@ -1833,13 +1833,8 @@ class MoveWidget(Widget):
         self._snap_cache = None
         self._snap_preview = None
 
-    def _update_snap_preview(self, b, cursor=None):
-        """Compute the snap preview (fast) based on cached data and current delta.
-
-        If a cursor (x, y) is provided, prefer snapping pairs that involve the selected
-        point closest to the cursor. This makes snapping intuitive when moving a
-        particular vertex of a selection.
-        """
+    def _update_snap_preview(self, b):
+        """Compute the snap preview (fast) based on cached data and current delta."""
         if self._snap_cache is not None and "grid_tick_distance" in self._snap_cache and self._snap_cache.get("grid_tick_distance") != self.scene.pane.grid.tick_distance:
             self._clear_snap_cache()
         if self._snap_cache is None:

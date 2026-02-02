@@ -74,21 +74,35 @@ class TestNearestNeighbor(unittest.TestCase):
         except Exception:
             self.skipTest("SciPy not available")
 
+        from meerk40t.core.spatial import _cKDTree as original_cKDTree
+
         rng = np.random.RandomState(3)
         # complex arrays
         p1 = rng.rand(100) + 1j * rng.rand(100)
         p2 = rng.rand(120) + 1j * rng.rand(120)
         r_kd = shortest_distance_chunked(p1, p2, False)
-        # Using the KD tree implicitly; chunked should agree
-        r_chunk = shortest_distance_chunked(p1, p2, False)
-        self.assertAlmostEqual(r_kd[0], r_chunk[0], places=9)
+        # Force chunked path by temporarily disabling KD-tree
+        import meerk40t.core.spatial
+        meerk40t.core.spatial._cKDTree = None
+        try:
+            r_chunk = shortest_distance_chunked(p1, p2, False)
+            self.assertAlmostEqual(r_kd[0], r_chunk[0], places=9)
+        finally:
+            # Restore original KD-tree availability
+            meerk40t.core.spatial._cKDTree = original_cKDTree
 
         # pair arrays
         p1p = rng.rand(80, 2)
         p2p = rng.rand(90, 2)
         r_kd2 = shortest_distance_chunked(p1p, p2p, True)
-        r_chunk2 = shortest_distance_chunked(p1p, p2p, True)
-        self.assertAlmostEqual(r_kd2[0], r_chunk2[0], places=9)
+        # Force chunked path by temporarily disabling KD-tree
+        meerk40t.core.spatial._cKDTree = None
+        try:
+            r_chunk2 = shortest_distance_chunked(p1p, p2p, True)
+            self.assertAlmostEqual(r_kd2[0], r_chunk2[0], places=9)
+        finally:
+            # Restore original KD-tree availability
+            meerk40t.core.spatial._cKDTree = original_cKDTree
 
 
 if __name__ == "__main__":

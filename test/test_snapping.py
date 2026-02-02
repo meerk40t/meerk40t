@@ -379,7 +379,7 @@ class TestSnapPreview(unittest.TestCase):
         mw.total_dy = 0
         # Cursor near (20,20) but global minimal pair is (10,10) -> (11,10)
         cursor = (20.0, 20.0)
-        mw._update_snap_preview(b, cursor=cursor)
+        mw._update_snap_preview(b)
         self.assertIsNotNone(mw._snap_preview)
         self.assertEqual(mw._snap_preview.get("type"), "point")
         # Preview 'from' is selected point (10,10)

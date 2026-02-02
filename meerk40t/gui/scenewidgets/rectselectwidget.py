@@ -240,11 +240,11 @@ class RectSelectWidget(Widget):
 
         # Use the memory-safe nearest-neighbor helper which uses a KD-tree if SciPy is available
         try:
-            from meerk40t.core.spatial import shortest_distance
+            from meerk40t.core.spatial import shortest_distance as _shortest_distance
 
             def shortest_distance(p1, p2, tuplemode):
                 try:
-                    return shortest_distance(p1, p2, tuplemode)
+                    return _shortest_distance(p1, p2, tuplemode)
                 except Exception:
                     return None, None, None
         except Exception:
