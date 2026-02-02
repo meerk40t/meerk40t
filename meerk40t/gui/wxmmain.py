@@ -1493,6 +1493,7 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 # Hint for translation _("Element-Points")
                 "subsection": "Element-Points",
+                "relevant": True,
             },
             {
                 "attr": "action_attract_len",
@@ -1512,6 +1513,7 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 # Hint for translation _("Element-Points")
                 "subsection": "Element-Points",
+                "relevant": True,
             },
             {
                 "attr": "snap_grid",
@@ -1527,6 +1529,7 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 # Hint for translation _("Grid")
                 "subsection": "Grid",
+                "relevant": True,
             },
             {
                 "attr": "grid_attract_len",
@@ -1546,6 +1549,7 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 # Hint for translation _("Grid")
                 "subsection": "Grid",
+                "relevant": True,
             },
             {
                 "attr": "clear_magnets",
@@ -1577,7 +1581,24 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 # Hint for translation _("Instant Snap Display")
                 "subsection": "Instant Snap Display",
-            }
+                "relevant": True,
+            },
+            {
+                "attr": "snap_preview",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Show snap line"),
+                "tip": _(
+                    "Displays a preview line from the cursor to the snap point"
+                ),
+                "page": "Scene",
+                # Hint for translation _("Snap-Options")
+                "section": "Snap-Options",
+                # Hint for translation _("Instant Snap Display")
+                "subsection": "Instant Snap Display",
+                "relevant": True,
+            },
         ]
         for c in choices:
             c["help"] = "snap"

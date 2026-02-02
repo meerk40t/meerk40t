@@ -1820,8 +1820,7 @@ class MoveWidget(Widget):
         if enabled and self._snap_preview is not None:
             try:
                 pen = wx.Pen()
-                pen.SetColour(wx.Colour(255, 0, 0))
-                pen.SetStyle(wx.PENSTYLE_DOT)
+                pen.SetColour(wx.Colour(255, 0, 0, 128))
                 gc.SetPen(pen)
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
                 p1 = self._snap_preview.get("from")
