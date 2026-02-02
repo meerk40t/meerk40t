@@ -18,6 +18,9 @@ import time
 
 import numpy as np
 import wx
+import logging
+
+logger = logging.getLogger(__name__)
 
 from meerk40t.core.spatial import shortest_distance, shortest_distance_chunked, _cKDTree  # noqa: E402
 
@@ -1886,7 +1889,7 @@ class MoveWidget(Widget):
                     continue
                 startpt = seg[0]
                 endpt = seg[4]
-                if np.isnan(startpt) or np.isnan(endpt):
+                if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
                     continue
                 midpt = geom.position(idx, 0.5)
 
@@ -1899,7 +1902,8 @@ class MoveWidget(Widget):
                     return last
 
                 lastpt = add_it(startpt, lastpt)
-                lastpt = add_it(midpt, lastpt)
+                if not e.emphasized:
+                    lastpt = add_it(midpt, lastpt)
                 lastpt = add_it(endpt, lastpt)
 
         # Filter grid points to those in the vicinity of the bounds to reduce work for preview
@@ -1980,6 +1984,14 @@ class MoveWidget(Widget):
         else:
             # sel_start is an array of complex
             sel_shifted = sel_start + (dsx + 1j * dsy)
+
+        # Compute shifted selection points + center for grid snapping
+        center = ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2)
+        if sel_shifted is not None and sel_shifted.size > 0:
+            sp_points = np.column_stack((sel_shifted.real, sel_shifted.imag))
+            selected_corners_shifted = np.vstack([sp_points, center])
+        else:
+            selected_corners_shifted = np.array([center])
 
         # 0) Magnet preview precedence: if there's a magnet action, show magnet preview and skip other checks
         try:
@@ -2077,43 +2089,72 @@ class MoveWidget(Widget):
                         dist_p = None
         except Exception:
             dist_p = None
-        # Grid snapping (corners + center)
+        # Grid snapping: consider all selected vertices (not only corners + center)
         try:
             if self.scene.context.snap_grid and b is not None:
-                selected_corners = (
-                    (b[0], b[1]),
-                    (b[2], b[1]),
-                    (b[0], b[3]),
-                    (b[2], b[3]),
-                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
-                )
                 gp = self._snap_cache.get("grid_points")
-                if gp and len(gp) > 0:
+                if gp is not None and len(gp) > 0:
+                    # Compare selected corners + center against grid points
                     np_other = np.asarray(gp)
-                    np_selected = np.asarray(selected_corners)
-                    dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
+                    sp = selected_corners_shifted
                     tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
                     try:
                         if tree is not None:
-                            sel = np_selected.astype(float)
-                            dists, idxs = tree.query(sel, k=1)
+                            pts = sp.astype(float)
+                            dists, idxs = tree.query(pts, k=1)
                             min_i = int(np.argmin(dists))
                             min_dist = float(dists[min_i])
                             if min_dist < gap_grid:
                                 min_j = int(idxs[min_i])
                                 pt1_g = np_other[min_j]
-                                pt2_g = np_selected[min_i]
+                                pt2_g = sp[min_i]
                                 if best is None or min_dist < best_dist:
                                     best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
                                     best_dist = min_dist
                         else:
-                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
+                            # Use corners + center for distance computation
+                            sel_xy = sp.astype(float)
+                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, sel_xy, True)
                             if dist_g is not None and dist_g < gap_grid:
                                 if best is None or dist_g < best_dist:
                                     best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
                                     best_dist = dist_g
                     except Exception:
                         dist_g = None
+                else:
+                    # Fallback to corners+center for compatibility
+                    selected_corners = (
+                        (b[0], b[1]),
+                        (b[2], b[1]),
+                        (b[0], b[3]),
+                        (b[2], b[3]),
+                        ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                    )
+                    np_other = np.asarray(gp) if gp is not None else np.asarray([])
+                    np_selected = np.asarray(selected_corners)
+                    if np_other.size > 0:
+                        try:
+                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
+                            tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
+                            if tree is not None:
+                                sel = np.column_stack((np_selected.real, np_selected.imag))
+                                dists, idxs = tree.query(sel, k=1)
+                                min_i = int(np.argmin(dists))
+                                min_dist = float(dists[min_i])
+                                if min_dist < gap_grid:
+                                    min_j = int(idxs[min_i])
+                                    pt1_g = np_other[min_j]
+                                    pt2_g = np_selected[min_i]
+                                    if best is None or min_dist < best_dist:
+                                        best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                        best_dist = min_dist
+                            else:
+                                if dist_g is not None and dist_g < gap_grid:
+                                    if best is None or dist_g < best_dist:
+                                        best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                        best_dist = dist_g
+                        except Exception:
+                            dist_g = None
         except Exception:
             dist_g = None
 
@@ -2286,7 +2327,7 @@ class MoveWidget(Widget):
                             continue
                         startpt = seg[0]
                         endpt = seg[4]
-                        if np.isnan(startpt) or np.isnan(endpt):
+                        if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
                             print(
                                 f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={startpt}, end={endpt} - coming from element type {e.type}\nPlease inform the developers"
                             )
@@ -2364,13 +2405,37 @@ class MoveWidget(Widget):
                 and b is not None
             ):
                 gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
-                selected_points = (
-                    (b[0], b[1]),
-                    (b[2], b[1]),
-                    (b[0], b[3]),
-                    (b[2], b[3]),
-                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
-                )
+                selected_points = []
+                for e in elements.elems(emphasized=True):
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
+                    if not hasattr(e, "as_geometry"):
+                        continue
+                    geom = e.as_geometry()
+                    lastpt = None
+                    for idx, seg in enumerate(geom.segments[: geom.index]):
+                        seg_type = geom._segtype(seg)
+                        if seg_type == TYPE_END:
+                            lastpt = None
+                        if seg_type in NON_GEOMETRY_TYPES:
+                            continue
+                        startpt = seg[0]
+                        endpt = seg[4]
+                        if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
+                            continue
+
+                        def add_it(pt, last):
+                            if last is not None and pt == last:
+                                return last
+                            last = pt
+                            selected_points.append(pt)
+                            return last
+
+                        lastpt = add_it(startpt, lastpt)
+                        lastpt = add_it(endpt, lastpt)
+                # Add center
+                center = ((b[0] + b[2]) / 2) + ((b[1] + b[3]) / 2) * 1j
+                selected_points.append(center)
                 other_points = self.scene.pane.grid.grid_points
                 if (
                     other_points is not None

@@ -130,20 +130,15 @@ def shortest_distance(p1, p2, tuplemode, max_mem: Optional[int] = None):
 
     # Normalize to Nx2 float arrays for distance computation
     if not tuplemode:
-        if np.iscomplexobj(a1) or np.iscomplexobj(a2):
-            p1_xy = np.column_stack((a1.real, a1.imag))
-            p2_xy = np.column_stack((a2.real, a2.imag))
-        else:
-            p1_xy = np.asarray(a1)
-            p2_xy = np.asarray(a2)
+        p1_xy = np.column_stack((a1.real, a1.imag)) if np.iscomplexobj(a1) else np.asarray(a1)
+        p2_xy = np.column_stack((a2.real, a2.imag)) if np.iscomplexobj(a2) else np.asarray(a2)
     else:
         p1_xy = np.asarray(a1)
+        if np.iscomplexobj(p1_xy):
+            p1_xy = np.column_stack((p1_xy.real, p1_xy.imag))
         p2_xy = np.asarray(a2)
-
-    if p1_xy.ndim == 1:
-        p1_xy = p1_xy.reshape(-1, 2)
-    if p2_xy.ndim == 1:
-        p2_xy = p2_xy.reshape(-1, 2)
+        if np.iscomplexobj(p2_xy):
+            p2_xy = np.column_stack((p2_xy.real, p2_xy.imag))
 
     n1 = p1_xy.shape[0]
     n2 = p2_xy.shape[0]
