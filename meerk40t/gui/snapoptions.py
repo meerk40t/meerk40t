@@ -40,7 +40,19 @@ class SnapOptionPanel(wx.Panel):
         # Simplify choice dicts for panel
         for c in choices:
             c["page"] = ""
-            c["section"] = ""  
+            c["section"] = "" 
+            c["subsection"] = ""
+        # Combine chocices into a subsection
+        # _("Attraction"), _("Sensitivity"), _("Options")
+        for (sect, atts) in (
+            ("Attraction", ("snap_points", "snap_grid")),
+            ("Sensitivity", ("action_attract_len", "grid_attract_len")),
+            ("Options", ("snap_instant", "snap_preview")),
+        ):
+            for c in choices:
+                if c.get("attr", "") in atts:
+                    c["subsection"] = sect
+
         self.options = ChoicePropertyPanel(self, wx.ID_ANY, context=context, choices=choices)    
 
         # Main Sizer
