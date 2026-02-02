@@ -27,7 +27,6 @@ def register_panel_snapoptions(window, context):
 
 
 class SnapOptionPanel(wx.Panel):
-
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -36,27 +35,32 @@ class SnapOptionPanel(wx.Panel):
         self.context.themes.set_window_colors(self)
         self.SetHelpText("snap")
         all_choices = self.context.lookup("choices", "preferences")
-        choices = [c for c in all_choices if c.get("section", "") == "Snap-Options" and c.get("relevant", False) ]
+        choices = [
+            c
+            for c in all_choices
+            if c.get("section", "") == "Snap-Options" and c.get("relevant", False)
+        ]
         # Simplify choice dicts for panel
         for c in choices:
             c["page"] = ""
-            c["section"] = "" 
+            c["section"] = ""
             c["subsection"] = ""
         # Combine chocices into a subsection
         # _("Attraction"), _("Sensitivity"), _("Options")
-        for (sect, atts) in (
-            ("Attraction", ("snap_points", "snap_grid")),
-            ("Sensitivity", ("action_attract_len", "grid_attract_len")),
-            ("Options", ("snap_instant", "snap_preview")),
+        for sect, atts in (
+            ("_10_Attraction", ("snap_points", "snap_grid")),
+            ("_20_Sensitivity", ("action_attract_len", "grid_attract_len")),
+            ("_30_Options", ("snap_instant", "snap_preview")),
         ):
             for c in choices:
                 if c.get("attr", "") in atts:
                     c["subsection"] = sect
 
-        self.options = ChoicePropertyPanel(self, wx.ID_ANY, context=context, choices=choices)    
+        self.options = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=context, choices=choices
+        )
 
         # Main Sizer
         sizer_snap = wx.BoxSizer(wx.VERTICAL)
         sizer_snap.Add(self.options, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_snap)   
-
+        self.SetSizer(sizer_snap)
