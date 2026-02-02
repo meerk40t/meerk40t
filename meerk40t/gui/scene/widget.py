@@ -391,6 +391,19 @@ class Widget(list):
             self.notify_added_to_parent(self)
             self.notify_added_child(widget)
 
+    def propagate_render_layer(self, layer, only_if_none=True):
+        """
+        Propagate a render layer to this widget and its children.
+
+        If only_if_none is True, only widgets without a render_layer are updated.
+        """
+        if not only_if_none or self.render_layer is None:
+            self.render_layer = layer
+        for w in self:
+            if w is None:
+                continue
+            w.propagate_render_layer(layer, only_if_none=only_if_none)
+
     def remove_all_widgets(self):
         """
         Remove all widgets from the current widget.

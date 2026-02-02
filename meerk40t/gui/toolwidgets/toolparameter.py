@@ -729,7 +729,7 @@ class ParameterTool(ToolWidget):
                 break
         self.scene.pane.suppress_selection = selected_node is not None
         self.establish_parameters(selected_node)
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def signal(self, signal, *args, **kwargs):
         """

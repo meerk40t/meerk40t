@@ -133,7 +133,7 @@ class PointMoveTool(ToolWidget):
         if event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
                 self.scene.pane.tool_active = False
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
@@ -169,7 +169,7 @@ class PointMoveTool(ToolWidget):
                 self.points.append([seg, 0, geom_transformed, node])
                 self.points.append([seg, 4, geom_transformed, node])
         self.scene.pane.suppress_selection = len(self.points) > 0
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def signal(self, signal, *args, **kwargs):
         """

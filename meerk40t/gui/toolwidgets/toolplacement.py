@@ -27,7 +27,7 @@ class PlacementTool(ToolWidget):
 
     def done(self):
         self.scene.pane.tool_active = False
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         self.message_displayed = ""
         self.scene.context("tool none\n")
 

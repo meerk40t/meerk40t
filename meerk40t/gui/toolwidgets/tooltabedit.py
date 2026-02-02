@@ -329,7 +329,7 @@ class TabEditTool(ToolWidget):
 
         self.node.mktabpositions = posi
         self.node.empty_cache()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         self.scene.context.signal("element_property_update", self.node)
         self.scene.context.signal("modified_by_tool")
 
@@ -465,7 +465,7 @@ class TabEditTool(ToolWidget):
                     self.write_node()
             elif self.point_index is not None and "shift" in modifiers:
                 self.delete_current_tab()
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             return RESPONSE_CONSUME
         if event_type == "move":
             if "m_middle" in modifiers:
@@ -479,7 +479,7 @@ class TabEditTool(ToolWidget):
                 seg_len = 100 * c_len / self.node_length
                 self.points[idx] = c_point
                 self.point_len[idx] = seg_len
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
             elif self.slider_index >= 0 and self.active_slider is not None:
                 self.active_slider.update_according_to_pos(
                     space_pos[0], space_pos[1]
@@ -487,7 +487,7 @@ class TabEditTool(ToolWidget):
                 self.node.mktablength = float(Length(f"{self.active_slider.value / 10.0}mm"))
                 # We wait
                 self.node.empty_cache()
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 self.scene.context.signal("element_property_update", self.node)
                 self.scene.context.signal("modified_by_tool")
             return RESPONSE_CONSUME
@@ -499,7 +499,7 @@ class TabEditTool(ToolWidget):
         if event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
                 self.scene.pane.tool_active = False
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
@@ -529,7 +529,7 @@ class TabEditTool(ToolWidget):
         # self.scene.pane.suppress_selection = len(self.points) > 0
         self.scene.pane.ignore_snap = True
         self.scene.pane.suppress_selection = True
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         self.scene.context.signal("statusmsg", _("Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"))
 
     def signal(self, signal, *args, **kwargs):

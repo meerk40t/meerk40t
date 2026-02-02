@@ -34,7 +34,7 @@ class TextTool(ToolWidget):
 
     def end_tool(self, force=False):
         self.scene.context.signal("statusmsg", "")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         if force or self.scene.context.just_a_single_element:
             self.scene.pane.tool_active = False
             self.scene.context("tool none\n")

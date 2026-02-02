@@ -183,36 +183,63 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
 
         # Tool container - Widget to hold tools.
+        from meerk40t.gui.scene.sceneconst import LAYER_TOOLS
+
         self.tool_container = ToolContainer(self.widget_scene)
+        self.tool_container.render_layer = LAYER_TOOLS
         self.widget_scene.add_scenewidget(self.tool_container)
 
         # Rectangular selection.
-        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+        from meerk40t.gui.scene.sceneconst import LAYER_SELECTION
+
+        rect_select = RectSelectWidget(self.widget_scene)
+        rect_select.render_layer = LAYER_SELECTION
+        self.widget_scene.add_scenewidget(rect_select)
 
         # Laser-Path blue-line drawer.
+        from meerk40t.gui.scene.sceneconst import LAYER_LASERPATH
+
         self.laserpath_widget = LaserPathWidget(self.widget_scene)
+        self.laserpath_widget.render_layer = LAYER_LASERPATH
         self.widget_scene.add_scenewidget(self.laserpath_widget)
 
         # Draw elements in scene.
-        self.widget_scene.add_scenewidget(
-            ElementsWidget(self.widget_scene, LaserRender(context))
-        )
+        from meerk40t.gui.scene.sceneconst import LAYER_ELEMENTS
+
+        elements_widget = ElementsWidget(self.widget_scene, LaserRender(context))
+        elements_widget.render_layer = LAYER_ELEMENTS
+        self.widget_scene.add_scenewidget(elements_widget)
 
         # Draw Machine Origin widget.
         self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
 
         # Draw Grid.
+        from meerk40t.gui.scene.sceneconst import LAYER_GRID
+
         self.grid = GridWidget(self.widget_scene)
+        self.grid.render_layer = LAYER_GRID
         self.widget_scene.add_scenewidget(self.grid)
 
         # Draw Bed
-        self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
+        from meerk40t.gui.scene.sceneconst import LAYER_BED
+
+        bed_widget = BedWidget(self.widget_scene)
+        bed_widget.render_layer = LAYER_BED
+        self.widget_scene.add_scenewidget(bed_widget)
 
         # Draw Interface Guide.
-        self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+        from meerk40t.gui.scene.sceneconst import LAYER_GUIDE
+
+        guide_widget = GuideWidget(self.widget_scene)
+        guide_widget.render_layer = LAYER_GUIDE
+        self.widget_scene.add_interfacewidget(guide_widget)
 
         # Draw Interface Laser-Position
-        self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
+        from meerk40t.gui.scene.sceneconst import LAYER_INTERFACE
+
+        reticle_widget = ReticleWidget(self.widget_scene)
+        reticle_widget.render_layer = LAYER_INTERFACE
+        self.widget_scene.add_interfacewidget(reticle_widget)
 
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
         sizer_2.Add(self.scene, 20, wx.EXPAND, 0)

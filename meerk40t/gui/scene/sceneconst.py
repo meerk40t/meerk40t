@@ -22,7 +22,28 @@ ORIENTATION_NO_BUFFER = 0b000010_00000000
 BUFFER = 1000.0
 
 # Scene rendering layers (low to high)
-LAYER_SCENE = 10
+LAYER_BED = 10
+LAYER_GRID = 20
+LAYER_GUIDE = 30
+LAYER_ELEMENTS = 40
+LAYER_LASERPATH = 50
+LAYER_TOOLS = 60
+LAYER_SELECTION = 70
+LAYER_SCENE = 80
 LAYER_INTERFACE = 90
 LAYER_TOAST = 100
 LAYER_ALL = -1
+
+LAYER_NAMES = {
+    LAYER_BED: "bed",
+    LAYER_GRID: "grid",
+    LAYER_GUIDE: "guide",
+    LAYER_ELEMENTS: "elements",
+    LAYER_LASERPATH: "laserpath",
+    LAYER_TOOLS: "tools",
+    LAYER_SELECTION: "selection",
+    LAYER_SCENE: "scene",
+    LAYER_INTERFACE: "interface",
+    LAYER_TOAST: "toast",
+    LAYER_ALL: "all",
+}

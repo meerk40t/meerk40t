@@ -285,7 +285,7 @@ class RectSelectWidget(Widget):
             self.scene.context.elements.update_bounds(
                 [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
             )
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
 
         def check_leftdown(space_pos):
             self.mouse_down_time = perf_counter()
@@ -297,7 +297,7 @@ class RectSelectWidget(Widget):
         def check_click(space_pos):
             # That's too fast
             # still chaining though
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             self.reset()
 
         def check_move(space_pos):
@@ -312,7 +312,7 @@ class RectSelectWidget(Widget):
                     self.scene.cursor("arrow")
 
             if self.mode == "select":
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 self.end_location = space_pos
                 self._clear_sector_cache()  # Clear cache when end location changes
             elif self.mode == "move":
@@ -330,7 +330,7 @@ class RectSelectWidget(Widget):
             ey = max(self.start_location[1], self.end_location[1])
             self.rect_select(elements, sx, sy, ex, ey)
 
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             self.scene.context.signal("select_emphasized_tree", 0)
 
         def check_leftup_move(space_pos):

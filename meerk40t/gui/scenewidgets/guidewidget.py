@@ -203,7 +203,7 @@ class GuideWidget(Widget):
             self.scene.pane.grid.auto_tick = False
             self.scene.pane.grid.tick_distance = value
         self.scene._signal_widget(self.scene.widget_root, "grid")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def change_tick_event(self, idx):
         value = self.options[idx]
@@ -296,7 +296,7 @@ class GuideWidget(Widget):
             self.scene.pane.grid.tick_distance = value
             self.scene.pane.grid.auto_tick = False
             self.scene._signal_widget(self.scene.widget_root, "grid")
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
 
         def on_regular_option(option):
             def check(event):
@@ -577,7 +577,7 @@ class GuideWidget(Widget):
             value = float(Length(f"{mark_point_y:.1f}{self.units}"))
             self.scene.pane.toggle_y_magnet(value)
         self.invalidate_cache()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
@@ -613,7 +613,7 @@ class GuideWidget(Widget):
             self._add_grid_draw_options(menu)
             self.scene.context.gui.PopupMenu(menu)
             menu.Destroy()
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
 
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
@@ -1029,8 +1029,8 @@ class GuideWidget(Widget):
         """Mark matrix as changed and invalidate cache"""
         self.invalidate_cache()
         # Force refresh on next draw since matrix affects all calculations
-        if hasattr(self.scene, "request_refresh"):
-            self.scene.request_refresh()
+        if hasattr(self.scene, "invalidate_layer"):
+            self.scene.invalidate_layer(self.render_layer)
 
     def _check_matrix_change(self):
         """Check if matrix has changed since last cache and invalidate if needed"""

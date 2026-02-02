@@ -1,4 +1,8 @@
-from meerk40t.gui.scene.sceneconst import HITCHAIN_DELEGATE_AND_HIT, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_DELEGATE_AND_HIT,
+    LAYER_SELECTION,
+    RESPONSE_CHAIN,
+)
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scenewidgets.affinemover import AffineMover
 from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
@@ -21,6 +25,9 @@ class ToolContainer(Widget):
             "affine": AffineMover(scene),
             "vertex": NodeSelector(scene),
         }
+        for widget in self.selection_widgets.values():
+            widget.render_layer = LAYER_SELECTION
+            widget.propagate_render_layer(LAYER_SELECTION, only_if_none=True)
         self.set_tool(None)
 
     def hit(self):
@@ -78,5 +85,5 @@ class ToolContainer(Widget):
 
         self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)
 
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         return True, response

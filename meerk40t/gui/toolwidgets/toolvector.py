@@ -146,7 +146,7 @@ class VectorTool(ToolWidget):
             pos = self.angled(pos)
             self.c0 = (pos[0], pos[1])
             if self.path:
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
         elif event_type == "leftup":
             self.scene.pane.tool_active = False
@@ -154,10 +154,10 @@ class VectorTool(ToolWidget):
                 self.scene.pane.tool_active = True
                 pos = self.mouse_position
                 self.path.smooth_cubic(self.c0, pos)
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
             self.c0 = None
             self.mouse_position = None
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             response = RESPONSE_CONSUME
         elif event_type == "hover":
             if nearest_snap is None:
@@ -168,21 +168,21 @@ class VectorTool(ToolWidget):
             else:
                 self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.path:
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
         elif event_type == "doubleclick":
             self.end_tool()
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
                 self.scene.pane.tool_active = False
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
             self.scene.context.signal("statusmsg", "")
             self.path = None
         elif update_required:
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             # Have we clicked already?
             if self.path:
                 response = RESPONSE_CONSUME
@@ -208,6 +208,6 @@ class VectorTool(ToolWidget):
         self.path = None
         self.scene.context.signal("statusmsg", "")
         self.mouse_position = None
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         if self.scene.context.just_a_single_element:
             self.scene.context("tool none\n")

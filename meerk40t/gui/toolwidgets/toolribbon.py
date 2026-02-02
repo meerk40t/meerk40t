@@ -548,7 +548,7 @@ class RibbonTool(ToolWidget):
 
     def tick(self):
         self.ribbon.tick()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         if self.stop:
             return False
         return True
@@ -572,7 +572,7 @@ class RibbonTool(ToolWidget):
             self.ribbon.clear()
             if self.scene.pane.tool_active:
                 self.scene.pane.tool_active = False
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 return RESPONSE_CONSUME
             else:
                 return RESPONSE_CHAIN

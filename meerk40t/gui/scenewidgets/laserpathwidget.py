@@ -43,12 +43,14 @@ class LaserPathWidget(Widget):
         index += 1
         index %= len(laserpath[0])
         self.laserpath_index = index
+        self.scene.invalidate_layer(self.render_layer)
 
     def clear_laserpath(self):
         self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [
             [0, 0] for _ in range(self.buffer_size)
         ]
         self.laserpath_index = 0
+        self.scene.invalidate_layer(self.render_layer)
 
     def process_draw(self, gc):
         """

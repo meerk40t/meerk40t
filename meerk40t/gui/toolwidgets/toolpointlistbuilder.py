@@ -151,7 +151,7 @@ class PointListTool(ToolWidget):
             else:
                 self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.point_series:
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
             response = RESPONSE_CONSUME
         elif event_type in ("leftup", "move", "hover"):
             if nearest_snap is None:
@@ -159,7 +159,7 @@ class PointListTool(ToolWidget):
             else:
                 self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.point_series:
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.end_tool()
@@ -167,7 +167,7 @@ class PointListTool(ToolWidget):
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
                 self.scene.pane.tool_active = False
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
@@ -181,7 +181,7 @@ class PointListTool(ToolWidget):
             if self.key_up(keycode, modifiers):
                 response = RESPONSE_CONSUME
         elif update_required:
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             # Have we clicked already?
             if len(self.point_series) > 0:
                 response = RESPONSE_CONSUME
@@ -192,7 +192,7 @@ class PointListTool(ToolWidget):
         self.scene.pane.tool_active = False
         self.point_series = []
         self.mouse_position = None
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         if followup:
             self.scene.context(f"{followup}\n")
         elif self.scene.context.just_a_single_element:

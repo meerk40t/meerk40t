@@ -65,7 +65,7 @@ class RelocateTool(ToolWidget):
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
                 self.scene.pane.tool_active = False
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN

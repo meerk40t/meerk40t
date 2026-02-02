@@ -36,7 +36,7 @@ class CircleTool(ToolWidget):
         self.p1 = None
         self.p2 = None
         self.scene.context.signal("statusmsg", "")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         if force or self.scene.context.just_a_single_element:
             self.scene.pane.tool_active = False
             self.scene.context("tool none\n")
@@ -167,21 +167,21 @@ class CircleTool(ToolWidget):
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
                     self.p2 = complex(nearest_snap[0], nearest_snap[1])
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 response = RESPONSE_CONSUME
         elif event_type == "leftclick":
             # Dear user: that's too quick for my taste - take your time...
             self.p1 = None
             self.p2 = None
             self.scene.pane.tool_active = False
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             # Allow other widgets (like the selection widget to take over)
             response = RESPONSE_CHAIN
         elif event_type == "leftup":
             self.scene.pane.tool_active = False
             try:
                 if self.p1 is None:
-                    self.scene.request_refresh()
+                    self.scene.invalidate_layer(self.render_layer)
                     self.scene.context.signal("statusmsg", "")
                     response = RESPONSE_ABORT
                     return response
@@ -202,7 +202,7 @@ class CircleTool(ToolWidget):
                     # Degenerate? Ignore!
                     self.p1 = None
                     self.p2 = None
-                    self.scene.request_refresh()
+                    self.scene.invalidate_layer(self.render_layer)
                     self.scene.context.signal("statusmsg", "")
                     response = RESPONSE_ABORT
                     return response
@@ -251,7 +251,7 @@ class CircleTool(ToolWidget):
                 response = RESPONSE_CHAIN
             self.end_tool(force=True)
         elif update_required:
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             # Have we clicked already?
             if self.p1 is not None:
                 response = RESPONSE_CONSUME

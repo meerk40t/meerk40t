@@ -295,7 +295,7 @@ class EditTool(ToolWidget):
             self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
             self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
         self._listener_active = False
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def init(self, context):
         """
@@ -313,7 +313,7 @@ class EditTool(ToolWidget):
         selected_node = self.scene.context.elements.first_element(emphasized=True)
         if selected_node is not self.element:
             self.calculate_points(selected_node)
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             self.enable_rules()
 
     def set_pen_widths(self):
@@ -804,7 +804,7 @@ class EditTool(ToolWidget):
         self.scene.context("tool none\n")
         self.scene.context.signal("statusmsg", "")
         self.scene.context.elements.validate_selected_area()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def modify_element(self, reload=True):
         """
@@ -825,11 +825,11 @@ class EditTool(ToolWidget):
         except AttributeError:
             pass
         self.scene.context.elements.validate_selected_area()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         self.scene.context.signal("element_property_reload", [self.element])
         if reload:
             self.calculate_points(self.element)
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             self.enable_rules()
 
     def clear_selection(self):
@@ -1895,13 +1895,13 @@ class EditTool(ToolWidget):
                     else:
                         # Clear selection
                         self.clear_selection()
-                        self.scene.request_refresh()
+                        self.scene.invalidate_layer(self.render_layer)
                 else:
                     # Fine we start a selection rectangle to select multiple nodes
                     self.move_type = "selection"
                     self.p1 = complex(space_pos[0], space_pos[1])
             else:
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
             return RESPONSE_CONSUME
         elif event_type == "rightdown":
             # We stop
@@ -1911,10 +1911,10 @@ class EditTool(ToolWidget):
             if self.move_type == "selection":
                 if self.p1 is not None:
                     self.p2 = complex(space_pos[0], space_pos[1])
-                    self.scene.request_refresh()
+                    self.scene.invalidate_layer(self.render_layer)
             else:
                 if self.selected_index is None or self.selected_index < 0:
-                    self.scene.request_refresh()
+                    self.scene.invalidate_layer(self.render_layer)
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
@@ -1950,7 +1950,7 @@ class EditTool(ToolWidget):
                             break
                     if orgnode is not None:
                         orgnode["selected"] = True
-                    self.scene.request_refresh()
+                    self.scene.invalidate_layer(self.render_layer)
                     return RESPONSE_CONSUME
                 pt.x = m[0]
                 pt.y = m[1]
@@ -2037,7 +2037,7 @@ class EditTool(ToolWidget):
                             and y0 <= pt.y <= y1
                         ):
                             entry["selected"] = True
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 self.enable_rules()
             self.p1 = None
             self.p2 = None
@@ -2071,7 +2071,7 @@ class EditTool(ToolWidget):
         else:
             self.calculate_points(selected_node)
             self.enable_rules()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def signal(self, signal, *args, **kwargs):
         """

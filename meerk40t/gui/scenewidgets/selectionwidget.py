@@ -763,7 +763,7 @@ class RotationWidget(Widget):
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
             elements.signal("updating")
 
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1055,7 +1055,7 @@ class CornerWidget(Widget):
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1286,7 +1286,7 @@ class SideWidget(Widget):
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1444,7 +1444,7 @@ class SkewWidget(Widget):
                         e._cache = None
             elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def event(
         self,
@@ -1985,7 +1985,7 @@ class MoveWidget(Widget):
             self.total_dy = 0
         elif event == TOOL_RESULT_MOVE:  # move
             move_to(dx, dy, interim=True)
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         elements.set_end_time("movewidget")
 
     def event(
@@ -2110,7 +2110,7 @@ class MoveRotationOriginWidget(Widget):
             self.master.rotation_cx += dx
             self.master.rotation_cy += dy
             self.master.invalidate_rot_center()
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -2129,7 +2129,7 @@ class MoveRotationOriginWidget(Widget):
             self.master.rotation_cx = None
             self.master.rotation_cy = None
             self.master.invalidate_rot_center()
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             return RESPONSE_CONSUME
         # Translation hint: _("Move rotation center")
         return process_event(
@@ -2264,7 +2264,7 @@ class ReferenceWidget(Widget):
                     except AttributeError:
                         pass
             self.scene.context.signal("reference")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def event(
         self,
@@ -2390,7 +2390,7 @@ class LockWidget(Widget):
             for e in data:
                 e.lock = False
             self.scene.context.signal("element_property_update", data)
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def event(
         self,
@@ -2864,7 +2864,7 @@ class SelectionWidget(Widget):
                 self.scale_selection_to_ref(opt_scale)
             self.move_selection_to_ref(opt_pos)
             self.scene.context.elements.validate_selected_area()
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
 
     def become_reference(self, event):
         for e in self.scene.context.elements.elems(emphasized=True):
@@ -2876,14 +2876,14 @@ class SelectionWidget(Widget):
                 pass
         # print("set...")
         self.scene.context.signal("reference")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def delete_reference(self, event):
         self.scene.pane.reference_object = None
         self.scene.context.signal("reference")
         # Simplify, no complete scene refresh required
         # print("unset...")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
 
     def create_menu(self, gui, node, elements):
         if node is None:

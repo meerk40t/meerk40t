@@ -43,21 +43,21 @@ class ReticleWidget(Widget):
         Update of driver adds and ensures the location of the d+origin position
         """
         self.reticles["d" + origin] = pos[2], pos[3]
-        self.scene.request_refresh_for_animation()
+        self.scene.invalidate_layer(self.render_layer, animate=True)
 
     def on_update_emulator(self, origin, pos):
         """
         Update of emulator adds and ensures the location of the e+origin position
         """
         self.reticles["e" + origin] = pos[2], pos[3]
-        self.scene.request_refresh_for_animation()
+        self.scene.invalidate_layer(self.render_layer, animate=True)
 
     def on_update_status(self, origin, pos):
         """
         Update of emulator adds and ensures the location of the e+origin position
         """
         self.reticles["s" + origin] = pos[2], pos[3]
-        self.scene.request_refresh_for_animation()
+        self.scene.invalidate_layer(self.render_layer, animate=True)
 
     def process_draw(self, gc):
         """

@@ -20,6 +20,14 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_PRIORITY_HIT,
     LAYER_INTERFACE,
     LAYER_SCENE,
+    LAYER_BED,
+    LAYER_GRID,
+    LAYER_GUIDE,
+    LAYER_ELEMENTS,
+    LAYER_LASERPATH,
+    LAYER_SELECTION,
+    LAYER_TOOLS,
+    LAYER_NAMES,
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -246,7 +254,18 @@ class Scene(Module, Job):
         self._layer_buffers = {}
         self._layer_dirty = set()
         self._layer_size = None
-        self._layer_order = [LAYER_SCENE, LAYER_INTERFACE]
+        self._layer_order = [
+            LAYER_BED,
+            LAYER_GRID,
+            LAYER_ELEMENTS,
+            LAYER_LASERPATH,
+            LAYER_TOOLS,
+            LAYER_SELECTION,
+            LAYER_SCENE,
+            LAYER_GUIDE,
+            LAYER_INTERFACE,
+        ]
+        self._layer_live = {LAYER_SELECTION}
 
         self._animating = []
         self._animate_lock = threading.Lock()
@@ -297,7 +316,8 @@ class Scene(Module, Job):
         context.setting(float, "zoom_factor", 0.1)
         context.setting(float, "pan_factor", 25.0)
         context.setting(int, "fps", 40)
-        context.setting(bool, "scene_layer_cache", False)
+        context.setting(bool, "scene_layer_cache", True)
+        context.setting(bool, "scene_layer_cache_debug", False)
         if context.fps <= 0:
             context.fps = 60
         self.interval = 1.0 / float(context.fps)
@@ -383,7 +403,7 @@ class Scene(Module, Job):
         if self._layer_cache_active():
             if layer is None:
                 self._invalidate_all_layers()
-            else:
+            elif self._is_cached_layer(layer):
                 self._layer_dirty.add(layer)
         if animate:
             self.request_refresh_for_animation()
@@ -392,11 +412,20 @@ class Scene(Module, Job):
 
     def invalidate_layer(self, layer, animate=False):
         if self._layer_cache_active():
-            self._layer_dirty.add(layer)
+            if layer is not None and self._is_cached_layer(layer):
+                self._layer_dirty.add(layer)
         if animate:
-            self.request_refresh_for_animation()
+            try:
+                if self.context.draw_mode & DRAW_MODE_ANIMATE == 0:
+                    self.screen_refresh_is_requested = True
+            except AttributeError:
+                pass
         else:
-            self.request_refresh()
+            try:
+                if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
+                    self.screen_refresh_is_requested = True
+            except AttributeError:
+                pass
 
     def animate(self, widget):
         with self._animate_lock:
@@ -507,7 +536,14 @@ class Scene(Module, Job):
             return False
 
     def _invalidate_all_layers(self):
-        self._layer_dirty.update(self._layer_order)
+        self._layer_dirty.update(
+            layer_id
+            for layer_id in self._layer_order
+            if self._is_cached_layer(layer_id)
+        )
+
+    def _is_cached_layer(self, layer_id):
+        return layer_id not in self._layer_live
 
     def _ensure_layer_bitmap(self, layer_id, size):
         bmp = self._layer_buffers.get(layer_id)
@@ -541,21 +577,47 @@ class Scene(Module, Job):
 
     def _draw_with_layer_cache(self, gc, dc, w, h, dm):
         size = (w, h)
+        cached_layers = [
+            layer_id for layer_id in self._layer_order if self._is_cached_layer(layer_id)
+        ]
         if self._layer_size != size:
             self._layer_size = size
             self._layer_buffers.clear()
-            self._layer_dirty = set(self._layer_order)
+            self._layer_dirty = set(cached_layers)
+        elif not self._layer_buffers:
+            self._layer_dirty.update(cached_layers)
+
+        debug_cache = False
+        try:
+            debug_cache = bool(self.context.scene_layer_cache_debug)
+        except AttributeError:
+            pass
+        if debug_cache and self.log:
+            recreated = [
+                LAYER_NAMES.get(lid, str(lid))
+                for lid in cached_layers
+                if lid in self._layer_dirty
+            ]
+            reused = [
+                LAYER_NAMES.get(lid, str(lid))
+                for lid in cached_layers
+                if lid not in self._layer_dirty
+            ]
+            self.log(
+                f"Layer cache refresh: recreated={recreated} reused={reused}"
+            )
 
         for layer_id in self._layer_order:
-            if layer_id in self._layer_dirty:
-                self._redraw_layer(layer_id, size, dm)
+            if self._is_cached_layer(layer_id):
+                if layer_id in self._layer_dirty:
+                    self._redraw_layer(layer_id, size, dm)
+                bmp = self._layer_buffers.get(layer_id)
+                if bmp is not None:
+                    dc.DrawBitmap(bmp, 0, 0, True)
+            else:
+                self.widget_root.draw_layer(gc, layer_id)
 
-        for layer_id in self._layer_order:
-            bmp = self._layer_buffers.get(layer_id)
-            if bmp is not None:
-                dc.DrawBitmap(bmp, 0, 0, True)
-
-        self._layer_dirty.difference_update(self._layer_order)
+        self._layer_dirty.difference_update(cached_layers)
 
     def toast(self, message, token=-1):
         if self._toast is None:

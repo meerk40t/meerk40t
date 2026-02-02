@@ -126,7 +126,7 @@ class LineTextTool(ToolWidget):
                 self.node.focus()
                 self.scene.pane.tool_active = False
                 self.scene.context.signal("element_property_update", [self.node])
-                self.scene.request_refresh()
+                self.scene.invalidate_layer(self.render_layer)
                 self.scene.context.setting(float, "last_font_size")
                 self.scene.context.last_font_size = self.node.mkfontsize
             self.node = None
@@ -243,7 +243,7 @@ class LineTextTool(ToolWidget):
                     if self.node is not None:
                         self.node.emphasized = False
 
-                    self.scene.request_refresh()
+                    self.scene.invalidate_layer(self.render_layer)
                 else:
                     self.node.mktext = self.vtext
                     self.scene.context.signal("linetext", "text")
@@ -260,7 +260,7 @@ class LineTextTool(ToolWidget):
         t = time()
         if t - self.last_anim > 0.5:
             self.last_anim = t
-            self.scene.request_refresh_for_animation()
+            self.scene.invalidate_layer(self.render_layer, animate=True)
 
         return True
 
@@ -268,7 +268,7 @@ class LineTextTool(ToolWidget):
         def update_node():
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             self.scene.gui.scene_panel.SetFocus()
 
         if self.node is None:

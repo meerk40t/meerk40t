@@ -36,7 +36,7 @@ class DrawTool(ToolWidget):
     def end_tool(self, force=False):
         self.series = None
         self.scene.context.signal("statusmsg", "")
-        self.scene.request_refresh()
+        self.scene.invalidate_layer(self.render_layer)
         if force or self.scene.context.just_a_single_element:
             self.scene.pane.tool_active = False
             self.scene.context("tool none\n")
@@ -63,7 +63,7 @@ class DrawTool(ToolWidget):
             if self.series is None:
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(self.render_layer)
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or event_type == "rightdown":
             if self.scene.pane.tool_active:
