@@ -410,10 +410,14 @@ class Scene(Module, Job):
         else:
             self.request_refresh()
 
-    def invalidate_layer(self, layer, animate=False):
+    def invalidate_layer(self, layers, animate=False):
         if self._layer_cache_active():
-            if layer is not None and self._is_cached_layer(layer):
-                self._layer_dirty.add(layer)
+            if layers is not None:
+                if not isinstance(layers, (tuple,list)):
+                    layers = (layers,)
+                for layer in layers:
+                    if layer is not None and self._is_cached_layer(layer):
+                        self._layer_dirty.add(layer)
         if animate:
             try:
                 if self.context.draw_mode & DRAW_MODE_ANIMATE == 0:

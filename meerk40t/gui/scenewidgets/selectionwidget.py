@@ -27,7 +27,7 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
 )
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE, LAYER_ELEMENTS, LAYER_SELECTION
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
@@ -561,6 +561,8 @@ class RotationWidget(Widget):
         self.reference_rect = None
 
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.render_layer = (LAYER_SELECTION, LAYER_ELEMENTS)
+
         self.update()
 
     def set_size(self, msize, rotsize):
@@ -897,6 +899,8 @@ class CornerWidget(Widget):
         self.cursor = f"size_{self.method}"
 
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.render_layer = (LAYER_SELECTION, LAYER_ELEMENTS)
+        
         self.update()
 
     def set_size(self, msize, rotsize):
@@ -1100,6 +1104,7 @@ class SideWidget(Widget):
         self.save_height = 0
         self.uniform = False
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.render_layer = (LAYER_SELECTION, LAYER_ELEMENTS)
         if index in (0, 2):
             self.allow_x = True
             self.allow_y = False
@@ -1335,6 +1340,7 @@ class SkewWidget(Widget):
         self.save_height = 0
         self.uniform = False
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.render_layer = (LAYER_SELECTION, LAYER_ELEMENTS)
         self.cursor = "skew_x" if is_x else "skew_y"
         self.update()
 
@@ -1502,6 +1508,7 @@ class MoveWidget(Widget):
         Widget.__init__(
             self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
         )
+        self.render_layer = (LAYER_SELECTION, LAYER_ELEMENTS)
         self.cursor = "sizing"
         self.total_dx = 0
         self.total_dy = 0
