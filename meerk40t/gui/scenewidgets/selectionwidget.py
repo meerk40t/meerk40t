@@ -1951,6 +1951,7 @@ class MoveWidget(Widget):
             "grid_tree": grid_tree,
             "start_total_dx": self.total_dx,
             "start_total_dy": self.total_dy,
+            "grid_tick_distance": self.scene.pane.grid.tick_distance,
         }
 
     def _clear_snap_cache(self):
@@ -1964,6 +1965,8 @@ class MoveWidget(Widget):
         point closest to the cursor. This makes snapping intuitive when moving a
         particular vertex of a selection.
         """
+        if self._snap_cache is not None and "grid_tick_distance" in self._snap_cache and self._snap_cache.get("grid_tick_distance") != self.scene.pane.grid.tick_distance:
+            self._clear_snap_cache()
         if self._snap_cache is None:
             self._gather_snap_cache(b)
         if self._snap_cache is None:
@@ -2089,12 +2092,12 @@ class MoveWidget(Widget):
                         dist_p = None
         except Exception:
             dist_p = None
-        # Grid snapping: consider all selected vertices (not only corners + center)
+        # Grid snapping: consider all selected vertices + center
         try:
             if self.scene.context.snap_grid and b is not None:
                 gp = self._snap_cache.get("grid_points")
                 if gp is not None and len(gp) > 0:
-                    # Compare selected corners + center against grid points
+                    # Compare selected vertices + center against grid points
                     np_other = np.asarray(gp)
                     sp = selected_corners_shifted
                     tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
@@ -2112,7 +2115,7 @@ class MoveWidget(Widget):
                                     best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
                                     best_dist = min_dist
                         else:
-                            # Use corners + center for distance computation
+                            # Use vertices + center for distance computation
                             sel_xy = sp.astype(float)
                             dist_g, pt1_g, pt2_g = shortest_distance(np_other, sel_xy, True)
                             if dist_g is not None and dist_g < gap_grid:
@@ -2160,54 +2163,6 @@ class MoveWidget(Widget):
 
         if best is not None:
             self._snap_preview = best
-            return
-
-        # 3) Magnet preview
-        dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
-        if (dx_m != 0 or dy_m != 0) and (not getattr(self.master, "key_shift_pressed", False)):
-            # Determine the anchor point used by revised_magnet_bound logic
-            # Recompute magnet attraction deltas to discover which side/center is chosen
-            pane = self.scene.pane
-            # Compute attraction length same as revised_magnet_bound
-            if pane.grid.tick_distance > 0:
-                s = f"{pane.grid.tick_distance}{self.scene.context.units_name}"
-                len_tick = float(Length(s))
-                attraction_len = 1 / 3 * pane._magnet_attraction * pane._magnet_attraction * len_tick
-            else:
-                attraction_len = float(Length("1mm"))
-
-            delta_x1, x1 = pane.magnet_attracted_x(b[0], pane.magnet_attract_x)
-            delta_x2, x2 = pane.magnet_attracted_x(b[2], pane.magnet_attract_x)
-            delta_x3, x3 = pane.magnet_attracted_x((b[0] + b[2]) / 2, pane.magnet_attract_c)
-            delta_y1, y1 = pane.magnet_attracted_y(b[1], pane.magnet_attract_y)
-            delta_y2, y2 = pane.magnet_attracted_y(b[3], pane.magnet_attract_y)
-            delta_y3, y3 = pane.magnet_attracted_y((b[1] + b[3]) / 2, pane.magnet_attract_c)
-
-            # Choose x anchor
-            if delta_x3 < delta_x1 and delta_x3 < delta_x2 and delta_x3 < attraction_len and x3 is not None:
-                anchor_x = (b[0] + b[2]) / 2
-            elif delta_x1 < delta_x2 and delta_x1 < delta_x3 and delta_x1 < attraction_len and x1 is not None:
-                anchor_x = b[0]
-            elif delta_x2 < delta_x1 and delta_x2 < delta_x3 and delta_x2 < attraction_len and x2 is not None:
-                anchor_x = b[2]
-            else:
-                # No horizontal magnet chosen; use center x
-                anchor_x = (b[0] + b[2]) / 2
-
-            # Choose y anchor
-            if delta_y3 < delta_y1 and delta_y3 < delta_y2 and delta_y3 < attraction_len and y3 is not None:
-                anchor_y = (b[1] + b[3]) / 2
-            elif delta_y1 < delta_y2 and delta_y1 < delta_y3 and delta_y1 < attraction_len and y1 is not None:
-                anchor_y = b[1]
-            elif delta_y2 < delta_y1 and delta_y2 < delta_y3 and delta_y2 < attraction_len and y2 is not None:
-                anchor_y = b[3]
-            else:
-                # No vertical magnet chosen; use center y
-                anchor_y = (b[1] + b[3]) / 2
-
-            src = (anchor_x, anchor_y)
-            dst = (anchor_x + dx_m, anchor_y + dy_m)
-            self._snap_preview = {"type": "magnet", "from": src, "to": dst}
             return
 
         # None
@@ -2444,18 +2399,36 @@ class MoveWidget(Widget):
                     and len(selected_points) > 0
                     and len(other_points) + len(selected_points) <= MAX_POINTS_FOR_SNAPPING
                 ):
-                    try:
-                        np_other = np.asarray(other_points)
-                        np_selected = np.asarray(selected_points)
-                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                    except MemoryError:
-                        dist, pt1, pt2 = None, None, None
+                    dist = None
+                    if _cKDTree is not None and len(other_points) > 0 and len(selected_points) > 0:
+                        try:
+                            p1_xy = np.column_stack((np_selected.real, np_selected.imag))
+                            tree = _cKDTree(other_points)
+                            dists, idxs = tree.query(p1_xy, k=1)
+                            min_i = int(np.argmin(dists))
+                            min_dist = float(dists[min_i])
+                            if min_dist < gap:
+                                pt1 = other_points[idxs[min_i]]
+                                pt2 = selected_points[min_i]
+                                dx = float(pt1[0] - pt2.real)
+                                dy = float(pt1[1] - pt2.imag)
+                                candidates.append({"type": "grid", "dist": min_dist, "dx": dx, "dy": dy})
+                                dist = min_dist  # Indicate success
+                        except Exception:
+                            pass
+                    if dist is None:
+                        try:
+                            np_other = np.asarray(other_points)
+                            np_selected = np.asarray(selected_points)
+                            dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                        except MemoryError:
+                            dist, pt1, pt2 = None, None, None
 
                     if dist is not None and dist < gap:
                         if pt1 is not None and pt2 is not None:
                             try:
-                                dx = float(pt1[0] - pt2[0])
-                                dy = float(pt1[1] - pt2[1])
+                                dx = float(pt1[0] - pt2.real)
+                                dy = float(pt1[1] - pt2.imag)
                                 candidates.append({"type": "grid", "dist": float(dist), "dx": dx, "dy": dy})
                             except (IndexError, TypeError, AttributeError):
                                 pass
