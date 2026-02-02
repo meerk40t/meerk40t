@@ -1910,10 +1910,49 @@ class MoveWidget(Widget):
                 lastpt = add_it(midpt, lastpt)
                 lastpt = add_it(endpt, lastpt)
 
+        # Filter grid points to those in the vicinity of the bounds to reduce work for preview
+        try:
+            grid_points = self.scene.pane.grid.grid_points or []
+        except Exception:
+            grid_points = []
+
+        gap_grid = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
+        filtered_grid = []
+        for gp in grid_points:
+            try:
+                gx, gy = gp
+            except Exception:
+                continue
+            if not (gx < b[0] - gap_grid or gx > b[2] + gap_grid or gy < b[1] - gap_grid or gy > b[3] + gap_grid):
+                filtered_grid.append((gx, gy))
+
+        other_arr = np.asarray(other_points)
+        sel_arr = np.asarray(selected_points)
+        grid_arr = np.asarray(filtered_grid)
+
+        # Build KD-trees when available for faster repeated NN queries
+        other_tree = None
+        grid_tree = None
+        try:
+            if _cKDTree is not None and other_arr.size > 0:
+                # other_arr is an array of complex numbers; convert to Nx2
+                other_xy = np.column_stack((other_arr.real, other_arr.imag))
+                other_tree = _cKDTree(other_xy)
+        except Exception:
+            other_tree = None
+        try:
+            if _cKDTree is not None and grid_arr.size > 0:
+                grid_xy = np.asarray(grid_arr, dtype=float)
+                grid_tree = _cKDTree(grid_xy)
+        except Exception:
+            grid_tree = None
+
         self._snap_cache = {
-            "other_points": np.asarray(other_points),
-            "selected_points_start": np.asarray(selected_points),
-            "grid_points": self.scene.pane.grid.grid_points,
+            "other_points": other_arr,
+            "selected_points_start": sel_arr,
+            "grid_points": grid_arr,
+            "other_tree": other_tree,
+            "grid_tree": grid_tree,
             "start_total_dx": self.total_dx,
             "start_total_dy": self.total_dy,
         }
@@ -1950,7 +1989,8 @@ class MoveWidget(Widget):
             dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
         except Exception:
             dx_m, dy_m = 0, 0
-        if dx_m != 0 or dy_m != 0:
+        # Respect Shift modifier: if shift is pressed we should not show magnet preview
+        if (dx_m != 0 or dy_m != 0) and (not getattr(self.master, "key_shift_pressed", False)):
             pane = self.scene.pane
             # Compute anchor selection same as existing logic
             if pane.grid.tick_distance > 0:
@@ -2003,49 +2043,89 @@ class MoveWidget(Widget):
             self._snap_preview = {"type": "magnet", "from": src, "to": dst}
             return
 
-        # 1) Point snapping
-        if (
-            self.scene.context.snap_points
-            and sel_shifted is not None
-            and self._snap_cache.get("other_points") is not None
-        ):
-            try:
+        # 1 & 2) Compute both point and grid snapping and pick the closer candidate (if within thresholds)
+        best = None
+        best_dist = None
+        # Point snapping
+        try:
+            if (
+                self.scene.context.snap_points
+                and sel_shifted is not None
+                and self._snap_cache.get("other_points") is not None
+            ):
                 op = self._snap_cache.get("other_points")
                 sp = sel_shifted
                 if op.size > 0 and sp.size > 0:
-                    dist, pt1, pt2 = shortest_distance(op, sp, False)
-                    if dist is not None and dist < gap_point:
-                        # preview from pt2 (selected) -> pt1 (other)
-                        self._snap_preview = {"type": "point", "from": (pt2.real, pt2.imag), "to": (pt1.real, pt1.imag)}
-                        return
-            except Exception:
-                pass
+                    tree = self._snap_cache.get("other_tree") if self._snap_cache is not None else None
+                    try:
+                        if tree is not None:
+                            pts = np.column_stack((sp.real, sp.imag))
+                            dists, idxs = tree.query(pts, k=1)
+                            min_i = int(np.argmin(dists))
+                            min_dist = float(dists[min_i])
+                            if min_dist < gap_point:
+                                min_j = int(idxs[min_i])
+                                pt1_p = op[min_j]
+                                pt2_p = sp[min_i]
+                                best = {"type": "point", "from": (pt2_p.real, pt2_p.imag), "to": (pt1_p.real, pt1_p.imag)}
+                                best_dist = min_dist
+                        else:
+                            dist_p, pt1_p, pt2_p = shortest_distance(op, sp, False)
+                            if dist_p is not None and dist_p < gap_point:
+                                best = {"type": "point", "from": (pt2_p.real, pt2_p.imag), "to": (pt1_p.real, pt1_p.imag)}
+                                best_dist = dist_p
+                    except Exception:
+                        dist_p = None
+        except Exception:
+            dist_p = None
 
-        # 2) Grid snapping (corners + center)
-        if self.scene.context.snap_grid and b is not None:
-            selected_corners = (
-                (b[0], b[1]),
-                (b[2], b[1]),
-                (b[0], b[3]),
-                (b[2], b[3]),
-                ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
-            )
-            gp = self._snap_cache.get("grid_points")
-            if gp and len(gp) > 0:
-                try:
+        # Grid snapping (corners + center)
+        try:
+            if self.scene.context.snap_grid and b is not None:
+                selected_corners = (
+                    (b[0], b[1]),
+                    (b[2], b[1]),
+                    (b[0], b[3]),
+                    (b[2], b[3]),
+                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                )
+                gp = self._snap_cache.get("grid_points")
+                if gp and len(gp) > 0:
                     np_other = np.asarray(gp)
                     np_selected = np.asarray(selected_corners)
-                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                    if dist is not None and dist < gap_grid:
-                        # preview from pt2 (selected corner) -> pt1 (grid)
-                        self._snap_preview = {"type": "grid", "from": (pt2[0], pt2[1]), "to": (pt1[0], pt1[1])}
-                        return
-                except Exception:
-                    pass
+                    dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
+                    tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
+                    try:
+                        if tree is not None:
+                            sel = np_selected.astype(float)
+                            dists, idxs = tree.query(sel, k=1)
+                            min_i = int(np.argmin(dists))
+                            min_dist = float(dists[min_i])
+                            if min_dist < gap_grid:
+                                min_j = int(idxs[min_i])
+                                pt1_g = np_other[min_j]
+                                pt2_g = np_selected[min_i]
+                                if best is None or min_dist < best_dist:
+                                    best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                    best_dist = min_dist
+                        else:
+                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
+                            if dist_g is not None and dist_g < gap_grid:
+                                if best is None or dist_g < best_dist:
+                                    best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                    best_dist = dist_g
+                    except Exception:
+                        dist_g = None
+        except Exception:
+            dist_g = None
+
+        if best is not None:
+            self._snap_preview = best
+            return
 
         # 3) Magnet preview
         dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
-        if dx_m != 0 or dy_m != 0:
+        if (dx_m != 0 or dy_m != 0) and (not getattr(self.master, "key_shift_pressed", False)):
             # Determine the anchor point used by revised_magnet_bound logic
             # Recompute magnet attraction deltas to discover which side/center is chosen
             pane = self.scene.pane
@@ -2213,6 +2293,7 @@ class MoveWidget(Widget):
                                 f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={startpt}, end={endpt} - coming from element type {e.type}\nPlease inform the developers"
                             )
                             continue
+
                         midpt = geom.position(idx, 0.5)
 
                         def add_it(pt, last):
@@ -2245,18 +2326,37 @@ class MoveWidget(Widget):
                     try:
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
-                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
-                    except MemoryError:
-                        dist, pt1, pt2 = None, None, None
-
-                    if dist is not None and dist < gap:
-                        if pt1 is not None and pt2 is not None:
+                        # Use KD-tree for the final snap nearest-neighbour if available
+                        if _cKDTree is not None and np_other.size > 0 and np_selected.size > 0:
                             try:
+                                other_xy = np.column_stack((np_other.real, np_other.imag))
+                                tree = _cKDTree(other_xy)
+                                sel_xy = np.column_stack((np_selected.real, np_selected.imag))
+                                dists, idxs = tree.query(sel_xy, k=1)
+                                min_i = int(np.argmin(dists))
+                                min_dist = float(dists[min_i])
+                                if min_dist < gap:
+                                    min_j = int(idxs[min_i])
+                                    pt1 = np_other[min_j]
+                                    pt2 = np_selected[min_i]
+                                    dx = float(pt1.real - pt2.real)
+                                    dy = float(pt1.imag - pt2.imag)
+                                    candidates.append({"type": "point", "dist": min_dist, "dx": dx, "dy": dy})
+                            except Exception:
+                                # Fallback to chunked approach
+                                dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+                                if dist is not None and dist < gap and pt1 is not None and pt2 is not None:
+                                    dx = float(pt1.real - pt2.real)
+                                    dy = float(pt1.imag - pt2.imag)
+                                    candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
+                        else:
+                            dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+                            if dist is not None and dist < gap and pt1 is not None and pt2 is not None:
                                 dx = float(pt1.real - pt2.real)
                                 dy = float(pt1.imag - pt2.imag)
                                 candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
-                            except (IndexError, TypeError, AttributeError):
-                                pass
+                    except MemoryError:
+                        pass
 
             # Grid snaps
             if (
@@ -2296,7 +2396,9 @@ class MoveWidget(Widget):
                             except (IndexError, TypeError, AttributeError):
                                 pass
 
-            # Magnet snaps take precedence: if a magnet action exists apply it and skip other snap tests
+            # Magnet snaps take precedence: 
+            # if a magnet action exists apply it 
+            # and skip other snap tests
             if not self.master.key_shift_pressed:
                 dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
                 if dx_m != 0 or dy_m != 0:
