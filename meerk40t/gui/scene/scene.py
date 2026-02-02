@@ -18,6 +18,8 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     HITCHAIN_HIT_AND_DELEGATE,
     HITCHAIN_PRIORITY_HIT,
+    LAYER_INTERFACE,
+    LAYER_SCENE,
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -241,6 +243,11 @@ class Scene(Module, Job):
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
 
+        self._layer_buffers = {}
+        self._layer_dirty = set()
+        self._layer_size = None
+        self._layer_order = [LAYER_SCENE, LAYER_INTERFACE]
+
         self._animating = []
         self._animate_lock = threading.Lock()
         self._adding_widgets = []
@@ -290,6 +297,7 @@ class Scene(Module, Job):
         context.setting(float, "zoom_factor", 0.1)
         context.setting(float, "pan_factor", 25.0)
         context.setting(int, "fps", 40)
+        context.setting(bool, "scene_layer_cache", False)
         if context.fps <= 0:
             context.fps = 60
         self.interval = 1.0 / float(context.fps)
@@ -354,6 +362,8 @@ class Scene(Module, Job):
         """Called on the various signals trying to animate the screen."""
         try:
             if self.context.draw_mode & DRAW_MODE_ANIMATE == 0:
+                if self._layer_cache_active():
+                    self._invalidate_all_layers()
                 self.request_refresh()
         except AttributeError:
             pass
@@ -362,12 +372,27 @@ class Scene(Module, Job):
         """Request an update to the scene."""
         try:
             if self.context.draw_mode & DRAW_MODE_REFRESH == 0:
+                if self._layer_cache_active():
+                    self._invalidate_all_layers()
                 self.screen_refresh_is_requested = True
         except AttributeError:
             pass
 
-    def invalidate(self, min_x, min_y, max_x, max_y, animate=False):
+    def invalidate(self, min_x, min_y, max_x, max_y, animate=False, layer=None):
         self.clip.Union((min_x, min_y, max_x - min_x, max_y - min_y))
+        if self._layer_cache_active():
+            if layer is None:
+                self._invalidate_all_layers()
+            else:
+                self._layer_dirty.add(layer)
+        if animate:
+            self.request_refresh_for_animation()
+        else:
+            self.request_refresh()
+
+    def invalidate_layer(self, layer, animate=False):
+        if self._layer_cache_active():
+            self._layer_dirty.add(layer)
         if animate:
             self.request_refresh_for_animation()
         else:
@@ -462,13 +487,75 @@ class Scene(Module, Job):
 
         font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         gc.SetFont(font, wx.BLACK)
-        self.draw(gc)
+        if self._layer_cache_active():
+            self._draw_with_layer_cache(gc, dc, w, h, dm)
+            if self._toast is not None:
+                self._toast.draw(gc)
+        else:
+            self.draw(gc)
         if dm & DRAW_MODE_INVERT != 0:
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
         del gc.dc
         del dc
+
+    def _layer_cache_active(self):
+        try:
+            return bool(self.context.scene_layer_cache)
+        except AttributeError:
+            return False
+
+    def _invalidate_all_layers(self):
+        self._layer_dirty.update(self._layer_order)
+
+    def _ensure_layer_bitmap(self, layer_id, size):
+        bmp = self._layer_buffers.get(layer_id)
+        if bmp is None or bmp.GetSize() != size or not bmp.IsOk():
+            bmp = wx.Bitmap(size[0], size[1], 32)
+            try:
+                bmp.UseAlpha()
+            except Exception:
+                pass
+            self._layer_buffers[layer_id] = bmp
+            self._layer_dirty.add(layer_id)
+        return bmp
+
+    def _redraw_layer(self, layer_id, size, dm):
+        if self.widget_root is None or self.suppress_changes:
+            return
+        bmp = self._ensure_layer_bitmap(layer_id, size)
+        layer_dc = wx.MemoryDC()
+        layer_dc.SelectObject(bmp)
+        layer_dc.SetBackground(wx.Brush(wx.Colour(0, 0, 0, 0)))
+        layer_dc.Clear()
+        if dm & DRAW_MODE_FLIPXY != 0:
+            layer_dc.SetUserScale(-1, -1)
+            layer_dc.SetLogicalOrigin(size[0], size[1])
+        layer_gc = wx.GraphicsContext.Create(layer_dc)
+        layer_gc.dc = layer_dc
+        layer_gc.Size = layer_dc.Size
+        self.widget_root.draw_layer(layer_gc, layer_id)
+        layer_gc.Destroy()
+        layer_dc.SelectObject(wx.NullBitmap)
+
+    def _draw_with_layer_cache(self, gc, dc, w, h, dm):
+        size = (w, h)
+        if self._layer_size != size:
+            self._layer_size = size
+            self._layer_buffers.clear()
+            self._layer_dirty = set(self._layer_order)
+
+        for layer_id in self._layer_order:
+            if layer_id in self._layer_dirty:
+                self._redraw_layer(layer_id, size, dm)
+
+        for layer_id in self._layer_order:
+            bmp = self._layer_buffers.get(layer_id)
+            if bmp is not None:
+                dc.DrawBitmap(bmp, 0, 0, True)
+
+        self._layer_dirty.difference_update(self._layer_order)
 
     def toast(self, message, token=-1):
         if self._toast is None:
@@ -541,7 +628,8 @@ class Scene(Module, Job):
     
     def notify_tree_changed(self):
         # Called when the widget tree has changed (e.g. a widget was added/removed)
-        pass
+        if self._layer_cache_active():
+            self._invalidate_all_layers()
 
     def draw(self, canvas):
         """

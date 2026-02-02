@@ -1,5 +1,7 @@
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE_AND_HIT,
+    LAYER_INTERFACE,
+    LAYER_SCENE,
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
 )
@@ -22,6 +24,8 @@ class SceneSpaceWidget(Widget):
 
         self.interface_widget = Widget(scene)
         self.scene_widget = Widget(scene)
+        self.interface_widget.render_layer = LAYER_INTERFACE
+        self.scene_widget.render_layer = LAYER_SCENE
         self.add_widget(-1, self.interface_widget)
         self.add_widget(-1, self.scene_widget)
         self.last_position = None
@@ -141,7 +145,7 @@ class SceneSpaceWidget(Widget):
                     self.scene_widget.matrix.post_scale(
                         self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
                     )
-            self.scene.request_refresh()
+                self.scene.invalidate_layer(LAYER_SCENE)
             return RESPONSE_CONSUME
         elif event_type == "wheeldown":
             if bool(self.scene.context.mouse_wheel_pan) == ("ctrl" not in modifiers):
@@ -150,15 +154,15 @@ class SceneSpaceWidget(Widget):
                 self.scene_widget.matrix.post_scale(
                     self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
                 )
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
             return RESPONSE_CONSUME
         elif event_type == "wheelleft":
             self.scene_widget.matrix.post_translate(self.pan_factor, 0)
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
             return RESPONSE_CONSUME
         elif event_type == "wheelright":
             self.scene_widget.matrix.post_translate(-self.pan_factor, 0)
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
             return RESPONSE_CONSUME
         elif event_type == "middledown":
             return RESPONSE_CONSUME
@@ -187,7 +191,7 @@ class SceneSpaceWidget(Widget):
             )
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self._previous_zoom = zoom
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
 
             return RESPONSE_CONSUME
         elif str(event_type).startswith("magnify "):
@@ -203,7 +207,7 @@ class SceneSpaceWidget(Widget):
         # Movement
         if self._placement_event_type is None:
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
         elif self._placement_event_type == "zoom":
             from math import e
 
@@ -224,12 +228,12 @@ class SceneSpaceWidget(Widget):
                     self._placement_event[0],
                     self._placement_event[1],
                 )
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
         elif self._placement_event_type == "pan":
             pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
-            self.scene.request_refresh()
+            self.scene.invalidate_layer(LAYER_SCENE)
         return RESPONSE_CHAIN
 
     def set_view(self, x, y, w, h, preserve_aspect=None):
@@ -338,7 +342,7 @@ class SceneAnimateMatrix:
         if self._to_matrix is None or self._from_matrix is None:
             return False  # Nothing to animate.
         if self.tick_max < self.tick_index:
-            self.widget.scene.request_refresh()
+            self.widget.scene.invalidate_layer(LAYER_SCENE)
             return False  # Animation was complete.
         amount = self.tick_index / self.tick_max
         self.widget.matrix.a = (
@@ -359,7 +363,7 @@ class SceneAnimateMatrix:
         self.widget.matrix.f = (
             amount * (self._to_matrix.f - self._from_matrix.f) + self._from_matrix.f
         )
-        self.widget.scene.request_refresh_for_animation()
+        self.widget.scene.invalidate_layer(LAYER_SCENE, animate=True)
         self.widget.on_matrix_change()
         self.tick_index += 1
         return True

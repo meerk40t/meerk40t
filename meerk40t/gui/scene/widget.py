@@ -35,6 +35,7 @@ class Widget(list):
         bottom: float = None,
         all: bool = False,
         visible: bool = True,
+        render_layer=None,
     ):
         """
         All produces a widget of infinite space rather than finite space.
@@ -46,6 +47,7 @@ class Widget(list):
         self.parent = None
         self.properties = ORIENTATION_RELATIVE
         self.visible = True
+        self.render_layer = render_layer
         # If this property is set, then it won't be counted as topmost in the hitchain...
         self.transparent = False
         if all:
@@ -112,6 +114,38 @@ class Widget(list):
                     widget.draw(gc)
                 except Exception as e:
                     print (f"Could not draw widget #{i} {type(widget).__name__} [{e}]")
+        gc.PopState()
+
+    def draw_layer(self, gc, layer_id):
+        """
+        Draw this widget and its children for a specific layer.
+        """
+        if not self.visible:
+            return
+        matrix = self.matrix
+        gc.PushState()
+        try:
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        except Exception as e:
+            print(f"Could not concat gc transformation [{e}]")
+            gc.PopState()
+            return
+
+        try:
+            if layer_id is None or layer_id == self.render_layer or layer_id == -1:
+                self.process_draw(gc)
+        except OSError as e:
+            print(f"Could not process draw [{e}]")
+        for i in range(len(self) - 1, -1, -1):
+            widget = self[i]
+            if widget is not None:
+                try:
+                    widget.draw_layer(gc, layer_id)
+                except Exception as e:
+                    print(
+                        f"Could not draw widget #{i} {type(widget).__name__} [{e}]"
+                    )
         gc.PopState()
 
     def process_draw(self, gc):
@@ -350,6 +384,8 @@ class Widget(list):
                 self.insert(index, widget)
             else:
                 self.append(widget)
+            if widget.render_layer is None:
+                widget.render_layer = self.render_layer
             widget.parent = self
             self.layout_by_orientation(widget, last, properties)
             self.notify_added_to_parent(self)
