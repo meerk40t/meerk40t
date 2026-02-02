@@ -1893,17 +1893,9 @@ class MoveWidget(Widget):
                 def add_it(pt, last):
                     if last is not None and pt == last:
                         return last
-                    xx = pt.real
-                    yy = pt.imag
-                    ignore = (
-                        xx < b[0] - gap
-                        or xx > b[2] + gap
-                        or yy < b[1] - gap
-                        or yy > b[3] + gap
-                    )
-                    if not ignore:
-                        last = pt
-                        target.append(pt)
+                    # Do not filter points by bounds during cache gathering; include all points to avoid missing candidates.
+                    last = pt
+                    target.append(pt)
                     return last
 
                 lastpt = add_it(startpt, lastpt)
@@ -1916,6 +1908,7 @@ class MoveWidget(Widget):
         except Exception:
             grid_points = []
 
+        # Include all valid grid points in the cache (no bounds-based filtering).
         gap_grid = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
         filtered_grid = []
         for gp in grid_points:
@@ -1923,8 +1916,7 @@ class MoveWidget(Widget):
                 gx, gy = gp
             except Exception:
                 continue
-            if not (gx < b[0] - gap_grid or gx > b[2] + gap_grid or gy < b[1] - gap_grid or gy > b[3] + gap_grid):
-                filtered_grid.append((gx, gy))
+            filtered_grid.append((float(gx), float(gy)))
 
         other_arr = np.asarray(other_points)
         sel_arr = np.asarray(selected_points)
@@ -1961,8 +1953,13 @@ class MoveWidget(Widget):
         self._snap_cache = None
         self._snap_preview = None
 
-    def _update_snap_preview(self, b):
-        """Compute the snap preview (fast) based on cached data and current delta."""
+    def _update_snap_preview(self, b, cursor=None):
+        """Compute the snap preview (fast) based on cached data and current delta.
+
+        If a cursor (x, y) is provided, prefer snapping pairs that involve the selected
+        point closest to the cursor. This makes snapping intuitive when moving a
+        particular vertex of a selection.
+        """
         if self._snap_cache is None:
             self._gather_snap_cache(b)
         if self._snap_cache is None:
@@ -2056,8 +2053,10 @@ class MoveWidget(Widget):
                 op = self._snap_cache.get("other_points")
                 sp = sel_shifted
                 if op.size > 0 and sp.size > 0:
+                    # If cursor is provided, prefer matching the selected point nearest the cursor
                     tree = self._snap_cache.get("other_tree") if self._snap_cache is not None else None
                     try:
+                        # Global nearest pair: compare all selected points to all other points and pick the minimum
                         if tree is not None:
                             pts = np.column_stack((sp.real, sp.imag))
                             dists, idxs = tree.query(pts, k=1)
@@ -2078,7 +2077,6 @@ class MoveWidget(Widget):
                         dist_p = None
         except Exception:
             dist_p = None
-
         # Grid snapping (corners + center)
         try:
             if self.scene.context.snap_grid and b is not None:
@@ -2331,6 +2329,7 @@ class MoveWidget(Widget):
                             try:
                                 other_xy = np.column_stack((np_other.real, np_other.imag))
                                 tree = _cKDTree(other_xy)
+                                # Global nearest pair: compare all selected points to all other points and pick the minimum
                                 sel_xy = np.column_stack((np_selected.real, np_selected.imag))
                                 dists, idxs = tree.query(sel_xy, k=1)
                                 min_i = int(np.argmin(dists))

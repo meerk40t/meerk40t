@@ -26,6 +26,8 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
+import numpy as np
+from meerk40t.core.spatial import _cKDTree
 from meerk40t.kernel import Job, Module, signal_listener
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.core.geomstr import NON_GEOMETRY_TYPES, TYPE_END
@@ -1016,6 +1018,24 @@ class Scene(Module, Job):
         @param length_sq: squared distance threshold
         @return:
         """
+        # If we have a KD-tree available, use a radius search to avoid iterating all points
+        tree = getattr(self, "_attraction_tree", None)
+        if tree is not None:
+            try:
+                radius = math.sqrt(length_sq)
+                idxs = tree.query_ball_point([my_x, my_y], r=radius)
+                for i in idxs:
+                    pts = self.snap_attraction_points[i]
+                    # Respect modification mode: do not snap to emphasized points when modifying
+                    if self.pane.modif_active and pts[3]:
+                        continue
+                    self.snap_display_points.append([pts[0], pts[1], pts[2]])
+                return
+            except Exception:
+                # Fall back to the previous approach on any error
+                pass
+
+        # Fallback: linear scan if no KD-tree
         for pts in self.snap_attraction_points:
             if self.pane.modif_active and pts[3]:
                 # No snap points for emphasized objects during modification
@@ -1036,6 +1056,21 @@ class Scene(Module, Job):
         @param length_sq: squared distance threshold
         @return:
         """
+        # Use KD-tree for grid queries when available to avoid scanning entire grid
+        grid_tree = getattr(self.pane.grid, "_grid_tree", None)
+        if grid_tree is not None:
+            try:
+                radius = math.sqrt(length_sq)
+                idxs = grid_tree.query_ball_point([my_x, my_y], r=radius)
+                gp = self.pane.grid.grid_points
+                for i in idxs:
+                    pts = gp[i]
+                    self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
+                return
+            except Exception:
+                pass
+
+        # Fallback: linear scan
         for pts in self.pane.grid.grid_points:
             # Use squared distance for better performance (avoid sqrt)
             dx = pts[0] - my_x
@@ -1129,6 +1164,16 @@ class Scene(Module, Job):
 
         self.snap_attraction_points = points_list
 
+        # Build KD-tree for attraction points for faster repeated queries when available
+        try:
+            if _cKDTree is not None and len(self.snap_attraction_points) > 0:
+                pts_arr = np.array([[p[0], p[1]] for p in self.snap_attraction_points], dtype=float)
+                self._attraction_tree = _cKDTree(pts_arr)
+            else:
+                self._attraction_tree = None
+        except Exception:
+            self._attraction_tree = None
+
         self.context.elements.set_end_time(
             "attr_calc_points",
             message=f"points added={len(self.snap_attraction_points)}",
@@ -1166,6 +1211,24 @@ class Scene(Module, Job):
         # Calculate snap points with optimized distance checking
         if snap_points and self.snap_attraction_points:
             self._calculate_snap_points_optimized(my_x, my_y, show_length_sq)
+
+        # Prepare KD-tree for grid points if available and needed
+        try:
+            gp = self.pane.grid.grid_points
+        except Exception:
+            gp = None
+        if gp and _cKDTree is not None:
+            try:
+                # Build or rebuild if missing or size changed
+                grid_tree = getattr(self.pane.grid, "_grid_tree", None)
+                if grid_tree is None or getattr(grid_tree, "n", None) != len(gp):
+                    grid_xy = np.asarray(gp, dtype=float)
+                    try:
+                        self.pane.grid._grid_tree = _cKDTree(grid_xy)
+                    except Exception:
+                        self.pane.grid._grid_tree = None
+            except Exception:
+                pass
 
         # Calculate grid points with optimized distance checking
         if snap_grid and self.pane.grid.grid_points:
