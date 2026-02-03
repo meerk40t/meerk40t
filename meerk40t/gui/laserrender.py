@@ -1295,6 +1295,11 @@ class LaserRender:
             dc.Destroy()
             del dc
             bmp = wx.Bitmap(int(dimension_x), int(dimension_y), 32)
+            if not bmp.IsOk():
+                # Failed to create bitmap, give up
+                node.text_cache = None
+                node.raw_bbox = None
+                return
             dc = wx.MemoryDC()
             dc.SelectObject(bmp)
             dc.SetBackground(wx.BLACK_BRUSH)
