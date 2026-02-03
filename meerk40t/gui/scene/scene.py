@@ -1253,20 +1253,54 @@ class Scene(Module, Job):
         # Pre-calculate action threshold
         action_threshold_sq = (self.context.action_attract_len / scale) ** 2
 
-        # Find closest point using squared distance
+        # Find closest point using squared distance (or KD-tree when available)
         min_delta_sq = float("inf")
         closest_x = None
         closest_y = None
 
-        for pt in self.snap_display_points:
-            dx = pt[0] - my_x
-            dy = pt[1] - my_y
-            delta_sq = dx * dx + dy * dy
+        if _cKDTree is not None and len(self.snap_display_points) > 32:
+            try:
+                pts = np.asarray(self.snap_display_points, dtype=float)
+                tree = _cKDTree(pts[:, :2])
+                dist, idx = tree.query(
+                    [my_x, my_y],
+                    k=1,
+                    distance_upper_bound=np.sqrt(action_threshold_sq),
+                )
+                if np.isfinite(dist) and idx < len(pts):
+                    closest_x = pts[idx, 0]
+                    closest_y = pts[idx, 1]
+                    min_delta_sq = dist * dist
+            except Exception:
+                closest_x = None
+                closest_y = None
+                min_delta_sq = float("inf")
 
-            if delta_sq < min_delta_sq:
-                closest_x = pt[0]
-                closest_y = pt[1]
-                min_delta_sq = delta_sq
+        if closest_x is None:
+            if len(self.snap_display_points) > 32:
+                try:
+                    pts = np.asarray(self.snap_display_points, dtype=float)
+                    dxy = pts[:, :2] - np.array([my_x, my_y], dtype=float)
+                    d2 = dxy[:, 0] * dxy[:, 0] + dxy[:, 1] * dxy[:, 1]
+                    idx = int(np.argmin(d2))
+                    min_delta_sq = float(d2[idx])
+                    closest_x = float(pts[idx, 0])
+                    closest_y = float(pts[idx, 1])
+                except Exception:
+                    closest_x = None
+                    closest_y = None
+                    min_delta_sq = float("inf")
+
+            if closest_x is None:
+                for pt in self.snap_display_points:
+                    dx = pt[0] - my_x
+                    dy = pt[1] - my_y
+                    delta_sq = dx * dx + dy * dy
+
+                    if delta_sq < min_delta_sq:
+                        closest_x = pt[0]
+                        closest_y = pt[1]
+                        min_delta_sq = delta_sq
 
         # Check if closest point is within action threshold
         if closest_x is not None and min_delta_sq <= action_threshold_sq:
