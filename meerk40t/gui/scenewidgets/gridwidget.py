@@ -18,8 +18,8 @@ class GridWidget(Widget):
     Scene Widget
     """
 
-    def __init__(self, scene, name=None, suppress_labels=False):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, name=None, suppress_labels=False, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.name = "Standard" if name is None else name
         self.primary_grid_lines = None
         self.secondary_grid_lines = None

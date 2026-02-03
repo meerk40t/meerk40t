@@ -16,14 +16,14 @@ class LineTextTool(ToolWidget):
     Linetext Creation Tool.
 
     Adds a linetext, first point click then Text-Entry
-    Obsolete, no longer needed. To make it fully usable we would need to translate 
-    the usual editing keystrokes like cursor movements, delete etc. As of now 
-    the only editing characters supported are backspace and some other 
+    Obsolete, no longer needed. To make it fully usable we would need to translate
+    the usual editing keystrokes like cursor movements, delete etc. As of now
+    the only editing characters supported are backspace and some other
     editing characters to introduce linebreaks
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.start_position = None
         self.p1 = None
         self.node = None

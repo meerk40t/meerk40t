@@ -12,8 +12,8 @@ class PointTool(ToolWidget):
     Adds points with clicks.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
 
     def process_draw(self, gc: wx.GraphicsContext):
         pass
@@ -59,7 +59,11 @@ class PointTool(ToolWidget):
             self.notify_created(node)
             self.end_tool()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or event_type == "rightdown":
+        elif (
+            event_type == "lost"
+            or (event_type == "key_up" and modifiers == "escape")
+            or event_type == "rightdown"
+        ):
             if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
             else:

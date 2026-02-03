@@ -517,8 +517,8 @@ class RibbonTool(ToolWidget):
     Ribbon Tool draws new segments by animating some click and press locations.
     """
 
-    def __init__(self, scene, mode="gravity"):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode="gravity", **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.stop = False
         if mode == "gravity":
             self.ribbon = Ribbon.gravity_tool()

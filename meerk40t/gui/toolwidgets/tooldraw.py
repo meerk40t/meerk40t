@@ -15,8 +15,8 @@ class DrawTool(ToolWidget):
     Draw Tool adds paths that are clicked and drawn within the scene.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.preferred_length = 50
         self.series = None
         self.last_position = None
@@ -65,7 +65,11 @@ class DrawTool(ToolWidget):
             self.add_point(space_pos[:2])
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or event_type == "rightdown":
+        elif (
+            event_type == "lost"
+            or (event_type == "key_up" and modifiers == "escape")
+            or event_type == "rightdown"
+        ):
             if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
             else:

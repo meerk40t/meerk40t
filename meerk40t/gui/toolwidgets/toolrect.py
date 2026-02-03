@@ -20,8 +20,8 @@ class RectTool(ToolWidget):
     Adds Rectangles with click and drag.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.start_position = None
         self.p1 = None
         self.p2 = None
@@ -197,7 +197,11 @@ class RectTool(ToolWidget):
                 pass
             self.end_tool()
             response = RESPONSE_ABORT
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
+        elif (
+            event_type == "lost"
+            or (event_type == "key_up" and modifiers == "escape")
+            or (event_type == "rightdown")
+        ):
             if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
             else:

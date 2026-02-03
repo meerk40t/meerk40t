@@ -17,12 +17,13 @@ class LaserPathWidget(Widget):
     These are blue lines that track the previous position of the laser-head.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.buffer_size = 1000
-        self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [
-            [0, 0] for _ in range(self.buffer_size)
-        ]
+        self.laserpath = (
+            [[0, 0] for _ in range(self.buffer_size)],
+            [[0, 0] for _ in range(self.buffer_size)],
+        )
         self.laserpath_index = 0
 
     def init(self, context):
@@ -45,9 +46,10 @@ class LaserPathWidget(Widget):
         self.laserpath_index = index
 
     def clear_laserpath(self):
-        self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [
-            [0, 0] for _ in range(self.buffer_size)
-        ]
+        self.laserpath = (
+            [[0, 0] for _ in range(self.buffer_size)],
+            [[0, 0] for _ in range(self.buffer_size)],
+        )
         self.laserpath_index = 0
 
     def process_draw(self, gc):

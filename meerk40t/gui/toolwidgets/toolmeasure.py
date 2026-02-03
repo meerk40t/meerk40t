@@ -45,7 +45,7 @@ class MeasureTool(PointListTool):
             font_size = 5000
         if font_size > 1e8:
             font_size = 5000
-        font_size *= self.font_size_factor            
+        font_size *= self.font_size_factor
         # print ("Fontsize=%.3f, " % self.font_size)
         if font_size < 1.0:
             font_size = 1.0  # Mac does not allow values lower than 1.

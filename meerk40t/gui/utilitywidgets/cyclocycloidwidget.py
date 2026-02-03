@@ -22,8 +22,8 @@ class CyclocycloidWidget(Widget):
     use animations to better implement subtle changes to a particular parameter.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
@@ -204,9 +204,9 @@ class MajorHandleWidget(Widget):
     Widget to adjust the radius major of the shape. Performs this adjustment within an animation.
     """
 
-    def __init__(self, scene, cyclowidget):
+    def __init__(self, scene, cyclowidget, **kwargs):
         self.size = 20000
-        Widget.__init__(self, scene, 0, 0, self.size, self.size)
+        Widget.__init__(self, scene, 0, 0, self.size, self.size, **kwargs)
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
@@ -279,9 +279,9 @@ class MinorHandleWidget(Widget):
     Does the same as Major but for the r_minor of the given shape.
     """
 
-    def __init__(self, scene, cyclowidget):
+    def __init__(self, scene, cyclowidget, **kwargs):
         self.size = 20000
-        Widget.__init__(self, scene, 0, 0, self.size, self.size)
+        Widget.__init__(self, scene, 0, 0, self.size, self.size, **kwargs)
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)

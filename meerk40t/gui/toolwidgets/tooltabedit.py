@@ -15,6 +15,7 @@ from meerk40t.gui.wxutils import get_gc_scale, dip_size
 
 _ = wx.GetTranslation
 
+
 class SimpleSlider:
     def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
         self.identifier = index
@@ -157,8 +158,8 @@ class TabEditTool(ToolWidget):
     The Tab Edit Tool allows the manipulation of the tabs of a given element
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.points = list()
         self.point_len = list()
         self.node = None
@@ -171,11 +172,13 @@ class TabEditTool(ToolWidget):
         self.current_pos = complex(0, 0)
         info = ""
         minval = 0
-        maxval = 50 # 5mm
+        maxval = 50  # 5mm
         self.slider_size = 200
         self.active_slider = None
         self.sliders = []
-        slider = SimpleSlider(0, self.scene, minval, maxval, 0, 0, self.slider_size, info )
+        slider = SimpleSlider(
+            0, self.scene, minval, maxval, 0, 0, self.slider_size, info
+        )
         slider.no_value_display = True
         self.sliders.append(slider)
         self.magnification = dip_size(scene.gui, 100, 100)[1] / 100
@@ -200,7 +203,6 @@ class TabEditTool(ToolWidget):
         self.scene.context.signal("statusmsg", "")
 
     def set_node(self, node):
-
         self.reset()
         self.node = node
         self.node_length = 0
@@ -253,7 +255,6 @@ class TabEditTool(ToolWidget):
         self.calculate_tabs()
 
     def calculate_tabs(self):
-
         def calculate_from_str(tabpos) -> list:
             positions = list()
             sub_comma = tabpos.split(",")
@@ -291,7 +292,9 @@ class TabEditTool(ToolWidget):
             if isinstance(tabpos, str):
                 positions = calculate_from_str(tabpos)
             else:
-                positions = list(tabpos, )
+                positions = list(
+                    tabpos,
+                )
             positions.sort()
             dx = 0
             index_pt = 0
@@ -389,7 +392,12 @@ class TabEditTool(ToolWidget):
                 fact = 1.5
             else:
                 fact = 1
-            gc.DrawEllipse(ptx - fact * offset, pty - fact * offset, offset * 2 * fact, offset * 2 * fact)
+            gc.DrawEllipse(
+                ptx - fact * offset,
+                pty - fact * offset,
+                offset * 2 * fact,
+                offset * 2 * fact,
+            )
         self.update_and_draw_sliders(gc)
         gc.PopState()
 
@@ -481,10 +489,10 @@ class TabEditTool(ToolWidget):
                 self.point_len[idx] = seg_len
                 self.scene.request_refresh()
             elif self.slider_index >= 0 and self.active_slider is not None:
-                self.active_slider.update_according_to_pos(
-                    space_pos[0], space_pos[1]
+                self.active_slider.update_according_to_pos(space_pos[0], space_pos[1])
+                self.node.mktablength = float(
+                    Length(f"{self.active_slider.value / 10.0}mm")
                 )
-                self.node.mktablength = float(Length(f"{self.active_slider.value / 10.0}mm"))
                 # We wait
                 self.node.empty_cache()
                 self.scene.request_refresh()
@@ -509,10 +517,10 @@ class TabEditTool(ToolWidget):
             # We stop
             self.done()
             return RESPONSE_CONSUME
-        if event_type == "key_up" and modifiers=="shift+delete":
+        if event_type == "key_up" and modifiers == "shift+delete":
             self.clear_all_tabs()
             return RESPONSE_CONSUME
-        if event_type == "key_up" and modifiers=="delete":
+        if event_type == "key_up" and modifiers == "delete":
             self.delete_current_tab()
             return RESPONSE_CONSUME
         # if event_type == "key_up":
@@ -530,7 +538,12 @@ class TabEditTool(ToolWidget):
         self.scene.pane.ignore_snap = True
         self.scene.pane.suppress_selection = True
         self.scene.request_refresh()
-        self.scene.context.signal("statusmsg", _("Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"))
+        self.scene.context.signal(
+            "statusmsg",
+            _(
+                "Drag existing tabs around or add one by clicking on the shape,\nShift-Click/Delete removes current, Shift+Delete removes all"
+            ),
+        )
 
     def signal(self, signal, *args, **kwargs):
         """

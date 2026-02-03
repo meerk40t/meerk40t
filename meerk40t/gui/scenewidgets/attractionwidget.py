@@ -25,8 +25,8 @@ class AttractionWidget(Widget):
     Interface Widget - computes and displays attraction points, performs snapping.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         # Respond to Snap is not necessary, but for the sake of completeness...
         # We want to be unrecognized
         self.transparent = True
@@ -88,7 +88,9 @@ class AttractionWidget(Widget):
             color_key = (color.Red(), color.Green(), color.Blue())
 
         if color_key not in self._cached_brushes:
-            self._cached_brushes[color_key] = wx.Brush(colour=color, style=wx.BRUSHSTYLE_SOLID)
+            self._cached_brushes[color_key] = wx.Brush(
+                colour=color, style=wx.BRUSHSTYLE_SOLID
+            )
         return self._cached_brushes[color_key]
 
     def _get_matrix_scale(self, matrix):
@@ -110,9 +112,9 @@ class AttractionWidget(Widget):
         if matrix_hash not in self._cached_attraction_lengths:
             scale = self._get_matrix_scale(matrix)
             self._cached_attraction_lengths[matrix_hash] = {
-                'show': self.context.show_attract_len / scale,
-                'action': self.context.action_attract_len / scale,
-                'grid': self.context.grid_attract_len / scale
+                "show": self.context.show_attract_len / scale,
+                "action": self.context.action_attract_len / scale,
+                "grid": self.context.grid_attract_len / scale,
             }
         return self._cached_attraction_lengths[matrix_hash]
 
@@ -145,14 +147,14 @@ class AttractionWidget(Widget):
         """Schedule snap point calculation after idle period."""
         if not snap_points and not snap_grid:
             return
-        
+
         # Store pending snap parameters
         self._pending_snap = (sx, sy, snap_points, snap_grid)
         self._last_move_time = time.time()
-        
+
         # Stop any existing timer to prevent race conditions
         self._cleanup_timer()
-        
+
         # Schedule new timer
         self._idle_timer = wx.CallLater(
             int(self.snap_idle_time * 1000), self._run_idle_update
@@ -162,9 +164,9 @@ class AttractionWidget(Widget):
         """Execute deferred snap calculation after idle period has elapsed."""
         if self._pending_snap is None:
             return
-        
+
         sx, sy, snap_points, snap_grid = self._pending_snap
-        
+
         # Check if enough time has actually elapsed (handles timer precision issues)
         elapsed = time.time() - self._last_move_time
         if elapsed < self.snap_idle_time:
@@ -178,16 +180,16 @@ class AttractionWidget(Widget):
                 int(remaining * 1000), self._run_idle_update
             )
             return
-        
+
         # Clear timer reference since this execution is complete
         self._idle_timer = None
-        
+
         # Validate conditions before updating
         if self.scene.pane.ignore_snap:
             return
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
             return
-        
+
         # Perform snap calculation and refresh display
         self.my_x = sx
         self.my_y = sy
@@ -381,9 +383,9 @@ class AttractionWidget(Widget):
 
         # Get cached attraction lengths
         lengths = self._get_attraction_lengths(matrix)
-        local_attract_len = lengths['show']
-        local_action_attract_len = lengths['action']
-        local_grid_attract_len = lengths['grid']
+        local_attract_len = lengths["show"]
+        local_action_attract_len = lengths["action"]
+        local_grid_attract_len = lengths["grid"]
 
         # Pre-calculate squared distances for better performance
         my_x, my_y = self.my_x, self.my_y
@@ -418,7 +420,9 @@ class AttractionWidget(Widget):
 
             # Determine if point is within snap range
             distance = (
-                local_grid_attract_len if pt_type == TYPE_GRID else local_action_attract_len
+                local_grid_attract_len
+                if pt_type == TYPE_GRID
+                else local_action_attract_len
             )
             closeup = 1 if abs(dx) <= distance and abs(dy) <= distance else 0
 

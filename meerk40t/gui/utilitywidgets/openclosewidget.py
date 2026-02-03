@@ -11,8 +11,8 @@ _ = wx.GetTranslation
 
 
 class OpenCloseWidget(Widget):
-    def __init__(self, scene, bitmap):
-        Widget.__init__(self, scene)
+    def __init__(self, scene, bitmap, **kwargs):
+        Widget.__init__(self, scene, **kwargs)
         self.bitmap = bitmap
         self._opened = False
         self.scene.request_refresh()

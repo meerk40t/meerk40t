@@ -2103,8 +2103,8 @@ class SimulationWidget(Widget):
     done such that both progress of 0 and 1 render nothing and items begin to draw at 2.
     """
 
-    def __init__(self, scene, sim):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, sim, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
         self.matrix.post_cat(~scene.context.device.view.matrix)
@@ -2277,8 +2277,8 @@ class SimulationTravelWidget(Widget):
     within the simulation scene.
     """
 
-    def __init__(self, scene, sim):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, sim, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
         self.matrix.post_cat(~scene.context.device.view.matrix)
@@ -2410,8 +2410,8 @@ class SimReticleWidget(Widget):
     the end of the current cut object.
     """
 
-    def __init__(self, scene, sim):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, sim, **kwargs ):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
 

@@ -50,8 +50,8 @@ class EditTool(ToolWidget):
     polylines / polygons and paths.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self._listener_active = False
         self.nodes = []
         self.shape = None
@@ -2060,8 +2060,7 @@ class EditTool(ToolWidget):
 
     def _tool_change(self):
         selected_node = None
-        elements = self.scene.context.elements.elem_branch
-        for node in elements.elems(emphasized=True):
+        for node in self.scene.context.elements.elems(emphasized=True):
             if node.type in ("elem path", "elem polyline"):
                 selected_node = node
                 break

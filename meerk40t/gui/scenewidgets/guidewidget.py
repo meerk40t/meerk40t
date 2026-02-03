@@ -17,8 +17,8 @@ class GuideWidget(Widget):
     Guidelines drawn at along the scene edges.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.edge_gap = 5
         self.line_length = 20
         self.scale_x_lower = 0

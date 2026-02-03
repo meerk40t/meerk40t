@@ -3,6 +3,7 @@ Specifically draws the rectangle selection box and deals with emphasis of select
 Special case: if the user did not move the mouse within the first 0.5 seconds after
 the initial mouse press then we assume a drag move.
 """
+
 from time import perf_counter
 
 import numpy as np
@@ -50,8 +51,8 @@ class RectSelectWidget(Widget):
 
     was_lb_raised = False
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         # Color for selection rectangle (hit, cross, enclose)
         self.selection_style = [
             [
@@ -95,7 +96,7 @@ class RectSelectWidget(Widget):
         """
         Cache the sector calculation to avoid repeated computations.
         """
-        if not hasattr(self, '_cached_sector') or self._cached_sector is None:
+        if not hasattr(self, "_cached_sector") or self._cached_sector is None:
             if self.start_location is None or self.end_location is None:
                 return 0
             sx = self.start_location[0]
@@ -140,32 +141,46 @@ class RectSelectWidget(Widget):
                 xmin, ymin, xmax, ymax = bounds
 
                 # Early exit if rectangles don't overlap
-                if (sel_right < xmin or sel_left > xmax or
-                    sel_bottom < ymin or sel_top > ymax):
+                if (
+                    sel_right < xmin
+                    or sel_left > xmax
+                    or sel_bottom < ymin
+                    or sel_top > ymax
+                ):
                     cover = 0
                 else:
                     # Determine coverage type
-                    cover = self._calculate_coverage(sel_left, sel_top, sel_right, sel_bottom,
-                                                   xmin, ymin, xmax, ymax)
+                    cover = self._calculate_coverage(
+                        sel_left, sel_top, sel_right, sel_bottom, xmin, ymin, xmax, ymax
+                    )
 
                 # Apply selection based on modifiers and coverage
                 if cover >= selection_method:
                     selected |= self._apply_selection(node, cover)
 
-    def _calculate_coverage(self, sel_left, sel_top, sel_right, sel_bottom,
-                           xmin, ymin, xmax, ymax):
+    def _calculate_coverage(
+        self, sel_left, sel_top, sel_right, sel_bottom, xmin, ymin, xmax, ymax
+    ):
         """
         Calculate the coverage type (touch, cross, enclose) for an element.
         Optimized version with clearer logic and early returns.
         """
         # Check if selection rectangle is fully inside the element (ignore)
-        if (sel_left > xmin and sel_right < xmax and
-            sel_top > ymin and sel_bottom < ymax):
+        if (
+            sel_left > xmin
+            and sel_right < xmax
+            and sel_top > ymin
+            and sel_bottom < ymax
+        ):
             return 0
 
         # Check for enclosure (element fully contained in selection)
-        if (sel_left <= xmin and xmax <= sel_right and
-            sel_top <= ymin and ymax <= sel_bottom):
+        if (
+            sel_left <= xmin
+            and xmax <= sel_right
+            and sel_top <= ymin
+            and ymax <= sel_bottom
+        ):
             return self.SELECTION_ENCLOSE
 
         # Check for crossing (element spans selection boundary in one dimension)
@@ -211,7 +226,7 @@ class RectSelectWidget(Widget):
 
     def _get_cached_status_message(self):
         """Cache the status message to avoid repeated string operations."""
-        if not hasattr(self, '_cached_status_msg') or self._cached_status_msg is None:
+        if not hasattr(self, "_cached_status_msg") or self._cached_status_msg is None:
             sector = self.sector
             _ = self.scene.context._
             base_msg = _(self.selection_style[self.selection_method[sector] - 1][2])
@@ -396,10 +411,10 @@ class RectSelectWidget(Widget):
                         if not ignore:
                             target.append(end)
                         last = end
-                
+
                 total_points = len(other_points) + len(selected_points)
                 if (
-                    other_points 
+                    other_points
                     and selected_points
                     and total_points <= MAX_POINTS_FOR_SNAPPING
                 ):
@@ -421,7 +436,7 @@ class RectSelectWidget(Widget):
                         except (IndexError, TypeError, AttributeError):
                             # Fallback: skip snapping if coordinate conversion fails
                             pass
-                        
+
                         # t3 = perf_counter()
                         # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
@@ -442,9 +457,10 @@ class RectSelectWidget(Widget):
                 )
                 other_points = self.scene.pane.grid.grid_points
                 if (
-                    other_points 
+                    other_points
                     and selected_points
-                    and len(other_points) + len(selected_points) <= MAX_POINTS_FOR_SNAPPING
+                    and len(other_points) + len(selected_points)
+                    <= MAX_POINTS_FOR_SNAPPING
                 ):
                     try:
                         np_other = np.asarray(other_points)
@@ -466,7 +482,7 @@ class RectSelectWidget(Widget):
 
                 # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
-            
+
             # Even then magnets win!
             if not modifiers or "shift" not in modifiers:
                 dx, dy = self.scene.pane.revised_magnet_bound(b)
@@ -619,8 +635,11 @@ class RectSelectWidget(Widget):
         """
         Draw the selection rectangle with optimized status message caching.
         """
-        if (self.mode != "select" or self.start_location is None or
-            self.end_location is None):
+        if (
+            self.mode != "select"
+            or self.start_location is None
+            or self.end_location is None
+        ):
             return
 
         self.selection_style[0][0] = self.scene.colors.color_selection1

@@ -14,8 +14,8 @@ class PlacementTool(ToolWidget):
     Adds a placement with clicks.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.has_ctrl = False
         self.has_alt = False
         self.has_shift = False
