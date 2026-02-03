@@ -14,9 +14,15 @@ LockWidget: Widget to lock and unlock the given object.
 """
 
 import math
+import time
 
 import numpy as np
 import wx
+import logging
+
+logger = logging.getLogger(__name__)
+
+from meerk40t.core.spatial import shortest_distance, shortest_distance_chunked, _cKDTree  # noqa: E402
 
 from meerk40t.core.elements.element_types import elem_group_nodes, elem_nodes
 from meerk40t.core.units import Length
@@ -74,7 +80,6 @@ def calculate_handle_offsets_and_deltas(
     dx = max(0, 2 * half - inner_wd_half)
     dy = max(0, 2 * half - inner_ht_half)
     return offset_x, offset_y, dx, dy
-
 
 def process_event(
     widget,
@@ -1507,6 +1512,18 @@ class MoveWidget(Widget):
         self.total_dy = 0
         self.update()
 
+        # User-configurable setting for showing snap preview
+        # Registers the setting and uses default True
+        self.scene.context.setting(bool, "snap_preview", True)
+
+        # Snap preview runtime cache and state
+        self._snap_cache = None
+        self._snap_preview = None  # dict with preview info or None
+        self._last_preview_pos = (0.0, 0.0)
+        self._last_preview_time = 0.0
+        self._preview_min_move = 1e-3  # threshold for recompute
+
+
     def set_size(self, msize, rotsize):
         self.action_size = rotsize
         self.half_x = rotsize / 2
@@ -1652,22 +1669,42 @@ class MoveWidget(Widget):
             elements.classify(copy_nodes)
 
     def process_draw(self, gc):
-        # print (f"MoveWidget: process_draw called, tool_running={self.master.tool_running}, visible={self.visible} - extent:{self.left},{self.top} - {self.right},{self.bottom} ")
-        if self.master.tool_running or not self.visible:
+        # Draw little handle and optionally snap preview while dragging
+        if not self.visible:
             return
 
-        self.update()  # make sure coords are valid
-        gc.SetPen(self.master.handle_pen)
-        brush = wx.Brush(
-            self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID
-        )
-        gc.SetBrush(brush)
-        gc.DrawRectangle(
-            self.left + self.half_x - self.drawhalf,
-            self.top + self.half_y - self.drawhalf,
-            2 * self.drawhalf,
-            2 * self.drawhalf,
-        )
+        # Draw the usual handle only when not actively running the tool to keep drawing cheap
+        if not self.master.tool_running:
+            self.update()  # make sure coords are valid
+            gc.SetPen(self.master.handle_pen)
+            brush = wx.Brush(
+                self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID
+            )
+            gc.SetBrush(brush)
+            gc.DrawRectangle(
+                self.left + self.half_x - self.drawhalf,
+                self.top + self.half_y - self.drawhalf,
+                2 * self.drawhalf,
+                2 * self.drawhalf,
+            )
+
+        # Draw snap preview even when tool_running to give immediate feedback
+        try:
+            enabled = self.scene.context.setting(bool, "snap_preview", True)
+        except Exception:
+            enabled = True
+        if enabled and self._snap_preview is not None:
+            try:
+                pen = wx.Pen()
+                pen.SetColour(wx.Colour(255, 0, 0, 128))
+                gc.SetPen(pen)
+                gc.SetBrush(wx.TRANSPARENT_BRUSH)
+                p1 = self._snap_preview.get("from")
+                p2 = self._snap_preview.get("to")
+                if p1 is not None and p2 is not None:
+                    gc.StrokeLine(p1[0], p1[1], p2[0], p2[1])
+            except Exception:
+                pass
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1696,6 +1733,310 @@ class MoveWidget(Widget):
                     self.translate(dx, dy)
                 elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+
+    # --- Snap preview helpers ---
+    def _gather_snap_cache(self, b):
+        """Gather static point caches at the start of a drag operation.
+
+        This collects non-moving data (non-selected element points, grid points)
+        and the selected element points at the start position so preview updates
+        can be cheap and incremental.
+        """
+        if b is None:
+            return
+        matrix = self.scene.widget_root.scene_widget.matrix
+        gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
+        other_points = []
+        selected_points = []
+        for e in self.scene.context.elements.elems():
+            if hasattr(e, "hidden") and e.hidden:
+                continue
+            target = selected_points if e.emphasized else other_points
+            if not hasattr(e, "as_geometry"):
+                continue
+            geom = e.as_geometry()
+            lastpt = None
+            for idx, seg in enumerate(geom.segments[: geom.index]):
+                seg_type = geom._segtype(seg)
+                if seg_type == TYPE_END:
+                    lastpt = None
+                if seg_type in NON_GEOMETRY_TYPES:
+                    continue
+                startpt = seg[0]
+                endpt = seg[4]
+                if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
+                    continue
+                midpt = geom.position(idx, 0.5)
+
+                def add_it(pt, last):
+                    if last is not None and pt == last:
+                        return last
+                    # Do not filter points by bounds during cache gathering; include all points to avoid missing candidates.
+                    last = pt
+                    target.append(pt)
+                    return last
+
+                lastpt = add_it(startpt, lastpt)
+                if not e.emphasized:
+                    lastpt = add_it(midpt, lastpt)
+                lastpt = add_it(endpt, lastpt)
+
+        # Filter grid points to those in the vicinity of the bounds to reduce work for preview
+        try:
+            grid_points = self.scene.pane.grid.grid_points or []
+        except Exception:
+            grid_points = []
+
+        # Include all valid grid points in the cache (no bounds-based filtering).
+        gap_grid = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
+        filtered_grid = []
+        for gp in grid_points:
+            try:
+                gx, gy = gp
+            except Exception:
+                continue
+            filtered_grid.append((float(gx), float(gy)))
+
+        other_arr = np.asarray(other_points)
+        sel_arr = np.asarray(selected_points)
+        grid_arr = np.asarray(filtered_grid)
+
+        # Build KD-trees when available for faster repeated NN queries
+        other_tree = None
+        grid_tree = None
+        try:
+            if _cKDTree is not None and other_arr.size > 0:
+                # other_arr is an array of complex numbers; convert to Nx2
+                other_xy = np.column_stack((other_arr.real, other_arr.imag))
+                other_tree = _cKDTree(other_xy)
+        except Exception:
+            other_tree = None
+        try:
+            if _cKDTree is not None and grid_arr.size > 0:
+                grid_xy = np.asarray(grid_arr, dtype=float)
+                grid_tree = _cKDTree(grid_xy)
+        except Exception:
+            grid_tree = None
+
+        self._snap_cache = {
+            "other_points": other_arr,
+            "selected_points_start": sel_arr,
+            "grid_points": grid_arr,
+            "other_tree": other_tree,
+            "grid_tree": grid_tree,
+            "start_total_dx": self.total_dx,
+            "start_total_dy": self.total_dy,
+            "grid_tick_distance": self.scene.pane.grid.tick_distance,
+        }
+
+    def _clear_snap_cache(self):
+        self._snap_cache = None
+        self._snap_preview = None
+
+    def _update_snap_preview(self, b):
+        """Compute the snap preview (fast) based on cached data and current delta."""
+        if self._snap_cache is not None and "grid_tick_distance" in self._snap_cache and self._snap_cache.get("grid_tick_distance") != self.scene.pane.grid.tick_distance:
+            self._clear_snap_cache()
+        if self._snap_cache is None:
+            self._gather_snap_cache(b)
+        if self._snap_cache is None:
+            self._snap_preview = None
+            return
+
+        # matrix and gaps
+        matrix = self.scene.widget_root.scene_widget.matrix
+        gap_point = self.scene.context.action_attract_len / get_matrix_scale(matrix)
+        gap_grid = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
+
+        # Compute shifted selected points
+        dsx = self.total_dx - self._snap_cache.get("start_total_dx", 0)
+        dsy = self.total_dy - self._snap_cache.get("start_total_dy", 0)
+        sel_start = self._snap_cache.get("selected_points_start")
+        if sel_start is None or sel_start.size == 0:
+            sel_shifted = None
+        else:
+            # sel_start is an array of complex
+            sel_shifted = sel_start + (dsx + 1j * dsy)
+
+        # Compute shifted selection points + center for grid snapping
+        center = ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2)
+        if sel_shifted is not None and sel_shifted.size > 0:
+            sp_points = np.column_stack((sel_shifted.real, sel_shifted.imag))
+            selected_corners_shifted = np.vstack([sp_points, center])
+        else:
+            selected_corners_shifted = np.array([center])
+
+        # 0) Magnet preview precedence: if there's a magnet action, show magnet preview and skip other checks
+        try:
+            dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
+        except Exception:
+            dx_m, dy_m = 0, 0
+        # Respect Shift modifier: if shift is pressed we should not show magnet preview
+        if (dx_m != 0 or dy_m != 0) and (not getattr(self.master, "key_shift_pressed", False)):
+            pane = self.scene.pane
+            # Compute anchor selection same as existing logic
+            if pane.grid.tick_distance > 0:
+                s = f"{pane.grid.tick_distance}{self.scene.context.units_name}"
+                try:
+                    len_tick = float(Length(s))
+                except Exception:
+                    len_tick = 1
+            else:
+                len_tick = 1
+            if pane._magnet_attraction is None:
+                pane._magnet_attraction = 1
+            attraction_len = 1 / 3 * pane._magnet_attraction * pane._magnet_attraction * len_tick
+
+            # If Pane provides magnet_attracted_x/y use the same logic as revised_magnet_bound to pick anchors.
+            if hasattr(pane, "magnet_attracted_x") and hasattr(pane, "magnet_attracted_y"):
+                delta_x1, x1 = pane.magnet_attracted_x(b[0], pane.magnet_attract_x)
+                delta_x2, x2 = pane.magnet_attracted_x(b[2], pane.magnet_attract_x)
+                delta_x3, x3 = pane.magnet_attracted_x((b[0] + b[2]) / 2, pane.magnet_attract_c)
+                delta_y1, y1 = pane.magnet_attracted_y(b[1], pane.magnet_attract_y)
+                delta_y2, y2 = pane.magnet_attracted_y(b[3], pane.magnet_attract_y)
+                delta_y3, y3 = pane.magnet_attracted_y((b[1] + b[3]) / 2, pane.magnet_attract_c)
+
+                # Choose x anchor
+                if delta_x3 < delta_x1 and delta_x3 < delta_x2 and delta_x3 < attraction_len and x3 is not None:
+                    anchor_x = (b[0] + b[2]) / 2
+                elif delta_x1 < delta_x2 and delta_x1 < delta_x3 and delta_x1 < attraction_len and x1 is not None:
+                    anchor_x = b[0]
+                elif delta_x2 < delta_x1 and delta_x2 < delta_x3 and delta_x2 < attraction_len and x2 is not None:
+                    anchor_x = b[2]
+                else:
+                    anchor_x = (b[0] + b[2]) / 2
+
+                # Choose y anchor
+                if delta_y3 < delta_y1 and delta_y3 < delta_y2 and delta_y3 < attraction_len and y3 is not None:
+                    anchor_y = (b[1] + b[3]) / 2
+                elif delta_y1 < delta_y2 and delta_y1 < delta_y3 and delta_y1 < attraction_len and y1 is not None:
+                    anchor_y = b[1]
+                elif delta_y2 < delta_y1 and delta_y2 < delta_y3 and delta_y2 < attraction_len and y2 is not None:
+                    anchor_y = b[3]
+                else:
+                    anchor_y = (b[1] + b[3]) / 2
+            else:
+                # Pane doesn't expose helpers (tests/mocks); default to center anchor
+                anchor_x = (b[0] + b[2]) / 2
+                anchor_y = (b[1] + b[3]) / 2
+
+            src = (anchor_x, anchor_y)
+            dst = (anchor_x + dx_m, anchor_y + dy_m)
+            self._snap_preview = {"type": "magnet", "from": src, "to": dst}
+            return
+
+        # 1 & 2) Compute both point and grid snapping and pick the closer candidate (if within thresholds)
+        best = None
+        best_dist = None
+        # Point snapping
+        try:
+            if (
+                self.scene.context.snap_points
+                and sel_shifted is not None
+                and self._snap_cache.get("other_points") is not None
+            ):
+                op = self._snap_cache.get("other_points")
+                sp = sel_shifted
+                if op.size > 0 and sp.size > 0:
+                    # If cursor is provided, prefer matching the selected point nearest the cursor
+                    tree = self._snap_cache.get("other_tree") if self._snap_cache is not None else None
+                    try:
+                        # Global nearest pair: compare all selected points to all other points and pick the minimum
+                        if tree is not None:
+                            pts = np.column_stack((sp.real, sp.imag))
+                            dists, idxs = tree.query(pts, k=1)
+                            min_i = int(np.argmin(dists))
+                            min_dist = float(dists[min_i])
+                            if min_dist < gap_point:
+                                min_j = int(idxs[min_i])
+                                pt1_p = op[min_j]
+                                pt2_p = sp[min_i]
+                                best = {"type": "point", "from": (pt2_p.real, pt2_p.imag), "to": (pt1_p.real, pt1_p.imag)}
+                                best_dist = min_dist
+                        else:
+                            dist_p, pt1_p, pt2_p = shortest_distance(op, sp, False)
+                            if dist_p is not None and dist_p < gap_point:
+                                best = {"type": "point", "from": (pt2_p.real, pt2_p.imag), "to": (pt1_p.real, pt1_p.imag)}
+                                best_dist = dist_p
+                    except Exception:
+                        dist_p = None
+        except Exception:
+            dist_p = None
+        # Grid snapping: consider all selected vertices + center
+        try:
+            if self.scene.context.snap_grid and b is not None:
+                gp = self._snap_cache.get("grid_points")
+                if gp is not None and len(gp) > 0:
+                    # Compare selected vertices + center against grid points
+                    np_other = np.asarray(gp)
+                    sp = selected_corners_shifted
+                    tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
+                    try:
+                        if tree is not None:
+                            pts = sp.astype(float)
+                            dists, idxs = tree.query(pts, k=1)
+                            min_i = int(np.argmin(dists))
+                            min_dist = float(dists[min_i])
+                            if min_dist < gap_grid:
+                                min_j = int(idxs[min_i])
+                                pt1_g = np_other[min_j]
+                                pt2_g = sp[min_i]
+                                if best is None or min_dist < best_dist:
+                                    best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                    best_dist = min_dist
+                        else:
+                            # Use vertices + center for distance computation
+                            sel_xy = sp.astype(float)
+                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, sel_xy, True)
+                            if dist_g is not None and dist_g < gap_grid:
+                                if best is None or dist_g < best_dist:
+                                    best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                    best_dist = dist_g
+                    except Exception:
+                        dist_g = None
+                else:
+                    # Fallback to corners+center for compatibility
+                    selected_corners = (
+                        (b[0], b[1]),
+                        (b[2], b[1]),
+                        (b[0], b[3]),
+                        (b[2], b[3]),
+                        ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                    )
+                    np_other = np.asarray(gp) if gp is not None else np.asarray([])
+                    np_selected = np.asarray(selected_corners)
+                    if np_other.size > 0:
+                        try:
+                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
+                            tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
+                            if tree is not None:
+                                sel = np.column_stack((np_selected.real, np_selected.imag))
+                                dists, idxs = tree.query(sel, k=1)
+                                min_i = int(np.argmin(dists))
+                                min_dist = float(dists[min_i])
+                                if min_dist < gap_grid:
+                                    min_j = int(idxs[min_i])
+                                    pt1_g = np_other[min_j]
+                                    pt2_g = np_selected[min_i]
+                                    if best is None or min_dist < best_dist:
+                                        best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                        best_dist = min_dist
+                            else:
+                                if dist_g is not None and dist_g < gap_grid:
+                                    if best is None or dist_g < best_dist:
+                                        best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                        best_dist = dist_g
+                        except Exception:
+                            dist_g = None
+        except Exception:
+            dist_g = None
+
+        if best is not None:
+            self._snap_preview = best
+            return
+
+        # None
+        self._snap_preview = None
 
     def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
@@ -1764,61 +2105,36 @@ class MoveWidget(Widget):
             # )
 
         if event == TOOL_RESULT_END:  # end
+            # Clear any transient preview state
+            self._snap_preview = None
+            self._snap_cache = None
             # Cleanup - we check for:
             # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
             # b) Use the distance of the 4 corners and the center to a grid point -> take the smallest distance
             # c) Regular snap-check
             # d) Use magnet lines
 
-            def shortest_distance(p1, p2, tuplemode):
-                """
-                Calculates the shortest distance between two arrays of 2-dimensional points.
-                """
-                try:
-                    # Calculate the Euclidean distance between each point in p1 and p2
-                    if tuplemode:
-                        # For an array of tuples:
-                        dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-                    else:
-                        # For an array of complex numbers
-                        dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
-                    # Find the minimum distance and its corresponding indices
-                    min_dist = np.min(dist)
-                    if np.isnan(min_dist):
-                        # print (f"Encountered the infamous bug: {p1} {p2}")
-                        # Still need an example when that happens
-                        return None, 0, 0
-                    min_indices = np.argwhere(dist == min_dist)
-
-                    # Return the coordinates of the two points
-                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-                except Exception:  # out of memory eg
-                    return None, None, None
+            # Use chunked nearest neighbor search implemented in shortest_distance_chunked
+            # to avoid memory blowup for large point sets.
 
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
 
             matrix = self.scene.widget_root.scene_widget.matrix
-            did_snap_to_point = False
-            selected_points = []
 
+            # Collect candidate snaps (point, grid, magnet) and pick the closest
+            candidates = []
+
+            # Point snaps
             if (
                 self.scene.context.snap_points
                 and (not modifiers or "shift" not in modifiers)
                 and b is not None
             ):
                 gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
-                # We gather all points of non-selected elements,
-                # but only those that lie within the boundaries
-                # of the selected area
-                # We compare every point of the selected elements
-                # with the points of the non-selected elements (provided they
-                # lie within the selection area plus boundary) and look for
-                # the closest distance.
-
-                # t1 = perf_counter()
                 other_points = []
+                selected_points = []
                 for e in self.scene.context.elements.elems():
                     if hasattr(e, "hidden") and e.hidden:
                         continue
@@ -1836,11 +2152,12 @@ class MoveWidget(Widget):
                             continue
                         startpt = seg[0]
                         endpt = seg[4]
-                        if np.isnan(startpt) or np.isnan(endpt):
+                        if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
                             print(
                                 f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={startpt}, end={endpt} - coming from element type {e.type}\nPlease inform the developers"
                             )
                             continue
+
                         midpt = geom.position(idx, 0.5)
 
                         def add_it(pt, last):
@@ -1862,7 +2179,6 @@ class MoveWidget(Widget):
                         lastpt = add_it(startpt, lastpt)
                         lastpt = add_it(midpt, lastpt)
                         lastpt = add_it(endpt, lastpt)
-                # t2 = perf_counter()
                 total_points = len(other_points) + len(selected_points)
                 if (
                     other_points is not None
@@ -1874,45 +2190,77 @@ class MoveWidget(Widget):
                     try:
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
-                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
-                    except MemoryError:
-                        dist, pt1, pt2 = None, None, None
-
-                    if dist is not None and dist < gap:
-                        if pt1 is not None and pt2 is not None:
+                        # Use KD-tree for the final snap nearest-neighbour if available
+                        if _cKDTree is not None and np_other.size > 0 and np_selected.size > 0:
                             try:
-                                dx = pt1.real - pt2.real
-                                dy = pt1.imag - pt2.imag
+                                other_xy = np.column_stack((np_other.real, np_other.imag))
+                                tree = _cKDTree(other_xy)
+                                # Global nearest pair: compare all selected points to all other points and pick the minimum
+                                sel_xy = np.column_stack((np_selected.real, np_selected.imag))
+                                dists, idxs = tree.query(sel_xy, k=1)
+                                min_i = int(np.argmin(dists))
+                                min_dist = float(dists[min_i])
+                                if min_dist < gap:
+                                    min_j = int(idxs[min_i])
+                                    pt1 = np_other[min_j]
+                                    pt2 = np_selected[min_i]
+                                    dx = float(pt1.real - pt2.real)
+                                    dy = float(pt1.imag - pt2.imag)
+                                    candidates.append({"type": "point", "dist": min_dist, "dx": dx, "dy": dy})
+                            except Exception:
+                                # Fallback to chunked approach
+                                dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+                                if dist is not None and dist < gap and pt1 is not None and pt2 is not None:
+                                    dx = float(pt1.real - pt2.real)
+                                    dy = float(pt1.imag - pt2.imag)
+                                    candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
+                        else:
+                            dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+                            if dist is not None and dist < gap and pt1 is not None and pt2 is not None:
+                                dx = float(pt1.real - pt2.real)
+                                dy = float(pt1.imag - pt2.imag)
+                                candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
+                    except MemoryError:
+                        pass
 
-                                self.total_dx = 0
-                                self.total_dy = 0
-                                move_to(dx, dy, interim=False)
-                                did_snap_to_point = True
-                            except (IndexError, TypeError, AttributeError):
-                                # Fallback: skip snapping if coordinate conversion fails
-                                did_snap_to_point = False
-
-                # t3 = perf_counter()
-                # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
-                if did_snap_to_point:
-                    # Even then magnets win!
-                    self.check_for_magnets()
+            # Grid snaps
             if (
                 self.scene.context.snap_grid
                 and (not modifiers or "shift" not in modifiers)
                 and b is not None
-                and not did_snap_to_point
             ):
-                # t1 = perf_counter()
                 gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
-                # Check for corner points + center:
-                selected_points = (
-                    (b[0], b[1]),
-                    (b[2], b[1]),
-                    (b[0], b[3]),
-                    (b[2], b[3]),
-                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
-                )
+                selected_points = []
+                for e in elements.elems(emphasized=True):
+                    if hasattr(e, "hidden") and e.hidden:
+                        continue
+                    if not hasattr(e, "as_geometry"):
+                        continue
+                    geom = e.as_geometry()
+                    lastpt = None
+                    for idx, seg in enumerate(geom.segments[: geom.index]):
+                        seg_type = geom._segtype(seg)
+                        if seg_type == TYPE_END:
+                            lastpt = None
+                        if seg_type in NON_GEOMETRY_TYPES:
+                            continue
+                        startpt = seg[0]
+                        endpt = seg[4]
+                        if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
+                            continue
+
+                        def add_it(pt, last):
+                            if last is not None and pt == last:
+                                return last
+                            last = pt
+                            selected_points.append(pt)
+                            return last
+
+                        lastpt = add_it(startpt, lastpt)
+                        lastpt = add_it(endpt, lastpt)
+                # Add center
+                center = ((b[0] + b[2]) / 2) + ((b[1] + b[3]) / 2) * 1j
+                selected_points.append(center)
                 other_points = self.scene.pane.grid.grid_points
                 if (
                     other_points is not None
@@ -1921,35 +2269,66 @@ class MoveWidget(Widget):
                     and len(selected_points) > 0
                     and len(other_points) + len(selected_points) <= MAX_POINTS_FOR_SNAPPING
                 ):
-                    try:
-                        np_other = np.asarray(other_points)
-                        np_selected = np.asarray(selected_points)
-                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
-                    except MemoryError:
-                        dist, pt1, pt2 = None, None, None
+                    dist = None
+                    if _cKDTree is not None and len(other_points) > 0 and len(selected_points) > 0:
+                        try:
+                            p1_xy = np.column_stack((np_selected.real, np_selected.imag))
+                            tree = _cKDTree(other_points)
+                            dists, idxs = tree.query(p1_xy, k=1)
+                            min_i = int(np.argmin(dists))
+                            min_dist = float(dists[min_i])
+                            if min_dist < gap:
+                                pt1 = other_points[idxs[min_i]]
+                                pt2 = selected_points[min_i]
+                                dx = float(pt1[0] - pt2.real)
+                                dy = float(pt1[1] - pt2.imag)
+                                candidates.append({"type": "grid", "dist": min_dist, "dx": dx, "dy": dy})
+                                dist = min_dist  # Indicate success
+                        except Exception:
+                            pass
+                    if dist is None:
+                        try:
+                            np_other = np.asarray(other_points)
+                            np_selected = np.asarray(selected_points)
+                            dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                        except MemoryError:
+                            dist, pt1, pt2 = None, None, None
 
                     if dist is not None and dist < gap:
                         if pt1 is not None and pt2 is not None:
-                            # Convert to real coordinates - pt1 and pt2 are ndarray
                             try:
-                                dx = pt1[0] - pt2[0]
-                                dy = pt1[1] - pt2[1]
-
-                                self.total_dx = 0
-                                self.total_dy = 0
-                                move_to(dx, dy, interim=False)
-                                did_snap_to_point = True
+                                dx = float(pt1[0] - pt2.real)
+                                dy = float(pt1[1] - pt2.imag)
+                                candidates.append({"type": "grid", "dist": float(dist), "dx": dx, "dy": dy})
                             except (IndexError, TypeError, AttributeError):
-                                # Fallback: skip snapping if coordinate conversion fails
-                                did_snap_to_point = False
+                                pass
 
-                # t2 = perf_counter()
-                # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
-                if did_snap_to_point:
-                    # Even then magnets win!
-                    self.check_for_magnets()
+            # Magnet snaps take precedence: 
+            # if a magnet action exists apply it 
+            # and skip other snap tests
+            if not self.master.key_shift_pressed:
+                dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
+                if dx_m != 0 or dy_m != 0:
+                    try:
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(float(dx_m), float(dy_m), interim=False)
+                    except Exception:
+                        pass
+                    # We applied the magnet snap, skip other snap logic
+                    update_elements(self.scene)
+                    return
 
-            if not did_snap_to_point:
+            # Choose best candidate
+            if candidates:
+                best = min(candidates, key=lambda c: c["dist"])
+                try:
+                    self.total_dx = 0
+                    self.total_dy = 0
+                    move_to(best["dx"], best["dy"], interim=False)
+                except Exception:
+                    pass
+            else:
                 if nearest_snap is None:
                     move_to(lastdx, lastdy, interim=False)
                 else:
@@ -1958,7 +2337,7 @@ class MoveWidget(Widget):
                         lastdy - self.master.offset_y,
                         interim=False,
                     )
-                self.check_for_magnets()
+
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
             #     # Did we actually move?
             #     # Remember this, it is still okay
@@ -1972,7 +2351,7 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
             update_elements(self.scene)
-        elif event == TOOL_RESULT_ABORT:  # abort
+        elif event == TOOL_RESULT_ABORT:  # abort / start of drag
             if modifiers and "alt" in modifiers:
                 self.create_duplicate()
             self.scene.pane.modif_active = True
@@ -1983,8 +2362,45 @@ class MoveWidget(Widget):
             elements.undo.mark("Element shifted")
             self.total_dx = 0
             self.total_dy = 0
+            # Initialize snap preview cache at the start of drag.
+            try:
+                b = elements._emphasized_bounds
+                if b is None:
+                    b = elements.selected_area()
+                self._gather_snap_cache(b)
+            except Exception:
+                self._snap_cache = None
+            # Reset preview
+            self._snap_preview = None
         elif event == TOOL_RESULT_MOVE:  # move
             move_to(dx, dy, interim=True)
+            # Update preview intelligently (avoid recomputing too often)
+            try:
+                enabled = self.scene.context.setting(bool, "snap_preview", True)
+            except Exception:
+                enabled = True
+            if enabled:
+                b = elements._emphasized_bounds
+                if b is None:
+                    b = elements.selected_area()
+                # Only update if bounds exist
+                if b is not None:
+                    # Throttle updates: recompute if movement passes threshold
+                    dx_elapsed = abs(self.total_dx - (self._snap_cache.get("start_total_dx") if self._snap_cache else 0))
+                    dy_elapsed = abs(self.total_dy - (self._snap_cache.get("start_total_dy") if self._snap_cache else 0))
+                    if (
+                        (abs(self.total_dx - self._last_preview_pos[0]) + abs(self.total_dy - self._last_preview_pos[1])
+                         > self._preview_min_move)
+                        or (time.time() - self._last_preview_time) > 0.05
+                    ):
+                        try:
+                            self._update_snap_preview(b)
+                            self._last_preview_pos = (self.total_dx, self.total_dy)
+                            self._last_preview_time = time.time()
+                            # Request refresh so preview is visible
+                            self.scene.request_refresh()
+                        except Exception:
+                            pass
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
 

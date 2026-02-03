@@ -826,7 +826,7 @@ def path_offset(
         cleanup_window (int): Recent edge window for self-intersection checks (default 100).
 
     Returns:
-        Path | None: Offset path or None if degenerate.
+        Path or None: Offset path or None if degenerate.
     """
     try:
         from meerk40t.svgelements import Path, Move, Line, Point, Close
