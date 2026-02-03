@@ -2,8 +2,6 @@
 Spatial helper utilities for nearest-neighbour queries.
 Provides a memory-safe nearest neighbour implementation with an optional SciPy cKDTree fallback.
 """
-from __future__ import annotations
-
 from typing import Optional
 import numpy as np
 
