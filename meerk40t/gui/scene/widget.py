@@ -133,7 +133,7 @@ class Widget(list):
             return
 
         try:
-            if layer_id is None or layer_id == self.render_layer or layer_id == -1:
+            if self._layer_matches(layer_id):
                 self.process_draw(gc)
         except OSError as e:
             print(f"Could not process draw [{e}]")
@@ -147,6 +147,16 @@ class Widget(list):
                         f"Could not draw widget #{i} {type(widget).__name__} [{e}]"
                     )
         gc.PopState()
+
+    def _layer_matches(self, layer_id):
+        if layer_id is None or layer_id == -1:
+            return True
+        render_layer = self.render_layer
+        if render_layer is None:
+            return False
+        if isinstance(render_layer, (tuple, list, set)):
+            return layer_id in render_layer
+        return layer_id == render_layer
 
     def process_draw(self, gc):
         """

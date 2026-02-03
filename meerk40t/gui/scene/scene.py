@@ -27,6 +27,7 @@ from meerk40t.gui.scene.sceneconst import (
     LAYER_LASERPATH,
     LAYER_SELECTION,
     LAYER_TOOLS,
+    LAYER_TOOLS_LIVE,
     LAYER_NAMES,
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
@@ -260,12 +261,13 @@ class Scene(Module, Job):
             LAYER_ELEMENTS,
             LAYER_LASERPATH,
             LAYER_TOOLS,
+            LAYER_TOOLS_LIVE,
             LAYER_SELECTION,
             LAYER_SCENE,
             LAYER_GUIDE,
             LAYER_INTERFACE,
         ]
-        self._layer_live = {LAYER_SELECTION}
+        self._layer_live = {LAYER_SELECTION, LAYER_TOOLS_LIVE}
 
         self._animating = []
         self._animate_lock = threading.Lock()
@@ -403,8 +405,13 @@ class Scene(Module, Job):
         if self._layer_cache_active():
             if layer is None:
                 self._invalidate_all_layers()
-            elif self._is_cached_layer(layer):
-                self._layer_dirty.add(layer)
+            else:
+                layers = layer
+                if not isinstance(layers, (tuple, list)):
+                    layers = (layers,)
+                for layer_id in layers:
+                    if self._is_cached_layer(layer_id):
+                        self._layer_dirty.add(layer_id)
         if animate:
             self.request_refresh_for_animation()
         else:

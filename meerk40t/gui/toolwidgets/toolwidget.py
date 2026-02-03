@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.scene.widget import Widget
 
 from ..scene.scene import Scene
-from ..scene.sceneconst import HITCHAIN_HIT
+from ..scene.sceneconst import HITCHAIN_HIT, LAYER_TOOLS_LIVE
 from .circlebrush import CircleBrush
 
 
@@ -13,7 +13,7 @@ class ToolWidget(Widget):
     """
 
     def __init__(self, scene: Scene):
-        Widget.__init__(self, scene, all=True)
+        Widget.__init__(self, scene, all=True, render_layer=LAYER_TOOLS_LIVE)
         self.brush = CircleBrush()
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
