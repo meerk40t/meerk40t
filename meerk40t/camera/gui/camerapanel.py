@@ -47,7 +47,11 @@ def register_panel_camera(window, context):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
         )
-        label = _("Camera {index}").format(index=index)
+        label = getattr(
+            panel,
+            "_camera_unavailable_label",
+            _("Camera {index}").format(index=index),
+        )
         pane = (
             aui.AuiPaneInfo()
             .Left()
@@ -98,6 +102,25 @@ class CameraPanel(wx.Panel, Job):
 
         self.context(f"camera{self.index}\n")  # command activates Camera service
         self.camera = self.context.get_context(f"camera/{self.index}")
+        if not hasattr(self.camera, "aspect"):
+            channel = self.context.kernel.channel("console")
+            label = _("Camera {index} (Unavailable)").format(index=self.index)
+            self._camera_unavailable_label = label
+            channel(
+                _(
+                    "Camera service not initialized; panel disabled for camera {index}."
+                ).format(index=self.index)
+            )
+            if self.pane and self.pane_aui is not None:
+                self.pane_aui.Caption(label)
+                self.pane_aui.caption = label
+            else:
+                try:
+                    self.GetParent().SetTitle(label)
+                except Exception:
+                    pass
+            self.Disable()
+            return
         self.camera.setting(int, "frames_per_second", 30)
         self._remembered = -1
         self.available_resolutions = []
