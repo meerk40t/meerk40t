@@ -23,8 +23,8 @@ class ElementsWidget(Widget):
     serves to process leftclick in order to emphasize the given object.
     """
 
-    def __init__(self, scene, renderer, filter=None):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, renderer, filter=None, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.renderer = renderer
         self.filter = SHOW_ALL if filter is None else filter
 

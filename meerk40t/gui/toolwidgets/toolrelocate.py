@@ -13,8 +13,8 @@ class RelocateTool(ToolWidget):
     Adds Circle with click and drag.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.start_position = None
         self.p1 = None
         self.p2 = None

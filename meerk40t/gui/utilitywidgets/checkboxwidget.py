@@ -18,6 +18,7 @@ class CheckboxWidget(Widget):
         text=None,
         tool_tip=None,
         checked=None,
+        **kwargs,
     ):
         size = size * scene.cell() / 2
         Widget.__init__(
@@ -27,6 +28,7 @@ class CheckboxWidget(Widget):
             y - size,
             x + size,
             y + size,
+            **kwargs,
         )
         self.text = text
         self.checked = checked

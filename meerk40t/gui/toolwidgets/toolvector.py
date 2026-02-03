@@ -16,8 +16,8 @@ class VectorTool(ToolWidget):
     Adds Path with click and drag.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.start_position = None
         self.path = None
         self.mouse_position = None

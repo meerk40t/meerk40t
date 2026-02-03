@@ -20,3 +20,12 @@ ORIENTATION_VERTICAL = 0b000000_10000000
 ORIENTATION_GRID = 0b000001_00000000
 ORIENTATION_NO_BUFFER = 0b000010_00000000
 BUFFER = 1000.0
+
+# Layer definitions, drawn from lowest to highest.
+LAYER_BACKGROUND = 0 # Grid, Guides, Rulers
+LAYER_GENERIC_NODES = 1000 # Generic Nodes (regmarks, placements)
+LAYER_NONACTIVE_ELEMENTS = 2000 # Non-active elements 
+LAYER_ACTIVE_ELEMENTS = 3000 # Active elements
+LAYER_TOOLS = 4000 # Tools, selections, controls
+LAYER_MESSAGES = 5000 # For toast messages etc.
+LAYER_LIVE = 6000 # No caching at all, live updates

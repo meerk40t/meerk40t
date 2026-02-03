@@ -496,8 +496,8 @@ class CameraPanel(wx.Panel, Job):
 
 
 class CamInterfaceWidget(Widget):
-    def __init__(self, scene, camera):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, camera, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.cam = camera
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -854,12 +854,12 @@ class CamInterfaceWidget(Widget):
 
 
 class CamPerspectiveWidget(Widget):
-    def __init__(self, scene, camera, index, mid=False):
+    def __init__(self, scene, camera, index, mid=False, **kwargs):
         self.cam = camera
         self.mid = mid
         self.index = index
         half = CORNER_SIZE / 2.0
-        Widget.__init__(self, scene, -half, -half, half, half)
+        Widget.__init__(self, scene, -half, -half, half, half, **kwargs)
         self.update()
         c = Color.distinct(self.index + 2)
         self.pen = wx.Pen(wx.Colour(c.red, c.green, c.blue))
@@ -905,8 +905,8 @@ class CamPerspectiveWidget(Widget):
 
 
 class CamSceneWidget(Widget):
-    def __init__(self, scene, camera):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, camera, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.cam = camera
 
     def process_draw(self, gc):
@@ -932,8 +932,8 @@ class CamSceneWidget(Widget):
 
 
 class CamImageWidget(Widget):
-    def __init__(self, scene, camera):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, camera, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.cam = camera
 
     def process_draw(self, gc):

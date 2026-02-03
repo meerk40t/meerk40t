@@ -17,8 +17,8 @@ class TextTool(ToolWidget):
     Adds Text at set location.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.start_position = None
         self.last_node_created = None
 
@@ -85,7 +85,11 @@ class TextTool(ToolWidget):
             wx.CallLater(750, self.refocus_text)
             self.end_tool()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
+        elif (
+            event_type == "lost"
+            or (event_type == "key_up" and modifiers == "escape")
+            or (event_type == "rightdown")
+        ):
             if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
             else:

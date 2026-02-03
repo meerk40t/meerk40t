@@ -15,6 +15,16 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.imageproperty import ContourPanel
 from meerk40t.gui.scene.scenepanel import ScenePanel
 
+from meerk40t.gui.scene.sceneconst import (
+    LAYER_BACKGROUND,
+    LAYER_LIVE,
+    LAYER_TOOLS,
+    LAYER_GENERIC_NODES,
+    LAYER_ACTIVE_ELEMENTS,
+    LAYER_MESSAGES,
+    LAYER_NONACTIVE_ELEMENTS,
+)
+
 # from meerk40t.gui.scenewidgets.affinemover import AffineMover
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
@@ -185,7 +195,9 @@ class MeerK40tScenePanel(wx.Panel):
 
         context = self.context
         # Add in snap-to-grid functionality.
-        self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(
+            AttractionWidget(self.widget_scene, layer=LAYER_LIVE)
+        )
 
         # Tool container - Widget to hold tools.
         self.tool_container = ToolContainer(self.widget_scene)
@@ -201,8 +213,8 @@ class MeerK40tScenePanel(wx.Panel):
         # Draw elements in scene.
         self.widget_scene.add_scenewidget(
             ElementsWidget(
-                self.widget_scene, 
-                LaserRender(context), 
+                self.widget_scene,
+                LaserRender(context),
                 filter=SHOW_REGMARKS,
             )
         )
@@ -215,9 +227,7 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.widget_scene.add_scenewidget(
             ElementsWidget(
-                self.widget_scene, 
-                LaserRender(context), 
-                filter=SHOW_ELEMENTS_SELECTED
+                self.widget_scene, LaserRender(context), filter=SHOW_ELEMENTS_SELECTED
             )
         )
 

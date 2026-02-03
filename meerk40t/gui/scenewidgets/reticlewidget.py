@@ -17,8 +17,8 @@ class ReticleWidget(Widget):
     gives a new tracking reticle.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.reticles = {}
         self.pen = wx.Pen()
 

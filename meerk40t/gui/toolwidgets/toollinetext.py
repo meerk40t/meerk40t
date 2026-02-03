@@ -17,8 +17,8 @@ class LineTextTool(ToolWidget):
     Adds Vectortext at set location.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.start_position = None
         self.scene.context.setting(float, "last_font_size", float(Length("20px")))
         self.scene.context.setting(str, "last_font", "")
@@ -66,7 +66,11 @@ class LineTextTool(ToolWidget):
             self.scene.context.signal("textselect")
             self.end_tool()
             response = RESPONSE_CONSUME
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape") or (event_type=="rightdown"):
+        elif (
+            event_type == "lost"
+            or (event_type == "key_up" and modifiers == "escape")
+            or (event_type == "rightdown")
+        ):
             if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
             else:
