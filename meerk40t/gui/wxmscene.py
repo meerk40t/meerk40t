@@ -18,7 +18,12 @@ from meerk40t.gui.scene.scenepanel import ScenePanel
 # from meerk40t.gui.scenewidgets.affinemover import AffineMover
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
-from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
+from meerk40t.gui.scenewidgets.elementswidget import (
+    ElementsWidget,
+    SHOW_REGMARKS,
+    SHOW_ELEMENTS_SELECTED,
+    SHOW_ELEMENTS_NONSELECTED,
+)
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
@@ -195,7 +200,25 @@ class MeerK40tScenePanel(wx.Panel):
 
         # Draw elements in scene.
         self.widget_scene.add_scenewidget(
-            ElementsWidget(self.widget_scene, LaserRender(context))
+            ElementsWidget(
+                self.widget_scene, 
+                LaserRender(context), 
+                filter=SHOW_REGMARKS,
+            )
+        )
+        self.widget_scene.add_scenewidget(
+            ElementsWidget(
+                self.widget_scene,
+                LaserRender(context),
+                filter=SHOW_ELEMENTS_NONSELECTED,
+            )
+        )
+        self.widget_scene.add_scenewidget(
+            ElementsWidget(
+                self.widget_scene, 
+                LaserRender(context), 
+                filter=SHOW_ELEMENTS_SELECTED
+            )
         )
 
         # Draw Machine Origin widget.
