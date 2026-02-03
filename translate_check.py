@@ -355,13 +355,15 @@ def read_source() -> Tuple[List[str], List[str]]:
                                 msgid_mode = False
                                 line = ""
                                 break
-                        elif m := pattern.search(line):
-                            msgid_mode = True
-                            msgid = ""
-                            line = line[m.end() :]
                         else:
-                            line = ""
-                            break
+                            m = pattern.search(line)
+                            if m:
+                                msgid_mode = True
+                                msgid = ""
+                                line = line[m.end() :]
+                            else:
+                                line = ""
+                                break
 
     # Read additional strings from file if present
     fname = "additional_strings.txt"
