@@ -739,7 +739,7 @@ class ParameterTool(ToolWidget):
 
     def _tool_change(self):
         selected_node = None
-        elements = self.scene.context.elements.elem_branch
+        elements = self.scene.context.elements
         for node in elements.elems(emphasized=True):
             if (
                 hasattr(node, "functional_parameter")
