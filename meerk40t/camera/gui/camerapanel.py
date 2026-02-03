@@ -40,6 +40,17 @@ def _get_camera_attribute(kernel, camera, attribute, default=None):
     label = kernel.read_persistent(str, camera, attribute, default)
     return label or default
 
+def has_live_job(cam):
+    we_have_a_job = False
+    try:
+        obj = cam.context.kernel.jobs[
+            f"timer.updatebg{cam.index}"
+        ]
+        if obj is not None:
+            we_have_a_job = True
+    except KeyError:
+        pass
+    return we_have_a_job
 
 def register_panel_camera(window, context):
     max_range = context.kernel.root.setting(int, "search_range", 5) or 5
@@ -300,7 +311,9 @@ class CameraPanel(wx.Panel, Job):
         )
 
     def pane_hide(self, *args):
-        self.camera(f"camera{self.index} stop\n")
+        if not has_live_job(self):
+            # Don't prevent live updates from happening
+            self.camera(f"camera{self.index} stop\n")
         self.camera.unschedule(self)
         self.display_camera.stop_scene()
         if not self.pane:
@@ -509,6 +522,7 @@ class CamInterfaceWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
+
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "rightdown":
 
@@ -610,19 +624,8 @@ class CamInterfaceWidget(Widget):
                     id=item.GetId(),
                 )
 
-            def has_live_job():
-                we_have_a_job = False
-                try:
-                    obj = self.cam.context.kernel.jobs[
-                        f"timer.updatebg{self.cam.index}"
-                    ]
-                    if obj is not None:
-                        we_have_a_job = True
-                except KeyError:
-                    pass
-                return we_have_a_job
 
-            if has_live_job():
+            if has_live_job(self.cam):
                 submenu.AppendSeparator()
                 item = submenu.Append(wx.ID_ANY, "Disable")
                 self.cam.Bind(
