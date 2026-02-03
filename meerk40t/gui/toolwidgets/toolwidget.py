@@ -13,7 +13,7 @@ class ToolWidget(Widget):
     """
 
     def __init__(self, scene: Scene, layer=LAYER_LIVE, **kwargs):
-        Widget.__init__(self, scene, all=True, **kwargs)
+        Widget.__init__(self, scene, all=True, layer=layer, **kwargs)
         self.brush = CircleBrush()
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
