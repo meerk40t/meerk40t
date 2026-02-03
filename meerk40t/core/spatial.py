@@ -77,11 +77,16 @@ def get_default_max_mem() -> int:
     return DEFAULT_MAX_MEM
 
 
-def set_default_max_mem(value: Optional[int] = None, fraction: Optional[float] = None, cap: Optional[int] = None) -> int:
+def set_default_max_mem(
+    value: Optional[int] = None,
+    fraction: Optional[float] = None,
+    cap: Optional[int] = None,
+    minimum: Optional[int] = None,
+) -> int:
     """Set the global default max memory.
 
     You can set either a fixed `value` in bytes, or recompute from the available memory
-    using `fraction` and optional `cap`.
+    using `fraction` and optional `cap` and `minimum`.
 
     Returns the new default value.
     """
@@ -91,21 +96,13 @@ def set_default_max_mem(value: Optional[int] = None, fraction: Optional[float] =
     else:
         _fraction = 0.1 if fraction is None else float(fraction)
         _cap = 200_000_000 if cap is None else int(cap)
-        DEFAULT_MAX_MEM = compute_default_max_mem(_fraction, _cap)
+        _minimum = 5_000_000 if minimum is None else int(minimum)
+        DEFAULT_MAX_MEM = compute_default_max_mem(_fraction, _cap, _minimum)
     return DEFAULT_MAX_MEM
 
 
 def shortest_distance(p1, p2, tuplemode, max_mem: Optional[int] = None):
-    """
-    Block-wise nearest neighbor search using pure numpy with optional cKDTree.
-
-    If max_mem is None, the module-level DEFAULT_MAX_MEM will be used (dynamically
-    computed at import time, and adjustable via `set_default_max_mem`).
-    """
-    if max_mem is None:
-        max_mem = DEFAULT_MAX_MEM
-    """
-    Block-wise nearest neighbor search using pure numpy with optional cKDTree.
+    """Block-wise nearest neighbor search using pure numpy with optional cKDTree.
 
     Returns (min_dist, pt_from_p1, pt_from_p2) where the returned points are
     typed as in the original inputs (complex for complex inputs, 2-tuple/array for tuplemode).
@@ -118,8 +115,10 @@ def shortest_distance(p1, p2, tuplemode, max_mem: Optional[int] = None):
             Whether to treat inputs as tuple pairs (True) or complex numbers (False).
         max_mem : int
             Approximate maximum bytes of temporary memory to use for chunked distance
-            computations (default 20_000_000 bytes ~ 20MB).
+            computations (default uses DEFAULT_MAX_MEM).
     """
+    if max_mem is None or max_mem <= 0:
+        max_mem = DEFAULT_MAX_MEM
     try:
         a1 = np.asarray(p1)
         a2 = np.asarray(p2)
@@ -129,6 +128,15 @@ def shortest_distance(p1, p2, tuplemode, max_mem: Optional[int] = None):
         return None, None, None
 
     # Normalize to Nx2 float arrays for distance computation
+    def _ensure_xy(arr):
+        if arr.ndim == 1:
+            if arr.size == 2:
+                return arr.reshape(1, 2)
+            return None
+        if arr.ndim != 2 or arr.shape[1] != 2:
+            return None
+        return arr
+
     if not tuplemode:
         p1_xy = np.column_stack((a1.real, a1.imag)) if np.iscomplexobj(a1) else np.asarray(a1)
         p2_xy = np.column_stack((a2.real, a2.imag)) if np.iscomplexobj(a2) else np.asarray(a2)
@@ -139,6 +147,11 @@ def shortest_distance(p1, p2, tuplemode, max_mem: Optional[int] = None):
         p2_xy = np.asarray(a2)
         if np.iscomplexobj(p2_xy):
             p2_xy = np.column_stack((p2_xy.real, p2_xy.imag))
+
+    p1_xy = _ensure_xy(p1_xy)
+    p2_xy = _ensure_xy(p2_xy)
+    if p1_xy is None or p2_xy is None:
+        return None, None, None
 
     n1 = p1_xy.shape[0]
     n2 = p2_xy.shape[0]
@@ -174,8 +187,9 @@ def shortest_distance(p1, p2, tuplemode, max_mem: Optional[int] = None):
             # Fall back to chunked approach on error
             pass
 
-    # Compute chunk size to keep memory usage bounded: chunk * n2 * 8 bytes
-    bytes_per_val = 8
+    # Compute chunk size to keep memory usage bounded: 3 temporaries (dx, dy, d2)
+    bytes_per_val = max(getattr(p1_xy.dtype, "itemsize", 8), getattr(p2_xy.dtype, "itemsize", 8), 8)
+    bytes_per_val *= 3
     max_cells = max(1, int(max_mem / bytes_per_val))
     chunk_size = max(1, min(n1, int(max_cells / max(1, n2))))
 
