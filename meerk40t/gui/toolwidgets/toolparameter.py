@@ -109,7 +109,9 @@ class SimpleCheckbox:
 
 
 class SimpleSlider:
-    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer, magnification=1):
+    def __init__(
+        self, index, scene, minimum, maximum, x, y, width, trailer, magnification=1
+    ):
         self.identifier = index
         self._minimum = min(minimum, maximum)
         self._maximum = max(minimum, maximum)
@@ -248,8 +250,8 @@ class ParameterTool(ToolWidget):
     and allows to change them visually.
     """
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
         self.element = None
         self.params = []
         self.paramtype = []
@@ -265,7 +267,9 @@ class ParameterTool(ToolWidget):
         self.pt_offset = 5
         self.is_hovering = False
         self.pin_box = None
-        self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"), magnification=self.magnification)
+        self.pin_box = SimpleCheckbox(
+            -1, self.scene, 0, 0, _("Pin"), magnification=self.magnification
+        )
         self.pinned = False
         self.is_moving = False
         self.slider_size = 200
@@ -355,7 +359,15 @@ class ParameterTool(ToolWidget):
                         if len(gui_info) > 2:
                             maxval = gui_info[2]
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info, magnification=self.magnification
+                    p_idx,
+                    self.scene,
+                    minval,
+                    maxval,
+                    0,
+                    0,
+                    self.slider_size,
+                    info,
+                    magnification=self.magnification,
                 )
                 self.sliders.append(slider)
                 slider.value = parameters[idx + 1]
@@ -377,7 +389,15 @@ class ParameterTool(ToolWidget):
                             maxval = gui_info[2]
                 info = "% " + info
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info, magnification=self.magnification
+                    p_idx,
+                    self.scene,
+                    minval,
+                    maxval,
+                    0,
+                    0,
+                    self.slider_size,
+                    info,
+                    magnification=self.magnification,
                 )
                 self.sliders.append(slider)
                 slider.value = int(100.0 * parameters[idx + 1])
@@ -671,7 +691,9 @@ class ParameterTool(ToolWidget):
                         if seg_type in NON_GEOMETRY_TYPES:
                             continue
                         if np.isnan(start) or np.isnan(end):
-                            print (f"Strange, encountered within toolparameter a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers")
+                            print(
+                                f"Strange, encountered within toolparameter a segment with type: {seg_type} and start={start}, end={end} - coming from element type {e.type}\nPlease inform the developers"
+                            )
                             continue
 
                         if start != last:
@@ -717,8 +739,7 @@ class ParameterTool(ToolWidget):
 
     def _tool_change(self):
         selected_node = None
-        elements = self.scene.context.elements.elem_branch
-        for node in elements.elems(emphasized=True):
+        for node in self.scene.context.elements.elems(emphasized=True):
             if (
                 hasattr(node, "functional_parameter")
                 and node.functional_parameter is not None

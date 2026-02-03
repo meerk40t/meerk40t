@@ -60,6 +60,7 @@ TOOL_RESULT_ABORT = -1
 TOOL_RESULT_MOVE = 0
 TOOL_RESULT_END = 1
 
+
 def calculate_handle_offsets_and_deltas(
     half, handle_outside, inner_wd_half, inner_ht_half
 ):
@@ -80,6 +81,7 @@ def calculate_handle_offsets_and_deltas(
     dx = max(0, 2 * half - inner_wd_half)
     dy = max(0, 2 * half - inner_ht_half)
     return offset_x, offset_y, dx, dy
+
 
 def process_event(
     widget,
@@ -148,12 +150,17 @@ def process_event(
             and len(modifiers) == 1
             and ("shift" in modifiers or "ctrl" in modifiers)
         )
-           
+
         if event_type == "leftdown":
             widget._last_win_x = window_pos[0]
             widget._last_win_y = window_pos[1]
         if event_type == "leftup":
-            if widget_identifier=="move" and hasattr(widget, "_last_win_x") and window_pos[0] == widget._last_win_x and window_pos[1] == widget._last_win_y:
+            if (
+                widget_identifier == "move"
+                and hasattr(widget, "_last_win_x")
+                and window_pos[0] == widget._last_win_x
+                and window_pos[1] == widget._last_win_y
+            ):
                 # No movement occurred
                 dx = 0
                 dy = 0
@@ -184,7 +191,9 @@ def process_event(
                 widget.master.tool_running = optimize_drawing
                 widget.master.invalidate_rot_center()
                 widget.master.check_rot_center()
-                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers)
+                widget.tool(
+                    space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers
+                )
                 return RESPONSE_CONSUME
         # elif event_type == "middledown":
         #     # Hmm, I think this is never called due to the consumption of this event by scene pane...
@@ -222,7 +231,9 @@ def process_event(
                     widget.save_height = widget.height
                 widget.master.total_delta_x += dx
                 widget.master.total_delta_y += dy
-                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_MOVE, modifiers)
+                widget.tool(
+                    space_pos, nearest_snap, dx, dy, TOOL_RESULT_MOVE, modifiers
+                )
                 return RESPONSE_CONSUME
         elif event_type == "leftclick":
             if widget.was_lb_raised:
@@ -233,7 +244,9 @@ def process_event(
                 widget.master.show_border = True
                 return RESPONSE_CONSUME
             else:
-                widget.tool(space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers)
+                widget.tool(
+                    space_pos, nearest_snap, dx, dy, TOOL_RESULT_ABORT, modifiers
+                )
                 widget.master.tool_running = False
                 widget.master.show_border = True
                 return RESPONSE_CONSUME
@@ -263,7 +276,7 @@ class BorderWidget(Widget):
     Border Widget it tasked with drawing the selection box
     """
 
-    def __init__(self, master, scene):
+    def __init__(self, master, scene, **kwargs):
         self.master = master
         self.scene = scene
         self.cursor = None
@@ -274,6 +287,7 @@ class BorderWidget(Widget):
             self.master.top,
             self.master.right,
             self.master.bottom,
+            **kwargs,
         )
         self.msize = None
         self.update()
@@ -549,7 +563,7 @@ class RotationWidget(Widget):
     dealing with rotating the selected object.
     """
 
-    def __init__(self, master, scene, index, size, inner=0):
+    def __init__(self, master, scene, index, size, inner=0, **kwargs):
         self.master = master
         self.scene = scene
         self.index = index
@@ -565,7 +579,9 @@ class RotationWidget(Widget):
         self.rotate_cy = None
         self.reference_rect = None
 
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         self.update()
 
     def set_size(self, msize, rotsize):
@@ -879,7 +895,7 @@ class CornerWidget(Widget):
     dealing with sizing the selected object in both X- and Y-direction
     """
 
-    def __init__(self, master, scene, index, size):
+    def __init__(self, master, scene, index, size, **kwargs):
         self.master = master
         self.scene = scene
         self.index = index
@@ -901,7 +917,9 @@ class CornerWidget(Widget):
             self.method = "sw"
         self.cursor = f"size_{self.method}"
 
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         self.update()
 
     def set_size(self, msize, rotsize):
@@ -1094,7 +1112,7 @@ class SideWidget(Widget):
     dealing with sizing the selected object either in X- or Y-direction
     """
 
-    def __init__(self, master, scene, index, size):
+    def __init__(self, master, scene, index, size, **kwargs):
         self.master = master
         self.scene = scene
         self.index = index
@@ -1104,7 +1122,9 @@ class SideWidget(Widget):
         self.save_width = 0
         self.save_height = 0
         self.uniform = False
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         if index in (0, 2):
             self.allow_x = True
             self.allow_y = False
@@ -1328,7 +1348,7 @@ class SkewWidget(Widget):
     dealing with skewing the selected object either in X- or Y-direction
     """
 
-    def __init__(self, master, scene, is_x, size):
+    def __init__(self, master, scene, is_x, size, **kwargs):
         self.master = master
         self.scene = scene
         self.is_x = is_x
@@ -1339,7 +1359,9 @@ class SkewWidget(Widget):
         self.save_width = 0
         self.save_height = 0
         self.uniform = False
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         self.cursor = "skew_x" if is_x else "skew_y"
         self.update()
 
@@ -1488,7 +1510,7 @@ class MoveWidget(Widget):
     dealing with moving the selected object
     """
 
-    def __init__(self, master, scene, size, drawsize):
+    def __init__(self, master, scene, size, drawsize, **kwargs):
         self.master = master
         self.scene = scene
         self.action_size = size
@@ -1505,7 +1527,7 @@ class MoveWidget(Widget):
         self.last_x = None
         self.last_y = None
         Widget.__init__(
-            self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
+            self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y, **kwargs
         )
         self.cursor = "sizing"
         self.total_dx = 0
@@ -1522,7 +1544,6 @@ class MoveWidget(Widget):
         self._last_preview_pos = (0.0, 0.0)
         self._last_preview_time = 0.0
         self._preview_min_move = 1e-3  # threshold for recompute
-
 
     def set_size(self, msize, rotsize):
         self.action_size = rotsize
@@ -1764,7 +1785,12 @@ class MoveWidget(Widget):
                     continue
                 startpt = seg[0]
                 endpt = seg[4]
-                if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
+                if (
+                    np.isnan(startpt.real)
+                    or np.isnan(startpt.imag)
+                    or np.isnan(endpt.real)
+                    or np.isnan(endpt.imag)
+                ):
                     continue
                 midpt = geom.position(idx, 0.5)
 
@@ -1835,7 +1861,12 @@ class MoveWidget(Widget):
 
     def _update_snap_preview(self, b):
         """Compute the snap preview (fast) based on cached data and current delta."""
-        if self._snap_cache is not None and "grid_tick_distance" in self._snap_cache and self._snap_cache.get("grid_tick_distance") != self.scene.pane.grid.tick_distance:
+        if (
+            self._snap_cache is not None
+            and "grid_tick_distance" in self._snap_cache
+            and self._snap_cache.get("grid_tick_distance")
+            != self.scene.pane.grid.tick_distance
+        ):
             self._clear_snap_cache()
         if self._snap_cache is None:
             self._gather_snap_cache(b)
@@ -1872,7 +1903,9 @@ class MoveWidget(Widget):
         except Exception:
             dx_m, dy_m = 0, 0
         # Respect Shift modifier: if shift is pressed we should not show magnet preview
-        if (dx_m != 0 or dy_m != 0) and (not getattr(self.master, "key_shift_pressed", False)):
+        if (dx_m != 0 or dy_m != 0) and (
+            not getattr(self.master, "key_shift_pressed", False)
+        ):
             pane = self.scene.pane
             # Compute anchor selection same as existing logic
             if pane.grid.tick_distance > 0:
@@ -1885,33 +1918,71 @@ class MoveWidget(Widget):
                 len_tick = 1
             if pane._magnet_attraction is None:
                 pane._magnet_attraction = 1
-            attraction_len = 1 / 3 * pane._magnet_attraction * pane._magnet_attraction * len_tick
+            attraction_len = (
+                1 / 3 * pane._magnet_attraction * pane._magnet_attraction * len_tick
+            )
 
             # If Pane provides magnet_attracted_x/y use the same logic as revised_magnet_bound to pick anchors.
-            if hasattr(pane, "magnet_attracted_x") and hasattr(pane, "magnet_attracted_y"):
+            if hasattr(pane, "magnet_attracted_x") and hasattr(
+                pane, "magnet_attracted_y"
+            ):
                 delta_x1, x1 = pane.magnet_attracted_x(b[0], pane.magnet_attract_x)
                 delta_x2, x2 = pane.magnet_attracted_x(b[2], pane.magnet_attract_x)
-                delta_x3, x3 = pane.magnet_attracted_x((b[0] + b[2]) / 2, pane.magnet_attract_c)
+                delta_x3, x3 = pane.magnet_attracted_x(
+                    (b[0] + b[2]) / 2, pane.magnet_attract_c
+                )
                 delta_y1, y1 = pane.magnet_attracted_y(b[1], pane.magnet_attract_y)
                 delta_y2, y2 = pane.magnet_attracted_y(b[3], pane.magnet_attract_y)
-                delta_y3, y3 = pane.magnet_attracted_y((b[1] + b[3]) / 2, pane.magnet_attract_c)
+                delta_y3, y3 = pane.magnet_attracted_y(
+                    (b[1] + b[3]) / 2, pane.magnet_attract_c
+                )
 
                 # Choose x anchor
-                if delta_x3 < delta_x1 and delta_x3 < delta_x2 and delta_x3 < attraction_len and x3 is not None:
+                if (
+                    delta_x3 < delta_x1
+                    and delta_x3 < delta_x2
+                    and delta_x3 < attraction_len
+                    and x3 is not None
+                ):
                     anchor_x = (b[0] + b[2]) / 2
-                elif delta_x1 < delta_x2 and delta_x1 < delta_x3 and delta_x1 < attraction_len and x1 is not None:
+                elif (
+                    delta_x1 < delta_x2
+                    and delta_x1 < delta_x3
+                    and delta_x1 < attraction_len
+                    and x1 is not None
+                ):
                     anchor_x = b[0]
-                elif delta_x2 < delta_x1 and delta_x2 < delta_x3 and delta_x2 < attraction_len and x2 is not None:
+                elif (
+                    delta_x2 < delta_x1
+                    and delta_x2 < delta_x3
+                    and delta_x2 < attraction_len
+                    and x2 is not None
+                ):
                     anchor_x = b[2]
                 else:
                     anchor_x = (b[0] + b[2]) / 2
 
                 # Choose y anchor
-                if delta_y3 < delta_y1 and delta_y3 < delta_y2 and delta_y3 < attraction_len and y3 is not None:
+                if (
+                    delta_y3 < delta_y1
+                    and delta_y3 < delta_y2
+                    and delta_y3 < attraction_len
+                    and y3 is not None
+                ):
                     anchor_y = (b[1] + b[3]) / 2
-                elif delta_y1 < delta_y2 and delta_y1 < delta_y3 and delta_y1 < attraction_len and y1 is not None:
+                elif (
+                    delta_y1 < delta_y2
+                    and delta_y1 < delta_y3
+                    and delta_y1 < attraction_len
+                    and y1 is not None
+                ):
                     anchor_y = b[1]
-                elif delta_y2 < delta_y1 and delta_y2 < delta_y3 and delta_y2 < attraction_len and y2 is not None:
+                elif (
+                    delta_y2 < delta_y1
+                    and delta_y2 < delta_y3
+                    and delta_y2 < attraction_len
+                    and y2 is not None
+                ):
                     anchor_y = b[3]
                 else:
                     anchor_y = (b[1] + b[3]) / 2
@@ -1939,7 +2010,11 @@ class MoveWidget(Widget):
                 sp = sel_shifted
                 if op.size > 0 and sp.size > 0:
                     # If cursor is provided, prefer matching the selected point nearest the cursor
-                    tree = self._snap_cache.get("other_tree") if self._snap_cache is not None else None
+                    tree = (
+                        self._snap_cache.get("other_tree")
+                        if self._snap_cache is not None
+                        else None
+                    )
                     try:
                         # Global nearest pair: compare all selected points to all other points and pick the minimum
                         if tree is not None:
@@ -1951,12 +2026,20 @@ class MoveWidget(Widget):
                                 min_j = int(idxs[min_i])
                                 pt1_p = op[min_j]
                                 pt2_p = sp[min_i]
-                                best = {"type": "point", "from": (pt2_p.real, pt2_p.imag), "to": (pt1_p.real, pt1_p.imag)}
+                                best = {
+                                    "type": "point",
+                                    "from": (pt2_p.real, pt2_p.imag),
+                                    "to": (pt1_p.real, pt1_p.imag),
+                                }
                                 best_dist = min_dist
                         else:
                             dist_p, pt1_p, pt2_p = shortest_distance(op, sp, False)
                             if dist_p is not None and dist_p < gap_point:
-                                best = {"type": "point", "from": (pt2_p.real, pt2_p.imag), "to": (pt1_p.real, pt1_p.imag)}
+                                best = {
+                                    "type": "point",
+                                    "from": (pt2_p.real, pt2_p.imag),
+                                    "to": (pt1_p.real, pt1_p.imag),
+                                }
                                 best_dist = dist_p
                     except Exception:
                         dist_p = None
@@ -1970,7 +2053,11 @@ class MoveWidget(Widget):
                     # Compare selected vertices + center against grid points
                     np_other = np.asarray(gp)
                     sp = selected_corners_shifted
-                    tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
+                    tree = (
+                        self._snap_cache.get("grid_tree")
+                        if self._snap_cache is not None
+                        else None
+                    )
                     try:
                         if tree is not None:
                             pts = sp.astype(float)
@@ -1982,15 +2069,25 @@ class MoveWidget(Widget):
                                 pt1_g = np_other[min_j]
                                 pt2_g = sp[min_i]
                                 if best is None or min_dist < best_dist:
-                                    best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                    best = {
+                                        "type": "grid",
+                                        "from": (pt2_g[0], pt2_g[1]),
+                                        "to": (pt1_g[0], pt1_g[1]),
+                                    }
                                     best_dist = min_dist
                         else:
                             # Use vertices + center for distance computation
                             sel_xy = sp.astype(float)
-                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, sel_xy, True)
+                            dist_g, pt1_g, pt2_g = shortest_distance(
+                                np_other, sel_xy, True
+                            )
                             if dist_g is not None and dist_g < gap_grid:
                                 if best is None or dist_g < best_dist:
-                                    best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                    best = {
+                                        "type": "grid",
+                                        "from": (pt2_g[0], pt2_g[1]),
+                                        "to": (pt1_g[0], pt1_g[1]),
+                                    }
                                     best_dist = dist_g
                     except Exception:
                         dist_g = None
@@ -2007,10 +2104,18 @@ class MoveWidget(Widget):
                     np_selected = np.asarray(selected_corners)
                     if np_other.size > 0:
                         try:
-                            dist_g, pt1_g, pt2_g = shortest_distance(np_other, np_selected, True)
-                            tree = self._snap_cache.get("grid_tree") if self._snap_cache is not None else None
+                            dist_g, pt1_g, pt2_g = shortest_distance(
+                                np_other, np_selected, True
+                            )
+                            tree = (
+                                self._snap_cache.get("grid_tree")
+                                if self._snap_cache is not None
+                                else None
+                            )
                             if tree is not None:
-                                sel = np.column_stack((np_selected.real, np_selected.imag))
+                                sel = np.column_stack(
+                                    (np_selected.real, np_selected.imag)
+                                )
                                 dists, idxs = tree.query(sel, k=1)
                                 min_i = int(np.argmin(dists))
                                 min_dist = float(dists[min_i])
@@ -2019,12 +2124,20 @@ class MoveWidget(Widget):
                                     pt1_g = np_other[min_j]
                                     pt2_g = np_selected[min_i]
                                     if best is None or min_dist < best_dist:
-                                        best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                        best = {
+                                            "type": "grid",
+                                            "from": (pt2_g[0], pt2_g[1]),
+                                            "to": (pt1_g[0], pt1_g[1]),
+                                        }
                                         best_dist = min_dist
                             else:
                                 if dist_g is not None and dist_g < gap_grid:
                                     if best is None or dist_g < best_dist:
-                                        best = {"type": "grid", "from": (pt2_g[0], pt2_g[1]), "to": (pt1_g[0], pt1_g[1])}
+                                        best = {
+                                            "type": "grid",
+                                            "from": (pt2_g[0], pt2_g[1]),
+                                            "to": (pt1_g[0], pt1_g[1]),
+                                        }
                                         best_dist = dist_g
                         except Exception:
                             dist_g = None
@@ -2152,7 +2265,12 @@ class MoveWidget(Widget):
                             continue
                         startpt = seg[0]
                         endpt = seg[4]
-                        if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
+                        if (
+                            np.isnan(startpt.real)
+                            or np.isnan(startpt.imag)
+                            or np.isnan(endpt.real)
+                            or np.isnan(endpt.imag)
+                        ):
                             print(
                                 f"Strange, encountered within selectionwidget a segment with type: {seg_type} and start={startpt}, end={endpt} - coming from element type {e.type}\nPlease inform the developers"
                             )
@@ -2191,12 +2309,20 @@ class MoveWidget(Widget):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         # Use KD-tree for the final snap nearest-neighbour if available
-                        if _cKDTree is not None and np_other.size > 0 and np_selected.size > 0:
+                        if (
+                            _cKDTree is not None
+                            and np_other.size > 0
+                            and np_selected.size > 0
+                        ):
                             try:
-                                other_xy = np.column_stack((np_other.real, np_other.imag))
+                                other_xy = np.column_stack(
+                                    (np_other.real, np_other.imag)
+                                )
                                 tree = _cKDTree(other_xy)
                                 # Global nearest pair: compare all selected points to all other points and pick the minimum
-                                sel_xy = np.column_stack((np_selected.real, np_selected.imag))
+                                sel_xy = np.column_stack(
+                                    (np_selected.real, np_selected.imag)
+                                )
                                 dists, idxs = tree.query(sel_xy, k=1)
                                 min_i = int(np.argmin(dists))
                                 min_dist = float(dists[min_i])
@@ -2206,20 +2332,55 @@ class MoveWidget(Widget):
                                     pt2 = np_selected[min_i]
                                     dx = float(pt1.real - pt2.real)
                                     dy = float(pt1.imag - pt2.imag)
-                                    candidates.append({"type": "point", "dist": min_dist, "dx": dx, "dy": dy})
+                                    candidates.append(
+                                        {
+                                            "type": "point",
+                                            "dist": min_dist,
+                                            "dx": dx,
+                                            "dy": dy,
+                                        }
+                                    )
                             except Exception:
                                 # Fallback to chunked approach
-                                dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
-                                if dist is not None and dist < gap and pt1 is not None and pt2 is not None:
+                                dist, pt1, pt2 = shortest_distance(
+                                    np_other, np_selected, False
+                                )
+                                if (
+                                    dist is not None
+                                    and dist < gap
+                                    and pt1 is not None
+                                    and pt2 is not None
+                                ):
                                     dx = float(pt1.real - pt2.real)
                                     dy = float(pt1.imag - pt2.imag)
-                                    candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
+                                    candidates.append(
+                                        {
+                                            "type": "point",
+                                            "dist": float(dist),
+                                            "dx": dx,
+                                            "dy": dy,
+                                        }
+                                    )
                         else:
-                            dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
-                            if dist is not None and dist < gap and pt1 is not None and pt2 is not None:
+                            dist, pt1, pt2 = shortest_distance(
+                                np_other, np_selected, False
+                            )
+                            if (
+                                dist is not None
+                                and dist < gap
+                                and pt1 is not None
+                                and pt2 is not None
+                            ):
                                 dx = float(pt1.real - pt2.real)
                                 dy = float(pt1.imag - pt2.imag)
-                                candidates.append({"type": "point", "dist": float(dist), "dx": dx, "dy": dy})
+                                candidates.append(
+                                    {
+                                        "type": "point",
+                                        "dist": float(dist),
+                                        "dx": dx,
+                                        "dy": dy,
+                                    }
+                                )
                     except MemoryError:
                         pass
 
@@ -2246,7 +2407,12 @@ class MoveWidget(Widget):
                             continue
                         startpt = seg[0]
                         endpt = seg[4]
-                        if np.isnan(startpt.real) or np.isnan(startpt.imag) or np.isnan(endpt.real) or np.isnan(endpt.imag):
+                        if (
+                            np.isnan(startpt.real)
+                            or np.isnan(startpt.imag)
+                            or np.isnan(endpt.real)
+                            or np.isnan(endpt.imag)
+                        ):
                             continue
 
                         def add_it(pt, last):
@@ -2267,12 +2433,19 @@ class MoveWidget(Widget):
                     and selected_points is not None
                     and len(other_points) > 0
                     and len(selected_points) > 0
-                    and len(other_points) + len(selected_points) <= MAX_POINTS_FOR_SNAPPING
+                    and len(other_points) + len(selected_points)
+                    <= MAX_POINTS_FOR_SNAPPING
                 ):
                     dist = None
-                    if _cKDTree is not None and len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        _cKDTree is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         try:
-                            p1_xy = np.column_stack((np_selected.real, np_selected.imag))
+                            p1_xy = np.column_stack(
+                                (np_selected.real, np_selected.imag)
+                            )
                             tree = _cKDTree(other_points)
                             dists, idxs = tree.query(p1_xy, k=1)
                             min_i = int(np.argmin(dists))
@@ -2282,7 +2455,14 @@ class MoveWidget(Widget):
                                 pt2 = selected_points[min_i]
                                 dx = float(pt1[0] - pt2.real)
                                 dy = float(pt1[1] - pt2.imag)
-                                candidates.append({"type": "grid", "dist": min_dist, "dx": dx, "dy": dy})
+                                candidates.append(
+                                    {
+                                        "type": "grid",
+                                        "dist": min_dist,
+                                        "dx": dx,
+                                        "dy": dy,
+                                    }
+                                )
                                 dist = min_dist  # Indicate success
                         except Exception:
                             pass
@@ -2290,7 +2470,9 @@ class MoveWidget(Widget):
                         try:
                             np_other = np.asarray(other_points)
                             np_selected = np.asarray(selected_points)
-                            dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                            dist, pt1, pt2 = shortest_distance(
+                                np_other, np_selected, True
+                            )
                         except MemoryError:
                             dist, pt1, pt2 = None, None, None
 
@@ -2299,12 +2481,19 @@ class MoveWidget(Widget):
                             try:
                                 dx = float(pt1[0] - pt2.real)
                                 dy = float(pt1[1] - pt2.imag)
-                                candidates.append({"type": "grid", "dist": float(dist), "dx": dx, "dy": dy})
+                                candidates.append(
+                                    {
+                                        "type": "grid",
+                                        "dist": float(dist),
+                                        "dx": dx,
+                                        "dy": dy,
+                                    }
+                                )
                             except (IndexError, TypeError, AttributeError):
                                 pass
 
-            # Magnet snaps take precedence: 
-            # if a magnet action exists apply it 
+            # Magnet snaps take precedence:
+            # if a magnet action exists apply it
             # and skip other snap tests
             if not self.master.key_shift_pressed:
                 dx_m, dy_m = self.scene.pane.revised_magnet_bound(b)
@@ -2386,13 +2575,27 @@ class MoveWidget(Widget):
                 # Only update if bounds exist
                 if b is not None:
                     # Throttle updates: recompute if movement passes threshold
-                    dx_elapsed = abs(self.total_dx - (self._snap_cache.get("start_total_dx") if self._snap_cache else 0))
-                    dy_elapsed = abs(self.total_dy - (self._snap_cache.get("start_total_dy") if self._snap_cache else 0))
+                    dx_elapsed = abs(
+                        self.total_dx
+                        - (
+                            self._snap_cache.get("start_total_dx")
+                            if self._snap_cache
+                            else 0
+                        )
+                    )
+                    dy_elapsed = abs(
+                        self.total_dy
+                        - (
+                            self._snap_cache.get("start_total_dy")
+                            if self._snap_cache
+                            else 0
+                        )
+                    )
                     if (
-                        (abs(self.total_dx - self._last_preview_pos[0]) + abs(self.total_dy - self._last_preview_pos[1])
-                         > self._preview_min_move)
-                        or (time.time() - self._last_preview_time) > 0.05
-                    ):
+                        abs(self.total_dx - self._last_preview_pos[0])
+                        + abs(self.total_dy - self._last_preview_pos[1])
+                        > self._preview_min_move
+                    ) or (time.time() - self._last_preview_time) > 0.05:
                         try:
                             self._update_snap_preview(b)
                             self._last_preview_pos = (self.total_dx, self.total_dy)
@@ -2433,7 +2636,7 @@ class MoveRotationOriginWidget(Widget):
     dealing with moving the rotation center for the selected object
     """
 
-    def __init__(self, master, scene, size):
+    def __init__(self, master, scene, size, **kwargs):
         self.master = master
         self.scene = scene
         self.half = size / 2
@@ -2443,7 +2646,9 @@ class MoveRotationOriginWidget(Widget):
         self.save_height = 0
         self.uniform = False
         self.at_center = True
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         self.cursor = "rotmove"
         self.update()
 
@@ -2566,7 +2771,9 @@ class ReferenceWidget(Widget):
     dealing with assigning / revoking the reference status
     """
 
-    def __init__(self, master, scene, size, is_reference_object, show_if_not_active):
+    def __init__(
+        self, master, scene, size, is_reference_object, show_if_not_active, **kwargs
+    ):
         self.master = master
         self.scene = scene
         self.half = size / 2
@@ -2581,7 +2788,9 @@ class ReferenceWidget(Widget):
             self.show_if_not_active = False
         self.is_reference_object = is_reference_object
         self.uniform = False
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         self.cursor = "reference"
         self.update()
 
@@ -2712,7 +2921,7 @@ class LockWidget(Widget):
     dealing with revoking the lock status by clicking it
     """
 
-    def __init__(self, master, scene, size):
+    def __init__(self, master, scene, size, **kwargs):
         self.master = master
         self.scene = scene
         # Slightly bigger to be clearly seen
@@ -2722,7 +2931,9 @@ class LockWidget(Widget):
         self.save_width = 0
         self.save_height = 0
         self.uniform = False
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half, -self.half, self.half, self.half, **kwargs
+        )
         self.cursor = "arrow"
         self.update()
 
@@ -3007,8 +3218,8 @@ class SelectionWidget(Widget):
     dealing with moving, resizing and altering the selected object.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=False)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=False, **kwargs)
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
         # self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
@@ -3031,7 +3242,9 @@ class SelectionWidget(Widget):
         msize = 10
         rotsize = 10
         self.child_widgets = {}
-        self.child_widgets["border"] = BorderWidget(master=self, scene=self.scene)
+        self.child_widgets["border"] = BorderWidget(
+            master=self, scene=self.scene, layer=self.layer
+        )
         self.add_widget(-1, self.child_widgets["border"])
         self.child_widgets["reference"] = ReferenceWidget(
             master=self,
@@ -3039,6 +3252,7 @@ class SelectionWidget(Widget):
             size=msize,
             is_reference_object=self.is_ref,
             show_if_not_active=False,
+            layer=self.layer,
         )
         self.add_widget(-1, self.child_widgets["reference"])
 
@@ -3047,14 +3261,23 @@ class SelectionWidget(Widget):
             scene=self.scene,
             size=rotsize,
             drawsize=msize,
+            layer=self.layer,
         )
         self.add_widget(-1, self.child_widgets["move"])
 
         self.child_widgets["skew_x"] = SkewWidget(
-            master=self, scene=self.scene, is_x=True, size=2 / 3 * msize
+            master=self,
+            scene=self.scene,
+            is_x=True,
+            size=2 / 3 * msize,
+            layer=self.layer,
         )
         self.child_widgets["skew_y"] = SkewWidget(
-            master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
+            master=self,
+            scene=self.scene,
+            is_x=False,
+            size=2 / 3 * msize,
+            layer=self.layer,
         )
         self.add_widget(-1, self.child_widgets["skew_x"])
         self.add_widget(-1, self.child_widgets["skew_y"])
@@ -3066,25 +3289,38 @@ class SelectionWidget(Widget):
                 index=i,
                 size=rotsize,
                 inner=msize,
+                layer=self.layer,
             )
             self.add_widget(-1, self.child_widgets[f"rotation_{i}"])
         self.child_widgets["rotation_org"] = MoveRotationOriginWidget(
-            master=self, scene=self.scene, size=msize
+            master=self,
+            scene=self.scene,
+            size=msize,
+            layer=self.layer,
         )
         self.add_widget(-1, self.child_widgets["rotation_org"])
         for i in range(4):
             self.child_widgets[f"corner_{i}"] = CornerWidget(
-                master=self, scene=self.scene, index=i, size=msize
+                master=self,
+                scene=self.scene,
+                index=i,
+                size=msize,
+                layer=self.layer,
             )
             self.add_widget(-1, self.child_widgets[f"corner_{i}"])
             self.child_widgets[f"side_{i}"] = SideWidget(
-                master=self, scene=self.scene, index=i, size=msize
+                master=self,
+                scene=self.scene,
+                index=i,
+                size=msize,
+                layer=self.layer,
             )
             self.add_widget(-1, self.child_widgets[f"side_{i}"])
         self.child_widgets["lock"] = LockWidget(
             master=self,
             scene=self.scene,
             size=1.5 * msize,
+            layer=self.layer,
         )
         self.add_widget(-1, self.child_widgets["lock"])
 
@@ -3184,9 +3420,7 @@ class SelectionWidget(Widget):
         else:
             posy = "center"
 
-        data = [
-            e for e in elements.elems(emphasized=True) if e != refob
-        ]
+        data = [e for e in elements.elems(emphasized=True) if e != refob]
 
         elements.align_elements(data, alignbounds, posx, posy, False)
         for q in data:

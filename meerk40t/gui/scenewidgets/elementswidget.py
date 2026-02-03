@@ -10,6 +10,12 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.widget import Widget
 
+SHOW_ALL = -1
+SHOW_REGMARKS = 1
+SHOW_ELEMENTS_ALL = 2
+SHOW_ELEMENTS_SELECTED = 3
+SHOW_ELEMENTS_NONSELECTED = 4
+
 
 class ElementsWidget(Widget):
     """
@@ -17,9 +23,10 @@ class ElementsWidget(Widget):
     serves to process leftclick in order to emphasize the given object.
     """
 
-    def __init__(self, scene, renderer):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, renderer, filter=None, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.renderer = renderer
+        self.filter = SHOW_ALL if filter is None else filter
 
     def hit(self):
         return HITCHAIN_HIT
@@ -56,42 +63,60 @@ class ElementsWidget(Widget):
         box = (xmin, ymin, xmax, ymax)
         self.renderer.set_visible_area(box)
         draw_mode = self.renderer.context.draw_mode
-        if (draw_mode & DRAW_MODE_REGMARKS) == 0:
-            # Very faint in the background as orientation - alpha 64
-            self.renderer.render(
-                context.elements.regmarks_nodes(selected=False),
-                gc,
-                draw_mode,
-                zoomscale=zoom_scale,
-                alpha=32,
-                msg="regmarks unselected",
-            )
-            self.renderer.render(
-                context.elements.regmarks_nodes(selected=True),
-                gc,
-                draw_mode,
-                zoomscale=zoom_scale,
-                alpha=64,
-                msg="regmarks selected",
-            )
-            # Slightly more prominent - alpha 96
-            self.renderer.render(
-                context.elements.placement_nodes(),
-                gc,
-                draw_mode,
-                zoomscale=zoom_scale,
-                alpha=96,
-                msg="placement node",
-            )
+        if self.filter in (SHOW_ALL, SHOW_REGMARKS):
+            if (draw_mode & DRAW_MODE_REGMARKS) == 0:
+                # Very faint in the background as orientation - alpha 64
+                self.renderer.render(
+                    context.elements.regmarks_nodes(selected=False),
+                    gc,
+                    draw_mode,
+                    zoomscale=zoom_scale,
+                    alpha=32,
+                    msg="regmarks unselected",
+                )
+                self.renderer.render(
+                    context.elements.regmarks_nodes(selected=True),
+                    gc,
+                    draw_mode,
+                    zoomscale=zoom_scale,
+                    alpha=64,
+                    msg="regmarks selected",
+                )
+                # Slightly more prominent - alpha 96
+                self.renderer.render(
+                    context.elements.placement_nodes(),
+                    gc,
+                    draw_mode,
+                    zoomscale=zoom_scale,
+                    alpha=96,
+                    msg="placement node",
+                )
         if self.scene.pane.tool_container.mode == "vertex":
             draw_mode |= DRAW_MODE_EDIT
-        self.renderer.render(
-            context.elements.elems_nodes(),
-            gc,
-            draw_mode,
-            zoomscale=zoom_scale,
-            msg="elements",
-        )
+        if self.filter in (SHOW_ALL, SHOW_ELEMENTS_ALL):
+            self.renderer.render(
+                context.elements.elems_nodes(),
+                gc,
+                draw_mode,
+                zoomscale=zoom_scale,
+                msg="elements",
+            )
+        elif self.filter == SHOW_ELEMENTS_SELECTED:
+            self.renderer.render(
+                context.elements.elems_nodes(emphasized=True),
+                gc,
+                draw_mode,
+                zoomscale=zoom_scale,
+                msg="elements",
+            )
+        elif self.filter == SHOW_ELEMENTS_NONSELECTED:
+            self.renderer.render(
+                context.elements.elems_nodes(emphasized=False),
+                gc,
+                draw_mode,
+                zoomscale=zoom_scale,
+                msg="elements",
+            )
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs

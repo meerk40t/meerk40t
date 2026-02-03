@@ -18,8 +18,8 @@ class MachineOriginWidget(Widget):
     Machine Origin Interface Widget
     """
 
-    def __init__(self, scene, name=None):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, name=None, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.name = name
         self.brush = wx.Brush(
             colour=wx.Colour(255, 0, 0, alpha=127), style=wx.BRUSHSTYLE_SOLID

@@ -14,8 +14,8 @@ class SceneSpaceWidget(Widget):
     Scene: Drawn at a particular scale relative to the zoom-pan scene.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self._view = None
         self._frame = None
         self.aspect = False

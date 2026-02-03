@@ -25,8 +25,8 @@ def register_widget_icon(context):
 
 
 class IconsWidget(Widget):
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.is_opened = True
         self.font_color = wx.Colour()
         self.font_color.SetRGBA(0xFF000000)

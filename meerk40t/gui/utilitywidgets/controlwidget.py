@@ -4,8 +4,8 @@ from meerk40t.gui.scene.widget import Widget
 
 
 class ControlWidget(Widget):
-    def __init__(self, scene):
-        super().__init__(scene, 0, 0, 10000, 10000)
+    def __init__(self, scene, **kwargs):
+        super().__init__(scene, 0, 0, 10000, 10000, **kwargs)
 
     def process_draw(self, gc: wx.GraphicsContext):
         gc.SetBrush(wx.RED_BRUSH)

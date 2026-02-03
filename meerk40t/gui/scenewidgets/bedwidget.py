@@ -21,8 +21,8 @@ class BedWidget(Widget):
     Bed Widget Interface Widget
     """
 
-    def __init__(self, scene, name=None):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, name=None, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         if name is None:
             self.name = "Standard"
         else:
@@ -32,7 +32,7 @@ class BedWidget(Widget):
     @property
     def background(self):
         try:
-            devlabel =  self.scene.context.device.label
+            devlabel = self.scene.context.device.label
             if devlabel in self._background:
                 return self._background[devlabel]
         except AttributeError:
@@ -42,7 +42,7 @@ class BedWidget(Widget):
     @background.setter
     def background(self, value):
         try:
-            devlabel =  self.scene.context.device.label
+            devlabel = self.scene.context.device.label
         except AttributeError:
             return
 

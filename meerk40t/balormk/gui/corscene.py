@@ -195,8 +195,8 @@ class CorFileWidget(Widget):
     Widget for cor file creation routine.
     """
 
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
         self.name = "Corfile"
         self.render = LaserRender(scene.context)
         self.geometry = cor_file_geometry()

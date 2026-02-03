@@ -18,8 +18,8 @@ from meerk40t.svgelements import Matrix
 
 
 class AffineMover(Widget):
-    def __init__(self, scene):
-        Widget.__init__(self, scene, all=True)
+    def __init__(self, scene, **kwargs):
+        Widget.__init__(self, scene, all=True, **kwargs)
 
         self.tool_pen = wx.Pen()
         self.tool_pen.SetColour(wx.BLUE)

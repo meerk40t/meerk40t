@@ -13,8 +13,8 @@ class NodeMoveTool(ToolWidget):
 
     select_mode = "vertex"
 
-    def __init__(self, scene, mode=None):
-        ToolWidget.__init__(self, scene)
+    def __init__(self, scene, mode=None, **kwargs):
+        ToolWidget.__init__(self, scene, **kwargs)
 
     def event(
         self,
