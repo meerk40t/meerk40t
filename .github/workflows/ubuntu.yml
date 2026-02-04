@@ -1,5 +1,5 @@
-# This workflow builds PyInstaller single-file executables
-# of Meerk40t for Ubuntu (latest)
+# This workflow builds a PyInstaller onedir bundle and packages it as an
+# AppImage for Ubuntu (latest).
 
 name: Meerk40t (Ubuntu)
 
@@ -90,8 +90,9 @@ jobs:
         mv external_plugins_build.py external_plugins.py
         cd ..
 
-        # Use the build spec which is known to work
+        mv meerk40t.py mk40t.py
         pyinstaller .github/workflows/linux/meerk40t_build.spec
+        mv mk40t.py meerk40t.py
 
         # Restore original files
         cd meerk40t
@@ -99,14 +100,16 @@ jobs:
         mv external_plugins.unused external_plugins.py
         cd ..
 
-        # Rename for expected output
-        mv dist/MeerK40t dist/MeerK40t-Ubuntu-Latest
-
     - name: Create AppImage
       run: |
         # Download appimagetool
         wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         chmod +x appimagetool
+
+        # Download linuxdeploy and GTK plugin to bundle runtime libraries
+        wget -O linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+        wget -O linuxdeploy-plugin-gtk "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
+        chmod +x linuxdeploy linuxdeploy-plugin-gtk
 
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
@@ -115,37 +118,44 @@ jobs:
         mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
         mkdir -p AppDir/usr/share/metainfo
 
-        # Copy the PyInstaller executable
-        cp dist/MeerK40t-Ubuntu-Latest AppDir/usr/bin/meerk40t
+        # Copy the onedir output (preserves wx/.libs/ layout needed for RPATHs)
+        cp -r dist/MeerK40t/* AppDir/usr/bin/
+        mv AppDir/usr/bin/MeerK40t AppDir/usr/bin/meerk40t
         chmod +x AppDir/usr/bin/meerk40t
 
         # Copy icon - should already be in PNG format from build_icon.sh
         if [ -f "meerk40t.png" ]; then
-          # Copy to proper freedesktop.org location
           cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
-          # Also copy to AppDir root for desktop file to find it
           cp meerk40t.png AppDir/meerk40t.png
-        else
-          # Fallback to ICO if needed
-          cp meerk40t.ico AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.ico
         fi
 
-        # Copy desktop file and other metadata from repo
-        cp .github/workflows/linux/meerk40t.desktop AppDir/usr/share/applications/meerk40t.desktop
-        cp .github/workflows/linux/meerk40t.desktop AppDir/
-        
-        # Copy AppStream metainfo
-        cp .github/workflows/linux/meerk40t.appdata.xml AppDir/usr/share/metainfo/
+        # Copy desktop file (reverse-DNS filename avoids AppStream warnings)
+        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop \
+          AppDir/usr/share/applications/io.github.meerk40t.meerk40t.desktop
+        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop AppDir/
+        chmod +x AppDir/io.github.meerk40t.meerk40t.desktop
 
-        # Copy AppRun script
+        # Copy AppStream metainfo
+        cp .github/workflows/linux/meerk40t.appdata.xml \
+          AppDir/usr/share/metainfo/io.github.meerk40t.meerk40t.appdata.xml
+
+        # Bundle runtime libraries (GTK, wx dependencies, etc.) into AppDir
+        export PATH="$PWD:$PATH"
+        export LINUXDEPLOY_PLUGIN_GTK="$PWD/linuxdeploy-plugin-gtk"
+        export DEPLOY_GTK_VERSION=3
+        ./linuxdeploy \
+          --appdir AppDir \
+          --executable AppDir/usr/bin/meerk40t \
+          --desktop-file AppDir/io.github.meerk40t.meerk40t.desktop \
+          --icon-file AppDir/meerk40t.png \
+          --plugin gtk
+
+        # Copy AppRun script (override linuxdeploy default)
         cp .github/workflows/linux/AppRun AppDir/
         chmod +x AppDir/AppRun
 
         # Create AppImage
-        ./appimagetool AppDir MeerK40t-Ubuntu-Latest.AppImage
-
-        # Move to dist directory
-        mv MeerK40t-Ubuntu-Latest.AppImage dist/
+        ./appimagetool AppDir dist/MeerK40t-Ubuntu-Latest.AppImage
 
     - name: Upload Release Assets
       id: release
@@ -154,5 +164,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t-Ubuntu-Latest
           dist/MeerK40t-Ubuntu-Latest.AppImage

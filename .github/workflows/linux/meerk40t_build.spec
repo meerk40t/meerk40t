@@ -10,7 +10,7 @@ block_cipher = None
 wx_datas, wx_binaries, wx_hidden = collect_all("wx")
 
 a = Analysis(
-    ["../../../meerk40t.py"],
+    ["../../../mk40t.py"],
     pathex=["../../../build/meerk40t-import"],
     binaries=wx_binaries,
     datas=wx_datas,
@@ -44,9 +44,9 @@ a.datas += [('locale/tr/LC_MESSAGES/meerk40t.mo', 'locale/tr/LC_MESSAGES/meerk40
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
+          [],
+          [],
+          [],
           [],
           name='MeerK40t',
           debug=False,
@@ -56,3 +56,14 @@ exe = EXE(pyz,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=False, icon='../../../meerk40t.ico')
+
+# onedir: preserves wx/.libs/ directory layout so $ORIGIN RPATHs resolve
+# correctly inside the AppImage.  linuxdeploy then patches any remaining
+# missing shared-library dependencies.
+coll = COLLECT(exe,
+               a.binaries,
+               a.zipfiles,
+               a.datas,
+               strip=False,
+               upx=False,
+               name='MeerK40t')

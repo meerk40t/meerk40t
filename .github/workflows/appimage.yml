@@ -77,7 +77,9 @@ jobs:
         mv external_plugins_build.py external_plugins.py
         cd ..
 
+        mv meerk40t.py mk40t.py
         pyinstaller .github/workflows/linux/meerk40t_build.spec
+        mv mk40t.py meerk40t.py
 
     - name: Create AppImage
       run: |
@@ -97,8 +99,9 @@ jobs:
         mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
         mkdir -p AppDir/usr/share/metainfo
 
-        # Copy the executable
-        cp dist/MeerK40t AppDir/usr/bin/meerk40t
+        # Copy the onedir output (preserves wx/.libs/ layout needed for RPATHs)
+        cp -r dist/MeerK40t/* AppDir/usr/bin/
+        mv AppDir/usr/bin/MeerK40t AppDir/usr/bin/meerk40t
         chmod +x AppDir/usr/bin/meerk40t
 
         # Copy icon - should already be in PNG format from build_icon.sh
@@ -162,17 +165,19 @@ jobs:
 
     - name: Test AppImage
       run: |
-        # Make AppImage executable and test basic functionality
         if [ -n "${{ github.event.release.tag_name }}" ]; then
           APPIMAGE_TAG="${{ github.event.release.tag_name }}"
         else
           APPIMAGE_TAG="${{ github.sha }}"
         fi
         chmod +x meerk40t-${APPIMAGE_TAG}-x86_64.AppImage
-        # Note: Can't run GUI in headless environment, but we can check if it starts
-        timeout 15s ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --version
+        # --version exits before any plugin loads, so it cannot catch wx import
+        # failures.  Use xvfb-run with --no-gui instead: this boots the full
+        # kernel (including the gui plugin's wx import gate) and exits cleanly.
+        sudo apt-get install -y xvfb > /dev/null 2>&1
+        timeout 15s xvfb-run ./meerk40t-${APPIMAGE_TAG}-x86_64.AppImage --no-gui -e "quit"
         if [ $? -ne 0 ]; then
-          echo "ERROR: AppImage failed to start or did not return version information."
+          echo "ERROR: AppImage smoke test failed."
           exit 1
         fi
 
