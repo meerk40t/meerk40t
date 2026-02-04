@@ -338,6 +338,11 @@ jobs:
         wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         chmod +x appimagetool
 
+        # Download linuxdeploy and GTK plugin to bundle runtime libraries
+        wget -O linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+        wget -O linuxdeploy-plugin-gtk.sh "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk.sh"
+        chmod +x linuxdeploy linuxdeploy-plugin-gtk.sh
+
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
         mkdir -p AppDir/usr/lib
@@ -385,7 +390,16 @@ jobs:
         cp .github/workflows/linux/meerk40t.appdata.xml \
           AppDir/usr/share/metainfo/io.github.meerk40t.meerk40t.appdata.xml
 
-        # Copy AppRun script
+        # Bundle runtime libraries (GTK, etc.) into AppDir
+        export PATH="$PWD:$PATH"
+        ./linuxdeploy \
+          --appdir AppDir \
+          --executable AppDir/usr/bin/meerk40t \
+          --desktop-file AppDir/io.github.meerk40t.meerk40t.desktop \
+          --icon-file AppDir/meerk40t.png \
+          --plugin gtk
+
+        # Copy AppRun script (override linuxdeploy default)
         cp .github/workflows/linux/AppRun AppDir/
         chmod +x AppDir/AppRun
 

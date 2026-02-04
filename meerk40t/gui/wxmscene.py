@@ -210,24 +210,25 @@ class MeerK40tScenePanel(wx.Panel):
         self.laserpath_widget = LaserPathWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.laserpath_widget)
 
+        self.render_engine = LaserRender(context)
         # Draw elements in scene.
         self.widget_scene.add_scenewidget(
             ElementsWidget(
                 self.widget_scene,
-                LaserRender(context),
+                self.render_engine,
                 filter=SHOW_REGMARKS,
             )
         )
         self.widget_scene.add_scenewidget(
             ElementsWidget(
                 self.widget_scene,
-                LaserRender(context),
+                self.render_engine,
                 filter=SHOW_ELEMENTS_NONSELECTED,
             )
         )
         self.widget_scene.add_scenewidget(
             ElementsWidget(
-                self.widget_scene, LaserRender(context), filter=SHOW_ELEMENTS_SELECTED
+                self.widget_scene, self.render_engine, filter=SHOW_ELEMENTS_SELECTED
             )
         )
 
