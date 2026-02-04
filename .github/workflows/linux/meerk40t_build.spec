@@ -1,27 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
 # wxPython wheels vendor critical shared libraries in-package (typically in
-# wx/.libs). If these are not collected, importing wx may fail on systems that
-# do not have matching system-wide wx libraries installed.
-wx_datas = collect_data_files("wx")
-wx_binaries = collect_dynamic_libs("wx")
+# wx/.libs). Collect all wx modules, data, and binaries to avoid partial
+# imports when running in AppImage.
+wx_datas, wx_binaries, wx_hidden = collect_all("wx")
 
 a = Analysis(
     ["../../../meerk40t.py"],
     pathex=["../../../build/meerk40t-import"],
     binaries=wx_binaries,
     datas=wx_datas,
-    hiddenimports=[
+    hiddenimports=wx_hidden + [
         "usb",
         "barcodes",
         "potrace",
-        "wx._core",
-        "wx._adv",
-        "wx._xml",
     ],
     hookspath=[],
     runtime_hooks=[],
