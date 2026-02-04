@@ -44,9 +44,9 @@ a.datas += [('locale/tr/LC_MESSAGES/meerk40t.mo', 'locale/tr/LC_MESSAGES/meerk40
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
-          [],
-          [],
-          [],
+          a.binaries,
+          a.zipfiles,
+          a.datas,
           [],
           name='MeerK40t',
           debug=False,
@@ -55,6 +55,7 @@ exe = EXE(pyz,
           upx=False,
           upx_exclude=[],
           runtime_tmpdir=None,
+          exclude_binaries=True,
           console=False, icon='../../../meerk40t.ico')
 
 # onedir: preserves wx/.libs/ directory layout so $ORIGIN RPATHs resolve
