@@ -48,4 +48,5 @@ Meerk40t provides a variety of drivers with an extensible framework to provide s
 *   Ezcad2-compatible JCZ controllers galvo lasers
 *   Moshiboard
 *   NewlyDraw System 8.1 Lasers
+*   Devices with Ruida-controller
 *   Ruida-Emulation (Middleman between Lightburn and K40)
