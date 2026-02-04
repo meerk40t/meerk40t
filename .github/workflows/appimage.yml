@@ -140,6 +140,7 @@ jobs:
         # Bundle runtime libraries (GTK, etc.) into AppDir
         export PATH="$PWD:$PATH"
         export LINUXDEPLOY_PLUGIN_GTK="$PWD/linuxdeploy-plugin-gtk"
+        export DEPLOY_GTK_VERSION=3
         ./linuxdeploy \
           --appdir AppDir \
           --executable AppDir/usr/bin/meerk40t \
