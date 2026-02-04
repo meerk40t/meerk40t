@@ -340,7 +340,7 @@ jobs:
 
         # Download linuxdeploy and GTK plugin to bundle runtime libraries
         wget -O linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
-        wget -O linuxdeploy-plugin-gtk "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk-x86_64.AppImage"
+        wget -O linuxdeploy-plugin-gtk "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
         chmod +x linuxdeploy linuxdeploy-plugin-gtk
 
         # Create AppDir structure
