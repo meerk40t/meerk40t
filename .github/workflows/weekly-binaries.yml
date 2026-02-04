@@ -340,8 +340,8 @@ jobs:
 
         # Download linuxdeploy and GTK plugin to bundle runtime libraries
         wget -O linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
-        wget -O linuxdeploy-plugin-gtk.sh "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk.sh"
-        chmod +x linuxdeploy linuxdeploy-plugin-gtk.sh
+        wget -O linuxdeploy-plugin-gtk "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk-x86_64.AppImage"
+        chmod +x linuxdeploy linuxdeploy-plugin-gtk
 
         # Create AppDir structure
         mkdir -p AppDir/usr/bin
@@ -392,6 +392,7 @@ jobs:
 
         # Bundle runtime libraries (GTK, etc.) into AppDir
         export PATH="$PWD:$PATH"
+        export LINUXDEPLOY_PLUGIN_GTK="$PWD/linuxdeploy-plugin-gtk"
         ./linuxdeploy \
           --appdir AppDir \
           --executable AppDir/usr/bin/meerk40t \
