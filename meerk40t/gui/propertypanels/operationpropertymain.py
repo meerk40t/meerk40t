@@ -329,7 +329,7 @@ class LayerSettingPanel(wx.Panel):
                             changed.append(cnode)
                 if len(changed) > 0:
                     self.context.elements.signal("element_property_update", changed)
-                    self.context.elements.signal("refresh_scene", "Scene")
+                    self.context.elements.refresh_signal()
 
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"
@@ -350,7 +350,7 @@ class LayerSettingPanel(wx.Panel):
             self.operation.is_visible = bool(self.checkbox_visible.GetValue())
             self.context.elements.validate_selected_area()
             self.context.elements.signal("element_property_update", self.operation)
-            self.context.elements.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal()
 
     def on_check_default(self, event=None):
         if self.operation.default != bool(self.checkbox_default.GetValue()):

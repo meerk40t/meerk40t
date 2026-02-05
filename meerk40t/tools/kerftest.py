@@ -855,7 +855,8 @@ class KerfPanel(wx.Panel):
                 create_operations()
 
         self.context.signal("rebuild_tree")
-        self.context.signal("refresh_scene", "Scene")
+        self.context.signal("invalidate_layer", "generic")
+        self.context.signal_refresh()
         # This is not really necessary if we have the sequence
         # of raster - engrave - cut. It might be still appropriate
         # in some other cases though

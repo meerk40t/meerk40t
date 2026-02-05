@@ -1794,7 +1794,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("invalidate_layer")
     def on_invalidate_layer(self, origin, layer=None, *args):
-        if layer is None:
+        if layer is None or layer == "all":
             self.widget_scene.invalidate_background()
             self.widget_scene.invalidate_elements()
         elif layer == "background":
