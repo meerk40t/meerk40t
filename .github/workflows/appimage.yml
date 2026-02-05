@@ -101,6 +101,13 @@ jobs:
         # Rename output
         mv MeerK40t*.AppImage MeerK40t-linux-x86_64.AppImage
 
+    - name: Test AppImage
+      run: |
+        chmod +x MeerK40t-linux-x86_64.AppImage
+        # Run with -z (no-gui) but ensuring it attempts to load wx (via kernel lifecycle)
+        # and then quits. This validates the executable structure without needing a display.
+        ./MeerK40t-linux-x86_64.AppImage -z -e "quit"
+
     - name: Store Artifact
       uses: actions/upload-artifact@v4
       with:
