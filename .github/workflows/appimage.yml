@@ -30,7 +30,8 @@ jobs:
           libagg-dev \
           cmake \
           libnotify-dev \
-          libsdl2-dev
+          libsdl2-dev \
+          xvfb
 
         pip install --upgrade pip setuptools wheel pyinstaller
         pip install --only-binary=all -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
@@ -115,11 +116,10 @@ jobs:
 
     - name: Test AppImage
       run: |
-        echo "This is attempt #1.000.006"
+        echo "This is attempt #1.000.008"
         chmod +x MeerK40t-linux-x86_64.AppImage
-        # Run with -z (no-gui) but ensuring it attempts to load wx (via kernel lifecycle)
-        # and then quits. This validates the executable structure without needing a display.
-        ./MeerK40t-linux-x86_64.AppImage -z -e "quit"
+        # Run with xvfb-run to provide a fake display for wx import
+        xvfb-run -a ./MeerK40t-linux-x86_64.AppImage -z -e "quit"
 
     - name: Store Artifact
       uses: actions/upload-artifact@v4
