@@ -1,23 +1,26 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
 block_cipher = None
 
 # wxPython wheels vendor critical shared libraries in-package (typically in
-# wx/.libs). Collect all wx modules, data, and binaries to avoid partial
-# imports when running in AppImage.
-wx_datas, wx_binaries, wx_hidden = collect_all("wx")
+# wx/.libs). Collect wx binaries and data.
+wx_datas = collect_data_files("wx")
+wx_binaries = collect_dynamic_libs("wx")
 
 a = Analysis(
     ["../../../mk40t.py"],
     pathex=["../../../build/meerk40t-import"],
     binaries=wx_binaries,
     datas=wx_datas,
-    hiddenimports=wx_hidden + [
+    hiddenimports=[
         "usb",
         "barcodes",
         "potrace",
+        "wx._core",
+        "wx._adv",
+        "wx._xml",
     ],
     hookspath=[],
     runtime_hooks=[],
@@ -25,14 +28,7 @@ a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    # noarchive=True: all pure-Python .pyc files land on the filesystem
-    # instead of being packed into the PYZ archive.  This means Python's
-    # standard PathFinder (not PyInstaller's frozen pyimod02_importers)
-    # loads them.  Critical for wxPython: the frozen importer corrupts
-    # wx in sys.modules when _core.so partially fails to init, producing
-    # the "partially initialized module 'wx'" AttributeError that is
-    # otherwise impossible to work around without replacing PyInstaller.
-    noarchive=True,
+    noarchive=False,
 )
 a.datas += [('locale/es/LC_MESSAGES/meerk40t.mo', 'locale/es/LC_MESSAGES/meerk40t.mo', 'DATA')]
 a.datas += [('locale/it/LC_MESSAGES/meerk40t.mo', 'locale/it/LC_MESSAGES/meerk40t.mo', 'DATA')]
