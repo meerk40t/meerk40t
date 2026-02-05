@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
-import wx
+import importlib.util
 
 block_cipher = None
 
-# Get the directory of the installed wxPython package
-wx_package_path = os.path.dirname(wx.__file__)
+# Get the directory of the installed wxPython package without importing it
+# This avoids ImportError due to missing system libraries on the build agent
+spec = importlib.util.find_spec('wx')
+if spec is None:
+    raise ImportError("wxPython module not found")
+wx_package_path = spec.submodule_search_locations[0]
 
 a = Analysis(
     ["../../../mk40t.py"],
