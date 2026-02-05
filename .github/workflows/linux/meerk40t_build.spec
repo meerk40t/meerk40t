@@ -25,15 +25,14 @@ a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    # noarchive=True: all pure-Python .pyc files land on the filesystem
-    # instead of being packed into the PYZ archive.  This means Python's
-    # standard PathFinder (not PyInstaller's frozen pyimod02_importers)
-    # loads them.  Critical for wxPython: the frozen importer corrupts
-    # wx in sys.modules when _core.so partially fails to init, producing
-    # the "partially initialized module 'wx'" AttributeError that is
-    # otherwise impossible to work around without replacing PyInstaller.
     noarchive=True,
 )
+
+# FIX: Remove wx modules from the PYZ archive (a.pure) to force loading from source/filesystem.
+# This bypasses the frozen importer (pyimod02) for wx, preventing the 'partially initialized module' error.
+# The files are already in 'wx_datas' (from collect_all), so they will be present in the dist directory.
+a.pure = [x for x in a.pure if not x[0].startswith("wx.")]
+
 a.datas += [('locale/es/LC_MESSAGES/meerk40t.mo', 'locale/es/LC_MESSAGES/meerk40t.mo', 'DATA')]
 a.datas += [('locale/it/LC_MESSAGES/meerk40t.mo', 'locale/it/LC_MESSAGES/meerk40t.mo', 'DATA')]
 a.datas += [('locale/de/LC_MESSAGES/meerk40t.mo', 'locale/de/LC_MESSAGES/meerk40t.mo', 'DATA')]
