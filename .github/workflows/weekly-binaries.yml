@@ -284,7 +284,7 @@ jobs:
         sudo apt install libagg-dev libpotrace-dev
         sudo apt install libpython3-dev
         sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
-        sudo apt install libsdl2-dev libsm-dev libx11-dev
+        sudo apt install libsdl2-dev libsm-dev libx11-dev libnotify-dev xvfb
         sudo apt install fuse libfuse2  # FUSE for AppImage support
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
@@ -444,15 +444,8 @@ jobs:
     - name: Test AppImage
       run: |
         chmod +x "MeerK40t-linux-${{ github.run_number }}.AppImage"
-        # --version exits before any plugin loads, so it cannot catch wx import
-        # failures.  Use xvfb-run with --no-gui instead: this boots the full
-        # kernel (including the gui plugin's wx import gate) and exits cleanly.
-        sudo apt-get install -y xvfb > /dev/null 2>&1
-        timeout 15s xvfb-run ./"MeerK40t-linux-${{ github.run_number }}.AppImage" --no-gui -e "quit"
-        if [ $? -ne 0 ]; then
-          echo "ERROR: AppImage smoke test failed."
-          exit 1
-        fi
+        # Run with xvfb-run to provide a fake display for wx import
+        xvfb-run -a ./"MeerK40t-linux-${{ github.run_number }}.AppImage" -z -e "quit"
 
     - name: Verify AppImage before upload
       run: |

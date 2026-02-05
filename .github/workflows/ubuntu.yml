@@ -44,7 +44,10 @@ jobs:
           fuse \
           libfuse2 \
           desktop-file-utils \
-          imagemagick
+          imagemagick \
+          libnotify-dev \
+          libsdl2-dev \
+          xvfb
 
     - name: Install Python dependencies
       run: |
@@ -91,7 +94,7 @@ jobs:
         cd ..
 
         mv meerk40t.py mk40t.py
-        pyinstaller .github/workflows/linux/meerk40t_build.spec
+        pyinstaller .github/workflows/linux/meerk40t.spec
         mv mk40t.py meerk40t.py
 
         # Restore original files
@@ -99,73 +102,14 @@ jobs:
         mv external_plugins.py external_plugins_build.py
         mv external_plugins.unused external_plugins.py
         cd ..
+        
+        mv dist/MeerK40t dist/MeerK40t-Ubuntu-Latest
 
-    - name: Create AppImage
+    - name: Test Binary
       run: |
-        # Download appimagetool
-        wget -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-        chmod +x appimagetool
-
-        # Download linuxdeploy and GTK plugin to bundle runtime libraries
-        wget -O linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
-        wget -O linuxdeploy-plugin-gtk "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
-        chmod +x linuxdeploy linuxdeploy-plugin-gtk
-
-        # Create AppDir structure
-        mkdir -p AppDir/usr/bin
-        mkdir -p AppDir/usr/lib
-        mkdir -p AppDir/usr/share/applications
-        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-        mkdir -p AppDir/usr/share/metainfo
-
-        # Copy the onedir output (preserves wx/.libs/ layout needed for RPATHs)
-        cp -r dist/MeerK40t/* AppDir/usr/bin/
-        mv AppDir/usr/bin/MeerK40t AppDir/usr/bin/meerk40t
-        chmod +x AppDir/usr/bin/meerk40t
-
-        # Copy icon - should already be in PNG format from build_icon.sh
-        if [ -f "meerk40t.png" ]; then
-          cp meerk40t.png AppDir/usr/share/icons/hicolor/256x256/apps/meerk40t.png
-          cp meerk40t.png AppDir/meerk40t.png
-        fi
-
-        # Copy desktop file (reverse-DNS filename avoids AppStream warnings)
-        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop \
-          AppDir/usr/share/applications/io.github.meerk40t.meerk40t.desktop
-        cp .github/workflows/linux/io.github.meerk40t.meerk40t.desktop AppDir/
-        chmod +x AppDir/io.github.meerk40t.meerk40t.desktop
-
-        # Copy AppStream metainfo
-        cp .github/workflows/linux/meerk40t.appdata.xml \
-          AppDir/usr/share/metainfo/io.github.meerk40t.meerk40t.appdata.xml
-
-        # Bundle runtime libraries (GTK, wx dependencies, etc.) into AppDir
-        export PATH="$PWD:$PATH"
-        export LINUXDEPLOY_PLUGIN_GTK="$PWD/linuxdeploy-plugin-gtk"
-        export DEPLOY_GTK_VERSION=3
-        ./linuxdeploy \
-          --appdir AppDir \
-          --executable AppDir/usr/bin/meerk40t \
-          --desktop-file AppDir/io.github.meerk40t.meerk40t.desktop \
-          --icon-file AppDir/meerk40t.png \
-          --plugin gtk
-
-        # Copy AppRun script (override linuxdeploy default)
-        cp .github/workflows/linux/AppRun AppDir/
-        chmod +x AppDir/AppRun
-
-        # Restore wx package from pristine PyInstaller output.
-        # linuxdeploy patches RPATHs on every ELF it finds; for wx this
-        # replaces $ORIGIN/.libs (where wx vendors libwx*) with
-        # $ORIGIN/../lib.  Overwriting with the original files restores
-        # the correct RPATHs.  AppRun also exposes wx/.libs via
-        # LD_LIBRARY_PATH as a belt-and-suspenders safety net.
-        if [ -d "dist/MeerK40t/wx" ]; then
-          cp -r dist/MeerK40t/wx AppDir/usr/bin/
-        fi
-
-        # Create AppImage
-        ./appimagetool AppDir dist/MeerK40t-Ubuntu-Latest.AppImage
+        chmod +x dist/MeerK40t-Ubuntu-Latest
+        # Run with xvfb-run to provide a fake display for wx import
+        xvfb-run -a ./dist/MeerK40t-Ubuntu-Latest -z -e "quit"
 
     - name: Upload Release Assets
       id: release
@@ -174,4 +118,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/MeerK40t-Ubuntu-Latest.AppImage
+          dist/MeerK40t-Ubuntu-Latest
