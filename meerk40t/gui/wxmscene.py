@@ -200,14 +200,16 @@ class MeerK40tScenePanel(wx.Panel):
         )
 
         # Tool container - Widget to hold tools.
-        self.tool_container = ToolContainer(self.widget_scene)
+        self.tool_container = ToolContainer(self.widget_scene, layer=LAYER_TOOLS)
         self.widget_scene.add_scenewidget(self.tool_container)
 
         # Rectangular selection.
-        self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(
+            RectSelectWidget(self.widget_scene, layer=LAYER_TOOLS)
+        )
 
         # Laser-Path blue-line drawer.
-        self.laserpath_widget = LaserPathWidget(self.widget_scene)
+        self.laserpath_widget = LaserPathWidget(self.widget_scene, layer=LAYER_TOOLS)
         self.widget_scene.add_scenewidget(self.laserpath_widget)
 
         self.render_engine = LaserRender(context)
@@ -217,6 +219,7 @@ class MeerK40tScenePanel(wx.Panel):
                 self.widget_scene,
                 self.render_engine,
                 filter=SHOW_REGMARKS,
+                layer=LAYER_GENERIC_NODES,
             )
         )
         self.widget_scene.add_scenewidget(
@@ -224,23 +227,31 @@ class MeerK40tScenePanel(wx.Panel):
                 self.widget_scene,
                 self.render_engine,
                 filter=SHOW_ELEMENTS_NONSELECTED,
+                layer=LAYER_NONACTIVE_ELEMENTS,
             )
         )
         self.widget_scene.add_scenewidget(
             ElementsWidget(
-                self.widget_scene, self.render_engine, filter=SHOW_ELEMENTS_SELECTED
+                self.widget_scene,
+                self.render_engine,
+                filter=SHOW_ELEMENTS_SELECTED,
+                layer=LAYER_ACTIVE_ELEMENTS,
             )
         )
 
         # Draw Machine Origin widget.
-        self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(
+            MachineOriginWidget(self.widget_scene, layer=LAYER_GENERIC_NODES)
+        )
 
         # Draw Grid.
-        self.grid = GridWidget(self.widget_scene)
+        self.grid = GridWidget(self.widget_scene, layer=LAYER_BACKGROUND)
         self.widget_scene.add_scenewidget(self.grid)
 
         # Draw Bed
-        self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(
+            BedWidget(self.widget_scene, layer=LAYER_BACKGROUND)
+        )
 
         # Draw Interface Guide.
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
@@ -1374,6 +1385,7 @@ class MeerK40tScenePanel(wx.Panel):
             Toggle the draw mode for the background
             """
             self.widget_scene.context.draw_mode ^= DRAW_MODE_BACKGROUND
+            self.widget_scene.invalidate_background()
             self.widget_scene.request_refresh()
 
         def toggle_grid(gridtype):
@@ -1388,6 +1400,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.scene.signal("guide")
             self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
+            self.widget_scene.invalidate_background()
             self.request_refresh()
 
         def toggle_grid_p(event=None):
@@ -1621,6 +1634,7 @@ class MeerK40tScenePanel(wx.Panel):
     def on_bedsize_simple(self, origin=None, nocmd=None, *args):
         self.scene.signal("guide")
         self.scene.signal("grid")
+        self.widget_scene.invalidate_background()
         self.request_refresh(origin)
 
     @signal_listener("magnet-attraction")
@@ -1661,6 +1675,7 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
         self.scene.signal("grid")
+        self.widget_scene.invalidate_background()
         self.request_refresh()
 
     def on_size(self, event):
@@ -1687,34 +1702,40 @@ class MeerK40tScenePanel(wx.Panel):
         except AttributeError:
             pass
         self.widget_scene.overrule_background = new_color
+        self.widget_scene.invalidate_background()
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
         self.scene.signal("background", background)
+        self.widget_scene.invalidate_background()
         self.request_refresh()
 
     @signal_listener("units")
     def space_changed(self, origin, *args):
         self.scene.signal("guide")
         self.scene.signal("grid")
+        self.widget_scene.invalidate_background()
         self.request_refresh(origin)
 
     @signal_listener("bed_size")
     def bed_changed(self, origin, *args):
         self.scene.signal("grid")
         # self.scene.signal('guide')
+        self.widget_scene.invalidate_background()
         self.request_refresh(origin)
 
     @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
         self.context.elements.process_keyhole_updates(self.context)
+        self.widget_scene.invalidate_emphasized()
         self.scene.signal("modified_by_tool")
 
     @signal_listener("tabs_updated")
     def on_tabs_update(self, origin, *args):
         # Pass on to scene widgets
+        self.widget_scene.invalidate_emphasized()
         self.scene.signal("tabs_updated")
 
     @signal_listener("emphasized")
@@ -1722,6 +1743,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.context.elements.set_start_time("Emphasis wxmscene")
         self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
+        self.widget_scene.invalidate_elements()
         self.request_refresh(origin)
         self.scene.context.elements.set_end_time("Emphasis wxmscene")
 
@@ -1732,6 +1754,7 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("modified")
     def on_element_modified(self, *args):
         self.scene.signal("modified")
+        self.widget_scene.invalidate_elements()
         self.widget_scene.request_refresh(*args)
 
     @signal_listener("linetext")
@@ -1755,6 +1778,7 @@ class MeerK40tScenePanel(wx.Panel):
         # There may be a smarter way to eliminate unnecessary rebuilds, but it's doing the job...
         # self.context.signal("rebuild_tree")
         self.context.signal("refresh_tree", nodes)
+        self.widget_scene.invalidate_elements()
         self.widget_scene.request_refresh()
 
     @signal_listener("rebuild_tree")
@@ -1766,6 +1790,8 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("theme")
     def on_theme_change(self, origin, theme=None):
         self.scene.signal("theme", theme)
+        self.widget_scene.invalidate_background()
+        self.widget_scene.invalidate_elements()
         self.request_refresh(origin)
 
     @signal_listener("selstroke")
