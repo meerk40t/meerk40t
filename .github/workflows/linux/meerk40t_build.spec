@@ -42,12 +42,14 @@ a.datas += [('locale/pl/LC_MESSAGES/meerk40t.mo', 'locale/pl/LC_MESSAGES/meerk40
 a.datas += [('locale/tr/LC_MESSAGES/meerk40t.mo', 'locale/tr/LC_MESSAGES/meerk40t.mo', 'DATA')]
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+# Onedir EXE: only pyz + scripts.  binaries / zipfiles / datas are handed
+# exclusively to COLLECT below.  Passing them here as positional args
+# (the onefile pattern) causes PyInstaller to append a PKG archive to the
+# bootloader; combined with exclude_binaries=True that archive is missing
+# libpython, which crashes the bootloader at runtime.
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          [],
           name='MeerK40t',
           debug=False,
           bootloader_ignore_signals=False,

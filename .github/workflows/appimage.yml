@@ -81,6 +81,16 @@ jobs:
         pyinstaller .github/workflows/linux/meerk40t_build.spec
         mv mk40t.py meerk40t.py
 
+    - name: Verify onedir output
+      run: |
+        if [ ! -d "dist/MeerK40t" ]; then
+          echo "FAIL: dist/MeerK40t is not a directory — PyInstaller produced onefile output"
+          file dist/MeerK40t 2>/dev/null
+          exit 1
+        fi
+        echo "OK: dist/MeerK40t is a directory (onedir)"
+        ls -la dist/MeerK40t/
+
     - name: Create AppImage
       run: |
         # Download appimagetool
