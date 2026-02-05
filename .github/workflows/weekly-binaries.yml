@@ -272,10 +272,10 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.9
+    - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: 3.13
 
     - name: Install dependencies
       run: |
@@ -289,9 +289,9 @@ jobs:
         python3 -m ensurepip --upgrade
         python3 -m pip install --upgrade pip
         pip cache purge
-        pip install setuptools==65.5.1
+        pip install setuptools
         pip install pyinstaller wheel
-        pip install numpy==1.26.4
+        pip install numpy
         pip install pyusb
         pip install wheel
         pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
@@ -305,8 +305,7 @@ jobs:
         pip install numba
         pip install --no-cache-dir opencv-python-headless==4.5.3.56
         # pip install meerk40t-camera
-        if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
-        if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
+        pip install -r requirements-optional-linux.txt
         pip install .
         pip install meerk40t-barcodes
 
@@ -443,6 +442,7 @@ jobs:
 
     - name: Test AppImage
       run: |
+        echo "Running AppImage test #1.000.009..."
         chmod +x "MeerK40t-linux-${{ github.run_number }}.AppImage"
         # Run with xvfb-run to provide a fake display for wx import
         xvfb-run -a ./"MeerK40t-linux-${{ github.run_number }}.AppImage" -z -e "quit"
