@@ -1200,6 +1200,7 @@ class Elemental(Service):
             # We changed elems, so update the tree and the scene
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
+        self.signal("rebuild_tree", "operations")
 
     def condense_elements(self, data, expand_single_group_at_end: bool = False):
         """Return a minimal node selection by recursively collapsing fully covered branches.
