@@ -13,7 +13,7 @@ jobs:
     
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.13'
 
     - name: Install Dependencies
       run: |
@@ -35,7 +35,8 @@ jobs:
 
         pip install --upgrade pip setuptools wheel pyinstaller
         pip install --only-binary=all -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
-        pip install -r requirements.txt
+        
+        pip install -r requirements_313.txt
         pip install --use-pep517 pyclipr
         pip install -r requirements-optional-linux.txt
         pip install bitarray
