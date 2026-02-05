@@ -421,6 +421,16 @@ jobs:
         cp .github/workflows/linux/AppRun AppDir/
         chmod +x AppDir/AppRun
 
+        # Restore wx package from pristine PyInstaller output.
+        # linuxdeploy patches RPATHs on every ELF it finds; for wx this
+        # replaces $ORIGIN/.libs (where wx vendors libwx*) with
+        # $ORIGIN/../lib.  Overwriting with the original files restores
+        # the correct RPATHs.  AppRun also exposes wx/.libs via
+        # LD_LIBRARY_PATH as a belt-and-suspenders safety net.
+        if [ -d "dist/MeerK40t/wx" ]; then
+          cp -r dist/MeerK40t/wx AppDir/usr/bin/
+        fi
+
         # Build AppImage
         ./appimagetool AppDir "MeerK40t-linux-${{ github.run_number }}.AppImage"
 

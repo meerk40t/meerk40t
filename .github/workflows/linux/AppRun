@@ -1,7 +1,15 @@
 #!/bin/bash
 HERE="$(dirname "$(readlink -f "${0}")")"
 export PATH="${HERE}/usr/bin:${PATH}"
-export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+# wx wheels vendor critical shared libraries in wx/.libs/ and bake
+# $ORIGIN/.libs into each extension's RPATH.  linuxdeploy may overwrite
+# those RPATHs when it patches the AppDir, so also expose the directory
+# via LD_LIBRARY_PATH (which takes precedence over DT_RUNPATH).
+if [ -d "${HERE}/usr/bin/wx/.libs" ]; then
+  export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/bin/wx/.libs:${LD_LIBRARY_PATH}"
+else
+  export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+fi
 export PYTHONNOUSERSITE=1
 unset PYTHONPATH
 unset PYTHONHOME
