@@ -103,6 +103,7 @@ jobs:
 
     - name: Test AppImage
       run: |
+        echo "This is attempt #1.000.006"
         chmod +x MeerK40t-linux-x86_64.AppImage
         # Run with -z (no-gui) but ensuring it attempts to load wx (via kernel lifecycle)
         # and then quits. This validates the executable structure without needing a display.

@@ -1,37 +1,34 @@
 # -*- mode: python ; coding: utf-8 -*-
-
-from PyInstaller.utils.hooks import collect_all
+import os
+import wx
 
 block_cipher = None
 
-# wxPython wheels vendor critical shared libraries in-package (typically in
-# wx/.libs). Collect all wx modules, data, and binaries to avoid partial
-# imports when running in AppImage.
-wx_datas, wx_binaries, wx_hidden = collect_all("wx")
+# Get the directory of the installed wxPython package
+wx_package_path = os.path.dirname(wx.__file__)
 
 a = Analysis(
     ["../../../mk40t.py"],
     pathex=["../../../build/meerk40t-import"],
-    binaries=wx_binaries,
-    datas=wx_datas,
-    hiddenimports=wx_hidden + [
+    binaries=[],
+    # Copy the entire wx package as data to preserve structure and avoid PyInstaller interference
+    datas=[(wx_package_path, "wx")],
+    hiddenimports=[
         "usb",
         "barcodes",
         "potrace",
+        # Add common wx dependencies that might be missed since we exclude wx from analysis
+        "PIL",
+        "numpy",
     ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=[],
+    excludes=["wx"],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=True,
 )
-
-# FIX: Remove wx modules from the PYZ archive (a.pure) to force loading from source/filesystem.
-# This bypasses the frozen importer (pyimod02) for wx, preventing the 'partially initialized module' error.
-# The files are already in 'wx_datas' (from collect_all), so they will be present in the dist directory.
-a.pure = [x for x in a.pure if not x[0].startswith("wx.")]
 
 a.datas += [('locale/es/LC_MESSAGES/meerk40t.mo', 'locale/es/LC_MESSAGES/meerk40t.mo', 'DATA')]
 a.datas += [('locale/it/LC_MESSAGES/meerk40t.mo', 'locale/it/LC_MESSAGES/meerk40t.mo', 'DATA')]
