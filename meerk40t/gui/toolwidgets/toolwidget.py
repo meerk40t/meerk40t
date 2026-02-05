@@ -27,6 +27,7 @@ class ToolWidget(Widget):
         return HITCHAIN_HIT
 
     def notify_created(self, node=None):
+        self.scene.invalidate_elements()
         self.scene.context.signal("element_added", node)
         select_it = getattr(self.scene.context, "auto_select", True)
         if select_it:

@@ -784,7 +784,9 @@ class RotationWidget(Widget):
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
             elements.signal("updating")
 
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
+
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1078,6 +1080,7 @@ class CornerWidget(Widget):
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
     def hit(self):
@@ -1311,6 +1314,8 @@ class SideWidget(Widget):
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
+        
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
     def hit(self):
@@ -1471,6 +1476,8 @@ class SkewWidget(Widget):
                         e._cache = None
             elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
     def event(
@@ -2604,6 +2611,8 @@ class MoveWidget(Widget):
                             self.scene.request_refresh()
                         except Exception:
                             pass
+        
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
 

@@ -246,7 +246,7 @@ def init_commands(kernel):
             channel(f"{counted} copies created")
             # Newly created! Classification needed?
             post.append(classify_new(data_out))
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         return "elements", data_out
 
     # Hint for translation: _("Unrotated"), _("Repeats"), _("Radius"), _("Deltaangle"), _("Startangle"), _("Endangle")
@@ -378,7 +378,7 @@ def init_commands(kernel):
         channel(f"{counted} copies created")
         # Newly created! Classification needed?
         post.append(classify_new(data_out))
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data_out
 
     # Hint for translation: _("Copies"), _("Radius"), _("Startangle"), _("Endangle"), _("Rotate"), _("Deltaangle")
@@ -508,7 +508,7 @@ def init_commands(kernel):
         channel(f"{counted} copies created")
 
         post.append(classify_new(data_out))
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data_out
 
     # --------------------------- END COMMANDS ------------------------------

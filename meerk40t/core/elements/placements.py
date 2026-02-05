@@ -290,7 +290,7 @@ def init_commands(kernel):
     #                 idx_y += 1
 
     #     self.signal("updateop_tree")
-    #     self.signal("refresh_scene", "Scene")
+    #     self.refresh_signal()
     #     return "ops", ops
 
     # --------------------------- END COMMANDS ------------------------------

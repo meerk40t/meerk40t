@@ -332,7 +332,7 @@ def init_commands(kernel):
             channel("Advancing wordlist indices")
             self.mywordlist.move_all_indices(1)
             self.signal("wordlist_modified")
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         else:
             channel("Leaving wordlist indices untouched as no usage detected")
         return "wordlist", ""

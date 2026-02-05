@@ -779,6 +779,10 @@ class Elemental(Service):
         self.default_operations_title = ""
         self.init_default_operations_nodes()
 
+    def refresh_signal(self, just_emphasized = False):
+        self.signal("invalidate_layer", "emphasized" if just_emphasized else "elements")
+        self.signal("refresh_scene", "Scene")
+
     @property
     def node_lock(self):
         """Exposes the node lock for external use."""
@@ -1199,7 +1203,7 @@ class Elemental(Service):
         if needs_refresh:
             # We changed elems, so update the tree and the scene
             self.signal("element_property_update", data)
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
 
     def condense_elements(self, data, expand_single_group_at_end: bool = False):
         """Return a minimal node selection by recursively collapsing fully covered branches.
@@ -1396,7 +1400,7 @@ class Elemental(Service):
                 # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
                 self.translate_node(q, dx, dy)
         self.signal("modified_by_tool")
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         self.signal("warn_state_update")
 
     def wordlist_delta(self, orgtext, increase):
@@ -1418,7 +1422,7 @@ class Elemental(Service):
 
     def wordlist_advance(self, delta):
         self.mywordlist.move_all_indices(delta)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         self.signal("wordlist")
 
     def wordlist_translate(self, pattern, elemnode=None, increment=True):
@@ -2989,6 +2993,7 @@ class Elemental(Service):
         finally:
             self.suppress_updates = previous_suppress
         if changed_nodes:
+            self.signal("invalidate_layer", "elements")
             self.signal("refresh_tree", changed_nodes)
         self.set_end_time("set_emphasis")
 

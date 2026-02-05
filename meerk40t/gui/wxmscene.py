@@ -1419,6 +1419,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene._signal_widget(
                 self.widget_scene.widget_root, "background", None
             )
+            self.widget_scene.invalidate_background()
             self.widget_scene.request_refresh()
 
         def recognize_background_contours(event=None):
@@ -1663,6 +1664,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.toggle_x_magnet((bb[0] + bb[2]) / 2)
             self.toggle_y_magnet((bb[1] + bb[3]) / 2)
         self.save_magnets()
+        self.widget_scene.invalidate_background()
         self.request_refresh()
 
     def pane_show(self, *args):
@@ -1783,12 +1785,27 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("rebuild_tree")
     def on_rebuild_tree(self, origin, *args):
-        self.widget_scene.invalidate_background()
-        self.widget_scene.invalidate_elements()
+        self.widget_scene.invalidate_background() 
+        # background invalidates all layers,
+        # so no need for further invalidation calls here
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "rebuild_tree", None
         )
 
+    @signal_listener("invalidate_layer")
+    def on_invalidate_layer(self, origin, layer=None, *args):
+        if layer is None:
+            self.widget_scene.invalidate_background()
+            self.widget_scene.invalidate_elements()
+        elif layer == "background":
+            self.widget_scene.invalidate_background()   
+        elif layer == "elements":            
+            self.widget_scene.invalidate_elements()
+        elif layer == "emphasized":
+            self.widget_scene.invalidate_emphasized()
+        elif layer == "generic":
+            self.widget_scene.invalidate_generic()
+        
     @signal_listener("theme")
     def on_theme_change(self, origin, theme=None):
         self.scene.signal("theme", theme)

@@ -239,6 +239,7 @@ class ScenePanel(wx.Panel):
         w, h = self.Size
         self.scene.widget_root.set_frame(0, 0, w, h)
         self.signal("guide")
+        self.scene.invalidate_background()
         self.scene.request_refresh()
 
     # Mouse Events.

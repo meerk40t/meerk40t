@@ -540,7 +540,7 @@ def init_commands(kernel):
             e.id = id
         self.validate_ids()
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return data_type, data
 
     @self.console_argument(
@@ -577,7 +577,7 @@ def init_commands(kernel):
         for e in data:
             e.label = label
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return data_type, data
 
     @self.console_command(
@@ -1347,7 +1347,7 @@ def init_commands(kernel):
         for e in data:
             e.lock = True
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_command(
@@ -1363,7 +1363,7 @@ def init_commands(kernel):
             if hasattr(e, "lock"):
                 e.lock = False
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_option(
@@ -1466,7 +1466,7 @@ def init_commands(kernel):
                         property_op(self.kernel.root, newnode)
             # Newly created! Classification needed?
             post.append(classify_new(add_elem))
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
             return "elements", add_elem
 
     @self.console_command(

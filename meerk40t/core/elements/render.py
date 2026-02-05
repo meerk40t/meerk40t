@@ -87,7 +87,7 @@ def init_commands(kernel):
         image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
         with self.node_lock:
             self.elem_branch.add_node(image_node)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         data = [image_node]
         # Newly created! Classification needed?
         post.append(classify_new(data))
@@ -265,7 +265,7 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         data_out = [node]
         post.append(classify_new(data_out))
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         kernel.busyinfo.end()
         return "elements", data_out
 
@@ -718,7 +718,7 @@ def init_commands(kernel):
 
         # Newly created! Classification needed?
         post.append(classify_new(outputdata))
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         kernel.busyinfo.end()
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
@@ -780,7 +780,7 @@ def init_commands(kernel):
                 channel(f"Could not register keyhole: {e}")
                 return
         self.process_keyhole_updates(None)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", images
 
     @self.console_command(
@@ -805,7 +805,7 @@ def init_commands(kernel):
                 self.deregister_keyhole(rid, node)
         self.process_keyhole_updates(None)
 
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", images
 
     # --------------------------- END COMMANDS ------------------------------
