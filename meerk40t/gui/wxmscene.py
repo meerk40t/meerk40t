@@ -1783,6 +1783,8 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("rebuild_tree")
     def on_rebuild_tree(self, origin, *args):
+        self.widget_scene.invalidate_background()
+        self.widget_scene.invalidate_elements()
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "rebuild_tree", None
         )

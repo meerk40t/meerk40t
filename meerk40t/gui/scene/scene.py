@@ -19,6 +19,7 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT_AND_DELEGATE,
     HITCHAIN_PRIORITY_HIT,
     LAYER_ACTIVE_ELEMENTS,
+    LAYER_GENERIC_NODES,
     LAYER_NONACTIVE_ELEMENTS,
     LAYER_TOOLS,
     ORIENTATION_RELATIVE,
@@ -187,32 +188,38 @@ class SceneToast:
 
 
 class LayerCache:
-    """Three-level opaque bitmap cache for scene rendering.
+    """Four-level opaque bitmap cache for scene rendering.
 
-    Cache A (background_bitmap): background colour fill + layers below
-    LAYER_NONACTIVE_ELEMENTS (bed, grid, generic nodes such as machine
-    origin and registration marks).
+    Cache A (background_bitmap): background colour fill + LAYER_BACKGROUND
+    (bed, grid).
 
-    Cache B (elements_bitmap): Cache A content + LAYER_NONACTIVE_ELEMENTS
-    (non-emphasized elements).  Stays valid when only emphasized elements
+    Cache B (generic_bitmap): Cache A content + LAYER_GENERIC_NODES
+    (registration marks, machine origin, placements). Stays valid when only
+    elements change.
+
+    Cache C (elements_bitmap): Cache B content + LAYER_NONACTIVE_ELEMENTS
+    (non-emphasized elements). Stays valid when only emphasized elements
     change.
 
-    Cache C (composite_bitmap): Cache B content + LAYER_ACTIVE_ELEMENTS
-    (emphasized elements).  Only this layer needs rebuilding when the user
+    Cache D (composite_bitmap): Cache C content + LAYER_ACTIVE_ELEMENTS
+    (emphasized elements). Only this layer needs rebuilding when the user
     moves / edits a selected element without changing the selection set.
 
     Widgets at LAYER_TOOLS and above are always drawn live on top.
 
     Invalidation cascade:
-      background invalid  →  elements invalid  →  composite invalid
-      elements  invalid   →  composite invalid
+      background invalid  →  generic invalid  →  elements invalid  →  composite invalid
+      generic invalid     →  elements invalid  →  composite invalid
+      elements invalid    →  composite invalid
     """
 
     def __init__(self):
         self._bg_bitmap = None
+        self._generic_bitmap = None
         self._elements_bitmap = None
         self._composite_bitmap = None
         self._bg_valid = False
+        self._generic_valid = False
         self._elements_valid = False
         self._composite_valid = False
         self._size = (0, 0)
@@ -223,6 +230,10 @@ class LayerCache:
     @property
     def background_valid(self):
         return self._bg_valid
+
+    @property
+    def generic_valid(self):
+        return self._generic_valid
 
     @property
     def elements_valid(self):
@@ -240,8 +251,15 @@ class LayerCache:
     # invalidation
     # ------------------------------------------------------------------
     def invalidate_background(self):
-        """Mark background cache dirty; cascades to elements and composite."""
+        """Mark background cache dirty; cascades to generic, elements and composite."""
         self._bg_valid = False
+        self._generic_valid = False
+        self._elements_valid = False
+        self._composite_valid = False
+
+    def invalidate_generic(self):
+        """Mark generic nodes cache dirty; cascades to elements and composite."""
+        self._generic_valid = False
         self._elements_valid = False
         self._composite_valid = False
 
@@ -259,14 +277,16 @@ class LayerCache:
     # ------------------------------------------------------------------
     def ensure_size(self, width, height):
         """Allocate (or reallocate) cache bitmaps when the window size changes.
-        A size change invalidates all three caches."""
+        A size change invalidates all four caches."""
         if self._size == (width, height):
             return
         self._size = (width, height)
         self._bg_bitmap = wx.Bitmap(width, height)
+        self._generic_bitmap = wx.Bitmap(width, height)
         self._elements_bitmap = wx.Bitmap(width, height)
         self._composite_bitmap = wx.Bitmap(width, height)
         self._bg_valid = False
+        self._generic_valid = False
         self._elements_valid = False
         self._composite_valid = False
 
@@ -275,6 +295,9 @@ class LayerCache:
     # ------------------------------------------------------------------
     def mark_background_valid(self):
         self._bg_valid = True
+
+    def mark_generic_valid(self):
+        self._generic_valid = True
 
     def mark_elements_valid(self):
         self._elements_valid = True
@@ -288,6 +311,10 @@ class LayerCache:
     @property
     def background_bitmap(self):
         return self._bg_bitmap
+
+    @property
+    def generic_bitmap(self):
+        return self._generic_bitmap
 
     @property
     def elements_bitmap(self):
@@ -496,8 +523,13 @@ class Scene(Module, Job):
             self.request_refresh()
 
     def invalidate_background(self):
-        """Invalidate background cache; cascades to elements and composite."""
+        """Invalidate background cache; cascades to generic, elements and composite."""
         self._cache.invalidate_background()
+        self.request_refresh()
+
+    def invalidate_generic(self):
+        """Invalidate generic nodes cache; cascades to elements and composite."""
+        self._cache.invalidate_generic()
         self.request_refresh()
 
     def invalidate_elements(self):
@@ -592,7 +624,7 @@ class Scene(Module, Job):
         gc.PopState()
 
     def _update_buffer_ui_thread(self):
-        """Performs redrawing using three-level cache (background, elements, composite)."""
+        """Performs redrawing using four-level cache (background, generic, elements, composite)."""
         dm = self.context.draw_mode
         buf = self.gui.scene_buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
@@ -632,7 +664,7 @@ class Scene(Module, Job):
 
         font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
 
-        # --- Cache A: background (bg color + layers < NONACTIVE) ---
+        # --- Cache A: background (bg color + LAYER_BACKGROUND) ---
         if not self._cache.background_valid:
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.background_bitmap)
@@ -648,18 +680,39 @@ class Scene(Module, Job):
             gc = wx.GraphicsContext.Create(dc)
             gc.Size = dc.Size
             gc.SetFont(font, wx.BLACK)
-            self._draw_scene_layers(gc, 0, LAYER_NONACTIVE_ELEMENTS)
+            self._draw_scene_layers(gc, 0, LAYER_GENERIC_NODES)
             gc.Destroy()
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_background_valid()
 
-        # --- Cache B: non-emphasized elements (background + NONACTIVE) ---
-        if not self._cache.elements_valid:
+        # --- Cache B: generic nodes (background + GENERIC_NODES) ---
+        if not self._cache.generic_valid:
             dc = wx.MemoryDC()
-            dc.SelectObject(self._cache.elements_bitmap)
+            dc.SelectObject(self._cache.generic_bitmap)
             # Raw pixel copy from background
             src_dc = wx.MemoryDC()
             src_dc.SelectObject(self._cache.background_bitmap)
+            dc.Blit(0, 0, w, h, src_dc, 0, 0)
+            src_dc.SelectObject(wx.NullBitmap)
+            # Draw generic nodes
+            if dm & DRAW_MODE_FLIPXY != 0:
+                dc.SetUserScale(-1, -1)
+                dc.SetLogicalOrigin(w, h)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.Size = dc.Size
+            gc.SetFont(font, wx.BLACK)
+            self._draw_scene_layers(gc, LAYER_GENERIC_NODES, LAYER_NONACTIVE_ELEMENTS)
+            gc.Destroy()
+            dc.SelectObject(wx.NullBitmap)
+            self._cache.mark_generic_valid()
+
+        # --- Cache C: non-emphasized elements (generic + NONACTIVE) ---
+        if not self._cache.elements_valid:
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._cache.elements_bitmap)
+            # Raw pixel copy from generic
+            src_dc = wx.MemoryDC()
+            src_dc.SelectObject(self._cache.generic_bitmap)
             dc.Blit(0, 0, w, h, src_dc, 0, 0)
             src_dc.SelectObject(wx.NullBitmap)
             # Draw non-emphasized elements
@@ -674,7 +727,7 @@ class Scene(Module, Job):
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_elements_valid()
 
-        # --- Cache C: emphasized elements (elements + ACTIVE) ---
+        # --- Cache D: emphasized elements (elements + ACTIVE) ---
         if not self._cache.composite_valid:
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.composite_bitmap)

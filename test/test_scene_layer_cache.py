@@ -1,23 +1,24 @@
 """Unit tests for the LayerCache validity state machine and invalidation rules.
 
-These tests exercise the three-level cache contract defined by LayerCache in
-meerk40t/gui/scene/scene.py without importing wx.  A thin ``_CacheMock``
+These tests exercise the four-level cache contract defined by LayerCache in
+meerk40t/gui/scene/scene.py without importing wx. A thin ``_CacheMock``
 replicates every state-transition rule so that the invariants can be verified
 purely in-process.
 
 Invariants under test
 ---------------------
-1. Initial state: all three caches invalid.
-2. ``invalidate_background()``  →  background, elements, AND composite invalid.
-3. ``invalidate_elements()``    →  elements AND composite invalid; background unchanged.
-4. ``invalidate_composite()``   →  only composite invalid; background and elements unchanged.
-5. ``ensure_size(w, h)``        →  if (w, h) differs from the stored size,
-                                    all three caches become invalid.
-6. ``ensure_size(w, h)``        →  if (w, h) equals stored size, validity is
+1. Initial state: all four caches invalid.
+2. ``invalidate_background()``  →  background, generic, elements, AND composite invalid.
+3. ``invalidate_generic()``     →  generic, elements AND composite invalid; background unchanged.
+4. ``invalidate_elements()``    →  elements AND composite invalid; background and generic unchanged.
+5. ``invalidate_composite()``   →  only composite invalid; background, generic, and elements unchanged.
+6. ``ensure_size(w, h)``        →  if (w, h) differs from the stored size,
+                                    all four caches become invalid.
+7. ``ensure_size(w, h)``        →  if (w, h) equals stored size, validity is
                                     preserved (no-op).
-7. ``mark_background_valid()`` / ``mark_elements_valid()`` / ``mark_composite_valid()``
+8. ``mark_background_valid()`` / ``mark_generic_valid()`` / ``mark_elements_valid()`` / ``mark_composite_valid()``
                                 →  set the corresponding flag to True.
-8. Draw-sequence scenarios that combine the above in realistic order.
+9. Draw-sequence scenarios that combine the above in realistic order.
 """
 
 import unittest
@@ -27,17 +28,20 @@ class _CacheMock:
     """Minimal stand-in for LayerCache — tests only the validity state machine.
 
     Replicates the invalidation contract from LayerCache in scene.py:
-      - invalidate_background()  →  background, elements, and composite become invalid
-      - invalidate_elements()    →  elements and composite become invalid (background unchanged)
+      - invalidate_background()  →  background, generic, elements, and composite become invalid
+      - invalidate_generic()     →  generic, elements, and composite become invalid (background unchanged)
+      - invalidate_elements()    →  elements and composite become invalid (background and generic unchanged)
       - invalidate_composite()   →  only composite becomes invalid
       - mark_background_valid()  →  background becomes valid (others unchanged)
+      - mark_generic_valid()     →  generic becomes valid (others unchanged)
       - mark_elements_valid()    →  elements becomes valid (others unchanged)
       - mark_composite_valid()   →  composite becomes valid (others unchanged)
-      - ensure_size(w, h)        →  if size changes, all three become invalid
+      - ensure_size(w, h)        →  if size changes, all four become invalid
     """
 
     def __init__(self):
         self._bg_valid = False
+        self._generic_valid = False
         self._elements_valid = False
         self._composite_valid = False
         self._size = (0, 0)
@@ -46,6 +50,10 @@ class _CacheMock:
     @property
     def background_valid(self):
         return self._bg_valid
+
+    @property
+    def generic_valid(self):
+        return self._generic_valid
 
     @property
     def elements_valid(self):
@@ -62,6 +70,12 @@ class _CacheMock:
     # -- invalidation -----------------------------------------------------
     def invalidate_background(self):
         self._bg_valid = False
+        self._generic_valid = False
+        self._elements_valid = False
+        self._composite_valid = False
+
+    def invalidate_generic(self):
+        self._generic_valid = False
         self._elements_valid = False
         self._composite_valid = False
 
@@ -78,12 +92,16 @@ class _CacheMock:
             return
         self._size = (width, height)
         self._bg_valid = False
+        self._generic_valid = False
         self._elements_valid = False
         self._composite_valid = False
 
     # -- mark valid -------------------------------------------------------
     def mark_background_valid(self):
         self._bg_valid = True
+
+    def mark_generic_valid(self):
+        self._generic_valid = True
 
     def mark_elements_valid(self):
         self._elements_valid = True
@@ -96,9 +114,10 @@ class _CacheMock:
 # 1  Initial state
 # ======================================================================
 class TestLayerCacheInitialState(unittest.TestCase):
-    def test_initially_all_three_invalid(self):
+    def test_initially_all_four_invalid(self):
         cache = _CacheMock()
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
@@ -108,16 +127,18 @@ class TestLayerCacheInitialState(unittest.TestCase):
 
 
 # ======================================================================
-# 2  invalidate_background  –  clears all three
+# 2  invalidate_background  –  clears all four
 # ======================================================================
 class TestInvalidateBackground(unittest.TestCase):
-    def test_clears_all_three_when_all_valid(self):
+    def test_clears_all_four_when_all_valid(self):
         cache = _CacheMock()
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         cache.invalidate_background()
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
@@ -126,39 +147,81 @@ class TestInvalidateBackground(unittest.TestCase):
         # already invalid from __init__
         cache.invalidate_background()
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
-    def test_clears_elements_and_composite_even_when_background_already_invalid(self):
+    def test_clears_downstream_caches_even_when_background_already_invalid(self):
         cache = _CacheMock()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         # background is still invalid from __init__
         cache.invalidate_background()
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
 
 # ======================================================================
-# 3  invalidate_elements  –  clears elements and composite
+# 3  invalidate_generic  –  clears generic, elements and composite
+# ======================================================================
+class TestInvalidateGeneric(unittest.TestCase):
+    def test_clears_generic_elements_and_composite(self):
+        cache = _CacheMock()
+        cache.mark_background_valid()
+        cache.mark_generic_valid()
+        cache.mark_elements_valid()
+        cache.mark_composite_valid()
+        cache.invalidate_generic()
+        self.assertTrue(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
+        self.assertFalse(cache.elements_valid)
+        self.assertFalse(cache.composite_valid)
+
+    def test_preserves_background_when_generic_already_invalid(self):
+        cache = _CacheMock()
+        cache.mark_background_valid()
+        # generic, elements and composite still False from __init__
+        cache.invalidate_generic()
+        self.assertTrue(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
+        self.assertFalse(cache.elements_valid)
+        self.assertFalse(cache.composite_valid)
+
+    def test_noop_when_all_already_invalid(self):
+        cache = _CacheMock()
+        cache.invalidate_generic()
+        self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
+        self.assertFalse(cache.elements_valid)
+        self.assertFalse(cache.composite_valid)
+
+
+# ======================================================================
+# 4  invalidate_elements  –  clears elements and composite
 # ======================================================================
 class TestInvalidateElements(unittest.TestCase):
     def test_clears_elements_and_composite(self):
         cache = _CacheMock()
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         cache.invalidate_elements()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
-    def test_preserves_background_when_elements_already_invalid(self):
+    def test_preserves_background_and_generic_when_elements_already_invalid(self):
         cache = _CacheMock()
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         # elements and composite still False from __init__
         cache.invalidate_elements()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
@@ -166,31 +229,36 @@ class TestInvalidateElements(unittest.TestCase):
         cache = _CacheMock()
         cache.invalidate_elements()
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
 
 # ======================================================================
-# 4  invalidate_composite  –  clears composite only
+# 5  invalidate_composite  –  clears composite only
 # ======================================================================
 class TestInvalidateComposite(unittest.TestCase):
     def test_clears_only_composite(self):
         cache = _CacheMock()
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         cache.invalidate_composite()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
-    def test_preserves_background_and_elements_when_composite_already_invalid(self):
+    def test_preserves_all_upstream_when_composite_already_invalid(self):
         cache = _CacheMock()
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         # composite still False from __init__
         cache.invalidate_composite()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
@@ -198,52 +266,59 @@ class TestInvalidateComposite(unittest.TestCase):
         cache = _CacheMock()
         cache.invalidate_composite()
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
 
 # ======================================================================
-# 5 & 6  ensure_size
+# 6 & 7  ensure_size
 # ======================================================================
 class TestEnsureSize(unittest.TestCase):
     def test_same_size_preserves_validity(self):
         cache = _CacheMock()
         cache._size = (800, 600)
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
 
         cache.ensure_size(800, 600)  # no change
 
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
         self.assertEqual(cache.size, (800, 600))
 
-    def test_width_change_invalidates_all_three(self):
+    def test_width_change_invalidates_all_four(self):
         cache = _CacheMock()
         cache._size = (800, 600)
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
 
         cache.ensure_size(1024, 600)
 
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
         self.assertEqual(cache.size, (1024, 600))
 
-    def test_height_change_invalidates_all_three(self):
+    def test_height_change_invalidates_all_four(self):
         cache = _CacheMock()
         cache._size = (800, 600)
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
 
         cache.ensure_size(800, 768)
 
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
         self.assertEqual(cache.size, (800, 768))
@@ -252,12 +327,14 @@ class TestEnsureSize(unittest.TestCase):
         cache = _CacheMock()
         cache._size = (800, 600)
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
 
         cache.ensure_size(1920, 1080)
 
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
         self.assertEqual(cache.size, (1920, 1080))
@@ -267,48 +344,62 @@ class TestEnsureSize(unittest.TestCase):
         cache = _CacheMock()
         cache.ensure_size(640, 480)
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
         self.assertEqual(cache.size, (640, 480))
 
 
 # ======================================================================
-# 7  mark_valid helpers
+# 8  mark_valid helpers
 # ======================================================================
 class TestMarkValid(unittest.TestCase):
     def test_mark_background_valid(self):
         cache = _CacheMock()
         cache.mark_background_valid()
         self.assertTrue(cache.background_valid)
-        self.assertFalse(cache.elements_valid)  # elements untouched
+        self.assertFalse(cache.generic_valid)    # generic untouched
+        self.assertFalse(cache.elements_valid)   # elements untouched
         self.assertFalse(cache.composite_valid)  # composite untouched
+
+    def test_mark_generic_valid(self):
+        cache = _CacheMock()
+        cache.mark_generic_valid()
+        self.assertFalse(cache.background_valid)  # background untouched
+        self.assertTrue(cache.generic_valid)
+        self.assertFalse(cache.elements_valid)    # elements untouched
+        self.assertFalse(cache.composite_valid)   # composite untouched
 
     def test_mark_elements_valid(self):
         cache = _CacheMock()
         cache.mark_elements_valid()
         self.assertFalse(cache.background_valid)  # background untouched
+        self.assertFalse(cache.generic_valid)     # generic untouched
         self.assertTrue(cache.elements_valid)
-        self.assertFalse(cache.composite_valid)  # composite untouched
+        self.assertFalse(cache.composite_valid)   # composite untouched
 
     def test_mark_composite_valid(self):
         cache = _CacheMock()
         cache.mark_composite_valid()
         self.assertFalse(cache.background_valid)  # background untouched
-        self.assertFalse(cache.elements_valid)   # elements untouched
+        self.assertFalse(cache.generic_valid)     # generic untouched
+        self.assertFalse(cache.elements_valid)    # elements untouched
         self.assertTrue(cache.composite_valid)
 
-    def test_mark_all_three_valid(self):
+    def test_mark_all_four_valid(self):
         cache = _CacheMock()
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
 
 
 # ======================================================================
-# 8  Realistic draw-sequence scenarios
+# 9  Realistic draw-sequence scenarios
 # ======================================================================
 class TestDrawSequences(unittest.TestCase):
     """Simulate the typical sequences that happen in _update_buffer_ui_thread."""
@@ -318,19 +409,23 @@ class TestDrawSequences(unittest.TestCase):
         cache = _CacheMock()
         cache.ensure_size(w, h)
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         return cache
 
     # ----------------------------------------------------------------
-    def test_first_draw_renders_all_three(self):
-        """Fresh cache: all invalid → render A → render B → render C → all valid."""
+    def test_first_draw_renders_all_four(self):
+        """Fresh cache: all invalid → render A → render B → render C → render D → all valid."""
         cache = _CacheMock()
         cache.ensure_size(800, 600)
 
         self.assertFalse(cache.background_valid)
         cache.mark_background_valid()
 
+        self.assertFalse(cache.generic_valid)
+        cache.mark_generic_valid()
+
         self.assertFalse(cache.elements_valid)
         cache.mark_elements_valid()
 
@@ -338,56 +433,82 @@ class TestDrawSequences(unittest.TestCase):
         cache.mark_composite_valid()
 
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
 
     def test_emphasized_element_change_rerenders_only_composite(self):
-        """invalidate_composite (emphasized element change) → only C re-rendered."""
+        """invalidate_composite (emphasized element change) → only D re-rendered."""
         cache = self._warmed_cache()
 
         cache.invalidate_composite()  # simulates emphasized element modified
         self.assertTrue(cache.background_valid)   # A untouched
-        self.assertTrue(cache.elements_valid)     # B untouched
-        self.assertFalse(cache.composite_valid)   # C dirty
+        self.assertTrue(cache.generic_valid)      # B untouched
+        self.assertTrue(cache.elements_valid)     # C untouched
+        self.assertFalse(cache.composite_valid)   # D dirty
 
-        cache.mark_composite_valid()              # re-render C
+        cache.mark_composite_valid()              # re-render D
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
 
     def test_non_emphasized_element_change_rerenders_elements_and_composite(self):
-        """invalidate_elements (non-emphasized element change) → B and C re-rendered."""
+        """invalidate_elements (non-emphasized element change) → C and D re-rendered."""
         cache = self._warmed_cache()
 
         cache.invalidate_elements()               # simulates non-emphasized element added/modified
         self.assertTrue(cache.background_valid)   # A untouched
-        self.assertFalse(cache.elements_valid)    # B dirty
-        self.assertFalse(cache.composite_valid)   # C dirty (cascade)
+        self.assertTrue(cache.generic_valid)      # B untouched
+        self.assertFalse(cache.elements_valid)    # C dirty
+        self.assertFalse(cache.composite_valid)   # D dirty (cascade)
 
-        cache.mark_elements_valid()               # re-render B
-        cache.mark_composite_valid()              # re-render C
+        cache.mark_elements_valid()               # re-render C
+        cache.mark_composite_valid()              # re-render D
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
 
-    def test_zoom_pan_rerenders_all_three(self):
-        """Matrix change (zoom/pan) → invalidate_background → all three re-rendered."""
+    def test_generic_node_change_rerenders_generic_elements_and_composite(self):
+        """invalidate_generic (generic node change) → B, C and D re-rendered."""
+        cache = self._warmed_cache()
+
+        cache.invalidate_generic()                # simulates registration mark added/moved
+        self.assertTrue(cache.background_valid)   # A untouched
+        self.assertFalse(cache.generic_valid)     # B dirty
+        self.assertFalse(cache.elements_valid)    # C dirty (cascade)
+        self.assertFalse(cache.composite_valid)   # D dirty (cascade)
+
+        cache.mark_generic_valid()                # re-render B
+        cache.mark_elements_valid()               # re-render C
+        cache.mark_composite_valid()              # re-render D
+        self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
+        self.assertTrue(cache.elements_valid)
+        self.assertTrue(cache.composite_valid)
+
+    def test_zoom_pan_rerenders_all_four(self):
+        """Matrix change (zoom/pan) → invalidate_background → all four re-rendered."""
         cache = self._warmed_cache()
 
         cache.invalidate_background()  # simulates matrix-snapshot mismatch
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
 
-    def test_successive_emphasized_changes_no_background_or_elements_rerender(self):
-        """Multiple rapid emphasized element changes before next draw do not touch A or B."""
+    def test_successive_emphasized_changes_no_upstream_rerender(self):
+        """Multiple rapid emphasized element changes before next draw do not touch A, B, or C."""
         cache = self._warmed_cache()
 
         cache.invalidate_composite()
@@ -395,44 +516,49 @@ class TestDrawSequences(unittest.TestCase):
         cache.invalidate_composite()
 
         self.assertTrue(cache.background_valid)   # A still valid
-        self.assertTrue(cache.elements_valid)     # B still valid
-        self.assertFalse(cache.composite_valid)   # C dirty
+        self.assertTrue(cache.generic_valid)      # B still valid
+        self.assertTrue(cache.elements_valid)     # C still valid
+        self.assertFalse(cache.composite_valid)   # D dirty
 
     def test_background_invalidation_overrides_composite_only(self):
-        """If composite-only was pending and then background fires, all three dirty."""
+        """If composite-only was pending and then background fires, all four dirty."""
         cache = self._warmed_cache()
 
         cache.invalidate_composite()               # emphasized element change
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
 
         cache.invalidate_background()              # then zoom/pan
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
     def test_resize_during_pending_element_change(self):
-        """Window resize while a composite invalidation is pending → all three dirty."""
+        """Window resize while a composite invalidation is pending → all four dirty."""
         cache = self._warmed_cache(800, 600)
 
         cache.invalidate_composite()               # element changed
         cache.ensure_size(1024, 768)               # window resized
 
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
         self.assertEqual(cache.size, (1024, 768))
 
     def test_resize_to_same_size_after_element_change(self):
-        """ensure_size with unchanged size after element change is a no-op on A and B."""
+        """ensure_size with unchanged size after element change is a no-op on A, B, and C."""
         cache = self._warmed_cache(800, 600)
 
         cache.invalidate_composite()
         cache.ensure_size(800, 600)  # no size change → no-op
 
         self.assertTrue(cache.background_valid)    # A stays valid
-        self.assertTrue(cache.elements_valid)      # B stays valid
-        self.assertFalse(cache.composite_valid)    # C still dirty
+        self.assertTrue(cache.generic_valid)       # B stays valid
+        self.assertTrue(cache.elements_valid)      # C stays valid
+        self.assertFalse(cache.composite_valid)    # D still dirty
 
     def test_multiple_full_cycles(self):
         """Two complete warm → dirty → re-render cycles in a row."""
@@ -440,20 +566,23 @@ class TestDrawSequences(unittest.TestCase):
         for _ in range(2):
             cache.ensure_size(800, 600)
             cache.mark_background_valid()
+            cache.mark_generic_valid()
             cache.mark_elements_valid()
             cache.mark_composite_valid()
             self.assertTrue(cache.background_valid)
+            self.assertTrue(cache.generic_valid)
             self.assertTrue(cache.elements_valid)
             self.assertTrue(cache.composite_valid)
 
             cache.invalidate_background()
             self.assertFalse(cache.background_valid)
+            self.assertFalse(cache.generic_valid)
             self.assertFalse(cache.elements_valid)
             self.assertFalse(cache.composite_valid)
 
     def test_theme_change_then_element_change_before_draw(self):
         """Theme (invalidate_background) followed by element change before draw.
-        Background invalidation already set all three dirty, so the second
+        Background invalidation already set all four dirty, so the second
         invalidate_composite is a no-op on state."""
         cache = self._warmed_cache()
 
@@ -461,14 +590,17 @@ class TestDrawSequences(unittest.TestCase):
         cache.invalidate_composite()    # element added (redundant)
 
         self.assertFalse(cache.background_valid)
+        self.assertFalse(cache.generic_valid)
         self.assertFalse(cache.elements_valid)
         self.assertFalse(cache.composite_valid)
 
         # single full re-render
         cache.mark_background_valid()
+        cache.mark_generic_valid()
         cache.mark_elements_valid()
         cache.mark_composite_valid()
         self.assertTrue(cache.background_valid)
+        self.assertTrue(cache.generic_valid)
         self.assertTrue(cache.elements_valid)
         self.assertTrue(cache.composite_valid)
 
