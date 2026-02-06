@@ -224,6 +224,16 @@ class LayerCache:
         self._composite_valid = False
         self._size = (0, 0)
 
+        # Statistics tracking
+        self._stats = {
+            'background': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+            'generic': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+            'elements': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+            'composite': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+        }
+        self._total_frames = 0
+        self._total_frame_time = 0.0
+
     # ------------------------------------------------------------------
     # validity queries
     # ------------------------------------------------------------------
@@ -304,6 +314,101 @@ class LayerCache:
 
     def mark_composite_valid(self):
         self._composite_valid = True
+
+    # ------------------------------------------------------------------
+    # statistics tracking
+    # ------------------------------------------------------------------
+    def record_hit(self, layer):
+        """Record a cache hit for the specified layer."""
+        if layer in self._stats:
+            self._stats[layer]['hits'] += 1
+
+    def record_miss(self, layer, render_time=0.0):
+        """Record a cache miss (rebuild) for the specified layer."""
+        if layer in self._stats:
+            self._stats[layer]['misses'] += 1
+            self._stats[layer]['total_time'] += render_time
+            self._stats[layer]['count'] += 1
+
+    def record_frame(self, frame_time):
+        """Record a complete frame render."""
+        self._total_frames += 1
+        self._total_frame_time += frame_time
+
+    def get_statistics(self):
+        """Return a dictionary of cache statistics for all layers."""
+        stats = {}
+        for layer, data in self._stats.items():
+            total_checks = data['hits'] + data['misses']
+            hit_rate = (data['hits'] / total_checks * 100) if total_checks > 0 else 0.0
+            avg_time = (data['total_time'] / data['count']) if data['count'] > 0 else 0.0
+            stats[layer] = {
+                'hits': data['hits'],
+                'misses': data['misses'],
+                'total_checks': total_checks,
+                'hit_rate': hit_rate,
+                'avg_render_time': avg_time,
+                'total_render_time': data['total_time'],
+            }
+
+        # Add total frame statistics
+        avg_frame_time = (self._total_frame_time / self._total_frames) if self._total_frames > 0 else 0.0
+        stats['frames'] = {
+            'total_frames': self._total_frames,
+            'total_time': self._total_frame_time,
+            'avg_time': avg_frame_time,
+        }
+        return stats
+
+    def reset_statistics(self):
+        """Reset all cache statistics."""
+        for layer in self._stats:
+            self._stats[layer] = {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0}
+        self._total_frames = 0
+        self._total_frame_time = 0.0
+
+    def print_statistics(self, channel=None):
+        """Print formatted cache statistics as a table."""
+        stats = self.get_statistics()
+
+        # Build table header
+        output = ["\n=== Layer Cache Statistics ===\n"]
+
+        # Column headers
+        header = f"{'Layer':<12} {'Hits':>8} {'Misses':>8} {'Total':>8} {'Hit %':>8} {'Avg(ms)':>10} {'Total(s)':>10}"
+        separator = "─" * len(header)
+        output.append(header)
+        output.append(separator)
+
+        # Data rows for each layer
+        for layer in ['background', 'generic', 'elements', 'composite']:
+            s = stats[layer]
+            row = (f"{layer.capitalize():<12} "
+                   f"{s['hits']:>8} "
+                   f"{s['misses']:>8} "
+                   f"{s['total_checks']:>8} "
+                   f"{s['hit_rate']:>7.1f}% "
+                   f"{s['avg_render_time']*1000:>9.2f} "
+                   f"{s['total_render_time']:>10.3f}")
+            output.append(row)
+
+        output.append(separator)
+
+        # Total frame statistics
+        fs = stats['frames']
+        output.append(f"\nTotal Frames: {fs['total_frames']}")
+        output.append(f"Avg Frame Time: {fs['avg_time']*1000:.2f}ms")
+        output.append(f"Total Frame Time: {fs['total_time']:.3f}s")
+        if fs['total_frames'] > 0:
+            fps = 1.0 / fs['avg_time'] if fs['avg_time'] > 0 else 0.0
+            output.append(f"Average FPS: {fps:.1f}")
+
+        output.append("\n" + "="*len(header))
+
+        result = "\n".join(output)
+        if channel is not None:
+            channel(result)
+        return result
 
     # ------------------------------------------------------------------
     # bitmap accessors
@@ -625,6 +730,7 @@ class Scene(Module, Job):
 
     def _update_buffer_ui_thread(self):
         """Performs redrawing using four-level cache (background, generic, elements, composite)."""
+        frame_start_time = time.perf_counter()
         dm = self.context.draw_mode
         buf = self.gui.scene_buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
@@ -650,6 +756,8 @@ class Scene(Module, Job):
             dc.SetBackground(self.background_brush)
             dc.Clear()
             dc.SelectObject(wx.NullBitmap)
+            frame_time = time.perf_counter() - frame_start_time
+            self._cache.record_frame(frame_time)
             return
 
         # Invalidate all caches if window size, matrix, or draw_mode changed
@@ -666,6 +774,7 @@ class Scene(Module, Job):
 
         # --- Cache A: background (bg color + LAYER_BACKGROUND) ---
         if not self._cache.background_valid:
+            start_time = time.perf_counter()
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.background_bitmap)
             if self.overrule_background is None:
@@ -684,9 +793,14 @@ class Scene(Module, Job):
             gc.Destroy()
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_background_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('background', render_time)
+        else:
+            self._cache.record_hit('background')
 
         # --- Cache B: generic nodes (background + GENERIC_NODES) ---
         if not self._cache.generic_valid:
+            start_time = time.perf_counter()
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.generic_bitmap)
             # Raw pixel copy from background
@@ -705,9 +819,14 @@ class Scene(Module, Job):
             gc.Destroy()
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_generic_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('generic', render_time)
+        else:
+            self._cache.record_hit('generic')
 
         # --- Cache C: non-emphasized elements (generic + NONACTIVE) ---
         if not self._cache.elements_valid:
+            start_time = time.perf_counter()
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.elements_bitmap)
             # Raw pixel copy from generic
@@ -726,9 +845,14 @@ class Scene(Module, Job):
             gc.Destroy()
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_elements_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('elements', render_time)
+        else:
+            self._cache.record_hit('elements')
 
         # --- Cache D: emphasized elements (elements + ACTIVE) ---
         if not self._cache.composite_valid:
+            start_time = time.perf_counter()
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.composite_bitmap)
             # Raw pixel copy from elements
@@ -747,6 +871,10 @@ class Scene(Module, Job):
             gc.Destroy()
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_composite_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('composite', render_time)
+        else:
+            self._cache.record_hit('composite')
 
         # --- Final frame: composite + live layers (tools, interface, toast) ---
         dc = wx.MemoryDC()
@@ -779,6 +907,10 @@ class Scene(Module, Job):
         dc.SelectObject(wx.NullBitmap)
         del gc.dc
         del dc
+
+        # Record total frame time
+        frame_time = time.perf_counter() - frame_start_time
+        self._cache.record_frame(frame_time)
 
     def toast(self, message, token=-1):
         if self._toast is None:
