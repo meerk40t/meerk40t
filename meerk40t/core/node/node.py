@@ -993,7 +993,7 @@ class Node:
     ):
         if invalidate:
             self.set_dirty_bounds()
-        if self._parent is not None:
+        if self._parent is not None and not interim:
             if node is None:
                 node = self
             # Any change to position / size needs a recalculation of the bounds

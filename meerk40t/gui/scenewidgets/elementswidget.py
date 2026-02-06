@@ -1,3 +1,5 @@
+# import time
+
 from math import sqrt
 
 from meerk40t.core.units import Length
@@ -27,6 +29,8 @@ class ElementsWidget(Widget):
         Widget.__init__(self, scene, all=True, **kwargs)
         self.renderer = renderer
         self.filter = SHOW_ALL if filter is None else filter
+        self._counter = 0
+        self._total_time = 0
 
     def hit(self):
         return HITCHAIN_HIT
@@ -93,6 +97,7 @@ class ElementsWidget(Widget):
                 )
         if self.scene.pane.tool_container.mode == "vertex":
             draw_mode |= DRAW_MODE_EDIT
+        # t0 = time.time()
         if self.filter in (SHOW_ALL, SHOW_ELEMENTS_ALL):
             self.renderer.render(
                 context.elements.elems_nodes(),
@@ -103,7 +108,7 @@ class ElementsWidget(Widget):
             )
         elif self.filter == SHOW_ELEMENTS_SELECTED:
             self.renderer.render(
-                context.elements.elems_nodes(emphasized=True, cascade_criteria=True),
+                context.elements.elems(emphasized=True),
                 gc,
                 draw_mode,
                 zoomscale=zoom_scale,
@@ -117,7 +122,12 @@ class ElementsWidget(Widget):
                 zoomscale=zoom_scale,
                 msg="elements",
             )
-
+        # t1 = time.time()
+        # self._counter += 1
+        # self._total_time += (t1 - t0)   
+        # info = {1: "regmarks", 2: "all", 3: "selected", 4: "non-selected"}
+        # print(f"Render elements: {t1-t0:.3f} seconds for {info.get(self.filter, 'unknown') }")
+        # print(f"Average render time: {self._total_time / self._counter:.3f} seconds over {self._counter} calls")    
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):

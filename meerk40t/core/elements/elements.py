@@ -661,8 +661,27 @@ class Elemental(Service):
         self._tree = RootNode(self)
         self._tree.node_lock = self.node_lock
         # Caches for flattened lists to avoid repeated full-tree traversals
-        self._elems_cache = None  # Cached list of element nodes
+        self._elems_cache = None  # Cached list of element nodes (elem_nodes)
+        self._elems_nodes_cache = None  # Cached list of element nodes + groups/effects (elem_group_nodes)
         self._ops_cache = None  # Cached list of operation nodes
+        # Optimized filtered sub-caches for common queries during interactive operations
+        self._emphasized_cache = None  # Cached list of emphasized elements only
+        self._selected_cache = None  # Cached list of selected elements only
+        self._targeted_cache = None  # Cached list of targeted elements only
+
+        # Notification tracking for performance debugging
+        self._notification_stats = {
+            'emphasized': 0,
+            'selected': 0,
+            'targeted': 0,
+            'highlighted': 0,
+            'modified': 0,
+            'translated': 0,
+            'translated_interim': 0,
+            'scaled': 0,
+            'altered': 0,
+            'structure_changed': 0,
+        }
 
         # Lightweight tracker for flat() calls (diagnostics)
         class FlatTracker:
@@ -1989,14 +2008,22 @@ class Elemental(Service):
             self.schedule(self._save_restore_job)
 
     def emphasized(self, *args):
+        """Called when emphasis/selection/targeting status changes on any node."""
+        self._notification_stats['emphasized'] += 1
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        # Invalidate sub-caches since emphasis/selection/targeted status changed
+        self._emphasized_cache = None
+        self._selected_cache = None
+        self._targeted_cache = None
 
     def altered(self, node=None, *args, **kwargs):
+        """Called when node properties are modified (position, size, etc)."""
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        # Note: Do NOT invalidate sub-caches here - emphasis status hasn't changed
         # Hint for translate check: _("Element altered")
         self.prepare_undo("Element altered")
         self.test_for_keyholes(node, "altered")
@@ -2338,10 +2365,15 @@ class Elemental(Service):
             yield item
 
     def elems(self, **kwargs):
-        """Return element nodes. Uses a per-instance cache when possible to avoid repeated tree traversals.
+        """Return element nodes. Uses per-instance caches when possible to avoid repeated tree traversals.
+
+        Performance optimizations:
+        - Main cache: All elements (self._elems_cache)
+        - Sub-caches: emphasized=True, selected=True, targeted=True (rebuilt only on tree changes)
+        - Typical drag operation on 1 element in 10k design: O(1) vs O(10k) with sub-cache
 
         Cache is used when no depth is specified and types is None or matches elem_nodes.
-        Property filters (emphasized/selected/targeted/highlighted/lock) are applied on the cached list.
+        Property filters (emphasized/selected/targeted/highlighted/lock) use sub-caches or main cache.
         """
         allowed_filters = {"emphasized", "selected", "targeted", "highlighted", "lock"}
         depth = kwargs.get("depth", None)
@@ -2351,12 +2383,44 @@ class Elemental(Service):
         # Lazy invalidate caches if the root node marked the structure dirty
         with self.node_lock:
             if getattr(self._tree, "_structure_dirty", False):
-                self._elems_cache = None
-                self._ops_cache = None
+                self._invalidate_elems_cache()
+                self._invalidate_ops_cache()
                 try:
                     self._tree._structure_dirty = False
                 except Exception:
                     pass
+
+        # Fast path: single filter using optimized sub-cache (most common during interactive ops)
+        if cacheable and len(kwargs) == 1:
+            # emphasized=True is called on every frame during drag/resize operations
+            if kwargs.get("emphasized") is True:
+                if self._emphasized_cache is None:
+                    with self.node_lock:
+                        if self._elems_cache is None:
+                            self._elems_cache = list(self.flat(types=elem_nodes))
+                        self._emphasized_cache = [e for e in self._elems_cache if e.emphasized]
+                yield from self._emphasized_cache
+                return
+
+            # selected=True is also common
+            if kwargs.get("selected") is True:
+                if self._selected_cache is None:
+                    with self.node_lock:
+                        if self._elems_cache is None:
+                            self._elems_cache = list(self.flat(types=elem_nodes))
+                        self._selected_cache = [e for e in self._elems_cache if e.selected]
+                yield from self._selected_cache
+                return
+
+            # targeted=True for operation highlighting
+            if kwargs.get("targeted") is True:
+                if self._targeted_cache is None:
+                    with self.node_lock:
+                        if self._elems_cache is None:
+                            self._elems_cache = list(self.flat(types=elem_nodes))
+                        self._targeted_cache = [e for e in self._elems_cache if e.targeted]
+                yield from self._targeted_cache
+                return
 
         # If we can use the cache and it exists, apply property filters in memory
         if (
@@ -2364,23 +2428,26 @@ class Elemental(Service):
             and self._elems_cache is not None
             and set(kwargs.keys()).issubset(allowed_filters)
         ):
-            # Hoist filter lookups to locals to avoid repeated dict access in the loop
-            emph_filter = kwargs.get("emphasized", None) is not None
-            sel_filter = kwargs.get("selected", None) is not None
-            targ_filter = kwargs.get("targeted", None) is not None
-            high_filter = kwargs.get("highlighted", None) is not None
-            lock_filter = kwargs.get("lock", None) is not None
+            # Get filter values (None means no filter, True/False means filter by that value)
+            # FIXED BUG: Previously used 'is not None' which treated False same as True!
+            emph_val = kwargs.get("emphasized", None)
+            sel_val = kwargs.get("selected", None)
+            targ_val = kwargs.get("targeted", None)
+            high_val = kwargs.get("highlighted", None)
+            lock_val = kwargs.get("lock", None)
+
+            # Optimized loop with early continue for non-matching elements
             cache = self._elems_cache
             for e in cache:
-                if emph_filter and e.emphasized != emph_filter:
+                if emph_val is not None and e.emphasized != emph_val:
                     continue
-                if sel_filter and e.selected != sel_filter:
+                if sel_val is not None and e.selected != sel_val:
                     continue
-                if targ_filter and e.targeted != targ_filter:
+                if targ_val is not None and e.targeted != targ_val:
                     continue
-                if high_filter and e.highlighted != high_filter:
+                if high_val is not None and e.highlighted != high_val:
                     continue
-                if lock_filter and e.lock != lock_filter:
+                if lock_val is not None and e.lock != lock_val:
                     continue
                 yield e
             return
@@ -2414,9 +2481,20 @@ class Elemental(Service):
         return False
 
     def _invalidate_elems_cache(self, *args, **kwargs):
+        """Invalidate element caches when tree structure changes (add/remove elements).
+
+        Sub-caches must also be invalidated because:
+        - A new emphasized/selected element could be added
+        - An emphasized/selected element could be removed
+        """
         self._elems_cache = None
+        self._elems_nodes_cache = None
+        self._emphasized_cache = None
+        self._selected_cache = None
+        self._targeted_cache = None
 
     def _invalidate_ops_cache(self, *args, **kwargs):
+        """Invalidate operation caches when tree structure changes."""
         self._ops_cache = None
 
     def node_attached(self, node=None, **kwargs):
@@ -2472,12 +2550,52 @@ class Elemental(Service):
 
     def elems_nodes(self, depth=None, cascade_criteria=False, **kwargs):
         """
-        Yield element nodes from the elements branch.
+        Yield element nodes (including groups/effects) from the elements branch.
+
+        Performance: Uses _elems_nodes_cache when possible (no depth, no cascade_criteria, no filters).
+        Filters (emphasized/selected/etc) are applied in-memory on cached list.
+        This dramatically improves rendering performance for large designs (10k+ elements).
 
         @param depth: depth to search within the tree
         @param cascade_criteria: if True, cascaded descendants must also match filter criteria (default False)
         @param kwargs: additional filter criteria (emphasized, selected, targeted, etc.)
         """
+        allowed_filters = {"emphasized", "selected", "targeted", "highlighted", "lock"}
+        cacheable = (depth is None) and (not cascade_criteria)
+
+        # Fast path: no filters, just return the cached list
+        if cacheable and not kwargs:
+            if self._elems_nodes_cache is None:
+                with self.node_lock:
+                    self._elems_nodes_cache = list(self.elem_branch.flat(types=elem_group_nodes))
+            yield from self._elems_nodes_cache
+            return
+
+        # Medium path: cacheable with filters - apply filters in-memory
+        if cacheable and self._elems_nodes_cache is not None and set(kwargs.keys()).issubset(allowed_filters):
+            # Apply filters in-memory on cached list (same logic as elems())
+            emph_val = kwargs.get("emphasized", None)
+            sel_val = kwargs.get("selected", None)
+            targ_val = kwargs.get("targeted", None)
+            high_val = kwargs.get("highlighted", None)
+            lock_val = kwargs.get("lock", None)
+
+            cache = self._elems_nodes_cache
+            for e in cache:
+                if emph_val is not None and e.emphasized != emph_val:
+                    continue
+                if sel_val is not None and e.selected != sel_val:
+                    continue
+                if targ_val is not None and e.targeted != targ_val:
+                    continue
+                if high_val is not None and e.highlighted != high_val:
+                    continue
+                if lock_val is not None and e.lock != lock_val:
+                    continue
+                yield e
+            return
+
+        # Slow path: Direct tree traversal for complex queries (depth, cascade_criteria)
         elements = self.elem_branch
         yield from elements.flat(types=elem_group_nodes, depth=depth, cascade_criteria=cascade_criteria, **kwargs)
 
