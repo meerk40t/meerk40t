@@ -271,7 +271,7 @@ class Node:
                 # but not necessarily emphasized
                 self._selected = True
             self._emphasized_time = time() if value else None
-        self.notify_emphasized(self)
+            self.notify_emphasized(self)
 
     @property
     def emphasized_time(self):

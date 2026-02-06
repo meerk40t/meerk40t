@@ -506,6 +506,67 @@ and a wxpython version <= 4.1.1."""
             except Exception as e:
                 channel(f"Error resetting cache statistics: {e}")
 
+        @kernel.console_command(
+            "notify_stats",
+            help=_("Display element notification statistics"),
+            hidden=True,
+        )
+        def notify_stats_cmd(command, channel, _, **kwargs):
+            """Show notification call counts for element tree operations."""
+            try:
+                context = _
+                elements = None
+
+                # Try to get elements service from context
+                if hasattr(context, 'elements') and context.elements:
+                    elements = context.elements
+                else:
+                    # Fallback to kernel root
+                    elements = kernel.root.elements
+
+                if elements is None:
+                    channel(_("Elements service not available."))
+                    return
+
+                if not hasattr(elements, '_notification_stats'):
+                    channel(_("Elements service does not have notification tracking enabled."))
+                    return
+
+                elements.print_notification_stats(channel)
+            except Exception as e:
+                channel(f"Error retrieving notification statistics: {e}")
+
+        @kernel.console_command(
+            "notify_reset",
+            help=_("Reset element notification statistics"),
+            hidden=True,
+        )
+        def notify_reset_cmd(command, channel, _, **kwargs):
+            """Reset notification statistics."""
+            try:
+                context = _
+                elements = None
+
+                # Try to get elements service from context
+                if hasattr(context, 'elements') and context.elements:
+                    elements = context.elements
+                else:
+                    # Fallback to kernel root
+                    elements = kernel.root.elements
+
+                if elements is None:
+                    channel(_("Elements service not available."))
+                    return
+
+                if not hasattr(elements, '_notification_stats'):
+                    channel(_("Elements service does not have notification tracking enabled."))
+                    return
+
+                elements.reset_notification_stats()
+                channel(_("Notification statistics reset."))
+            except Exception as e:
+                channel(f"Error resetting notification statistics: {e}")
+
         if kernel._gui:
 
             def detect_windows_dpi(context):

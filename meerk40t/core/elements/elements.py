@@ -2020,6 +2020,7 @@ class Elemental(Service):
 
     def altered(self, node=None, *args, **kwargs):
         """Called when node properties are modified (position, size, etc)."""
+        self._notification_stats['altered'] += 1
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -2029,6 +2030,7 @@ class Elemental(Service):
         self.test_for_keyholes(node, "altered")
 
     def modified(self, node=None, *args):
+        self._notification_stats['modified'] += 1
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -2040,6 +2042,10 @@ class Elemental(Service):
         # It's safer to just recompute the selection area
         # as these listener routines will be called for every
         # element that faces a .translated(dx, dy)
+        if interim:
+            self._notification_stats['translated_interim'] += 1
+        else:
+            self._notification_stats['translated'] += 1
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -2051,12 +2057,61 @@ class Elemental(Service):
         # It's safer to just recompute the selection area
         # as these listener routines will be called for every
         # element that faces a .translated(dx, dy)
+        self._notification_stats['scaled'] += 1
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         # Hint for translate check: _("Element scaled")
         self.prepare_undo("Element scaled")
         self.test_for_keyholes(node, "scaled")
+
+    def print_notification_stats(self, channel=None):
+        """Print formatted notification statistics as a table."""
+        if channel is None:
+            def channel(msg):
+                print(msg)
+
+        stats = self._notification_stats
+
+        # Header
+        channel("=" * 60)
+        channel("Element Notification Statistics")
+        channel("=" * 60)
+        channel(f"{'Notification Type':<30} {'Count':>10}")
+        channel("-" * 60)
+
+        # Data rows
+        channel(f"{'Emphasized (selection)':<30} {stats['emphasized']:>10,}")
+        channel(f"{'Selected':<30} {stats['selected']:>10,}")
+        channel(f"{'Targeted':<30} {stats['targeted']:>10,}")
+        channel(f"{'Highlighted':<30} {stats['highlighted']:>10,}")
+        channel(f"{'Modified':<30} {stats['modified']:>10,}")
+        channel(f"{'Translated':<30} {stats['translated']:>10,}")
+        channel(f"{'Translated (interim)':<30} {stats['translated_interim']:>10,}")
+        channel(f"{'Scaled':<30} {stats['scaled']:>10,}")
+        channel(f"{'Altered':<30} {stats['altered']:>10,}")
+        channel(f"{'Structure changed':<30} {stats['structure_changed']:>10,}")
+
+        # Total
+        total = sum(stats.values())
+        channel("-" * 60)
+        channel(f"{'Total notifications':<30} {total:>10,}")
+        channel("=" * 60)
+
+    def reset_notification_stats(self):
+        """Reset all notification counters to zero."""
+        self._notification_stats = {
+            'emphasized': 0,
+            'selected': 0,
+            'targeted': 0,
+            'highlighted': 0,
+            'modified': 0,
+            'translated': 0,
+            'translated_interim': 0,
+            'scaled': 0,
+            'altered': 0,
+            'structure_changed': 0,
+        }
 
     def node_attached(self, node, **kwargs):
         # Hint for translate check: _("Element added")
@@ -2542,6 +2597,7 @@ class Elemental(Service):
         structurally dirty; the cache invalidation is deferred and performed
         lazily by `elems()`/`ops()` or when `_flush_structure_changes()` is called.
         """
+        self._notification_stats['structure_changed'] += 1
         with self.node_lock:
             try:
                 self._tree._structure_dirty = True
@@ -3175,7 +3231,9 @@ class Elemental(Service):
                 y = x[1]
                 x = x[0]
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
-
+        
+        
+        t0 = time()
         if self.has_emphasis():
             if (
                 self._emphasized_bounds is not None
