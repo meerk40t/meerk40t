@@ -103,7 +103,7 @@ class ElementsWidget(Widget):
             )
         elif self.filter == SHOW_ELEMENTS_SELECTED:
             self.renderer.render(
-                context.elements.elems_nodes(emphasized=True),
+                context.elements.elems_nodes(emphasized=True, cascade_criteria=True),
                 gc,
                 draw_mode,
                 zoomscale=zoom_scale,
@@ -111,7 +111,7 @@ class ElementsWidget(Widget):
             )
         elif self.filter == SHOW_ELEMENTS_NONSELECTED:
             self.renderer.render(
-                context.elements.elems_nodes(emphasized=False),
+                context.elements.elems_nodes(emphasized=False, cascade_criteria=True),
                 gc,
                 draw_mode,
                 zoomscale=zoom_scale,

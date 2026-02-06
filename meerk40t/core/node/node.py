@@ -1395,11 +1395,13 @@ class Node:
         targeted=None,
         highlighted=None,
         lock=None,
+        cascade_criteria=False,
     ):
         """
         Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
-        of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
-        the criteria with respect to either the depth or the emphases.
+        of the given type, even if those descendants are beyond the depth limit. By default (cascade_criteria=False),
+        the sub-elements do not need to match the criteria with respect to either the depth or the emphases.
+        If cascade_criteria=True, descendants must also match the filter criteria (emphasis, selection, etc.).
 
         OPTIMIZED VERSION: Improved performance for large trees through:
         - Pre-compiled type sets for O(1) lookup
@@ -1415,6 +1417,7 @@ class Node:
         @param targeted: match only targeted nodes
         @param highlighted: match only highlighted nodes
         @param lock: match locked nodes
+        @param cascade_criteria: if True, cascaded descendants must also match the filter criteria (default False for backward compatibility)
         @return:
         """
         # Pre-compile types for faster lookup (O(1) instead of O(n))
@@ -1453,7 +1456,12 @@ class Node:
                     # Give every type-matched descendant using iterative traversal
                     for c in self._flatten(node):
                         if matches_type(c):
-                            yield c
+                            # If cascade_criteria is True, also check if descendant matches criteria
+                            if cascade_criteria:
+                                if matches_criteria(c):
+                                    yield c
+                            else:
+                                yield c
                     continue  # Skip adding children to stack
                 else:
                     if matches_type(node):

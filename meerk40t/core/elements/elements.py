@@ -2470,9 +2470,16 @@ class Elemental(Service):
             except Exception:
                 pass
 
-    def elems_nodes(self, depth=None, **kwargs):
+    def elems_nodes(self, depth=None, cascade_criteria=False, **kwargs):
+        """
+        Yield element nodes from the elements branch.
+
+        @param depth: depth to search within the tree
+        @param cascade_criteria: if True, cascaded descendants must also match filter criteria (default False)
+        @param kwargs: additional filter criteria (emphasized, selected, targeted, etc.)
+        """
         elements = self.elem_branch
-        yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
+        yield from elements.flat(types=elem_group_nodes, depth=depth, cascade_criteria=cascade_criteria, **kwargs)
 
     def _flush_structure_changes(self):
         """Flush any pending structure change notifications by performing
