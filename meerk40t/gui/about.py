@@ -22,6 +22,70 @@ from .wxutils import (
 
 _ = wx.GetTranslation
 
+
+def get_package_version(package_names, module=None, attr_names=None):
+    """
+    Get package version using multiple fallback strategies.
+
+    This function tries to get version information in the following order:
+    1. importlib.metadata (Python 3.8+)
+    2. importlib_metadata backport (Python 3.6-3.7)
+    3. Module attributes (__version__, version, etc.)
+
+    Args:
+        package_names: PyPI package name (str) or list of names to try.
+                      E.g., 'pillow' or ['opencv-python', 'opencv-python-headless']
+        module: Imported module object (optional, for attribute fallback)
+        attr_names: List of attribute names to try (default: ['__version__', 'version'])
+
+    Returns:
+        Version string or "??" if not found
+    """
+    if isinstance(package_names, str):
+        package_names = [package_names]
+
+    if attr_names is None:
+        attr_names = ['__version__', 'version']
+
+    # Method 1: Try importlib.metadata (Python 3.8+)
+    try:
+        from importlib.metadata import version
+        for pkg_name in package_names:
+            try:
+                return version(pkg_name)
+            except Exception:
+                continue
+    except ImportError:
+        pass  # Python < 3.8
+
+    # Method 2: Try importlib_metadata backport (for Python 3.6-3.7)
+    try:
+        from importlib_metadata import version
+        for pkg_name in package_names:
+            try:
+                return version(pkg_name)
+            except Exception:
+                continue
+    except ImportError:
+        pass  # Backport not installed
+
+    # Method 3: Try module attributes
+    if module is not None:
+        for attr_name in attr_names:
+            if hasattr(module, attr_name):
+                attr_value = getattr(module, attr_name)
+                # Handle callable attributes (e.g., potrace.potracelib_version())
+                if callable(attr_value):
+                    try:
+                        return str(attr_value())
+                    except Exception:
+                        continue
+                return str(attr_value)
+
+    # Give up
+    return "??"
+
+
 def get_header_text():
     return _(
         "MeerK40t is a free MIT Licensed open source project\n"
@@ -1772,13 +1836,13 @@ class ComponentPanel(ScrolledPanel):
 
         def get_wxp():
             entry = ["wxPython", "", "", "https://www.wxpython.org"]
-            info = "??"
-            status = _("Old")
             try:
-                info = wx.version()
+                # wx.version is a callable, so we pass it as an attribute name
+                info = get_package_version("wxPython", wx, ["version"])
                 status = _("Present")
-            except:
-                pass
+            except Exception:
+                info = "??"
+                status = _("Old")
             entry[1] = info
             entry[2] = status
             self.content.append(entry)
@@ -1788,10 +1852,13 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import numpy as np
 
-                try:
-                    info = np.version.short_version
-                except AttributeError:
-                    info = "??"
+                # Try metadata first, then numpy's special version attribute
+                info = get_package_version("numpy", np)
+                if info == "??":
+                    try:
+                        info = np.version.short_version
+                    except AttributeError:
+                        pass
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1805,10 +1872,7 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import PIL
 
-                try:
-                    info = PIL.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("pillow", PIL)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1844,12 +1908,7 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import vtracer
 
-                # for e in vars(vtracer):
-                #     print (f"var {e} - {getattr(vtracer, e)}")
-                try:
-                    info = vtracer.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("vtracer", vtracer)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1863,10 +1922,7 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import ezdxf
 
-                try:
-                    info = ezdxf.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("ezdxf", ezdxf)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1880,10 +1936,7 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import usb
 
-                try:
-                    info = usb.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("pyusb", usb)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1897,10 +1950,7 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import serial
 
-                try:
-                    info = serial.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("pyserial", serial)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1914,10 +1964,8 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import cv2
 
-                try:
-                    info = cv2.__version__
-                except AttributeError:
-                    info = "??"
+                # OpenCV can be installed as opencv-python or opencv-python-headless
+                info = get_package_version(["opencv-python", "opencv-python-headless"], cv2)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1938,12 +1986,7 @@ class ComponentPanel(ScrolledPanel):
                 import barcodes as mk
 
                 has_barcodes = True
-                if hasattr(mk, "version"):
-                    info = mk.version
-                elif hasattr(mk, "__version__"):
-                    info = mk.__version__
-                else:
-                    info = "??"
+                info = get_package_version("meerk40t-barcodes", mk)
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -1955,11 +1998,7 @@ class ComponentPanel(ScrolledPanel):
                 try:
                     import qrcode
 
-                    info = "??"
-                    try:
-                        info = qrcode.__version__
-                    except AttributeError:
-                        pass
+                    info = get_package_version("qrcode", qrcode)
                     entry = (
                         "qrcode",
                         info,
@@ -1972,11 +2011,7 @@ class ComponentPanel(ScrolledPanel):
                 try:
                     import barcode
 
-                    info = "??"
-                    try:
-                        info = barcode.version
-                    except AttributeError:
-                        pass
+                    info = get_package_version("python-barcode", barcode)
                     entry = (
                         "barcodes",
                         info,
@@ -1992,10 +2027,9 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import pyclipr
 
-                try:
-                    info = pyclipr.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("pyclipr", pyclipr)
+                if hasattr(pyclipr, "clipperVersion"):
+                    info += f" (clipper {pyclipr.clipperVersion})"
                 status = _("Present")
             except ImportError:
                 info = "??"
@@ -2009,10 +2043,7 @@ class ComponentPanel(ScrolledPanel):
             try:
                 import numba
 
-                try:
-                    info = numba.__version__
-                except AttributeError:
-                    info = "??"
+                info = get_package_version("numba", numba)
                 status = _("Present")
             except (ImportError, AttributeError):
                 info = "??"
