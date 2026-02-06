@@ -446,6 +446,7 @@ class GrblController:
         self.service = context
         self.connection = None
         self._validation_stage = 0
+        self.detected_firmware_type = None  # Firmware type detected from responses
 
         self.update_connection()
 
@@ -547,6 +548,65 @@ class GrblController:
 
             self.connection = MockConnection(self.service, self)
 
+    def detect_firmware_from_response(self, response):
+        """
+        Attempt to detect firmware type from response strings.
+        This is informational only - user settings take priority.
+        Logs detection for validation purposes.
+        
+        @param response: Response string from controller
+        @return: Detected firmware type or None
+        """
+        response_upper = response.upper()
+        detected = None
+        
+        # Check for Marlin signatures
+        if "MARLIN" in response_upper:
+            detected = "marlin"
+        # Check for grblHAL signatures
+        elif "GRBLHAL" in response_upper or "GRBL-HAL" in response_upper:
+            detected = "grblhal"
+        # Check for Smoothieware signatures
+        elif "SMOOTHIE" in response_upper:
+            detected = "smoothieware"
+        # Check for standard GRBL (must be after grblHAL check)
+        elif "GRBL" in response_upper:
+            detected = "grbl"
+        
+        if detected:
+            self.detected_firmware_type = detected
+            configured = self.service.settings.get("firmware_type", "grbl")
+            
+            if detected == configured:
+                self.log(f"Firmware detection confirmed: {detected}", type="event")
+            else:
+                self.log(
+                    f"Firmware detection: {detected} (configured as {configured}). "
+                    f"If issues occur, update firmware_type setting to '{detected}'.",
+                    type="event"
+                )
+        
+        return detected
+
+    def get_effective_firmware_type(self):
+        """
+        Get the firmware type to use for parsing.
+        Prioritizes user-configured setting, uses detection as fallback/validation.
+        
+        @return: Firmware type string
+        """
+        # Primary: User-configured firmware type
+        configured_type = self.service.settings.get("firmware_type", "grbl")
+        
+        # If firmware was detected and differs from configured, log warning
+        if self.detected_firmware_type and self.detected_firmware_type != configured_type:
+            self.log(
+                f"Warning: Detected firmware '{self.detected_firmware_type}' differs from configured '{configured_type}'. Using configured setting.",
+                type="event"
+            )
+        
+        return configured_type
+
     def add_watcher(self, watcher):
         self._watchers.append(watcher)
 
@@ -592,7 +652,7 @@ class GrblController:
             # We are required to wait for the validation.
             if self.service.boot_connect_sequence:
                 self._validation_stage = 1
-                self.validate_start("$")
+                self.validate_start(self.driver.translate_command("query_help"))
             else:
                 self._validation_stage = 5
         if self.service.startup_commands:
@@ -690,15 +750,36 @@ class GrblController:
                 daemon=True,
             )
 
+    def skip_validation_stage(self, stage, reason):
+        """
+        Skip a validation stage and advance to the next one.
+        
+        @param stage: Current validation stage
+        @param reason: Reason for skipping
+        """
+        self.log(f"Skipping stage {stage}: {reason}", type="event")
+        self._validation_stage = stage + 1
+
     def shutdown(self):
         self.is_shutdown = True
         self._forward_buffer.clear()
 
     def validate_start(self, cmd):
-        if cmd == "$":
+        firmware_type = self.get_effective_firmware_type()
+        query_help = self.driver.translate_command("query_help")
+        
+        # Determine appropriate delay
+        if cmd == query_help:
             delay = self.service.connect_delay / 1000
         else:
             delay = 0
+        
+        # For Marlin, adjust validation expectations
+        if firmware_type == "marlin":
+            # Marlin uses M115 instead of $, different response format expected
+            if cmd == query_help:
+                self.log("Requesting Marlin firmware info (M115)...", type="event")
+        
         name = self.service.safe_label
         if delay:
             self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
@@ -715,7 +796,8 @@ class GrblController:
             self.service(f".timer-{name}* -q --off")
             return
         self.service(f".timer-{name}{cmd} -q --off")
-        if cmd == "$":
+        query_help = self.driver.translate_command("query_help")
+        if cmd == query_help:
             if len(self._forward_buffer) > 3:
                 # If the forward planning buffer is longer than 3 it must have filled with failed attempts.
                 with self._forward_lock:
@@ -935,13 +1017,22 @@ class GrblController:
                 continue
             elif response.startswith("<"):
                 self._process_status_message(response)
+            elif (
+                self.get_effective_firmware_type() == "marlin"
+                and ":" in response
+                and not response.startswith("[")
+                and not response.startswith("echo:")
+            ):
+                # Marlin status/position responses (e.g., M114)
+                self._process_status_message(response)
             elif response.startswith("["):
                 self._process_feedback_message(response)
                 continue
-            elif response.startswith("$"):
-                if self._validation_stage == 2:
+            elif response.startswith(self.driver.translate_command("query_help")) or response.startswith("echo:"):
+                # Handle both GRBL $ responses and Marlin echo: responses
+                if self._validation_stage == 2 and not response.startswith("echo:"):
                     self.log("Stage 3: $$ was successfully parsed.", type="event")
-                    self.validate_stop("$$")
+                    self.validate_stop(self.driver.translate_command("query_settings"))
                     self._validation_stage = 3
                 self._process_settings_message(response)
             elif response.startswith("Alarm|"):
@@ -965,7 +1056,22 @@ class GrblController:
                 self._assembled_response = []
             elif response.startswith(">"):
                 self.log(f"STARTUP: {response}", type="event")
-            elif response.startswith(self.service.welcome):
+            elif response.startswith(self.service.welcome) or "Marlin" in response or "FIRMWARE_NAME" in response:
+                # Attempt firmware detection from welcome/info messages
+                self.detect_firmware_from_response(response)
+                
+                # Handle Marlin M115 response (firmware info)
+                if "FIRMWARE_NAME" in response or "Marlin" in response:
+                    self.log(f"Firmware Info: {response}", type="event")
+                    # If in validation stage 1, advance to stage 2
+                    if self._validation_stage == 1:
+                        self.log("Stage 2: M115 parsed (Marlin).", type="event")
+                        self._validation_stage = 2
+                        self.validate_stop(self.driver.translate_command("query_help"))
+                        # For Marlin, try M503 for settings
+                        query_settings = self.driver.translate_command("query_settings")
+                        self.validate_start(query_settings)
+                
                 if not self.service.require_validator:
                     # Validation is not required, we reboot.
                     if self.fully_validated():
@@ -975,13 +1081,13 @@ class GrblController:
                                 "Device Reset, revalidation required", type="event"
                             )
                             self._validation_stage = 1
-                            self.validate_start("$")
+                            self.validate_start(self.driver.translate_command("query_help"))
                 else:
                     # Validation is required. This was stage 0.
                     if self.service.boot_connect_sequence:
                         # Boot sequence is required. Restart sequence.
                         self._validation_stage = 1
-                        self.validate_start("$")
+                        self.validate_start(self.driver.translate_command("query_help"))
                     else:
                         # No boot sequence required. Declare fully connected.
                         self._validation_stage = 5
@@ -995,7 +1101,54 @@ class GrblController:
         self._validation_stage = 5
         self.validate_stop("*")
 
+    def _parse_marlin_status(self, response):
+        """
+        Parse Marlin M114 status response format.
+        Example: X:0.00 Y:0.00 Z:0.00 E:0.00 Count X:0 Y:0 Z:0
+        
+        @param response: Marlin M114 response
+        """
+        # Basic Marlin M114 format parsing
+        try:
+            parts = response.split()
+            for part in parts:
+                if ":" in part:
+                    axis, value = part.split(":")
+                    axis = axis.upper()
+                    if axis == "X":
+                        x = float(value)
+                        ox = self.driver.mpos_x
+                        x_mm, _ = self.service.view_mm.position(f"{x}mm", "0mm")
+                        self.driver.mpos_x, _ = self.service.view_mm.scene_position(f"{x_mm}mm", "0mm")
+                        if not self.fully_validated():
+                            self.driver.declare_position(x, self.driver.mpos_y)
+                    elif axis == "Y":
+                        y = float(value)
+                        oy = self.driver.mpos_y
+                        _, y_mm = self.service.view_mm.position("0mm", f"{y}mm")
+                        _, self.driver.mpos_y = self.service.view_mm.scene_position("0mm", f"{y_mm}mm")
+                        if not self.fully_validated():
+                            self.driver.declare_position(self.driver.mpos_x, y)
+                    elif axis == "Z":
+                        self.driver.mpos_z = float(value)
+            
+            # Trigger validation completion if in status query stage
+            if self._validation_stage in (2, 3, 4):
+                self.log("Connection Confirmed (Marlin).", type="event")
+                self._validation_stage = 5
+                self.validate_stop("*")
+        except (ValueError, IndexError) as e:
+            self.log(f"Failed to parse Marlin status: {e}", type="event")
+
     def _process_status_message(self, response):
+        firmware_type = self.get_effective_firmware_type()
+        
+        # Marlin M114 format: X:0.00 Y:0.00 Z:0.00
+        if firmware_type == "marlin" and ":" in response and not response.startswith("<"):
+            self._parse_marlin_status(response)
+            return
+        
+        # GRBL/grblHAL/Smoothieware format: <Idle|MPos:0,0,0|...>
         if not response.endswith(">"):
             self.log(f"Status message not terminated: {response}", type="event")
             return
@@ -1078,8 +1231,8 @@ class GrblController:
                 self.log("Stage 4: $G was successfully parsed.", type="event")
                 self.driver.declare_modals(states)
                 self._validation_stage = 4
-                self.validate_stop("$G")
-                self.validate_start("?")
+                self.validate_stop(self.driver.translate_command("query_parser"))
+                self.validate_start(self.driver.translate_command("status_query"))
             self.log(message, type="event")
             self.service.signal("grbl:states", states)
         elif response.startswith("[HLP:"):
@@ -1088,14 +1241,17 @@ class GrblController:
             if self._validation_stage == 1:
                 self.log("Stage 2: $ was successfully parsed.", type="event")
                 self._validation_stage = 2
-                self.validate_stop("$")
-                if "$$" in message:
-                    self.validate_start("$$")
-                if "$G" in message:
-                    self.validate_start("$G")
-                elif "?" in message:
+                self.validate_stop(self.driver.translate_command("query_help"))
+                query_settings = self.driver.translate_command("query_settings")
+                query_parser = self.driver.translate_command("query_parser")
+                status_query = self.driver.translate_command("status_query")
+                if query_settings in message:
+                    self.validate_start(query_settings)
+                if query_parser in message:
+                    self.validate_start(query_parser)
+                elif status_query in message:
                     # No $G just request status.
-                    self.validate_start("?")
+                    self.validate_start(status_query)
             self.log(message, type="event")
         elif response.startswith("[G54:"):
             message = response[5:-1]
@@ -1204,7 +1360,48 @@ class GrblController:
             message = response[6:-1]
             self.service.channel("console")(message)
 
+    def _parse_marlin_settings(self, response):
+        """
+        Parse Marlin M503 settings response format.
+        Marlin uses 'echo:' prefix and M-code format.
+        
+        Examples:
+          echo:  M92 X80.00 Y80.00 Z400.00 E93.00
+          echo:  M203 X500.00 Y500.00 Z5.00 E25.00
+        
+        @param response: Marlin response line
+        """
+        if response.startswith("echo:"):
+            message = response[5:].strip()
+            # Store Marlin settings in a separate dict
+            if not hasattr(self.service, 'marlin_config'):
+                self.service.marlin_config = {}
+            
+            # Parse M-code settings
+            if message.startswith("M"):
+                parts = message.split()
+                if len(parts) > 0:
+                    mcode = parts[0]
+                    self.service.marlin_config[mcode] = message
+                    self.service.signal("grbl:marlinsetting", mcode, message)
+            
+            # Log the setting for user visibility
+            self.log(f"Marlin Setting: {message}", type="recv")
+            self.service.channel("console")(message)
+
     def _process_settings_message(self, response):
+        firmware_type = self.get_effective_firmware_type()
+        
+        # Route to firmware-specific parser
+        if firmware_type == "marlin":
+            self._parse_marlin_settings(response)
+            # After receiving Marlin settings (M503), request status to finish validation
+            if self._validation_stage == 2:
+                self.validate_start(self.driver.translate_command("status_query"))
+                self._validation_stage = 3
+            return
+        
+        # GRBL/grblHAL/Smoothieware format: $0=value
         match = SETTINGS_MESSAGE.match(response)
         if match:
             try:
@@ -1218,5 +1415,9 @@ class GrblController:
 
                 self.service.hardware_config[key] = value
                 self.service.signal("grbl:hwsettings", key, value)
+                
+                # Update driver with max S value from $30 setting
+                if key == 30:
+                    self.driver.update_max_s_from_settings(self.service.hardware_config)
             except ValueError:
                 pass
