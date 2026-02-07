@@ -713,7 +713,7 @@ class Elemental(Service):
         self.segments = []
 
         # Will be filled with a list of newly added nodes after a load operation
-        self.added_elements = []
+        self._added_elements = []
 
         # keyhole-logic
         self.registered_keyholes = {}
@@ -802,6 +802,10 @@ class Elemental(Service):
         self.signal("invalidate_layer", "emphasized" if just_emphasized else "elements")
         self.signal("refresh_scene", "Scene")
 
+    @property 
+    def added_elements(self):
+        return self._added_elements
+    
     @property
     def node_lock(self):
         """Exposes the node lock for external use."""
@@ -4876,7 +4880,7 @@ class Elemental(Service):
                             with self._node_lock:
                                 for e in self.elems_nodes():
                                     if e not in _stored_elements:
-                                        self.added_elements.append(e)
+                                        self._added_elements.append(e)
                             # self.listen_tree(self)
                             self._filename = pathname
                             self.set_end_time("load", display=True)
@@ -4909,7 +4913,7 @@ class Elemental(Service):
 
     def clear_loaded_information(self):
         with self._node_lock:
-            self.added_elements.clear()
+            self._added_elements.clear()
 
     def load_types(self, all=True):
         kernel = self.kernel

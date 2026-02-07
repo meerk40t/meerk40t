@@ -401,6 +401,55 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(obj.value, 42)  # ast.literal_eval converts "42" to int
         self.assertEqual(obj.list_value, [1, 2, 3])  # type: ignore
 
+    def test_read_persistent_object_preserves_descriptors_and_methods(self):
+        """Ensure settings do not overwrite properties or methods unintentionally."""
+        settings = Settings(None, self.config_file, ignore_settings=True)
+
+        # Values to load from settings
+        settings._config_dict["section1"] = {
+            "direct": "100",
+            "prop_settable": "200",
+            "prop_readonly": "should_not_set",
+            "method": "bad",
+            "newkey": "300",
+        }
+
+        class TestObject:
+            def __init__(self):
+                self.direct = 1
+                self._prop_value = None
+
+            @property
+            def prop_settable(self):
+                return self._prop_value
+
+            @prop_settable.setter
+            def prop_settable(self, v):
+                # store as int to mirror ast.literal_eval behaviour
+                self._prop_value = int(v)
+
+            @property
+            def prop_readonly(self):
+                return "readonly"
+
+            def method(self):
+                return "ok"
+
+        obj = TestObject()
+        settings.read_persistent_object("section1", obj)
+
+        # direct attribute should be overwritten
+        self.assertEqual(obj.direct, 100)
+        # settable property should be updated via its setter
+        self.assertEqual(obj.prop_settable, 200)
+        # read-only property should not be overwritten and remains callable
+        self.assertEqual(obj.prop_readonly, "readonly")
+        # method should remain callable (not overwritten by the string 'bad')
+        self.assertTrue(callable(obj.method))
+        self.assertEqual(obj.method(), "ok")
+        # newkey should be set as instance attribute
+        self.assertEqual(obj.newkey, 300)
+
 
 if __name__ == "__main__":
     unittest.main()

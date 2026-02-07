@@ -244,7 +244,13 @@ class Settings:
 
     def read_persistent_object(self, section: str, obj: object) -> None:
         """
-        Updates the objects instance dictionary with literal read values.
+        Updates the object's instance dictionary with literal read values.
+
+        This will only set plain instance attributes. It will NOT overwrite
+        class-level descriptors (properties, methods, functions) directly by
+        writing into `__dict__`. For properties with setters we attempt to
+        set them via `setattr()` so the setter logic can run. For read-only
+        properties or callables we skip assignment to avoid shadowing.
 
         @param section: section to load into string dict
         @param obj: object to apply read values.
@@ -256,6 +262,26 @@ class Settings:
                 item = ast.literal_eval(item)
             except (ValueError, SyntaxError):
                 pass
+
+            # If the class defines an attribute with this name, be conservative:
+            # - if it's a property, try to set via setattr (invokes setter)
+            # - if it's callable (method, function), skip assignment
+            # - otherwise, treat as an instance attribute and put into __dict__
+            cls_attr = getattr(type(obj), k, None)
+            if cls_attr is not None:
+                # property handling: try to set using setter if defined
+                if isinstance(cls_attr, property):
+                    try:
+                        setattr(obj, k, item)
+                    except AttributeError:
+                        # read-only property; skip assignment
+                        pass
+                    continue
+                # If attribute is callable, don't overwrite methods
+                if callable(cls_attr):
+                    continue
+
+            # Safe to set as instance attribute
             obj.__dict__[k] = item
 
     def read_persistent_string_dict(
