@@ -10,7 +10,8 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preregister":
         from .color_cache import install_color_cache
         if install_color_cache():
-            print("Color caching enabled (14x faster color parsing)")
+            pass
+            # print("Color caching enabled (14x faster color parsing)")
 
     if lifecycle == "plugins":
         plugins = []
