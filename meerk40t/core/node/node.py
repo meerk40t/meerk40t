@@ -160,6 +160,21 @@ class Node:
         obj._references = list()
         obj._points = list()
         obj._default_map = dict()
+        # Detach from tree — the copy is a standalone unattached node
+        obj._parent = None
+        obj._root = None
+
+        # Deep-copy the Parameters.settings dict so property setters on the
+        # copy don't mutate the original's values (speed, power, etc.)
+        settings = obj.__dict__.get("settings")
+        if settings is not None:
+            new_settings = dict(settings)
+            # Also deep-copy any mutable values inside settings (e.g.
+            # allowed_attributes list) to prevent cross-contamination.
+            for key, value in new_settings.items():
+                if isinstance(value, list):
+                    new_settings[key] = list(value)
+            obj.__dict__["settings"] = new_settings
 
         return obj
 
