@@ -3,6 +3,8 @@ import tempfile
 import unittest
 
 from meerk40t.kernel.settings import Settings
+from meerk40t.kernel.kernel import Kernel
+from meerk40t.kernel.context import Context
 
 
 class TestSettings(unittest.TestCase):
@@ -270,6 +272,9 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(obj.method(), "ok")
         # new_attr should NOT be created by read_persistent_attributes
         self.assertFalse(hasattr(obj, 'new_attr'))
+        # Persisted keys which would override methods/properties should have been removed
+        self.assertNotIn('prop_readonly', settings._config_dict['section1'])
+        self.assertNotIn('method', settings._config_dict['section1'])
 
     def test_clear_persistent(self):
         """Test clearing a persistent section."""
@@ -454,6 +459,114 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(obj.value, 42)  # ast.literal_eval converts "42" to int
         self.assertEqual(obj.list_value, [1, 2, 3])  # type: ignore
 
+    def test_persistent_key_removed_for_readonly_property_in_attributes(self):
+        """Persisted keys that would overwrite read-only properties are removed."""
+        settings = Settings(None, self.config_file, ignore_settings=True)
+        section = "section1"
+        settings._config_dict[section] = {"added_elements": "[1, 2, 3]"}
+
+        class Dummy:
+            @property
+            def added_elements(self):
+                return []
+
+        d = Dummy()
+        settings.read_persistent_attributes(section, d)
+        self.assertNotIn("added_elements", settings._config_dict[section])
+        # Ensure we did not create an instance attribute that shadows the property
+        self.assertFalse("added_elements" in d.__dict__)
+
+    def test_persistent_key_removed_for_readonly_property_in_object(self):
+        """read_persistent_object should also remove persisted keys that would shadow properties."""
+        settings = Settings(None, self.config_file, ignore_settings=True)
+        section = "section1"
+        settings._config_dict[section] = {"added_elements": "[1, 2, 3]"}
+
+        class Dummy:
+            @property
+            def added_elements(self):
+                return []
+
+        d = Dummy()
+        settings.read_persistent_object(section, d)
+        # Should remove persisted key without printing to stdout
+        self.assertNotIn("added_elements", settings._config_dict[section])
+        self.assertFalse("added_elements" in d.__dict__)
+
+    def test_context_init_cleans_persisted_keys(self):
+        """Creating a Context should remove persisted keys that would shadow descriptors."""
+        k = Kernel(name="app", version="v", profile="p", ignore_settings=True)
+        path = "elements"
+        k._config_dict[path] = {"added_elements": "[1,2,3]"}
+
+        class DummyService(Context):
+            @property
+            def added_elements(self):
+                return ["existing"]
+
+        # Capture console channel output
+        messages = []
+        def watcher(msg):
+            messages.append(msg)
+        k.channel("console").watch(watcher)
+        svc = DummyService(k, path)
+        # The key should be removed during Context init
+        self.assertNotIn("added_elements", k._config_dict[path])
+        # And the removal should have been posted to the console channel
+        self.assertTrue(any("removed persisted key 'added_elements'" in str(m) for m in messages))
+        # Clean up watcher
+        k.channel("console").unwatch(watcher)
+
+    def test_context_setting_removes_persisted_key_for_descriptor(self):
+        """Context.setting should delete persisted keys that would shadow class descriptors."""
+        k = Kernel(name="app", version="v", profile="p", ignore_settings=True)
+        path = "elements"
+        k._config_dict[path] = {"added_elements": "[1,2,3]"}
+
+        class DummyService(Context):
+            @property
+            def added_elements(self):
+                return ["existing"]
+
+        svc = DummyService(k, path)
+        # Call setting which should prefer existing descriptor and delete persisted key
+        messages = []
+        def watcher(msg):
+            messages.append(msg)
+        k.channel("console").watch(watcher)
+        val = svc.setting(list, "added_elements", default=None)
+        # The message should have been sent to the console channel
+        self.assertTrue(any("removed persisted key 'added_elements'" in str(m) for m in messages))
+        self.assertEqual(val, ["existing"])
+        self.assertNotIn("added_elements", k._config_dict[path])
+        # Clean up watcher
+        k.channel("console").unwatch(watcher)
+
+    def test_context_setting_calls_property_setter_and_removes_key(self):
+        """When a property has a setter use it and delete the persisted key."""
+        k = Kernel(name="app", version="v", profile="p", ignore_settings=True)
+        path = "things"
+        k._config_dict[path] = {"num": "42"}
+
+        class DummyService(Context):
+            def __init__(self, kernel, path):
+                super().__init__(kernel, path)
+                self._num = 0
+
+            @property
+            def num(self):
+                return self._num
+
+            @num.setter
+            def num(self, v):
+                self._num = int(v)
+
+        svc = DummyService(k, path)
+        # Should call setter and remove persisted key
+        val = svc.setting(int, "num", default=0)
+        self.assertEqual(svc.num, 42)
+        self.assertNotIn("num", k._config_dict[path])
+
     def test_read_persistent_object_preserves_descriptors_and_methods(self):
         """Ensure settings do not overwrite properties or methods unintentionally."""
         settings = Settings(None, self.config_file, ignore_settings=True)
@@ -502,6 +615,9 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(obj.method(), "ok")
         # newkey should be set as instance attribute
         self.assertEqual(obj.newkey, 300)
+        # persisted keys that would have overwritten methods/properties should be removed
+        self.assertNotIn('prop_readonly', settings._config_dict['section1'])
+        self.assertNotIn('method', settings._config_dict['section1'])
 
 
 if __name__ == "__main__":

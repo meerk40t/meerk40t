@@ -236,14 +236,40 @@ class Settings:
         @param obj:
         @return:
         """
+        # Remove persisted entries that would try to overwrite class-level
+        # read-only properties or callables (methods). These entries are
+        # dangerous to retain and should be removed proactively.
+        for possible in list(self.keylist(section)):
+            cls_attr = getattr(type(obj), possible, None)
+            if cls_attr is not None:
+                if isinstance(cls_attr, property) and getattr(cls_attr, 'fset', None) is None:
+                    try:
+                        del self._config_dict[section][possible]
+                        # silent: key removed to avoid shadowing read-only property
+                    except Exception:
+                        pass
+                    continue
+                if callable(cls_attr):
+                    try:
+                        del self._config_dict[section][possible]
+                        # silent: key removed to avoid shadowing callable
+                    except Exception:
+                        pass
+                    continue
+
         for key, value in list(obj.__dict__.items()):
             if key.startswith("_"):
                 continue
             # If the existing instance attribute is callable (e.g. a method stored in
             # the instance dict) we do not attempt to read/assign a persisted value
             # for it — that could lead to trying to coerce strings via a function
-            # call and cause errors (see tests).
+            # call and cause errors (see tests). Also remove the persisted key.
             if callable(value):
+                try:
+                    del self._config_dict[section][key]
+                    # silent: removed persisted key because an instance callable exists
+                except Exception:
+                    pass
                 continue
 
             t = type(value) if value is not None else str
@@ -260,11 +286,22 @@ class Settings:
                     try:
                         setattr(obj, key, read_value)
                     except AttributeError:
+                        # read-only property; remove persisted key to avoid future issues
+                        try:
+                            del self._config_dict[section][key]
+                            # silent: removed persisted key to avoid shadowing read-only property
+                        except Exception:
+                            pass
                         pass
                     continue
                 if callable(cls_attr):
+                    # Don't overwrite methods; remove persisted key
+                    try:
+                        del self._config_dict[section][key]
+                        # silent: removed persisted key to avoid shadowing callable
+                    except Exception:
+                        pass
                     continue
-
             try:
                 setattr(obj, key, read_value)
             except AttributeError:
@@ -302,11 +339,21 @@ class Settings:
                     try:
                         setattr(obj, k, item)
                     except AttributeError:
-                        # read-only property; skip assignment
-                        pass
+                        # read-only property; skip assignment and remove persisted key
+                        try:
+                            del self._config_dict[section][k]
+                            # print(f"Settings: removed persisted key '{k}' in section '{section}' to avoid shadowing read-only property on {type(obj).__name__}")
+                        except Exception:
+                            pass
+                        continue
                     continue
-                # If attribute is callable, don't overwrite methods
+                # If attribute is callable, don't overwrite methods; remove persisted key
                 if callable(cls_attr):
+                    try:
+                        del self._config_dict[section][k]
+                        # silent: removed persisted key to avoid shadowing callable
+                    except Exception:
+                        pass
                     continue
 
             # Safe to set as instance attribute
