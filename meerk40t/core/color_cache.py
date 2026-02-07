@@ -19,6 +19,7 @@ import meerk40t.svgelements as svgelements_module
 # Global color cache
 _color_cache = {}
 _original_color_class = None
+_original_color_init = None
 _cache_installed = False
 
 
@@ -267,13 +268,14 @@ def install_color_cache():
     Returns:
         bool: True if installed, False if already installed
     """
-    global _original_color_class, _cache_installed
+    global _original_color_class, _original_color_init, _cache_installed
 
     if _cache_installed:
         return False
 
-    # Save original Color class
+    # Save original Color class and its __init__
     _original_color_class = svgelements_module.Color
+    _original_color_init = _original_color_class.__init__
 
     # Copy class-level helpers (staticmethods / classmethods / constants)
     # so users can still call `Color.parse(...)`, `Color.parse_color_hex(...)`, etc.
@@ -320,6 +322,47 @@ def install_color_cache():
             except Exception:
                 pass
 
+    # Patch the original Color.__init__ so that isinstance checks inside it
+    # recognise both original Color and CachedColor instances.
+    #
+    # After monkey-patching svgelements.Color = CachedColor, any
+    # ``isinstance(v, Color)`` inside the original Color.__init__ resolves
+    # ``Color`` to CachedColor at runtime.  An original Color instance
+    # would then fail that check, falling through to Color.parse(v) which
+    # crashes because it receives a Color object instead of a string.
+    #
+    # We fix this by intercepting Color/CachedColor arguments and converting
+    # them to their raw .value (a 32-bit RGBA int) which we assign directly,
+    # exactly as the original __init__ would do via ``self.value = v.value``.
+    def _patched_init(self, *args, **kwargs):
+        # Fast path: single Color-like argument — handle directly to avoid
+        # the isinstance(v, Color) check inside the original __init__ which
+        # now resolves Color to CachedColor and fails for original Color.
+        if len(args) >= 1:
+            a = args[0]
+            if isinstance(a, CachedColor) and hasattr(a, "_color"):
+                # CachedColor wrapping an original Color
+                self.value = a._color.value
+                # Handle optional second arg (opacity) and kwargs
+                if len(args) >= 2:
+                    self.opacity = float(args[1])
+                # Process remaining kwargs via original init with no args
+                if kwargs:
+                    _original_color_init(self, **kwargs)
+                return
+            elif _original_color_class and isinstance(a, _original_color_class):
+                # Original Color instance — copy its value directly
+                self.value = a.value
+                if len(args) >= 2:
+                    self.opacity = float(args[1])
+                if kwargs:
+                    _original_color_init(self, **kwargs)
+                return
+        # Default path: no Color-like args, delegate entirely
+        _original_color_init(self, *args, **kwargs)
+
+    _original_color_class.__init__ = _patched_init
+
     # Replace Color in the svgelements module
     svgelements_module.Color = CachedColor
 
@@ -338,7 +381,9 @@ def uninstall_color_cache():
     if not _cache_installed or _original_color_class is None:
         return False
 
-    # Restore original Color class
+    # Restore original Color class and its __init__
+    if _original_color_init is not None:
+        _original_color_class.__init__ = _original_color_init
     svgelements_module.Color = _original_color_class
     _cache_installed = False
     return True
