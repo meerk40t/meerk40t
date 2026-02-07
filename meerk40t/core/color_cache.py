@@ -44,6 +44,10 @@ class CachedColor:
         - If key is unhashable, fall back to creating a fresh underlying
           Color instance (no cache)
         """
+        # If caller passed a CachedColor instance, return it directly
+        if len(args) == 1 and not kwargs and isinstance(args[0], cls):
+            return args[0]
+
         # If caller passed an original Color instance, wrap it
         if len(args) == 1 and not kwargs and _original_color_class and isinstance(args[0], _original_color_class):
             underlying = args[0]
@@ -53,13 +57,31 @@ class CachedColor:
             if not kwargs and len(args) == 1 and isinstance(args[0], (str, int)):
                 key = args[0]
             else:
-                # Attempt to form a hashable key from args/kwargs
+                # Attempt to form a hashable key from args/kwargs using normalized args
                 try:
-                    key = ("args", tuple(args), tuple(sorted(kwargs.items())))
+                    norm_args = []
+                    for a in args:
+                        if isinstance(a, cls):
+                            # Unwrap cached color to a stable primitive
+                            norm_args.append(a._color.value)
+                        elif _original_color_class and isinstance(a, _original_color_class):
+                            norm_args.append(a.value)
+                        else:
+                            norm_args.append(a)
+                    key = ("args", tuple(norm_args), tuple(sorted(kwargs.items())))
                     hash(key)
                 except Exception:
                     # Unhashable, do not cache
-                    underlying = _original_color_class(*args, **kwargs)
+                    # Build constructor args, unwrapping any Color wrappers
+                    constructor_args = []
+                    for a in args:
+                        if isinstance(a, cls):
+                            constructor_args.append(int(a))
+                        elif _original_color_class and isinstance(a, _original_color_class):
+                            constructor_args.append(int(a))
+                        else:
+                            constructor_args.append(a)
+                    underlying = _original_color_class(*constructor_args, **kwargs)
                     inst = object.__new__(cls)
                     inst._color = underlying
                     inst._key = None
@@ -67,7 +89,17 @@ class CachedColor:
 
         # Create and/or reuse the underlying Color instance from cache
         if key not in _color_cache:
-            _color_cache[key] = _original_color_class(*args, **kwargs)
+            # Build constructor args by unwrapping Color wrappers so original constructor
+            # doesn't receive wrapper instances which could confuse parse()
+            constructor_args = []
+            for a in args:
+                if isinstance(a, cls):
+                    constructor_args.append(int(a))
+                elif _original_color_class and isinstance(a, _original_color_class):
+                    constructor_args.append(int(a))
+                else:
+                    constructor_args.append(a)
+            _color_cache[key] = _original_color_class(*constructor_args, **kwargs)
         underlying = _color_cache[key]
         inst = object.__new__(cls)
         inst._color = underlying
