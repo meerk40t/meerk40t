@@ -22,6 +22,42 @@ _original_color_class = None
 _cache_installed = False
 
 
+def _parse_hex_components(value):
+    stripped = value.strip()
+    if not stripped.startswith("#"):
+        return None, None
+    h = stripped[1:]
+    size = len(h)
+    if size not in (3, 4, 6, 8):
+        return None, None
+    try:
+        lowered = h.lower()
+        if size == 6:
+            r = int(lowered[0:2], 16)
+            g = int(lowered[2:4], 16)
+            b = int(lowered[4:6], 16)
+            return (r, g, b, 0xFF), "#" + lowered
+        if size == 3:
+            r = int(lowered[0] * 2, 16)
+            g = int(lowered[1] * 2, 16)
+            b = int(lowered[2] * 2, 16)
+            return (r, g, b, 0xFF), "#" + lowered
+        if size == 8:
+            r = int(lowered[0:2], 16)
+            g = int(lowered[2:4], 16)
+            b = int(lowered[4:6], 16)
+            a = int(lowered[6:8], 16)
+            return (r, g, b, a), "#" + lowered
+        # size == 4
+        r = int(lowered[0] * 2, 16)
+        g = int(lowered[1] * 2, 16)
+        b = int(lowered[2] * 2, 16)
+        a = int(lowered[3] * 2, 16)
+        return (r, g, b, a), "#" + lowered
+    except ValueError:
+        return None, None
+
+
 class CachedColor:
     """
     Wrapper class that intercepts Color instantiation and caches results.
@@ -32,6 +68,8 @@ class CachedColor:
     so that expensive parsing is avoided while preserving the original
     API (including class-level helpers like `parse`).
     """
+
+    __slots__ = ("_color", "_key")
 
     def __new__(cls, *args, **kwargs):
         """
@@ -44,53 +82,94 @@ class CachedColor:
         - If key is unhashable, fall back to creating a fresh underlying
           Color instance (no cache)
         """
+        target_class = _original_color_class or svgelements_module.Color
+
         # If caller passed a CachedColor instance, return it directly
         if len(args) == 1 and not kwargs and isinstance(args[0], cls):
             return args[0]
 
-        # If caller passed an original Color instance, wrap it
-        if len(args) == 1 and not kwargs and _original_color_class and isinstance(args[0], _original_color_class):
-            underlying = args[0]
-            key = ("__original__", underlying.value)
-        else:
+        # Handle single-argument special cases early for performance.
+        if len(args) == 1 and not kwargs:
+            arg0 = args[0]
+
+            # If caller passed an original Color instance, wrap it.
+            if _original_color_class and isinstance(arg0, _original_color_class):
+                key = ("__original__", getattr(arg0, "value", None))
+                cached_wrapper = _color_cache.get(key)
+                if cached_wrapper is not None:
+                    return cached_wrapper
+                inst = object.__new__(cls)
+                inst._color = arg0
+                inst._key = key
+                _color_cache[key] = inst
+                return inst
+
             # Simple single-argument (string/int) cache key
-            if not kwargs and len(args) == 1 and isinstance(args[0], (str, int)):
-                key = args[0]
-            else:
-                # Attempt to form a hashable key from args/kwargs using normalized args
-                try:
-                    norm_args = []
-                    for a in args:
-                        if isinstance(a, cls):
-                            # Unwrap cached color to a stable primitive
-                            norm_args.append(a._color.value)
-                        elif _original_color_class and isinstance(a, _original_color_class):
-                            norm_args.append(a.value)
+            if isinstance(arg0, (str, int)):
+                if isinstance(arg0, str):
+                    key = arg0
+                    cached_wrapper = _color_cache.get(key)
+                    if cached_wrapper is not None:
+                        return cached_wrapper
+                    components, normalized = _parse_hex_components(arg0)
+                    alias_key = None
+                    if normalized and normalized != key:
+                        alias_key = normalized
+                        cached_wrapper = _color_cache.get(alias_key)
+                        if cached_wrapper is not None:
+                            _color_cache[key] = cached_wrapper
+                            return cached_wrapper
+                    if components is not None:
+                        r, g, b, a = components
+                        if a == 0xFF:
+                            underlying = target_class(r, g, b)
                         else:
-                            norm_args.append(a)
-                    key = ("args", tuple(norm_args), tuple(sorted(kwargs.items())))
-                    hash(key)
-                except Exception:
-                    # Unhashable, do not cache
-                    # Build constructor args, unwrapping any Color wrappers
-                    constructor_args = []
-                    for a in args:
-                        if isinstance(a, cls):
-                            constructor_args.append(int(a))
-                        elif _original_color_class and isinstance(a, _original_color_class):
-                            constructor_args.append(int(a))
-                        else:
-                            constructor_args.append(a)
-                    underlying = _original_color_class(*constructor_args, **kwargs)
+                            underlying = target_class(r, g, b, a)
+                        inst = object.__new__(cls)
+                        inst._color = underlying
+                        inst._key = key
+                        _color_cache[key] = inst
+                        if alias_key is not None:
+                            _color_cache.setdefault(alias_key, inst)
+                        return inst
+                    underlying = target_class(arg0)
                     inst = object.__new__(cls)
                     inst._color = underlying
-                    inst._key = None
+                    inst._key = key
+                    _color_cache[key] = inst
+                    if alias_key is not None:
+                        _color_cache.setdefault(alias_key, inst)
                     return inst
 
-        # Create and/or reuse the underlying Color instance from cache
-        if key not in _color_cache:
-            # Build constructor args by unwrapping Color wrappers so original constructor
-            # doesn't receive wrapper instances which could confuse parse()
+                key = arg0
+                cached_wrapper = _color_cache.get(key)
+                if cached_wrapper is not None:
+                    return cached_wrapper
+                underlying = target_class(arg0)
+                inst = object.__new__(cls)
+                inst._color = underlying
+                inst._key = key
+                _color_cache[key] = inst
+                return inst
+
+        # Attempt to form a hashable key from args/kwargs using normalized args
+        try:
+            norm_args = []
+            for a in args:
+                if isinstance(a, cls):
+                    # Unwrap cached color to a stable primitive
+                    norm_args.append(a._color.value)
+                elif _original_color_class and isinstance(a, _original_color_class):
+                    norm_args.append(a.value)
+                else:
+                    norm_args.append(a)
+            key = ("args", tuple(norm_args), tuple(sorted(kwargs.items())))
+            cached_wrapper = _color_cache.get(key)
+            if cached_wrapper is not None:
+                return cached_wrapper
+        except Exception:
+            # Unhashable, do not cache
+            # Build constructor args, unwrapping any Color wrappers
             constructor_args = []
             for a in args:
                 if isinstance(a, cls):
@@ -99,11 +178,27 @@ class CachedColor:
                     constructor_args.append(int(a))
                 else:
                     constructor_args.append(a)
-            _color_cache[key] = _original_color_class(*constructor_args, **kwargs)
-        underlying = _color_cache[key]
+            underlying = target_class(*constructor_args, **kwargs)
+            inst = object.__new__(cls)
+            inst._color = underlying
+            inst._key = None
+            return inst
+
+        # Build constructor args by unwrapping Color wrappers so original constructor
+        # doesn't receive wrapper instances which could confuse parse()
+        constructor_args = []
+        for a in args:
+            if isinstance(a, cls):
+                constructor_args.append(int(a))
+            elif _original_color_class and isinstance(a, _original_color_class):
+                constructor_args.append(int(a))
+            else:
+                constructor_args.append(a)
+        underlying = target_class(*constructor_args, **kwargs)
         inst = object.__new__(cls)
         inst._color = underlying
         inst._key = key
+        _color_cache[key] = inst
         return inst
 
     # Instance delegation -------------------------------------------------
