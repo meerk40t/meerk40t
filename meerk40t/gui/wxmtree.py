@@ -681,6 +681,7 @@ class ShadowTree:
         self.cache_requests = 0
         self.color_cache = {}
         self.formatter_cache = {}
+        self._tree_translation_cache = {}
         self._too_big = False
         self.refresh_tree_counter = 0
         self._last_hover_item = None
@@ -1782,6 +1783,7 @@ class ShadowTree:
 
     def reset_formatter_cache(self):
         self.formatter_cache.clear()
+        self._tree_translation_cache.clear()
 
     def update_decorations(self, node, force=False):
         """
@@ -1798,48 +1800,67 @@ class ShadowTree:
                     text = node._formatter
                 except AttributeError:
                     text = "{element_type}:{id}"
-            # Just for the optical impression (who understands what a "Rect: None" means),
-            # let's replace some of the more obvious ones...
+
+            device = self.context.device
             mymap = node.default_map()
-            # We change power to either ppi or percent
+
             if "power" in mymap and "ppi" in mymap and "percent" in mymap:
-                self.context.device.setting(
-                    bool, "use_percent_for_power_display", False
-                )
-                if self.context.device.use_percent_for_power_display:
+                try:
+                    use_percent = device.use_percent_for_power_display
+                except AttributeError:
+                    use_percent = device.setting(
+                        bool, "use_percent_for_power_display", False
+                    )
+                if use_percent:
                     mymap["power"] = mymap["percent"]
-            if "speed" in mymap and "speed_mm_min" in mymap:
-                self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
-                if self.context.device.use_mm_min_for_speed_display:
-                    text = text.replace("mm/s", "mm/min")
-                    mymap["speed"] = mymap["speed_mm_min"]
+
+            speed_key = "speed"
+            if speed_key in mymap and "speed_mm_min" in mymap:
+                try:
+                    use_mm_min = device.use_mm_min_for_speed_display
+                except AttributeError:
+                    use_mm_min = device.setting(
+                        bool, "use_mm_min_for_speed_display", False
+                    )
+                if use_mm_min:
+                    if "mm/s" in text:
+                        text = text.replace("mm/s", "mm/min")
+                    mymap[speed_key] = mymap["speed_mm_min"]
                     mymap["speed_unit"] = "mm/min"
                 else:
                     mymap["speed_unit"] = "mm/s"
-            for key in mymap:
-                if hasattr(node, key) and key in mymap and mymap[key] == "None":
-                    if getattr(node, key) is None:
+
+            sentinel = object()
+            node_dict = getattr(node, "__dict__", {})
+            for key, value in mymap.items():
+                if value == "None":
+                    attr = node_dict.get(key, sentinel)
+                    if attr is sentinel:
+                        attr = getattr(node, key, None)
+                    if attr is None:
                         mymap[key] = "-"
-            # There are a couple of translatable entries,
-            # to make sure we don't get an unwanted translation we add
-            # a special pattern to it
-            translatable = (
-                "element_type",
-                "enabled",
-            )
+
+            translatable = ("element_type", "enabled")
+            translation_cache = self._tree_translation_cache
             pattern = "_TREE_"
-            for key in mymap:
-                if key in translatable:
-                    # Original value
-                    std = mymap[key]
-                    value = _(pattern + std)
-                    if not value.startswith(pattern):
-                        mymap[key] = value
+            for key in translatable:
+                std = mymap.get(key)
+                if not std:
+                    continue
+                translated = translation_cache.get(std)
+                if translated is None:
+                    candidate = _(pattern + std)
+                    if candidate.startswith(pattern):
+                        translated = std
+                    else:
+                        translated = candidate
+                    translation_cache[std] = translated
+                mymap[key] = translated
+
             try:
-                res = text.format_map(mymap)
+                return text.format_map(mymap)
             except (ValueError, KeyError):
-                res = text
-            return res
+                return text
 
         def get_formatter(nodetype):
             if nodetype not in self.formatter_cache:
