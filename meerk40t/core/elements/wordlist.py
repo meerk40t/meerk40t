@@ -92,6 +92,9 @@ Functions:
 import os.path
 import re
 
+# Precompiled regex patterns for performance
+_BRACKETS = re.compile(r"\{[^}]+\}")
+
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -313,11 +316,10 @@ def init_commands(kernel):
     )
     def wordlist_advance(command, channel, _, **kwargs):
         usage = False
-        brackets = re.compile(r"\{[^}]+\}")
         for node in self.elems():
             if hasattr(node, "text"):
                 if node.text:
-                    bracketed_key = list(brackets.findall(str(node.text)))
+                    bracketed_key = list(_BRACKETS.findall(str(node.text)))
                     if len(bracketed_key) > 0:
                         usage = True
                         break
