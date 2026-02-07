@@ -218,6 +218,59 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(obj.value, 456)
         self.assertEqual(obj.enabled, False)
 
+    def test_read_persistent_attributes_preserves_descriptors_and_methods(self):
+        """Test that read_persistent_attributes doesn't overwrite properties or methods."""
+        settings = Settings(None, self.config_file, ignore_settings=True)
+
+        # Prepare persisted values
+        settings._config_dict["section1"] = {
+            "direct": "100",
+            "prop_settable": "200",
+            "prop_readonly": "should_not_set",
+            "method": "bad",
+            "new_attr": "300",
+        }
+
+        class TestObject:
+            def __init__(self):
+                self.direct = 1
+                # create an instance attribute that would shadow a property
+                self.__dict__["prop_settable"] = 1
+                # create an instance attribute that would shadow a method
+                self.__dict__["method"] = lambda: "ok"
+
+            @property
+            def prop_settable(self):
+                return getattr(self, "_prop_value", None)
+
+            @prop_settable.setter
+            def prop_settable(self, v):
+                self._prop_value = int(v)
+
+            @property
+            def prop_readonly(self):
+                return "readonly"
+
+            def method(self):
+                return "original"
+
+        obj = TestObject()
+        settings.read_persistent_attributes("section1", obj)
+
+        # direct attribute should be overwritten
+        self.assertEqual(obj.direct, 100)
+        # prop_settable is a property on the class; the implementation should
+        # call setattr and have the setter applied even though the instance
+        # originally had an attribute with the same name
+        self.assertEqual(obj.prop_settable, 200)
+        # read-only property should not be overwritten
+        self.assertEqual(obj.prop_readonly, "readonly")
+        # method that was present in __dict__ should remain callable and unchanged
+        self.assertTrue(callable(obj.method))
+        self.assertEqual(obj.method(), "ok")
+        # new_attr should NOT be created by read_persistent_attributes
+        self.assertFalse(hasattr(obj, 'new_attr'))
+
     def test_clear_persistent(self):
         """Test clearing a persistent section."""
         settings = Settings(None, self.config_file, ignore_settings=True)

@@ -226,17 +226,45 @@ class Settings:
         Reads persistent settings for any value found set on the object so long as the object type is int, float, str
         or bool.
 
+        This method is conservative: when an instance attribute shadows a class-level
+        descriptor (like a property or method), prefer to interact with the descriptor
+        safely rather than blindly overwriting it in the instance dictionary. For
+        properties with setters we attempt to set via `setattr()` so the setter logic
+        runs; for callables (methods) we skip overwriting.
+
         @param section:
         @param obj:
         @return:
         """
-        for key, value in obj.__dict__.items():
+        for key, value in list(obj.__dict__.items()):
             if key.startswith("_"):
                 continue
+            # If the existing instance attribute is callable (e.g. a method stored in
+            # the instance dict) we do not attempt to read/assign a persisted value
+            # for it — that could lead to trying to coerce strings via a function
+            # call and cause errors (see tests).
+            if callable(value):
+                continue
+
             t = type(value) if value is not None else str
             read_value = self.read_persistent(t, section, key)
             if read_value is None:
                 continue
+
+            # If the class defines an attribute with this name, be conservative:
+            # - if it's a property, try to set via setattr (invokes setter)
+            # - if it's callable (method, function), skip assignment
+            cls_attr = getattr(type(obj), key, None)
+            if cls_attr is not None:
+                if isinstance(cls_attr, property):
+                    try:
+                        setattr(obj, key, read_value)
+                    except AttributeError:
+                        pass
+                    continue
+                if callable(cls_attr):
+                    continue
+
             try:
                 setattr(obj, key, read_value)
             except AttributeError:
