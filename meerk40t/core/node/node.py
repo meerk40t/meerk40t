@@ -231,22 +231,27 @@ class Node:
     @property
     def is_visible(self):
         result = True
-        # is it an operation?
-        if hasattr(self, "output"):
-            if self.output:
+        # is it an operation? (use dict checking instead of hasattr for speed)
+        if "output" in self.__dict__:
+            output = self.__dict__["output"]
+            if output:
                 return True
             else:
                 return self._is_visible
-        if hasattr(self, "references"):
+        if "references" in self.__dict__:
+            references = self.__dict__["references"]
             valid = False
             flag = False
-            for n in self.references:
-                if hasattr(n.parent, "output"):
+            for n in references:
+                # Avoid hasattr on parent - use dict get instead
+                n_parent = n.__dict__.get("_parent")
+                if n_parent and "output" in n_parent.__dict__:
                     valid = True
-                    if n.parent.output is None or n.parent.output:
+                    output = n_parent.__dict__["output"]
+                    if output is None or output:
                         flag = True
                         break
-                    if n.parent.is_visible:
+                    if n_parent.is_visible:
                         flag = True
                         break
             # If there aren't any references then it is visible by default
@@ -257,8 +262,9 @@ class Node:
     @is_visible.setter
     def is_visible(self, value):
         # is it an operation?
-        if hasattr(self, "output"):
-            if self.output:
+        if "output" in self.__dict__:
+            output = self.__dict__["output"]
+            if output:
                 value = True
         else:
             value = True
