@@ -3,11 +3,11 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 
-from ..core.units import Length
-from ..kernel import signal_listener
-from ..svgelements import Color
-from .basicops import BasicOpPanel
-from .icons import (
+from meerk40t.core.units import Length
+from meerk40t.kernel import signal_listener
+from meerk40t.svgelements import Color
+from meerk40t.gui.basicops import BasicOpPanel
+from meerk40t.gui.icons import (
     icon_bell,
     icon_bmap_text,
     icon_canvas,
@@ -42,9 +42,9 @@ from .icons import (
     icons8_lock,
     icons8_r_white,
 )
-from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
-from .mwindow import MWindow
-from .wxutils import (
+from meerk40t.gui.laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     create_menu,
     dip_size,
