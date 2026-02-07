@@ -16,7 +16,6 @@ but below) then another mark will effectively create a new history.
 """
 import threading
 
-
 class UndoState:
     def __init__(self, state, message=None, hold=False):
         self.state = state
@@ -75,6 +74,17 @@ class Undo:
         """
         if not self.active:
             return
+        # # Performance: Skip undo for very large designs (hardcoded 1000-element threshold)
+        # # Creating a full tree snapshot for 10k+ elements takes ~3 seconds
+        # try:
+        #     elem_branch = self.tree.get(type="branch elems")
+        #     if elem_branch is not None:
+        #         elem_count = len(list(elem_branch.flat()))
+        #         if elem_count > 1000:
+        #             return
+        # except (AttributeError, TypeError):
+        #     # If we can't count elements, proceed with undo anyway
+        #     pass
         with self._lock:
             # print (f"** Mark {message} requested, current {self._undo_index} / {len(self._undo_stack)} **")
             old_idx = self._undo_index

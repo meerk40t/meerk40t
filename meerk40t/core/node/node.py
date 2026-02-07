@@ -148,7 +148,20 @@ class Node:
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        return self.__class__(**self.node_dict)
+        # Optimized: Direct __dict__ copy instead of going through __init__
+        # This avoids the expensive node_dict property and __init__ kwargs processing
+        obj = self.__class__.__new__(self.__class__)
+
+        # Copy all attributes directly
+        obj.__dict__.update(self.__dict__)
+
+        # Create new mutable containers to avoid sharing references
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+
+        return obj
 
     def __str__(self):
         text = self._formatter
@@ -458,17 +471,23 @@ class Node:
         return self._points
 
     def restore_tree(self, tree_data):
-        # Takes a backup and reapplies it again to the tree
-        # Caveat: we can't just simply take the backup and load it into the tree,
-        # although it is already a perfectly independent copy.
-        #           self._children.extend(tree_data)
-        # If loaded directly as above then this stored state will be used
-        # as the basis for further modifications consequently changing the
-        # original data (as it is still the original structure) used in the undostack.
-        # tree_data contains the copied branch nodes
+        """
+        Takes a backup and reapplies it again to the tree.
 
+        Caveat: we can't just simply take the backup and load it into the tree,
+        although it is already a perfectly independent copy.
+                  self._children.extend(tree_data)
+        If loaded directly as above then this stored state will be used
+        as the basis for further modifications consequently changing the
+        original data (as it is still the original structure) used in the undostack.
+        tree_data contains the copied branch nodes.
+
+        Optimized to reduce hasattr/getattr/setattr overhead.
+        """
         self._children.clear()
         links = {id(self): (self, None)}
+
+        # Optimization: Direct __dict__ access instead of hasattr/getattr/setattr
         attrib_list = (
             "_selected",
             "_emphasized",
@@ -477,18 +496,24 @@ class Node:
             "_expanded",
             "_translated_text",
         )
+
+        root = self._root  # Cache to avoid repeated attribute lookup
+
         for c in tree_data:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
+
+            # Optimized attribute verification using __dict__ directly
+            c_dict = c.__dict__
+            copy_dict = node_copy.__dict__
+
             for att in attrib_list:
-                if not hasattr(c, att):
-                    continue
-                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
-                    c, att
-                ):
-                    # print (f"Strange {att} not identical, fixing")
-                    setattr(node_copy, att, getattr(c, att))
-            node_copy._root = self._root
+                if att in c_dict:
+                    c_val = c_dict[att]
+                    if copy_dict.get(att) != c_val:
+                        copy_dict[att] = c_val
+
+            node_copy._root = root
             links[id(c)] = (c, node_copy)
 
         # Rebuild structure.
@@ -662,11 +687,17 @@ class Node:
         a map between id of original node and copy node. Without any structure. The original
         root will link to `None` since root copies are in-effective.
 
+        Optimized to reduce hasattr/getattr/setattr overhead.
+
         @param links:
         @return:
         """
         if links is None:
             links = {id(self): (self, None)}
+
+        # Optimization: Direct __dict__ access instead of hasattr/getattr/setattr
+        # These attributes are preserved by the optimized __copy__ via __dict__.update()
+        # but we verify they match the original values as a safety check
         attrib_list = (
             "_selected",
             "_emphasized",
@@ -675,18 +706,25 @@ class Node:
             "_expanded",
             "_translated_text",
         )
+
+        root = self._root  # Cache to avoid repeated attribute lookup
+
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
+
+            # Optimized attribute verification using __dict__ directly
+            c_dict = c.__dict__
+            copy_dict = node_copy.__dict__
+
             for att in attrib_list:
-                if not hasattr(c, att):
-                    continue
-                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
-                    c, att
-                ):
-                    # print (f"Strange {att} not identical, fixing")
-                    setattr(node_copy, att, getattr(c, att))
-            node_copy._root = self._root
+                if att in c_dict:
+                    c_val = c_dict[att]
+                    # Only set if different (defensive check)
+                    if copy_dict.get(att) != c_val:
+                        copy_dict[att] = c_val
+
+            node_copy._root = root
             links[id(c)] = (c, node_copy)
         return links
 
