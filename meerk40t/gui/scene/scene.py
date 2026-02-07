@@ -763,6 +763,8 @@ class Scene(Module, Job):
         # Invalidate all caches if window size, matrix, or draw_mode changed
         self._cache.ensure_size(w, h)
         scene_matrix = self.widget_root.scene_widget.matrix
+        if scene_matrix is None:
+            scene_matrix = Matrix()
         current_matrix = (scene_matrix.a, scene_matrix.b, scene_matrix.c,
                           scene_matrix.d, scene_matrix.e, scene_matrix.f)
         if current_matrix != self._cached_matrix or dm != self._cached_draw_mode:
