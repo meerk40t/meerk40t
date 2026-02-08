@@ -21,10 +21,18 @@ class ImageRasterNode(Node):
         self._can_skew = False
 
     def __copy__(self):
-        nd = self.node_dict
-        nd["matrix"] = copy(self.matrix)
-        nd["image"] = copy(self.image)
-        return ImageRasterNode(**nd)
+        obj = ImageRasterNode.__new__(ImageRasterNode)
+        obj.__dict__.update(self.__dict__)
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+        obj._parent = None
+        obj._root = None
+        # Deep-copy mutable objects
+        obj.matrix = copy(self.matrix)
+        obj.image = copy(self.image)
+        return obj
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"

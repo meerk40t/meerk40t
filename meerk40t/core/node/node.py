@@ -503,37 +503,17 @@ class Node:
         original data (as it is still the original structure) used in the undostack.
         tree_data contains the copied branch nodes.
 
-        Optimized to reduce hasattr/getattr/setattr overhead.
+        Optimized: attrib_list verification removed since __dict__.update
+        preserves all attributes.
         """
         self._children.clear()
         links = {id(self): (self, None)}
-
-        # Optimization: Direct __dict__ access instead of hasattr/getattr/setattr
-        attrib_list = (
-            "_selected",
-            "_emphasized",
-            "_emphasized_time",
-            "_highlighted",
-            "_expanded",
-            "_translated_text",
-        )
 
         root = self._root  # Cache to avoid repeated attribute lookup
 
         for c in tree_data:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
-
-            # Optimized attribute verification using __dict__ directly
-            c_dict = c.__dict__
-            copy_dict = node_copy.__dict__
-
-            for att in attrib_list:
-                if att in c_dict:
-                    c_val = c_dict[att]
-                    if copy_dict.get(att) != c_val:
-                        copy_dict[att] = c_val
-
             node_copy._root = root
             links[id(c)] = (c, node_copy)
 
@@ -708,7 +688,8 @@ class Node:
         a map between id of original node and copy node. Without any structure. The original
         root will link to `None` since root copies are in-effective.
 
-        Optimized to reduce hasattr/getattr/setattr overhead.
+        Iterative depth-first traversal for performance (avoids 10k+ recursive
+        Python function calls on large trees).
 
         @param links:
         @return:
@@ -716,35 +697,22 @@ class Node:
         if links is None:
             links = {id(self): (self, None)}
 
-        # Optimization: Direct __dict__ access instead of hasattr/getattr/setattr
-        # These attributes are preserved by the optimized __copy__ via __dict__.update()
-        # but we verify they match the original values as a safety check
-        attrib_list = (
-            "_selected",
-            "_emphasized",
-            "_emphasized_time",
-            "_highlighted",
-            "_expanded",
-            "_translated_text",
-        )
-
         root = self._root  # Cache to avoid repeated attribute lookup
 
-        for c in self._children:
-            c._build_copy_nodes(links=links)
+        # Iterative depth-first traversal using an explicit stack.
+        # All __copy__ implementations use __dict__.update which preserves every
+        # attribute from the original, so no attrib_list verification is needed.
+        # Children are pushed in reverse order so pop() yields them left-to-right,
+        # preserving the original child ordering in the links dict for _validate_links.
+        stack = list(reversed(self._children))
+        while stack:
+            c = stack.pop()
+            # Push children in reverse so pop() maintains correct order
+            children = c._children
+            if children:
+                stack.extend(reversed(children))
+            # Copy the node and record the link
             node_copy = copy(c)
-
-            # Optimized attribute verification using __dict__ directly
-            c_dict = c.__dict__
-            copy_dict = node_copy.__dict__
-
-            for att in attrib_list:
-                if att in c_dict:
-                    c_val = c_dict[att]
-                    # Only set if different (defensive check)
-                    if copy_dict.get(att) != c_val:
-                        copy_dict[att] = c_val
-
             node_copy._root = root
             links[id(c)] = (c, node_copy)
         return links

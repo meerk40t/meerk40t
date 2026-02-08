@@ -104,10 +104,27 @@ class ImageProcessedNode(Node):
             self.process_image(step_x, step_y, not self.prevent_crop)
 
     def __copy__(self):
-        nd = self.node_dict
-        nd["matrix"] = copy(self.matrix)
-        nd["operations"] = copy(self.operations)
-        return ImageProcessedNode(**nd)
+        import threading
+        obj = ImageProcessedNode.__new__(ImageProcessedNode)
+        obj.__dict__.update(self.__dict__)
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+        obj._parent = None
+        obj._root = None
+        # Deep-copy mutable objects
+        obj.matrix = copy(self.matrix)
+        obj.operations = copy(self.operations)
+        # Create new lock — must not share with original
+        obj._update_lock = threading.Lock()
+        obj._update_thread = None
+        obj._needs_update = False
+        # Preserve processed data
+        if self._processed_image is not None:
+            obj._processed_image = copy(self._processed_image)
+            obj._processed_matrix = copy(self._processed_matrix)
+        return obj
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
