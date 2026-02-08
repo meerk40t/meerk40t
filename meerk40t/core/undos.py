@@ -172,6 +172,7 @@ class Undo:
             # except KeyError:
             #     pass
             # Refresh all node layers
+            self.service.invalidate()
             self.service.signal("invalidate_layer", "generic")
             self.service.signal("undoredo")
             self.debug_me("Undo done")
@@ -208,6 +209,7 @@ class Undo:
             # except KeyError:
             #     pass
             # Refresh all node layers
+            self.service.invalidate()
             self.service.signal("invalidate_layer", "generic")
             self.service.signal("undoredo")
             self.debug_me("Redo done")

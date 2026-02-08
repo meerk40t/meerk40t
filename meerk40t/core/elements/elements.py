@@ -892,6 +892,21 @@ class Elemental(Service):
                 self.do_undo = True
             busy.end()
 
+    def invalidate(self):
+        with self.node_lock:
+            # Marks all caches as invalid
+            self._emphasized_bounds = None
+            self._emphasized_bounds_painted = None
+            self._emphasized_bounds_dirty = True
+            # Caches for flattened lists to avoid repeated full-tree traversals
+            self._elems_cache = None  # Cached list of element nodes (elem_nodes)
+            self._elems_nodes_cache = None  # Cached list of element nodes + groups/effects (elem_group_nodes)
+            self._ops_cache = None  # Cached list of operation nodes
+            # Optimized filtered sub-caches for common queries during interactive operations
+            self._emphasized_cache = None  # Cached list of emphasized elements only
+            self._selected_cache = None  # Cached list of selected elements only
+            self._targeted_cache = None  # Cached list of targeted elements only
+
     def stop_visual_updates(self):
         self._tree.notify_frozen(True)
 
