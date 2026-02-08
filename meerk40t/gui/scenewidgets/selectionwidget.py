@@ -1032,6 +1032,8 @@ class CornerWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 return
+            if isinstance(b, tuple):
+                b = list(b)
 
             # Establish origin
             orgy = self.master.bottom if "n" in self.method else self.master.top
@@ -1274,7 +1276,10 @@ class SideWidget(Widget):
                 orgy = (self.master.bottom + self.master.top) / 2
                 orgx = (self.master.left + self.master.right) / 2
                 grow = 0.5
-
+            if b is None:
+                return
+            if isinstance(b, tuple):
+                b = list(b)
             oldvalue = self.save_width
             self.save_width *= scalex
             deltax = self.save_width - oldvalue
