@@ -61,10 +61,18 @@ class WobbleEffectNode(Node, Suppressable):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        nd = self.node_dict
-        nd["stroke"] = copy(self.stroke)
-        nd["fill"] = copy(self.fill)
-        return WobbleEffectNode(**nd)
+        obj = WobbleEffectNode.__new__(WobbleEffectNode)
+        obj.__dict__.update(self.__dict__)
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+        obj._parent = None
+        obj._root = None
+        # Deep-copy mutable style objects
+        obj.stroke = copy(self.stroke)
+        obj.fill = copy(self.fill)
+        return obj
 
     def get_effect_descriptor(self):
         """

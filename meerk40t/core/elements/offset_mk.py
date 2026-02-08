@@ -2438,7 +2438,7 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         if len(data_out) > 0:
             # Skip classification for simple offset to avoid overhead and classification side-effects.
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         return "elements", data_out
 
     # --------------------------- END COMMANDS ------------------------------
@@ -2528,5 +2528,5 @@ def init_commands(kernel):
             data_out.append(newnode)
         if len(data_out) > 0:
             post.append(classify_new(data_out))
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         return "elements", data_out

@@ -712,7 +712,7 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         if len(data_out) > 0:
             post.append(classify_new(data_out))
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         return "elements", data_out
 
     # Pocketing
@@ -824,7 +824,7 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         if len(data_out) > 0:
             post.append(classify_new(data_out))
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         return "elements", data_out
 
     # ---- Let's add some CAG commands....
@@ -934,7 +934,7 @@ def init_commands(kernel):
             # Newly created! Classification needed?
             if len(data_out) > 0:
                 post.append(classify_new(data_out))
-                self.signal("refresh_scene", "Scene")
+                self.refresh_signal()
                 if not keep:
                     self.remove_nodes(data)
 

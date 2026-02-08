@@ -413,8 +413,8 @@ class ContourPanel(wx.Panel):
             )
             self.context.elements.elem_branch.add_node(node)
             # print (f"Having added: {node.display_label()}")
-        self.context.elements.signal("refresh_scene", "Scene")
-
+        self.context.elements.refresh_signal()
+        
     def on_creation_placement(self, event):
         def get_place_parameters(geom, method):
             points = list(geom.as_points())

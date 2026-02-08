@@ -141,6 +141,7 @@ class SceneSpaceWidget(Widget):
                     self.scene_widget.matrix.post_scale(
                         self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
                     )
+            self.scene.invalidate_background()
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "wheeldown":
@@ -150,14 +151,17 @@ class SceneSpaceWidget(Widget):
                 self.scene_widget.matrix.post_scale(
                     self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
                 )
+            self.scene.invalidate_background()
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "wheelleft":
             self.scene_widget.matrix.post_translate(self.pan_factor, 0)
+            self.scene.invalidate_background()
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "wheelright":
             self.scene_widget.matrix.post_translate(-self.pan_factor, 0)
+            self.scene.invalidate_background()  
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "middledown":
@@ -187,6 +191,7 @@ class SceneSpaceWidget(Widget):
             )
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self._previous_zoom = zoom
+            self.scene.invalidate_background()
             self.scene.request_refresh()
 
             return RESPONSE_CONSUME
@@ -196,6 +201,7 @@ class SceneSpaceWidget(Widget):
                 magnify, magnify, space_pos[0], space_pos[1]
             )
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self.scene.invalidate_background()
             self.scene.context.signal("refresh_scene", 0)
 
             return RESPONSE_CONSUME
@@ -203,6 +209,7 @@ class SceneSpaceWidget(Widget):
         # Movement
         if self._placement_event_type is None:
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
+            self.scene.invalidate_background()
             self.scene.request_refresh()
         elif self._placement_event_type == "zoom":
             from math import e
@@ -224,11 +231,13 @@ class SceneSpaceWidget(Widget):
                     self._placement_event[0],
                     self._placement_event[1],
                 )
+            self.scene.invalidate_background()
             self.scene.request_refresh()
         elif self._placement_event_type == "pan":
             pan_factor_x = -(space_pos[0] - self._placement_event[0]) / 10
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
+            self.scene.invalidate_background()
             self.scene.request_refresh()
         return RESPONSE_CHAIN
 
@@ -250,7 +259,8 @@ class SceneSpaceWidget(Widget):
         """
         if self._frame and self._view and self.aspect:
             self.scene_widget.matrix = Matrix(self._view.transform(self._frame))
-
+        self.scene.invalidate_background()
+        
     def focus_position_scene(self, scene_point, scene_size):
         """
         Focus on the specific point within the scene.
@@ -262,6 +272,7 @@ class SceneSpaceWidget(Widget):
         self.scene_post_pan(-scene_point[0], -scene_point[1])
         self.scene_post_scale(scale_x, scale_y)
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
+        self.scene.invalidate_background()
 
     def focus_viewport_scene(
         self, new_scene_viewport, scene_size, buffer=0.0, lock=True, animate=False
@@ -317,7 +328,7 @@ class SceneSpaceWidget(Widget):
         else:
             self.scene_widget.matrix.reset()
             self.scene_widget.matrix.post_cat(matrix)
-
+            self.scene.invalidate_background()
 
 class SceneAnimateMatrix:
     def __init__(self, widget):

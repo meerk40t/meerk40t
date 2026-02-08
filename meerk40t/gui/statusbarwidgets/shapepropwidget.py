@@ -417,6 +417,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
         new_unit = self.units[self.unit_index]
         self.unit_lbl.SetLabel(new_unit)
         self.context._display_unit = new_unit
+        self.context.signal("invalidate_layer", "background")
         self.context.signal("refresh_scene", "Scene")
         self.update_position(True)
 
@@ -640,6 +641,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
 
         if force:
             self.execute_wh_changes()
+            self.context.signal("invalidate_layer", "emphasized")
             self.context.signal("refresh_scene", "Scene")
 
     def on_text_h_action(self, force):
@@ -672,6 +674,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
 
         if force:
             self.execute_wh_changes()
+            self.context.signal("invalidate_layer", "emphasized")
             self.context.signal("refresh_scene", "Scene")
 
     def on_text_x_action(self, force):
@@ -690,6 +693,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
         self.position_x = pos_x - self.offset_x * self.position_w
         if force:
             self.execute_xy_changes()
+            self.context.signal("invalidate_layer", "emphasized")
             self.context.signal("refresh_scene", "Scene")
 
     def on_text_y_action(self, force):
@@ -710,6 +714,7 @@ class PositionWidget(PositionDimensionMixin, StatusBarWidget):
 
         if force:
             self.execute_xy_changes()
+            self.context.signal("invalidate_layer", "emphasized")
             self.context.signal("refresh_scene", "Scene")
 
     def Show(self, showit=True):

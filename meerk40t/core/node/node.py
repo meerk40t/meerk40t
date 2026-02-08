@@ -148,7 +148,35 @@ class Node:
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        return self.__class__(**self.node_dict)
+        # Optimized: Direct __dict__ copy instead of going through __init__
+        # This avoids the expensive node_dict property and __init__ kwargs processing
+        obj = self.__class__.__new__(self.__class__)
+
+        # Copy all attributes directly
+        obj.__dict__.update(self.__dict__)
+
+        # Create new mutable containers to avoid sharing references
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+        # Detach from tree — the copy is a standalone unattached node
+        obj._parent = None
+        obj._root = None
+
+        # Deep-copy the Parameters.settings dict so property setters on the
+        # copy don't mutate the original's values (speed, power, etc.)
+        settings = obj.__dict__.get("settings")
+        if settings is not None:
+            new_settings = dict(settings)
+            # Also deep-copy any mutable values inside settings (e.g.
+            # allowed_attributes list) to prevent cross-contamination.
+            for key, value in new_settings.items():
+                if isinstance(value, list):
+                    new_settings[key] = list(value)
+            obj.__dict__["settings"] = new_settings
+
+        return obj
 
     def __str__(self):
         text = self._formatter
@@ -218,22 +246,27 @@ class Node:
     @property
     def is_visible(self):
         result = True
-        # is it an operation?
-        if hasattr(self, "output"):
-            if self.output:
+        # is it an operation? (use dict checking instead of hasattr for speed)
+        if "output" in self.__dict__:
+            output = self.__dict__["output"]
+            if output:
                 return True
             else:
                 return self._is_visible
-        if hasattr(self, "references"):
+        if "references" in self.__dict__:
+            references = self.__dict__["references"]
             valid = False
             flag = False
-            for n in self.references:
-                if hasattr(n.parent, "output"):
+            for n in references:
+                # Avoid hasattr on parent - use dict get instead
+                n_parent = n.__dict__.get("_parent")
+                if n_parent and "output" in n_parent.__dict__:
                     valid = True
-                    if n.parent.output is None or n.parent.output:
+                    output = n_parent.__dict__["output"]
+                    if output is None or output:
                         flag = True
                         break
-                    if n.parent.is_visible:
+                    if n_parent.is_visible:
                         flag = True
                         break
             # If there aren't any references then it is visible by default
@@ -244,8 +277,9 @@ class Node:
     @is_visible.setter
     def is_visible(self, value):
         # is it an operation?
-        if hasattr(self, "output"):
-            if self.output:
+        if "output" in self.__dict__:
+            output = self.__dict__["output"]
+            if output:
                 value = True
         else:
             value = True
@@ -271,7 +305,7 @@ class Node:
                 # but not necessarily emphasized
                 self._selected = True
             self._emphasized_time = time() if value else None
-        self.notify_emphasized(self)
+            self.notify_emphasized(self)
 
     @property
     def emphasized_time(self):
@@ -458,37 +492,29 @@ class Node:
         return self._points
 
     def restore_tree(self, tree_data):
-        # Takes a backup and reapplies it again to the tree
-        # Caveat: we can't just simply take the backup and load it into the tree,
-        # although it is already a perfectly independent copy.
-        #           self._children.extend(tree_data)
-        # If loaded directly as above then this stored state will be used
-        # as the basis for further modifications consequently changing the
-        # original data (as it is still the original structure) used in the undostack.
-        # tree_data contains the copied branch nodes
+        """
+        Takes a backup and reapplies it again to the tree.
 
+        Caveat: we can't just simply take the backup and load it into the tree,
+        although it is already a perfectly independent copy.
+                  self._children.extend(tree_data)
+        If loaded directly as above then this stored state will be used
+        as the basis for further modifications consequently changing the
+        original data (as it is still the original structure) used in the undostack.
+        tree_data contains the copied branch nodes.
+
+        Optimized: attrib_list verification removed since __dict__.update
+        preserves all attributes.
+        """
         self._children.clear()
         links = {id(self): (self, None)}
-        attrib_list = (
-            "_selected",
-            "_emphasized",
-            "_emphasized_time",
-            "_highlighted",
-            "_expanded",
-            "_translated_text",
-        )
+
+        root = self._root  # Cache to avoid repeated attribute lookup
+
         for c in tree_data:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
-            for att in attrib_list:
-                if not hasattr(c, att):
-                    continue
-                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
-                    c, att
-                ):
-                    # print (f"Strange {att} not identical, fixing")
-                    setattr(node_copy, att, getattr(c, att))
-            node_copy._root = self._root
+            node_copy._root = root
             links[id(c)] = (c, node_copy)
 
         # Rebuild structure.
@@ -496,6 +522,14 @@ class Node:
         branches = [links[id(c)][1] for c in tree_data]
         self._children.extend(branches)
         self._validate_tree()
+        # Mark structure dirty so that element caches (e.g.
+        # _elems_cache, _elems_nodes_cache, _emphasized_cache) are
+        # lazily invalidated on next access.  Without this, caches
+        # keep pointing to the old (now orphaned) nodes after an
+        # undo/redo restore.
+        root = self._root if self._root is not None else self
+        if hasattr(root, "_structure_dirty"):
+            root._structure_dirty = True
 
     def _validate_links(self, links):
         for uid, n in links.items():
@@ -662,31 +696,32 @@ class Node:
         a map between id of original node and copy node. Without any structure. The original
         root will link to `None` since root copies are in-effective.
 
+        Iterative depth-first traversal for performance (avoids 10k+ recursive
+        Python function calls on large trees).
+
         @param links:
         @return:
         """
         if links is None:
             links = {id(self): (self, None)}
-        attrib_list = (
-            "_selected",
-            "_emphasized",
-            "_emphasized_time",
-            "_highlighted",
-            "_expanded",
-            "_translated_text",
-        )
-        for c in self._children:
-            c._build_copy_nodes(links=links)
+
+        root = self._root  # Cache to avoid repeated attribute lookup
+
+        # Iterative depth-first traversal using an explicit stack.
+        # All __copy__ implementations use __dict__.update which preserves every
+        # attribute from the original, so no attrib_list verification is needed.
+        # Children are pushed in reverse order so pop() yields them left-to-right,
+        # preserving the original child ordering in the links dict for _validate_links.
+        stack = list(reversed(self._children))
+        while stack:
+            c = stack.pop()
+            # Push children in reverse so pop() maintains correct order
+            children = c._children
+            if children:
+                stack.extend(reversed(children))
+            # Copy the node and record the link
             node_copy = copy(c)
-            for att in attrib_list:
-                if not hasattr(c, att):
-                    continue
-                if not hasattr(node_copy, att) or getattr(node_copy, att) != getattr(
-                    c, att
-                ):
-                    # print (f"Strange {att} not identical, fixing")
-                    setattr(node_copy, att, getattr(c, att))
-            node_copy._root = self._root
+            node_copy._root = root
             links[id(c)] = (c, node_copy)
         return links
 
@@ -993,7 +1028,7 @@ class Node:
     ):
         if invalidate:
             self.set_dirty_bounds()
-        if self._parent is not None:
+        if self._parent is not None and not interim:
             if node is None:
                 node = self
             # Any change to position / size needs a recalculation of the bounds
@@ -1395,11 +1430,13 @@ class Node:
         targeted=None,
         highlighted=None,
         lock=None,
+        cascade_criteria=False,
     ):
         """
         Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
-        of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
-        the criteria with respect to either the depth or the emphases.
+        of the given type, even if those descendants are beyond the depth limit. By default (cascade_criteria=False),
+        the sub-elements do not need to match the criteria with respect to either the depth or the emphases.
+        If cascade_criteria=True, descendants must also match the filter criteria (emphasis, selection, etc.).
 
         OPTIMIZED VERSION: Improved performance for large trees through:
         - Pre-compiled type sets for O(1) lookup
@@ -1415,6 +1452,7 @@ class Node:
         @param targeted: match only targeted nodes
         @param highlighted: match only highlighted nodes
         @param lock: match locked nodes
+        @param cascade_criteria: if True, cascaded descendants must also match the filter criteria (default False for backward compatibility)
         @return:
         """
         # Pre-compile types for faster lookup (O(1) instead of O(n))
@@ -1453,7 +1491,12 @@ class Node:
                     # Give every type-matched descendant using iterative traversal
                     for c in self._flatten(node):
                         if matches_type(c):
-                            yield c
+                            # If cascade_criteria is True, also check if descendant matches criteria
+                            if cascade_criteria:
+                                if matches_criteria(c):
+                                    yield c
+                            else:
+                                yield c
                     continue  # Skip adding children to stack
                 else:
                     if matches_type(node):

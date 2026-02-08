@@ -423,7 +423,7 @@ def init_commands(kernel):
                 else:
                     nparent.altered()
                     node.emphasized = was_emphasized
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     @self.console_option("etype", "e", type=str, default="scanline")
     @self.console_option("distance", "d", type=str, default=None)
@@ -1044,7 +1044,7 @@ def init_commands(kernel):
             if len(text_elems) > 0:
                 # Recalculate bounds
                 calculate_text_bounds(text_elems)
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
             self.signal("element_property_update", changed)
             self.validate_selected_area()
             if classify_required:
@@ -1181,7 +1181,7 @@ def init_commands(kernel):
                 e.altered()
                 changed.append(e)
         if len(changed) > 0:
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
             self.signal("element_property_update", changed)
 
         return "ops", data
@@ -1197,7 +1197,7 @@ def init_commands(kernel):
             return
         for e in data:
             e.set_dirty_bounds()
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         self.validate_selected_area()
 
     @self.console_option("douglas", "d", type=bool, action="store_true", default=False)
@@ -1274,7 +1274,7 @@ def init_commands(kernel):
                     )
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
         return "elements", data
 
     @self.console_command(
@@ -1522,7 +1522,7 @@ def init_commands(kernel):
                 # the painted_bounds
                 e.translated(0, 0)
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_command(
@@ -1551,7 +1551,7 @@ def init_commands(kernel):
                 e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_option("filter", "f", type=str, help="Filter indexes")
@@ -1893,7 +1893,7 @@ def init_commands(kernel):
                 self.signal("refresh_tree", apply)
             else:
                 self.signal("element_property_reload", apply)
-                self.signal("refresh_scene", "Scene")
+                self.refresh_signal()
         return "elements", data
 
     @self.console_option(
@@ -2005,7 +2005,7 @@ def init_commands(kernel):
                 self.set_end_time("classify")
             else:
                 self.signal("element_property_update", apply)
-                self.signal("refresh_scene", "Scene")
+                self.refresh_signal()
         return "elements", data
 
     @self.console_argument("x_offset", type=str, help=_("x offset."), default="0")
@@ -2172,7 +2172,7 @@ def init_commands(kernel):
             for node in images:
                 self.do_image_update(node)
 
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
@@ -2292,7 +2292,7 @@ def init_commands(kernel):
             for node in images:
                 self.do_image_update(node)
             self.process_keyhole_updates(None)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         self.signal("modified_by_tool")
         return "elements", data
 
@@ -2452,7 +2452,7 @@ def init_commands(kernel):
             except ValueError:
                 raise CommandSyntaxError
         if changes:
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
             self.signal("modified_by_tool")
         return "elements", data
 
@@ -2499,7 +2499,7 @@ def init_commands(kernel):
                     changes = True
             if changes:
                 self.process_keyhole_updates(None)
-                self.signal("refresh_scene", "Scene")
+                self.refresh_signal()
                 self.signal("modified_by_tool")
         return "elements", data
 
@@ -2611,7 +2611,7 @@ def init_commands(kernel):
 
             for node in images:
                 self.do_image_update(node)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_argument("sx", type=float, help=_("scale_x value"))
@@ -2680,7 +2680,7 @@ def init_commands(kernel):
                 raise CommandSyntaxError
             for node in images:
                 self.do_image_update(node)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return
 
     @self.console_command(
@@ -2707,7 +2707,7 @@ def init_commands(kernel):
                     images.append(e)
             for e in images:
                 self.do_image_update(e)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     @self.console_command(
@@ -3026,7 +3026,7 @@ def init_commands(kernel):
 
             # Newly created! Classification needed?
             post.append(classify_new(data))
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------

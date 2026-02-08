@@ -43,6 +43,7 @@ class RegBranchPanel(wx.Panel):
         bits = DRAW_MODE_REGMARKS
         self.context.draw_mode ^= bits
         self.context.signal("draw_mode", self.context.draw_mode)
+        self.context.signal("invalidate_layer", "generic")
         self.context.signal("refresh_scene", "Scene")
 
     def on_move_back(self, event):

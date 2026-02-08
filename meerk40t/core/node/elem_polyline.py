@@ -98,12 +98,20 @@ class PolylineNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressabl
         self.set_dirty_bounds()
 
     def __copy__(self):
-        nd = self.node_dict
-        nd["geometry"] = copy(self.geometry)
-        nd["matrix"] = copy(self.matrix)
-        nd["stroke"] = copy(self.stroke)
-        nd["fill"] = copy(self.fill)
-        return PolylineNode(**nd)
+        obj = PolylineNode.__new__(PolylineNode)
+        obj.__dict__.update(self.__dict__)
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+        obj._parent = None
+        obj._root = None
+        # Deep-copy mutable geometry/style objects
+        obj.geometry = copy(self.geometry)
+        obj.matrix = copy(self.matrix)
+        obj.stroke = copy(self.stroke)
+        obj.fill = copy(self.fill)
+        return obj
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"

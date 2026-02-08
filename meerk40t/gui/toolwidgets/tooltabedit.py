@@ -332,6 +332,7 @@ class TabEditTool(ToolWidget):
 
         self.node.mktabpositions = posi
         self.node.empty_cache()
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
         self.scene.context.signal("element_property_update", self.node)
         self.scene.context.signal("modified_by_tool")
@@ -473,6 +474,7 @@ class TabEditTool(ToolWidget):
                     self.write_node()
             elif self.point_index is not None and "shift" in modifiers:
                 self.delete_current_tab()
+            self.scene.invalidate_emphasized()
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         if event_type == "move":
@@ -495,6 +497,7 @@ class TabEditTool(ToolWidget):
                 )
                 # We wait
                 self.node.empty_cache()
+                self.scene.invalidate_emphasized()
                 self.scene.request_refresh()
                 self.scene.context.signal("element_property_update", self.node)
                 self.scene.context.signal("modified_by_tool")

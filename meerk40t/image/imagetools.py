@@ -2021,8 +2021,8 @@ def plugin(kernel, lifecycle=None):
 
             if elements.classify_new and data_out:
                 elements.classify(data_out)
-
-        context.signal("refresh_scene", "Scene")
+        
+        elements.refresh_signal()
         return "image", data_out
 
     @context.console_option(

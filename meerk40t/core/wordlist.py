@@ -31,6 +31,9 @@ from copy import copy
 from datetime import datetime
 from ..extra.encode_detect import EncodingDetectFile
 
+# Precompiled regex patterns for performance
+_BRACKETS = re.compile(r"\{[^}]+\}")
+
 # Type constants
 TYPE_STATIC = 0
 TYPE_CSV = 1
@@ -501,8 +504,7 @@ class Wordlist:
         if pattern is None:
             return ""
         result = str(pattern)
-        brackets = re.compile(r"\{[^}]+\}")
-        for bracketed_key in brackets.findall(result):
+        for bracketed_key in _BRACKETS.findall(result):
             #            print(f"Key found: {bracketed_key}")
             key = bracketed_key[1:-1].lower().strip()
             # Let's check whether we have a modifier at the end: #<num>
@@ -1013,8 +1015,7 @@ class Wordlist:
         toreplace = []
         # list of tuples, (index found, old, new )
         # Let's gather the {} first...
-        brackets = re.compile(r"\{[^}]+\}")
-        for bracketed_key in brackets.findall(str(orgtext)):
+        for bracketed_key in _BRACKETS.findall(str(orgtext)):
             key = bracketed_key[1:-1].lower().strip()
             relative = 0
             pos = key.find("#")

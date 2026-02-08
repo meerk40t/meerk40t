@@ -661,7 +661,7 @@ def init_commands(kernel):
             return "align", (mode, group, bound, raw_elements)
         elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=True, distance=True)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
@@ -682,7 +682,7 @@ def init_commands(kernel):
             return "align", (mode, group, bound, raw_elements)
         elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=True, distance=False)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
@@ -703,7 +703,7 @@ def init_commands(kernel):
             return "align", (mode, group, bound, raw_elements)
         elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=False, distance=True)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
@@ -724,7 +724,7 @@ def init_commands(kernel):
             return "align", (mode, group, bound, raw_elements)
         elements = self.condense_elements(raw_elements, expand_single_group_at_end=True)
         distribute_elements(elements, in_x=False, distance=False)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         return "align", (mode, group, bound, elements)
 
     @self.console_argument(

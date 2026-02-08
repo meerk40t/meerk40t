@@ -842,7 +842,7 @@ class MeerK40t(MWindow):
                 if node.can_emphasize:
                     node.emphasized = flag
             elements.validate_selected_area()
-            self.context.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal()
 
         def on_click_properties():
             self.context("window open Properties\n")
@@ -1116,6 +1116,7 @@ class MeerK40t(MWindow):
         bits = DRAW_MODE_REGMARKS
         self.context.draw_mode ^= bits
         self.context.signal("draw_mode", self.context.draw_mode)
+        self.context.signal("invalidate_layer", "generic")
         self.context.signal("refresh_scene", "Scene")
 
     @signal_listener("system_font_directories")
@@ -4333,6 +4334,7 @@ class MeerK40t(MWindow):
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
             self.context.elements.modified()
+            self.context.signal("invalidate_layer", "all")
             self.context.signal("refresh_scene", "Scene")
             self.context.signal("theme")
 
@@ -5409,7 +5411,7 @@ class MeerK40t(MWindow):
                 )
                 if elements.classify_new:
                     elements.classify([node])
-            self.context.signal("refresh_scene", "Scene")
+            elements.refresh_signal()
 
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):

@@ -444,7 +444,7 @@ def init_tree(kernel):
             return
         with self.undoscope("Hide elements"):
             updated = set_vis(data, 0)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal(just_emphasized=True)
         self.signal("element_property_reload", updated)
         self.signal("warn_state_update")
 
@@ -462,7 +462,7 @@ def init_tree(kernel):
             return
         with self.undoscope("Show elements"):
             updated = set_vis(data, 1)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal(just_emphasized=True)
         self.signal("element_property_reload", updated)
         self.signal("warn_state_update")
 
@@ -480,7 +480,7 @@ def init_tree(kernel):
             return
         with self.undoscope("Toggle visibility"):
             updated = set_vis(data, 2)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal(just_emphasized=True)
         self.signal("element_property_reload", updated)
         self.signal("warn_state_update")
 
@@ -537,7 +537,7 @@ def init_tree(kernel):
         if len(changes) > 0:
             self.validate_selected_area()
             self.signal("element_property_update", changes)
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
             self.signal("warn_state_update", "")
 
     @tree_conditional(
@@ -567,7 +567,7 @@ def init_tree(kernel):
         if len(changes) > 0:
             self.validate_selected_area()
             self.signal("element_property_update", changes)
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(
@@ -816,7 +816,7 @@ def init_tree(kernel):
             for e in data:
                 e.operations = []
                 self.do_image_update(e)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None and firstnode is not None:
             activate(firstnode)
@@ -844,7 +844,7 @@ def init_tree(kernel):
             for e in data:
                 e.operations = raster_script
                 self.do_image_update(e)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal(just_emphasized=True)
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(firstnode)
@@ -1046,7 +1046,7 @@ def init_tree(kernel):
             for n in data:
                 n.dpi = dpi
                 self.do_image_update(n)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal(just_emphasized=True)
         self.signal("element_property_reload", data)
 
     @tree_submenu(_("DPI"))
@@ -1074,7 +1074,7 @@ def init_tree(kernel):
                 n.dpi = dpi
                 if hasattr(n, "override_dpi"):
                     n.override_dpi = True
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         self.signal("element_property_reload", data)
 
     def radio_match_passes(node, passvalue=1, **kwargs):
@@ -1129,7 +1129,7 @@ def init_tree(kernel):
             for n in data:
                 n.loops = loopvalue
         self.signal("element_property_update", data)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     @tree_operation(
         _("Remove all placements"),
@@ -1147,7 +1147,7 @@ def init_tree(kernel):
         with self.undoscope("Remove placements"):
             self.remove_operations(data)
         self.signal("rebuild_tree", "operations")
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     @tree_operation(
         _("Move laser to placement"),
@@ -1813,7 +1813,7 @@ def init_tree(kernel):
                     changes = True
         if changes:
             self.validate_selected_area()
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
 
     # ==========
     # REMOVE ELEMENTS
@@ -1891,7 +1891,7 @@ def init_tree(kernel):
                 start_angle=start_angle,
             )
             node.altered()
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal(just_emphasized=True)
 
     # ==========
     # CONVERT TREE OPERATIONS
@@ -1956,7 +1956,7 @@ def init_tree(kernel):
         parser.parse(node.data, self)
         with self.node_lock:
             node.remove_node()
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     @tree_conditional_try(
         lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
@@ -2182,7 +2182,7 @@ def init_tree(kernel):
                 node.emphasized = emphasis
         if changes:
             self.validate_selected_area()
-            self.signal("refresh_scene", "Scene")
+            self.refresh_signal()
 
     ## @tree_separator_before()
     @tree_operation(
@@ -3127,7 +3127,7 @@ def init_tree(kernel):
             image_node = ImageNode(image=image, matrix=matrix, dpi=node.dpi)
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     def convert_raster_to_path(node, mode):
         def feedback(msg):
@@ -4063,7 +4063,7 @@ def init_tree(kernel):
             if self.classify_new:
                 self.classify(data)
         self.set_node_emphasis(node, True)
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
         self.signal("rebuild_tree", "elements")
         node.focus()
 
@@ -4285,7 +4285,7 @@ def init_tree(kernel):
                 if self.classify_new:
                     self.classify(data)
         self.signal("rebuild_tree", "elements")
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     @tree_conditional(
         lambda node: not is_regmark(node)
@@ -4669,7 +4669,7 @@ def init_tree(kernel):
             self.op_branch.add(
                 type="place point", x=x, y=y, corner=corner, rotation=rotation
             )
-        self.signal("refresh_scene", "Scene")
+        self.refresh_signal()
 
     @tree_conditional(lambda node: is_regmark(node))
     @tree_submenu(_("Toggle magnet-lines"))
