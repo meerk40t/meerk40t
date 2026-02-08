@@ -171,6 +171,8 @@ class Undo:
             #     undo.state = self.tree.backup_tree()  # Get unused copy
             # except KeyError:
             #     pass
+            # Refresh all node layers
+            self.service.signal("invalidate_layer", "generic")
             self.service.signal("undoredo")
             self.debug_me("Undo done")
             return True
@@ -205,6 +207,8 @@ class Undo:
             #     redo.state = self.tree.backup_tree()  # Get unused copy
             # except KeyError:
             #     pass
+            # Refresh all node layers
+            self.service.signal("invalidate_layer", "generic")
             self.service.signal("undoredo")
             self.debug_me("Redo done")
             return True
