@@ -522,6 +522,14 @@ class Node:
         branches = [links[id(c)][1] for c in tree_data]
         self._children.extend(branches)
         self._validate_tree()
+        # Mark structure dirty so that element caches (e.g.
+        # _elems_cache, _elems_nodes_cache, _emphasized_cache) are
+        # lazily invalidated on next access.  Without this, caches
+        # keep pointing to the old (now orphaned) nodes after an
+        # undo/redo restore.
+        root = self._root if self._root is not None else self
+        if hasattr(root, "_structure_dirty"):
+            root._structure_dirty = True
 
     def _validate_links(self, links):
         for uid, n in links.items():
