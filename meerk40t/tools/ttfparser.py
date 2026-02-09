@@ -138,11 +138,13 @@ class TrueTypeFont:
                     return string.decode("UTF-16BE")
                 elif platform_id == 1:  # Macintosh
                     if platform_specific_id == 0:  # MacRoman
+                        # Some Mac fonts incorrectly use UTF-8 in MacRoman fields
+                        # Since mac_roman decoding never fails (maps all bytes),
+                        # we must try UTF-8 first to correctly handle these cases.
                         try:
-                            return string.decode("mac_roman")
-                        except UnicodeDecodeError:
-                            # Fall back to UTF-8 for some Mac fonts
                             return string.decode("UTF-8")
+                        except UnicodeDecodeError:
+                            return string.decode("mac_roman")
                     else:
                         # Other Macintosh encodings, try UTF-8
                         return string.decode("UTF-8")
@@ -174,13 +176,13 @@ class TrueTypeFont:
                             (len(decoded) < 3 and control_char_count == len(decoded))):
                             # Return file basename as fallback to help identify problematic files
                             import os
-                            return f"<{os.path.basename(filename)}>"
+                            return f"[{os.path.basename(filename)}]"
                     return decoded
                 except UnicodeDecodeError:
                     # Return file basename as fallback to help identify problematic files
                     import os
-                    return f"<{os.path.basename(filename)}>"
-
+                    return f"[{os.path.basename(filename)}]"
+        
         try:
             with open(filename, "rb") as f:
                 (
@@ -1250,7 +1252,7 @@ class TrueTypeFont:
                     return string.decode("UTF8")
                 except UnicodeDecodeError:
                     # Return a safe fallback instead of raw bytes
-                    return "< undecodable font name >"
+                    return "Undecodable Font Name"
 
         data = self._raw_tables[b"name"]
         b = BytesIO(data)
