@@ -624,9 +624,18 @@ class Meerk40tFonts:
         full_path, display_name, family, subfamily, is_system = entry
         
         # Check that all string fields are actually strings and not empty
-        for field in [full_path, display_name, family, subfamily]:
-            if not isinstance(field, str) or not field.strip():
-                return False
+        # full_path and display_name must be present and not empty
+        if not isinstance(full_path, str) or not full_path.strip():
+            return False
+        if not isinstance(display_name, str) or not display_name.strip():
+            return False
+            
+        # family and subfamily can be empty strings (some fonts miss this info)
+        # but they must be strings
+        if not isinstance(family, str):
+            return False
+        if not isinstance(subfamily, str):
+            return False
         
         # Check for non-printable characters in display_name (most likely to be garbled)
         for char in display_name:
