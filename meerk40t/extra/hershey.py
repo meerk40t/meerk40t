@@ -624,30 +624,22 @@ class Meerk40tFonts:
         full_path, display_name, family, subfamily, is_system = entry
         
         # Check that all string fields are actually strings and not empty
-        for field in [full_path, display_name, family, subfamily]:
-            if not isinstance(field, str) or not field.strip():
-                return False
+        # full_path and display_name must be present and not empty
+        if not isinstance(full_path, str) or not full_path.strip():
+            return False
+        if not isinstance(display_name, str) or not display_name.strip():
+            return False
+            
+        # family and subfamily can be empty strings (some fonts miss this info)
+        # but they must be strings
+        if not isinstance(family, str):
+            return False
+        if not isinstance(subfamily, str):
+            return False
         
         # Check for non-printable characters in display_name (most likely to be garbled)
         for char in display_name:
             if not char.isprintable():
-                return False
-        
-        # Check for obviously garbled text - if display_name contains many non-ASCII characters
-        # when it should typically be ASCII for font names, it might be corrupted
-        non_ascii_count = sum(1 for c in display_name if ord(c) > 127)
-        if non_ascii_count > len(display_name) * 0.5:  # More than 50% non-ASCII
-            # Additional check: if it contains CJK characters, it's likely garbled
-            cjk_ranges = [
-                (0x4E00, 0x9FFF),   # CJK Unified Ideographs
-                (0x3400, 0x4DBF),   # CJK Extension A
-                (0x20000, 0x2A6DF), # CJK Extension B
-                (0x2A700, 0x2B73F), # CJK Extension C
-                (0x2B740, 0x2B81F), # CJK Extension D
-                (0x2B820, 0x2CEAF), # CJK Extension E
-            ]
-            cjk_count = sum(1 for c in display_name if any(start <= ord(c) <= end for start, end in cjk_ranges))
-            if cjk_count > len(display_name) * 0.3:  # More than 30% CJK characters
                 return False
         
         return True
