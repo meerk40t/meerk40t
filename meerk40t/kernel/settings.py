@@ -226,17 +226,82 @@ class Settings:
         Reads persistent settings for any value found set on the object so long as the object type is int, float, str
         or bool.
 
+        This method is conservative: when an instance attribute shadows a class-level
+        descriptor (like a property or method), prefer to interact with the descriptor
+        safely rather than blindly overwriting it in the instance dictionary. For
+        properties with setters we attempt to set via `setattr()` so the setter logic
+        runs; for callables (methods) we skip overwriting.
+
         @param section:
         @param obj:
         @return:
         """
-        for key, value in obj.__dict__.items():
+        # Remove persisted entries that would try to overwrite class-level
+        # read-only properties or callables (methods). These entries are
+        # dangerous to retain and should be removed proactively.
+        for possible in list(self.keylist(section)):
+            cls_attr = getattr(type(obj), possible, None)
+            if cls_attr is not None:
+                if isinstance(cls_attr, property) and getattr(cls_attr, 'fset', None) is None:
+                    try:
+                        del self._config_dict[section][possible]
+                        # silent: key removed to avoid shadowing read-only property
+                    except Exception:
+                        pass
+                    continue
+                if callable(cls_attr):
+                    try:
+                        del self._config_dict[section][possible]
+                        # silent: key removed to avoid shadowing callable
+                    except Exception:
+                        pass
+                    continue
+
+        for key, value in list(obj.__dict__.items()):
             if key.startswith("_"):
                 continue
+            # If the existing instance attribute is callable (e.g. a method stored in
+            # the instance dict) we do not attempt to read/assign a persisted value
+            # for it — that could lead to trying to coerce strings via a function
+            # call and cause errors (see tests). Also remove the persisted key.
+            if callable(value):
+                try:
+                    del self._config_dict[section][key]
+                    # silent: removed persisted key because an instance callable exists
+                except Exception:
+                    pass
+                continue
+
             t = type(value) if value is not None else str
             read_value = self.read_persistent(t, section, key)
             if read_value is None:
                 continue
+
+            # If the class defines an attribute with this name, be conservative:
+            # - if it's a property, try to set via setattr (invokes setter)
+            # - if it's callable (method, function), skip assignment
+            cls_attr = getattr(type(obj), key, None)
+            if cls_attr is not None:
+                if isinstance(cls_attr, property):
+                    try:
+                        setattr(obj, key, read_value)
+                    except AttributeError:
+                        # read-only property; remove persisted key to avoid future issues
+                        try:
+                            del self._config_dict[section][key]
+                            # silent: removed persisted key to avoid shadowing read-only property
+                        except Exception:
+                            pass
+                        pass
+                    continue
+                if callable(cls_attr):
+                    # Don't overwrite methods; remove persisted key
+                    try:
+                        del self._config_dict[section][key]
+                        # silent: removed persisted key to avoid shadowing callable
+                    except Exception:
+                        pass
+                    continue
             try:
                 setattr(obj, key, read_value)
             except AttributeError:
@@ -244,7 +309,13 @@ class Settings:
 
     def read_persistent_object(self, section: str, obj: object) -> None:
         """
-        Updates the objects instance dictionary with literal read values.
+        Updates the object's instance dictionary with literal read values.
+
+        This will only set plain instance attributes. It will NOT overwrite
+        class-level descriptors (properties, methods, functions) directly by
+        writing into `__dict__`. For properties with setters we attempt to
+        set them via `setattr()` so the setter logic can run. For read-only
+        properties or callables we skip assignment to avoid shadowing.
 
         @param section: section to load into string dict
         @param obj: object to apply read values.
@@ -256,6 +327,36 @@ class Settings:
                 item = ast.literal_eval(item)
             except (ValueError, SyntaxError):
                 pass
+
+            # If the class defines an attribute with this name, be conservative:
+            # - if it's a property, try to set via setattr (invokes setter)
+            # - if it's callable (method, function), skip assignment
+            # - otherwise, treat as an instance attribute and put into __dict__
+            cls_attr = getattr(type(obj), k, None)
+            if cls_attr is not None:
+                # property handling: try to set using setter if defined
+                if isinstance(cls_attr, property):
+                    try:
+                        setattr(obj, k, item)
+                    except AttributeError:
+                        # read-only property; skip assignment and remove persisted key
+                        try:
+                            del self._config_dict[section][k]
+                            # print(f"Settings: removed persisted key '{k}' in section '{section}' to avoid shadowing read-only property on {type(obj).__name__}")
+                        except Exception:
+                            pass
+                        continue
+                    continue
+                # If attribute is callable, don't overwrite methods; remove persisted key
+                if callable(cls_attr):
+                    try:
+                        del self._config_dict[section][k]
+                        # silent: removed persisted key to avoid shadowing callable
+                    except Exception:
+                        pass
+                    continue
+
+            # Safe to set as instance attribute
             obj.__dict__[k] = item
 
     def read_persistent_string_dict(

@@ -935,7 +935,13 @@ class wxMeerK40t(wx.App, Module):
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
             context = kernel.root
+            channel(_("Invalidating caches..."))
+            context.elements.invalidate()
+            channel(_("Invalidating layers..."))
+            context.signal("invalidate_layer", "all")
+            channel(_("Refreshing scene..."))
             context.signal("refresh_scene", "Scene")
+            channel(_("Rebuilding tree..."))
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
 

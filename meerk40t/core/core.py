@@ -5,6 +5,14 @@ This plugin registers the other major plugins found in core.
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
+
+    # Install color caching as early as possible
+    if lifecycle == "preregister":
+        from .color_cache import install_color_cache
+        if install_color_cache():
+            pass
+            # print("Color caching enabled (14x faster color parsing)")
+
     if lifecycle == "plugins":
         plugins = []
 

@@ -1142,10 +1142,11 @@ class PlacementPanel(wx.Panel):
                 data = [node]
                 if self.context.elements.classify_new:
                     self.context.elements.classify(data)
-            self.context.root.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal()
 
     def updated(self):
         self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("invalidate_layer", "generic")
         self.context.elements.signal("refresh_scene", "Scene")
 
 

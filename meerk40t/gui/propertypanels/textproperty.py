@@ -582,7 +582,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.renderer.measure_text(self.node)
         bb = self.node.bounds
         self.context.elements.signal("element_property_reload", self.node)
-        self.context.signal("refresh_scene", "Scene")
+        self.context.elements.refresh_signal(just_emphasized=True)
 
     def on_button_smaller(self, event):
         try:

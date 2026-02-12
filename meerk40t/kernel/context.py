@@ -23,6 +23,41 @@ class Context:
         self._state = "unknown"
         self.opened = {}
 
+        # Proactively remove persisted keys that would shadow class-level
+        # descriptors (read-only properties or callables) for this specific
+        # context path. This handles persisted entries that are not loaded
+        # via explicit .setting calls and ensures keys like `added_elements`
+        # do not linger and shadow descriptors.
+        try:
+            for possible in list(self._kernel.keylist(self._path)):
+                cls_attr = getattr(type(self), possible, None)
+                if cls_attr is not None:
+                    if isinstance(cls_attr, property) and getattr(cls_attr, "fset", None) is None:
+                        try:
+                            self._kernel.delete_persistent(self._path, possible)
+                            try:
+                                # Prefer kernel channel for diagnostics when possible
+                                self._kernel.channel("console")(f"Settings: removed persisted key '{possible}' at '{self._path}' to avoid shadowing read-only property on {type(self).__name__}")
+                            except Exception:
+                                # Fall back to stdout if channel is unavailable
+                                print(f"Settings: removed persisted key '{possible}' at '{self._path}' to avoid shadowing read-only property on {type(self).__name__}")
+                        except Exception:
+                            pass
+                        continue
+                    if callable(cls_attr):
+                        try:
+                            self._kernel.delete_persistent(self._path, possible)
+                            try:
+                                self._kernel.channel("console")(f"Settings: removed persisted key '{possible}' at '{self._path}' to avoid shadowing callable on {type(self).__name__}")
+                            except Exception:
+                                print(f"Settings: removed persisted key '{possible}' at '{self._path}' to avoid shadowing callable on {type(self).__name__}")
+                        except Exception:
+                            pass
+                        continue
+        except Exception:
+            # Be conservative: do not let cleanup errors interfere with normal operation
+            pass
+
     def __repr__(self):
         return f"Context('{self._path}')"
 
@@ -119,13 +154,50 @@ class Context:
         If the setting exists in the persistent storage that value is used.
         If there is no settings value, the default will be used.
 
+        This implementation avoids allowing persisted configuration to shadow
+        class-level descriptors (properties, methods). If a class-level
+        property is present and it's read-only, we remove the persisted key
+        instead of creating an instance attribute that would shadow it. If a
+        property has a setter we call that setter with the persisted value
+        and then remove the persisted key to avoid re-applying it later.
+
         @param setting_type: int, float, str, bool, list or tuple value
         @param key: name of the setting
         @param default: default value for the setting to have.
         @return: load_value
         """
+        # If attribute already exists and is non-None, prefer existing value
+        # in most cases. However, if the class defines a property with a
+        # setter we should still honor persisted values by letting the
+        # setter execute, so do not early-return in that situation.
         if hasattr(self, key) and getattr(self, key) is not None:
-            return getattr(self, key)
+            cls_attr = getattr(type(self), key, None)
+            # If there is a property with a setter, allow loading to call the setter
+            if isinstance(cls_attr, property) and getattr(cls_attr, "fset", None) is not None:
+                # allow to proceed and apply persisted value via setter
+                pass
+            else:
+                if cls_attr is not None:
+                    # Remove persisted entry if it's a read-only property or a callable
+                    if isinstance(cls_attr, property) and getattr(cls_attr, "fset", None) is None:
+                        try:
+                            self._kernel.delete_persistent(self._path, key)
+                            try:
+                                self._kernel.channel("console")(f"Settings: removed persisted key '{key}' at '{self._path}' to avoid shadowing read-only property on {type(self).__name__}")
+                            except Exception:
+                                print(f"Settings: removed persisted key '{key}' at '{self._path}' to avoid shadowing read-only property on {type(self).__name__}")
+                        except Exception:
+                            pass
+                    elif callable(cls_attr):
+                        try:
+                            self._kernel.delete_persistent(self._path, key)
+                            try:
+                                self._kernel.channel("console")(f"Settings: removed persisted key '{key}' at '{self._path}' to avoid shadowing callable on {type(self).__name__}")
+                            except Exception:
+                                print(f"Settings: removed persisted key '{key}' at '{self._path}' to avoid shadowing callable on {type(self).__name__}")
+                        except Exception:
+                            pass
+                return getattr(self, key)
 
         # Key is not located in the attr. Load the value.
         if not key.startswith("_"):
@@ -134,6 +206,39 @@ class Context:
             )
         else:
             load_value = default
+
+        # If a class-level descriptor exists for this key, honor it.
+        cls_attr = getattr(type(self), key, None)
+        if cls_attr is not None:
+            # If it's a property with a setter, call the setter and remove persisted key
+            if isinstance(cls_attr, property) and getattr(cls_attr, "fset", None) is not None:
+                if load_value is not None:
+                    try:
+                        # Convert to the requested type then invoke setter
+                        if not isinstance(load_value, setting_type):
+                            load_value_cast = setting_type(load_value)
+                        else:
+                            load_value_cast = load_value
+                        try:
+                            setattr(self, key, load_value_cast)
+                            try:
+                                self._kernel.delete_persistent(self._path, key)
+                            except Exception:
+                                pass
+                            print(f"Settings: applied persisted key '{key}' at '{self._path}' to property on {type(self).__name__} and removed persisted entry")
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
+            # If it's a callable (method), do not set. Remove persisted entry.
+            if callable(cls_attr):
+                try:
+                    self._kernel.delete_persistent(self._path, key)
+                    print(f"Settings: removed persisted key '{key}' at '{self._path}' because it would shadow callable on {type(self).__name__}")
+                except Exception:
+                    pass
+                return getattr(self, key, default)
+
         if load_value is not None and not isinstance(load_value, setting_type):
             load_value = setting_type(load_value)
         setattr(self, key, load_value)

@@ -461,6 +461,112 @@ and a wxpython version <= 4.1.1."""
                 wx.CallAfter(message_dialog, None)
             lock.acquire(True)
 
+        @kernel.console_command(
+            "cache_stats",
+            help=_("Display layer cache statistics"),
+            hidden=True,
+        )
+        def cache_stats_cmd(command, channel, _, **kwargs):
+            """Show cache hit/miss statistics for the scene layer cache."""
+            try:
+                scene = getattr(kernel.root, "mainscene", None)
+
+                if scene is None:
+                    channel(_("Scene not available. GUI may not be running."))
+                    return
+
+                if not hasattr(scene, '_cache'):
+                    channel(_("Scene does not have cache statistics enabled."))
+                    return
+
+                scene._cache.print_statistics(channel)
+            except Exception as e:
+                channel(f"Error retrieving cache statistics: {e}")
+
+        @kernel.console_command(
+            "cache_reset",
+            help=_("Reset layer cache statistics"),
+            hidden=True,
+        )
+        def cache_reset_cmd(command, channel, _, **kwargs):
+            """Reset cache statistics."""
+            try:
+                scene = getattr(kernel.root, "mainscene", None)
+
+                if scene is None:
+                    channel(_("Scene not available. GUI may not be running."))
+                    return
+
+                if not hasattr(scene, '_cache'):
+                    channel(_("Scene does not have cache statistics enabled."))
+                    return
+
+                scene._cache.reset_statistics()
+                channel(_("Cache statistics reset."))
+            except Exception as e:
+                channel(f"Error resetting cache statistics: {e}")
+
+        @kernel.console_command(
+            "notify_stats",
+            help=_("Display element notification statistics"),
+            hidden=True,
+        )
+        def notify_stats_cmd(command, channel, _, **kwargs):
+            """Show notification call counts for element tree operations."""
+            try:
+                context = _
+                elements = None
+
+                # Try to get elements service from context
+                if hasattr(context, 'elements') and context.elements:
+                    elements = context.elements
+                else:
+                    # Fallback to kernel root
+                    elements = kernel.root.elements
+
+                if elements is None:
+                    channel(_("Elements service not available."))
+                    return
+
+                if not hasattr(elements, '_notification_stats'):
+                    channel(_("Elements service does not have notification tracking enabled."))
+                    return
+
+                elements.print_notification_stats(channel)
+            except Exception as e:
+                channel(f"Error retrieving notification statistics: {e}")
+
+        @kernel.console_command(
+            "notify_reset",
+            help=_("Reset element notification statistics"),
+            hidden=True,
+        )
+        def notify_reset_cmd(command, channel, _, **kwargs):
+            """Reset notification statistics."""
+            try:
+                context = _
+                elements = None
+
+                # Try to get elements service from context
+                if hasattr(context, 'elements') and context.elements:
+                    elements = context.elements
+                else:
+                    # Fallback to kernel root
+                    elements = kernel.root.elements
+
+                if elements is None:
+                    channel(_("Elements service not available."))
+                    return
+
+                if not hasattr(elements, '_notification_stats'):
+                    channel(_("Elements service does not have notification tracking enabled."))
+                    return
+
+                elements.reset_notification_stats()
+                channel(_("Notification statistics reset."))
+            except Exception as e:
+                channel(f"Error resetting notification statistics: {e}")
+
         if kernel._gui:
 
             def detect_windows_dpi(context):

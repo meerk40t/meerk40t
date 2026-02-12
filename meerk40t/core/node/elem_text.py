@@ -153,12 +153,21 @@ class TextNode(Node, Stroked, FunctionalParameter, LabelDisplay, Suppressable):
             self.stroke_width_zero()
 
     def __copy__(self):
-        nd = self.node_dict
-        nd["matrix"] = copy(self.matrix)
-        nd["stroke"] = copy(self.stroke)
-        nd["stroke_width"] = copy(self.stroke_width)
-        nd["fill"] = copy(self.fill)
-        return TextNode(**nd)
+        obj = TextNode.__new__(TextNode)
+        obj.__dict__.update(self.__dict__)
+        obj._children = list()
+        obj._references = list()
+        obj._points = list()
+        obj._default_map = dict()
+        obj._parent = None
+        obj._root = None
+        # Deep-copy mutable style/transform objects
+        obj.matrix = copy(self.matrix)
+        obj.stroke = copy(self.stroke)
+        obj.fill = copy(self.fill)
+        if hasattr(self, 'path') and self.path is not None:
+            obj.path = copy(self.path)
+        return obj
 
     @property
     def font(self):

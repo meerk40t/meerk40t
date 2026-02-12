@@ -117,4 +117,5 @@ class CoordinateSystem(Service):
             flip_y=not self.bottom_positive,
             swap_xy=self.swap_xy,
         )
+        self.signal("invalidate_layer")
         self.signal("refresh_scene", "Scene")

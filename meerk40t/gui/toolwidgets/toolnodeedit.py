@@ -825,6 +825,7 @@ class EditTool(ToolWidget):
         except AttributeError:
             pass
         self.scene.context.elements.validate_selected_area()
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
         self.scene.context.signal("element_property_reload", [self.element])
         if reload:

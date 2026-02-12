@@ -334,7 +334,7 @@ class IdPanel(wx.Panel):
     def on_check_label(self, event):
         self.node.label_display = bool(self.check_label.GetValue())
         self.context.signal("element_property_update", self.node)
-        self.context.signal("refresh_scene", "Scene")
+        self.context.elements.refresh_signal(just_emphasized=True)
 
     def on_check_hidden(self, event):
         self.node.hidden = bool(self.check_hidden.GetValue())
@@ -344,7 +344,7 @@ class IdPanel(wx.Panel):
             self.context.signal("refresh_tree")
         data = self.add_node_and_children(self.node)
         self.context.signal("element_property_reload", data)
-        self.context.signal("refresh_scene", "Scene")
+        self.context.elements.refresh_signal()
         self.context.signal("warn_state_update")
 
     def on_hidden_click(self, event):
@@ -354,7 +354,7 @@ class IdPanel(wx.Panel):
         self.Layout()
         data = self.add_node_and_children(self.node)
         self.context.signal("element_property_reload", data)
-        self.context.signal("refresh_scene", "Scene")
+        self.context.elements.refresh_signal()
         self.context.signal("warn_state_update")
 
     def pane_hide(self):
@@ -609,7 +609,7 @@ class LinePropPanel(wx.Panel):
         try:
             self.node.linecap = _id
             self.context.signal("element_property_update", self.node)
-            self.context.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal(just_emphasized=True)
         except AttributeError:
             pass
 
@@ -620,7 +620,7 @@ class LinePropPanel(wx.Panel):
         try:
             self.node.linejoin = _id
             self.context.signal("element_property_update", self.node)
-            self.context.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal(just_emphasized=True)
         except AttributeError:
             pass
 
@@ -631,7 +631,7 @@ class LinePropPanel(wx.Panel):
         try:
             self.node.fillrule = _id
             self.context.signal("element_property_update", self.node)
-            self.context.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal(just_emphasized=True)
         except AttributeError:
             pass
 
@@ -669,7 +669,7 @@ class LinePropPanel(wx.Panel):
             # We need to recalculate the appearance
             self.node.empty_cache()
             self.context.signal("element_property_update", self.node)
-            self.context.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal(just_emphasized=True)
         except AttributeError:
             pass
 
@@ -681,7 +681,7 @@ class LinePropPanel(wx.Panel):
             if self.node.mktablength != swidth:
                 self.node.mktablength = swidth
                 self.node.empty_cache()
-                self.context.signal("refresh_scene", "Scene")
+                self.context.elements.refresh_signal(just_emphasized=True)
                 self.context.signal("element_property_update", self.node)
                 self.context.signal("tabs_updated")
         except (ValueError, AttributeError):
@@ -695,7 +695,7 @@ class LinePropPanel(wx.Panel):
             if self.node.mktabpositions != positions:
                 self.node.mktabpositions = positions
                 self.node.empty_cache()
-                self.context.signal("refresh_scene", "Scene")
+                self.context.elements.refresh_signal(just_emphasized=True)
                 self.context.signal("element_property_update", self.node)
                 self.context.signal("tabs_updated")
         except (ValueError, AttributeError):
@@ -824,7 +824,7 @@ class StrokeWidthPanel(wx.Panel):
         try:
             if self.node.stroke_scaled != flag:
                 self.node.stroke_scaled = flag
-                self.context.signal("refresh_scene", "Scene")
+                self.context.elements.refresh_signal(just_emphasized=True)
                 self.context.signal("element_property_update", self.node)
         except (ValueError, AttributeError):
             pass
@@ -850,7 +850,7 @@ class StrokeWidthPanel(wx.Panel):
             if self.node.stroke_width != stroke_width:
                 self.node.stroke_width = stroke_width
                 self.node.altered()
-                self.context.signal("refresh_scene", "Scene")
+                self.context.elements.refresh_signal(just_emphasized=True)
                 self.context.signal("element_property_update", self.node)
         except (ValueError, AttributeError):
             pass
@@ -1182,7 +1182,7 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
             # self.node.modified()
             self.node.translated(dx, dy)
             self.context.elements.signal("element_property_update", self.node)
-            self.context.elements.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal(just_emphasized=True)
 
     def scale_it(self, was_width):
         if not self.node.can_scale:
@@ -1228,7 +1228,7 @@ class PositionSizePanel(PositionDimensionMixin, wx.Panel):
             )
 
             self.context.elements.signal("element_property_update", self.node)
-            self.context.elements.signal("refresh_scene", "Scene")
+            self.context.elements.refresh_signal(just_emphasized=True)
 
     def on_toggle_ratio(self, event):
         self.btn_lock_ratio.update_button(None)
@@ -1467,7 +1467,7 @@ class RoundedRectPanel(wx.Panel):
             self.slider_y.SetValue(min(max_val_y, int_ry))
         self.node.altered()
         self.context.elements.signal("element_property_update", self.node)
-        self.context.signal("refresh_scene", "Scene")
+        self.context.elements.refresh_signal(just_emphasized=True)
 
     def on_slider_x(self, event):
         if self.node is None:
@@ -1527,7 +1527,7 @@ class AutoHidePanel(wx.Panel):
         for e in self.node.children:
             if hasattr(e, "hidden"):
                 e.hidden = flag
-        self.context.signal("refresh_scene", "Scene")
+        self.context.refresh_signal()
         self.context.signal("element_property_update", self.node.children)
 
     def accepts(self, node):

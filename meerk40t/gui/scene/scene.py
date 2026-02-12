@@ -18,6 +18,10 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     HITCHAIN_HIT_AND_DELEGATE,
     HITCHAIN_PRIORITY_HIT,
+    LAYER_ACTIVE_ELEMENTS,
+    LAYER_GENERIC_NODES,
+    LAYER_NONACTIVE_ELEMENTS,
+    LAYER_TOOLS,
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -26,6 +30,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.wxutils import get_matrix_scale
+from meerk40t.gui.zmatrix import ZMatrix
 import numpy as np
 from meerk40t.core.spatial import _cKDTree
 from meerk40t.kernel import Job, Module, signal_listener
@@ -182,6 +187,249 @@ class SceneToast:
         self.countdown = duration
 
 
+class LayerCache:
+    """Four-level opaque bitmap cache for scene rendering.
+
+    Cache A (background_bitmap): background colour fill + LAYER_BACKGROUND
+    (bed, grid).
+
+    Cache B (generic_bitmap): Cache A content + LAYER_GENERIC_NODES
+    (registration marks, machine origin, placements). Stays valid when only
+    elements change.
+
+    Cache C (elements_bitmap): Cache B content + LAYER_NONACTIVE_ELEMENTS
+    (non-emphasized elements). Stays valid when only emphasized elements
+    change.
+
+    Cache D (composite_bitmap): Cache C content + LAYER_ACTIVE_ELEMENTS
+    (emphasized elements). Only this layer needs rebuilding when the user
+    moves / edits a selected element without changing the selection set.
+
+    Widgets at LAYER_TOOLS and above are always drawn live on top.
+
+    Invalidation cascade:
+      background invalid  →  generic invalid  →  elements invalid  →  composite invalid
+      generic invalid     →  elements invalid  →  composite invalid
+      elements invalid    →  composite invalid
+    """
+
+    def __init__(self):
+        self._bg_bitmap = None
+        self._generic_bitmap = None
+        self._elements_bitmap = None
+        self._composite_bitmap = None
+        self._bg_valid = False
+        self._generic_valid = False
+        self._elements_valid = False
+        self._composite_valid = False
+        self._size = (0, 0)
+
+        # Statistics tracking
+        self._stats = {
+            'background': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+            'generic': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+            'elements': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+            'composite': {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0},
+        }
+        self._total_frames = 0
+        self._total_frame_time = 0.0
+
+    # ------------------------------------------------------------------
+    # validity queries
+    # ------------------------------------------------------------------
+    @property
+    def background_valid(self):
+        return self._bg_valid
+
+    @property
+    def generic_valid(self):
+        return self._generic_valid
+
+    @property
+    def elements_valid(self):
+        return self._elements_valid
+
+    @property
+    def composite_valid(self):
+        return self._composite_valid
+
+    @property
+    def size(self):
+        return self._size
+
+    # ------------------------------------------------------------------
+    # invalidation
+    # ------------------------------------------------------------------
+    def invalidate_background(self):
+        """Mark background cache dirty; cascades to generic, elements and composite."""
+        self._bg_valid = False
+        self._generic_valid = False
+        self._elements_valid = False
+        self._composite_valid = False
+
+    def invalidate_generic(self):
+        """Mark generic nodes cache dirty; cascades to elements and composite."""
+        self._generic_valid = False
+        self._elements_valid = False
+        self._composite_valid = False
+
+    def invalidate_elements(self):
+        """Mark elements cache dirty; cascades to composite."""
+        self._elements_valid = False
+        self._composite_valid = False
+
+    def invalidate_composite(self):
+        """Mark composite (emphasized) cache dirty only."""
+        self._composite_valid = False
+
+    # ------------------------------------------------------------------
+    # size management
+    # ------------------------------------------------------------------
+    def ensure_size(self, width, height):
+        """Allocate (or reallocate) cache bitmaps when the window size changes.
+        A size change invalidates all four caches."""
+        if self._size == (width, height):
+            return
+        self._size = (width, height)
+        self._bg_bitmap = wx.Bitmap(width, height)
+        self._generic_bitmap = wx.Bitmap(width, height)
+        self._elements_bitmap = wx.Bitmap(width, height)
+        self._composite_bitmap = wx.Bitmap(width, height)
+        self._bg_valid = False
+        self._generic_valid = False
+        self._elements_valid = False
+        self._composite_valid = False
+
+    # ------------------------------------------------------------------
+    # mark valid after a successful render
+    # ------------------------------------------------------------------
+    def mark_background_valid(self):
+        self._bg_valid = True
+
+    def mark_generic_valid(self):
+        self._generic_valid = True
+
+    def mark_elements_valid(self):
+        self._elements_valid = True
+
+    def mark_composite_valid(self):
+        self._composite_valid = True
+
+    # ------------------------------------------------------------------
+    # statistics tracking
+    # ------------------------------------------------------------------
+    def record_hit(self, layer):
+        """Record a cache hit for the specified layer."""
+        if layer in self._stats:
+            self._stats[layer]['hits'] += 1
+
+    def record_miss(self, layer, render_time=0.0):
+        """Record a cache miss (rebuild) for the specified layer."""
+        if layer in self._stats:
+            self._stats[layer]['misses'] += 1
+            self._stats[layer]['total_time'] += render_time
+            self._stats[layer]['count'] += 1
+
+    def record_frame(self, frame_time):
+        """Record a complete frame render."""
+        self._total_frames += 1
+        self._total_frame_time += frame_time
+
+    def get_statistics(self):
+        """Return a dictionary of cache statistics for all layers."""
+        stats = {}
+        for layer, data in self._stats.items():
+            total_checks = data['hits'] + data['misses']
+            hit_rate = (data['hits'] / total_checks * 100) if total_checks > 0 else 0.0
+            avg_time = (data['total_time'] / data['count']) if data['count'] > 0 else 0.0
+            stats[layer] = {
+                'hits': data['hits'],
+                'misses': data['misses'],
+                'total_checks': total_checks,
+                'hit_rate': hit_rate,
+                'avg_render_time': avg_time,
+                'total_render_time': data['total_time'],
+            }
+
+        # Add total frame statistics
+        avg_frame_time = (self._total_frame_time / self._total_frames) if self._total_frames > 0 else 0.0
+        stats['frames'] = {
+            'total_frames': self._total_frames,
+            'total_time': self._total_frame_time,
+            'avg_time': avg_frame_time,
+        }
+        return stats
+
+    def reset_statistics(self):
+        """Reset all cache statistics."""
+        for layer in self._stats:
+            self._stats[layer] = {'hits': 0, 'misses': 0, 'total_time': 0.0, 'count': 0}
+        self._total_frames = 0
+        self._total_frame_time = 0.0
+
+    def print_statistics(self, channel=None):
+        """Print formatted cache statistics as a table."""
+        stats = self.get_statistics()
+
+        # Build table header
+        output = ["\n=== Layer Cache Statistics ===\n"]
+
+        # Column headers
+        header = f"{'Layer':<12} {'Hits':>8} {'Misses':>8} {'Total':>8} {'Hit %':>8} {'Avg(ms)':>10} {'Total(s)':>10}"
+        separator = "─" * len(header)
+        output.append(header)
+        output.append(separator)
+
+        # Data rows for each layer
+        for layer in ['background', 'generic', 'elements', 'composite']:
+            s = stats[layer]
+            row = (f"{layer.capitalize():<12} "
+                   f"{s['hits']:>8} "
+                   f"{s['misses']:>8} "
+                   f"{s['total_checks']:>8} "
+                   f"{s['hit_rate']:>7.1f}% "
+                   f"{s['avg_render_time']*1000:>9.2f} "
+                   f"{s['total_render_time']:>10.3f}")
+            output.append(row)
+
+        output.append(separator)
+
+        # Total frame statistics
+        fs = stats['frames']
+        output.append(f"\nTotal Frames: {fs['total_frames']}")
+        output.append(f"Avg Frame Time: {fs['avg_time']*1000:.2f}ms")
+        output.append(f"Total Frame Time: {fs['total_time']:.3f}s")
+        if fs['total_frames'] > 0:
+            fps = 1.0 / fs['avg_time'] if fs['avg_time'] > 0 else 0.0
+            output.append(f"Average FPS: {fps:.1f}")
+
+        output.append("\n" + "="*len(header))
+
+        result = "\n".join(output)
+        if channel is not None:
+            channel(result)
+        return result
+
+    # ------------------------------------------------------------------
+    # bitmap accessors
+    # ------------------------------------------------------------------
+    @property
+    def background_bitmap(self):
+        return self._bg_bitmap
+
+    @property
+    def generic_bitmap(self):
+        return self._generic_bitmap
+
+    @property
+    def elements_bitmap(self):
+        return self._elements_bitmap
+
+    @property
+    def composite_bitmap(self):
+        return self._composite_bitmap
+
+
 class Scene(Module, Job):
     """
     The Scene Module holds all the needed references to widgets and catches the events from the ScenePanel which
@@ -256,6 +504,10 @@ class Scene(Module, Job):
         # Snap information
         self.snap_display_points = None
         self.snap_attraction_points = None
+        # Three-level render cache and invalidation guards
+        self._cache = LayerCache()
+        self._cached_matrix = None
+        self._cached_draw_mode = None
 
     @property
     def has_background(self):
@@ -375,6 +627,26 @@ class Scene(Module, Job):
         else:
             self.request_refresh()
 
+    def invalidate_background(self):
+        """Invalidate background cache; cascades to generic, elements and composite."""
+        self._cache.invalidate_background()
+        self.request_refresh()
+
+    def invalidate_generic(self):
+        """Invalidate generic nodes cache; cascades to elements and composite."""
+        self._cache.invalidate_generic()
+        self.request_refresh()
+
+    def invalidate_elements(self):
+        """Invalidate non-emphasized elements cache; cascades to composite."""
+        self._cache.invalidate_elements()
+        self.request_refresh()
+
+    def invalidate_emphasized(self):
+        """Invalidate emphasized (active) elements cache only."""
+        self._cache.invalidate_composite()
+        self.request_refresh()
+
     def animate(self, widget):
         with self._animate_lock:
             if widget not in self._adding_widgets:
@@ -432,45 +704,215 @@ class Scene(Module, Job):
             self.scene_lock.release()
         self.screen_refresh_is_requested = False
 
+    def _draw_scene_layers(self, gc, min_layer, max_layer):
+        """Draw scene_widget children in the layer range [min_layer, max_layer)."""
+        if self.widget_root is None:
+            return
+        scene_widget = self.widget_root.scene_widget
+        gc.PushState()
+        try:
+            matrix = scene_widget.matrix
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        except Exception as e:
+            self.log(f"Could not concat scene matrix [{e}]")
+            gc.PopState()
+            return
+        # Iterate in reverse (same as Widget.draw), filtering by layer
+        for i in range(len(scene_widget) - 1, -1, -1):
+            widget = scene_widget[i]
+            if widget is not None and widget.visible and min_layer <= widget.layer < max_layer:
+                try:
+                    widget.draw(gc)
+                except Exception as e:
+                    self.log(f"Could not draw widget {type(widget).__name__} [{e}]")
+        gc.PopState()
+
     def _update_buffer_ui_thread(self):
-        """Performs redrawing of the data in the UI thread."""
+        """Performs redrawing using four-level cache (background, generic, elements, composite)."""
+        frame_start_time = time.perf_counter()
         dm = self.context.draw_mode
         buf = self.gui.scene_buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
             self.gui.set_buffer()
             buf = self.gui.scene_buffer
-        dc = wx.MemoryDC()
-        if self.clip.width != 0 and self.clip.height != 0:
-            dc.SetClippingRegion(self.clip)
-            self.clip.SetX(0)
-            self.clip.SetY(0)
-            self.clip.SetWidth(0)
-            self.clip.SetHeight(0)
 
-        dc.SelectObject(buf)
-        if self.overrule_background is None:
-            self.background_brush.SetColour(self.colors.color_background)
+        w, h = self.gui.ClientSize
+
+        # Reset clip rect (no partial invalidation with multi-level cache)
+        self.clip.SetX(0)
+        self.clip.SetY(0)
+        self.clip.SetWidth(0)
+        self.clip.SetHeight(0)
+
+        # Handle suppress_changes early (startup phase)
+        if self.suppress_changes or self.widget_root is None:
+            dc = wx.MemoryDC()
+            dc.SelectObject(buf)
+            if self.overrule_background is None:
+                self.background_brush.SetColour(self.colors.color_background)
+            else:
+                self.background_brush.SetColour(self.overrule_background)
+            dc.SetBackground(self.background_brush)
+            dc.Clear()
+            dc.SelectObject(wx.NullBitmap)
+            frame_time = time.perf_counter() - frame_start_time
+            self._cache.record_frame(frame_time)
+            return
+
+        # Invalidate all caches if window size, matrix, or draw_mode changed
+        self._cache.ensure_size(w, h)
+        scene_matrix = self.widget_root.scene_widget.matrix
+        if scene_matrix is None:
+            scene_matrix = Matrix()
+        current_matrix = (scene_matrix.a, scene_matrix.b, scene_matrix.c,
+                          scene_matrix.d, scene_matrix.e, scene_matrix.f)
+        if current_matrix != self._cached_matrix or dm != self._cached_draw_mode:
+            self._cache.invalidate_background()
+            self._cached_matrix = current_matrix
+            self._cached_draw_mode = dm
+
+        font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+
+        # --- Cache A: background (bg color + LAYER_BACKGROUND) ---
+        if not self._cache.background_valid:
+            start_time = time.perf_counter()
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._cache.background_bitmap)
+            if self.overrule_background is None:
+                self.background_brush.SetColour(self.colors.color_background)
+            else:
+                self.background_brush.SetColour(self.overrule_background)
+            dc.SetBackground(self.background_brush)
+            dc.Clear()
+            if dm & DRAW_MODE_FLIPXY != 0:
+                dc.SetUserScale(-1, -1)
+                dc.SetLogicalOrigin(w, h)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.Size = dc.Size
+            gc.SetFont(font, wx.BLACK)
+            self._draw_scene_layers(gc, 0, LAYER_GENERIC_NODES)
+            gc.Destroy()
+            dc.SelectObject(wx.NullBitmap)
+            self._cache.mark_background_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('background', render_time)
         else:
-            self.background_brush.SetColour(self.overrule_background)
-        dc.SetBackground(self.background_brush)
-        dc.Clear()
-        w, h = dc.Size
+            self._cache.record_hit('background')
+
+        # --- Cache B: generic nodes (background + GENERIC_NODES) ---
+        if not self._cache.generic_valid:
+            start_time = time.perf_counter()
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._cache.generic_bitmap)
+            # Raw pixel copy from background
+            src_dc = wx.MemoryDC()
+            src_dc.SelectObject(self._cache.background_bitmap)
+            dc.Blit(0, 0, w, h, src_dc, 0, 0)
+            src_dc.SelectObject(wx.NullBitmap)
+            # Draw generic nodes
+            if dm & DRAW_MODE_FLIPXY != 0:
+                dc.SetUserScale(-1, -1)
+                dc.SetLogicalOrigin(w, h)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.Size = dc.Size
+            gc.SetFont(font, wx.BLACK)
+            self._draw_scene_layers(gc, LAYER_GENERIC_NODES, LAYER_NONACTIVE_ELEMENTS)
+            gc.Destroy()
+            dc.SelectObject(wx.NullBitmap)
+            self._cache.mark_generic_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('generic', render_time)
+        else:
+            self._cache.record_hit('generic')
+
+        # --- Cache C: non-emphasized elements (generic + NONACTIVE) ---
+        if not self._cache.elements_valid:
+            start_time = time.perf_counter()
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._cache.elements_bitmap)
+            # Raw pixel copy from generic
+            src_dc = wx.MemoryDC()
+            src_dc.SelectObject(self._cache.generic_bitmap)
+            dc.Blit(0, 0, w, h, src_dc, 0, 0)
+            src_dc.SelectObject(wx.NullBitmap)
+            # Draw non-emphasized elements
+            if dm & DRAW_MODE_FLIPXY != 0:
+                dc.SetUserScale(-1, -1)
+                dc.SetLogicalOrigin(w, h)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.Size = dc.Size
+            gc.SetFont(font, wx.BLACK)
+            self._draw_scene_layers(gc, LAYER_NONACTIVE_ELEMENTS, LAYER_ACTIVE_ELEMENTS)
+            gc.Destroy()
+            dc.SelectObject(wx.NullBitmap)
+            self._cache.mark_elements_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('elements', render_time)
+        else:
+            self._cache.record_hit('elements')
+
+        # --- Cache D: emphasized elements (elements + ACTIVE) ---
+        if not self._cache.composite_valid:
+            start_time = time.perf_counter()
+            dc = wx.MemoryDC()
+            dc.SelectObject(self._cache.composite_bitmap)
+            # Raw pixel copy from elements
+            src_dc = wx.MemoryDC()
+            src_dc.SelectObject(self._cache.elements_bitmap)
+            dc.Blit(0, 0, w, h, src_dc, 0, 0)
+            src_dc.SelectObject(wx.NullBitmap)
+            # Draw emphasized elements
+            if dm & DRAW_MODE_FLIPXY != 0:
+                dc.SetUserScale(-1, -1)
+                dc.SetLogicalOrigin(w, h)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.Size = dc.Size
+            gc.SetFont(font, wx.BLACK)
+            self._draw_scene_layers(gc, LAYER_ACTIVE_ELEMENTS, LAYER_TOOLS)
+            gc.Destroy()
+            dc.SelectObject(wx.NullBitmap)
+            self._cache.mark_composite_valid()
+            render_time = time.perf_counter() - start_time
+            self._cache.record_miss('composite', render_time)
+        else:
+            self._cache.record_hit('composite')
+
+        # --- Final frame: composite + live layers (tools, interface, toast) ---
+        dc = wx.MemoryDC()
+        dc.SelectObject(buf)
+        # Pixel-copy the composite cache to the output buffer
+        src_dc = wx.MemoryDC()
+        src_dc.SelectObject(self._cache.composite_bitmap)
+        dc.Blit(0, 0, w, h, src_dc, 0, 0)
+        src_dc.SelectObject(wx.NullBitmap)
+        # Apply FLIPXY for live layers
         if dm & DRAW_MODE_FLIPXY != 0:
             dc.SetUserScale(-1, -1)
             dc.SetLogicalOrigin(w, h)
         gc = wx.GraphicsContext.Create(dc)
         gc.dc = dc
         gc.Size = dc.Size
-
-        font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         gc.SetFont(font, wx.BLACK)
-        self.draw(gc)
+        # Live scene layers (tools and above)
+        self._draw_scene_layers(gc, LAYER_TOOLS, float('inf'))
+        # Interface widgets (guides, reticle)
+        if self.widget_root is not None:
+            self.widget_root.interface_widget.draw(gc)
+        # Toast (animated, always live)
+        if self._toast is not None:
+            self._toast.draw(gc)
+        # Invert if needed
         if dm & DRAW_MODE_INVERT != 0:
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
         del gc.dc
         del dc
+
+        # Record total frame time
+        frame_time = time.perf_counter() - frame_start_time
+        self._cache.record_frame(frame_time)
 
     def toast(self, message, token=-1):
         if self._toast is None:

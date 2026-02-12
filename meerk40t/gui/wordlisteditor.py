@@ -4,6 +4,9 @@ import re
 import wx
 from wx import aui
 
+# Precompiled regex patterns for performance
+_BRACKETS = re.compile(r"\{[^}]+\}")
+
 from ..extra.encode_detect import EncodingDetectFile
 from ..kernel import signal_listener
 from .icons import (
@@ -191,8 +194,7 @@ class WordlistMiniPanel(wx.Panel):
                 continue
             # we can be rather agnostic on the individual variable,
             # we are interested in the highest {variable#+offset} pattern
-            brackets = re.compile(r"\{[^}]+\}")
-            for bracketed_key in brackets.findall(sample):
+            for bracketed_key in _BRACKETS.findall(sample):
                 #            print(f"Key found: {bracketed_key}")
                 key = bracketed_key[1:-1].lower().strip()
                 relative = 0

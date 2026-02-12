@@ -784,7 +784,9 @@ class RotationWidget(Widget):
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
             elements.signal("updating")
 
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
+
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1030,6 +1032,8 @@ class CornerWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 return
+            if isinstance(b, tuple):
+                b = list(b)
 
             # Establish origin
             orgy = self.master.bottom if "n" in self.method else self.master.top
@@ -1078,6 +1082,7 @@ class CornerWidget(Widget):
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
     def hit(self):
@@ -1271,7 +1276,10 @@ class SideWidget(Widget):
                 orgy = (self.master.bottom + self.master.top) / 2
                 orgx = (self.master.left + self.master.right) / 2
                 grow = 0.5
-
+            if b is None:
+                return
+            if isinstance(b, tuple):
+                b = list(b)
             oldvalue = self.save_width
             self.save_width *= scalex
             deltax = self.save_width - oldvalue
@@ -1311,6 +1319,8 @@ class SideWidget(Widget):
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
+        
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
     def hit(self):
@@ -1471,6 +1481,8 @@ class SkewWidget(Widget):
                         e._cache = None
             elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
     def event(
@@ -1532,6 +1544,7 @@ class MoveWidget(Widget):
         self.cursor = "sizing"
         self.total_dx = 0
         self.total_dy = 0
+        self._undo_marked = False  # Track if undo mark was created for current drag
         self.update()
 
         # User-configurable setting for showing snap preview
@@ -1762,8 +1775,15 @@ class MoveWidget(Widget):
         This collects non-moving data (non-selected element points, grid points)
         and the selected element points at the start position so preview updates
         can be cheap and incremental.
+
+        Skip cache gathering if there are too many elements (performance threshold).
         """
         if b is None:
+            return
+        # Performance threshold: skip snap cache for designs with many elements
+        element_count = sum(1 for _ in self.scene.context.elements.elems())
+        if element_count > 1000:
+            self._snap_cache = None
             return
         matrix = self.scene.widget_root.scene_widget.matrix
         gap = self.scene.context.action_attract_len / get_matrix_scale(matrix)
@@ -2221,6 +2241,7 @@ class MoveWidget(Widget):
             # Clear any transient preview state
             self._snap_preview = None
             self._snap_cache = None
+            self._undo_marked = False
             # Cleanup - we check for:
             # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
             # b) Use the distance of the 4 corners and the center to a grid point -> take the smallest distance
@@ -2544,24 +2565,34 @@ class MoveWidget(Widget):
             if modifiers and "alt" in modifiers:
                 self.create_duplicate()
             self.scene.pane.modif_active = True
-            # Normally this would happen automagically in the background, but as we are going
-            # to suppress undo during the execution of this tool (to allow to go back to the
-            # very starting point) we need to set the recovery point ourselves.
+            # Defer undo mark creation until first actual movement to avoid
+            # expensive snapshot on mousedown for large element counts.
             # Hint for translate check: _("Element shifted")
-            elements.undo.mark("Element shifted")
+            self._undo_marked = False
             self.total_dx = 0
             self.total_dy = 0
-            # Initialize snap preview cache at the start of drag.
+            # Initialize snap preview cache at the start of drag (only if enabled).
             try:
-                b = elements._emphasized_bounds
-                if b is None:
-                    b = elements.selected_area()
-                self._gather_snap_cache(b)
+                enabled = self.scene.context.setting(bool, "snap_preview", True)
             except Exception:
+                enabled = True
+            if enabled:
+                try:
+                    b = elements._emphasized_bounds
+                    if b is None:
+                        b = elements.selected_area()
+                    self._gather_snap_cache(b)
+                except Exception:
+                    self._snap_cache = None
+            else:
                 self._snap_cache = None
             # Reset preview
             self._snap_preview = None
         elif event == TOOL_RESULT_MOVE:  # move
+            # Create undo mark on first movement (deferred from drag start for performance)
+            if not self._undo_marked:
+                elements.undo.mark("Element shifted")
+                self._undo_marked = True
             move_to(dx, dy, interim=True)
             # Update preview intelligently (avoid recomputing too often)
             try:
@@ -2604,6 +2635,8 @@ class MoveWidget(Widget):
                             self.scene.request_refresh()
                         except Exception:
                             pass
+        
+        self.scene.invalidate_emphasized()
         self.scene.request_refresh()
         elements.set_end_time("movewidget")
 
