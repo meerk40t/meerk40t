@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 30-12-25 17:45:00UTC\n"
+"PO-Revision-Date: 12-02-26 19:05:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Language: it\n"
@@ -3678,7 +3678,7 @@ msgstr "Posiziona una dima"
 #: meerk40t/gui/materialtest.py:1542 meerk40t/gui/wxmmain.py:2386
 #: meerk40t/newly/device.py:510 meerk40t/newly/device.py:526
 msgid "Cut"
-msgstr "Taglia"
+msgstr "Taglio"
 
 #: meerk40t/device/devicechoices.py:91 meerk40t/gui/gui_optypes.py:30
 #: meerk40t/gui/materialtest.py:241 meerk40t/gui/materialtest.py:1306
@@ -4998,7 +4998,7 @@ msgstr ""
 #: meerk40t/gui/snapoptions.py:61 meerk40t/gui/wxmmain.py:1487
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:123
 msgid "Snap to Element"
-msgstr "Aggancio all'elemento"
+msgstr "Aggancia all'elemento"
 
 #: meerk40t/gui/snapoptions.py:63
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:151
@@ -23501,7 +23501,7 @@ msgstr "Movimento"
 
 #: meerk40t/newly/device.py:626 meerk40t/newly/device.py:638
 msgid "Framing"
-msgstr "Inquadratura"
+msgstr "Parametri operativi"
 
 #: meerk40t/ruida/device.py:112 meerk40t/ruida/device.py:125
 msgid "User Scale"
@@ -24293,8 +24293,7 @@ msgstr "Algoritmo:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1969
 msgid "- Diagonal: Starting in one corner traversing the image diagonally"
-msgstr ""
-"- Diagonale: Iniziando in un angolo attraversando l'immagine diagonalmente"
+msgstr "- Diagonale: Iniziando in un angolo attraversando l'immagine diagonalmente"
 
 #: meerk40t/tools/livinghinges.py:360
 msgid "Choose the generation algorithm"
@@ -24940,7 +24939,8 @@ msgstr "Posizione di destinazione del laser"
 
 #: meerk40t/gui/propertypanels/generic_op_property.py:75
 msgid "Move the laser to the physical home position (engaging endstops)."
-msgstr "Sposta il laser nella posizione home fisica (attivando i finecorsa)."
+msgstr ""
+"Sposta il laser nella posizione home fisica (attivando i finecorsa)."
 
 #: meerk40t/gui/propertypanels/generic_op_property.py:138
 msgid "Console Command"
@@ -25153,7 +25153,8 @@ msgstr "finestra di controllo auto-intersezione (predefinito 100)"
 
 #: meerk40t/core/elements/offset_mk.py:2347
 msgid "create an offset path using simplified fast algorithm"
-msgstr "crea un percorso offset usando un algoritmo semplificato e veloce"
+msgstr ""
+"crea un percorso offset usando un algoritmo semplificato e veloce"
 
 #: meerk40t/core/elements/element_treeops.py:2724
 #: meerk40t/core/elements/element_treeops.py:2745
@@ -25262,7 +25263,8 @@ msgstr "Password (opzionale)"
 
 #: meerk40t/grbl/device.py:786
 msgid "Password for ESP3D authentication (leave empty if not required)"
-msgstr "Password per autenticazione ESP3D (lasciare vuoto se non richiesto)"
+msgstr ""
+"Password per autenticazione ESP3D (lasciare vuoto se non richiesto)"
 
 #: meerk40t/grbl/device.py:797
 msgid "Cleanup Local Files"
@@ -25304,8 +25306,7 @@ msgstr "Questo dispositivo non supporta il caricamento ESP3D"
 #: meerk40t/grbl/plugin.py:343 meerk40t/grbl/plugin.py:528
 msgid "ESP3D upload is not enabled. Enable in device settings."
 msgstr ""
-"Il caricamento ESP3D non è abilitato. Abilita nelle impostazioni del "
-"dispositivo."
+"Il caricamento ESP3D non è abilitato. Abilita nelle impostazioni del dispositivo."
 
 #: meerk40t/grbl/plugin.py:346
 msgid "Testing ESP3D connection..."
@@ -25341,8 +25342,7 @@ msgstr "Uso: esp3d_config set <parametro> <valore>"
 
 #: meerk40t/grbl/plugin.py:380
 msgid "Parameters: host, port, path, username, password, enabled, cleanup"
-msgstr ""
-"Parametri: host, porta, percorso, nome utente, password, abilitato, pulizia"
+msgstr "Parametri: host, porta, percorso, nome utente, password, abilitato, pulizia"
 
 #: meerk40t/grbl/plugin.py:388
 msgid "ESP3D host set to: {value}"
@@ -25472,7 +25472,8 @@ msgstr "Esegui file dopo caricamento"
 
 #: meerk40t/grbl/plugin.py:500
 msgid "Generate G-code, upload to ESP3D SD card, and optionally execute"
-msgstr "Genera G-code, carica sulla scheda SD ESP3D e opzionalmente esegui"
+msgstr ""
+"Genera G-code, carica sulla scheda SD ESP3D e opzionalmente esegui"
 
 #: meerk40t/grbl/plugin.py:533
 msgid "Preparing G-code for ESP3D upload..."
@@ -25655,7 +25656,8 @@ msgstr "Test Connessione"
 
 #: meerk40t/grbl/gui/esp3dconfig.py:43
 msgid "Test connection to ESP3D device and display SD card information"
-msgstr "Test connessione al dispositivo ESP3D e mostra informazioni scheda SD"
+msgstr ""
+"Test connessione al dispositivo ESP3D e mostra informazioni scheda SD"
 
 #: meerk40t/grbl/gui/esp3dconfig.py:47
 msgid "List Files"
@@ -25922,7 +25924,8 @@ msgstr "Avvia &Telnet sulla porta {port}"
 
 #: meerk40t/gui/wxmmain.py:4692
 msgid "Starts a telnet instance to control MeerK40t from a terminal"
-msgstr "Avvia un'istanza Telnet per controllare MeerK40t da un terminale"
+msgstr ""
+"Avvia un'istanza Telnet per controllare MeerK40t da un terminale"
 
 #: meerk40t/gui/wxmmain.py:4694
 msgid "Stop &Telnet"
@@ -26174,6 +26177,7 @@ msgstr "Usa G1 prima dei movimenti rapidi"
 msgid "Uses G1 S0 to explicitly set the power to 0 instead of a G0 X Y S0 "
 msgstr ""
 "Usa G1 S0 per impostare esplicitamente la potenza a 0 invece di G0 X Y S0 "
+" "
 
 #: meerk40t/gui/wordlisteditor.py:640
 msgid "Rename failed"
@@ -26216,8 +26220,7 @@ msgstr ""
 msgid ""
 "If disabled, snap points are only calculated when the mouse is not moving"
 msgstr ""
-"Se disabilitato, i punti di aggancio vengono calcolati solo quando il mouse "
-"non si muove"
+"Se disabilitato, i punti di aggancio vengono calcolati solo quando il mouse non si muove"
 
 #: meerk40t/gui/wordlisteditor.py:269
 msgid "Filter:"
@@ -26466,12 +26469,12 @@ msgstr "Soglia di tempo totale in secondi"
 
 #: meerk40t/kernel/kernel.py:3900
 msgid "List listeners exceeding thresholds (requires debug_mode)"
-msgstr "Elenca ascoltatori che superano le soglie (richiede debug_mode)"
+msgstr ""
+"Elenca ascoltatori che superano le soglie (richiede debug_mode)"
 
 #: meerk40t/kernel/kernel.py:3911
 msgid "Signal stats are only collected when debug_mode is active."
-msgstr ""
-"Le statistiche del segnale vengono raccolte solo quando debug_mode è attivo."
+msgstr "Le statistiche del segnale vengono raccolte solo quando debug_mode è attivo."
 
 #: meerk40t/kernel/kernel.py:3912
 msgid "To enable: set debug_mode True (requires restart)"
@@ -26480,7 +26483,8 @@ msgstr "Per abilitare: 'set debug_mode True' (richiede il riavvio)"
 #: meerk40t/kernel/kernel.py:3930
 msgid "No slow listeners found (avg >= {avg} or total >= {total})."
 msgstr ""
-"Nessun ascoltatore lento trovato (media >= {avg} o totale >= {total})."
+"Nessun ascoltatore lento trovato (media >= {avg} o totale >= "
+"{total})."
 
 #: meerk40t/kernel/kernel.py:3948
 msgid "Action: 'reset' to reset the counter"
@@ -26489,3 +26493,15 @@ msgstr "Azione: 'reset' per ripristinare il contatore"
 #: meerk40t/kernel/kernel.py:3949
 msgid "Show or reset the global flat() call counter"
 msgstr "Mostra o ripristina il contatore globale delle chiamate flat()"
+
+msgid "Show snap line"
+msgstr "Mostra la linea di aggancio"
+
+msgid "UI-Colours"
+msgstr "Colori UI"
+
+msgid "Sensitivity"
+msgstr "Sensibilità"
+
+msgid "Attraction"
+msgstr "Attrazione"
