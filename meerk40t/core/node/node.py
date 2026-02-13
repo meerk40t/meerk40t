@@ -253,8 +253,8 @@ class Node:
                 return True
             else:
                 return self._is_visible
-        if "references" in self.__dict__:
-            references = self.__dict__["references"]
+        if "_references" in self.__dict__:
+            references = self.__dict__["_references"]
             valid = False
             flag = False
             for n in references:
