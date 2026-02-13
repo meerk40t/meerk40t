@@ -462,7 +462,6 @@ class wxMeerK40t(wx.App, Module):
         self.supported_languages = supported_languages
         # for idx, (lang, name, wxlang) in enumerate(supported_languages):
         #     print (f"Language #{idx:02d} : {lang} - {name}")
-        import meerk40t.gui.icons as icons
 
         self.timer = wx.Timer(self, id=wx.ID_ANY)
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
@@ -473,8 +472,7 @@ class wxMeerK40t(wx.App, Module):
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         Module.__init__(self, context, path)
-        theme = Themes(kernel=context._kernel)
-        icons.DARKMODE = theme.dark
+  
         self.locale = None
         self.Bind(wx.EVT_CLOSE, self.on_app_close)
         self.Bind(wx.EVT_QUERY_END_SESSION, self.on_app_close)  # MAC DOCK QUIT.
