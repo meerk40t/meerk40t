@@ -316,8 +316,17 @@ class GRBLConfiguration(MWindow):
     def hw_config(self, value):
         if not value:
             return
+        firmware_type = self.context.setting(str, "firmware_type", "grbl").lower()
+        if firmware_type == "marlin":
+            wx.MessageBox(
+                _("Hardware configuration is not available for Marlin firmware."),
+                _("Not supported"),
+                wx.OK | wx.ICON_INFORMATION,
+            )
+            return
         try:
-            self.context.driver(f"$${self.context.driver.line_end}")
+            query_cmd = self.context.driver.translate_command("query_settings")
+            self.context.driver(f"{query_cmd}{self.context.driver.line_end}")
             self.context("window open GrblHardwareConfig\n")
         except:
             wx.MessageBox(
@@ -336,7 +345,8 @@ class GRBLConfiguration(MWindow):
         if not value:
             return
         try:
-            self.context.driver(f"$${self.context.driver.line_end}")
+            query_cmd = self.context.driver.translate_command("query_settings")
+            self.context.driver(f"{query_cmd}{self.context.driver.line_end}")
             self._requested_status = True
         except:
             wx.MessageBox(
@@ -350,7 +360,8 @@ class GRBLConfiguration(MWindow):
         if responses is None:
             return
         flag = False
-        if cmd_issued.startswith("$$"):
+        query_cmd = self.context.driver.translate_command("query_settings")
+        if cmd_issued.startswith(query_cmd):
             flag = True
         if flag:
             # Right command

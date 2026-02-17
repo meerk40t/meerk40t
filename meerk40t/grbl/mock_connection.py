@@ -15,7 +15,10 @@ class MockConnection:
         self.laser = None
         self.read_buffer = bytearray()
         self.emulator = GRBLEmulator(
-            device=None, units_to_device_matrix=service.view.matrix, reply=self.add_read
+            device=None, 
+            units_to_device_matrix=service.view.matrix, 
+            reply=self.add_read,
+            service=service
         )
 
     @property

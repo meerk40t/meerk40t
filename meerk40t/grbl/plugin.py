@@ -3,7 +3,7 @@ GRBL Device Plugin
 
 Registers the required files to run the GRBL device.
 """
-from meerk40t.grbl.control import GRBLControl, greet
+from meerk40t.grbl.control import GRBLControl
 from meerk40t.grbl.device import GRBLDevice, GRBLDriver
 from meerk40t.grbl.emulator import GRBLEmulator
 from meerk40t.grbl.gcodejob import GcodeJob
@@ -202,6 +202,42 @@ def plugin(kernel, lifecycle=None):
                 ],
             },
         )
+        for fw_type in ["marlin", "smoothieware"]:
+            kernel.register(
+                f"dev_info/grbl-{fw_type}",
+                {
+                    "provider": "provider/device/grbl",
+                    "friendly_name": _("{firmware} based device (GRBL)").format(
+                        firmware=fw_type.capitalize(),
+                    ),
+                    "extended_info": _("Laser engraver with {firmware} firmware").format(
+                        firmware=fw_type.capitalize()
+                    ),
+                    "priority": 21,
+                    "family": _("Ortur Diode-Laser"),
+                    "choices": [
+                        {
+                            "attr": "label",
+                            "default": f"{fw_type.capitalize()}-Laser",
+                        },
+                        {
+                            "attr": "has_endstops",
+                            "default": True,
+                        },
+                        {
+                            "attr": "source",
+                            "default": "diode",
+                        },
+                        {
+                            "attr": "require_validator",
+                            "default": False,
+                        },
+                        {"attr": "bedheight", "default": "200mm"},
+                        {"attr": "bedwidth", "default": "200mm"},
+                        {"attr": "firmware_type", "default": fw_type}
+                    ],
+                },
+            )
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("spoolerjob/grbl", GcodeJob)
         kernel.register("interpreter/grbl", GRBLInterpreter)
@@ -273,7 +309,7 @@ def plugin(kernel, lifecycle=None):
                 root.open_as("module/TCPServer", "grblmock", port=port)
                 tcp_recv_channel = root.channel("grblmock/recv", pure=True)
                 tcp_send_channel = root.channel("grblmock/send", pure=True)
-                tcp_send_channel.greet = greet
+                tcp_send_channel.greet = "Grbl 1.1f ['$' for help]\r\n"
 
                 def everything_ok(line):
                     for c in line:
