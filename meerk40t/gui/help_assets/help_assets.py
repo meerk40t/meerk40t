@@ -104,60 +104,71 @@ Für eine komplette Liste der Format-Codes: https://docs.python.org/3/library/da
 """
 
 italian_wordlist_howto = """
-Variabili di testo consente di inserire elementi di testo in un progetto sostituendoli a dei “segnaposto”. Il testo viene sostituito al momento della lavorazione. È quindi possibile produrre più elementi con testi diversi senza dover modificare ogni volta il progetto.
+Le Variabili di testo permettono di inserire all’interno degli elementi testuali dei segnaposto che, durante il processo di incisione o taglio, vengono automaticamente sostituiti dai valori contenuti nella variabile corrispondente.
+In questo modo è possibile generare testi diversi a ogni lavorazione, senza dover modificare manualmente il progetto ogni volta.
+Un segnaposto è composto da un nome racchiuso tra parentesi graffe, ad esempio:
+{NOME}
+Questo nome viene definito nell’editor delle Variabili di testo insieme ai valori associati, così che il software possa sostituirlo automaticamente con il contenuto corretto durante la lavorazione.
 
-Un segnaposto consiste in una parola all'interno di parentesi graffe, ad esempio '{FIRSTNAME}'. La parola viene associato al segnaposto presente in Gestione variabili di testo e il segnaposto viene sostituito dal testo inserito nel contenuto della variabile di testo associata.
+Esempio pratico
+Supponiamo di voler creare un modello di targhetta per una festa, facilmente riutilizzabile.
+   - Disegniamo un riquadro (ad esempio un rettangolo).
+   - Inseriamo un elemento di testo all’interno.
+   - Modifichiamo il testo in:
 
-Come esempio di utilizzo di questa funzionalità, immaginiamo di voler creare una serie di etichette per la prenotazione di posti a sedere ad una cena, ognuna con il nome di una persona diversa. Dopo aver creato il percorso di taglio per il contorno dell'etichetta, ad esempio un rettangolo, si utilizza lo strumento di disegno Testo per creare un elemento testo contenente quanto segue:
+   - "Qui si siede {INVITATO}"
 
-Questo posto è riservato a {INVITATO}.
-Quindi si utilizza Gestione variabili di testo per creare una o più voci come segue:
+Nell’editor delle Variabili di testo definiamo il segnaposto:
 
 	|-----------|------|-------|
-	| Nome      | Tipo | Indice|
+	|    Name   | Type | Index |
 	|-----------|------|-------|
-	| invitato  | Text | 0     |
-	|-----------|------|-------|
+	| Invitato  | Text |   0   |
+	|-----------|------|-------| 
 
-Quindi selezionare la riga "invitato" e aggiungere i dati necessari nel pannello Contenuto, ad es:
+Poi aggiungiamo alcuni valori associati:
+   - David
+   - Roberto
+   - Andrea
+   
+Quando avviamo la lavorazione, il software genera automaticamente targhette personalizzate con i nomi della lista, ad esempio:
+"Qui si siede David"
+È possibile definire e utilizzare quanti segnaposto si desidera.
 
-	Paolo
-	Davide
-	Andy
+Il ruolo dell’Index
+Il valore Index indica quale voce della lista verrà utilizzata alla prossima lavorazione (0 = primo elemento).
+Un segnaposto può essere usato più volte nello stesso progetto.
+La forma standard {NOME} usa il valore alla posizione Index.
+Le varianti:
+- {NOME#+1} ? usa l’elemento successivo
+- {NOME#+2} ? quello dopo ancora
+- e così via
+L’Index non avanza automaticamente: rimane fisso finché non lo si modifica manualmente tramite i pulsanti Avanti e Indietro.
 
-Eseguendo la lavorazione si otterranno segnaposto individuali con nomi diversi, ad esempio 'Questo posto è riservato a Andy'.
+Variabili da file CSV
+È possibile definire un intero set di variabili importandole da un file CSV, ad esempio generato con Excel, LibreCalc o da un sistema online che produce automaticamente liste clienti.
+Le voci provenienti da CSV sono indicate con tipo CSV, e tutte condividono lo stesso Index.
+Attenzione:
+Se il CSV non contiene una riga di intestazione, le colonne verranno chiamate automaticamente:
+column_1, column_2, ecc.
 
-È possibile utilizzare tutti i nomi di segnaposto che si desidera nei campi di testo del progetto.
+Variabili predefinite
+Esistono anche variabili già pronte, utili per inserire informazioni sulla lavorazione o sulla data/ora:
+  * 'version' – versione di Meerk40t
+  * 'date' – data di avvio della lavorazione
+  * 'time' – ora di avvio della lavorazione
+  * 'op_device' – nome del dispositivo utilizzato
+  * 'op_speed' – velocità dell’operazione corrente
+  * 'op_power' – potenza dell’operazione corrente
+  * 'op_dpi' – risoluzione DPI dell’operazione
+  * 'op_passes' – numero di passaggi dell’operazione
 
-Il valore Indice di partenza per il campo nella tabella Variabili di testo indica quale voce dell'elenco dei contenuti verrà utilizzata successivamente; zero significa la prima voce. L'indice viene automaticamente aumentato di uno alla fine di ogni singolo elemento processato.
-
-Ma supponiamo, per motivi di efficienza, di voler masterizzare contemporaneamente due tag di prenotazione di posti, ciascuno con un nome diverso dallo stesso elenco. In questo caso, se il primo tag usa '{NAME#+0}' e il secondo '{NAME#+1}' (notare il segno più). '{NAME}' o '{NAME#+0}' utilizza la voce corrente (indicata dal valore dell'indice), '{NAME#+1}' utilizza la voce successiva a quella corrente, ecc.
-
-Con questo sistema, è possibile utilizzare questi valori tutte le volte che si desidera nel proprio progetto.
-Per far avanzare l'indice è necessario fare clic sui pulsanti Prev / Next della barra degli strumenti.
-
-In alternativa all'inserimento manuale dei valori in Variabili di testo tramite il Gestione variabili di testo, è possibile utilizzare un file CSV standard separato da virgole. I nomi dei segnaposto sono definiti nella riga di intestazione standard del file CSV (la prima riga del file CSV) e i contenuti sono presi da tutte le righe successive. Il modo più semplice per creare un file CSV è utilizzare un foglio di calcolo, ad esempio Excel.
-
-Le voci caricate da un file CSV vengono visualizzate come Tipo CSV ed è possibile impostare i valori dell'indice per tutte le voci CSV contemporaneamente.
-
-Nota: se il CSV non ha una riga di intestazione, le colonne saranno denominate "colonna_1", "colonna_2" ecc.
-
-L'elenco di parole contiene anche alcune voci speciali (che potrebbero essere particolarmente utili per i progetti di calibrazione):
-
-	* 'version' - Versione di Meerk40t
-	* 'date' - Data di inizio dell’incisione
-	* 'time' - Ora di inizio dell’incisione
-	* 'op_device' - Dispositivo su cui si sta effettuando l’incisione
-	* 'op_speed' - Velocità dell'operazione corrente
-	* 'op_power' - PPI dell'operazione corrente
-	* 'op_dpi' - DPI dell'operazione corrente (raster)
-	* 'op_passes' - Passaggi dell'operazione corrente
-
-I segnaposto per "data" e "ora" possono anche contenere istruzioni di formattazione che consentono di formattarli secondo le convenzioni locali, ad esempio
-	{date@%d.%m.%Y} - 31.12.2022
-	{time@%H:%M} - 23:59
-
-Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+I segnaposto {date} e {time} possono essere formattati per rispettare gli standard locali, ad esempio:
+  - {date@%d.%m.%Y} - 31.12.2022
+  - {time@%H:%M} - 23:59
+  
+L’elenco completo dei codici di formattazione è disponibile qui:
+https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 """
 
 french_wordlist_howto = """
