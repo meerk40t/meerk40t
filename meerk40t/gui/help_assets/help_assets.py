@@ -123,7 +123,7 @@ Nell’editor delle Variabili di testo definiamo il segnaposto:
 	|-----------|------|-------|
 	|    Name   | Type | Index |
 	|-----------|------|-------|
-	| Invitato  | Text |   0   |
+	| INVITATO  | Text |   0   |
 	|-----------|------|-------| 
 
 Poi aggiungiamo alcuni valori associati:
