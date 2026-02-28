@@ -20,6 +20,7 @@ def plugin(kernel, lifecycle=None):
             return True
     if lifecycle == "register":
         import serial
+        from meerk40t.core.serial_utils import serial_open
 
         @kernel.console_option(
             "port", "c", type=str, default="COM4", help="com port to use"
@@ -70,7 +71,7 @@ def plugin(kernel, lifecycle=None):
             serial_device = None
             try:
                 # Open the serial port
-                serial_device = serial.Serial(port, baud_rate, timeout=2)
+                serial_device = serial_open(port, baud_rate, timeout=2)
 
                 if delay:
                     # Add in wakeup delay.
