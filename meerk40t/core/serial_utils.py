@@ -4,6 +4,7 @@ Serial port utilities shared across drivers.
 
 import re
 
+import platform
 import serial
 from serial import SerialException
 
@@ -31,6 +32,8 @@ def serial_open(port: str, baud_rate: int, **kwargs) -> serial.Serial:
     try:
         return serial.Serial(port, baud_rate, **kwargs)
     except SerialException:
-        if re.match(r"^COM\d+$", port, re.IGNORECASE):
+        if platform.system() == "Windows" and re.match(
+            r"^COM\d+$", port, re.IGNORECASE
+        ):
             return serial.Serial(f"\\\\.\\{port}", baud_rate, **kwargs)
         raise
