@@ -1019,10 +1019,25 @@ class LihuiyuController:
                 continue  # Not a packet confirmation; keep polling for OK/ERROR.
             elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
                 # On M3 boards, 0xCC serves a dual role: it both acknowledges the packet
-                # and signals end-of-job (equivalent to FINISH on standard boards).
-                # Record finish_seen for the same reason as FINISH above so that a
-                # subsequent wait_finished() call is skipped if the M3 already finished.
+                # AND signals end-of-job.  It must be handled as two simultaneous events:
+                #
+                # 1. Packet acknowledgement: the M3 has accepted the packet.  We increment
+                #    packet_count and will return True (confirmed).
+                #
+                # 2. Serial challenge confirmation: if we sent a serial-challenge packet
+                #    (starting with "A"), the post-send command is _confirm_serial(), which
+                #    polls for another SERIAL_CORRECT_M3_FINISH to set serial_confirmed.
+                #    But the device only sends 0xCC once — by the time _confirm_serial()
+                #    is called the device has already moved to OK state and will never send
+                #    it again, so _confirm_serial() would time out and set serial_confirmed
+                #    to False, breaking M3 authentication.
+                #    Fix: set serial_confirmed = True here directly, and let
+                #    _execute_post_send_command skip the redundant _confirm_serial() call.
+                #
+                # 3. End-of-job signal: equivalent to FINISH for wait_finished purposes.
+                #    _finish_seen = True so _execute_post_send_command skips wait_finished.
                 self._finish_seen = True
+                self.serial_confirmed = True
                 self.context.packet_count += 1
                 return True
 
@@ -1091,9 +1106,23 @@ class LihuiyuController:
             wait_finished_func = getattr(
                 self.wait_finished, "__func__", self.wait_finished
             )
+            confirm_serial_func = getattr(
+                self._confirm_serial, "__func__", self._confirm_serial
+            )
             callback_func = getattr(post_send_command, "__func__", post_send_command)
             if callback_func is wait_finished_func and self._finish_seen:
-                return  # FINISH already received during confirmation — skip redundant wait.
+                # FINISH (or SERIAL_CORRECT_M3_FINISH) already received during
+                # confirmation — skip the redundant wait_finished() call.  Calling it
+                # now would loop forever because OK (0xCE & 0x02 = 2) never satisfies
+                # the PEMP-bit exit condition, and the device will not emit FINISH again.
+                return
+            if callback_func is confirm_serial_func and self.serial_confirmed:
+                # SERIAL_CORRECT_M3_FINISH was received during the packet confirmation
+                # loop (_confirm_packet_receipt), which already set serial_confirmed = True.
+                # The device sends 0xCC only once; _confirm_serial() would poll for 0.5 s,
+                # fail to see it again, and incorrectly set serial_confirmed = False.
+                # Skip the call — authentication already succeeded.
+                return
             try:
                 post_send_command()
             except ConnectionError:
