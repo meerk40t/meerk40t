@@ -202,6 +202,13 @@ class LihuiyuController:
         self.state = "unknown"
         self.is_shutdown = False
         self.serial_confirmed = False  # Initialize as boolean, not None
+        # Tracks whether a FINISH (0xEC) status was received from the device during
+        # the packet confirmation polling loop (_confirm_packet_receipt).  When this
+        # is True, _execute_post_send_command skips the explicit wait_finished() call
+        # because the device has already signalled completion and returned to OK state —
+        # calling wait_finished() at that point would poll forever since OK (0xCE) never
+        # satisfies the PEMP-bit exit condition (status & 0x02 == 0) used by that method.
+        self._finish_seen = False
 
         self._thread = None
         self._buffer = (
@@ -967,6 +974,7 @@ class LihuiyuController:
         """
         status = 0
         flawless = True
+        self._finish_seen = False
 
         for attempts in range(MAX_CONFIRMATION_ATTEMPTS):
             try:
@@ -998,8 +1006,23 @@ class LihuiyuController:
                 self.context.rejected_count += 1
                 return not flawless  # Return True if there were connection errors
             elif status == LihuiyuStatus.FINISH.value:
-                continue  # This is not a confirmation.
+                # FINISH (0xEC) means the device has completed its internal buffer and
+                # is signalling end-of-job.  It is NOT a packet acknowledgement — the
+                # device still owes us an OK or ERROR for the packet we just sent, so we
+                # record that FINISH arrived and keep polling.
+                # Recording it here is critical: the post-send command for end-of-job
+                # packets is wait_finished(), which blocks until it observes FINISH.
+                # If FINISH arrives now (during confirmation), by the time wait_finished()
+                # is actually called the device will already be back in OK state and will
+                # never send FINISH again, causing wait_finished() to loop forever.
+                self._finish_seen = True
+                continue  # Not a packet confirmation; keep polling for OK/ERROR.
             elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
+                # On M3 boards, 0xCC serves a dual role: it both acknowledges the packet
+                # and signals end-of-job (equivalent to FINISH on standard boards).
+                # Record finish_seen for the same reason as FINISH above so that a
+                # subsequent wait_finished() call is skipped if the M3 already finished.
+                self._finish_seen = True
                 self.context.packet_count += 1
                 return True
 
@@ -1035,9 +1058,42 @@ class LihuiyuController:
         """
         Execute post-send command if one was specified.
 
+        Background
+        ----------
+        End-of-job packets carry a '-' pipe command which sets post_send_command to
+        wait_finished().  wait_finished() polls device status until the PEMP bit clears
+        (status & 0x02 == 0), which only happens when the device reports FINISH (0xEC).
+
+        Race condition fixed here
+        -------------------------
+        If the device executes its buffer quickly, FINISH (0xEC) may arrive while
+        _confirm_packet_receipt() is still polling for the packet acknowledgement.
+        _confirm_packet_receipt() records this via self._finish_seen and keeps polling
+        until it receives OK or ERROR.  By the time we reach this method the device has
+        already transitioned past FINISH back to OK (0xCE).
+
+        Calling wait_finished() at this point would poll forever: OK (0xCE & 0x02 = 2)
+        never satisfies the exit condition, and the device will not send FINISH again
+        until the next job.  The result is a permanently hung controller thread.
+
+        Fix: if _finish_seen is set we skip wait_finished() entirely — the device has
+        already finished, there is nothing left to wait for.
+
+        Note on the identity check
+        --------------------------
+        Python 3 creates a new bound-method object on every attribute access, so
+        ``post_send_command is self.wait_finished`` is always False.  We compare the
+        underlying function objects via __func__ instead, which is stable.
+
         @param post_send_command: The command to execute after sending
         """
         if post_send_command is not None:
+            wait_finished_func = getattr(
+                self.wait_finished, "__func__", self.wait_finished
+            )
+            callback_func = getattr(post_send_command, "__func__", post_send_command)
+            if callback_func is wait_finished_func and self._finish_seen:
+                return  # FINISH already received during confirmation — skip redundant wait.
             try:
                 post_send_command()
             except ConnectionError:
