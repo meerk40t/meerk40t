@@ -1132,6 +1132,25 @@ class LihuiyuController:
                 break
             if status == LihuiyuStatus.ERROR.value:
                 break
+            if status == LihuiyuStatus.FINISH.value:
+                # FINISH (0xEC) means the device has emptied its internal command buffer
+                # and is signalling end-of-job.  The device will NOT self-transition from
+                # FINISH back to OK — it stays in FINISH until it receives the next packet.
+                #
+                # Without this branch the controller deadlocks:
+                #   1. Device is in FINISH state (e.g. after fast buffer drain, or after the
+                #      500-attempt BUSY exhaustion path in _confirm_packet_receipt clears
+                #      pre_ok and causes this method to be called on the next packet).
+                #   2. wait_until_accepting_packets loops, waiting for OK.
+                #   3. Device waits for a new packet before leaving FINISH.
+                #   4. Neither side advances → permanent hang.
+                #
+                # The fix: FINISH is semantically equivalent to OK for the purpose of this
+                # gate — the device IS ready to accept the next packet.  Break out exactly
+                # as we would for OK (clearing pre_ok so the caller does not skip the next
+                # wait_until_accepting_packets call).
+                self.pre_ok = False
+                break
             time.sleep(0.05)
             if self.context is not None:
                 self.context.signal("pipe;wait", LihuiyuStatus.OK.value, i)
