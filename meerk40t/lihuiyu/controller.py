@@ -202,6 +202,7 @@ class LihuiyuController:
         self.state = "unknown"
         self.is_shutdown = False
         self.serial_confirmed = False  # Initialize as boolean, not None
+        self._finish_seen = False  # Set when FINISH is received during packet confirmation
 
         self._thread = None
         self._buffer = (
@@ -967,6 +968,7 @@ class LihuiyuController:
         """
         status = 0
         flawless = True
+        self._finish_seen = False
 
         for attempts in range(MAX_CONFIRMATION_ATTEMPTS):
             try:
@@ -998,8 +1000,12 @@ class LihuiyuController:
                 self.context.rejected_count += 1
                 return not flawless  # Return True if there were connection errors
             elif status == LihuiyuStatus.FINISH.value:
-                continue  # This is not a confirmation.
+                # Device has already finished — note it so wait_finished won't be called.
+                self._finish_seen = True
+                continue  # This is not a packet confirmation; keep polling for OK/ERROR.
             elif status == LihuiyuStatus.SERIAL_CORRECT_M3_FINISH.value:
+                # On M3 devices this also serves as a "finished" signal.
+                self._finish_seen = True
                 self.context.packet_count += 1
                 return True
 
@@ -1035,9 +1041,15 @@ class LihuiyuController:
         """
         Execute post-send command if one was specified.
 
+        If FINISH was already observed during packet confirmation, skip wait_finished
+        — the device has already completed and returned to OK, so waiting for FINISH
+        again would loop forever.
+
         @param post_send_command: The command to execute after sending
         """
         if post_send_command is not None:
+            if post_send_command is self.wait_finished and self._finish_seen:
+                return  # FINISH was seen during confirmation; no need to wait again.
             try:
                 post_send_command()
             except ConnectionError:
