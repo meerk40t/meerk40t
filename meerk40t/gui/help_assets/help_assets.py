@@ -106,17 +106,23 @@ Für eine komplette Liste der Format-Codes: https://docs.python.org/3/library/da
 italian_wordlist_howto = """
 Le Variabili di testo permettono di inserire all’interno degli elementi testuali dei segnaposto che, durante il processo di incisione o taglio, vengono automaticamente sostituiti dai valori contenuti nella variabile corrispondente.
 In questo modo è possibile generare testi diversi a ogni lavorazione, senza dover modificare manualmente il progetto ogni volta.
-Un segnaposto è composto da un nome racchiuso tra parentesi graffe, ad esempio:
+Un segnaposto è composto da un nome racchiuso tra parentesi graffe.
+Ad esempio:
+
 {NOME}
+
 Questo nome viene definito nell’editor delle Variabili di testo insieme ai valori associati, così che il software possa sostituirlo automaticamente con il contenuto corretto durante la lavorazione.
 
+
 Esempio pratico
+
 Supponiamo di voler creare un modello di targhetta per una festa, facilmente riutilizzabile.
    - Disegniamo un riquadro (ad esempio un rettangolo).
-   - Inseriamo un elemento di testo all’interno.
-   - Modifichiamo il testo in:
+   - Inseriamo un elemento di testo all’interno e poniamo un segnaposto.
+   
+ Ad esempio:
 
-   - "Qui si siede {INVITATO}"
+    "Qui si siede {INVITATO}"
 
 Nell’editor delle Variabili di testo definiamo il segnaposto:
 
@@ -131,28 +137,36 @@ Poi aggiungiamo alcuni valori associati:
    - Roberto
    - Andrea
    
-Quando avviamo la lavorazione, il software genera automaticamente targhette personalizzate con i nomi della lista, ad esempio:
+Quando avviamo la lavorazione, il software genera automaticamente targhette personalizzate con i nomi della lista.
+Ad esempio:
+
 "Qui si siede David"
+
 È possibile definire e utilizzare quanti segnaposto si desidera.
 
+
 Il ruolo dell’Index
-Il valore Index indica quale voce della lista verrà utilizzata alla prossima lavorazione (0 = primo elemento).
-Un segnaposto può essere usato più volte nello stesso progetto.
-La forma standard {NOME} usa il valore alla posizione Index.
-Le varianti:
-- {NOME#+1} ? usa l’elemento successivo
-- {NOME#+2} ? quello dopo ancora
-- e così via
-L’Index non avanza automaticamente: rimane fisso finché non lo si modifica manualmente tramite i pulsanti Avanti e Indietro.
+
+Il valore Index nella tabella delle variabili stabilisce quale dei valori mostrati a destra verrà utilizzato alla prossima lavorazione (il valore 0 corrisponde al primo elemento della lista).
+L’uso di un segnaposto non è limitato a una sola occorrenza (utile, ad esempio, quando si vogliono incidere più targhette in un’unica sessione). La forma standard {NOME} utilizza il valore alla posizione #index della lista caricata; {NOME#+1} (nota il #+1 finale) usa il valore successivo, {NOME#+2} quello dopo ancora, e così via.
+In questo modo i valori possono essere utilizzati tutte le volte necessarie senza far avanzare automaticamente l’indice. 
+I pulsanti Avanti e Indietro permettono di modificare manualmente l’indice
+
 
 Variabili da file CSV
+
 È possibile definire un intero set di variabili importandole da un file CSV, ad esempio generato con Excel, LibreCalc o da un sistema online che produce automaticamente liste clienti.
 Le voci provenienti da CSV sono indicate con tipo CSV, e tutte condividono lo stesso Index.
-Attenzione:
+
+
+------> Attenzione <------
+
 Se il CSV non contiene una riga di intestazione, le colonne verranno chiamate automaticamente:
 column_1, column_2, ecc.
 
+
 Variabili predefinite
+
 Esistono anche variabili già pronte, utili per inserire informazioni sulla lavorazione o sulla data/ora:
   * 'version' – versione di Meerk40t
   * 'date' – data di avvio della lavorazione
@@ -166,6 +180,7 @@ Esistono anche variabili già pronte, utili per inserire informazioni sulla lavo
 I segnaposto {date} e {time} possono essere formattati per rispettare gli standard locali, ad esempio:
   - {date@%d.%m.%Y} - 31.12.2022
   - {time@%H:%M} - 23:59
+  
   
 L’elenco completo dei codici di formattazione è disponibile qui:
 https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
@@ -684,9 +699,10 @@ Die Parameter, die man z.B. für das Schneiden von Acryl benötigt unterscheiden
 Diese Daten können im Übrigen mit der Meerk40t Commnity geteilt werden, un man im Gegenzug von den Beiträgen anderer profitieren.
 """
 italian_material_howto = """
-Il Gestore della libreria di materiali consente di creare, gestire, memorizzare e utilizzare i parametri di lavorazione per ottenere l'effetto desiderato con un determinato materiale.
-I parametri da utilizzare, ad esempio, per tagliare l'acrilico sono molto diversi da quelli da utilizzare per incidere un'immagine sull'ardesia.
-È possibile condividere tali impostazioni di lavorazione dei materiali con la comunità MeerK40t e beneficiare dei contributi degli altri caricando e utilizzando le loro impostazioni.
+Il Gestore della Libreria dei Materiali consente di creare, organizzare, salvare e utilizzare i parametri di lavorazione necessari per ottenere il risultato desiderato su un determinato materiale. 
+I parametri richiesti, ad esempio, per tagliare l’acrilico sono molto diversi da quelli necessari per incidere un’immagine sull’ardesia.
+
+È possibile condividere queste impostazioni di lavorazione con la comunità di MeerK40t e, allo stesso tempo, beneficiare dei contributi degli altri utenti scaricando e utilizzando le loro configurazioni
 """
 french_material_howto = """
 Le gestionnaire de bibliothèque de matériaux permet de créer, maintenir, utiliser et gérer des opérations qui sont personnalisées pour fournir un effet désiré avec un matériau donné (d'où le nom Bibliothèque de matériaux).
