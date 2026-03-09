@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 12-02-26 19:05:00UTC\n"
+"PO-Revision-Date: 07-03-26 19:30:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Language: it\n"
@@ -5949,7 +5949,7 @@ msgstr "Zoom &Area di lavoro\tCtrl-B"
 
 #: meerk40t/gui/wxmmain.py:4326
 msgid "GUI-Elements"
-msgstr "Elementi dell'interfaccia grafica"
+msgstr "Gestione elementi dell'interfaccia grafica"
 
 #: meerk40t/gui/wxmmain.py:4332
 msgid "Show/Hide UI-Panels\tCtrl-U"
@@ -23444,7 +23444,7 @@ msgstr "Gestione dispositivi"
 #: meerk40t/gui/executejob.py:312 meerk40t/gui/simulation.py:2577
 #: meerk40t/gui/spoolerpanel.py:1252
 msgid "Burning"
-msgstr "Incisione"
+msgstr "Lavorazione"
 
 #: meerk40t/gui/imagesplitter.py:563
 msgid "Image Splitting"
@@ -26505,3 +26505,6 @@ msgstr "Sensibilità"
 
 msgid "Attraction"
 msgstr "Attrazione"
+
+msgid "Shape-Attributes"
+msgstr "Proprietà delle forme"
