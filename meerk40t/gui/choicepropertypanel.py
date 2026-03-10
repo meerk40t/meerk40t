@@ -818,6 +818,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             # Store choice list for handler
             control._choice_list = choice_list
+            control._display_list = display_list
         else:
             # Standard combo without display/choices separation
             raw_choice_list = list(choice.get("choices", [choice.get("default")]))
@@ -1053,6 +1054,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             # Store choice list for handler
             control._choice_list = choice_list
+            control._display_list = display_list
 
             # Set up event handler
             if handler_factory:
@@ -1588,8 +1590,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                             combo_handler = real_handler
                         control.Bind(wx.EVT_COMBOBOX, combo_handler)
                         if not choice.get("exclusive", True):
-                            control.Bind(wx.EVT_TEXT_ENTER, real_handler)
-                            control.Bind(wx.EVT_KILL_FOCUS, real_handler)
+                            # For display/value mapped combos, commit via the same mapper
+                            # so we do not overwrite stored values with display labels.
+                            text_commit_handler = combo_handler if has_display else real_handler
+                            control.Bind(wx.EVT_TEXT_ENTER, text_commit_handler)
+                            control.Bind(wx.EVT_KILL_FOCUS, text_commit_handler)
                     elif data_style == "radio":
                         control.Bind(wx.EVT_RADIOBOX, real_handler)
                     elif data_style == "slider":
@@ -1940,10 +1945,32 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         def handle_combo_option_selection(event):
             try:
-                selected_choice = ctrl._choice_list[ctrl.GetSelection()]
-                converted_value = dtype(selected_choice)
+                selection = ctrl.GetSelection()
+                if selection != wx.NOT_FOUND:
+                    selected_choice = ctrl._choice_list[selection]
+                    converted_value = dtype(selected_choice)
+                    self._update_property_and_signal(obj, param, converted_value, addsig)
+                    return
+
+                # Non-exclusive combo: user may type. If typed text matches a display
+                # entry, convert back to the raw choice value; otherwise use raw text.
+                entered_value = ctrl.GetValue()
+                display_list = getattr(ctrl, "_display_list", None)
+                if display_list is not None:
+                    try:
+                        mapped_idx = display_list.index(entered_value)
+                        mapped_choice = ctrl._choice_list[mapped_idx]
+                        converted_value = dtype(mapped_choice)
+                        self._update_property_and_signal(
+                            obj, param, converted_value, addsig
+                        )
+                        return
+                    except ValueError:
+                        pass
+
+                converted_value = dtype(entered_value)
                 self._update_property_and_signal(obj, param, converted_value, addsig)
-            except (ValueError, TypeError, IndexError):
+            except (ValueError, TypeError, IndexError, AttributeError):
                 # Invalid selection or conversion - silently ignore to keep UI responsive
                 pass
 
