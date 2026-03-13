@@ -314,7 +314,7 @@ class OperationAssignWidget(StatusBarWidget):
         self.parent.Freeze()
         self.assign_clear_old()
         idx = 0
-        for node in list(self.context.elements.flat(types=op_nodes)):
+        for node in list(self.context.elements.ops()):
             if node is None:
                 continue
             if node.type.startswith("op "):

@@ -1188,7 +1188,7 @@ class Elemental(Service):
             # Now that we have the colors let's iterate through all elements
             fuzzy = self.classify_fuzzy
             fuzzydistance = self.classify_fuzzydistance
-            for n in self.flat(types=elem_nodes):
+            for n in self.elems():
                 addit = False
                 if hasattr(n, attrib):
                     c = getattr(n, attrib)
@@ -4819,9 +4819,6 @@ class Elemental(Service):
                             opcount_now = self.count_op()
                             self.remove_invalid_references()
                             self.remove_empty_groups()
-                            # Flush any pending structure changes that were coalesced
-                            # during the load to avoid excessive repeated invalidations.
-                            self._flush_structure_changes()
                             with self._node_lock:
                                 for e in self.elems_nodes():
                                     if e not in _stored_elements:

@@ -221,7 +221,7 @@ class StrokeWidget(StatusBarWidget):
 
     def update_stroke_magnitude(self):
         sw_default = None
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for e in self.context.elements.elems(emphasized=True):
             if hasattr(e, "stroke_width"):
                 sw_default = e.stroke_width
                 try:
@@ -239,7 +239,7 @@ class StrokeWidget(StatusBarWidget):
         self.spin_width.SetValue(str(round(value, 4)))
 
     def update_stroke_scale_check(self):
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for e in self.context.elements.elems(emphasized=True):
             if hasattr(e, "stroke_scaled"):
                 self.chk_scale.SetValue(e.stroke_scaled)
                 return

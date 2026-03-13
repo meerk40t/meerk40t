@@ -496,7 +496,7 @@ def init_tree(kernel):
         self("group\n")
 
     @tree_conditional(
-        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        lambda cond: len(list(self.ops(selected=True, cascade=False)))
         >= 1
     )
     @tree_operation(
@@ -507,7 +507,7 @@ def init_tree(kernel):
     )
     def clear_all_op_entries(node, **kwargs):
         data = list()
-        for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+        for item in list(self.ops(selected=True, cascade=False)):
             data.append(item)
         if not data:
             return
@@ -1586,7 +1586,7 @@ def init_tree(kernel):
         self.signal("refresh_tree")
 
     @tree_conditional(
-        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        lambda cond: len(list(self.ops(selected=True, cascade=False)))
         == 1
     )
     @tree_operation(
@@ -1622,12 +1622,12 @@ def init_tree(kernel):
         self.signal("operation_removed")
 
     @tree_conditional(
-        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        lambda cond: len(list(self.ops(selected=True, cascade=False)))
         > 1
     )
     @tree_calc(
         "ecount",
-        lambda i: len(list(self.flat(selected=True, cascade=False, types=op_nodes))),
+        lambda i: len(list(self.ops(selected=True, cascade=False))),
     )
     @tree_operation(
         _("Delete {ecount} operations fully"),
@@ -1636,7 +1636,7 @@ def init_tree(kernel):
         grouping="10_OPS_DELETION",
     )
     def remove_type_op_multiple(node, **kwargs):
-        data = list(self.flat(selected=True, cascade=False, types=op_nodes))
+        data = list(self.ops(selected=True, cascade=False))
         if not data:
             return
         # Language hint _("Delete operation")

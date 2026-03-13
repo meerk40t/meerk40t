@@ -703,7 +703,7 @@ class BasicOpPanel(wx.Panel):
         highlight_fore = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
         highlight_back.ChangeLightness(32)
 
-        for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for elem in self.context.elements.elems(emphasized=True):
             for op in self.context.elements.ops():
                 for node in op.children:
                     if node.type == "reference":

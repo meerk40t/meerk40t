@@ -772,7 +772,7 @@ class RotationWidget(Widget):
             # )
             # b = self.reference_rect.bbox()
             with elements.undofree():
-                for e in elements.flat(types=elem_nodes, emphasized=True):
+                for e in elements.elems(emphasized=True):
                     try:
                         if e.lock:
                             continue
@@ -1459,7 +1459,7 @@ class SkewWidget(Widget):
 
             # No undo of interim steps
             with elements.undofree():
-                for e in elements.flat(types=elem_nodes, emphasized=True):
+                for e in elements.elems(emphasized=True):
                     try:
                         if e.lock:
                             continue
@@ -1757,7 +1757,7 @@ class MoveWidget(Widget):
             self.total_dy += dy
             if dx != 0 or dy != 0:
                 with elements.undofree():
-                    for e in elements.flat(types=elem_nodes, emphasized=True):
+                    for e in elements.elems(emphasized=True):
                         if not e.can_move(allowlockmove):
                             continue
                         e.matrix.post_translate(dx, dy)
@@ -2189,7 +2189,7 @@ class MoveWidget(Widget):
                     return
             allowlockmove = elements.lock_allows_move
             with elements.undofree():
-                for e in elements.flat(types=elem_nodes, emphasized=True):
+                for e in elements.elems(emphasized=True):
                     if not e.can_move(allowlockmove):
                         continue
                     e.matrix.post_translate(dx, dy)
@@ -2914,7 +2914,7 @@ class ReferenceWidget(Widget):
             if self.is_reference_object:
                 self.scene.pane.reference_object = None
             else:
-                for e in elements.flat(types=elem_nodes, emphasized=True):
+                for e in elements.elems(emphasized=True):
                     try:
                         # First object
                         self.scene.pane.reference_object = e
@@ -3046,7 +3046,7 @@ class LockWidget(Widget):
             # Nothing to do...
             return
         elif event == TOOL_RESULT_END:  # leftup, leftclick
-            data = list(elements.flat(types=elem_nodes, emphasized=True))
+            data = list(elements.elems(emphasized=True))
             for e in data:
                 e.lock = False
             self.scene.context.signal("element_property_update", data)
@@ -3453,7 +3453,7 @@ class SelectionWidget(Widget):
         else:
             posy = "center"
 
-        data = [e for e in elements.flat(types=elem_nodes, emphasized=True) if e != refob]
+        data = [e for e in elements.elems(emphasized=True) if e != refob]
 
         elements.align_elements(data, alignbounds, posx, posy, False)
         for q in data:
@@ -3477,7 +3477,7 @@ class SelectionWidget(Widget):
             cy = (cc[1] + cc[3]) / 2
             dx = cc[2] - cc[0]
             dy = cc[3] - cc[1]
-            for e in elements.flat(types=elem_nodes, emphasized=True):
+            for e in elements.elems(emphasized=True):
                 if e.lock:
                     continue
                 e.matrix.post_rotate(angle, cx, cy)
@@ -3522,7 +3522,7 @@ class SelectionWidget(Widget):
             return
         # No undo of interim steps
         with elements.undofree():
-            for e in elements.flat(types=elem_nodes, emphasized=True):
+            for e in elements.elems(emphasized=True):
                 if e.lock:
                     continue
                 if e is not refob:
@@ -3550,7 +3550,7 @@ class SelectionWidget(Widget):
             self.scene.request_refresh()
 
     def become_reference(self, event):
-        for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
+        for e in self.scene.context.elements.elems(emphasized=True):
             try:
                 # First object
                 self.scene.pane.reference_object = e
@@ -3578,9 +3578,7 @@ class SelectionWidget(Widget):
         reference_object = self.scene.pane.reference_object
         if reference_object is not None:
             # Okay, just let's make sure we are not doing this on the refobject itself...
-            for e in self.scene.context.elements.flat(
-                types=elem_nodes, emphasized=True
-            ):
+            for e in self.scene.context.elements.elems(emphasized=True):
                 # Here we acknowledge the lock-status of an element
                 if reference_object is e:
                     reference_object = None
@@ -3812,7 +3810,7 @@ class SelectionWidget(Widget):
             no_skew = True
             no_move = True
             no_rotate = True
-            for idx, e in enumerate(elements.flat(types=elem_nodes, emphasized=True)):
+            for idx, e in enumerate(elements.elems(emphasized=True)):
                 if e is self.scene.pane.reference_object:
                     self.is_ref = True
                 # Is one of the elements locked?
