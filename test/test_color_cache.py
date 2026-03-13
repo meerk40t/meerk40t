@@ -104,15 +104,58 @@ class TestColorCache(unittest.TestCase):
         self.assertEqual(hash(c), hash(c._color.value))
 
     def test_cached_attribute_write_delegation(self):
-        """Ensure attribute writes are forwarded to wrapped Color (regression)."""
+        """Ensure attribute writes and deletions are forwarded to wrapped Color."""
+        # Baseline plain Color behavior before cache is installed.
+        orig = svgelements.Color("#112233")
+
+        # Cached Color behavior.
         color_cache.install_color_cache()
         c = svgelements.Color("#112233")
+
+        # Attribute write delegation.
         new_value = svgelements.Color.parse("#445566")
         c.value = new_value
         self.assertEqual(c.value, new_value)
         self.assertEqual(c._color.value, new_value)
         c.opacity = 0.5
         self.assertAlmostEqual(c.opacity, 0.5, places=2)
+        orig.value = new_value
+        orig.opacity = 0.5
+
+        # Attribute deletion delegation and post-delete access behavior.
+        def assert_delete_parity(attr_name):
+            # Delete on plain Color to define expected behavior.
+            plain_delete_exc = None
+            try:
+                delattr(orig, attr_name)
+            except Exception as exc:
+                plain_delete_exc = exc
+
+            if plain_delete_exc is None:
+                delattr(c, attr_name)
+            else:
+                with self.assertRaises(type(plain_delete_exc)) as cm:
+                    delattr(c, attr_name)
+                self.assertEqual(str(cm.exception), str(plain_delete_exc))
+
+            # Access on plain Color defines expected read behavior.
+            plain_read_exc = None
+            plain_read_value = None
+            try:
+                plain_read_value = getattr(orig, attr_name)
+            except Exception as exc:
+                plain_read_exc = exc
+
+            for obj in (c, c._color):
+                if plain_read_exc is None:
+                    self.assertEqual(getattr(obj, attr_name), plain_read_value)
+                else:
+                    with self.assertRaises(type(plain_read_exc)) as cm:
+                        _ = getattr(obj, attr_name)
+                    self.assertEqual(str(cm.exception), str(plain_read_exc))
+
+        assert_delete_parity("opacity")
+        assert_delete_parity("value")
 
     def test_cached_matches_original_properties(self):
         """Compare outputs of many properties/methods between original Color and cached wrapper."""
