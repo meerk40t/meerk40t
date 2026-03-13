@@ -309,7 +309,7 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
             return
         more_than_one = False
         ct = 0
-        for _e in self.context.elements.elems(emphasized=True):
+        for _e in self.context.elements.elems_nodes(emphasized=True):
             ct += 1
             if ct > 1:
                 more_than_one = True
@@ -530,7 +530,22 @@ class PositionPanel(PositionDimensionMixin, wx.Panel):
         ):
             return
         if self.chk_individually.GetValue():
-            for elem in self.context.elements.elems(emphasized=True):
+            # Expand groups to their leaf elements for individual positioning
+            seen = set()
+            elems_to_move = []
+            for node in self.context.elements.elems_nodes(emphasized=True):
+                if node.type in ("group", "file"):
+                    for child in node.flat(types=elem_nodes):
+                        cid = id(child)
+                        if cid not in seen:
+                            seen.add(cid)
+                            elems_to_move.append(child)
+                else:
+                    nid = id(node)
+                    if nid not in seen:
+                        seen.add(nid)
+                        elems_to_move.append(node)
+            for elem in elems_to_move:
                 # Skip elements that cannot be moved
                 if not elem.can_move(self.context.elements.lock_allows_move):
                     continue

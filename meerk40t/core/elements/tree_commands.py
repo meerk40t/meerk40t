@@ -252,7 +252,7 @@ def init_commands(kernel):
         # print ("selected")
         # for n in self.flat():
         #     print ("Node: %s, selected=%s, emphasized=%s" % (n.type, n.selected, n.emphasized))
-        return "tree", list(self.elems(selected=True))
+        return "tree", list(self.flat(selected=True))
 
     @self.console_command(
         "emphasized",
@@ -264,7 +264,7 @@ def init_commands(kernel):
         """
         Set tree list to emphasized node
         """
-        return "tree", list(self.elems(emphasized=True))
+        return "tree", list(self.flat(emphasized=True))
 
     @self.console_command(
         "highlighted",

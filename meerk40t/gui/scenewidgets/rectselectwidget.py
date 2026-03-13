@@ -291,13 +291,22 @@ class RectSelectWidget(Widget):
                     return
             allowlockmove = self.scene.context.elements.lock_allows_move
             with self.scene.context.elements.undofree():
-                for e in self.scene.context.elements.elems(emphasized=True):
-                    if not e.can_move(allowlockmove):
-                        continue
-                    e.matrix.post_translate(dx, dy)
-                    # We would normally not adjust the node properties,
-                    # but the pure adjustment of the bbox is hopefully not hurting
-                    e.translated(dx, dy)
+                seen = set()
+                for e in self.scene.context.elements.elems_nodes(emphasized=True):
+                    # Expand groups/files to their leaf elements
+                    if e.type in ("group", "file"):
+                        nodes_to_move = list(e.flat(types=elem_nodes))
+                    else:
+                        nodes_to_move = [e]
+                    for node in nodes_to_move:
+                        node_id = id(node)
+                        if node_id in seen:
+                            continue
+                        seen.add(node_id)
+                        if not node.can_move(allowlockmove):
+                            continue
+                        node.matrix.post_translate(dx, dy)
+                        node.translated(dx, dy)
             self.scene.context.elements.update_bounds(
                 [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
             )

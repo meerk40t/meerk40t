@@ -48,6 +48,7 @@ Functions:
 
 from math import sqrt
 
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.core.units import (
     UNITS_PER_MM,
@@ -2468,7 +2469,22 @@ def init_commands(kernel):
         command, channel, _, tx, ty, absolute=False, data=None, **kwargs
     ):
         if data is None:
-            data = list(self.elems(emphasized=True))
+            # Include groups by using elems_nodes, then expand groups to leaf elements
+            data_raw = list(self.elems_nodes(emphasized=True))
+            data = []
+            seen = set()
+            for node in data_raw:
+                if node.type in ("group", "file"):
+                    for child in node.flat(types=elem_nodes):
+                        cid = id(child)
+                        if cid not in seen:
+                            seen.add(cid)
+                            data.append(child)
+                else:
+                    nid = id(node)
+                    if nid not in seen:
+                        seen.add(nid)
+                        data.append(node)
         if len(data) == 0:
             channel(_("No selected elements."))
             return

@@ -772,15 +772,25 @@ class RotationWidget(Widget):
             # )
             # b = self.reference_rect.bbox()
             with elements.undofree():
-                for e in elements.elems(emphasized=True):
-                    try:
-                        if e.lock:
+                seen = set()
+                for e in elements.elems_nodes(emphasized=True):
+                    if e.type in ("group", "file"):
+                        nodes_to_transform = list(e.flat(types=elem_nodes))
+                    else:
+                        nodes_to_transform = [e]
+                    for node in nodes_to_transform:
+                        node_id = id(node)
+                        if node_id in seen:
                             continue
-                    except AttributeError:
-                        pass
-                    e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
-                    if e.type == "elem image":
-                        e._cache = None
+                        seen.add(node_id)
+                        try:
+                            if node.lock:
+                                continue
+                        except AttributeError:
+                            pass
+                        node.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+                        if node.type == "elem image":
+                            node._cache = None
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
             elements.signal("updating")
 
@@ -1069,16 +1079,26 @@ class CornerWidget(Widget):
 
             # No undo of interim steps
             with elements.undofree():
-                for node in elements.elems(emphasized=True):
-                    try:
-                        if node.lock:
+                seen = set()
+                for e in elements.elems_nodes(emphasized=True):
+                    if e.type in ("group", "file"):
+                        nodes_to_transform = list(e.flat(types=elem_nodes))
+                    else:
+                        nodes_to_transform = [e]
+                    for node in nodes_to_transform:
+                        node_id = id(node)
+                        if node_id in seen:
                             continue
-                    except AttributeError:
-                        pass
-                    node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
-                    if node.type == "elem image":
-                        node._cache = None
+                        seen.add(node_id)
+                        try:
+                            if node.lock:
+                                continue
+                        except AttributeError:
+                            pass
+                        node.matrix.post_scale(scalex, scaley, orgx, orgy)
+                        node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
+                        if node.type == "elem image":
+                            node._cache = None
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -1306,20 +1326,29 @@ class SideWidget(Widget):
 
             # No undo of interim steps
             with elements.undofree():
-                for node in elements.elems(emphasized=True):
-                    try:
-                        if node.lock:
+                seen = set()
+                for e in elements.elems_nodes(emphasized=True):
+                    if e.type in ("group", "file"):
+                        nodes_to_transform = list(e.flat(types=elem_nodes))
+                    else:
+                        nodes_to_transform = [e]
+                    for node in nodes_to_transform:
+                        node_id = id(node)
+                        if node_id in seen:
                             continue
-                    except AttributeError:
-                        pass
-                    node.matrix.post_scale(scalex, scaley, orgx, orgy)
-                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
-                    if node.type == "elem image":
-                        node._cache = None
+                        seen.add(node_id)
+                        try:
+                            if node.lock:
+                                continue
+                        except AttributeError:
+                            pass
+                        node.matrix.post_scale(scalex, scaley, orgx, orgy)
+                        node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy, interim=True)
+                        if node.type == "elem image":
+                            node._cache = None
             elements.signal("updating")
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-        
         self.scene.invalidate_emphasized()
         self.scene.request_refresh()
 
@@ -1459,26 +1488,36 @@ class SkewWidget(Widget):
 
             # No undo of interim steps
             with elements.undofree():
-                for e in elements.elems(emphasized=True):
-                    try:
-                        if e.lock:
-                            continue
-                    except AttributeError:
-                        pass
-                    if self.is_x:
-                        e.matrix.post_skew_x(
-                            delta_angle,
-                            (self.master.right + self.master.left) / 2,
-                            (self.master.top + self.master.bottom) / 2,
-                        )
+                seen = set()
+                for e in elements.elems_nodes(emphasized=True):
+                    if e.type in ("group", "file"):
+                        nodes_to_transform = list(e.flat(types=elem_nodes))
                     else:
-                        e.matrix.post_skew_y(
-                            delta_angle,
-                            (self.master.right + self.master.left) / 2,
-                            (self.master.top + self.master.bottom) / 2,
-                        )
-                    if e.type == "elem image":
-                        e._cache = None
+                        nodes_to_transform = [e]
+                    for node in nodes_to_transform:
+                        node_id = id(node)
+                        if node_id in seen:
+                            continue
+                        seen.add(node_id)
+                        try:
+                            if node.lock:
+                                continue
+                        except AttributeError:
+                            pass
+                        if self.is_x:
+                            node.matrix.post_skew_x(
+                                delta_angle,
+                                (self.master.right + self.master.left) / 2,
+                                (self.master.top + self.master.bottom) / 2,
+                            )
+                        else:
+                            node.matrix.post_skew_y(
+                                delta_angle,
+                                (self.master.right + self.master.left) / 2,
+                                (self.master.top + self.master.bottom) / 2,
+                            )
+                        if node.type == "elem image":
+                            node._cache = None
             elements.signal("updating")
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         
@@ -1599,7 +1638,7 @@ class MoveWidget(Widget):
         # This copy will lose all hierarchy attributes,
         # so let's do something basic at least
         to_be_copied = []
-        emph_list = list(elements.elems(emphasized=True))
+        emph_list = list(elements.elems_nodes(emphasized=True))
         for e in emph_list:
             if hasattr(e, "hidden") and e.hidden:
                 continue
@@ -1757,13 +1796,23 @@ class MoveWidget(Widget):
             self.total_dy += dy
             if dx != 0 or dy != 0:
                 with elements.undofree():
-                    for e in elements.elems(emphasized=True):
-                        if not e.can_move(allowlockmove):
-                            continue
-                        e.matrix.post_translate(dx, dy)
-                        # We would normally not adjust the node properties,
-                        # but the pure adjustment of the bbox is hopefully not hurting
-                        e.translated(dx, dy, interim=False)
+                    seen = set()
+                    for e in elements.elems_nodes(emphasized=True):
+                        if e.type in ("group", "file"):
+                            nodes_to_move = list(e.flat(types=elem_nodes))
+                        else:
+                            nodes_to_move = [e]
+                        for node in nodes_to_move:
+                            node_id = id(node)
+                            if node_id in seen:
+                                continue
+                            seen.add(node_id)
+                            if not node.can_move(allowlockmove):
+                                continue
+                            node.matrix.post_translate(dx, dy)
+                            # We would normally not adjust the node properties,
+                            # but the pure adjustment of the bbox is hopefully not hurting
+                            node.translated(dx, dy, interim=False)
                     self.translate(dx, dy)
                 elements.signal("updating")
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -2189,13 +2238,22 @@ class MoveWidget(Widget):
                     return
             allowlockmove = elements.lock_allows_move
             with elements.undofree():
-                for e in elements.elems(emphasized=True):
-                    if not e.can_move(allowlockmove):
-                        continue
-                    e.matrix.post_translate(dx, dy)
-                    # We would normally not adjust the node properties,
-                    # but the pure adjustment of the bbox is hopefully not hurting
-                    e.translated(dx, dy, interim=interim)
+                seen = set()
+                for e in elements.elems_nodes(emphasized=True):
+                    # Expand groups/files to their leaf elements
+                    if e.type in ("group", "file"):
+                        nodes_to_move = list(e.flat(types=elem_nodes))
+                    else:
+                        nodes_to_move = [e]
+                    for node in nodes_to_move:
+                        node_id = id(node)
+                        if node_id in seen:
+                            continue
+                        seen.add(node_id)
+                        if not node.can_move(allowlockmove):
+                            continue
+                        node.matrix.post_translate(dx, dy)
+                        node.translated(dx, dy, interim=interim)
             self.translate(dx, dy)
             elements.signal("updating")
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -2413,7 +2471,17 @@ class MoveWidget(Widget):
             ):
                 gap = self.scene.context.grid_attract_len / get_matrix_scale(matrix)
                 selected_points = []
-                for e in elements.elems(emphasized=True):
+                seen_snap = set()
+                snap_nodes = []
+                for e in elements.elems_nodes(emphasized=True):
+                    if e.type in ("group", "file"):
+                        snap_nodes.extend(e.flat(types=elem_nodes))
+                    else:
+                        snap_nodes.append(e)
+                for e in snap_nodes:
+                    if id(e) in seen_snap:
+                        continue
+                    seen_snap.add(id(e))
                     if hasattr(e, "hidden") and e.hidden:
                         continue
                     if not hasattr(e, "as_geometry"):
@@ -2914,7 +2982,7 @@ class ReferenceWidget(Widget):
             if self.is_reference_object:
                 self.scene.pane.reference_object = None
             else:
-                for e in elements.elems(emphasized=True):
+                for e in elements.elems_nodes(emphasized=True):
                     try:
                         # First object
                         self.scene.pane.reference_object = e
@@ -3046,7 +3114,7 @@ class LockWidget(Widget):
             # Nothing to do...
             return
         elif event == TOOL_RESULT_END:  # leftup, leftclick
-            data = list(elements.elems(emphasized=True))
+            data = list(elements.elems_nodes(emphasized=True))
             for e in data:
                 e.lock = False
             self.scene.context.signal("element_property_update", data)
@@ -3453,7 +3521,7 @@ class SelectionWidget(Widget):
         else:
             posy = "center"
 
-        data = [e for e in elements.elems(emphasized=True) if e != refob]
+        data = [e for e in elements.elems_nodes(emphasized=True) if e != refob]
 
         elements.align_elements(data, alignbounds, posx, posy, False)
         for q in data:
@@ -3477,12 +3545,22 @@ class SelectionWidget(Widget):
             cy = (cc[1] + cc[3]) / 2
             dx = cc[2] - cc[0]
             dy = cc[3] - cc[1]
-            for e in elements.elems(emphasized=True):
-                if e.lock:
-                    continue
-                e.matrix.post_rotate(angle, cx, cy)
-                if e.type == "elem image":
-                    e._cache = None
+            seen = set()
+            for e in elements.elems_nodes(emphasized=True):
+                if e.type in ("group", "file"):
+                    nodes_to_transform = list(e.flat(types=elem_nodes))
+                else:
+                    nodes_to_transform = [e]
+                for node in nodes_to_transform:
+                    node_id = id(node)
+                    if node_id in seen:
+                        continue
+                    seen.add(node_id)
+                    if node.lock:
+                        continue
+                    node.matrix.post_rotate(angle, cx, cy)
+                    if node.type == "elem image":
+                        node._cache = None
             # Update bbox
             cc[0] = cx - dy / 2
             cc[2] = cc[0] + dy
@@ -3522,12 +3600,22 @@ class SelectionWidget(Widget):
             return
         # No undo of interim steps
         with elements.undofree():
-            for e in elements.elems(emphasized=True):
-                if e.lock:
-                    continue
-                if e is not refob:
-                    e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
-                    e.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
+            seen = set()
+            for e in elements.elems_nodes(emphasized=True):
+                if e.type in ("group", "file"):
+                    nodes_to_transform = list(e.flat(types=elem_nodes))
+                else:
+                    nodes_to_transform = [e]
+                for node in nodes_to_transform:
+                    node_id = id(node)
+                    if node_id in seen:
+                        continue
+                    seen.add(node_id)
+                    if node.lock:
+                        continue
+                    if node is not refob:
+                        node.matrix.post_scale(scalex, scaley, cc[0], cc[1])
+                        node.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
         elements.signal("updating")
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
@@ -3550,7 +3638,7 @@ class SelectionWidget(Widget):
             self.scene.request_refresh()
 
     def become_reference(self, event):
-        for e in self.scene.context.elements.elems(emphasized=True):
+        for e in self.scene.context.elements.elems_nodes(emphasized=True):
             try:
                 # First object
                 self.scene.pane.reference_object = e
@@ -3578,7 +3666,7 @@ class SelectionWidget(Widget):
         reference_object = self.scene.pane.reference_object
         if reference_object is not None:
             # Okay, just let's make sure we are not doing this on the refobject itself...
-            for e in self.scene.context.elements.elems(emphasized=True):
+            for e in self.scene.context.elements.elems_nodes(emphasized=True):
                 # Here we acknowledge the lock-status of an element
                 if reference_object is e:
                     reference_object = None
@@ -3810,7 +3898,7 @@ class SelectionWidget(Widget):
             no_skew = True
             no_move = True
             no_rotate = True
-            for idx, e in enumerate(elements.elems(emphasized=True)):
+            for idx, e in enumerate(elements.elems_nodes(emphasized=True)):
                 if e is self.scene.pane.reference_object:
                     self.is_ref = True
                 # Is one of the elements locked?

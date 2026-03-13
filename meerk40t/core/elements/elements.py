@@ -3016,7 +3016,7 @@ class Elemental(Service):
         boundary_points = []
         boundary_points_painted = []
         for e in self.elem_branch.flat(
-            types=elem_nodes,
+            types=elem_group_nodes,
             emphasized=True,
         ):
             if e.bounds is None:
@@ -3024,6 +3024,8 @@ class Elemental(Service):
             if hasattr(e, "hidden") and e.hidden:
                 continue
             box = e.bounds
+            if box is None or box[0] > box[2]:
+                continue
             top_left = [box[0], box[1]]
             top_right = [box[2], box[1]]
             bottom_left = [box[0], box[3]]
@@ -3033,6 +3035,10 @@ class Elemental(Service):
             boundary_points.append(bottom_left)
             boundary_points.append(bottom_right)
             box = e.paint_bounds
+            if box is None:
+                box = e.bounds
+            if box is None or box[0] > box[2]:
+                continue
             top_left = [box[0], box[1]]
             top_right = [box[2], box[1]]
             bottom_left = [box[0], box[3]]
