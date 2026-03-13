@@ -300,7 +300,7 @@ class PropertyWindow(MWindow):
         )
 
     def window_open(self):
-        nodes = list(self.context.elements.elems(selected=True, cascade=False))
+        nodes = list(self.context.elements.flat(selected=True, cascade=False))
         self.validate_display(nodes, "window_open")
 
     def window_close(self):

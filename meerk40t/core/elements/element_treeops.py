@@ -439,7 +439,7 @@ def init_tree(kernel):
         grouping="30_ELEM_VISIBLE",
     )
     def element_visibility_hide(node, **kwargs):
-        data = list(self.elems(selected=True))
+        data = list(self.flat(selected=True))
         if not data:
             return
         with self.undoscope("Hide elements"):
@@ -457,7 +457,7 @@ def init_tree(kernel):
         grouping="30_ELEM_VISIBLE",
     )
     def element_visibility_show(node, **kwargs):
-        data = list(self.elems(selected=True))
+        data = list(self.flat(selected=True))
         if not data:
             return
         with self.undoscope("Show elements"):
@@ -475,7 +475,7 @@ def init_tree(kernel):
         grouping="30_ELEM_VISIBLE",
     )
     def element_visibility_toggle(node, **kwargs):
-        data = list(self.elems(selected=True))
+        data = list(self.flat(selected=True))
         if not data:
             return
         with self.undoscope("Toggle visibility"):
@@ -496,7 +496,8 @@ def init_tree(kernel):
         self("group\n")
 
     @tree_conditional(
-        lambda cond: len(list(self.ops(selected=True, cascade=False))) >= 1
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        >= 1
     )
     @tree_operation(
         _("Remove all items from operation"),
@@ -506,7 +507,7 @@ def init_tree(kernel):
     )
     def clear_all_op_entries(node, **kwargs):
         data = list()
-        for item in list(self.ops(selected=True, cascade=False)):
+        for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
             data.append(item)
         if not data:
             return
@@ -1585,7 +1586,8 @@ def init_tree(kernel):
         self.signal("refresh_tree")
 
     @tree_conditional(
-        lambda cond: len(list(self.ops(selected=True, cascade=False))) == 1
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        == 1
     )
     @tree_operation(
         _("Delete operation '{name}' fully"),
@@ -1620,11 +1622,12 @@ def init_tree(kernel):
         self.signal("operation_removed")
 
     @tree_conditional(
-        lambda cond: len(list(self.ops(selected=True, cascade=False))) > 1
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        > 1
     )
     @tree_calc(
         "ecount",
-        lambda i: len(list(self.ops(selected=True, cascade=False))),
+        lambda i: len(list(self.flat(selected=True, cascade=False, types=op_nodes))),
     )
     @tree_operation(
         _("Delete {ecount} operations fully"),
@@ -1633,7 +1636,7 @@ def init_tree(kernel):
         grouping="10_OPS_DELETION",
     )
     def remove_type_op_multiple(node, **kwargs):
-        data = list(self.ops(selected=True, cascade=False))
+        data = list(self.flat(selected=True, cascade=False, types=op_nodes))
         if not data:
             return
         # Language hint _("Delete operation")
@@ -1646,7 +1649,7 @@ def init_tree(kernel):
 
     def contains_no_unremovable_items():
         nolock = True
-        for e in list(self.elems(selected=True, cascade=True)):
+        for e in list(self.flat(selected=True, cascade=True)):
             if hasattr(e, "can_remove") and not e.can_remove:
                 nolock = False
                 break
@@ -1722,7 +1725,7 @@ def init_tree(kernel):
     def remove_transparent(node, **kwargs):
         res = 0
         data = list()
-        for enode in self.elems(
+        for enode in self.flat(
             selected=True,
             cascade=True,
             types=(
@@ -4214,7 +4217,7 @@ def init_tree(kernel):
     )
     def convert_to_vectext(node, **kwargs):
         data = []
-        nodelist = list(self.elems(emphasized=True, types=("elem text",)))
+        nodelist = list(self.flat(emphasized=True, types=("elem text",)))
         if not nodelist:
             return
         with self.undoscope("Convert to vector text"):
@@ -4332,7 +4335,7 @@ def init_tree(kernel):
     def convert_to_path_effect(singlenode, **kwargs):
         nodes = (
             node
-            for node in self.elems(types=effect_nodes, emphasized=True)
+            for node in self.flat(types=effect_nodes, emphasized=True)
             if hasattr(node, "as_geometry")
         )
         if not nodes:

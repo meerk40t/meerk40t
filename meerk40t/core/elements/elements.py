@@ -1192,7 +1192,7 @@ class Elemental(Service):
             # Now that we have the colors let's iterate through all elements
             fuzzy = self.classify_fuzzy
             fuzzydistance = self.classify_fuzzydistance
-            for n in self.elems():
+            for n in self.flat(types=elem_nodes):
                 addit = False
                 if hasattr(n, attrib):
                     c = getattr(n, attrib)
@@ -1528,7 +1528,7 @@ class Elemental(Service):
         # No need for an opinfo dict
         self.save_persistent_operations("previous")
         self.op_data.write_configuration()
-        for e in self.elems():
+        for e in self.flat():
             e.unregister()
 
     def safe_section_name(self, name):
@@ -1920,7 +1920,7 @@ class Elemental(Service):
         emphasize_mode = False
         if data is None:
             emphasize_mode = True
-            data = list(self.elems(emphasized=True))
+            data = list(self.flat(emphasized=True))
         if len(data) == 0:
             return
         emph_data = [e for e in data]
@@ -2347,7 +2347,7 @@ class Elemental(Service):
         uid = {}
         missing = []
         if nodelist is None:
-            nodelist = list(self.elems())
+            nodelist = list(self.flat())
         for node in nodelist:
             if node.id in uid:
                 # ID already used. Clear.
@@ -2972,7 +2972,7 @@ class Elemental(Service):
                     to_be_deleted += 1
         fastmode = to_be_deleted >= 100
         with self._node_lock:
-            for n in reversed(list(self.elems())):
+            for n in reversed(list(self.flat())):
                 if not hasattr(n, "_mark_delete"):
                     continue
                 if n.type in ("root", "branch elems", "branch reg", "branch ops"):
@@ -4979,7 +4979,7 @@ class Elemental(Service):
         return "|".join(filetypes)
 
     def find_node(self, identifier):
-        for node in self.elems():
+        for node in self.flat():
             if node.id == identifier:
                 return node
         return None
