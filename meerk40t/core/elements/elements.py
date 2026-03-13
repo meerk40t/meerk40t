@@ -985,6 +985,9 @@ class Elemental(Service):
         if not node.can_emphasize:
             return
         node.emphasized = flag
+        # Emphasize all child objects, too
+        for child in node.children:
+            self.set_node_emphasis(child, flag)
         if flag:
             if self._first_emphasized is None:
                 self._first_emphasized = node
