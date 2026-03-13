@@ -10,6 +10,13 @@ The primary goals of this software is simple:
 ## Getting started
 To get up and running, simply download Meerk40t from [here](https://github.com/meerk40t/meerk40t/releases) for your specific platform. (Windows, Mac OSX, Linux, and by extension, Raspberry Pi).
 
+## 🛠 Project Status: Maintenance Mode
+**MeerK40t is currently in a low-maintenance phase.** The original maintainers have limited bandwidth for active development. What this means for users and contributors:
+* **Response Times:** Issues and Pull Requests may not receive immediate feedback. Silence is not a lack of interest, but a lack of time.
+* **Weekly Builds:** These are automated experimental snapshots. They **will** contain bugs and regressions. If you require a stable experience, please stick to the [latest stable Release](https://github.com/meerk40t/meerk40t/releases).
+* **Contributions Welcome:** This project survives on community involvement. If you find a bug in a weekly build, the fastest way to get it fixed is to submit a Pull Request. 
+* **Support:** Please use the [Discussions] tab or community forums for general help, as the Issue tracker is reserved for actionable bug reports and development tasks.
+
 <details>
 <summary>Release Versions (Just use the latest)</summary>
 
