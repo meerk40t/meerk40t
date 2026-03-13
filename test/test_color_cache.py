@@ -103,6 +103,17 @@ class TestColorCache(unittest.TestCase):
         # hash is stable and derived from underlying value
         self.assertEqual(hash(c), hash(c._color.value))
 
+    def test_cached_attribute_write_delegation(self):
+        """Ensure attribute writes are forwarded to wrapped Color (regression)."""
+        color_cache.install_color_cache()
+        c = svgelements.Color("#112233")
+        new_value = svgelements.Color.parse("#445566")
+        c.value = new_value
+        self.assertEqual(c.value, new_value)
+        self.assertEqual(c._color.value, new_value)
+        c.opacity = 0.5
+        self.assertAlmostEqual(c.opacity, 0.5, places=2)
+
     def test_cached_matches_original_properties(self):
         """Compare outputs of many properties/methods between original Color and cached wrapper."""
         specs = [

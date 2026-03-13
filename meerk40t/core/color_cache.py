@@ -207,6 +207,20 @@ class CachedColor:
         """Delegate attribute access to the underlying Color instance."""
         return getattr(self._color, name)
 
+    def __setattr__(self, name, value):
+        """Delegate attribute writes to the wrapped Color instance."""
+        if name in ("_color", "_key") or not hasattr(self, "_color"):
+            object.__setattr__(self, name, value)
+            return
+        setattr(self._color, name, value)
+
+    def __delattr__(self, name):
+        """Delegate attribute deletion to the wrapped Color instance."""
+        if name in ("_color", "_key"):
+            object.__delattr__(self, name)
+            return
+        delattr(self._color, name)
+
     def __int__(self):
         return int(self._color)
 
@@ -402,12 +416,16 @@ def get_cache_stats():
         dict with cache size and cache installation status
     """
     return {
-        'cache_installed': _cache_installed,
-        'cached_colors': len(_color_cache),
-        'estimated_parses_avoided': sum(1 for _ in _color_cache),  # Minimum 1 reuse per entry
+        "cache_installed": _cache_installed,
+        "cached_colors": len(_color_cache),
+        "estimated_parses_avoided": sum(
+            1 for _ in _color_cache
+        ),  # Minimum 1 reuse per entry
     }
 
 
 # For backwards compatibility with parameters.py
 Color = CachedColor
-ColorClass = lambda: _original_color_class if _original_color_class else svgelements_module.Color
+ColorClass = lambda: (
+    _original_color_class if _original_color_class else svgelements_module.Color
+)
