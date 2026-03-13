@@ -637,6 +637,23 @@ class GRBLDevice(Service, Status):
                 "section": "_40_Validation",
             },
             {
+                "attr": "firmware_type",
+                "object": self,
+                "default": "grbl",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["grbl", "grblhal", "marlin", "smoothieware", "custom"],
+                "label": _("Firmware Type"),
+                "tip": _(
+                    "Type of firmware running on the device (REQUIRED). Affects command translation and response parsing. "
+                    "Choose: grbl (standard GRBL 1.1), grblhal (modern 32-bit GRBL), marlin (3D printer firmware), "
+                    "smoothieware (Smoothie firmware), or custom (user-defined)."
+                ),
+                # Hint for translation _("Firmware type")
+                "section": "_05_Firmware type",
+                "signals": "firmware_changed",
+            },
+            {
                 "attr": "reset_on_connect",
                 "object": self,
                 "default": False,
@@ -863,7 +880,9 @@ class GRBLDevice(Service, Status):
                 channel(_("No z-movement defined"))
                 return
             # relative movement in mm
-            gcode = f"G91 G21 Z{step.mm:.3f}"
+            rel_mode = self.driver.translate_command("relative_mode")
+            units_mm = self.driver.translate_command("units_mm")
+            gcode = f"{rel_mode} {units_mm} Z{step.mm:.3f}"
             self.driver(gcode + self.driver.line_end)
 
         @self.console_argument("step", type=Length, help=_("New z-axis position"))
@@ -880,7 +899,9 @@ class GRBLDevice(Service, Status):
                 channel(_("No z-movement defined"))
                 return
             # absolute movement in mm
-            gcode = f"G91 G20 Z{step.mm:.3f}"
+            rel_mode = self.driver.translate_command("relative_mode")
+            units_inches = self.driver.translate_command("units_inches")
+            gcode = f"{rel_mode} {units_inches} Z{step.mm:.3f}"
             self.driver(gcode + self.driver.line_end)
 
         @self.console_command(
@@ -968,7 +989,9 @@ class GRBLDevice(Service, Status):
         def plus_x_forward(data, **kwgs):
             feed = 2000
             step = feed / 600
-            self(f".timerright 0 0.1 .gcode $J=G91G21X{step}F{feed}")
+            # Jog using firmware-specific command (already uses jog_command helper)
+            jog_cmd = self.driver.jog_command(f"G91G21X{step}F{feed}")
+            self(f".timerright 0 0.1 .gcode {jog_cmd}")
 
         @kernel.console_command(
             "-xforward",
@@ -985,7 +1008,8 @@ class GRBLDevice(Service, Status):
         def plus_x_backward(data, **kwgs):
             feed = 2000
             step = feed / 600
-            self(f".timerleft 0 0.1 .gcode $J=G91G21X-{step}F{feed}")
+            jog_cmd = self.driver.jog_command(f"G91G21X-{step}F{feed}")
+            self(f".timerleft 0 0.1 .gcode {jog_cmd}")
 
         @kernel.console_command(
             "-xbackward",
@@ -1001,7 +1025,8 @@ class GRBLDevice(Service, Status):
         def plus_y_forward(data, **kwgs):
             feed = 2000
             step = feed / 600
-            self(f".timertop 0 0.1 .gcode $J=G91G21Y{step}F{feed}")
+            jog_cmd = self.driver.jog_command(f"G91G21Y{step}F{feed}")
+            self(f".timertop 0 0.1 .gcode {jog_cmd}")
 
         @kernel.console_command(
             "-yforward",
@@ -1018,7 +1043,8 @@ class GRBLDevice(Service, Status):
         def plus_y_backward(data, **kwgs):
             feed = 2000
             step = feed / 600
-            self(f".timerbottom 0 0.1 .gcode $J=G91G21Y-{step}F{feed}")
+            jog_cmd = self.driver.jog_command(f"G91G21Y-{step}F{feed}")
+            self(f".timerbottom 0 0.1 .gcode {jog_cmd}")
 
         @kernel.console_command(
             "-ybackward",
