@@ -170,7 +170,7 @@ class BasicOpPanel(wx.Panel):
         self.context.elements.classify_all_similar = newval
 
     def execute_single(self, targetop, attrib):
-        data = list(self.context.elements.elems(emphasized=True))
+        data = list(self.context.elements.flat(emphasized=True))
         idx = self.context.elements.classify_impose_default
         if idx == 1:
             impose = "to_op"

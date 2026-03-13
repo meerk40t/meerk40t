@@ -261,7 +261,7 @@ def update_elements(scene):
     elements = scene.context.elements
     with elements.undofree():
         images = []
-        for e in elements.elems(types=elem_group_nodes, emphasized=True):
+        for e in elements.flat(types=elem_group_nodes, emphasized=True):
             e.modified()
             if hasattr(e, "update"):
                 images.append(e)

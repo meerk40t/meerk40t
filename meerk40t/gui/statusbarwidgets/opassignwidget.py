@@ -179,7 +179,7 @@ class OperationAssignWidget(StatusBarWidget):
         event.Skip()
 
     def execute_on(self, targetop, attrib):
-        data = list(self.context.elements.elems(emphasized=True))
+        data = list(self.context.elements.flat(emphasized=True))
         idx = self.context.elements.classify_impose_default
         if idx == 1:
             impose = "to_op"

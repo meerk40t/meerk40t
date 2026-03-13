@@ -2061,7 +2061,7 @@ class EditTool(ToolWidget):
 
     def _tool_change(self):
         selected_node = None
-        for node in self.scene.context.elements.elems(emphasized=True):
+        for node in self.scene.context.elements.flat(emphasized=True):
             if node.type in ("elem path", "elem polyline"):
                 selected_node = node
                 break

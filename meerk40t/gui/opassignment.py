@@ -363,7 +363,7 @@ class OperationAssignPanel(wx.Panel):
         event.Skip()
 
     def execute_on(self, targetop, attrib):
-        data = list(self.context.elements.elems(emphasized=True))
+        data = list(self.context.elements.flat(emphasized=True))
         idx = self.cbo_apply_color.GetCurrentSelection()
         if idx == 1:
             impose = "to_op"
