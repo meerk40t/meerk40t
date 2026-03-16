@@ -848,6 +848,9 @@ class PassesPanel(wx.Panel):
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
         self.operation.passes_custom = bool(on)
+        if on and self.operation.passes <= 0:
+            self.operation.passes = 1
+            set_ctrl_value(self.text_passes, "1")
         self.context.elements.signal(
             "element_property_reload", self.operation, "check_passes"
         )

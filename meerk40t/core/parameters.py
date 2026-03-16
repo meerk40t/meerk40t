@@ -401,7 +401,10 @@ class Parameters:
     def implicit_passes(self):
         if not self.passes_custom:
             return 1
-        return self.passes
+        try:
+            return max(int(self.passes), 1)
+        except (TypeError, ValueError):
+            return 1
 
     @property
     def loops(self):

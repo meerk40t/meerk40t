@@ -1699,6 +1699,8 @@ class Elemental(Service):
             except ValueError:
                 # Attempted to create a non-bootstrapped node type.
                 continue
+            if hasattr(op, "validate"):
+                op.validate()
             # op.load(settings, section)
             op_tree[section] = op
         op_list = []
