@@ -365,7 +365,7 @@ class HatchEffectNode(Node, Suppressable):
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
-        for p in range(self.loops):
+        for p in range(int(self.loops)):
             # Choose algorithm based on selection and complexity
             if self.hatch_type == "spiral":
                 path.append(
@@ -450,7 +450,8 @@ class HatchEffectNode(Node, Suppressable):
         for o in outlines:
             if self.include_outlines:
                 yield o
-            for p in range(self.loops):
+            
+            for p in range(int(self.loops)):
                 if self.hatch_type == "spiral":
                     yield Geomstr.hatch_spiral(
                         o,
