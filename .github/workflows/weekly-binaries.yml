@@ -65,6 +65,64 @@ jobs:
         path: dist/MeerK40t-windows-${{ github.run_number }}.exe
         retention-days: 60
 
+  build-windows-all:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+        architecture: x86
+
+    - name: Install dependencies
+      run: |
+        pip install "opencv-python-headless<=4.8.1.78"
+        pip install -r requirements.txt
+        pip install -r requirements-optional-win.txt
+        pip install .
+        pip install meerk40t-barcodes
+
+    - name: Build PyInstaller bootloaders
+      env:
+        PYTHONHASHSEED: 12506
+      run: |
+        git clone --depth=1 https://github.com/pyinstaller/pyinstaller
+        cd pyinstaller/bootloader
+        python3 ./waf distclean all --target-arch=32bit
+        cd ..
+        pip3 install .
+        cd ..
+
+    - name: Generate icons
+      run: |
+        choco install imagemagick
+        # Generate icons using the build script
+        tools\build_icon.cmd "w${{ github.run_number }}"
+
+    - name: Build MeerK40t Windows All binary
+      run: |
+        cd meerk40t
+        move external_plugins.py external_plugins.unused
+        move external_plugins_build.py external_plugins.py
+        cd ..
+
+        move meerk40t.py mk40t.py
+        pyinstaller .github/workflows/win/meerk40t-all.spec
+        move mk40t.py meerk40t.py
+
+        cd dist
+        move MeerK40t.exe "MeerK40t-windows-all-${{ github.run_number }}.exe"
+
+    - name: Upload Windows All binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-windows-all
+        path: dist/MeerK40t-windows-all-${{ github.run_number }}.exe
+        retention-days: 60
+
   build-macos:
     runs-on: macos-latest
     steps:
@@ -468,8 +526,8 @@ jobs:
 
   create-release:
     # Run even if some builds fail, as long as at least one succeeds
-    needs: [build-windows, build-macos, build-linux, build-minimal-linux]
-    if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success' || needs.build-minimal-linux.result == 'success')
+    needs: [build-windows, build-windows-all, build-macos, build-linux, build-minimal-linux]
+    if: always() && (needs.build-windows.result == 'success' || needs.build-windows-all.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success' || needs.build-minimal-linux.result == 'success')
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
@@ -607,6 +665,9 @@ jobs:
         if [ "${{ needs.build-windows.result }}" = "success" ]; then
           echo "Windows build succeeded - downloading artifact"
         fi
+        if [ "${{ needs.build-windows-all.result }}" = "success" ]; then
+          echo "Windows All build succeeded - downloading artifact"
+        fi
         if [ "${{ needs.build-macos.result }}" = "success" ]; then
           echo "macOS build succeeded - downloading artifact"
         fi
@@ -620,6 +681,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: meerk40t-windows
+        path: binaries/
+
+    - name: Download Windows All binary
+      if: needs.build-windows-all.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: meerk40t-windows-all
         path: binaries/
 
     - name: Download macOS binary
@@ -706,6 +774,7 @@ jobs:
           | Platform | Status | File | Description |
           |----------|--------|------|-------------|
           ${{ needs.build-windows.result == 'success' && format('| **Windows** | ✅ Available | `MeerK40t-windows-{0}.exe` | 32-bit Windows executable |', github.run_number) || '| **Windows** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-windows-all.result == 'success' && format('| **Windows (All)** | ✅ Available | `MeerK40t-windows-all-{0}.exe` | 32-bit Windows executable (all features) |', github.run_number) || '| **Windows (All)** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-macos.result == 'success' && format('| **macOS** | ✅ Available | `MeerK40t-macos-{0}.app.zip` | macOS application bundle (zipped) |', github.run_number) || '| **macOS** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-{0}.AppImage` | Linux AppImage (universal) |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-minimal-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-minimal-{0}` | Linux binary |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
@@ -756,13 +825,14 @@ jobs:
           - For stable releases, see: [Release Versions](${{ github.server_url }}/${{ github.repository }}/releases)
           - Latest stable: [0.9.x series](${{ github.server_url }}/${{ github.repository }}/releases/latest)
 
-          ${{ (needs.build-windows.result != 'success' || needs.build-macos.result != 'success' || needs.build-linux.result != 'success') && '
+          ${{ (needs.build-windows.result != 'success' || needs.build-windows-all.result != 'success' || needs.build-macos.result != 'success' || needs.build-linux.result != 'success') && '
           ### ⚠️ Build Status
 
           Some platform builds failed. Only successfully built binaries are included in this release. Failed builds will be addressed in future releases.
           ' || '' }}
         files: |
           ${{ needs.build-windows.result == 'success' && format('binaries/MeerK40t-windows-{0}.exe', github.run_number) || '' }}
+          ${{ needs.build-windows-all.result == 'success' && format('binaries/MeerK40t-windows-all-{0}.exe', github.run_number) || '' }}
           ${{ needs.build-macos.result == 'success' && format('binaries/MeerK40t-macos-{0}.zip', github.run_number) || '' }}
           ${{ needs.build-linux.result == 'success' && format('binaries/MeerK40t-linux-{0}.AppImage', github.run_number) || '' }}
           ${{ needs.build-minimal-linux.result == 'success' && format('binaries/MeerK40t-linux-minimal-{0}', github.run_number) || '' }}
