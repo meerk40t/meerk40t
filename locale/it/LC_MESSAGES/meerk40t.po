@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 23-04-21 14:10UTC\n"
-"PO-Revision-Date: 30-03-26 21:30:00UTC\n"
+"PO-Revision-Date: 01-04-26 20:50:00UTC\n"
 "Last-Translator: Betaeta\n"
 "Language-Team: Cicioni Italian traslation <betaeta-AT-gmail.com>\n"
 "Language: it\n"
@@ -1633,31 +1633,31 @@ msgstr "Cancella"
 #: meerk40t/core/elements/element_treeops.py:2467
 #: meerk40t/core/elements/element_treeops.py:2685
 msgid "Append operation"
-msgstr "Aggiungi processo alla fine dell'elenco"
+msgstr "Aggiunge processo alla fine dell'elenco"
 
 #: meerk40t/core/elements/element_treeops.py:2390
 msgid "Append Image"
-msgstr "Aggiungi Immagine"
+msgstr "Aggiunge Immagine"
 
 #: meerk40t/core/elements/element_treeops.py:2405
 msgid "Append Raster"
-msgstr "Aggiungi Raster"
+msgstr "Aggiunge Raster"
 
 #: meerk40t/core/elements/element_treeops.py:2420
 msgid "Append Engrave"
-msgstr "Aggiungi Incisione"
+msgstr "Aggiunge Incisione"
 
 #: meerk40t/core/elements/element_treeops.py:2435
 msgid "Append Cut"
-msgstr "Aggiungi Taglio"
+msgstr "Aggiunge Taglio"
 
 #: meerk40t/core/elements/element_treeops.py:2450
 msgid "Append new Hatch"
-msgstr "Aggiungi Trama"
+msgstr "Aggiunge Trama"
 
 #: meerk40t/core/elements/element_treeops.py:2469
 msgid "Append Dots"
-msgstr "Aggiungi Punti"
+msgstr "Aggiunge Punti"
 
 #: meerk40t/core/elements/element_treeops.py:2482
 #: meerk40t/core/elements/element_treeops.py:2494
@@ -1676,23 +1676,23 @@ msgstr "Aggiungi Punti"
 #: meerk40t/core/elements/element_treeops.py:2691
 #: meerk40t/core/elements/element_treeops.py:2707
 msgid "Append special operation(s)"
-msgstr "Aggiungi Processi speciali"
+msgstr "Aggiunge Processi speciali"
 
 #: meerk40t/core/elements/element_treeops.py:2484
 msgid "Append Home"
-msgstr "Aggiungi Home"
+msgstr "Aggiunge Home"
 
 #: meerk40t/core/elements/element_treeops.py:2506
 msgid "Append Return to Origin"
-msgstr "Aggiungi Ritorno all'Origine"
+msgstr "Aggiunge Ritorno all'Origine"
 
 #: meerk40t/core/elements/element_treeops.py:2536
 msgid "Append Beep"
-msgstr "Aggiungi Beep"
+msgstr "Aggiunge Beep"
 
 #: meerk40t/core/elements/element_treeops.py:2552
 msgid "Append Interrupt"
-msgstr "Aggiungi Interruzione"
+msgstr "Aggiunge Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:2567
 #: meerk40t/core/elements/element_treeops.py:3366
@@ -1701,27 +1701,27 @@ msgstr "Quanto tempo (in secondi) attendi?"
 
 #: meerk40t/core/elements/element_treeops.py:2569
 msgid "Append Wait"
-msgstr "Aggiungi 'attendi'"
+msgstr "Aggiunge 'attendi'"
 
 #: meerk40t/core/elements/element_treeops.py:2585
 msgid "Append Output"
-msgstr "Aggiungi 'uscita'"
+msgstr "Aggiunge 'uscita'"
 
 #: meerk40t/core/elements/element_treeops.py:2603
 msgid "Append Input"
-msgstr "Aggiungi 'ingresso'"
+msgstr "Aggiunge 'ingresso'"
 
 #: meerk40t/core/elements/element_treeops.py:2653
 msgid "Append Home/Beep/Interrupt"
-msgstr "Aggiungi Home/Beep/Interruzione"
+msgstr "Aggiunge Home/Beep/Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:2679
 msgid "Append Origin/Beep/Interrupt"
-msgstr "Aggiungi Origine/Beep/Interruzione"
+msgstr "Aggiunge Origine/Beep/Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:2693
 msgid "Append Shutdown"
-msgstr "Aggiungi 'arresto'"
+msgstr "Aggiunge 'arresto'"
 
 #: meerk40t/core/elements/element_treeops.py:2331
 msgid "Update Statusbar on load"
@@ -1755,7 +1755,7 @@ msgstr "Quale comando deve essere aggiunto ai Processi?"
 
 #: meerk40t/core/elements/element_treeops.py:2710
 msgid "Append Console"
-msgstr "Aggiungi 'console'"
+msgstr "Aggiunge 'console'"
 
 #: meerk40t/core/elements/element_treeops.py:3001
 msgid "Duplicate operation(s)"
@@ -1821,35 +1821,35 @@ msgstr "Inserisci processo"
 #: meerk40t/core/elements/element_treeops.py:3253
 #: meerk40t/gui/materialmanager.py:3073
 msgid "Add Image"
-msgstr "Aggiungi Immagine"
+msgstr "Aggiunge Immagine"
 
 #: meerk40t/core/elements/element_treeops.py:3263
 #: meerk40t/gui/materialmanager.py:3063
 msgid "Add Raster"
-msgstr "Aggiungi Raster"
+msgstr "Aggiunge Raster"
 
 #: meerk40t/core/elements/element_treeops.py:3273
 #: meerk40t/gui/materialmanager.py:3085
 msgid "Add Engrave"
-msgstr "Aggiungi Incisione"
+msgstr "Aggiunge Incisione"
 
 #: meerk40t/core/elements/element_treeops.py:3283
 #: meerk40t/gui/materialmanager.py:3096
 msgid "Add Cut"
-msgstr "Aggiungi Taglio"
+msgstr "Aggiunge Taglio"
 
 #: meerk40t/core/elements/element_treeops.py:3293
 msgid "Add Hatch"
-msgstr "Aggiungi Trama"
+msgstr "Aggiunge Trama"
 
 #: meerk40t/core/elements/element_treeops.py:2341
 #: meerk40t/core/elements/element_treeops.py:2364
 msgid "Add effect"
-msgstr "Aggiungi effetto"
+msgstr "Aggiunge effetto"
 
 #: meerk40t/core/elements/element_treeops.py:2343
 msgid "Add hatch effect"
-msgstr "Aggiungi effetto tratteggio"
+msgstr "Aggiunge effetto tratteggio"
 
 #: meerk40t/core/elements/element_treeops.py:2345
 msgid "Add an hatch effect to the operation"
@@ -1865,7 +1865,7 @@ msgstr "Aggiunge un effetto wobble (seguipercorso) al flusso di lavoro"
 
 #: meerk40t/core/elements/element_treeops.py:3303
 msgid "Add Dots"
-msgstr "Aggiungi Punti"
+msgstr "Aggiunge Punti"
 
 #: meerk40t/core/elements/element_treeops.py:3311
 #: meerk40t/core/elements/element_treeops.py:3323
@@ -1885,39 +1885,39 @@ msgstr "Inserisci Processi speciali"
 
 #: meerk40t/core/elements/element_treeops.py:3313
 msgid "Add Home"
-msgstr "Aggiungi Home"
+msgstr "Aggiunge Home"
 
 #: meerk40t/core/elements/element_treeops.py:3337
 msgid "Add Return to Origin"
-msgstr "Aggiungi Ritorna a Origine"
+msgstr "Aggiunge Ritorna a Origine"
 
 #: meerk40t/core/elements/element_treeops.py:3347
 msgid "Add Beep"
-msgstr "Aggiungi Beep"
+msgstr "Aggiunge Beep"
 
 #: meerk40t/core/elements/element_treeops.py:3357
 msgid "Add Interrupt"
-msgstr "Aggiungi Interruzione"
+msgstr "Aggiunge Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:3368
 msgid "Add Wait"
-msgstr "Aggiungi Attendi"
+msgstr "Aggiunge Attendi"
 
 #: meerk40t/core/elements/element_treeops.py:3380
 msgid "Add Output"
-msgstr "Aggiungi Output"
+msgstr "Aggiunge Output"
 
 #: meerk40t/core/elements/element_treeops.py:3390
 msgid "Add Input"
-msgstr "Aggiungi Input"
+msgstr "Aggiunge Input"
 
 #: meerk40t/core/elements/element_treeops.py:3420
 msgid "Add Home/Beep/Interrupt"
-msgstr "Aggiungi Home/Beep/Interruzione"
+msgstr "Aggiunge Home/Beep/Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:3454
 msgid "Add Origin/Beep/Interrupt"
-msgstr "Aggiungi Origine/Beep/Interruzione"
+msgstr "Aggiunge Origine/Beep/Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:3470
 msgid "Reload '{name}'"
@@ -3280,7 +3280,7 @@ msgstr ""
 
 #: meerk40t/gui/keymap.py:27
 msgid "Add Hotkey"
-msgstr "Aggiungi tasto di scelta rapida"
+msgstr "Aggiunge tasto di scelta rapida"
 
 #: meerk40t/gui/keymap.py:58
 msgid "What keys are bound to which actions?"
@@ -5173,7 +5173,7 @@ msgstr "Indice iniziale per il campo:"
 
 #: meerk40t/gui/wordlisteditor.py:343
 msgid "Add Text"
-msgstr "Aggiungi testo"
+msgstr "Aggiunge testo"
 
 #: meerk40t/gui/wordlisteditor.py:344
 msgid "Add another wordlist entry"
@@ -5181,7 +5181,7 @@ msgstr "Crea un'altra voce in Variabili di testo"
 
 #: meerk40t/gui/wordlisteditor.py:347
 msgid "Add Counter"
-msgstr "Aggiungi contatori"
+msgstr "Aggiunge contatori"
 
 #: meerk40t/gui/wordlisteditor.py:351
 msgid "Delete the current wordlist entry"
@@ -5273,19 +5273,19 @@ msgstr "Variabili di testo"
 #: meerk40t/gui/wxmmain.py:1052 meerk40t/gui/wxmmain.py:2793
 #: meerk40t/gui/wxmmain.py:2805
 msgid "Manages Wordlist-Entries"
-msgstr "Modificare/creare voci di Variabili di testo"
+msgstr "Modifica/crea voci di Variabili di testo \n"
 
 #: meerk40t/gui/wordlisteditor.py:85
 msgid "Wordlist: go to next page (right-click to next entry)"
 msgstr ""
-"Variabili di testo: salta all'ultima voce\n"
-" (clic destro: alla voce successiva)"
+"Variabili di testo: salta all'ultima voce \n"
+"(clic destro: alla voce successiva)"
 
 #: meerk40t/gui/wordlisteditor.py:95
 msgid "Wordlist: go to previous page (right-click to previous entry)"
 msgstr ""
-"Variabili di testo: salta alla prima voce\n"
-" (clic destro: alla voce precedente)"
+"Variabili di testo: salta alla prima voce \n"
+"(clic destro: alla voce precedente)"
 
 #: meerk40t/gui/wordlisteditor.py:364 meerk40t/gui/wxmmain.py:194
 #: meerk40t/gui/wxmmain.py:213
@@ -5551,10 +5551,10 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Aggiungi un poligono chiuso all'area di lavoro\n"
-"clic sinistro: punto/linea\n"
-"Doppio clic: fine\n"
-"Cclic destrolic destrolick destro: annulla"
+"Aggiunge un poligono chiuso all'area di lavoro\n"
+"- Clic sinistro: punto/linea\n"
+"- Doppio clic: fine\n"
+"- Clic destro: annulla"
 
 #: meerk40t/gui/wxmmain.py:2300
 msgid "Polyline"
@@ -5567,10 +5567,10 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Aggiungi un oggetto polilinea all'area di lavoro\n"
-"Clic sinistro: punto/linea\n"
-"Doppio clic: fine\n"
-"Clic destro: annulla"
+"Aggiunge un oggetto polilinea all'area di lavoro\n"
+"- Clic sinistro: punto/linea\n"
+"- Doppio clic: fine\n"
+"- Clic destro: annulla"
 
 #: meerk40t/gui/wxmmain.py:2270
 msgid "Rectangle"
@@ -5600,15 +5600,15 @@ msgid ""
 "Double click: complete\n"
 "Right click: end"
 msgstr ""
-"Aggiungi un oggetto vettoriale all'area di lavoro\n"
-"Clic sinistro: punto/linea\n"
-"Click e tieni premuto: curva\n"
-"Doppio clic: fine\n"
-"Cclic destrolic destro: annulla"
+"Aggiunge un oggetto vettoriale all'area di lavoro\n"
+"- Clic sinistro: punto/linea\n"
+"- Clic e tieni premuto: curva\n"
+"- Doppio clic: fine\n"
+"- Clic destrolic destro: annulla"
 
 #: meerk40t/gui/wxmmain.py:2362
 msgid "Add a text element"
-msgstr "Aggiungere un elemento di testo all'area di lavoro"
+msgstr "Aggiunge un elemento di testo all'area di lavoro"
 
 #: meerk40t/gui/wxmmain.py:2537
 msgid "Measure"
@@ -5622,9 +5622,9 @@ msgid ""
 "Right click: cancel"
 msgstr ""
 "Misura distanza / perimetro / area\n"
-"Clic sinistro: punto/linea\n"
-"Doppio clic: fine\n"
-"Clic destro: annulla"
+"- Clic sinistro: punto/linea\n"
+"- Doppio clic: fine\n"
+"- Clic destro: annulla"
 
 #: meerk40t/gui/wxmmain.py:2556
 msgid "Flip Vertical"
@@ -5707,7 +5707,7 @@ msgid ""
 "Align selected elements at the leftmost position (right click: of the bed)"
 msgstr ""
 "Allinea gli elementi sul lato sinistro della selezione\n"
-"(Clic destro: area di lavoro"
+"(Clic destro: area di lavoro)"
 
 #: meerk40t/gui/wxmmain.py:2880
 msgid ""
@@ -9994,11 +9994,11 @@ msgstr "Ripristina"
 
 #: meerk40t/gui/wxmmain.py:2492
 msgid "Undo last operation"
-msgstr "Annulla l'ultimo processo"
+msgstr "Annulla l'ultima operazione"
 
 #: meerk40t/gui/wxmmain.py:2499
 msgid "Redo last operation"
-msgstr "Applica nuovamente l'ultimo processo"
+msgstr "Applica nuovamente l'ultima operazione"
 
 #: meerk40t/gui/wxmmain.py:920 meerk40t/gui/wxmmain.py:2388
 msgid "Cut selected elements"
@@ -12139,11 +12139,11 @@ msgstr "Disegna una stella intersecante (2)"
 
 #: meerk40t/gui/wxmmain.py:2974 meerk40t/gui/wxmmain.py:2994
 msgid "Left click: Equal distances"
-msgstr "Clic sinistro: distribuisce la spaziatura"
+msgstr "- Clic sinistro: distribuisce la spaziatura"
 
 #: meerk40t/gui/wxmmain.py:2976 meerk40t/gui/wxmmain.py:2996
 msgid "Right click: Equal centers"
-msgstr "Clic destro: distribuisce i punti centrali"
+msgstr "- Clic destro: distribuisce i punti centrali"
 
 #: meerk40t/newly/device.py:78
 msgid "Speed <="
@@ -12395,7 +12395,7 @@ msgstr ""
 #: meerk40t/core/elements/element_treeops.py:2945
 #: meerk40t/core/elements/element_treeops.py:2963
 msgid "Append wobble {type} {radius} @{interval}"
-msgstr "Aggiungi effetto wobble: {type} {radius} @{interval}"
+msgstr "Aggiunge effetto wobble: {type} {radius} @{interval}"
 
 #: meerk40t/core/elements/element_treeops.py:2964
 msgid "Meander"
@@ -12722,7 +12722,7 @@ msgstr "Incolla i dati provenienti da altre applicazioni"
 
 #: meerk40t/gui/wxmmain.py:2132
 msgid "(Right click removes the hatch)"
-msgstr "(Clic destro rimuove il riempimento tratteggiato)"
+msgstr "(Clic destro per rimuove il riempimento)"
 
 #: meerk40t/gui/wxmmain.py:2171
 msgid "Remove hatch"
@@ -13506,8 +13506,8 @@ msgid ""
 "First select your template, then every subsequent selection will apply the "
 "templates properties to the selected elements"
 msgstr ""
-"Seleziona, prima, l'elemento di origine, poi ogni selezione successiva "
-"applicherà le proprietà del modello agli elementi selezionati (ad esempio, il colore)"
+"Seleziona, prima, l'elemento di origine, poi ad ogni selezione successiva verranno"
+"applicatr le proprietà del modello, agli elementi selezionati successivamente (ad esempio, il colore)"
 
 #: meerk40t/gui/gui_mixins.py:251
 msgid "There are issues with your project"
@@ -15839,7 +15839,7 @@ msgstr "Aggiunge la maschera di ritaglio"
 #: meerk40t/core/elements/element_treeops.py:4381
 msgid "Add a keyhole effect between the selected elements"
 msgstr ""
-"Aggiungere un effetto maschera di ritaglio tra gli elementi selezionati"
+"Aggiunge un effetto maschera di ritaglio tra gli elementi selezionati"
 
 #: meerk40t/core/elements/element_treeops.py:4393
 #: meerk40t/core/elements/element_treeops.py:4884
@@ -16749,7 +16749,7 @@ msgstr "Incolla testo"
 
 #: meerk40t/gui/wxmmain.py:3089
 msgid "Add path"
-msgstr "Aggiungi percorso"
+msgstr "Aggiunge percorso"
 
 #: meerk40t/gui/wxmmain.py:5228
 msgid "Export image"
@@ -16799,7 +16799,7 @@ msgstr "Crea rettangolo"
 
 #: meerk40t/image/imagetools.py:839 meerk40t/image/imagetools.py:851
 msgid "Add image"
-msgstr "Aggiungi immagine"
+msgstr "Aggiunge immagine"
 
 #: meerk40t/image/imagetools.py:2339
 msgid "Image white"
@@ -18811,7 +18811,7 @@ msgstr "Imposta questi valori come da selezione"
 #: meerk40t/core/elements/branches.py:266
 #: meerk40t/core/elements/branches.py:1642
 msgid "Add the input to the selection"
-msgstr "Aggiungi l'input alla selezione"
+msgstr "Aggiunge l'input alla selezione"
 
 #: meerk40t/core/elements/branches.py:278
 #: meerk40t/core/elements/branches.py:1654
@@ -22186,7 +22186,7 @@ msgstr "Comandi batch"
 
 #: meerk40t/kernel/kernel.py:3462
 msgid "add a batch command 'batch add <line>'"
-msgstr "Aggiungi un comando batch 'batch add <line>'"
+msgstr "Aggiunge un comando batch 'batch add <line>'"
 
 #: meerk40t/kernel/kernel.py:3475
 msgid "delete line located at specific index"
@@ -23526,19 +23526,19 @@ msgstr "Rimuovi effetto:"
 
 #: meerk40t/gui/materialmanager.py:3212
 msgid "Add diagonal Hatch"
-msgstr "Aggiungi tratteggio diagonale"
+msgstr "Aggiunge tratteggio diagonale"
 
 #: meerk40t/gui/materialmanager.py:3216
 msgid "Add horizontal Hatch"
-msgstr "Aggiungi tratteggio orizzontale"
+msgstr "Aggiunge tratteggio orizzontale"
 
 #: meerk40t/gui/materialmanager.py:3220
 msgid "Add vertical Hatch"
-msgstr "Aggiungi tratteggio verticale"
+msgstr "Aggiunge tratteggio verticale"
 
 #: meerk40t/gui/materialmanager.py:3223
 msgid "Add Wobble"
-msgstr "Aggiungi wobble"
+msgstr "Aggiunge wobble"
 
 #: meerk40t/gui/plugin.py:125
 msgid "Simplify Effects"
@@ -23628,7 +23628,7 @@ msgstr "Crea forma di confine"
 
 #: meerk40t/gui/materialtest.py:668
 msgid "Add the shape a second time around the effect"
-msgstr "Aggiungi la forma una seconda volta attorno all'effetto"
+msgstr "Aggiunge la forma una seconda volta attorno all'effetto"
 
 #: meerk40t/gui/mkdebug.py:183
 msgid "Op Settings"
@@ -24067,19 +24067,19 @@ msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:2496
 msgid "Append Physical Home"
-msgstr "Aggiungi Home Fisico"
+msgstr "Aggiunge Home Fisico"
 
 #: meerk40t/core/elements/element_treeops.py:2666
 msgid "Append Physical Home/Beep/Interrupt"
-msgstr "Aggiungi Home Fisico/Suono/Interruzione"
+msgstr "Aggiunge Home Fisico/Suono/Interruzione"
 
 #: meerk40t/core/elements/element_treeops.py:3325
 msgid "Add Physical Home"
-msgstr "Aggiungi Home Fisico"
+msgstr "Aggiunge Home Fisico"
 
 #: meerk40t/core/elements/element_treeops.py:3437
 msgid "Add Physical Home/Beep/Interrupt"
-msgstr "Aggiungi Home Fisico/Suono/Interruzione"
+msgstr "Aggiunge Home Fisico/Suono/Interruzione"
 
 #: meerk40t/device/gui/defaultactions.py:75
 msgid "Move the laser head to the physicalhome position."
@@ -26139,7 +26139,7 @@ msgstr "Salto fallito: {err}"
 
 #: meerk40t/gui/wordlisteditor.py:1011
 msgid "Add..."
-msgstr "Aggiungi..."
+msgstr "Aggiunge..."
 
 #: meerk40t/gui/wordlisteditor.py:1012
 msgid "Edit..."
@@ -26151,7 +26151,7 @@ msgstr "Nuovo nome variabile:"
 
 #: meerk40t/gui/wordlisteditor.py:1027
 msgid "Add Wordlist Variable"
-msgstr "Aggiungi variabile alla wordlist"
+msgstr "Aggiunge variabile alla wordlist"
 
 #: meerk40t/gui/wordlisteditor.py:1033 meerk40t/gui/wordlisteditor.py:1473
 #: meerk40t/gui/wordlisteditor.py:1505
@@ -26180,7 +26180,7 @@ msgstr "Voci del file CSV eliminate"
 
 #: meerk40t/gui/wordlisteditor.py:1175
 msgid "Add Entry..."
-msgstr "Aggiungi voce..."
+msgstr "Aggiunge voce..."
 
 #: meerk40t/gui/wordlisteditor.py:1176
 msgid "Paste Entries"
@@ -26200,7 +26200,7 @@ msgstr "Nuovo valore voce:"
 
 #: meerk40t/gui/wordlisteditor.py:1199
 msgid "Add Entry"
-msgstr "Aggiungi voce"
+msgstr "Aggiunge voce"
 
 #: meerk40t/gui/wordlisteditor.py:1258
 msgid "Clipboard empty or unavailable"
@@ -26339,3 +26339,9 @@ msgstr "Attrazione"
 
 msgid "Shape-Attributes"
 msgstr "Proprietà delle forme"
+
+msgid "Operations restored"
+msgstr "Elementi ripristinati"
+
+msgid "Last status"
+msgstr "Ultimo stato"
