@@ -91,7 +91,7 @@ msgstr "Effetti"
 #: meerk40t/gui/propertypanels/attributes.py:272 meerk40t/moshi/device.py:70
 #: meerk40t/newly/device.py:131 meerk40t/ruida/device.py:60
 msgid "Label"
-msgstr "Etichetta"
+msgstr "Etichetta (nome della macchina)"
 
 #: meerk40t/balormk/device.py:92 meerk40t/grbl/device.py:55
 #: meerk40t/moshi/device.py:71 meerk40t/newly/device.py:132
@@ -5833,7 +5833,7 @@ msgstr "Ripristina le finestre standard"
 
 #: meerk40t/gui/wxmmain.py:4066
 msgid "&New\tCtrl-N"
-msgstr "&Nuovo\tCtrl-N"
+msgstr "&Crea &nuovo progetto\tCtrl-N"
 
 #: meerk40t/gui/wxmmain.py:4066
 msgid "Clear Operations, Elements and Notes"
@@ -5841,7 +5841,7 @@ msgstr "Ripristino di Processi, elementi e note"
 
 #: meerk40t/gui/wxmmain.py:4072
 msgid "&Open Project\tCtrl-O"
-msgstr "&Apre Pr&ogetto\tCtrl-O"
+msgstr "&Apre pr&ogetto\tCtrl-O"
 
 #: meerk40t/gui/wxmmain.py:4073
 msgid "Clear existing elements and notes and open a new file"
@@ -5849,7 +5849,7 @@ msgstr "Azzera elementi e note e apre un nuovo file"
 
 #: meerk40t/gui/wxmmain.py:4081
 msgid "&Recent"
-msgstr "&Recenti"
+msgstr "&Progetti &recenti"
 
 #: meerk40t/gui/wxmmain.py:4085
 msgid "&Import File"
