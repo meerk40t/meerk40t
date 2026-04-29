@@ -1162,7 +1162,12 @@ class RibbonBarPanel(wx.Control):
                 width = 1
             if height <= 0:
                 height = 1
-            self._ribbon_buffer = wx.Bitmap(width, height)
+            bmp = wx.Bitmap(width, height);
+
+# Tiger note: This will be helpful when making ribbon DPI aware but Meerk40t isn't ready for that quite yet.
+#            bmp.CreateWithDIPSize(width, height, self.GetDPIScaleFactor())
+
+            self._ribbon_buffer = bmp
         return self._ribbon_buffer
 
     def toggle_show_labels(self, v):
@@ -1452,6 +1457,8 @@ class Art:
         self.hover_tab = None
         self.hover_button = None
         self.hover_dropdown = None
+
+        self.text_bmp = wx.Bitmap(1,1)
 
     def get_cached_font(self, ptsize):
         """
@@ -2148,6 +2155,14 @@ class Art:
         if button.dropdown is not None and button.dropdown.position is not None:
             self._paint_dropdown(dc, button.dropdown)
 
+    def get_text_extent(self, text):
+        temp_dc = wx.MemoryDC()
+        temp_dc.SelectObjectAsSource(self.text_bmp)   # bind to bitmap in a readonly way
+        temp_dc.SetFont(self.default_font)
+        result = temp_dc.GetTextExtent(text)
+        temp_dc.SelectObjectAsSource(wx.NullBitmap)
+        return result
+
     def layout(self, dc: wx.DC, ribbon):
         """
         Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
@@ -2157,7 +2172,7 @@ class Art:
         @return:
         """
         ribbon_width, ribbon_height = dc.Size
-        # print(f"ribbon: {dc.Size}")
+#        print(f"ribbon: {dc.Size}")
         horizontal = self.parent.prefer_horizontal()
         xpos = 0
         ypos = 0
@@ -2170,7 +2185,10 @@ class Art:
             # Compute tabwidth according to be displayed label,
             # if bigger than default then extend width
             if has_page_header:
-                line_width, line_height = dc.GetTextExtent(page.label)
+
+                line_width, line_height = self.get_text_extent(page.label)
+#                line_width, line_height = dc.GetTextExtent(page.label)
+
                 if line_height + 4 > self.tab_height:
                     self.tab_height = line_height + 4
                     for former in range(0, pn):
