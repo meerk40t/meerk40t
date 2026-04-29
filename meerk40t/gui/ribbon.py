@@ -1458,7 +1458,8 @@ class Art:
         self.hover_button = None
         self.hover_dropdown = None
 
-        self.text_bmp = wx.Bitmap(1,1)
+        # This can be static across all ribbon, as it is only used to support GetTextExtent
+        Art.text_bmp = wx.Bitmap(1,1)
 
     def get_cached_font(self, ptsize):
         """
@@ -2157,7 +2158,7 @@ class Art:
 
     def get_text_extent(self, text):
         temp_dc = wx.MemoryDC()
-        temp_dc.SelectObjectAsSource(self.text_bmp)   # bind to bitmap in a readonly way
+        temp_dc.SelectObjectAsSource(Art.text_bmp)   # bind to bitmap in a readonly way
         temp_dc.SetFont(self.default_font)
         result = temp_dc.GetTextExtent(text)
         temp_dc.SelectObjectAsSource(wx.NullBitmap)
