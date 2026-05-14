@@ -506,6 +506,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             self._processed_matrix = actualized_matrix * inverted_main_matrix
             self._processed_image = image
             self._process_image_failed = False
+            # The rendered cache reflects the *previous* processed image; once
+            # the processed image is replaced, the cache is stale and must not
+            # be reused. (Reusing it across cutplan copy + matrix-flip
+            # preprocess caused raster ops to render unflipped pixels at flipped
+            # device coords, producing a mirrored simulation.)
+            self._cache = None
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
