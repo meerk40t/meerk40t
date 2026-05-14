@@ -1761,11 +1761,18 @@ class ShadowTree:
         if startnode is None:
             # Branch op never populated the tree, we cannot update sublayer.
             return
+        # Collect children first to avoid segfault if tree is modified during iteration
+        children = []
         child, cookie = self.wxtree.GetFirstChild(startnode)
         while child.IsOk():
-            node = self.wxtree.GetItemData(child)  # Make sure the map is updated...
-            self.update_decorations(node=node, force=True)
+            children.append(child)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
+        for child in children:
+            if not child.IsOk():
+                continue
+            node = self.wxtree.GetItemData(child)
+            if node is not None:
+                self.update_decorations(node=node, force=True)
 
     def update_group_labels(self, src):
         # print(f"group_labels: {src}")
