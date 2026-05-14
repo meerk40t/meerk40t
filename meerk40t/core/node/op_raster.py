@@ -649,8 +649,14 @@ class RasterOpNode(OperationMixin, Node, Parameters):
 
             # print (f"Raster direction for {image_node.type}: {direction}, horizontal: {horizontal}, bidir: {bidirectional}, start_on_left: {start_on_left}, start_on_top: {start_on_top}")
 
-            step_x = image_node.step_x
-            step_y = image_node.step_y
+            # Use as_image() — reading raw .image/.matrix drops the flip that
+            # _process_image bakes into the processed pixels.
+            pil_image, bounds = image_node.as_image()
+            offset_x = bounds[0]
+            offset_y = bounds[1]
+            image_width, image_height = pil_image.size
+            step_x = (bounds[2] - bounds[0]) / image_width
+            step_y = (bounds[3] - bounds[1]) / image_height
 
             dotwidth = 2 * self._spot_in_device_units / (step_x + step_y)
             # print (f"Laserspot in device units: {self._spot_in_device_units:.2f}, step: {step_x:.2f} + {step_y:.2f} -> {dotwidth:.2f}")
@@ -663,15 +669,6 @@ class RasterOpNode(OperationMixin, Node, Parameters):
                 # Raster step is only along x for vertical raster
                 settings["raster_step_x"] = step_x
                 settings["raster_step_y"] = 0
-
-            # Perform correct actualization
-            image_node.process_image()
-
-            # Set variables
-            matrix = image_node.matrix
-            pil_image = image_node.image
-            offset_x = matrix.value_trans_x()
-            offset_y = matrix.value_trans_y()
 
             # Establish path
             min_x = offset_x
