@@ -203,6 +203,10 @@ class CachedColor:
         return inst
 
     # Instance delegation -------------------------------------------------
+    def __copy__(self):
+        """Return self — CachedColor instances are shared/immutable wrappers."""
+        return self
+
     def __getattr__(self, name):
         """Delegate attribute access to the underlying Color instance."""
         return getattr(self._color, name)

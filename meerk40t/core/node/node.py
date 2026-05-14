@@ -809,7 +809,6 @@ class Node:
         @return:
         """
         for child in copy_node.children:
-            child = child
             if child.type == "reference":
                 child = child.node
             copy_child = copy(child)
