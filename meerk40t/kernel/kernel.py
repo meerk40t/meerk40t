@@ -47,20 +47,20 @@ SAFE_OPERATORS = {
     ast.UAdd: operator.pos,
 }
 
+
 def safe_eval(expr, term, term_value):
     """
     Safely evaluate arithmetic expressions with <term> as a variable.
     Supports ast.Constant and ast.Num for compatibility.
     """
+
     def _eval(node):
         if isinstance(node, ast.Constant):  # Python 3.8+
             return node.value
         elif isinstance(node, ast.Num):  # Python <3.8
             return node.n
         elif isinstance(node, ast.BinOp):
-            return SAFE_OPERATORS[type(node.op)](
-                _eval(node.left), _eval(node.right)
-            )
+            return SAFE_OPERATORS[type(node.op)](_eval(node.left), _eval(node.right))
         elif isinstance(node, ast.UnaryOp):
             return SAFE_OPERATORS[type(node.op)](_eval(node.operand))
         elif isinstance(node, ast.Name):
@@ -69,6 +69,7 @@ def safe_eval(expr, term, term_value):
             raise ValueError(f"Unknown variable: {node.id}")
         else:
             raise ValueError("Unsupported expression")
+
     return _eval(ast.parse(expr, mode="eval").body)
 
 
@@ -1258,7 +1259,9 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler", daemon=True)
+        self.scheduler_thread = self.threaded(
+            self.run, thread_name="Scheduler", daemon=True
+        )
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -1321,7 +1324,7 @@ class Kernel(Settings):
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
                     if line in ("quit", "shutdown", "exit", "restart"):
-                        print (f"Will shut down due to '{line}' command.")
+                        print(f"Will shut down due to '{line}' command.")
                         self._shutdown = True
                         if line == "restart":
                             self._restart = True
@@ -1331,6 +1334,7 @@ class Kernel(Settings):
                         break
 
             import asyncio
+
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
@@ -1559,7 +1563,8 @@ class Kernel(Settings):
         self.listener_stats = {}
         self.listener_call_stats = {}
         if (
-            self.scheduler_thread != threading.current_thread() and not self.scheduler_thread.daemon
+            self.scheduler_thread != threading.current_thread()
+            and not self.scheduler_thread.daemon
         ):  # Join if not this thread and not daemon.
             self.scheduler_thread.join()
         if channel:
@@ -1851,8 +1856,8 @@ class Kernel(Settings):
         thread_name: Optional[str] = None,
         result: Optional[Callable] = None,
         daemon: bool = False,
-        user_type : bool = False,
-        info : str = "",
+        user_type: bool = False,
+        info: str = "",
     ) -> Thread:
         """
         Register a thread, and run the provided function with the name if needed. When the function finishes this thread
@@ -2154,7 +2159,7 @@ class Kernel(Settings):
         if code not in self.listener_stats:
             self.listener_stats[code] = [1, 0, 0]  # [calls, messages, duration]
         else:
-            self.listener_stats[code][0] += 1 # Calls
+            self.listener_stats[code][0] += 1  # Calls
         # print(f"Signal queued: {code} {path} {message}: {self.listener_stats[code]}")
         with self._message_queue_lock:
             self._message_queue[code] = path, message
@@ -2185,13 +2190,13 @@ class Kernel(Settings):
             if signal in self._last_message:
                 if signal not in already_added:
                     already_added.add(signal)
-                    self.listener_stats[signal][0] += 1 # Calls
+                    self.listener_stats[signal][0] += 1  # Calls
 
                 origin, message = self._last_message[signal]
-                self.listener_stats[signal][1] += 1 # Messages
+                self.listener_stats[signal][1] += 1  # Messages
                 t0 = time.time()
                 funct(origin, *message)
-                self.listener_stats[signal][2] += time.time() - t0 # Duration
+                self.listener_stats[signal][2] += time.time() - t0  # Duration
 
     def _process_remove_listeners(self):
         """
@@ -2243,18 +2248,22 @@ class Kernel(Settings):
             origin, message = payload
             if signal in self.listeners:
                 if signal not in self.listener_stats:
-                    self.listener_stats[signal] = [1, 0, 0]  # [calls, messages, duration]
+                    self.listener_stats[signal] = [
+                        1,
+                        0,
+                        0,
+                    ]  # [calls, messages, duration]
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
                     try:
-                        t0 = time.time()    
+                        t0 = time.time()
                         listener(origin, *message)
                         duration = time.time() - t0
-                        self.listener_stats[signal][1] += 1 # Messages
-                        self.listener_stats[signal][2] += duration # Duration
+                        self.listener_stats[signal][1] += 1  # Messages
+                        self.listener_stats[signal][2] += duration  # Duration
 
                         # Record per-listener statistics (only when debug_mode is active)
-                        if getattr(self.root, 'debug_mode', False):
+                        if getattr(self.root, "debug_mode", False):
                             try:
                                 lid = f"{listener.__module__}:{getattr(listener, '__name__', repr(listener))}"
                             except Exception:
@@ -2533,7 +2542,7 @@ class Kernel(Settings):
         data = None  # Initial command context data is null
         input_type = None  # Initial command context is None
         post: List[Any] = []
-        post_data: Dict[Any,Any] = {}
+        post_data: Dict[Any, Any] = {}
         _ = self.translation
         while len(text) > 0:
             # Split command from remainder.
@@ -2681,7 +2690,11 @@ class Kernel(Settings):
         @self.console_option("output", "o", help=_("Output type to match"), type=str)
         @self.console_option("input", "i", help=_("Input type to match"), type=str)
         @self.console_argument("extended_help", type=str)
-        @self.console_command(("help", "?"), hidden=True, help="help <help> : " + _("get help on a command"))
+        @self.console_command(
+            ("help", "?"),
+            hidden=True,
+            help="help <help> : " + _("get help on a command"),
+        )
         def help_command(channel, _, extended_help, output=None, input=None, **kwargs):
             """
             'help' will display the list of accepted commands. Help <command> will provided extended help for
@@ -2777,7 +2790,12 @@ class Kernel(Settings):
                 else:
                     channel(command_name.split("/")[-1])
 
-        @self.console_command(("find", "??"), hidden=False, help="find <substr> : " + _("display the list of accepted commands that contain a given substring"))
+        @self.console_command(
+            ("find", "??"),
+            hidden=False,
+            help="find <substr> : "
+            + _("display the list of accepted commands that contain a given substring"),
+        )
         def find_command(channel, _, remainder=None, **kwargs):
             """
             'find' will display the list of accepted commands that contain a given substr.
@@ -2862,7 +2880,7 @@ class Kernel(Settings):
             channel(_("Registered Threads:"))
             parts = ["Nr", "thread", "status", "type", "info", "alive"]
             channel(" ".join(parts))
-            channel("-"*60)
+            channel("-" * 60)
             for i, thread_name in enumerate(list(self.threads)):
                 thread, message, user_type, info, started = self.threads[thread_name]
                 parts = []
@@ -3145,7 +3163,11 @@ class Kernel(Settings):
                 try:
                     subprocess.run(cmd, shell=False)
                 except OSError as e:
-                    channel(_("Encountered exception {error}").format(error=f"{e} (cmd={cmd[0]})"))
+                    channel(
+                        _("Encountered exception {error}").format(
+                            error=f"{e} (cmd={cmd[0]})"
+                        )
+                    )
 
             def _play_linux():
                 try:
@@ -3266,7 +3288,10 @@ class Kernel(Settings):
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("module", help="module [(open|close) <module_name>] : " + _("open/closes modules"))
+        @self.console_command(
+            "module",
+            help="module [(open|close) <module_name>] : " + _("open/closes modules"),
+        )
         def module(channel, _, path=None, args=tuple(), **kwargs):
             if len(args) == 0:
                 channel(_("----------"))
@@ -3558,7 +3583,8 @@ class Kernel(Settings):
 
         @self.console_command(
             "channel",
-            help="channel (open|close|save|list|print) <channel_name> : " + _("manage channels"),
+            help="channel (open|close|save|list|print) <channel_name> : "
+            + _("manage channels"),
             output_type="channel",
         )
         def channel(channel, _, remainder=None, **kwargs):
@@ -3742,7 +3768,9 @@ class Kernel(Settings):
         @self.console_option(
             "path", "p", type=str, default="/", help=_("Path of variables to set.")
         )
-        @self.console_command("set", help="set [<key> <value>] : " + _("set or list variables"))
+        @self.console_command(
+            "set", help="set [<key> <value>] : " + _("set or list variables")
+        )
         def set_command(channel, _, path=None, args=tuple(), **kwargs):
             relevant_context = self.get_context(path) if path is not None else self.root
             if len(args) == 0:
@@ -3841,8 +3869,7 @@ class Kernel(Settings):
                 stats = list(self.listener_stats.keys())
                 # All signals, but show the ones used the longest, the most first
                 information = [
-                    (key, self.listener_stats.get(key, (0, 0, 0.0)))
-                    for key in stats
+                    (key, self.listener_stats.get(key, (0, 0, 0.0))) for key in stats
                 ]
                 # Sort by total_time desc, messages desc, then name ascending (tie-breaker)
                 information.sort(key=lambda item: (-item[1][2], -item[1][1], item[0]))
@@ -3850,18 +3877,22 @@ class Kernel(Settings):
                 # Prepare a neat table: index, signal (truncated), requests, messages, total time, avg time
                 header = f"{'#':>3}  {'Signal':<35} {'Listen':<6} {'Requests':>8} {'Messages':>8} {'Total(s)':>12} {'Avg(s)':>12}"
                 channel(header)
-                channel('-' * len(header))
+                channel("-" * len(header))
                 for idx, (key, (calls, messages, total_time)) in enumerate(information):
                     avg = 0.0 if messages == 0 else total_time / messages
                     # Make the signal name safe and truncate if it's too long
-                    key_safe = key.replace('\n', '\\n')
+                    key_safe = key.replace("\n", "\\n")
                     if len(key_safe) > 35:
-                        key_safe = key_safe[:32] + '...'
-                    attached = 0 if key not in self.listeners else len(self.listeners[key])
-                    channel(f"{idx:3d}  {key_safe:<35} {attached:<6} {calls:8d} {messages:8d} {total_time:12.3f} {avg:12.6f}")
+                        key_safe = key_safe[:32] + "..."
+                    attached = (
+                        0 if key not in self.listeners else len(self.listeners[key])
+                    )
+                    channel(
+                        f"{idx:3d}  {key_safe:<35} {attached:<6} {calls:8d} {messages:8d} {total_time:12.3f} {avg:12.6f}"
+                    )
 
                     # Per-listener breakdown (if available)
-                    lcs = getattr(self, 'listener_call_stats', {}) or {}
+                    lcs = getattr(self, "listener_call_stats", {}) or {}
                     if key in lcs and lcs[key]:
                         # Build list of (lid, calls, total_time, avg) for listeners with messages
                         listener_items = []
@@ -3877,13 +3908,15 @@ class Kernel(Settings):
                             listener_items.sort(key=lambda x: x[2], reverse=True)
                             subheader = f"     {'Listener':<45} {'Calls':>6} {'Total(s)':>12} {'Avg(s)':>12}"
                             channel(subheader)
-                            channel('     ' + '-' * (len(subheader) - 5))
+                            channel("     " + "-" * (len(subheader) - 5))
                             for lid, lcalls, ltotal, lavg in listener_items:
-                                lid_safe = lid.replace('\n', '\\n')
+                                lid_safe = lid.replace("\n", "\\n")
                                 if len(lid_safe) > 45:
-                                    lid_safe = lid_safe[:42] + '...'
-                                channel(f"     {lid_safe:<45} {lcalls:6d} {ltotal:12.3f} {lavg:12.6f}")
-                
+                                    lid_safe = lid_safe[:42] + "..."
+                                channel(
+                                    f"     {lid_safe:<45} {lcalls:6d} {ltotal:12.3f} {lavg:12.6f}"
+                                )
+
                 return
             try:
                 if signalargs is None:
@@ -3895,29 +3928,43 @@ class Kernel(Settings):
                 channel(f"Error while sending {signalname}, {signalargs}: {e}")
             return
 
-        @self.console_argument("avg_threshold", type=float, help=_("Average time threshold in seconds"))
-        @self.console_argument("total_threshold", type=float, help=_("Total time threshold in seconds"))
-        @self.console_command("signal-stats", help=_("List listeners exceeding thresholds (requires debug_mode)"))
-        def signal_stats(channel, _, remainder=None, avg_threshold = None, total_threshold = None, **kwargs):
+        @self.console_argument(
+            "avg_threshold", type=float, help=_("Average time threshold in seconds")
+        )
+        @self.console_argument(
+            "total_threshold", type=float, help=_("Total time threshold in seconds")
+        )
+        @self.console_command(
+            "signal-stats",
+            help=_("List listeners exceeding thresholds (requires debug_mode)"),
+        )
+        def signal_stats(
+            channel,
+            _,
+            remainder=None,
+            avg_threshold=None,
+            total_threshold=None,
+            **kwargs,
+        ):
             """Show routines called by the signal processor that are slow.
 
             Usage: signal-stats [avg_threshold] [total_threshold]
             If thresholds are not provided, defaults are avg >= 1.0s, total >= 10.0s
-            
+
             Note: Stats are only collected when debug_mode is active (set debug_mode True)
             """
             # Check if debug mode is active
-            if not getattr(self.root, 'debug_mode', False):
+            if not getattr(self.root, "debug_mode", False):
                 channel(_("Signal stats are only collected when debug_mode is active."))
                 channel(_("To enable: set debug_mode True (requires restart)"))
                 return
-            
+
             # Default thresholds
             avg_thresh = 1.0 if avg_threshold is None else avg_threshold
             total_thresh = 10.0 if total_threshold is None else total_threshold
 
             stats = []
-            lcs = getattr(self, 'listener_call_stats', {}) or {}
+            lcs = getattr(self, "listener_call_stats", {}) or {}
             for signal, ldict in lcs.items():
                 for lid, data in ldict.items():
                     calls = int(data[0])
@@ -3927,32 +3974,45 @@ class Kernel(Settings):
                         stats.append((signal, lid, calls, total_time, avg))
 
             if not stats:
-                channel(_("No slow listeners found (avg >= {avg} or total >= {total}).").format(avg=avg_thresh, total=total_thresh))
+                channel(
+                    _(
+                        "No slow listeners found (avg >= {avg} or total >= {total})."
+                    ).format(avg=avg_thresh, total=total_thresh)
+                )
                 return
 
             # Sort by total_time descending
             stats.sort(key=lambda x: x[3], reverse=True)
             header = f"{'#':>3} {'Signal':<35} {'Listener':<45} {'Calls':>6} {'Total(s)':>12} {'Avg(s)':>12}"
             channel(header)
-            channel('-' * len(header))
+            channel("-" * len(header))
             for idx, (signal, lid, calls, total_time, avg) in enumerate(stats):
-                sig_safe = signal.replace('\n', '\\n')
+                sig_safe = signal.replace("\n", "\\n")
                 if len(sig_safe) > 35:
-                    sig_safe = sig_safe[:32] + '...'
-                lid_safe = lid.replace('\n', '\\n')
+                    sig_safe = sig_safe[:32] + "..."
+                lid_safe = lid.replace("\n", "\\n")
                 if len(lid_safe) > 45:
-                    lid_safe = lid_safe[:42] + '...'
-                channel(f"{idx:3d} {sig_safe:<35} {lid_safe:<45} {calls:6d} {total_time:12.3f} {avg:12.6f}")
+                    lid_safe = lid_safe[:42] + "..."
+                channel(
+                    f"{idx:3d} {sig_safe:<35} {lid_safe:<45} {calls:6d} {total_time:12.3f} {avg:12.6f}"
+                )
 
         # Flat tracker console command
-        @self.console_argument("action", type=str, default=None, help=_("Action: 'reset' to reset the counter"))
-        @self.console_command("flat-stats", help=_("Show or reset the global flat() call counter"))
+        @self.console_argument(
+            "action",
+            type=str,
+            default=None,
+            help=_("Action: 'reset' to reset the counter"),
+        )
+        @self.console_command(
+            "flat-stats", help=_("Show or reset the global flat() call counter")
+        )
         def flat_stats(channel, _, remainder=None, action=None, **kwargs):
             try:
                 total = self.elements.flat_tracker.get()
             except Exception:
                 total = None
-            if action == 'reset':
+            if action == "reset":
                 try:
                     self.elements.flat_tracker.reset()
                 except Exception:
@@ -3980,9 +4040,13 @@ class Kernel(Settings):
                 self.signal("thread_update", "/", job_identifier, "started")
                 t0 = time.perf_counter()
                 try:
-                    data_out = self._console_parse(remainder, channel=self._console_channel)
+                    data_out = self._console_parse(
+                        remainder, channel=self._console_channel
+                    )
                 except Exception as e:
-                    self._console_channel(_("Encountered exception {error}").format(error=e))
+                    self._console_channel(
+                        _("Encountered exception {error}").format(error=e)
+                    )
 
                 t1 = time.perf_counter()
                 self._console_channel(
@@ -4008,7 +4072,9 @@ class Kernel(Settings):
                 channel(_("----------"))
                 return
             job_identifier = f"user-{time.time():.4f}"
-            thread = self.threaded(handler, thread_name=job_identifier, user_type=True, info=remainder)
+            thread = self.threaded(
+                handler, thread_name=job_identifier, user_type=True, info=remainder
+            )
             # self.schedule(job)
             channel(
                 _("Command '{cmd}' is now running in the background.").format(
@@ -4017,13 +4083,23 @@ class Kernel(Settings):
             )
 
         @self.console_option(
-            "variable", "v", type=str, default="loop", help=_("Variable name to replace (default 'loop')")
+            "variable",
+            "v",
+            type=str,
+            default="loop",
+            help=_("Variable name to replace (default 'loop')"),
         )
         @self.console_argument("range_from", type=int, help=_("First value to take"))
         @self.console_argument("range_to", type=int, help=_("Last value to take"))
         @self.console_command("loop", help=_("loop a given command"))
         def loop_command(
-            channel, _, range_from=None, range_to=None, remainder=None, variable=None, **kwargs
+            channel,
+            _,
+            range_from=None,
+            range_to=None,
+            remainder=None,
+            variable=None,
+            **kwargs,
         ):
             if variable is None:
                 variable = "loop"
@@ -4293,16 +4369,18 @@ class Kernel(Settings):
         @return:
         """
         return self._capabilities.get(key, None)
-    
+
     def get_capabilities(self):
         """
         Retrieve all capabilities from the kernel.
 
         @return: dictionary of capabilities
         """
-        return self._capabilities.copy()    
+        return self._capabilities.copy()
+
 
 # ==========
+
 
 def lookup_listener(param):
     """
@@ -4339,4 +4417,3 @@ def signal_listener(param):
         return func
 
     return decor
-
