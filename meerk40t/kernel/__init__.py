@@ -15,11 +15,11 @@ _gettext = lambda e: e
 _gettext_language = None
 
 
-def _(message):
+def _(message: str) -> str:
     return _gettext(message)
 
 
-def set_language(domain, localedir, language):
+def set_language(domain: str, localedir: str, language: str):
     import gettext
     import sys
 

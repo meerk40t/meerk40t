@@ -10,7 +10,7 @@ import operator
 
 from datetime import datetime
 from threading import Thread
-from typing import Any, Callable, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from .channel import Channel
 from .context import Context
@@ -133,7 +133,7 @@ class Kernel(Settings):
         ansi: bool = True,
         ignore_settings: bool = False,
         delay: float = 0.05,  # 20 ticks per second
-        language: str = None,
+        language: Optional[str] = None,
         restarted: bool = False,
     ):
         """
@@ -165,20 +165,20 @@ class Kernel(Settings):
         self._was_restarted = restarted
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
-        self._kernel_plugins = []
-        self._service_plugins = {}
-        self._module_plugins = {}
+        self._kernel_plugins: List[Callable] = []
+        self._service_plugins: Dict[str, List[Callable]] = {}
+        self._module_plugins: Dict[str, List[Callable]] = {}
 
         # All established contexts.
-        self.contexts = {}
+        self.contexts: Dict[str, Context] = {}
 
         # All registered threads.
-        self.threads = {}
+        self.threads: Dict[str, List[Any]] = {}
         self.thread_lock = threading.Lock()
-        self.thread_local = threading.local() 
+        self.thread_local = threading.local()
 
         # All established delegates
-        self.delegates = []
+        self.delegates: List[Tuple[Any, Union[Module, Service, "Kernel"]]] = []
 
         # All registered lookups within the kernel.
         self._clean_lookup = Job(
@@ -188,10 +188,10 @@ class Kernel(Settings):
             times=1,
             run_main=True,
         )
-        self._registered = {}
-        self.lookups = {}
+        self._registered: Dict[str, Any] = {}
+        self.lookups: Dict[str, List[Tuple[Callable, Any]]] = {}
         self.lookup_previous = {}
-        self._dirty_paths = []
+        self._dirty_paths: List[str] = []
         self._lookup_lock = threading.Lock()
 
         # The translation object to be overridden by any valid translation functions
@@ -210,7 +210,7 @@ class Kernel(Settings):
 
         # Scheduler
         self.jobs = {}
-        self.scheduler_thread = None
+        self.scheduler_thread: Optional[Thread] = None
 
         # Signal Listener
         self.signal_job = None
@@ -230,7 +230,7 @@ class Kernel(Settings):
         self._processing = {}
 
         # Channels
-        self.channels = {}
+        self.channels: Dict[str, Channel] = {}
 
         # Console Commands.
         self._console_buffer = ""
@@ -363,7 +363,7 @@ class Kernel(Settings):
     # PLUGIN API
     # ==========
 
-    def add_plugin(self, plugin: Callable) -> None:
+    def add_plugin(self, plugin: Callable[[Kernel, str], Any]) -> None:
         """
         Accepts a plugin function. Plugins should accept two arguments: kernel and lifecycle.
 
@@ -413,7 +413,7 @@ class Kernel(Settings):
     # SERVICES API
     # ==========
 
-    def services(self, domain: str, active: bool = False):
+    def services(self, domain: str, active: bool = False) -> Union[None, List, Any]:
         """
         Fetch the active or available servers from the 'kernel.lookup'
         @param domain: domain of service to lookup
@@ -466,7 +466,7 @@ class Kernel(Settings):
         self,
         domain: str,
         service: Service,
-        registered_path: str = None,
+        registered_path: Optional[str] = None,
         activate: bool = False,
     ):
         """
@@ -673,7 +673,7 @@ class Kernel(Settings):
         except AttributeError:
             return 0
 
-    def get_linked_objects(self, obj: Any, object_list: list = None):
+    def get_linked_objects(self, obj: Any, object_list: Optional[List] = None):
         """
         adds
         @param obj: Object to check for delegate links.
@@ -688,7 +688,7 @@ class Kernel(Settings):
                 self.get_linked_objects(delegate, object_list)
         return object_list
 
-    def update_linked_lifecycles(self, model):
+    def update_linked_lifecycles(self, model: Union[Module, Service, "Kernel"]):
         """
         Matches the lifecycle of the obj on the model.
 
@@ -1570,12 +1570,12 @@ class Kernel(Settings):
     # REGISTRATION
     # ==========
 
-    def find(self, *args):
+    def find(self, *args: str) -> Generator[Tuple[Any, str, str], None, None]:
         """
         Find registered path and objects that regex match the given matchtext
 
-        @param args: parts of matchtext
-        @return:
+        @param args: path segments for matchtext
+        @return: iterator of found value, full path, final path segment
         """
         matchtext = "/".join(args)
         match = re.compile(matchtext)
@@ -1610,7 +1610,7 @@ class Kernel(Settings):
                 else:
                     yield r
 
-    def lookup(self, *args):
+    def lookup(self, *args) -> Optional[Any]:
         """
         Lookup registered value from the registered dictionary checking the active devices first.
 
@@ -1628,7 +1628,7 @@ class Kernel(Settings):
         except KeyError:
             return None
 
-    def has_feature(self, *args):
+    def has_feature(self, *args: str) -> bool:
         for feature in args:
             try:
                 v = self._registered[f"feature/{feature}"]
@@ -1638,10 +1638,10 @@ class Kernel(Settings):
                 return False
         return True
 
-    def set_feature(self, feature):
+    def set_feature(self, feature: str) -> None:
         self._registered[f"feature/{feature}"] = True
 
-    def lookup_all(self, *args):
+    def lookup_all(self, *args) -> Generator[Any, None, None]:
         """
         Lookup registered values from the registered dictionary checking the active devices first.
 
@@ -1651,7 +1651,7 @@ class Kernel(Settings):
         for obj, name, sname in self.find(*args):
             yield obj
 
-    def _remove_delegates(self, cookie: Any):
+    def _remove_delegates(self, cookie: Any) -> None:
         """
         Remove any delegates bound to the given cookie.
 
@@ -1805,7 +1805,7 @@ class Kernel(Settings):
             obj.sub_register(self)
         self.lookup_change(path)
 
-    def unregister(self, path: str):
+    def unregister(self, path: str) -> None:
         del self._registered[path]
         self.lookup_change(path)
 
@@ -1814,16 +1814,16 @@ class Kernel(Settings):
     # ==========
 
     @property
-    def root(self) -> "Context":
+    def root(self) -> Context:
         return self.get_context("/")
 
-    def register_as_context(self, context):
+    def register_as_context(self, context: Context):
         # If context get after boot, apply all services.
         for domain, service in self.services_active():
             setattr(context, domain, service)
         self.contexts[context.path] = context
 
-    def get_context(self, path: str) -> "Context":
+    def get_context(self, path: str) -> Context:
         """
         Create a context derived from this kernel, at the given path.
 
@@ -1848,8 +1848,8 @@ class Kernel(Settings):
         self,
         func: Callable,
         *args,
-        thread_name: str = None,
-        result: Callable = None,
+        thread_name: Optional[str] = None,
+        result: Optional[Callable] = None,
         daemon: bool = False,
         user_type : bool = False,
         info : str = "",
@@ -1920,7 +1920,7 @@ class Kernel(Settings):
 
         thread.run = run
         self.threads[thread_name] = [
-            thread, 
+            thread,
             "Running",
             user_type,
             info,
@@ -1976,7 +1976,7 @@ class Kernel(Settings):
             if user_type_only and not user_type:
                 continue
             messages.append([thread_name, message, user_type, info])
-        return messages 
+        return messages
 
     # ==========
     # SCHEDULER
@@ -2079,9 +2079,9 @@ class Kernel(Settings):
         name: Optional[str] = None,
         args: Tuple = (),
         interval: float = 1.0,
-        times: int = None,
+        times: Optional[int] = None,
         run_main: bool = False,
-        conditional: Callable = None,
+        conditional: Optional[Callable] = None,
     ) -> "Job":
         """
         Adds a job to the scheduler.
@@ -2112,7 +2112,7 @@ class Kernel(Settings):
     def set_timer(
         self,
         command: str,
-        name: str = None,
+        name: Optional[str] = None,
         times: int = 1,
         interval: float = 1.0,
         run_main: bool = False,
@@ -2381,7 +2381,7 @@ class Kernel(Settings):
 
     def _command_detach(
         self,
-        registration: None,
+        registration: Union[Module, Service, "Kernel"],
         scan_object: Any,
     ) -> None:
         """
@@ -2457,7 +2457,7 @@ class Kernel(Settings):
     # CHANNEL PROCESSING
     # ==========
 
-    def channel(self, channel: str, *args, **kwargs) -> "Channel":
+    def channel(self, channel: str, *args, **kwargs) -> Channel:
         if channel not in self.channels:
             chan = Channel(channel, *args, **kwargs)
             chan._ = self.translation
@@ -2521,7 +2521,7 @@ class Kernel(Settings):
                 return True
         return False
 
-    def _console_parse(self, text: str, channel: "Channel"):
+    def _console_parse(self, text: str, channel: Channel):
         """
         Takes single line console commands and executes them.
         """
@@ -2532,8 +2532,8 @@ class Kernel(Settings):
             channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
         data = None  # Initial command context data is null
         input_type = None  # Initial command context is None
-        post = list()
-        post_data = dict()
+        post: List[Any] = []
+        post_data: Dict[Any,Any] = {}
         _ = self.translation
         while len(text) > 0:
             # Split command from remainder.
