@@ -52,7 +52,10 @@ class Job:
 
     @property
     def remaining(self) -> int:
-        return self._remaining or -1
+        if self._remaining is None:
+            return -1
+        else:
+            return self._remaining
 
     @property
     def scheduled(self) -> bool:

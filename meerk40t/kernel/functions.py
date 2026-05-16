@@ -4,7 +4,7 @@ import os.path
 import platform
 import re
 from math import isinf
-from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from .exceptions import CommandSyntaxError, MalformedCommandRegistration
 from .channel import Channel
