@@ -7,8 +7,12 @@ for full details.
 """
 
 import argparse
+import faulthandler
 import os.path
 import sys
+
+# Print Python stack on native crashes (SIGSEGV etc).
+faulthandler.enable()
 
 APPLICATION_NAME = "MeerK40t"
 APPLICATION_VERSION = "0.9.9000"
