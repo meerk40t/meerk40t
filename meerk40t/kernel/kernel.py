@@ -1342,21 +1342,21 @@ class Kernel(Settings):
     def shutdown(self):
         """
         Initiate kernel shutdown and wait for scheduler thread.
-        
+
         This is a lightweight shutdown method that signals termination
         and waits for the scheduler thread to complete. Used for quick
         shutdowns like settings reset operations.
-        
+
         For comprehensive shutdown with full cleanup, use the main
         shutdown procedure (see below).
-        
+
         Sets kernel state to "terminate" and waits up to 1 second
         for the scheduler thread to finish.
         """
         self.state = "terminate"
         self._shutdown = True
         # Wait for the scheduler thread to finish
-        if hasattr(self, 'scheduler_thread') and self.scheduler_thread.is_alive():
+        if self.scheduler_thread and self.scheduler_thread.is_alive():
             self.scheduler_thread.join(timeout=1.0)
 
     def preshutdown(self):
