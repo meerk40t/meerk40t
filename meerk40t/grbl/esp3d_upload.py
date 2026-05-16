@@ -12,6 +12,7 @@ from urllib.parse import urlencode, quote
 
 try:
     import requests
+
     REQUESTS_AVAILABLE = True
 except ImportError:
     requests = None
@@ -20,6 +21,7 @@ except ImportError:
 
 class ESP3DUploadError(Exception):
     """Exception raised for ESP3D upload errors."""
+
     pass
 
 
@@ -73,7 +75,7 @@ class ESP3DConnection:
         data = {
             "SUBMIT": "yes",
             "PASSWORD": self.password,
-            "USER": self.username
+            "USER": self.username,
         }
         try:
             response = self.session.post(login_url, data=data, timeout=self.timeout)
@@ -93,33 +95,29 @@ class ESP3DConnection:
         try:
             url = f"{self.base_url}/command"
             params = {"cmd": "[ESP800]"}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             return {
                 "success": True,
                 "status_code": response.status_code,
                 "message": "Connection successful",
-                "response": response.text[:200]  # First 200 chars
+                "response": response.text[:200],  # First 200 chars
             }
         except requests.Timeout:
             return {
                 "success": False,
-                "message": "Connection timed out. Check host and port."
+                "message": "Connection timed out. Check host and port.",
             }
         except requests.ConnectionError as e:
             return {
                 "success": False,
-                "message": f"Connection error: Unable to reach host. {e}"
+                "message": f"Connection error: Unable to reach host. {e}",
             }
         except requests.RequestException as e:
-            return {
-                "success": False,
-                "message": f"Connection failed: {e}"
-            }
-
+            return {"success": False, "message": f"Connection failed: {e}"}
 
     def get_sd_info(self):
         """
@@ -129,27 +127,28 @@ class ESP3DConnection:
         try:
             url = f"{self.base_url}/upload"
             params = {"path": "/", "PAGEID": "0"}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             import json
+
             data = json.loads(response.text)
-            
+
             # Parse size strings to bytes
             def parse_size(size_str):
                 """Convert size string like '1.23 MB' to bytes."""
                 if not size_str or size_str == "-1":
                     return 0
-                    
+
                 units = {
                     "B": 1,
                     "KB": 1024,
                     "MB": 1024 * 1024,
-                    "GB": 1024 * 1024 * 1024
+                    "GB": 1024 * 1024 * 1024,
                 }
-                
+
                 parts = size_str.strip().split()
                 if len(parts) == 2:
                     try:
@@ -159,10 +158,10 @@ class ESP3DConnection:
                     except (ValueError, KeyError):
                         return 0
                 return 0
-            
+
             total = parse_size(data.get("total", "0"))
             used = parse_size(data.get("used", "0"))
-            
+
             return {
                 "success": True,
                 "total": total,
@@ -171,7 +170,7 @@ class ESP3DConnection:
                 "occupation": data.get("occupation", "0"),
                 "files": data.get("files", []),
                 "path": data.get("path", "/"),
-                "status": data.get("status", "unknown")
+                "status": data.get("status", "unknown"),
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Failed to get SD info: {e}")
@@ -194,7 +193,13 @@ class ESP3DConnection:
         except ESP3DUploadError:
             raise
 
-    def upload_file(self, local_path, remote_filename, remote_path="/", progress_callback=None):
+    def upload_file(
+        self,
+        local_path,
+        remote_filename,
+        remote_path="/",
+        progress_callback=None,
+    ):
         """
         Upload a file to ESP3D SD card.
 
@@ -224,7 +229,7 @@ class ESP3DConnection:
                 response = session.post(
                     url,
                     files=files_data,
-                    timeout=self.timeout * 3  # Longer timeout for upload
+                    timeout=self.timeout * 3,  # Longer timeout for upload
                 )
                 response.raise_for_status()
 
@@ -233,7 +238,7 @@ class ESP3DConnection:
                     "success": True,
                     "message": f"File uploaded successfully: {remote_filename}",
                     "filename": remote_filename,
-                    "size": file_size
+                    "size": file_size,
                 }
 
         except requests.RequestException as e:
@@ -252,20 +257,18 @@ class ESP3DConnection:
                 "path": "/",
                 "action": "delete",
                 "filename": filename,
-                "PAGEID": "0"
+                "PAGEID": "0",
             }
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             # Note: Your firmware may not return JSON, but HTTP 200 means success
-            return {
-                "success": True,
-                "message": f"File deleted: {filename}"
-            }
+            return {"success": True, "message": f"File deleted: {filename}"}
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Delete failed: {e}")
+
     def execute_file(self, filename, path="/"):
         """
         Execute a G-code file on the device.
@@ -282,18 +285,18 @@ class ESP3DConnection:
             if filename.startswith("/"):
                 filename = filename[1:]
             command_text = f"[ESP220]/{filename}"
-            
+
             url = f"{self.base_url}/command"
             params = {"commandText": command_text}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             return {
                 "success": True,
                 "message": f"File execution started: {filename}",
-                "response": response.text
+                "response": response.text,
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Execute failed: {e}")
@@ -311,15 +314,15 @@ class ESP3DConnection:
         try:
             url = f"{self.base_url}/command"
             params = {"cmd": command}
-            
+
             session = self.session if self.session else requests
             response = session.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            
+
             return {
                 "success": True,
                 "message": f"Command sent: {command}",
-                "response": response.text
+                "response": response.text,
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Command failed: {e}")
@@ -377,7 +380,7 @@ def generate_8_3_filename(base="file", extension="gc", counter=None):
         str: Filename in 8.3 format (e.g., "file0001.gc" or "file3a7f.gc")
     """
     extension = extension[:3]  # Max 3 chars for extension
-    
+
     if counter is not None:
         # Use provided counter
         suffix = f"{counter:04d}"  # 4 digit counter
@@ -388,11 +391,11 @@ def generate_8_3_filename(base="file", extension="gc", counter=None):
         random_part = random.randint(0, 0xFFFF)  # 16-bit random number
         # Combine: 2 digits time + 2 hex digits random for better distribution
         suffix = f"{time_part % 100:02d}{random_part:04x}"[:4]
-    
+
     # Calculate available space for base name (8 - len(suffix))
     max_base_len = 8 - len(suffix)
     base = base[:max_base_len]
-    
+
     filename = f"{base}{suffix}.{extension}"
     return filename
 
@@ -409,20 +412,20 @@ def validate_filename_8_3(filename):
     """
     if not filename or "." not in filename:
         return False
-    
+
     parts = filename.rsplit(".", 1)
     if len(parts) != 2:
         return False
-    
+
     name, ext = parts
-    
+
     # Check length constraints
     if len(name) > 8 or len(ext) > 3:
         return False
-    
+
     # Check for invalid characters
     invalid_chars = set(' \\/:*?"<>|')
     if any(c in invalid_chars for c in filename):
         return False
-    
+
     return True
