@@ -91,6 +91,7 @@ Functions:
 
 import os.path
 import re
+from typing import Optional
 
 # Precompiled regex patterns for performance
 _BRACKETS = re.compile(r"\{[^}]+\}")
@@ -317,18 +318,17 @@ def init_commands(kernel):
     def wordlist_advance(command, channel, _, **kwargs):
         usage = False
         for node in self.elems():
+            text: Optional[str] = None
             if hasattr(node, "text"):
-                if node.text:
-                    bracketed_key = list(_BRACKETS.findall(str(node.text)))
-                    if len(bracketed_key) > 0:
-                        usage = True
-                        break
+                text = node.text
             elif hasattr(node, "mktext"):
-                if node.mktext:
-                    bracketed_key = list(_BRACKETS.findall(str(node.mktext)))
-                    if len(bracketed_key) > 0:
-                        usage = True
-                        break
+                text = node.mktext
+
+            if text:
+                bracketed_key = list(_BRACKETS.findall(str(text)))
+                if len(bracketed_key) > 0:
+                    usage = True
+                    break
 
         if usage:
             channel("Advancing wordlist indices")
