@@ -1,3 +1,6 @@
+from typing import Optional
+from .context import Context
+
 class Module:
     """
     Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
@@ -13,9 +16,9 @@ class Module:
 
     def __init__(
         self,
-        context: "Context",
-        name: str = None,
-        registered_path: str = None,
+        context: Context,
+        name: Optional[str] = None,
+        registered_path: Optional[str] = None,
         *args,
         **kwargs,
     ):

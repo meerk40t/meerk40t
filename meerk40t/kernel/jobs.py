@@ -19,7 +19,7 @@ class Job:
         times: Optional[int] = None,
         job_name: Optional[str] = None,
         run_main: bool = False,
-        conditional: Callable = None,
+        conditional: Optional[Callable] = None,
     ):
         self.job_name = job_name
         self.state = "init"
@@ -52,7 +52,7 @@ class Job:
 
     @property
     def remaining(self) -> int:
-        return self._remaining
+        return self._remaining or -1
 
     @property
     def scheduled(self) -> bool:
@@ -78,16 +78,23 @@ class ConsoleFunction(Job):
 
     def __init__(
         self,
-        context: "Context",
+        # cannot import Context here as that would create a circular import dependency
+        context: "context.Context",
         data: str,
         interval: float = 1.0,
         times: Optional[int] = None,
         job_name: Optional[str] = None,
         run_main: bool = False,
-        conditional: Callable = None,
+        conditional: Optional[Callable] = None,
     ):
-        Job.__init__(
-            self, self.__call__, None, interval, times, job_name, run_main, conditional
+        super().__init__(
+            self.__call__,
+            None,
+            interval,
+            times,
+            job_name,
+            run_main,
+            conditional,
         )
         self.context = context
         self.data = data
