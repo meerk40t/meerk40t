@@ -1314,13 +1314,14 @@ class ShadowTree:
 
         def rebuild_items(target):
             if target == "all":
-                if self.tree_images is not None:
-                    self.tree_images.Destroy()
-                    self.image_cache = []
+                # Swap before Destroy: wxtree holds the old ptr until SetImageList replaces it.
+                old_images = self.tree_images
                 self.tree_images = wx.ImageList()
                 self.tree_images.Create(width=self.iconsize, height=self.iconsize)
-
                 self.wxtree.SetImageList(self.tree_images)
+                self.image_cache = []
+                if old_images is not None:
+                    old_images.Destroy()
             if target == "regmarks":
                 elemtree = self.elements.reg_branch
             elif target == "operations":
@@ -1378,13 +1379,21 @@ class ShadowTree:
         startnode = self.elements._tree._item
 
         def expand_leaf(snode):
+            # Snapshot children before Expand to avoid cookie invalidation mid-walk.
+            children = []
             child, cookie = self.wxtree.GetFirstChild(snode)
             while child.IsOk():
+                children.append(child)
+                child, cookie = self.wxtree.GetNextChild(snode, cookie)
+            for child in children:
+                if not child.IsOk():
+                    continue
                 node = self.wxtree.GetItemData(child)
+                if node is None:
+                    continue
                 if node.expanded:
                     self.wxtree.Expand(child)
                 expand_leaf(child)
-                child, cookie = self.wxtree.GetNextChild(snode, cookie)
 
         expand_leaf(startnode)
         self.elements.signal("warn_state_update")
@@ -1757,15 +1766,14 @@ class ShadowTree:
         return image_id
 
     def update_op_labels(self):
-        startnode = self.elements.get(type="branch ops")._item
-        if startnode is None:
-            # Branch op never populated the tree, we cannot update sublayer.
+        # Walk Python op_branch instead of wxTree; GetItemData on stale handles segfaults.
+        op_branch = self.elements.get(type="branch ops")
+        if op_branch is None:
             return
-        child, cookie = self.wxtree.GetFirstChild(startnode)
-        while child.IsOk():
-            node = self.wxtree.GetItemData(child)  # Make sure the map is updated...
+        for node in list(op_branch.children):
+            if node is None or getattr(node, "_item", None) is None:
+                continue
             self.update_decorations(node=node, force=True)
-            child, cookie = self.wxtree.GetNextChild(startnode, cookie)
 
     def update_group_labels(self, src):
         # print(f"group_labels: {src}")
