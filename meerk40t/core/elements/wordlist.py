@@ -91,18 +91,21 @@ Functions:
 
 import os.path
 import re
+from typing import Optional
+
+from meerk40t.kernel import Kernel
 
 # Precompiled regex patterns for performance
 _BRACKETS = re.compile(r"\{[^}]+\}")
 
 
-def plugin(kernel, lifecycle=None):
+def plugin(kernel: Kernel, lifecycle: Optional[str] = None) -> None:
     _ = kernel.translation
     if lifecycle == "postboot":
         init_commands(kernel)
 
 
-def init_commands(kernel):
+def init_commands(kernel: Kernel) -> None:
     self = kernel.elements
 
     _ = kernel.translation
@@ -116,7 +119,7 @@ def init_commands(kernel):
         help=_("Wordlist base operation"),
         output_type="wordlist",
     )
-    def wordlist_base(command, channel, _, remainder=None, **kwargs):
+    def wordlist_base(command, channel, _, remainder=None, **kwargs) -> tuple[str, str]:
         return "wordlist", ""
 
     @self.console_argument("key", help=_("Wordlist value"))
@@ -317,18 +320,17 @@ def init_commands(kernel):
     def wordlist_advance(command, channel, _, **kwargs):
         usage = False
         for node in self.elems():
+            text: Optional[str] = None
             if hasattr(node, "text"):
-                if node.text:
-                    bracketed_key = list(_BRACKETS.findall(str(node.text)))
-                    if len(bracketed_key) > 0:
-                        usage = True
-                        break
+                text = node.text
             elif hasattr(node, "mktext"):
-                if node.mktext:
-                    bracketed_key = list(brackets.findall(str(node.mktext)))
-                    if len(bracketed_key) > 0:
-                        usage = True
-                        break
+                text = node.mktext
+
+            if text:
+                bracketed_key = list(_BRACKETS.findall(str(text)))
+                if len(bracketed_key) > 0:
+                    usage = True
+                    break
 
         if usage:
             channel("Advancing wordlist indices")
