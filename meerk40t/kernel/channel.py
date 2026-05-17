@@ -2,7 +2,7 @@ import re
 import threading
 from collections import deque
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
 BBCODE_LIST = {
@@ -80,7 +80,9 @@ class Channel:
         pure: bool = False,
         ansi: bool = False,
     ):
-        self.watchers = []
+        self.watchers: List[
+            Union[Callable[Union[str, bytes, bytearray], Any], Channel]
+        ] = []
         self.greet = None
         self.name = name
         self.buffer_size = buffer_size
@@ -115,7 +117,7 @@ class Channel:
         *args,
         indent: Optional[bool] = True,
         ansi: Optional[bool] = False,
-        execute_threaded=True,
+        execute_threaded: bool = True,
         **kwargs,
     ):
         if self.threaded and execute_threaded:

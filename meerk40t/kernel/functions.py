@@ -4,9 +4,10 @@ import os.path
 import platform
 import re
 from math import isinf
-from typing import Callable, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from .exceptions import CommandSyntaxError, MalformedCommandRegistration
+from .channel import Channel
 
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
@@ -48,7 +49,7 @@ def get_safe_path(
     return directory
 
 
-def console_option(name: str, short: str = None, **kwargs) -> Callable:
+def console_option(name: str, short: Optional[str] = None, **kwargs) -> Callable:
     """
     Adds an option for a console_command.
 
@@ -98,14 +99,14 @@ def console_argument(name: str, **kwargs) -> Callable:
 
 def console_command(
     registration,
-    path: Union[str, Tuple[str, ...]] = None,
+    path: Optional[Union[str, Tuple[str, ...]]] = None,
     regex: bool = False,
     hidden: bool = False,
-    help: str = None,
-    input_type: Union[str, Tuple[str, ...]] = None,
-    output_type: str = None,
+    help: Optional[str] = None,
+    input_type: Optional[Union[str, Tuple[str, ...]]] = None,
+    output_type: Optional[str] = None,
     all_arguments_required: bool = False,
-    force: str = None,
+    force: Optional[str] = None,
 ):
     """
     Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
@@ -130,7 +131,7 @@ def console_command(
 
     def decorator(func: Callable):
         @functools.wraps(func)
-        def inner(command: str, remainder: str, channel: "Channel", **ik):
+        def inner(command: str, remainder: str, channel: Channel, **ik):
             options = inner.options
             arguments = inner.arguments
 
@@ -139,7 +140,7 @@ def console_command(
             stack.extend(arguments)
 
             # To be passed to the console_command
-            kwargs = dict()
+            kwargs: Dict[str, Any] = dict()
 
             argument_index = 0
             opt_index = 0
