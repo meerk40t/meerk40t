@@ -1587,6 +1587,17 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             variable_info += f"[{source}]:\n" + _variable_summary(frame.f_locals)
     except Exception:
         pass
+
+    # Always surface the crash on the terminal (stderr), regardless of
+    # whether the crash-log file below can be written.
+    try:
+        sys.stderr.write(error_log)
+        if variable_info:
+            sys.stderr.write(variable_info)
+        sys.stderr.flush()
+    except Exception:
+        pass
+
     try:
         filename = f"MeerK40t-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
     except Exception:  # I already crashed once, if there's another here just ignore it.
@@ -1598,14 +1609,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                 file.write(error_log)
                 if variable_info:
                     file.write(variable_info)
-                print(error_log)
         except PermissionError:
             filename = os.path.join(get_safe_path(APPLICATION_NAME), filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 if variable_info:
                     file.write(variable_info)
-                print(error_log)
     except Exception:
         # I already crashed once, if there's another here just ignore it.
         pass

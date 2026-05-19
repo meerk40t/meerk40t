@@ -3980,17 +3980,19 @@ class Kernel(Settings):
                 self.signal("thread_update", "/", job_identifier, "started")
                 t0 = time.perf_counter()
                 try:
-                    data_out = self._console_parse(remainder, channel=self._console_channel)
-                except Exception as e:
-                    self._console_channel(_("Encountered exception {error}").format(error=e))
-
-                t1 = time.perf_counter()
-                self._console_channel(
-                    _("Finished command {cmd} after {duration}sec").format(
-                        cmd=remainder, duration=f"{t1 - t0:.2f}"
+                    self._console_parse(remainder, channel=self._console_channel)
+                finally:
+                    # Report completion even on failure, but do NOT swallow
+                    # the exception. Letting it propagate routes it through
+                    # kernel.threaded()'s run() wrapper to sys.excepthook,
+                    # producing the full crash log (file + dialog + terminal).
+                    t1 = time.perf_counter()
+                    self._console_channel(
+                        _("Finished command {cmd} after {duration}sec").format(
+                            cmd=remainder, duration=f"{t1 - t0:.2f}"
+                        )
                     )
-                )
-                self.signal("thread_update", "/", job_identifier, "ended")
+                    self.signal("thread_update", "/", job_identifier, "ended")
 
             if remainder is None:
                 # List all scheduled jobs that fit our format
