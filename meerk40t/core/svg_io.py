@@ -1770,6 +1770,14 @@ class SVGProcessor:
                     )
                     self.check_for_label_display(context_node, element)
                     self.check_for_bound_information(context_node, element)
+            else:
+                # Reusing an existing operation. Remove any auto-created
+                # effect children so the SVG's own effect children (parsed
+                # below via recursion) don't produce duplicates.
+                with self.elements.node_lock:
+                    for child in list(context_node._children):
+                        if child.type.startswith("effect "):
+                            child.remove_node(fast=True, destroy=True)
             context_node._ref_load = element.values.get("references")
             e_list.append(context_node)
             if hasattr(context_node, "validate"):
