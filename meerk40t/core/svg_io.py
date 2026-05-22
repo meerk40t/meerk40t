@@ -743,6 +743,7 @@ class SVGProcessor:
         load_operations,
         load_hidden_to_regmarks=True,
         reuse_operations=True,
+        replace_ops=False,
     ):
         self.elements = elements
         self.fastmode = getattr(self.elements, "fastload", False)
@@ -758,6 +759,7 @@ class SVGProcessor:
         self.pathname = None
         self.load_operations = load_operations
         self.reuse_operations = reuse_operations
+        self.replace_ops = replace_ops
         self.mk_params = list(
             self.elements.kernel.lookup_all("registered_mk_svg_parameters")
         )
@@ -785,11 +787,7 @@ class SVGProcessor:
         @param pathname:
         @return:
         """
-        retain_op_list = [
-            child
-            for child in list(self.elements.ops())
-            if child._children is not None and len(child._children) > 0
-        ]
+        retain_op_list = list(self.elements.ops())
         self.pathname = pathname
 
         context_node = self.elements.elem_branch
@@ -802,6 +800,15 @@ class SVGProcessor:
         if self.load_operations and self.operations_generated:
             # print ("Will replace all operations...")
             self.requires_classification = False
+            if self.replace_ops:
+                # Opening a project: clear pre-existing operations,
+                # the file's operations take over.
+                with self.elements.node_lock:
+                    for child in list(self.elements.op_branch.children):
+                        if child in retain_op_list:
+                            child.remove_all_children(fast=True, destroy=True)
+                            child.remove_node(fast=True, destroy=True)
+            # Remove orphan operations from the file that got no references.
             with self.elements.node_lock:
                 for child in list(self.elements.op_branch.children):
                     if child in retain_op_list:
@@ -1968,12 +1975,14 @@ class SVGLoader:
             raise BadFileError(str(e)) from e
         reuse = elements_service.reuse_operations_on_load
         to_regmarks = elements_service.load_hidden_to_regmarks
+        replace_ops = kwargs.get("replace_ops", False)
         elements_service._loading_cleared = True
         svg_processor = SVGProcessor(
             elements_service,
             load_operations=True,
             reuse_operations=reuse,
             load_hidden_to_regmarks=to_regmarks,
+            replace_ops=replace_ops,
         )
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
