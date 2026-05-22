@@ -652,6 +652,7 @@ class Elemental(Service):
         self._node_lock = threading.RLock()
 
         self.note = None
+        self.last_file_dir = ""
         self.last_file_autoexec = None
         self.last_file_autoexec_active = False
         self._filename = None
