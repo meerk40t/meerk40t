@@ -1759,6 +1759,51 @@ class SVGProcessor:
                                 break
                         if differs:
                             continue
+                        # Compare effect children to avoid reusing an
+                        # operation whose effects don't match the SVG.
+                        existing_effects = [
+                            node
+                            for node in testop.children
+                            if node.type.startswith("effect ")
+                        ]
+                        svg_effect_attrs = []
+                        for child in element:
+                            if not isinstance(child, Group):
+                                continue
+                            ca = dict(child.values.get("attributes", {}))
+                            if ca.get("type", "").startswith("effect "):
+                                svg_effect_attrs.append(ca)
+                        # Different number of effects — not a match.
+                        if len(existing_effects) != len(svg_effect_attrs):
+                            differs = True
+                        # Compare each effect's parameters.
+                        if not differs:
+                            for eff_node, svg_attrs in zip(
+                                existing_effects, svg_effect_attrs
+                            ):
+                                if eff_node.type != svg_attrs.get("type", ""):
+                                    differs = True
+                                    break
+                                for attr_key, attr_val in svg_attrs.items():
+                                    if attr_key in (
+                                        "type", "id", "label",
+                                        "lock", "hidden", "references",
+                                    ):
+                                        continue
+                                    node_val = getattr(
+                                        eff_node, attr_key, None
+                                    )
+                                    if node_val is None:
+                                        node_val = eff_node.settings.get(
+                                            attr_key
+                                        ) if hasattr(eff_node, "settings") else None
+                                    if node_val is not None and str(node_val) != str(attr_val):
+                                        differs = True
+                                        break
+                                if differs:
+                                    break
+                        if differs:
+                            continue
                         context_node = testop
                         already = True
                         break
@@ -1770,25 +1815,48 @@ class SVGProcessor:
                     )
                     self.check_for_label_display(context_node, element)
                     self.check_for_bound_information(context_node, element)
-            else:
-                # Reusing an existing operation. Remove any auto-created
-                # effect children so the SVG's own effect children (parsed
-                # below via recursion) don't produce duplicates.
-                with self.elements.node_lock:
-                    for child in list(context_node._children):
-                        if child.type.startswith("effect "):
-                            child.remove_node(fast=True, destroy=True)
             context_node._ref_load = element.values.get("references")
             e_list.append(context_node)
             if hasattr(context_node, "validate"):
                 context_node.validate()
 
-            # recurse to children
+            # Recurse to children, but skip effect nodes if we are
+            # reusing an operation that already has matching effects.
+            # Collect the skipped effects' references and assign them
+            # to the operation — add_reference will route them to the
+            # existing effect child automatically.
+            skip_effects = already and any(
+                c.type.startswith("effect ")
+                for c in context_node._children
+            )
+            if skip_effects:
+                effect_refs = []
+                for child in element:
+                    if isinstance(child, Group):
+                        ca = child.values.get("attributes", {})
+                        if ca.get("type", "").startswith("effect "):
+                            refs = ca.get("references")
+                            if refs:
+                                effect_refs.append(refs)
+                if effect_refs:
+                    all_refs = " ".join(effect_refs)
+                    if context_node._ref_load:
+                        context_node._ref_load += " " + all_refs
+                    else:
+                        context_node._ref_load = all_refs
             if self.reverse:
                 for child in reversed(element):
+                    if skip_effects and isinstance(child, Group):
+                        ca = child.values.get("attributes", {})
+                        if ca.get("type", "").startswith("effect "):
+                            continue
                     self.parse(child, context_node, e_list, branch=branch)
             else:
                 for child in element:
+                    if skip_effects and isinstance(child, Group):
+                        ca = child.values.get("attributes", {})
+                        if ca.get("type", "").startswith("effect "):
+                            continue
                     self.parse(child, context_node, e_list, branch=branch)
         elif isinstance(element, Use):
             # recurse to children, but do not subgroup elements.
