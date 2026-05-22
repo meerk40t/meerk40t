@@ -801,11 +801,11 @@ class SVGProcessor:
             # print ("Will replace all operations...")
             self.requires_classification = False
             if self.replace_ops:
-                # Opening a project: clear pre-existing operations,
-                # the file's operations take over.
+                # Opening a project: clear pre-existing operations
+                # that weren't reused by the file.
                 with self.elements.node_lock:
                     for child in list(self.elements.op_branch.children):
-                        if child in retain_op_list:
+                        if child in retain_op_list and not hasattr(child, "_ref_load"):
                             child.remove_all_children(fast=True, destroy=True)
                             child.remove_node(fast=True, destroy=True)
             # Remove orphan operations from the file that got no references.
