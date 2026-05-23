@@ -5620,7 +5620,7 @@ class MeerK40t(MWindow):
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)
-        if self.load(pathname, preferred_loader, execution=True):
+        if self.load(pathname, preferred_loader, execution=True, replace_ops=True):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
                     # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -5630,7 +5630,7 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
-    def load(self, pathname, preferred_loader=None, execution=False):
+    def load(self, pathname, preferred_loader=None, execution=False, **kwargs):
         def unescaped(filename):
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
@@ -5751,6 +5751,7 @@ class MeerK40t(MWindow):
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.elements.svg_ppi,
                 preferred_loader=preferred_loader,
+                **kwargs,
             )
             kernel.busyinfo.end()
             if post_process:

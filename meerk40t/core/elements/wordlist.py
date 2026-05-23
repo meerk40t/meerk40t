@@ -325,7 +325,7 @@ def init_commands(kernel):
                         break
             elif hasattr(node, "mktext"):
                 if node.mktext:
-                    bracketed_key = list(brackets.findall(str(node.mktext)))
+                    bracketed_key = list(_BRACKETS.findall(str(node.mktext)))
                     if len(bracketed_key) > 0:
                         usage = True
                         break
