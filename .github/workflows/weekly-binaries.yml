@@ -526,19 +526,12 @@ jobs:
 
   build-flatpak:
     runs-on: ubuntu-22.04
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
-
-    - name: Install ImageMagick
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y imagemagick
-
-    - name: Generate icon
-      run: |
-        chmod +x tools/build_icon.sh
-        tools/build_icon.sh "w${{ github.run_number }}"
 
     - name: Build Flatpak bundle
       uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v6

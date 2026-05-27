@@ -73,10 +73,14 @@ modules:
       - pip3 install --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation .
       - install -Dm644 .github/workflows/linux/io.github.meerk40t.meerk40t.desktop
           ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
+      # Desktop file's Icon=meerk40t works for the AppImage; Flatpak requires
+      # the icon basename to match the app-id, so patch in place.
+      - sed -i 's/^Icon=meerk40t$/Icon=io.github.meerk40t.meerk40t/'
+          ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
       - install -Dm644 .github/workflows/linux/meerk40t.appdata.xml
           ${FLATPAK_DEST}/share/metainfo/io.github.meerk40t.meerk40t.metainfo.xml
-      - install -Dm644 meerk40t.png
-          ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/io.github.meerk40t.meerk40t.png
+      - install -Dm644 images/meerk40t.svg
+          ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/io.github.meerk40t.meerk40t.svg
     sources:
       - type: dir
         path: ../../..
