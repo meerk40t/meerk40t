@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-win.txt
         pip install .
@@ -79,7 +79,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-win.txt
         pip install .
@@ -136,7 +136,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-macos.txt
         pip install .
@@ -361,7 +361,7 @@ jobs:
         pip install bitarray
         # pip install scipy
         pip install numba
-        pip install --no-cache-dir opencv-python-headless==4.5.3.56
+        pip install --no-cache-dir "opencv-python-headless>=4.10.0.84"
         # pip install meerk40t-camera
         pip install -r requirements-optional-linux.txt
         pip install .
