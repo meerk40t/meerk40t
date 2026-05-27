@@ -58,7 +58,7 @@ jobs:
         pip install pyinstaller wheel
         
         # Install wxPython for Ubuntu 22.04
-        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        pip install --only-binary=:all: -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         
         # Install core dependencies from requirements.txt
         pip install -r requirements.txt
