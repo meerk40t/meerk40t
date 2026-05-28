@@ -533,6 +533,15 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
 
+    - name: Validate AppStream metainfo
+      # The freedesktop-24.08 SDK image already includes appstreamcli.
+      # Catches metainfo regressions before the (long) flatpak build runs.
+      # --no-net skips screenshot URL liveness checks — those URLs point at
+      # raw.githubusercontent.com which can lag the commit by a few seconds.
+      run: |
+        appstreamcli validate --strict --no-net \
+          .github/workflows/linux/meerk40t.appdata.xml
+
     - name: Build Flatpak bundle
       uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v6
       with:

@@ -79,6 +79,11 @@ modules:
       # Disable external plugin discovery — matches the AppImage build.
       - mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
       - mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+      # Replace the in-app updater with a no-op stub. The flatpak install
+      # path is read-only, so the updater can detect a new release but
+      # cannot install it — the resulting "update available" prompt is
+      # actionable only outside the flatpak (via `flatpak update`).
+      - cp .github/workflows/flatpak/updater_stub.py meerk40t/extra/updater.py
       - pip3 install --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation .
       - install -Dm644 .github/workflows/linux/io.github.meerk40t.meerk40t.desktop
           ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
