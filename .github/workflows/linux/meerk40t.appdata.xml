@@ -75,8 +75,14 @@
     </screenshot>
   </screenshots>
 
+  <!--
+    Placeholder release entry. The weekly-binaries flatpak job rewrites this
+    in-place via sed to set the actual build version (APPLICATION_VERSION +
+    run_number) and today's date. The committed values exist only so the file
+    passes `appstreamcli validate --strict` for local development.
+  -->
   <releases>
-    <release version="0.9.9000" date="2026-05-27"/>
+    <release version="0.9.9000" date="2026-05-27" type="development"/>
   </releases>
 </component>
 

@@ -533,6 +533,19 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v4
 
+    - name: Patch metainfo release entry
+      # Replace the committed placeholder <release> with the actual snapshot
+      # version (APPLICATION_VERSION from main.py + run_number) and today's
+      # date. Marked type="development" so software centers know weekly bundles
+      # are snapshots, not stable releases.
+      run: |
+        VERSION=$(python3 -c "import re; print(re.search(r'APPLICATION_VERSION\s*=\s*\"([^\"]+)\"', open('meerk40t/main.py').read()).group(1))")
+        BUILD_VERSION="${VERSION}-w${{ github.run_number }}"
+        BUILD_DATE=$(date -u +%Y-%m-%d)
+        sed -i "s|<release [^/]*/>|<release version=\"${BUILD_VERSION}\" date=\"${BUILD_DATE}\" type=\"development\"/>|" \
+          .github/workflows/linux/meerk40t.appdata.xml
+        grep '<release ' .github/workflows/linux/meerk40t.appdata.xml
+
     - name: Validate AppStream metainfo
       # The freedesktop-24.08 SDK image already includes appstreamcli.
       # Catches metainfo regressions before the (long) flatpak build runs.
