@@ -48,6 +48,15 @@ modules:
           Pillow numpy requests \
           ezdxf "opencv-python-headless>=4.10.0.84" \
           pyserial pyusb websocket-client
+      # Optional deps mirroring requirements-optional-linux.txt (used by the
+      # AppImage build). pypotrace is skipped — it requires libpotrace/libagg/
+      # libeigen built as flatpak modules. meerk40t accepts `potracer` as a
+      # drop-in (both expose `import potrace`), falling back to the bundled
+      # mk_potrace if neither is present. bitarray is needed by extra/ezd.py.
+      - pip3 install --prefix=${FLATPAK_DEST} --no-cache-dir --use-pep517 pyclipr
+      - |
+        pip3 install --prefix=${FLATPAK_DEST} --no-cache-dir \
+          potracer meerk40t-barcodes numba "scipy>=1.12.0" vtracer psutil bitarray
 
   - name: python3-wxpython
     buildsystem: simple
