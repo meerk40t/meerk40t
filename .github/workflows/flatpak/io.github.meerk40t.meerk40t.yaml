@@ -21,6 +21,10 @@ finish-args:
   - --socket=fallback-x11
   - --device=all
   - --filesystem=home
+  # Suppress the in-app updater. The install path is read-only and updates
+  # are handled via `flatpak update`; meerk40t/extra/updater.py honors this
+  # by skipping startup checks and the preferences UI.
+  - --env=MEERK40T_DISABLE_UPDATER=1
 
 # ---------------------------------------------------------------------------
 # Flathub-migration TODO (not blocking for self-hosted bundle builds):
@@ -28,9 +32,7 @@ finish-args:
 #      python3-requirements.json generated via flatpak-pip-generator.
 #   2. Switch the `meerk40t` source from type: dir to type: git pinned at a
 #      release tag.
-#   3. Patch out the in-app updater (meerk40t/extra/updater.py) — Flathub
-#      forbids apps from self-updating.
-#   4. Validate metainfo with `appstreamcli validate --strict`; the current
+#   3. Validate metainfo with `appstreamcli validate --strict`; the current
 #      appdata.xml may need <screenshots> and <releases> sections added.
 # ---------------------------------------------------------------------------
 
@@ -79,11 +81,6 @@ modules:
       # Disable external plugin discovery — matches the AppImage build.
       - mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
       - mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
-      # Replace the in-app updater with a no-op stub. The flatpak install
-      # path is read-only, so the updater can detect a new release but
-      # cannot install it — the resulting "update available" prompt is
-      # actionable only outside the flatpak (via `flatpak update`).
-      - cp .github/workflows/flatpak/updater_stub.py meerk40t/extra/updater.py
       - pip3 install --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation .
       - install -Dm644 .github/workflows/linux/io.github.meerk40t.meerk40t.desktop
           ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
