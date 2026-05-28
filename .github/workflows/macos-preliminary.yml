@@ -19,7 +19,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-macos.txt
         pip install .

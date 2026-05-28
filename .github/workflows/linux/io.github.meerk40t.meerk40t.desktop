@@ -1,8 +1,9 @@
 [Desktop Entry]
 Name=MeerK40t
-Exec=meerk40t
+Exec=meerk40t %f
 Icon=meerk40t
 Type=Application
 Categories=Graphics;VectorGraphics;
 Comment=Laser Cutter Software
 Terminal=false
+MimeType=image/svg+xml;image/vnd.dxf;image/png;image/bmp;image/tiff;image/gif;application/postscript;application/x-lbrn;application/x-xcs;application/x-ezd;application/x-rd;application/x-egv;application/x-gcode;

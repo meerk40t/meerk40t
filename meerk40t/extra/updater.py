@@ -3,6 +3,7 @@ The code inside this module provides routines to look for newer versions of meer
 """
 import http.client
 import json
+import os
 import platform
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -10,6 +11,16 @@ from urllib.request import Request, urlopen
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
+        if os.environ.get("MEERK40T_DISABLE_UPDATER"):
+            # Updater disabled via environment — used by the flatpak build,
+            # whose install path is read-only and where updates are managed
+            # externally via `flatpak update`. Register the two settings the
+            # GUI reads so wxmmain.update_check_at_startup short-circuits
+            # cleanly, then bail without wiring up the preferences page or
+            # the check_for_updates console command.
+            kernel.root.setting(int, "update_check", 0)
+            kernel.root.setting(int, "update_frequency", 1)
+            return
         _ = kernel.translation
         choices = [
             {

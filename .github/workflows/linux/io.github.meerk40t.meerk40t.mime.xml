@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-lbrn">
+    <comment>LightBurn project</comment>
+    <glob pattern="*.lbrn"/>
+    <glob pattern="*.lbrn2"/>
+  </mime-type>
+  <mime-type type="application/x-xcs">
+    <comment>XTool Creative Space project</comment>
+    <glob pattern="*.xcs"/>
+  </mime-type>
+  <mime-type type="application/x-ezd">
+    <comment>EZCad2 project</comment>
+    <glob pattern="*.ezd"/>
+  </mime-type>
+  <mime-type type="application/x-rd">
+    <comment>Ruida RDWorks file</comment>
+    <glob pattern="*.rd"/>
+  </mime-type>
+  <mime-type type="application/x-egv">
+    <comment>Lihuiyu engrave file</comment>
+    <glob pattern="*.egv"/>
+  </mime-type>
+  <mime-type type="application/x-gcode">
+    <comment>G-code program</comment>
+    <glob pattern="*.gcode"/>
+    <glob pattern="*.nc"/>
+    <glob pattern="*.gc"/>
+  </mime-type>
+</mime-info>
