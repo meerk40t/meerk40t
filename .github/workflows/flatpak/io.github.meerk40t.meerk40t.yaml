@@ -90,6 +90,11 @@ modules:
           ${FLATPAK_DEST}/share/metainfo/io.github.meerk40t.meerk40t.metainfo.xml
       - install -Dm644 images/meerk40t_simple_transparent.svg
           ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/io.github.meerk40t.meerk40t.svg
+      # Vendor MIME types (LightBurn, XTool, EZCad2, Ruida, Lihuiyu, G-code).
+      # Standard types (svg, dxf, png, etc.) are already in shared-mime-info;
+      # only the application/x-* types need registration here.
+      - install -Dm644 .github/workflows/linux/io.github.meerk40t.meerk40t.mime.xml
+          ${FLATPAK_DEST}/share/mime/packages/io.github.meerk40t.meerk40t.xml
     sources:
       - type: dir
         path: ../../..
