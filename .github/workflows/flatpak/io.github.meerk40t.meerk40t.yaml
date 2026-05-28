@@ -88,7 +88,7 @@ modules:
           ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
       - install -Dm644 .github/workflows/linux/meerk40t.appdata.xml
           ${FLATPAK_DEST}/share/metainfo/io.github.meerk40t.meerk40t.metainfo.xml
-      - install -Dm644 images/meerk40t.svg
+      - install -Dm644 images/meerk40t_simple_transparent.svg
           ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/io.github.meerk40t.meerk40t.svg
     sources:
       - type: dir
