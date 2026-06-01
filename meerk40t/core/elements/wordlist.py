@@ -93,17 +93,19 @@ import os.path
 import re
 from typing import Optional
 
+from meerk40t.kernel import Kernel
+
 # Precompiled regex patterns for performance
 _BRACKETS = re.compile(r"\{[^}]+\}")
 
 
-def plugin(kernel, lifecycle=None):
+def plugin(kernel: Kernel, lifecycle: Optional[str] = None) -> None:
     _ = kernel.translation
     if lifecycle == "postboot":
         init_commands(kernel)
 
 
-def init_commands(kernel):
+def init_commands(kernel: Kernel) -> None:
     self = kernel.elements
 
     _ = kernel.translation
@@ -117,7 +119,7 @@ def init_commands(kernel):
         help=_("Wordlist base operation"),
         output_type="wordlist",
     )
-    def wordlist_base(command, channel, _, remainder=None, **kwargs):
+    def wordlist_base(command, channel, _, remainder=None, **kwargs) -> tuple[str, str]:
         return "wordlist", ""
 
     @self.console_argument("key", help=_("Wordlist value"))
