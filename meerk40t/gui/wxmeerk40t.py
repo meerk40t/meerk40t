@@ -504,6 +504,7 @@ class wxMeerK40t(wx.App, Module):
         wx.ToolTip.SetAutoPop(autopop_ms)
         wx.ToolTip.SetDelay(delay_ms)
         wx.ToolTip.SetReshow(0)
+        self.context.setting(bool, "ribbon_verbose_hover_help", True)
 
     def _get_usb_config_instructions(self):
         """Get the technical USB configuration instructions.

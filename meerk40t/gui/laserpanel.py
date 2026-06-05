@@ -1,4 +1,6 @@
 import platform
+import time
+from math import isinf
 
 import wx
 from wx import aui
@@ -19,6 +21,7 @@ from meerk40t.gui.icons import (
     icons8_save,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, JogDistancePanel, MovePanel
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
@@ -33,9 +36,95 @@ from meerk40t.gui.wxutils import (
     wxStaticText,
     dispatch_to_main_thread,
 )
+from meerk40t.core.planner import STAGE_PLAN_BLOB
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
+
+# Laser-Control override slider: center = 0%, each step = 5% (GRBL allows ~10%..200%)
+OVERRIDE_STEP_PERCENT = 5
+OVERRIDE_SLIDER_MIN = 1
+OVERRIDE_SLIDER_MAX = 41
+OVERRIDE_SLIDER_CENTER = 21
+
+
+def queue_cutplan_to_spooler(context, optimize=True, hold_policy="laserpane"):
+    """
+    Build a cut plan from the current scene and spool it to the active device.
+
+    hold_policy "laserpane": honour Laser tab Hold (re-spool last plan only if it has blob).
+    hold_policy "never": always rebuild from the scene (used after Parameter-Test).
+    """
+    if not context.elements.have_burnable_elements():
+        wx.MessageBox(
+            _(
+                "Nothing to burn. Operations need assigned shapes "
+                "(check the Operations tree after Create Pattern)."
+            ),
+            _("Queue Job"),
+            wx.OK | wx.ICON_INFORMATION,
+        )
+        return False
+    device = context.device
+    if device is None or getattr(device, "spooler", None) is None:
+        wx.MessageBox(
+            _("Connect your laser device first (Laser tab → Connect)."),
+            _("Queue Job"),
+            wx.OK | wx.ICON_WARNING,
+        )
+        return False
+
+    if context.elements.have_unassigned_elements():
+        answer = wx.MessageBox(
+            _(
+                "Some shapes are not assigned to any operation (Operations tree → "
+                "yellow Unassigned bar, or Elements still outside Cut/Engrave).\n\n"
+                "Only assigned shapes are sent to the laser — e.g. the outer frame "
+                "may cut while inner detail is skipped.\n\n"
+                "Fix: expand your Cut op → Re-Classify, enable Fill on Cut if inner "
+                "art has fill but no stroke, or drag shapes onto the Cut op.\n\n"
+                "Queue anyway?"
+            ),
+            _("Unassigned shapes"),
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
+        )
+        if answer != wx.YES:
+            return False
+
+    prefer_threaded = context.setting(bool, "prefer_threaded_mode", True)
+    prefix = "threaded " if prefer_threaded else ""
+
+    last_plan = context.laserpane_plan or context.planner.get_last_plan()
+    states, _info = (
+        context.planner.get_plan_stage(last_plan) if last_plan else (None, "")
+    )
+    has_blob = states is not None and STAGE_PLAN_BLOB in states
+
+    use_hold = (
+        hold_policy == "laserpane"
+        and context.laserpane_hold
+        and last_plan
+        and context.planner.has_content(last_plan)
+        and has_blob
+    )
+    if use_hold:
+        context(f"plan{last_plan} spool\n")
+    else:
+        new_plan = context.planner.get_free_plan()
+        if optimize:
+            context(
+                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
+            )
+        else:
+            context(
+                f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n"
+            )
+        if prefer_threaded and context.setting(bool, "autoshow_task_window", True):
+            context("window open ThreadInfo\n")
+
+    if context.auto_spooler:
+        context("window open JobSpooler\n")
+    return True
 
 
 def register_panel_laser(window, context):
@@ -336,34 +425,88 @@ class LaserPanel(wx.Panel):
         lb_power = wxStaticText(self, wx.ID_ANY, _("Power"))
         self.label_power = wxStaticText(self, wx.ID_ANY, "0%")
         self.slider_power = wx.Slider(
-            self, wx.ID_ANY, value=10, minValue=1, maxValue=20
+            self,
+            wx.ID_ANY,
+            value=OVERRIDE_SLIDER_CENTER,
+            minValue=OVERRIDE_SLIDER_MIN,
+            maxValue=OVERRIDE_SLIDER_MAX,
         )
-        self.sizer_power.Add(lb_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.text_power_override = TextCtrl(
+            self, wx.ID_ANY, "0", limited=True, check="float"
+        )
+        self.text_power_override.SetMinSize(dip_size(self, 40, -1))
+        self.btn_set_power = wxButton(self, wx.ID_ANY, _("Set"))
+        self.sizer_power.Add(lb_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_power.Add(self.slider_power, 3, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.sizer_power.Add(self.label_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_power.Add(self.text_power_override, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_power.Add(self.btn_set_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_power.Add(self.label_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_power.SetToolTip(
-            _("Increases/decreases the regular laser power by this amount.")
+            _("Adjust laser power override in {step}% steps (center = 0%).").format(
+                step=OVERRIDE_STEP_PERCENT
+            )
             + "\n"
-            + _("This affects running jobs, so use with care!")
+            + _("Right = more power, left = less. Affects running jobs.")
+        )
+        self.text_power_override.SetToolTip(
+            _("Percent change from normal, e.g. 70 or -30. Press Set to apply.")
         )
 
         self.sizer_speed = wx.BoxSizer(wx.HORIZONTAL)
         sizer_manipulate.Add(self.sizer_speed, 0, wx.EXPAND, 0)
         lb_speed = wxStaticText(self, wx.ID_ANY, _("Speed"))
         self.label_speed = wxStaticText(self, wx.ID_ANY, "0%")
-        self.slider_size = 20
         self.power_mode = "relative"
         self.slider_speed = wx.Slider(
-            self, wx.ID_ANY, value=10, minValue=1, maxValue=20
+            self,
+            wx.ID_ANY,
+            value=OVERRIDE_SLIDER_CENTER,
+            minValue=OVERRIDE_SLIDER_MIN,
+            maxValue=OVERRIDE_SLIDER_MAX,
         )
-        self.sizer_speed.Add(lb_speed, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.text_speed_override = TextCtrl(
+            self, wx.ID_ANY, "0", limited=True, check="float"
+        )
+        self.text_speed_override.SetMinSize(dip_size(self, 40, -1))
+        self.btn_set_speed = wxButton(self, wx.ID_ANY, _("Set"))
+        self.sizer_speed.Add(lb_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_speed.Add(self.slider_speed, 3, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.sizer_speed.Add(self.label_speed, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_speed.Add(self.text_speed_override, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_speed.Add(self.btn_set_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_speed.Add(self.label_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_speed.SetToolTip(
-            _("Increases/decreases the regular speed by this amount.")
+            _("Adjust feed override in {step}% steps (center = 0%).").format(
+                step=OVERRIDE_STEP_PERCENT
+            )
             + "\n"
-            + _("This affects running jobs, so use with care!")
+            + _("Right = faster, left = slower. Affects running jobs.")
         )
+        self.text_speed_override.SetToolTip(
+            _("Percent change from normal, e.g. 50 or -20. Press Set to apply.")
+        )
+
+        sizer_progress = wx.BoxSizer(wx.VERTICAL)
+        sizer_progress_header = wx.BoxSizer(wx.HORIZONTAL)
+        self.label_job_progress = wxStaticText(self, wx.ID_ANY, _("Job progress"))
+        self.label_progress_percent = wxStaticText(
+            self, wx.ID_ANY, "", style=wx.ALIGN_RIGHT
+        )
+        sizer_progress_header.Add(self.label_job_progress, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_progress_header.Add(
+            self.label_progress_percent, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        sizer_progress.Add(sizer_progress_header, 0, wx.EXPAND, 0)
+        self.gauge_job_progress = wx.Gauge(
+            self, range=100, style=wx.GA_HORIZONTAL | wx.GA_SMOOTH
+        )
+        self.gauge_job_progress.SetValue(0)
+        sizer_progress.Add(self.gauge_job_progress, 0, wx.EXPAND, 0)
+        self.label_progress_detail = wxStaticText(self, wx.ID_ANY, _("No job running"))
+        sizer_progress.Add(self.label_progress_detail, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_progress, 1, wx.EXPAND | wx.ALL, 4)
+
+        self._progress_last_update = 0.0
+        self._progress_update_delta = 1.0
 
         self.SetSizer(sizer_main)
         self.Layout()
@@ -385,6 +528,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_adjust, self.checkbox_adjust)
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
         self.Bind(wx.EVT_SLIDER, self.on_slider_power, self.slider_power)
+        self.Bind(wx.EVT_BUTTON, self.on_set_power_override, self.btn_set_power)
+        self.Bind(wx.EVT_BUTTON, self.on_set_speed_override, self.btn_set_speed)
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
         # self.btn_config_laser.Bind(wx.EVT_LEFT_DOWN, self.on_config_button)
         self.btn_config_laser.Bind(wx.EVT_BUTTON, self.on_config_button)
@@ -400,6 +545,145 @@ class LaserPanel(wx.Panel):
             disable_window(self)
         # Check for a real click of the execute button
         self.button_start_was_clicked = False
+        self.update_job_progress(force=True)
+
+    @staticmethod
+    def _format_elapsed(seconds):
+        if isinf(seconds) or seconds < 0:
+            return "∞"
+        hours, remainder = divmod(seconds, 3600)
+        minutes, secs = divmod(remainder, 60)
+        return f"{int(hours)}:{int(minutes):02d}:{int(secs):02d}"
+
+    def update_job_progress(self, force=False):
+        now = time.time()
+        if not force and now - self._progress_last_update < self._progress_update_delta:
+            return
+        self._progress_last_update = now
+
+        percentage = -1
+        detail = _("No job running")
+        job_label = ""
+
+        try:
+            spooler = self.context.device.spooler
+        except AttributeError:
+            spooler = None
+
+        if spooler is not None and spooler.queue:
+            job_pos = 0
+            job_len = 0
+            job_remaining = 0.0
+            job_elapsed = 0.0
+            queue_pos = 0
+            queue_len = len(spooler.queue)
+            job_active = False
+
+            for idx, spool_obj in enumerate(spooler.queue):
+                if spool_obj.is_running() and isinstance(spool_obj, LaserJob):
+                    job_active = True
+                    queue_pos = idx + 1
+                    job_label = spool_obj.label or ""
+                    if spool_obj.steps_total == 0:
+                        spool_obj.calc_steps()
+                    if spool_obj.steps_total > 0:
+                        job_len = spool_obj.steps_total
+                        job_pos = spool_obj.steps_done
+                    else:
+                        job_len = len(spool_obj.items)
+                        job_pos = spool_obj.item_index
+                    if spool_obj.time_started:
+                        job_elapsed = now - spool_obj.time_started
+                    job_estimate = spool_obj.estimate_time()
+                    if job_estimate > job_elapsed:
+                        job_remaining = job_estimate - job_elapsed
+                    elif job_pos > 0 and job_len > 0:
+                        job_remaining = job_elapsed * (job_len - job_pos) / job_pos
+                    if job_len > 0:
+                        percentage = min(100, int(100 * job_pos / job_len))
+                    break
+
+            if job_active:
+                buffer_note = ""
+                driver = getattr(spooler, "driver", None)
+                if driver is not None and hasattr(driver, "get_internal_queue_status"):
+                    internal_current, internal_total = driver.get_internal_queue_status()
+                    if internal_total:
+                        buffer_note = f" · {internal_current}/{internal_total}"
+                if job_label:
+                    detail = _("{label}: {steps}/{total} · {remaining} left{buffer}").format(
+                        label=job_label,
+                        steps=job_pos,
+                        total=job_len,
+                        remaining=self._format_elapsed(job_remaining),
+                        buffer=buffer_note,
+                    )
+                else:
+                    detail = _("Steps {steps}/{total} · {remaining} left{buffer}").format(
+                        steps=job_pos,
+                        total=job_len,
+                        remaining=self._format_elapsed(job_remaining),
+                        buffer=buffer_note,
+                    )
+                if queue_len > 1:
+                    detail += _(" · Queue {pos}/{len}").format(
+                        pos=queue_pos, len=queue_len
+                    )
+            elif queue_len > 0:
+                detail = _("Queued ({count} jobs)").format(count=queue_len)
+                percentage = 0
+
+        if percentage < 0:
+            self.gauge_job_progress.SetValue(0)
+            self.label_progress_percent.SetLabel("")
+            self.label_progress_detail.SetLabel(detail)
+        else:
+            self.gauge_job_progress.SetValue(percentage)
+            self.label_progress_percent.SetLabel(f"{percentage}%")
+            self.label_progress_detail.SetLabel(detail)
+
+        self.gauge_job_progress.Refresh()
+        self.Layout()
+
+    @signal_listener("spooler;queue")
+    @signal_listener("spooler;update")
+    @signal_listener("spooler;completed")
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
+    @dispatch_to_main_thread
+    def on_spooler_progress(self, origin, *args):
+        if origin in ("spooler;completed", "spooler;queue"):
+            self._progress_last_update = 0.0
+        self.update_job_progress(force=origin == "spooler;completed")
+
+    @staticmethod
+    def _slider_to_factor(sliderval):
+        offset = sliderval - OVERRIDE_SLIDER_CENTER
+        return max(
+            0.1,
+            min(2.0, 1.0 + offset * (OVERRIDE_STEP_PERCENT / 100.0)),
+        )
+
+    @staticmethod
+    def _factor_to_slider(factor):
+        offset = int(round((factor - 1.0) * 100 / OVERRIDE_STEP_PERCENT))
+        return max(
+            OVERRIDE_SLIDER_MIN,
+            min(OVERRIDE_SLIDER_MAX, OVERRIDE_SLIDER_CENTER + offset),
+        )
+
+    @staticmethod
+    def _format_override_percent(factor):
+        return f"{'+' if factor > 1 else ''}{100 * (factor - 1.0):.0f}%"
+
+    @staticmethod
+    def _parse_override_percent(text):
+        s = text.strip().replace("%", "").replace(" ", "")
+        if not s:
+            return 1.0
+        if s.startswith("+"):
+            s = s[1:]
+        return max(0.1, min(2.0, 1.0 + float(s) / 100.0))
 
     def update_override_controls(self):
         def set_boundaries(slider, current_value, min_value, max_value):
@@ -418,14 +702,19 @@ class LaserPanel(wx.Panel):
             value = self.context.device.driver.power_scale
             if value != 1:
                 override = True
-            half = self.slider_size / 2
-            sliderval = int(value * half)
-            sliderval = max(1, min(self.slider_size, sliderval))
-            set_boundaries(self.slider_power, sliderval, 1, self.slider_size)
+            sliderval = self._factor_to_slider(value)
+            set_boundaries(
+                self.slider_power,
+                sliderval,
+                OVERRIDE_SLIDER_MIN,
+                OVERRIDE_SLIDER_MAX,
+            )
             self.slider_power.SetToolTip(
-                _("Increases/decreases the regular laser power by this amount.")
+                _("Adjust laser power override in {step}% steps (center = 0%).").format(
+                    step=OVERRIDE_STEP_PERCENT
+                )
                 + "\n"
-                + _("This affects running jobs, so use with care!")
+                + _("Right = more power, left = less. Affects running jobs.")
             )
             self.power_mode = "relative"
             self.on_slider_power(None)
@@ -458,10 +747,13 @@ class LaserPanel(wx.Panel):
             value = self.context.device.driver.speed_scale
             if value != 1:
                 override = True
-            half = self.slider_size / 2
-            sliderval = int(value * half)
-            sliderval = max(1, min(self.slider_size, sliderval))
-            set_boundaries(self.slider_speed, sliderval, 1, self.slider_size)
+            sliderval = self._factor_to_slider(value)
+            set_boundaries(
+                self.slider_speed,
+                sliderval,
+                OVERRIDE_SLIDER_MIN,
+                OVERRIDE_SLIDER_MAX,
+            )
             self.on_slider_speed(None)
 
         self.sizer_power.Show(flag_power)
@@ -474,22 +766,35 @@ class LaserPanel(wx.Panel):
         self.checkbox_adjust.SetValue(override)
         self.slider_power.Enable(override)
         self.slider_speed.Enable(override)
+        self.text_power_override.Enable(override and self.power_mode == "relative")
+        self.btn_set_power.Enable(override and self.power_mode == "relative")
+        self.text_speed_override.Enable(override)
+        self.btn_set_speed.Enable(override)
         self.Layout()
 
     def on_check_adjust(self, event):
         if self.checkbox_adjust.GetValue():
             self.slider_power.Enable(True)
             self.slider_speed.Enable(True)
+            self.text_speed_override.Enable(True)
+            self.btn_set_speed.Enable(True)
+            if self.power_mode == "relative":
+                self.text_power_override.Enable(True)
+                self.btn_set_power.Enable(True)
         else:
             self.slider_power.Enable(False)
             self.slider_speed.Enable(False)
+            self.text_power_override.Enable(False)
+            self.btn_set_power.Enable(False)
+            self.text_speed_override.Enable(False)
+            self.btn_set_speed.Enable(False)
             if (
                 hasattr(self.context.device.driver, "has_adjustable_power")
                 and self.context.device.driver.has_adjustable_power
             ):
                 if event is not None:
                     self.context.device.driver.set_power_scale(1.0)
-                self.slider_power.SetValue(10)
+                self.slider_power.SetValue(OVERRIDE_SLIDER_CENTER)
                 self.on_slider_power(None)
             if (
                 hasattr(self.context.device.driver, "has_adjustable_speed")
@@ -497,18 +802,17 @@ class LaserPanel(wx.Panel):
             ):
                 if event is not None:
                     self.context.device.driver.set_speed_scale(1.0)
-                self.slider_speed.SetValue(10)
+                self.slider_speed.SetValue(OVERRIDE_SLIDER_CENTER)
                 self.on_slider_speed(None)
 
     def on_slider_speed(self, event):
         sliderval = self.slider_speed.GetValue()
-        half = self.slider_size / 2
-        newvalue = sliderval - half  # -> -9 to +10
-        factor = 1 + newvalue / half
+        factor = self._slider_to_factor(sliderval)
         if event is not None:
             self.context.device.driver.set_speed_scale(factor)
-        msg = f"{'+' if factor > 1 else ''}{100 * (factor - 1.0):.0f}%"
+        msg = self._format_override_percent(factor)
         self.label_speed.SetLabel(msg)
+        self.text_speed_override.SetValue(f"{100 * (factor - 1.0):.0f}")
 
     def on_slider_power(self, event):
         sliderval = self.slider_power.GetValue()
@@ -518,13 +822,32 @@ class LaserPanel(wx.Panel):
                 self.context.device.driver.max_power_scale = sliderval
             msg = f"{sliderval}%"
         else:
-            half = self.slider_size / 2
-            newvalue = sliderval - half  # -> -9 to +10
-            factor = 1 + newvalue / half
+            factor = self._slider_to_factor(sliderval)
             if event is not None:
                 self.context.device.driver.set_power_scale(factor)
-            msg = f"{'+' if factor > 1 else ''}{100 * (factor - 1.0):.0f}%"
+            msg = self._format_override_percent(factor)
+            self.text_power_override.SetValue(f"{100 * (factor - 1.0):.0f}")
         self.label_power.SetLabel(msg)
+
+    def on_set_power_override(self, event):
+        if self.power_mode == "maximum":
+            return
+        try:
+            factor = self._parse_override_percent(self.text_power_override.GetValue())
+        except ValueError:
+            return
+        self.context.device.driver.set_power_scale(factor)
+        self.slider_power.SetValue(self._factor_to_slider(factor))
+        self.on_slider_power(None)
+
+    def on_set_speed_override(self, event):
+        try:
+            factor = self._parse_override_percent(self.text_speed_override.GetValue())
+        except ValueError:
+            return
+        self.context.device.driver.set_speed_scale(factor)
+        self.slider_speed.SetValue(self._factor_to_slider(factor))
+        self.on_slider_speed(None)
 
     def on_optimize(self, event):
         newval = bool(self.checkbox_optimize.GetValue())
@@ -729,30 +1052,13 @@ class LaserPanel(wx.Panel):
                 )
             )
             return
-        prefer_threaded = self.context.setting(bool, "prefer_threaded_mode", True)
-        prefix = "threaded " if prefer_threaded else ""
-
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
-        last_plan = self.context.laserpane_plan or self.context.planner.get_last_plan()
-        if self.context.laserpane_hold and self.context.planner.has_content(last_plan):
-            self.context(f"plan{last_plan} spool\n")
-        elif self.checkbox_optimize.GetValue():
-            new_plan = self.context.planner.get_free_plan()
-            self.context(
-                f"{prefix}plan{new_plan} clear copy preprocess validate blob preopt optimize spool\n"
-            )
-            if self.context.setting(bool, "autoshow_task_window", True):
-                self.context("window open ThreadInfo\n")
-        else:
-            new_plan = self.context.planner.get_free_plan()
-            self.context(
-                f"{prefix}plan{new_plan} clear copy preprocess validate blob spool\n"
-            )
+        queue_cutplan_to_spooler(
+            self.context, optimize=self.checkbox_optimize.GetValue()
+        )
         self.armed = False
         self.check_laser_arm()
-        if self.context.auto_spooler:
-            self.context("window open JobSpooler\n")
         busy.end()
         self.button_start_was_clicked = False
 

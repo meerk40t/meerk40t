@@ -79,6 +79,46 @@ def plugin(kernel, lifecycle=None):
             },
         )
         kernel.register(
+            "dev_info/grbl-dlc32-k40-400",
+            {
+                "provider": "provider/device/grbl",
+                "friendly_name": _("K40 CO2 — MKS DLC32 (405×285 mm)"),
+                "extended_info": _(
+                    "K40-style CO2 with Makerbase MKS DLC32 (Grbl 1.1h). "
+                    "Bed 405×285 mm, Swap XY, Wi-Fi TCP defaults for Meerkat. "
+                    "Tune power/speed after Material Test."
+                ),
+                "priority": 20,
+                "family": _("K-Series CO2-Laser"),
+                "choices": [
+                    {"attr": "label", "default": "GRBL-DLC32-400"},
+                    {"attr": "has_endstops", "default": True},
+                    {"attr": "sequential_homing", "default": True},
+                    {"attr": "bedwidth", "default": "405mm"},
+                    {"attr": "bedheight", "default": "285mm"},
+                    {"attr": "swap_xy", "default": False},
+                    {"attr": "flip_y", "default": True},
+                    {"attr": "home_corner", "default": "top-left"},
+                    {"attr": "source", "default": "co2"},
+                    {"attr": "require_validator", "default": True},
+                    {"attr": "reset_on_connect", "default": True},
+                    {"attr": "interface", "default": "tcp"},
+                    {"attr": "address", "default": "192.168.10.90"},
+                    {"attr": "port", "default": 8080},
+                    {"attr": "macro_title_0", "default": "Clear alarm"},
+                    {"attr": "macro_0", "default": "$X"},
+                    {"attr": "macro_title_1", "default": "Work zero"},
+                    {"attr": "macro_1", "default": "G92 X0 Y0"},
+                    {"attr": "macro_title_2", "default": "Status"},
+                    {"attr": "macro_2", "default": "?"},
+                    {"attr": "macro_title_3", "default": "Home Y"},
+                    {"attr": "macro_3", "default": "$HY"},
+                    {"attr": "macro_title_4", "default": "Home X"},
+                    {"attr": "macro_4", "default": "$HX"},
+                ],
+            },
+        )
+        kernel.register(
             "dev_info/grbl-k40",
             {
                 "provider": "provider/device/grbl",

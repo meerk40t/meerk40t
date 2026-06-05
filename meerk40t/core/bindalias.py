@@ -109,6 +109,9 @@ DEFAULT_KEYMAP = {
         "tree emphasized delete",
         "element delete",
     ),
+    "numpad_delete": (
+        "tree selected delete",
+    ),
     "escape": (
         "",
         "pause",

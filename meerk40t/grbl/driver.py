@@ -203,22 +203,28 @@ class GRBLDriver(Parameters):
         # x, y = self.service.view.position(x, y)
         # self._move(x, y)
         if confined:
-            new_x = self.native_x * self.service.view.native_scale_x + dx
-            new_y = self.native_y * self.service.view.native_scale_y + dy
+            if not isinstance(dx, (int, float)):
+                dx = float(Length(dx))
+            if not isinstance(dy, (int, float)):
+                dy = float(Length(dy))
+            bed_w = float(Length(self.service.view.width))
+            bed_h = float(Length(self.service.view.height))
+            # Clamp in bed/UI coordinates (same as Navigation get_movement).
+            # Do not mix native machine coords with UI jog deltas — breaks Y when
+            # GRBL MPos Y is negative (0 at top, -bedheight into the bed).
+            cur_x, cur_y = self.service.current
+            cur_x = float(cur_x)
+            cur_y = float(cur_y)
+            new_x = cur_x + dx
+            new_y = cur_y + dy
             if new_x < 0:
-                dx = -self.native_x * self.service.view.native_scale_x
-            elif new_x > self.service.view.width:
-                dx = (
-                    self.service.view.width
-                    - self.native_x * self.service.view.native_scale_x
-                )
+                dx = -cur_x
+            elif new_x > bed_w:
+                dx = bed_w - cur_x
             if new_y < 0:
-                dy = -self.native_y * self.service.view.native_scale_y
-            elif new_y > self.service.view.height:
-                dy = (
-                    self.service.view.height
-                    - self.native_y * self.service.view.native_scale_y
-                )
+                dy = -cur_y
+            elif new_y > bed_h:
+                dy = bed_h - cur_y
         self._g91_relative()
         self._clean()
         old_current = self.service.current
@@ -622,7 +628,13 @@ class GRBLDriver(Parameters):
         self.native_x = 0
         self.native_y = 0
         if self.service.has_endstops:
-            self(f"$H{self.line_end}")
+            # DLC32 / top-left (X−, Y+): $H homes both axes and often alarms
+            # ~50 mm before switches; $HY then $HX matches touch-panel homing.
+            if self.service.sequential_homing:
+                self(f"$HY{self.line_end}")
+                self(f"$HX{self.line_end}")
+            else:
+                self(f"$H{self.line_end}")
         else:
             self(f"G28{self.line_end}")
         new_current = self.service.current
@@ -993,44 +1005,44 @@ class GRBLDriver(Parameters):
         self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
         self.units_dirty = True
 
+    def _apply_grbl_override_scale(
+        self, factor, reset_cmd, increase_cmd, decrease_cmd, step=0.05
+    ):
+        """Apply GRBL realtime override from 100% in ``step`` increments (default 5%)."""
+        if factor <= 0 or factor > 2.0:
+            factor = 1.0
+        self(reset_cmd, real=True)
+        current = 1.0
+        if factor > 1.0:
+            while current + step <= factor + 1e-6:
+                self(increase_cmd, real=True)
+                current += step
+        elif factor < 1.0:
+            while current - step >= factor - 1e-6:
+                self(decrease_cmd, real=True)
+                current -= step
+
     def set_power_scale(self, factor):
-        # Grbl can only deal with factors between 10% and 200%
+        # Grbl spindle override: 10%..200% (0x99 reset, 0x9A +10%, 0x9B -10%)
         if factor <= 0 or factor > 2.0:
             factor = 1.0
         if self.power_scale == factor:
             return
         self.power_scale = factor
-
-        # Grbl can only deal with factors between 10% and 200%
-        self("\x99\r", real=True)
-        # Upward loop
-        start = 1.0
-        while start < 2.0 and start < factor:
-            self("\x9B\r", real=True)
-            start += 0.1
-        # Downward loop
-        start = 1.0
-        while start > 0.0 and start > factor:
-            self("\x9A\r", real=True)
-            start -= 0.1
+        self._apply_grbl_override_scale(
+            factor, "\x99\r", "\x9A\r", "\x9B\r", step=0.05
+        )
 
     def set_speed_scale(self, factor):
-        # Grbl can only deal with factors between 10% and 200%
+        # Grbl feed override: 10%..200% (0x90 reset, 0x91 +10%, 0x92 -10%)
         if factor <= 0 or factor > 2.0:
             factor = 1.0
         if self.speed_scale == factor:
             return
         self.speed_scale = factor
-        self("\x90\r", real=True)
-        start = 1.0
-        while start < 2.0 and start < factor:
-            self("\x91\r", real=True)
-            start += 0.1
-        # Downward loop
-        start = 1.0
-        while start > 0.0 and start > factor:
-            self("\x92\r", real=True)
-            start -= 0.1
+        self._apply_grbl_override_scale(
+            factor, "\x90\r", "\x91\r", "\x92\r", step=0.05
+        )
 
     @staticmethod
     def has_adjustable_power():

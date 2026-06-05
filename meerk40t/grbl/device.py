@@ -40,6 +40,10 @@ class GRBLDevice(Service, Status):
                 default = c.get("default")
                 if attr is not None and default is not None:
                     setattr(self, attr, default)
+            for idx in range(5):
+                for key in (f"macro_{idx}", f"macro_title_{idx}"):
+                    if hasattr(self, key):
+                        self.setting(str, key, getattr(self, key))
 
         # self.redlight_preferred = False
 
@@ -158,7 +162,9 @@ class GRBLDevice(Service, Status):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _(
-                    "-Y is standard for grbl but sometimes settings can flip that."
+                    "On this machine Y goes negative into the bed (0 at top). "
+                    "Leave Flip Y on with Home corner top-left, or Y jogs can "
+                    "trigger GRBL ALARM:2 (soft limit)."
                 ),
                 # Hint for translation _("Flip Axis")
                 "subsection": "_40_Flip Axis",
@@ -480,6 +486,18 @@ class GRBLDevice(Service, Status):
                 "section": "_5_Config",
                 "tip": _(
                     "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
+                ),
+            },
+            {
+                "attr": "sequential_homing",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Sequential homing ($HY then $HX)"),
+                "section": "_5_Config",
+                "tip": _(
+                    "For MKS DLC32 / top-left limits: home Y then X separately "
+                    "instead of $H. Avoids ALARM:1 stopping ~50 mm before switches."
                 ),
             },
             {

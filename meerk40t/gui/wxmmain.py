@@ -1738,11 +1738,44 @@ class MeerK40t(MWindow):
         """
         Activate the node in question.
 
+        Laser operations open Parameter-Test (embedded property pages).
+        Elements and other nodes open the standalone Properties window.
+
         @param node:
         @return:
         """
-        # print(f"Calling property for {node.type}")
         self.context.elements.set_emphasis([node])
+        target = node
+        if getattr(node, "type", None) == "reference" and hasattr(node, "parent"):
+            target = node.parent
+
+        laser_op_types = ("op cut", "op engrave", "op raster", "op image", "op dots")
+        if getattr(target, "type", None) in laser_op_types:
+
+            def open_parameter_test():
+                window_uri = "window/Templatetool"
+                try:
+                    parent = self.context.gui
+                except AttributeError:
+                    parent = None
+                try:
+                    tool = self.context.opened[window_uri]
+                except KeyError:
+                    self.context.open_as(window_uri, window_uri, parent)
+                    tool = self.context.opened[window_uri]
+                if tool is None:
+                    self.context("window open Properties\n")
+                    return
+                if hasattr(tool, "panel_template"):
+                    tool.panel_template.select_operation_for_node(target)
+                tool.set_node(target, focus_properties=True)
+
+            if wx.IsMainThread():
+                open_parameter_test()
+            else:
+                wx.CallAfter(open_parameter_test)
+            return
+
         self.context("window open Properties\n")
 
     @staticmethod
@@ -3630,6 +3663,11 @@ class MeerK40t(MWindow):
                     pane.window.lock()
         self._mgr.Update()
 
+    def on_toggle_ribbon_verbose_hover_help(self, event):
+        checked = event.IsChecked()
+        self.context.ribbon_verbose_hover_help = checked
+        self.context.write_persistent("ribbon_verbose_hover_help", checked)
+
     def on_pane_create(self, paneinfo: aui.AuiPaneInfo):
         control = paneinfo.control
         if isinstance(control, wx.aui.AuiNotebook):
@@ -3825,6 +3863,26 @@ class MeerK40t(MWindow):
                 pane.window.check = menu_item.Check
             except AttributeError:
                 pass
+
+        help_menu = submenus.get(_("Help"))
+        if help_menu is not None:
+            help_menu.AppendSeparator()
+            self.context.setting(bool, "ribbon_verbose_hover_help", True)
+            item_verbose = help_menu.AppendCheckItem(
+                wx.ID_ANY,
+                _("Long UI descriptions (ribbon + context menus)"),
+                _(
+                    "When checked: ribbon buttons use the long hover delay and extra text; "
+                    "tree and scene right-click menus put full descriptions in the "
+                    "status bar as you move through the menu (bottom of the window)."
+                ),
+            )
+            item_verbose.Check(self.context.ribbon_verbose_hover_help)
+            self.Bind(
+                wx.EVT_MENU,
+                self.on_toggle_ribbon_verbose_hover_help,
+                id=item_verbose.GetId(),
+            )
 
         self.panes_menu.AppendSeparator()
         item = self.main_menubar.lockpane = self.panes_menu.Append(
@@ -5457,6 +5515,8 @@ class MeerK40t(MWindow):
         )
         if self.needs_saving:
             title += "(*)"
+        # Example GUI tweak: remove the next line anytime (demo only).
+        title += " — example edit"
         self.SetTitle(title)
 
     def __set_properties(self):

@@ -468,6 +468,7 @@ class GrblController:
         self._log = None
 
         self._paused = False
+        self._warned_flip_y = False
         self._watchers = []
         self.is_shutdown = False
         self._last_state = None
@@ -1023,10 +1024,23 @@ class GrblController:
                 try:
                     nx = float(coords[0])
                     ny = float(coords[1])
+                    if (
+                        ny < -0.5
+                        and not self.service.flip_y
+                        and not self._warned_flip_y
+                    ):
+                        self._warned_flip_y = True
+                        self.log(
+                            "GRBL machine Y is negative (into bed) but Device "
+                            "'Flip Y' is off — Y jogs may trigger ALARM:2 soft "
+                            "limit. Enable Flip Y and Home corner top-left, then "
+                            "restart MeerK40t.",
+                            type="warning",
+                        )
 
-                    if not self.fully_validated():
-                        # During validation, we declare positions.
-                        self.driver.declare_position(nx, ny)
+                    # Keep driver native position aligned with MPos for confined
+                    # jogs (GRBL only reported position during connect before).
+                    self.driver.declare_position(nx, ny)
                     ox = self.driver.mpos_x
                     oy = self.driver.mpos_y
 

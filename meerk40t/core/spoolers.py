@@ -211,7 +211,7 @@ def plugin(kernel, lifecycle):
                 idy = spooler._dy
             except AttributeError:
                 return
-            confined = getattr(kernel.root, 'confined', False)
+            confined = getattr(kernel.root, "confined", True)
 
             if force:
                 spooler.command("move_rel", idx, idy, False)
@@ -264,7 +264,7 @@ def plugin(kernel, lifecycle):
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
                 data = kernel.device.spooler
-            confined = getattr(kernel.root, 'confined', False)
+            confined = getattr(kernel.root, "confined", True)
             spooler = data
             if dy is None:
                 raise CommandSyntaxError

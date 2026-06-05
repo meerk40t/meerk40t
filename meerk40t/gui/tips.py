@@ -335,6 +335,9 @@ class TipPanel(wx.Panel):
     def on_check_startup(self, event):
         state = self.check_startup.GetValue()
         self.context.show_tips = state
+        # Persist into the kernel config dict immediately so shutdown save includes it
+        # (assigning the attribute alone can miss a flush snapshot for this context).
+        self.context.write_persistent("show_tips", state)
 
     def on_tip_prev(self, event):
         self.current_tip -= 1
