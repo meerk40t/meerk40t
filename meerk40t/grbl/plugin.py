@@ -100,6 +100,7 @@ def plugin(kernel, lifecycle=None):
                     {"attr": "flip_y", "default": True},
                     {"attr": "home_corner", "default": "top-left"},
                     {"attr": "source", "default": "co2"},
+                    {"attr": "use_m3", "default": True},
                     {"attr": "require_validator", "default": True},
                     {"attr": "reset_on_connect", "default": True},
                     {"attr": "interface", "default": "tcp"},
@@ -115,6 +116,9 @@ def plugin(kernel, lifecycle=None):
                     {"attr": "macro_3", "default": "$HY"},
                     {"attr": "macro_title_4", "default": "Home X"},
                     {"attr": "macro_4", "default": "$HX"},
+                    {"attr": "esp3d_enabled", "default": True},
+                    {"attr": "esp3d_host", "default": "192.168.10.90"},
+                    {"attr": "esp3d_port", "default": 80},
                 ],
             },
         )
@@ -549,6 +553,7 @@ def plugin(kernel, lifecycle=None):
                     ESP3DUploadError, 
                     generate_8_3_filename,
                     validate_filename_8_3,
+                    prepare_sd_gcode_file,
                     REQUESTS_AVAILABLE
                 )
                 
@@ -607,6 +612,14 @@ def plugin(kernel, lifecycle=None):
                         return
                     
                     channel(_("Generated {size} bytes of G-code").format(size=file_size))
+
+                    use_m3 = getattr(device, "use_m3", True)
+                    prepare_sd_gcode_file(temp_path, use_m3=use_m3, force_lf=True)
+                    channel(
+                        _("Prepared for SD card (LF lines{mode}).").format(
+                            mode=_(", M3 laser mode") if use_m3 else ""
+                        )
+                    )
                     
                     # Upload to ESP3D
                     busy.change(msg=_("Uploading G-code to ESP3D..."))

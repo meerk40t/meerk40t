@@ -6,6 +6,7 @@ on network-connected GRBL lasers with ESP3D firmware.
 """
 
 import os
+import re
 import time
 import random
 from urllib.parse import urlencode, quote
@@ -266,34 +267,110 @@ class ESP3DConnection:
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Delete failed: {e}")
-    def execute_file(self, filename, path="/"):
+    def _command_request(self, command_text):
+        """Send one command via MKS / ESP3D ``/command?commandText=`` API."""
+        url = f"{self.base_url}/command"
+        params = {"commandText": command_text, "PAGEID": "0"}
+        session = self.session if self.session else requests
+        response = session.get(url, params=params, timeout=self.timeout)
+        return response
+
+    def query_grbl_status(self):
+        """
+        Query GRBL status report (``?``) over HTTP.
+
+        Returns:
+            dict: Parsed status with raw response text
+        """
+        try:
+            response = self._command_request("?")
+            body = (response.text or "").strip()
+            state = None
+            if body.startswith("<") and "|" in body:
+                state = body.split("|", 1)[0].lstrip("<").strip()
+            return {
+                "success": response.status_code < 400,
+                "state": state,
+                "response": body,
+                "status_code": response.status_code,
+            }
+        except requests.RequestException as e:
+            raise ESP3DUploadError(f"Status query failed: {e}")
+
+    def execute_file(self, filename, path="/", verify_started=True):
         """
         Execute a G-code file on the device.
 
         Args:
             filename: Name of file to execute
             path: Path prefix (ignored for OEM firmwares like MKS DLC32)
+            verify_started: After ESP220, poll ``?`` to catch silent SD read failures
 
         Returns:
-            dict: Execution result
+            dict: Execution result with success flag and human-readable message
         """
         try:
-            # Use the correct prefix and parameter for MKS DLC32 V2.1 firmware
             if filename.startswith("/"):
                 filename = filename[1:]
             command_text = f"[ESP220]/{filename}"
-            
-            url = f"{self.base_url}/command"
-            params = {"commandText": command_text}
-            
-            session = self.session if self.session else requests
-            response = session.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
-            
+
+            response = self._command_request(command_text)
+            body = (response.text or "").strip()
+            parsed = interpret_esp3d_command_response(body, response.status_code)
+
+            if parsed["success"] is False:
+                return {
+                    "success": False,
+                    "message": parsed["message"],
+                    "response": body,
+                    "status_code": response.status_code,
+                }
+
+            if verify_started:
+                time.sleep(0.4)
+                status = self.query_grbl_status()
+                grbl_state = (status.get("state") or "").lower()
+                if grbl_state == "run":
+                    return {
+                        "success": True,
+                        "message": f"File running: {filename}",
+                        "response": body or status.get("response", ""),
+                        "grbl_state": grbl_state,
+                    }
+                if grbl_state == "alarm":
+                    return {
+                        "success": False,
+                        "message": (
+                            "GRBL is in Alarm. Send $X, then $HY and $HX, and try again."
+                        ),
+                        "response": status.get("response", body),
+                        "grbl_state": grbl_state,
+                    }
+                if grbl_state == "hold":
+                    return {
+                        "success": True,
+                        "message": f"File started (Hold): {filename}",
+                        "response": body or status.get("response", ""),
+                        "grbl_state": grbl_state,
+                    }
+                if parsed["success"] is None or grbl_state in ("", "idle"):
+                    return {
+                        "success": False,
+                        "message": (
+                            f"File did not start ({filename}). "
+                            "Old SD files often use CR-only lines — the board needs LF. "
+                            "Delete the file, run esp3d_upload_run -e in the console, "
+                            "then Execute the new file."
+                        ),
+                        "response": body or status.get("response", ""),
+                        "grbl_state": grbl_state or "idle",
+                    }
+
             return {
                 "success": True,
-                "message": f"File execution started: {filename}",
-                "response": response.text
+                "message": parsed["message"] or f"File execution started: {filename}",
+                "response": body,
+                "status_code": response.status_code,
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Execute failed: {e}")
@@ -309,17 +386,15 @@ class ESP3DConnection:
             dict: Command result
         """
         try:
-            url = f"{self.base_url}/command"
-            params = {"cmd": command}
-            
-            session = self.session if self.session else requests
-            response = session.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
-            
+            response = self._command_request(command)
+            body = (response.text or "").strip()
+            parsed = interpret_esp3d_command_response(body, response.status_code)
+            success = parsed["success"] is not False
             return {
-                "success": True,
-                "message": f"Command sent: {command}",
-                "response": response.text
+                "success": success,
+                "message": parsed["message"] or f"Command sent: {command}",
+                "response": body,
+                "status_code": response.status_code,
             }
         except requests.RequestException as e:
             raise ESP3DUploadError(f"Command failed: {e}")
@@ -362,6 +437,108 @@ class ESP3DConnection:
             return self.send_command("\x18")
         except ESP3DUploadError as e:
             raise ESP3DUploadError(f"Stop failed: {e}")
+
+
+def interpret_esp3d_command_response(body, status_code):
+    """
+    Parse MKS / ESP3D ``/command`` HTTP response for ESP220 and other commands.
+
+    Returns dict with ``success`` True / False / None (ambiguous empty body).
+    """
+    text = (body or "").strip()
+    lower = text.lower()
+
+    if status_code >= 500:
+        return {
+            "success": False,
+            "message": text or f"HTTP {status_code} server error",
+        }
+
+    if status_code >= 400:
+        return {
+            "success": False,
+            "message": text or f"HTTP {status_code}",
+        }
+
+    if lower == "alarm":
+        return {
+            "success": False,
+            "message": "GRBL is in Alarm. Send $X, then $HY and $HX.",
+        }
+
+    if lower == "busy":
+        return {
+            "success": False,
+            "message": "GRBL is busy (not Idle). Wait or stop the current job first.",
+        }
+
+    if lower.startswith("error"):
+        return {"success": False, "message": text}
+
+    for phrase in (
+        "cannot stat file",
+        "cannot delete",
+        "no sd card",
+        "sd card busy",
+        "missing file name",
+    ):
+        if phrase in lower:
+            return {"success": False, "message": text}
+
+    if lower == "ok":
+        return {"success": True, "message": "ok"}
+
+    if text.startswith("<") and "|" in text:
+        state = text.split("|", 1)[0].lstrip("<").strip().lower()
+        if state == "run":
+            return {"success": True, "message": "Job running"}
+        if state == "hold":
+            return {"success": True, "message": "Job on hold"}
+        if state == "alarm":
+            return {
+                "success": False,
+                "message": "GRBL is in Alarm. Send $X, then $HY and $HX.",
+            }
+
+    if not text:
+        return {"success": None, "message": "Empty response (check GRBL state)"}
+
+    return {"success": True, "message": text}
+
+
+def normalize_sd_file_entry(entry):
+    """
+    Normalize one file record from MKS / ESP3D ``/upload`` JSON.
+
+    MKS DLC32 uses ``datetime`` (not ``time``) and may include ``shortname``.
+    """
+    name = entry.get("name") or entry.get("shortname") or ""
+    size = entry.get("size", "-1")
+    if size is None:
+        size = "-1"
+    size = str(size)
+    timestamp = entry.get("time") or entry.get("datetime") or ""
+    is_dir = size == "-1"
+    return {"name": name, "size": size, "time": timestamp, "is_dir": is_dir}
+
+
+def prepare_sd_gcode_file(path, use_m3=True, force_lf=True):
+    """
+    Patch exported G-code for MKS DLC32 SD execution.
+
+    - LF line endings (board readFileLine splits on \\n only)
+    - M3 instead of M4 when use_m3 (CO2 + $32=1 often needs constant PWM)
+    """
+    with open(path, "rb") as f:
+        raw = f.read()
+    text = raw.decode("latin-1", errors="replace")
+    if force_lf:
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+    if use_m3:
+        text = re.sub(r"^M4\b", "M3", text, flags=re.MULTILINE | re.IGNORECASE)
+    with open(path, "wb") as f:
+        f.write(text.encode("latin-1"))
+    return path
 
 
 def generate_8_3_filename(base="file", extension="gc", counter=None):

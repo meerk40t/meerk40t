@@ -1,9 +1,7 @@
 import wx
 from wx import aui
-from datetime import datetime
 
-from meerk40t.gui.icons import icons8_delete, icons8_save
-from meerk40t.gui.wxutils import ScrolledPanel, wxButton
+from meerk40t.gui.wxutils import wxButton
 
 _ = wx.GetTranslation
 
@@ -34,9 +32,8 @@ def register_panel_esp3d_files(window, context):
 class ESP3DFileManagerPanel(wx.Panel):
     """
     File manager panel for ESP3D SD card files.
-    
-    Provides GUI controls for listing, executing, and deleting files
-    on the ESP3D SD card.
+
+    Uses a dropdown to pick which SD file to run (Execute asks for confirmation).
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -44,25 +41,23 @@ class ESP3DFileManagerPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.pane_aui = None
+        self._file_names = []
         if self.context is not None:
             self.context.themes.set_window_colors(self)
         self.SetHelpText("esp3dfilemgr")
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        # File list
-        list_label = wx.StaticText(self, wx.ID_ANY, _("Files on ESP3D SD Card:"))
+        list_label = wx.StaticText(self, wx.ID_ANY, _("Select file to run:"))
         sizer_main.Add(list_label, 0, wx.ALL, 5)
 
-        self.list_files = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_REPORT | wx.LC_SINGLE_SEL
-        )
-        self.list_files.InsertColumn(0, _("Filename"), width=200)
-        self.list_files.InsertColumn(1, _("Size"), width=100)
-        self.list_files.InsertColumn(2, _("Date/Time"), width=150)
-        sizer_main.Add(self.list_files, 1, wx.EXPAND | wx.ALL, 5)
+        self.choice_files = wx.Choice(self, wx.ID_ANY, choices=[])
+        self.choice_files.SetMinSize((-1, 28))
+        sizer_main.Add(self.choice_files, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 5)
 
-        # Buttons
+        self.label_selected = wx.StaticText(self, wx.ID_ANY, _("Selected: (none)"))
+        sizer_main.Add(self.label_selected, 0, wx.ALL, 5)
+
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
         self.btn_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))
@@ -85,40 +80,75 @@ class ESP3DFileManagerPanel(wx.Panel):
 
         sizer_main.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
-        # Status text
         self.text_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
         self.text_status.SetMinSize((-1, 150))
         sizer_main.Add(self.text_status, 0, wx.EXPAND | wx.ALL, 5)
 
-        # SD card info
         self.label_sd_info = wx.StaticText(self, wx.ID_ANY, "")
         sizer_main.Add(self.label_sd_info, 0, wx.ALL, 5)
 
         self.SetSizer(sizer_main)
         self.Layout()
 
-        # List selection handler
-        self.list_files.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_file_selected)
-        self.list_files.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_file_deselected)
+        self.choice_files.Bind(wx.EVT_CHOICE, self.on_file_selected)
+
+    def _device(self):
+        device = self.context
+        if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
+            device = self.context.kernel.device
+        return device
 
     def on_file_selected(self, event):
-        """Enable buttons when file is selected."""
-        self.btn_execute.Enable(True)
-        self.btn_delete.Enable(True)
-
-    def on_file_deselected(self, event):
-        """Disable buttons when no file is selected."""
-        self.btn_execute.Enable(False)
-        self.btn_delete.Enable(False)
+        filename = self.get_selected_filename()
+        has_sel = filename is not None
+        self.btn_execute.Enable(has_sel)
+        self.btn_delete.Enable(has_sel)
+        if filename:
+            self.label_selected.SetLabel(_("Selected: {name}").format(name=filename))
+        else:
+            self.label_selected.SetLabel(_("Selected: (none)"))
 
     def get_selected_filename(self):
-        """Get the currently selected filename."""
-        index = self.list_files.GetFirstSelected()
-        if index != -1:
-            return self.list_files.GetItemText(index, 0)
+        index = self.choice_files.GetSelection()
+        if index == wx.NOT_FOUND:
+            return None
+        if 0 <= index < len(self._file_names):
+            return self._file_names[index]
         return None
+
+    def _populate_file_list(self, files):
+        """Fill dropdown and status log from SD card JSON."""
+        from ..esp3d_upload import normalize_sd_file_entry
+
+        self._file_names = []
+        labels = []
+        self.choice_files.Clear()
+        self.text_status.AppendText(_("Files on SD card:\n"))
+
+        for raw in files:
+            f = normalize_sd_file_entry(raw)
+            if f["is_dir"]:
+                continue
+            name = f["name"]
+            size = f["size"]
+            self._file_names.append(name)
+            label = f"{name}  ({size})"
+            labels.append(label)
+            self.text_status.AppendText(f"  {label}\n")
+
+        if labels:
+            self.choice_files.AppendItems(labels)
+            self.choice_files.SetSelection(0)
+            self.on_file_selected(None)
+        else:
+            self.btn_execute.Enable(False)
+            self.btn_delete.Enable(False)
+            self.label_selected.SetLabel(_("Selected: (none)"))
+
+        self.text_status.AppendText("\n")
+        return len(self._file_names)
 
     def on_refresh(self, event):
         """Refresh file list."""
@@ -126,7 +156,11 @@ class ESP3DFileManagerPanel(wx.Panel):
         wx.Yield()
 
         try:
-            from ..esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+            from ..esp3d_upload import (
+                ESP3DConnection,
+                ESP3DUploadError,
+                REQUESTS_AVAILABLE,
+            )
 
             if not REQUESTS_AVAILABLE:
                 self.text_status.AppendText(
@@ -134,14 +168,14 @@ class ESP3DFileManagerPanel(wx.Panel):
                 )
                 return
 
-            # Get device - context might be device itself or have kernel.device
-            device = self.context
-            if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
-                device = self.context.kernel.device
+            device = self._device()
 
             if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
                 self.text_status.AppendText(
-                    _("Error: ESP3D upload is not enabled.\n")
+                    _(
+                        "Error: ESP3D upload is not enabled.\n"
+                        "Configuration → Device → ESP3D Upload → Enable.\n"
+                    )
                 )
                 return
 
@@ -159,59 +193,39 @@ class ESP3DFileManagerPanel(wx.Panel):
                 device.esp3d_port,
                 username,
                 password,
-                timeout=5
+                timeout=5,
             ) as esp3d:
                 sd_info = esp3d.get_sd_info()
                 files = sd_info.get("files", [])
 
-                # Clear list
-                self.list_files.DeleteAllItems()
+                file_count = self._populate_file_list(files)
 
-                # Add files
-                for f in files:
-                    name = f.get("name", "")
-                    size = f.get("size", "-1")
-                    time = f.get("time", "")
-
-                    # Skip directories
-                    if size == "-1":
-                        continue
-
-                    # Format time according to locale
-                    formatted_time = time
-                    if time:
-                        try:
-                            # ESP3D returns time in format like "2024-12-30 15:30:45"
-                            # Parse and reformat according to locale
-                            dt = datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
-                            formatted_time = dt.strftime("%x %X")  # Locale's date and time representation
-                        except (ValueError, AttributeError):
-                            # If parsing fails, keep original format
-                            formatted_time = time
-
-                    index = self.list_files.InsertItem(self.list_files.GetItemCount(), name)
-                    self.list_files.SetItem(index, 1, size)
-                    self.list_files.SetItem(index, 2, formatted_time)
-
-                # Update SD info
                 total_mb = sd_info["total"] / (1024 * 1024)
                 used_mb = sd_info["used"] / (1024 * 1024)
                 free_mb = sd_info["free"] / (1024 * 1024)
                 occupation = sd_info["occupation"]
 
                 self.label_sd_info.SetLabel(
-                    _("SD Card: {used:.2f} MB / {total:.2f} MB used ({occupation}%) - Free: {free:.2f} MB").format(
+                    _(
+                        "SD Card: {used:.2f} MB / {total:.2f} MB used ({occupation}%) - Free: {free:.2f} MB"
+                    ).format(
                         used=used_mb,
                         total=total_mb,
                         occupation=occupation,
-                        free=free_mb
+                        free=free_mb,
                     )
                 )
 
-                file_count = self.list_files.GetItemCount()
                 self.text_status.AppendText(
                     _("✓ Found {count} file(s)\n").format(count=file_count)
                 )
+                if file_count:
+                    self.text_status.AppendText(
+                        _(
+                            "Pick a file from the dropdown, then click Execute.\n"
+                            "Old SD files may need re-upload (esp3d_upload_run) for M3 + LF.\n"
+                        )
+                    )
 
         except ESP3DUploadError as e:
             self.text_status.AppendText(_("✗ Error: {error}\n").format(error=e))
@@ -222,13 +236,38 @@ class ESP3DFileManagerPanel(wx.Panel):
         """Execute selected file."""
         filename = self.get_selected_filename()
         if not filename:
+            wx.MessageBox(
+                _("Choose a file from the dropdown first."),
+                _("ESP3D Files"),
+                wx.OK | wx.ICON_INFORMATION,
+            )
             return
+
+        dlg = wx.MessageDialog(
+            self,
+            _(
+                "Run this file on the laser?\n\n{filename}\n\n"
+                "Home first ($HY then $HX).\n\n"
+                "If this file was uploaded before today, delete it and use "
+                "Console → esp3d_upload_run -e instead (LF lines + M3 laser)."
+            ).format(filename=filename),
+            _("Confirm Execute"),
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION,
+        )
+        if dlg.ShowModal() != wx.ID_YES:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
 
         self.text_status.SetValue(_("Executing {filename}...\n").format(filename=filename))
         wx.Yield()
 
         try:
-            from ..esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+            from ..esp3d_upload import (
+                ESP3DConnection,
+                ESP3DUploadError,
+                REQUESTS_AVAILABLE,
+            )
 
             if not REQUESTS_AVAILABLE:
                 self.text_status.AppendText(
@@ -236,10 +275,7 @@ class ESP3DFileManagerPanel(wx.Panel):
                 )
                 return
 
-            # Get device - context might be device itself or have kernel.device
-            device = self.context
-            if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
-                device = self.context.kernel.device
+            device = self._device()
 
             if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
                 self.text_status.AppendText(
@@ -261,14 +297,29 @@ class ESP3DFileManagerPanel(wx.Panel):
                 device.esp3d_port,
                 username,
                 password,
-                timeout=5
+                timeout=10,
             ) as esp3d:
                 result = esp3d.execute_file(filename)
                 if result["success"]:
-                    self.text_status.AppendText(_("✓ File execution started\n"))
+                    self.text_status.AppendText(_("✓ {message}\n").format(
+                        message=result.get("message", _("File execution started"))
+                    ))
                 else:
                     self.text_status.AppendText(
-                        _("✗ Execution failed: {message}\n").format(message=result.get('message', 'Unknown error'))
+                        _("✗ {message}\n").format(
+                            message=result.get("message", _("Execution failed"))
+                        )
+                    )
+                    self.text_status.AppendText(
+                        _(
+                            "Fix: Console → esp3d_upload_run -e (fresh LF + M3 file), "
+                            "or Clear All old files first.\n"
+                        )
+                    )
+                resp = result.get("response")
+                if resp:
+                    self.text_status.AppendText(
+                        _("Board: {resp}\n").format(resp=resp[:200])
                     )
 
         except ESP3DUploadError as e:
@@ -282,12 +333,11 @@ class ESP3DFileManagerPanel(wx.Panel):
         if not filename:
             return
 
-        # Confirm deletion
         dlg = wx.MessageDialog(
             self,
             _("Delete file '{filename}'?").format(filename=filename),
             _("Confirm Delete"),
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION,
         )
         result = dlg.ShowModal()
         dlg.Destroy()
@@ -299,7 +349,11 @@ class ESP3DFileManagerPanel(wx.Panel):
         wx.Yield()
 
         try:
-            from ..esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+            from ..esp3d_upload import (
+                ESP3DConnection,
+                ESP3DUploadError,
+                REQUESTS_AVAILABLE,
+            )
 
             if not REQUESTS_AVAILABLE:
                 self.text_status.AppendText(
@@ -307,10 +361,7 @@ class ESP3DFileManagerPanel(wx.Panel):
                 )
                 return
 
-            # Get device - context might be device itself or have kernel.device
-            device = self.context
-            if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
-                device = self.context.kernel.device
+            device = self._device()
 
             if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
                 self.text_status.AppendText(
@@ -332,16 +383,19 @@ class ESP3DFileManagerPanel(wx.Panel):
                 device.esp3d_port,
                 username,
                 password,
-                timeout=5
+                timeout=5,
             ) as esp3d:
                 result = esp3d.delete_file(filename, device.esp3d_path)
                 if result["success"]:
-                    self.text_status.AppendText(_("✓ File deleted: {filename}\n").format(filename=filename))
-                    # Refresh list
+                    self.text_status.AppendText(
+                        _("✓ File deleted: {filename}\n").format(filename=filename)
+                    )
                     self.on_refresh(None)
                 else:
                     self.text_status.AppendText(
-                        _("✗ Delete failed: {message}\n").format(message=result.get('message', 'Unknown error'))
+                        _("✗ Delete failed: {message}\n").format(
+                            message=result.get("message", "Unknown error")
+                        )
                     )
 
         except ESP3DUploadError as e:
@@ -351,22 +405,23 @@ class ESP3DFileManagerPanel(wx.Panel):
 
     def on_clear_all(self, event):
         """Delete all files on SD card."""
-        file_count = self.list_files.GetItemCount()
-        
+        file_count = len(self._file_names)
+
         if file_count == 0:
             wx.MessageBox(
                 _("No files to delete"),
                 _("Clear All"),
-                wx.OK | wx.ICON_INFORMATION
+                wx.OK | wx.ICON_INFORMATION,
             )
             return
 
-        # Confirm deletion
         dlg = wx.MessageDialog(
             self,
-            _("Delete ALL {count} file(s) from SD card?\n\nThis cannot be undone!").format(count=file_count),
+            _(
+                "Delete ALL {count} file(s) from SD card?\n\nThis cannot be undone!"
+            ).format(count=file_count),
             _("Confirm Clear All"),
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING,
         )
         result = dlg.ShowModal()
         dlg.Destroy()
@@ -378,7 +433,12 @@ class ESP3DFileManagerPanel(wx.Panel):
         wx.Yield()
 
         try:
-            from ..esp3d_upload import ESP3DConnection, ESP3DUploadError, REQUESTS_AVAILABLE
+            from ..esp3d_upload import (
+                ESP3DConnection,
+                ESP3DUploadError,
+                REQUESTS_AVAILABLE,
+                normalize_sd_file_entry,
+            )
 
             if not REQUESTS_AVAILABLE:
                 self.text_status.AppendText(
@@ -386,10 +446,7 @@ class ESP3DFileManagerPanel(wx.Panel):
                 )
                 return
 
-            # Get device - context might be device itself or have kernel.device
-            device = self.context
-            if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
-                device = self.context.kernel.device
+            device = self._device()
 
             if not hasattr(device, "esp3d_enabled") or not device.esp3d_enabled:
                 self.text_status.AppendText(
@@ -405,32 +462,24 @@ class ESP3DFileManagerPanel(wx.Panel):
 
             username = device.esp3d_username if device.esp3d_username else None
             password = device.esp3d_password if device.esp3d_password else None
-            if hasattr(self.context, "kernel") and hasattr(self.context.kernel, "device"):
-                device = self.context.kernel.device
-
-            username = device.esp3d_username if device.esp3d_username else None
-            password = device.esp3d_password if device.esp3d_password else None
 
             with ESP3DConnection(
                 device.esp3d_host,
                 device.esp3d_port,
                 username,
                 password,
-                timeout=5
+                timeout=5,
             ) as esp3d:
-                # Get list of files
                 sd_info = esp3d.get_sd_info()
                 files = sd_info.get("files", [])
 
                 deleted = 0
                 failed = 0
 
-                for f in files:
-                    name = f.get("name", "")
-                    size = f.get("size", "-1")
-
-                    # Skip directories
-                    if size == "-1":
+                for raw in files:
+                    f = normalize_sd_file_entry(raw)
+                    name = f["name"]
+                    if f["is_dir"]:
                         continue
 
                     try:
@@ -441,18 +490,26 @@ class ESP3DFileManagerPanel(wx.Panel):
                         else:
                             failed += 1
                             self.text_status.AppendText(
-                                _("  ✗ {name}: {message}\n").format(name=name, message=result.get('message', 'Unknown error'))
+                                _("  ✗ {name}: {message}\n").format(
+                                    name=name,
+                                    message=result.get("message", "Unknown error"),
+                                )
                             )
                     except ESP3DUploadError as e:
                         failed += 1
-                        self.text_status.AppendText(_("  ✗ {name}: {error}\n").format(name=name, error=e))
+                        self.text_status.AppendText(
+                            _("  ✗ {name}: {error}\n").format(name=name, error=e)
+                        )
 
                     wx.Yield()
 
                 self.text_status.AppendText("\n")
-                self.text_status.AppendText(_("Deleted: {deleted}, Failed: {failed}\n").format(deleted=deleted, failed=failed))
+                self.text_status.AppendText(
+                    _("Deleted: {deleted}, Failed: {failed}\n").format(
+                        deleted=deleted, failed=failed
+                    )
+                )
 
-                # Refresh list
                 self.on_refresh(None)
 
         except ESP3DUploadError as e:
@@ -461,9 +518,10 @@ class ESP3DFileManagerPanel(wx.Panel):
             self.text_status.AppendText(_("✗ Unexpected error: {error}\n").format(error=e))
 
     def pane_show(self):
-        """Called when panel is shown."""
-        pass
+        """Refresh when the pane is opened."""
+        if not self._file_names:
+            self.on_refresh(None)
 
     def pane_hide(self):
         """Called when panel is hidden."""
-        pass
+        return
