@@ -8,7 +8,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
+from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -1340,7 +1340,30 @@ class MeerK40tScenePanel(wx.Panel):
             self._tool_widget.set_position(orgx, orgy)
 
     @signal_listener("scene_right_click")
-    def on_scene_right(self, origin, *args):
+    def on_scene_right(self, origin, space_x=None, space_y=None, *args):
+        click_pos = None
+        if space_x is not None and space_y is not None:
+            click_pos = (space_x, space_y)
+
+        def move_laser_here(event=None):
+            if click_pos is None:
+                return
+            view = self.context.device.view
+            x, y = click_pos[0], click_pos[1]
+            bed_width = view.unit_width
+            bed_height = view.unit_height
+            if x > bed_width:
+                x = bed_width
+            if y > bed_height:
+                y = bed_height
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            xmm = x / UNITS_PER_MM
+            ymm = y / UNITS_PER_MM
+            self.context(f"move_absolute {xmm}mm {ymm}mm\n")
+
         def zoom_in(event=None):
             self.context(f"scene zoom {1.5 / 1.0}\n")
 
@@ -1566,6 +1589,14 @@ class MeerK40tScenePanel(wx.Panel):
                     _("Stop automatic refresh of background image"),
                 ),
             )
+        if click_pos is not None:
+            menu.AppendSeparator()
+            id_move_here = menu.Append(
+                wx.ID_ANY,
+                _("Move laser head here"),
+                _("Move the laser head to the right-click position on the bed"),
+            )
+            self.Bind(wx.EVT_MENU, move_laser_here, id=id_move_here.GetId())
         menu.AppendSeparator()
         self.Bind(
             wx.EVT_MENU,
