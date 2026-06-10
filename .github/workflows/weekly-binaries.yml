@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-win.txt
         pip install .
@@ -79,7 +79,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-win.txt
         pip install .
@@ -136,7 +136,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install "opencv-python-headless<=4.8.1.78"
+        pip install "opencv-python-headless>=4.10.0.84"
         pip install -r requirements.txt
         pip install -r requirements-optional-macos.txt
         pip install .
@@ -352,7 +352,7 @@ jobs:
         pip install numpy
         pip install pyusb
         pip install wheel
-        pip install --only-binary=all -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
+        pip install --only-binary=:all: -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04 wxPython
         pip install potracer
         pip install pypotrace
         pip install pillow==9.5.0
@@ -361,7 +361,7 @@ jobs:
         pip install bitarray
         # pip install scipy
         pip install numba
-        pip install --no-cache-dir opencv-python-headless==4.5.3.56
+        pip install --no-cache-dir "opencv-python-headless>=4.10.0.84"
         # pip install meerk40t-camera
         pip install -r requirements-optional-linux.txt
         pip install .
@@ -524,10 +524,55 @@ jobs:
         path: MeerK40t-linux-${{ github.run_number }}.AppImage
         retention-days: 60
 
+  build-flatpak:
+    runs-on: ubuntu-22.04
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v4
+
+    - name: Patch metainfo release entry
+      # Replace the committed placeholder <release> with the actual snapshot
+      # version (APPLICATION_VERSION from main.py + run_number) and today's
+      # date. Marked type="development" so software centers know weekly bundles
+      # are snapshots, not stable releases.
+      run: |
+        VERSION=$(python3 -c "import re; print(re.search(r'APPLICATION_VERSION\s*=\s*\"([^\"]+)\"', open('meerk40t/main.py').read()).group(1))")
+        BUILD_VERSION="${VERSION}-w${{ github.run_number }}"
+        BUILD_DATE=$(date -u +%Y-%m-%d)
+        sed -i "s|<release [^/]*/>|<release version=\"${BUILD_VERSION}\" date=\"${BUILD_DATE}\" type=\"development\"/>|" \
+          .github/workflows/linux/meerk40t.appdata.xml
+        grep '<release ' .github/workflows/linux/meerk40t.appdata.xml
+
+    - name: Validate AppStream metainfo
+      # The freedesktop-24.08 SDK image already includes appstreamcli.
+      # Catches metainfo regressions before the (long) flatpak build runs.
+      # --no-net skips screenshot URL liveness checks — those URLs point at
+      # raw.githubusercontent.com which can lag the commit by a few seconds.
+      run: |
+        appstreamcli validate --strict --no-net \
+          .github/workflows/linux/meerk40t.appdata.xml
+
+    - name: Build Flatpak bundle
+      uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v6
+      with:
+        bundle: MeerK40t-linux-${{ github.run_number }}.flatpak
+        manifest-path: .github/workflows/flatpak/io.github.meerk40t.meerk40t.yaml
+        cache-key: flatpak-builder-${{ hashFiles('.github/workflows/flatpak/**', 'requirements.txt', 'setup.py') }}
+
+    - name: Upload Flatpak bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: meerk40t-linux-flatpak
+        path: MeerK40t-linux-${{ github.run_number }}.flatpak
+        retention-days: 60
+
   create-release:
     # Run even if some builds fail, as long as at least one succeeds
-    needs: [build-windows, build-windows-all, build-macos, build-linux, build-minimal-linux]
-    if: always() && (needs.build-windows.result == 'success' || needs.build-windows-all.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success' || needs.build-minimal-linux.result == 'success')
+    needs: [build-windows, build-windows-all, build-macos, build-linux, build-minimal-linux, build-flatpak]
+    if: always() && (needs.build-windows.result == 'success' || needs.build-windows-all.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success' || needs.build-minimal-linux.result == 'success' || needs.build-flatpak.result == 'success')
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
@@ -711,6 +756,13 @@ jobs:
         name: meerk40t-minimal-linux
         path: binaries/
 
+    - name: Download Flatpak bundle
+      if: needs.build-flatpak.result == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: meerk40t-linux-flatpak
+        path: binaries/
+
     - name: Extract device support status from NOTES.md
       id: extract_device_status
       run: |
@@ -778,6 +830,7 @@ jobs:
           ${{ needs.build-macos.result == 'success' && format('| **macOS** | ✅ Available | `MeerK40t-macos-{0}.app.zip` | macOS application bundle (zipped) |', github.run_number) || '| **macOS** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-{0}.AppImage` | Linux AppImage (universal) |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
           ${{ needs.build-minimal-linux.result == 'success' && format('| **Linux** | ✅ Available | `MeerK40t-linux-minimal-{0}` | Linux binary |', github.run_number) || '| **Linux** | ❌ Failed | - | Build failed |'}}
+          ${{ needs.build-flatpak.result == 'success' && format('| **Linux (Flatpak)** | ✅ Available | `MeerK40t-linux-{0}.flatpak` | Flatpak bundle |', github.run_number) || '| **Linux (Flatpak)** | ❌ Failed | - | Build failed |'}}
 
           ### 🖥️ System Requirements
 
@@ -819,6 +872,11 @@ jobs:
           2. Make it executable: `chmod +x MeerK40t-linux-minimal-${{ github.run_number }}`
           3. Run: `./MeerK40t-linux-minimal-${{ github.run_number }}`
 
+          #### Linux (Flatpak)
+          1. Download `MeerK40t-linux-${{ github.run_number }}.flatpak`
+          2. Install: `flatpak install --user MeerK40t-linux-${{ github.run_number }}.flatpak`
+          3. Run: `flatpak run io.github.meerk40t.meerk40t`
+
           ### ⚠️ Important Notes
 
           - This is a **weekly development build** - use at your own risk
@@ -836,4 +894,5 @@ jobs:
           ${{ needs.build-macos.result == 'success' && format('binaries/MeerK40t-macos-{0}.zip', github.run_number) || '' }}
           ${{ needs.build-linux.result == 'success' && format('binaries/MeerK40t-linux-{0}.AppImage', github.run_number) || '' }}
           ${{ needs.build-minimal-linux.result == 'success' && format('binaries/MeerK40t-linux-minimal-{0}', github.run_number) || '' }}
+          ${{ needs.build-flatpak.result == 'success' && format('binaries/MeerK40t-linux-{0}.flatpak', github.run_number) || '' }}
         prerelease: true
