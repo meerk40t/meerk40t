@@ -705,13 +705,14 @@ class GRBLDevice(Service, Status):
             {
                 "attr": "line_end",
                 "object": self,
-                "default": "CR",
+                "default": "LF",
                 "type": str,
                 "style": "combosmall",
                 "choices": ["CR", "LF", "CRLF"],
                 "label": _("Line Ending"),
                 "tip": _(
-                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+                    "LF (\\n) is required for MKS DLC32 SD card files. "
+                    "CR (\\r) is legacy; CRLF for some serial hosts."
                 ),
                 # Hint for translation _("Protocol")
                 "section": "_20_Protocol",
@@ -825,6 +826,21 @@ class GRBLDevice(Service, Status):
                 "type": bool,
                 "label": _("Cleanup Local Files"),
                 "tip": _("Automatically delete local G-code files after successful upload"),
+                # Hint for translation _("ESP3D Upload")
+                "section": "_45_ESP3D Upload",
+                "subsection": "_10_Settings",
+            },
+            {
+                "attr": "sd_export_prepare",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Prepare Plan exports for SD card"),
+                "tip": _(
+                    "After Laser → Plan → Export, patch the file for MKS DLC32 SD: "
+                    "LF line endings, M3 laser mode, remove G28. "
+                    "Home on the panel ($HY / $HX) before Execute."
+                ),
                 # Hint for translation _("ESP3D Upload")
                 "section": "_45_ESP3D Upload",
                 "subsection": "_10_Settings",
@@ -1172,6 +1188,7 @@ class GRBLDevice(Service, Status):
         def gcode_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
+            channel(_("Exporting to {filename}...").format(filename=filename))
             # Save the existing driver output routines so they can always be restored.
             old_routine_1 = self.driver.out_pipe
             old_routine_2 = self.driver.out_real
@@ -1198,7 +1215,31 @@ class GRBLDevice(Service, Status):
                 self.driver.out_pipe = old_routine_1
                 self.driver.out_real = old_routine_2
             if success:
-                channel(_("Export succeeded: {filename}").format(filename=filename))
+                if getattr(self, "sd_export_prepare", True):
+                    from .esp3d_upload import prepare_sd_gcode_file
+
+                    channel(_("Patching for MKS SD card..."))
+                    use_m3 = getattr(self, "use_m3", True)
+                    prepare_sd_gcode_file(
+                        filename,
+                        use_m3=use_m3,
+                        force_lf=True,
+                        strip_g28=True,
+                    )
+                    channel(
+                        _("Export succeeded (SD-ready): {filename}").format(
+                            filename=filename
+                        )
+                    )
+                    channel(
+                        _(
+                            "Patched for MKS SD: LF lines"
+                            + (", M3 mode" if use_m3 else "")
+                            + ", G28 removed — home ($HY / $HX) before Execute."
+                        )
+                    )
+                else:
+                    channel(_("Export succeeded: {filename}").format(filename=filename))
 
         @self.console_command(
             "grblinterpreter", help=_("activate the grbl interpreter.")

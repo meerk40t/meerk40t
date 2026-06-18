@@ -7,6 +7,7 @@ on network-connected GRBL lasers with ESP3D firmware.
 
 import os
 import re
+import tempfile
 import time
 import random
 from urllib.parse import urlencode, quote
@@ -522,23 +523,98 @@ def normalize_sd_file_entry(entry):
     return {"name": name, "size": size, "time": timestamp, "is_dir": is_dir}
 
 
-def prepare_sd_gcode_file(path, use_m3=True, force_lf=True):
+def prepare_sd_gcode_file(path, use_m3=True, force_lf=True, strip_g28=True):
     """
     Patch exported G-code for MKS DLC32 SD execution.
 
     - LF line endings (board readFileLine splits on \\n only)
     - M3 instead of M4 when use_m3 (CO2 + $32=1 often needs constant PWM)
+    - Optional removal of G28 (DLC32: home with $HY / $HX before Execute, not G28)
+
+    Streams line-by-line so large raster exports (100+ MB) do not freeze the UI.
     """
-    with open(path, "rb") as f:
-        raw = f.read()
-    text = raw.decode("latin-1", errors="replace")
-    if force_lf:
-        text = text.replace("\r\n", "\n").replace("\r", "\n")
-    if use_m3:
-        text = re.sub(r"^M4\b", "M3", text, flags=re.MULTILINE | re.IGNORECASE)
-    with open(path, "wb") as f:
-        f.write(text.encode("latin-1"))
+    g28_pat = re.compile(
+        rb"^G28(\.\d+)?(\s+[XYZ]-?\d*\.?\d*)*\s*$", re.IGNORECASE
+    )
+    m4_pat = re.compile(rb"^M4\b", re.IGNORECASE)
+    dirname = os.path.dirname(os.path.abspath(path)) or "."
+    fd, tmp_path = tempfile.mkstemp(suffix=".sdtmp", dir=dirname)
+    os.close(fd)
+    try:
+        with open(path, "rb") as src, open(tmp_path, "wb") as dst:
+            buf = b""
+            chunk_size = 8 * 1024 * 1024
+            while True:
+                chunk = src.read(chunk_size)
+                if not chunk:
+                    break
+                buf += chunk
+                parts = re.split(br"[\r\n]+", buf)
+                buf = parts.pop()
+                for line in parts:
+                    if not line.strip():
+                        continue
+                    if strip_g28 and g28_pat.match(line):
+                        continue
+                    if use_m3:
+                        line = m4_pat.sub(b"M3", line, count=1)
+                    dst.write(line + b"\n")
+            if buf.strip():
+                line = buf
+                if not (strip_g28 and g28_pat.match(line)):
+                    if use_m3:
+                        line = m4_pat.sub(b"M3", line, count=1)
+                    dst.write(line + b"\n")
+        os.replace(tmp_path, path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
     return path
+
+
+def normalize_8_3_filename(name, default_ext="gc"):
+    """
+    Normalize user input to a valid 8.3 SD filename.
+
+    Adds .gc when no extension is given, strips invalid characters, and truncates.
+    Returns None when the result would be empty.
+    """
+    if not name:
+        return None
+    name = name.strip()
+    if not name:
+        return None
+    if "." not in name:
+        name = f"{name}.{default_ext}"
+    base, ext = name.rsplit(".", 1)
+    base = re.sub(r"[^A-Za-z0-9_]", "", base)[:8]
+    ext = re.sub(r"[^A-Za-z0-9]", "", ext)[:3] or default_ext[:3]
+    if not base:
+        return None
+    return f"{base}.{ext}"
+
+
+def suggest_esp3d_filename(project_label=None, last=None, extension="gc"):
+    """
+    Suggest an 8.3 filename for ESP3D SD upload.
+
+    Prefers the last successful upload name, then the project/window label,
+    then a short job#### style name.
+    """
+    extension = extension[:3]
+    if last:
+        normalized = normalize_8_3_filename(last, default_ext=extension)
+        if normalized and validate_filename_8_3(normalized):
+            return normalized
+    if project_label:
+        label = project_label
+        if os.sep in label or (len(label) > 1 and label[1] == ":"):
+            label = os.path.splitext(os.path.basename(label))[0]
+        clean = re.sub(r"[^A-Za-z0-9]", "", label)[:8]
+        if clean:
+            return f"{clean.lower()}.{extension}"
+    return generate_8_3_filename("job", extension)
 
 
 def generate_8_3_filename(base="file", extension="gc", counter=None):

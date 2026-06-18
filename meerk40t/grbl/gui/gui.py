@@ -152,17 +152,19 @@ def plugin(service, lifecycle):
             """Check if ESP3D upload is enabled."""
             return hasattr(service, "esp3d_enabled") and service.esp3d_enabled
 
+        from meerk40t.grbl.gui.esp3dupload import run_esp3d_upload_with_prompt
+
         service.register(
             "button/control/ESP3DUpload",
             {
                 "label": _("ESP3D Upload+Run"),
                 "icon": icons8_save,
                 "tip": _("Upload current job to ESP3D and execute") + "\n"
-                + _("(right click: upload only)"),
+                + _("(right click: upload only; you choose the SD filename)"),
                 "help": "devicegrbl",
                 "rule_visible": lambda v: esp3d_is_enabled(),
-                "action": lambda v: service("esp3d_upload_run -e\n"),
-                "action_right": lambda v: service("esp3d_upload_run\n"),    
+                "action": lambda v: run_esp3d_upload_with_prompt(service, execute=True),
+                "action_right": lambda v: run_esp3d_upload_with_prompt(service, execute=False),
             },
         )
 

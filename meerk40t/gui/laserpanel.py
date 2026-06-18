@@ -1337,7 +1337,12 @@ class JobPanel(wx.Panel):
 
             if not pathname.lower().endswith(f".{extension}"):
                 pathname += f".{extension}"
-            self.context(f'plan{plan_name} save_job "{pathname}"\n')
+            cmd = f'plan{plan_name} save_job "{pathname}"'
+            self.context(f"threaded {cmd}\n")
+            ch = self.context.kernel.channel("console")
+            ch(_("Export started in background — watch Console for progress."))
+            if self.context.setting(bool, "autoshow_task_window", True):
+                self.context("window open ThreadInfo\n")
 
     def on_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()

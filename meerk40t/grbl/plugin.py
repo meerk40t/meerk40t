@@ -642,6 +642,7 @@ def plugin(kernel, lifecycle=None):
                         
                         if result["success"]:
                             channel(_("✓ Upload successful: {filename}").format(filename=remote_filename))
+                            device.esp3d_last_filename = remote_filename
                             
                             # Execute if requested
                             if execute:
