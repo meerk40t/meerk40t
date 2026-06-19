@@ -726,12 +726,13 @@ class CutPlan:
             # self.channel("Dumping scenarios:")
             # self.commands.append(self._dump_scenario)
 
-        # When effect_combine is True but effect_optimize is False, skip travel optimization
-        # and use basic sequencing to prevent skip-marked groups from being optimized
-        if context.opt_effect_combine and not context.opt_effect_optimize:
-            # Skip all travel optimization for effect-combined groups
-            self.commands.append(self.basic_cutcode_sequencing)
-        elif context.opt_inner_first:
+        # Inner-first / travel optimization still runs when effects are combined:
+        # combine_effects marks effect (hatch) groups with .skip, and
+        # short_travel_cutcode sequences those separately (honoring
+        # opt_effect_optimize via hatch_optimize) while optimizing the rest.
+        # A blanket basic_cutcode_sequencing here would disable optimization for
+        # every plan whenever "Keep effect lines together" is on (the default).
+        if context.opt_inner_first:
             # Inner-first optimization takes priority and includes travel optimization
             self.commands.append(self.optimize_cuts)
         elif context.opt_reduce_travel and (
@@ -965,8 +966,11 @@ class CutPlan:
                     c = self.plan[i]
                 self.plan[i] = short_travel_cutcode(
                     c,
+                    kernel=self.context.kernel,
                     channel=channel,
+                    complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=grouped_inner,
+                    hatch_optimize=self.context.opt_effect_optimize,
                 )
 
     def optimize_travel(self):
