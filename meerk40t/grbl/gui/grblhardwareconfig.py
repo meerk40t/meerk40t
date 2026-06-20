@@ -49,7 +49,8 @@ class GrblIoButtons(wx.Panel):
         self.SetSizer(sizer_2)
 
     def on_button_refresh(self, event):
-        self.service("gcode $$\n")
+        query_cmd = self.service.driver.translate_command("query_settings")
+        self.service(f"gcode {query_cmd}\n")
 
     def on_button_write(self, event):
         chart = self.chart.chart
@@ -84,7 +85,8 @@ class GrblIoButtons(wx.Panel):
                 return
             for ew in eeprom_writes:
                 self.service(f".gcode {ew}")
-            self.service(".gcode $$")
+            query_cmd = self.service.driver.translate_command("query_settings")
+            self.service(f".gcode {query_cmd}")
 
     def on_button_export(self, event):
         filetype = "*.nc"
