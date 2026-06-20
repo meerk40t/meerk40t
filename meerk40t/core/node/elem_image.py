@@ -951,13 +951,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 height = cbox[3] - cbox[1]
                 if width != image.width or height != image.height:
                     image = image.crop(cbox)
-                    # TODO:
-                    # We did not crop the image so far, but we already applied
-                    # the cropped transformation! That may be faulty, and needs to
-                    # be corrected at a later stage, but this logic, even if clumsy
-                    # is good enough: don't shift things twice!
-                    if orgbox[0] == 0 and orgbox[1] == 0:
-                        actualized_matrix.post_translate(cbox[0], cbox[1])
+                    actualized_matrix.post_translate(cbox[0], cbox[1])
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)
