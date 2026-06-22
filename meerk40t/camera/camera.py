@@ -566,10 +566,11 @@ class Camera(Service):
         self.fisheye = None
 
     def set_uri(self, uri):
+        uri = normalize_camera_uri(uri)
         self.uri = uri
         try:
             self.uri = int(self.uri)  # URI is an index.
-        except ValueError:
+        except (ValueError, TypeError):
             pass
 
     def background(self):
@@ -624,6 +625,115 @@ class Camera(Service):
             self.signal("export-image", (self.image_width, self.image_height, frame))
             return self.image_width, self.image_height, frame
         return None
+
+
+def normalize_camera_uri(text):
+    """
+    Turn a pasted camera address into an OpenCV VideoCapture URI.
+
+    Accepts:
+    - USB index: ``0``, ``1``, …
+    - Full stream URL: ``rtsp://…``, ``http://…`` (unchanged)
+    - ``user:pass@host``, ``user:pass@host:8554/stream1``
+    - Bare IP/hostname: ``192.168.10.133`` → ``rtsp://192.168.10.133:8554/profile0``
+
+    Andre's IP camera (unchanged when pasted in full):
+    ``rtsp://admin:***@192.168.10.133:8554/stream1``
+    or shorthand ``admin:***@192.168.10.133:8554/stream1``.
+    """
+    import re
+
+    if text is None:
+        return None
+    text = str(text).strip()
+    if not text:
+        return None
+
+    lower = text.lower()
+    if lower.startswith(("rtsp://", "http://", "https://", "rtmp://", "file://")):
+        return text
+
+    if re.fullmatch(r"\d+", text):
+        return int(text)
+
+    if "@" in text and "://" not in text:
+        text = f"rtsp://{text}"
+        lower = text.lower()
+
+    if lower.startswith("rtsp://"):
+        body = text[7:]
+        path_part = body.split("?", 1)[0]
+        if "/" not in path_part:
+            host_part = path_part.rsplit("@", 1)[-1]
+            if ":" in host_part:
+                text = f"{text}/profile0"
+            else:
+                text = f"{text}:8554/profile0"
+        return text
+
+    if re.match(r"^[\w.:-]+/", text) or re.match(r"^\d+\.\d+\.\d+\.\d+", text):
+        if "/" in text:
+            return f"rtsp://{text}"
+        if ":" in text:
+            return f"rtsp://{text}/profile0"
+        return f"rtsp://{text}:8554/profile0"
+
+    return text
+
+
+def _ensure_camera_service(kernel, camera_index):
+    """Return Camera service for camera/N, creating it if needed."""
+    cam = _camera_service_for_index(kernel, camera_index)
+    if cam is not None:
+        return cam
+    path = f"camera/{camera_index}"
+    try:
+        if path not in kernel.contexts:
+            kernel.add_service("camera", Camera(kernel, path))
+        kernel.activate_service_path("camera", path)
+    except (AttributeError, ValueError, KeyError):
+        return None
+    return _camera_service_for_index(kernel, camera_index)
+
+
+def connect_camera_from_paste(kernel, camera_index, raw_text, start=True):
+    """
+    Normalize a pasted address, save it in the URI list, and connect camera/N.
+    """
+    uri = normalize_camera_uri(raw_text)
+    if uri is None:
+        return None
+
+    cam = _ensure_camera_service(kernel, camera_index)
+    if cam is None:
+        _ = kernel.translation
+        camera_user_log(
+            kernel,
+            _("Camera {n} could not be opened.").format(n=camera_index),
+        )
+        return None
+
+    try:
+        camera_root = kernel.get_context("camera")
+        camera_root.setting(list, "uris", [])
+        store = uri if isinstance(uri, int) else str(uri)
+        known = [str(u) for u in camera_root.uris]
+        if str(store) not in known:
+            camera_root.uris.append(store)
+    except (AttributeError, TypeError):
+        pass
+
+    cam.set_uri(uri)
+    if start:
+        cam.close_camera()
+        cam.open_camera()
+
+    _ = kernel.translation
+    camera_user_log(
+        kernel,
+        _("Camera {n} set to: {uri}").format(n=camera_index, uri=uri),
+    )
+    return uri
 
 
 def camera_user_log(kernel, message):

@@ -162,6 +162,9 @@ class ElementsWidget(Widget):
             #     return RESPONSE_CONSUME
             return RESPONSE_CHAIN
         elif event_type == "leftclick":
+            # If a creation/modification tool is active, do not steal the click for selection.
+            if self.scene.pane.active_tool != "none":
+                return RESPONSE_CHAIN
             if self.scene.pane.modif_active:
                 return RESPONSE_CHAIN
             keep_old = "shift" in modifiers

@@ -1325,7 +1325,8 @@ class CameraURIPanel(wx.Panel):
             list_name="list_camerauri",
         )
         self.button_add = wxButton(self, wx.ID_ANY, _("Add URI"))
-        self.text_uri = TextCtrl(self, wx.ID_ANY, "")
+        self.button_connect = wxButton(self, wx.ID_ANY, _("Connect"))
+        self.text_uri = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         self.__set_properties()
         self.__do_layout()
@@ -1335,6 +1336,8 @@ class CameraURIPanel(wx.Panel):
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_list_right_clicked, self.list_uri
         )
         self.Bind(wx.EVT_BUTTON, self.on_button_add_uri, self.button_add)
+        self.Bind(wx.EVT_BUTTON, self.on_button_connect, self.button_connect)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_button_connect, self.text_uri)
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
         self.changed = False
@@ -1345,7 +1348,19 @@ class CameraURIPanel(wx.Panel):
         self.list_uri.AppendColumn(_("URI"), format=wx.LIST_FORMAT_LEFT, width=348)
         self.list_uri.resize_columns()
         self.button_add.SetToolTip(_("Add a new URL"))
-        # end wxGlade
+        self.button_connect.SetToolTip(
+            _(
+                "Connect camera {index} using the pasted address.\n"
+                "Examples: 0 (USB webcam), rtsp://user:pass@192.168.1.50:8554/stream1,\n"
+                "user:pass@192.168.1.50, or bare IP 192.168.1.50"
+            ).format(index=self.index)
+        )
+        self.text_uri.SetToolTip(
+            _(
+                "Paste camera address: USB index (0), full rtsp:// URL,\n"
+                "user:pass@IP[:port][/path], or bare IP/hostname."
+            )
+        )
 
     def __do_layout(self):
         # begin wxGlade: CameraURI.__do_layout
@@ -1353,7 +1368,8 @@ class CameraURIPanel(wx.Panel):
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1.Add(self.list_uri, 1, wx.EXPAND, 0)
         sizer_2.Add(self.button_add, 0, 0, 0)
-        sizer_2.Add(self.text_uri, 2, 0, 0)
+        sizer_2.Add(self.button_connect, 0, wx.LEFT, 4)
+        sizer_2.Add(self.text_uri, 2, wx.LEFT, 4)
         sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         self.Layout()
@@ -1440,7 +1456,9 @@ class CameraURIPanel(wx.Panel):
             except IndexError:
                 return
             if dlg.ShowModal() == wx.ID_OK:
-                self.context.uris[index] = dlg.GetValue()
+                from meerk40t.camera.camera import normalize_camera_uri
+
+                self.context.uris[index] = normalize_camera_uri(dlg.GetValue())
                 self.changed = True
                 self.on_list_refresh()
 
@@ -1458,13 +1476,39 @@ class CameraURIPanel(wx.Panel):
         return delete
 
     def on_button_add_uri(self, event=None):  # wxGlade: CameraURI.<event_handler>
-        uri = self.text_uri.GetValue()
-        if uri is None or uri == "":
+        from meerk40t.camera.camera import normalize_camera_uri
+
+        raw = self.text_uri.GetValue()
+        if raw is None or str(raw).strip() == "":
             return
-        self.context.uris.append(uri)
+        uri = normalize_camera_uri(raw)
+        if uri is None:
+            return
+        store = uri if isinstance(uri, int) else str(uri)
+        known = [str(u) for u in self.context.uris]
+        if str(store) not in known:
+            self.context.uris.append(store)
         self.text_uri.SetValue("")
         self.changed = True
         self.on_list_refresh()
+
+    def on_button_connect(self, event=None):
+        from meerk40t.camera.camera import connect_camera_from_paste
+
+        raw = self.text_uri.GetValue()
+        if raw is None or str(raw).strip() == "":
+            return
+        uri = connect_camera_from_paste(
+            self.context.kernel, self.index, raw, start=True
+        )
+        if uri is not None:
+            store = uri if isinstance(uri, int) else str(uri)
+            known = [str(u) for u in self.context.uris]
+            if str(store) not in known:
+                self.context.uris.append(store)
+                self.changed = True
+                self.on_list_refresh()
+            self.text_uri.SetValue(str(uri) if not isinstance(uri, int) else "")
 
     def on_text_uri(self, event):  # wxGlade: CameraURI.<event_handler>
         pass

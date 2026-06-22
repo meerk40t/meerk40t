@@ -10,7 +10,7 @@ import wx
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_image_in_frame
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, wxButton, wxStaticText
+from meerk40t.gui.wxutils import StaticBoxSizer, wxButton, wxStaticText, TextCtrl
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -64,12 +64,29 @@ class CameraCalibWindow(MWindow):
         )
         steps.Add(self.lbl_steps, 0, wx.EXPAND, 0)
 
-        cam_box = StaticBoxSizer(self, wx.ID_ANY, _("Camera"), wx.HORIZONTAL)
-        cam_box.Add(wxStaticText(self, wx.ID_ANY, _("Index")), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        cam_box = StaticBoxSizer(self, wx.ID_ANY, _("Camera"), wx.VERTICAL)
+        row_cam = wx.BoxSizer(wx.HORIZONTAL)
+        row_cam.Add(wxStaticText(self, wx.ID_ANY, _("Index")), 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.spin_camera = wx.SpinCtrl(self, wx.ID_ANY, min=0, max=8, initial=0)
-        cam_box.Add(self.spin_camera, 0, wx.LEFT, 4)
+        row_cam.Add(self.spin_camera, 0, wx.LEFT, 4)
         self.btn_open = wxButton(self, wx.ID_ANY, _("Open camera window"))
-        cam_box.Add(self.btn_open, 0, wx.LEFT, 8)
+        row_cam.Add(self.btn_open, 0, wx.LEFT, 8)
+        cam_box.Add(row_cam, 0, wx.EXPAND, 0)
+
+        row_uri = wx.BoxSizer(wx.HORIZONTAL)
+        self.text_camera_uri = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_camera_uri.SetToolTip(
+            _(
+                "Paste: 0 (USB), rtsp://user:pass@IP:8554/stream1,\n"
+                "user:pass@IP, or bare IP (defaults to rtsp://IP:8554/profile0)."
+            )
+        )
+        self.btn_connect = wxButton(self, wx.ID_ANY, _("Connect"))
+        row_uri.Add(self.text_camera_uri, 1, wx.EXPAND, 0)
+        row_uri.Add(self.btn_connect, 0, wx.LEFT, 4)
+        cam_box.Add(row_uri, 0, wx.EXPAND | wx.TOP, 4)
 
         actions = StaticBoxSizer(self, wx.ID_ANY, _("Actions"), wx.VERTICAL)
         row1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -147,6 +164,8 @@ class CameraCalibWindow(MWindow):
         self.sizer.Add(bed_box, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
         self.btn_open.Bind(wx.EVT_BUTTON, self.on_open_camera)
+        self.btn_connect.Bind(wx.EVT_BUTTON, self.on_connect_camera)
+        self.text_camera_uri.Bind(wx.EVT_TEXT_ENTER, self.on_connect_camera)
         self.btn_reset.Bind(wx.EVT_BUTTON, self.on_reset_perspective)
         self.btn_flip180.Bind(wx.EVT_BUTTON, self.on_flip180)
         self.btn_background.Bind(wx.EVT_BUTTON, self.on_update_background)
@@ -162,7 +181,15 @@ class CameraCalibWindow(MWindow):
         self.Layout()
         self.refresh_bed_info()
         self.refresh_align_spins()
+        self._load_saved_camera_uri()
         self._ensure_window_fits_content()
+
+    def _load_saved_camera_uri(self):
+        from meerk40t.camera.camera import _camera_service_for_index
+
+        cam = _camera_service_for_index(self.context.kernel, self._camera_index())
+        if cam is not None and getattr(cam, "uri", None) is not None:
+            self.text_camera_uri.SetValue(str(cam.uri))
 
     def _ensure_window_fits_content(self):
         self.Layout()
@@ -264,9 +291,29 @@ class CameraCalibWindow(MWindow):
         idx = self._camera_index()
         self.context(f"camwin {idx}\n")
 
-    def _camera_service(self):
+    def on_connect_camera(self, event=None):
+        from meerk40t.camera.camera import connect_camera_from_paste
+
+        raw = self.text_camera_uri.GetValue()
+        if not str(raw).strip():
+            wx.MessageBox(
+                _("Paste a camera address (USB 0, rtsp://…, user:pass@IP, or IP)."),
+                _("Connect camera"),
+                wx.OK | wx.ICON_INFORMATION,
+                parent=self,
+            )
+            return
         idx = self._camera_index()
-        return self.context.get_context(f"camera/{idx}")
+        uri = connect_camera_from_paste(self.context.kernel, idx, raw, start=True)
+        if uri is None:
+            return
+        self.text_camera_uri.SetValue(str(uri) if not isinstance(uri, int) else str(uri))
+        self.context(f"camwin {idx}\n")
+
+    def _camera_service(self):
+        from meerk40t.camera.camera import _camera_service_for_index
+
+        return _camera_service_for_index(self.context.kernel, self._camera_index())
 
     def on_flip180(self, event=None):
         try:
@@ -358,6 +405,7 @@ class CameraCalibWindow(MWindow):
     def window_open(self):
         self.refresh_bed_info()
         self.refresh_align_spins()
+        self._load_saved_camera_uri()
         self._ensure_window_fits_content()
         self.Raise()
 
