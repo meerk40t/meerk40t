@@ -14,6 +14,7 @@ from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, Las
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.imageproperty import ContourPanel
 from meerk40t.gui.scene.scenepanel import ScenePanel
+from meerk40t.gui.wxutils import dispatch_to_main_thread
 
 from meerk40t.gui.scene.sceneconst import (
     LAYER_BACKGROUND,
@@ -1739,10 +1740,31 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")
+    @dispatch_to_main_thread
     def on_background_signal(self, origin, background):
-        background = wx.Bitmap.FromBuffer(*background)
-        self.scene.signal("background", background)
-        self.widget_scene.invalidate_background()
+        from meerk40t.camera.camera import frame_for_wx_bitmap, make_bed_bitmap_from_frame
+
+        if background is None:
+            bitmap = None
+        elif isinstance(background, wx.Bitmap):
+            bitmap = background if background.IsOk() else None
+        else:
+            try:
+                width, height, data = background
+                data = frame_for_wx_bitmap(data)
+                if data is None:
+                    raise ValueError("invalid frame buffer")
+                bitmap = make_bed_bitmap_from_frame(data)
+                if bitmap is None or not bitmap.IsOk():
+                    bitmap = None
+            except (TypeError, ValueError, wx.wxAssertionError) as e:
+                self.context.kernel.channel("camera")(
+                    _("Background image failed: {error}").format(error=e)
+                )
+                bitmap = None
+        from meerk40t.camera.camera import _apply_bed_background_to_scene
+
+        _apply_bed_background_to_scene(self.widget_scene, bitmap)
         self.request_refresh()
 
     @signal_listener("units")

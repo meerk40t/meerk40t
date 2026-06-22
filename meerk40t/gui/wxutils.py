@@ -32,6 +32,16 @@ def dispatch_to_main_thread(func):
     return wrapper
 
 
+def safe_enable_control(control, enabled=True):
+    """Re-enable a wx control after async work; ignore if the widget was destroyed."""
+    if control is None:
+        return
+    try:
+        control.Enable(enabled)
+    except RuntimeError:
+        pass
+
+
 ##############
 # DYNAMIC CHOICE
 # NODE MENU
@@ -1521,21 +1531,24 @@ class HoverButton(wxButton):
         return self._focus_color
 
     def Enable(self, value):
-        if value:
-            super().SetBackgroundColour(self._background_color)
-        else:
-            if self._disable_color is None:
-                r, g, b, a = self._background_color.Get()
-                color = wx.Colour(
-                    min(255, int(1.5 * r)),
-                    min(255, int(1.5 * g)),
-                    min(255, int(1.5 * b)),
-                )
+        try:
+            if value:
+                super().SetBackgroundColour(self._background_color)
             else:
-                color = self._disable_color
-            super().SetBackgroundColour(color)
-        super().Enable(value)
-        self.Refresh()
+                if self._disable_color is None:
+                    r, g, b, a = self._background_color.Get()
+                    color = wx.Colour(
+                        min(255, int(1.5 * r)),
+                        min(255, int(1.5 * g)),
+                        min(255, int(1.5 * b)),
+                    )
+                else:
+                    color = self._disable_color
+                super().SetBackgroundColour(color)
+            super().Enable(value)
+            self.Refresh()
+        except RuntimeError:
+            pass
 
     def on_enter(self, event):
         if self._focus_color is not None:

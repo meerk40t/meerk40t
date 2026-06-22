@@ -157,6 +157,24 @@ class GRBLDriver(Parameters):
             self.speed_dirty = True
         self.settings[key] = value
 
+    def _job_aborted(self):
+        """True while estop/clear_queue is stopping the active job."""
+        try:
+            spooler = self.service.spooler
+        except AttributeError:
+            return False
+        return getattr(spooler, "_user_aborted", False) or getattr(
+            spooler, "_abort_clear", False
+        )
+
+    def _abort_plot_if_needed(self):
+        """Exit plot_start quickly when the user aborted the spooler job."""
+        if self._job_aborted():
+            self.queue.clear()
+            self._set_queue_status(0, 0)
+            return True
+        return False
+
     def status(self):
         """
         Wants a status report of what the driver is doing.
@@ -322,7 +340,7 @@ class GRBLDriver(Parameters):
         g = Geomstr()
         for segment_type, start, c1, c2, end, sets in geom.as_lines():
             while self.hold_work(0):
-                if self.service.kernel.is_shutdown:
+                if self.service.kernel.is_shutdown or self._job_aborted():
                     return
                 time.sleep(0.05)
             x = self.native_x
@@ -365,7 +383,9 @@ class GRBLDriver(Parameters):
                 g.clear()
                 g.quad(complex(start), complex(c1), complex(end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    while self.paused:
+                    while self.paused or self._job_aborted():
+                        if self._job_aborted():
+                            return
                         time.sleep(0.05)
                     self._move(p.real, p.imag)
             elif segment_type == "cubic":
@@ -379,7 +399,9 @@ class GRBLDriver(Parameters):
                     complex(end),
                 )
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    while self.paused:
+                    while self.paused or self._job_aborted():
+                        if self._job_aborted():
+                            return
                         time.sleep(0.05)
                     self._move(p.real, p.imag)
             elif segment_type == "arc":
@@ -393,7 +415,9 @@ class GRBLDriver(Parameters):
                     complex(end),
                 )
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    while self.paused:
+                    while self.paused or self._job_aborted():
+                        if self._job_aborted():
+                            return
                         time.sleep(0.05)
                     self._move(p.real, p.imag)
             elif segment_type == "point":
@@ -445,6 +469,9 @@ class GRBLDriver(Parameters):
         total = len(self.queue)
         current = 0
         for q in self.queue:
+            if self._job_aborted():
+                self.queue.clear()
+                return
             # Are there any custom commands to be executed?
             # Usecase (as described in issue https://github.com/meerk40t/meerk40t/issues/2764 ):
             # Switch between M3 and M4 mode for cut / raster
@@ -460,7 +487,7 @@ class GRBLDriver(Parameters):
             current += 1
             self._set_queue_status(current, total)
             while self.hold_work(0):
-                if self.service.kernel.is_shutdown:
+                if self.service.kernel.is_shutdown or self._job_aborted():
                     return
                 time.sleep(0.05)
             x = self.native_x
@@ -506,7 +533,9 @@ class GRBLDriver(Parameters):
                 g = Geomstr()
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    while self.paused:
+                    while self.paused or self._job_aborted():
+                        if self._job_aborted():
+                            return
                         time.sleep(0.05)
                     self._move(p.real, p.imag)
             elif isinstance(q, CubicCut):
@@ -520,7 +549,9 @@ class GRBLDriver(Parameters):
                     complex(*q.end),
                 )
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    while self.paused:
+                    while self.paused or self._job_aborted():
+                        if self._job_aborted():
+                            return
                         time.sleep(0.05)
                     self._move(p.real, p.imag)
             elif isinstance(q, WaitCut):
@@ -539,7 +570,11 @@ class GRBLDriver(Parameters):
                 self.move_mode = 1
                 self.set("power", 1000)
                 for ox, oy, on, x, y in q.plot:
+                    if self._abort_plot_if_needed():
+                        return
                     while self.hold_work(0):
+                        if self._abort_plot_if_needed():
+                            return
                         time.sleep(0.05)
                     # q.plot can have different on values, these are parsed
                     if self.on_value != on:
@@ -555,7 +590,11 @@ class GRBLDriver(Parameters):
                 self.plot_planner.push(q)
                 self.move_mode = 1
                 for x, y, on in self.plot_planner.gen():
+                    if self._abort_plot_if_needed():
+                        return
                     while self.hold_work(0):
+                        if self._abort_plot_if_needed():
+                            return
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
@@ -593,6 +632,10 @@ class GRBLDriver(Parameters):
                     else:
                         self.move_mode = 1
                     self._move(x, y)
+        if self._job_aborted():
+            self.queue.clear()
+            self._set_queue_status(0, 0)
+            return
         self.queue.clear()
         self._set_queue_status(0, 0)
 
@@ -715,6 +758,8 @@ class GRBLDriver(Parameters):
         @return:
         """
         while True:
+            if self._job_aborted():
+                return
             if self.queue or len(self.service.controller):
                 time.sleep(0.05)
                 continue
@@ -823,10 +868,10 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
+        self(f"\x18{self.line_end}", real=True)
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
-        self(f"\x18{self.line_end}", real=True)
         self._g94_feedrate()
         self._g21_units_mm()
         self._g90_absolute()

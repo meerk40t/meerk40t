@@ -860,6 +860,12 @@ class MeerK40t(MWindow):
         def on_click_pref_wordlist():
             self.context("window open Wordlist\n")
 
+        def on_click_pref_batchrun():
+            self.context("window open BatchRun\n")
+
+        def on_click_pref_cameracal():
+            self.context("window open CameraCalib\n")
+
         def on_click_pref_fonts():
             self.context("window open HersheyFontManager\n")
 
@@ -1057,6 +1063,20 @@ class MeerK40t(MWindow):
                     "action": on_click_pref_wordlist,
                     "level": 2,
                     # Hint for translation _("Settings")
+                    "segment": "Settings",
+                },
+                {
+                    "label": _("CSV Batch Run"),
+                    "help": _("Run repeated jobs from CSV wordlist rows"),
+                    "action": on_click_pref_batchrun,
+                    "level": 2,
+                    "segment": "Settings",
+                },
+                {
+                    "label": _("Camera Calibration"),
+                    "help": _("Guide camera perspective and bed overlay"),
+                    "action": on_click_pref_cameracal,
+                    "level": 2,
                     "segment": "Settings",
                 },
                 {

@@ -658,6 +658,9 @@ class GrblController:
         if "\x18" in data:
             with self._sending_lock:
                 self._sending_queue.clear()
+            with self._forward_lock:
+                self._forward_buffer.clear()
+            self._assembled_response = []
         self.service.signal(
             "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )

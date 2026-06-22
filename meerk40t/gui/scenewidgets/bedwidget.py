@@ -16,6 +16,27 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.scene.widget import Widget
 
 
+def _device_label(context):
+    try:
+        return context.device.label
+    except AttributeError:
+        try:
+            return context.root.device.label
+        except AttributeError:
+            return "__default__"
+
+
+def _bed_rect(x, y, width, height):
+    """Normalize signed bed width/height (e.g. flip_y) for wx draw calls."""
+    if height < 0:
+        y = y + height
+        height = -height
+    if width < 0:
+        x = x + width
+        width = -width
+    return x, y, width, height
+
+
 class BedWidget(Widget):
     """
     Bed Widget Interface Widget
@@ -31,25 +52,27 @@ class BedWidget(Widget):
 
     @property
     def background(self):
+        devlabel = _device_label(self.scene.context)
+        if devlabel in self._background:
+            return self._background[devlabel]
+        if "__default__" in self._background:
+            return self._background["__default__"]
         try:
-            devlabel = self.scene.context.device.label
-            if devlabel in self._background:
-                return self._background[devlabel]
+            if self.scene.has_background and self.scene.active_background is not None:
+                return self.scene.active_background
         except AttributeError:
             pass
         return None
 
     @background.setter
     def background(self, value):
-        try:
-            devlabel = self.scene.context.device.label
-        except AttributeError:
-            return
-
+        devlabel = _device_label(self.scene.context)
         if value is None:
             self._background.pop(devlabel, None)
+            self._background.pop("__default__", None)
         else:
             self._background[devlabel] = value
+            self._background["__default__"] = value
 
     def hit(self):
         if self.background is None:
@@ -83,26 +106,32 @@ class BedWidget(Widget):
         """
         Draws the background on the scene.
         """
-        # print ("Bedwidget draw %s" % self.name)
-        if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            context = self.scene.context
-            try:
-                unit_width = context.device.view.unit_width
-                unit_height = context.device.view.unit_height
-            except AttributeError:
-                return
-            background = self.background
-            if background is None:
-                brush = wx.Brush(
-                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
-                )
-                gc.SetBrush(brush)
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
-            elif isinstance(background, int):
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
-            else:
-                gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
+        context = self.scene.context
+        try:
+            unit_width = context.device.view.unit_width
+            unit_height = context.device.view.unit_height
+        except AttributeError:
+            return
+
+        background = self.background
+        if background is not None and not isinstance(background, int):
+            # Photo is composited in scene.Scene._update_buffer_ui_thread via
+            # composite_bed_photo_on_device_dc (MemoryDC); skip GC bitmap here.
+            return
+
+        if context.draw_mode & DRAW_MODE_BACKGROUND != 0:
+            return
+
+        bed_x, bed_y, bed_w, bed_h = _bed_rect(0, 0, unit_width, unit_height)
+        if background is None:
+            brush = wx.Brush(
+                colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
+            )
+            gc.SetBrush(brush)
+            gc.DrawRectangle(bed_x, bed_y, bed_w, bed_h)
+        elif isinstance(background, int):
+            gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
+            gc.DrawRectangle(bed_x, bed_y, bed_w, bed_h)
 
     def signal(self, signal, *args, **kwargs):
         """

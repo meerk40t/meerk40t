@@ -35,6 +35,7 @@ from meerk40t.gui.wxutils import (
     wxListCtrl,
     wxStaticText,
     dispatch_to_main_thread,
+    safe_enable_control,
 )
 from meerk40t.core.planner import STAGE_PLAN_BLOB
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -1066,7 +1067,17 @@ class LaserPanel(wx.Panel):
         self.context("pause\n")
 
     def on_button_stop(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("estop\n")
+        if not self.button_stop.IsEnabled():
+            return
+        self.button_stop.Enable(False)
+
+        def do_estop():
+            try:
+                self.context("estop\n")
+            finally:
+                wx.CallAfter(safe_enable_control, self.button_stop, True)
+
+        self.context.threaded(do_estop, thread_name="LaserPanel-estop")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
         try:

@@ -31,7 +31,13 @@ from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
-CORNER_SIZE = 25
+CORNER_HIT_SIZE = 56
+CORNER_LABELS = ("TL", "TR", "BR", "BL")
+
+
+def _perspective_markers_visible(camera):
+    """Corner handles are shown whenever perspective correction is off."""
+    return not camera.correction_perspective
 
 
 def _get_camera_attribute(kernel, camera, attribute, default=None):
@@ -349,16 +355,18 @@ class CameraPanel(wx.Panel, Job):
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
 
-    def update_camera_frame(self, event=None):
+    def update_camera_frame(self, event=None, force=False):
         if self.camera is None:
             return
 
-        if self.camera.frame_index == self.last_frame_index:
+        if not force and self.camera.frame_index == self.last_frame_index:
             return
         else:
             self.last_frame_index = self.camera.frame_index
 
-        frame = self.camera.get_frame()
+        from meerk40t.camera.camera import make_bed_bitmap_from_frame
+
+        frame = self.camera.get_display_frame()
         if frame is None:
             return
 
@@ -368,16 +376,10 @@ class CameraPanel(wx.Panel, Job):
             self.widget_scene.widget_root.set_view(
                 0, 0, self.image_width, self.image_height, self.camera.preserve_aspect
             )
-        self.frame_bitmap = wx.Bitmap.FromBuffer(
-            self.image_width, self.image_height, frame
-        )
-        if self.camera.correction_perspective:
-            if (
-                self.camera.width != self.image_width
-                or self.camera.height != self.image_height
-            ):
-                self.image_width = self.camera.width
-                self.image_height = self.camera.height
+        bmp = make_bed_bitmap_from_frame(frame)
+        if bmp is None:
+            return
+        self.frame_bitmap = bmp
 
         self.widget_scene.request_refresh()
 
@@ -389,15 +391,6 @@ class CameraPanel(wx.Panel, Job):
         @return:
         """
         self.camera(f"camera{self.index} perspective reset\n")
-        if self.camera.perspective is None:
-            width = self.camera.width
-            height = self.camera.height
-            self.camera.perspective = [
-                [0, 0],
-                [width, 0],
-                [width, height],
-                [0, height],
-            ]
         for v in self.widget_scene.widget_root.scene_widget:
             if hasattr(v, "update"):
                 v.update()
@@ -438,7 +431,13 @@ class CameraPanel(wx.Panel, Job):
         @param event:
         @return:
         """
-        self.camera(f"camera{self.index} background\n")
+        from meerk40t.camera.camera import camera_user_log
+
+        camera_user_log(
+            self.context.kernel, _("Update image: sending frame to main scene...")
+        )
+        self.update_camera_frame(force=True)
+        self.camera.background()
 
     def on_button_export(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -744,6 +743,37 @@ class CamInterfaceWidget(Widget):
             )
             menu.AppendSeparator()
 
+            flip_h = menu.Append(wx.ID_ANY, _("Flip horizontal"), "", wx.ITEM_CHECK)
+            flip_v = menu.Append(wx.ID_ANY, _("Flip vertical"), "", wx.ITEM_CHECK)
+            flip_h.Check(self.cam.camera.flip_x)
+            flip_v.Check(self.cam.camera.flip_y)
+
+            def toggle_flip_h(event=None):
+                self.cam.camera.set_image_flip(flip_x=flip_h.IsChecked())
+                for v in self.scene.widget_root.scene_widget:
+                    if hasattr(v, "update"):
+                        v.update()
+
+            def toggle_flip_v(event=None):
+                self.cam.camera.set_image_flip(flip_y=flip_v.IsChecked())
+                for v in self.scene.widget_root.scene_widget:
+                    if hasattr(v, "update"):
+                        v.update()
+
+            def flip_180(event=None):
+                self.cam.camera.set_image_flip(flip_x=True, flip_y=True)
+                flip_h.Check(True)
+                flip_v.Check(True)
+                for v in self.scene.widget_root.scene_widget:
+                    if hasattr(v, "update"):
+                        v.update()
+
+            self.cam.Bind(wx.EVT_MENU, toggle_flip_h, flip_h)
+            self.cam.Bind(wx.EVT_MENU, toggle_flip_v, flip_v)
+            item = menu.Append(wx.ID_ANY, _("Flip 180° (upside down)"), "")
+            self.cam.Bind(wx.EVT_MENU, flip_180, id=item.GetId())
+            menu.AppendSeparator()
+
             fisheye = menu.Append(wx.ID_ANY, _("Correct Fisheye"), "", wx.ITEM_CHECK)
             fisheye.Check(self.cam.camera.correction_fisheye)
             self.cam.camera.correction_fisheye = fisheye.IsChecked()
@@ -764,15 +794,6 @@ class CamInterfaceWidget(Widget):
 
             def reset_perspect(event=None):
                 self.cam.camera(f"camera{self.cam.index} perspective reset\n")
-                if self.cam.camera.perspective is None:
-                    width = self.cam.camera.width
-                    height = self.cam.camera.height
-                    self.cam.camera.perspective = [
-                        [0, 0],
-                        [width, 0],
-                        [width, height],
-                        [0, height],
-                    ]
                 for v in self.scene.widget_root.scene_widget:
                     if hasattr(v, "update"):
                         v.update()
@@ -858,14 +879,15 @@ class CamPerspectiveWidget(Widget):
         self.cam = camera
         self.mid = mid
         self.index = index
-        half = CORNER_SIZE / 2.0
+        half = CORNER_HIT_SIZE / 2.0
         Widget.__init__(self, scene, -half, -half, half, half, **kwargs)
         self.update()
         c = Color.distinct(self.index + 2)
-        self.pen = wx.Pen(wx.Colour(c.red, c.green, c.blue))
+        self.fill_colour = wx.Colour(c.red, c.green, c.blue, 210)
 
     def update(self):
-        half = CORNER_SIZE / 2.0
+        half = CORNER_HIT_SIZE / 2.0
+        self.cam.camera.ensure_perspective()
         pos_x, pos_y = self.cam.camera.perspective[self.index]
         self.set_position(pos_x - half, pos_y - half)
 
@@ -873,27 +895,44 @@ class CamPerspectiveWidget(Widget):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
-        if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
-            gc.SetPen(self.pen)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            gc.StrokeLine(
-                self.left,
-                self.top + self.height / 2.0,
-                self.right,
-                self.bottom - self.height / 2.0,
+        if not _perspective_markers_visible(self.cam.camera):
+            return
+        cx = self.left + self.width / 2.0
+        cy = self.top + self.height / 2.0
+        pad = 6
+        gc.SetPen(wx.Pen(wx.WHITE, 4))
+        gc.SetBrush(wx.Brush(wx.Colour(255, 255, 255, 90)))
+        gc.DrawEllipse(
+            self.left - pad,
+            self.top - pad,
+            self.width + pad * 2,
+            self.height + pad * 2,
+        )
+        gc.SetPen(wx.Pen(wx.BLACK, 2))
+        gc.SetBrush(wx.Brush(self.fill_colour))
+        gc.DrawEllipse(self.left, self.top, self.width, self.height)
+        gc.SetPen(wx.Pen(wx.WHITE, 2))
+        gc.StrokeLine(self.left, cy, self.right, cy)
+        gc.StrokeLine(cx, self.top, cx, self.bottom)
+        try:
+            font = wx.Font(
+                12,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_BOLD,
             )
-            gc.StrokeLine(
-                self.left + self.width / 2.0,
-                self.top,
-                self.right - self.width / 2.0,
-                self.bottom,
-            )
-            gc.DrawEllipse(self.left, self.top, self.width, self.height)
+            gc.SetFont(font, wx.WHITE)
+            label = CORNER_LABELS[self.index]
+            tw, th = gc.GetTextExtent(label)
+            gc.DrawText(label, cx - tw / 2.0, cy - th / 2.0)
+        except Exception:
+            pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
+            self.cam.camera.ensure_perspective()
             self.cam.camera.perspective[self.index][0] += space_pos[4]
             self.cam.camera.perspective[self.index][1] += space_pos[5]
             if self.parent is not None:
@@ -910,20 +949,20 @@ class CamSceneWidget(Widget):
         self.cam = camera
 
     def process_draw(self, gc):
-        if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
-            if self.cam.camera.perspective is not None:
-                if not len(self):
-                    for i in range(len(self.cam.camera.perspective)):
-                        self.add_widget(
-                            -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
-                        )
-                gc.SetPen(wx.BLACK_DASHED_PEN)
-                lines = list(self.cam.camera.perspective)
-                lines.append(lines[0])
-                gc.StrokeLines(lines)
-        else:
+        if not _perspective_markers_visible(self.cam.camera):
             if len(self):
                 self.remove_all_widgets()
+            return
+        if self.cam.camera.perspective is not None:
+            if not len(self):
+                for i in range(len(self.cam.camera.perspective)):
+                    self.add_widget(
+                        -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
+                    )
+            gc.SetPen(wx.Pen(wx.Colour(255, 220, 0), 3, wx.PENSTYLE_SHORT_DASH))
+            lines = list(self.cam.camera.perspective)
+            lines.append(lines[0])
+            gc.StrokeLines(lines)
 
     def update(self):
         for v in self:
@@ -956,7 +995,13 @@ class CameraInterface(MWindow):
         self.index = index
         super().__init__(640, 480, context, path, parent, **kwds)
         self.camera = self.context.get_context(f"camera/{self.index}")
-        self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=self.index)
+        self.panel = CameraPanel(
+            self,
+            wx.ID_ANY,
+            context=self.root_context,
+            gui=self.root_context.gui,
+            index=self.index,
+        )
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
 
