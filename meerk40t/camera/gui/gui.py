@@ -12,7 +12,10 @@ def plugin(kernel, lifecycle):
             register_panel_camera,
         )
 
+        from meerk40t.camera.gui.cameracal import CameraCalibWindow
+
         kernel.register("window/CameraInterface", CameraInterface)
+        kernel.register("window/CameraCalib", CameraCalibWindow)
         kernel.register("wxpane/CameraPane", register_panel_camera)
 
         @kernel.console_argument("x", type=str, help="x position")

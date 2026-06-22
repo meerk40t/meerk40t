@@ -13,6 +13,7 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import get_default_icon_size, icons8_detective
+from meerk40t.gui.laserpanel import queue_cutplan_to_spooler
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import (
     StaticBoxSizer,
@@ -385,6 +386,8 @@ class TemplatePanel(wx.Panel):
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size(self.context))
         )
+        self.button_queue = wxButton(self, wx.ID_ANY, _("Queue to Spooler"))
+        self.button_queue.Enable(False)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)
@@ -565,6 +568,7 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(sizer_param_optype, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_param_xy, 0, wx.EXPAND, 0)
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.button_queue, 0, wx.EXPAND, 0)
 
         sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.VERTICAL)
         infomsg = _("To provide the best burning results, the parameters of operations")
@@ -599,6 +603,12 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(sizer_info, 1, wx.EXPAND, 0)
 
         self.button_create.SetToolTip(_("Create a grid with your values"))
+        self.button_queue.SetToolTip(
+            _(
+                "Plan the test pattern and add it to the Job Spooler. "
+                "Connect the laser first. Does not run the job — use Start in Job Spooler."
+            )
+        )
         s = _("Operation type for which the testpattern will be generated")
         s += "\n" + _(
             "You can define the common parameters for this operation in the other tabs on top of this window"
@@ -669,6 +679,7 @@ class TemplatePanel(wx.Panel):
         )
 
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
+        self.button_queue.Bind(wx.EVT_BUTTON, self.on_button_queue_to_spooler)
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_max_1.Bind(wx.EVT_TEXT, self.validate_input)
@@ -782,9 +793,35 @@ class TemplatePanel(wx.Panel):
         self.context.device.setting(bool, "use_percent_for_power_display", False)
         return self.context.device.use_percent_for_power_display
 
+    def cap_power_for_display(self, value):
+        """Laser power: 0–100% display (= 0–1000 internal). GRBL cannot exceed 100%."""
+        if not self.use_percent():
+            return value
+        try:
+            v = float(value)
+        except (TypeError, ValueError):
+            return value
+        return max(0.0, min(100.0, v))
+
     def use_mm_min(self):
         self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
         return self.context.device.use_mm_min_for_speed_display
+
+    def select_operation_for_node(self, node):
+        """Match the Generator operation combo to a tree operation type."""
+        if node is None:
+            return
+        type_to_index = {
+            "op cut": 0,
+            "op engrave": 1,
+            "op raster": 2,
+            "op image": 3,
+            "op dots": 1,
+        }
+        idx = type_to_index.get(getattr(node, "type", None), -1)
+        if 0 <= idx < self.combo_ops.GetCount() and self.combo_ops.GetSelection() != idx:
+            self.combo_ops.SetSelection(idx)
+            self.set_param_according_to_op(None)
 
     def set_param_according_to_op(self, event):
         def preset_image_dpi(node=None):
@@ -1257,6 +1294,23 @@ class TemplatePanel(wx.Panel):
         # self.on_combo_1(None)
         # self.on_combo_2(None)
 
+    def on_button_queue_to_spooler(self, event):
+        optimize = getattr(self.context.planner, "do_optimization", True)
+        if queue_cutplan_to_spooler(
+            self.context, optimize=optimize, hold_policy="never"
+        ):
+            prefer_threaded = self.context.setting(bool, "prefer_threaded_mode", True)
+            if prefer_threaded:
+                wx.MessageBox(
+                    _(
+                        "The job is being prepared in the background.\n\n"
+                        "Wait a few seconds, then open Job Spooler and press Start there "
+                        "(or Laser tab → Arm → Start)."
+                    ),
+                    _("Queue to Spooler"),
+                    wx.OK | wx.ICON_INFORMATION,
+                )
+
     def on_button_create_pattern(self, event):
         def make_color(idx1, max1, idx2, max2, aspect1, growing1, aspect2, growing2):
             if self._freecolor:
@@ -1566,7 +1620,10 @@ class TemplatePanel(wx.Panel):
                             prepper(op)
                         v = f"{value}{unit}" if keep_unit else value
                         if ptype == "power" and self.use_percent():
-                            v = v if keep_unit else float(v) * 10.0
+                            if keep_unit:
+                                pass
+                            else:
+                                v = float(self.cap_power_for_display(v)) * 10.0
                         if ptype == "speed" and self.use_mm_min():
                             v = v if keep_unit else float(v) / 60.0
                         if hasattr(op, ptype):
@@ -1744,9 +1801,15 @@ class TemplatePanel(wx.Panel):
                 if param_unit == "deg":
                     min_value = float(text_min)
                     max_value = float(text_max)
-                elif param_unit == "ppi":
+                elif param_unit in ("ppi", "%"):
                     min_value = max(min_value, 0)
-                    max_value = min(max_value, 1000)
+                    if (
+                        self.parameters[idx][0] == "power"
+                        and self.use_percent()
+                    ):
+                        max_value = min(max_value, 100)
+                    else:
+                        max_value = min(max_value, 1000)
                 elif param_unit == "%":
                     min_value = max(min_value, 0)
                     max_value = min(max_value, 100)
@@ -1795,6 +1858,7 @@ class TemplatePanel(wx.Panel):
         self.context.signal("rebuild_tree")
         self.context.signal("refresh_scene", "Scene")
         self.save_settings()
+        self.button_queue.Enable(self.context.elements.have_burnable_elements())
 
     def setup_settings(self):
         self.context.setting(int, "template_optype", 0)
@@ -2075,7 +2139,7 @@ class TemplateTool(MWindow):
 
         return None
 
-    def set_node(self, primary_node, secondary_node=None):
+    def set_node(self, primary_node, secondary_node=None, focus_properties=False):
         def sort_priority(prop):
             prop_sheet, node = prop
             return (
@@ -2168,8 +2232,10 @@ class TemplateTool(MWindow):
 
         self.Layout()
         self.Thaw()
-        self.notebook_main.SetSelection(1)
-        self.notebook_main.SetSelection(0)
+        if focus_properties and self.notebook_main.GetPageCount() > 1:
+            self.notebook_main.SetSelection(1)
+        else:
+            self.notebook_main.SetSelection(0)
         del busy
 
     def window_open(self):

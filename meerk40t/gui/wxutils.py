@@ -32,6 +32,16 @@ def dispatch_to_main_thread(func):
     return wrapper
 
 
+def safe_enable_control(control, enabled=True):
+    """Re-enable a wx control after async work; ignore if the widget was destroyed."""
+    if control is None:
+        return
+    try:
+        control.Enable(enabled)
+    except RuntimeError:
+        pass
+
+
 ##############
 # DYNAMIC CHOICE
 # NODE MENU
@@ -251,6 +261,36 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
 
     tree_operations_for_node = get_tree_operation_for_node(elements)
 
+    def op_status_help(func):
+        """
+        Status-bar help while the user highlights a tree/scene context menu entry.
+        When ``ribbon_verbose_hover_help`` is on, empty explicit help falls back to
+        the operation function's docstring (first paragraph).
+        """
+        verbose = gui.context.setting(bool, "ribbon_verbose_hover_help", True)
+        h = func.help
+        if h is None:
+            h = ""
+        elif callable(h):
+            try:
+                h = h()
+            except Exception:
+                h = ""
+        hs_base = str(h)
+        try:
+            hs = hs_base.format_map(func.func_dict)
+        except (KeyError, ValueError, TypeError, IndexError):
+            hs = hs_base
+        hs = str(hs).strip()
+        if verbose and not hs:
+            wrapped = getattr(func, "__wrapped__", None)
+            if wrapped is not None:
+                doc = getattr(wrapped, "__doc__", None) or ""
+                doc = str(doc).strip()
+                if doc:
+                    return doc.split("\n\n")[0].replace("\n", " ")[:800]
+        return hs if hs else ""
+
     def menu_functions(f, node):
         func_dict = dict(f.func_dict)
 
@@ -342,7 +382,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                                 parent_menu.AppendSeparator()
                                 func.separate_before = False
 
-                            parent_menu.AppendSubMenu(submenu, sname, func.help)
+                            parent_menu.AppendSubMenu(submenu, sname, op_status_help(func))
                             submenus[common] = submenu
                             parent_menu = submenu
 
@@ -363,7 +403,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             if func.radio_state is not None:
                 last_was_separator = False
                 item = menu_context.Append(
-                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_RADIO
+                    wx.ID_ANY, func.real_name, op_status_help(func), wx.ITEM_RADIO
                 )
                 check = func.radio_state
                 item.Check(check)
@@ -385,7 +425,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                 else:
                     kind = wx.ITEM_NORMAL
                     check = None
-                item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
+                item = menu_context.Append(
+                    wx.ID_ANY, func.real_name, op_status_help(func), kind
+                )
                 if check is not None:
                     item.Check(check)
                 if func.enabled:
@@ -429,7 +471,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         if func.separate_before:
                             parent_menu.AppendSeparator()
                             func.separate_before = False
-                        parent_menu.AppendSubMenu(submenu, sname, func.help)
+                        parent_menu.AppendSubMenu(submenu, sname, op_status_help(func))
                         submenus[common] = submenu
                         parent_menu = submenu
 
@@ -445,7 +487,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             continue
         if func.radio_state is not None:
             item = menu_context.Append(
-                wx.ID_ANY, func.real_name, func.help, wx.ITEM_RADIO
+                wx.ID_ANY, func.real_name, op_status_help(func), wx.ITEM_RADIO
             )
             check = func.radio_state
             item.Check(check)
@@ -466,7 +508,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             else:
                 kind = wx.ITEM_NORMAL
                 check = None
-            item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
+            item = menu_context.Append(
+                wx.ID_ANY, func.real_name, op_status_help(func), kind
+            )
             if check is not None:
                 item.Check(check)
             if func.enabled:
@@ -1487,21 +1531,24 @@ class HoverButton(wxButton):
         return self._focus_color
 
     def Enable(self, value):
-        if value:
-            super().SetBackgroundColour(self._background_color)
-        else:
-            if self._disable_color is None:
-                r, g, b, a = self._background_color.Get()
-                color = wx.Colour(
-                    min(255, int(1.5 * r)),
-                    min(255, int(1.5 * g)),
-                    min(255, int(1.5 * b)),
-                )
+        try:
+            if value:
+                super().SetBackgroundColour(self._background_color)
             else:
-                color = self._disable_color
-            super().SetBackgroundColour(color)
-        super().Enable(value)
-        self.Refresh()
+                if self._disable_color is None:
+                    r, g, b, a = self._background_color.Get()
+                    color = wx.Colour(
+                        min(255, int(1.5 * r)),
+                        min(255, int(1.5 * g)),
+                        min(255, int(1.5 * b)),
+                    )
+                else:
+                    color = self._disable_color
+                super().SetBackgroundColour(color)
+            super().Enable(value)
+            self.Refresh()
+        except RuntimeError:
+            pass
 
     def on_enter(self, event):
         if self._focus_color is not None:
@@ -2025,6 +2072,22 @@ WX_SPECIALKEYS = {
     wx.WXK_CLEAR: "clear",
     wx.WXK_WINDOWS_MENU: "menu",
 }
+
+
+TREE_SELECTED_DELETE_KEYS = frozenset(("delete", "numpad_delete"))
+
+
+def key_triggers_tree_selected_delete(keyvalue):
+    """True when the key should run the same command as the ribbon Delete button."""
+    return keyvalue in TREE_SELECTED_DELETE_KEYS
+
+
+def emit_tree_selected_delete(context):
+    """Delete emphasized elements (same as ribbon Delete). Returns True if executed."""
+    if context.elements.has_emphasis():
+        context("tree selected delete\n")
+        return True
+    return False
 
 
 def is_navigation_key(keyvalue):

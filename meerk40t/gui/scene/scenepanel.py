@@ -1,7 +1,11 @@
 import wx
 
 from meerk40t.gui.scene.scene import RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_DROP
-from meerk40t.gui.wxutils import get_key_name
+from meerk40t.gui.wxutils import (
+    emit_tree_selected_delete,
+    get_key_name,
+    key_triggers_tree_selected_delete,
+)
 
 
 class ScenePanel(wx.Panel):
@@ -218,6 +222,17 @@ class ScenePanel(wx.Panel):
             if not ignore and self.context.bind.untrigger(literal):
                 if self._keybind_channel:
                     self._keybind_channel(f"Scene key_up: {literal} executed.")
+            elif (
+                not ignore
+                and literal not in self.context.bind.triggered
+                and key_triggers_tree_selected_delete(literal)
+                and emit_tree_selected_delete(self.context)
+            ):
+                consumed = True
+                if self._keybind_channel:
+                    self._keybind_channel(
+                        f"Scene key_up: {literal} tree selected delete."
+                    )
             else:
                 if self._keybind_channel:
                     if ignore:

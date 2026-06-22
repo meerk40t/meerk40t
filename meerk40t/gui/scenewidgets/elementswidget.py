@@ -152,7 +152,9 @@ class ElementsWidget(Widget):
                     self.scene.context("tool none\n")
                     return RESPONSE_CONSUME
                 else:
-                    self.scene.context.signal("scene_right_click")
+                    self.scene.context.signal(
+                        "scene_right_click", space_pos[0], space_pos[1]
+                    )
                     return RESPONSE_CONSUME
         elif event_type == "rightdown":  # any modifier
             # if self.scene.context.use_toolmenu:
@@ -160,6 +162,9 @@ class ElementsWidget(Widget):
             #     return RESPONSE_CONSUME
             return RESPONSE_CHAIN
         elif event_type == "leftclick":
+            # If a creation/modification tool is active, do not steal the click for selection.
+            if self.scene.pane.active_tool != "none":
+                return RESPONSE_CHAIN
             if self.scene.pane.modif_active:
                 return RESPONSE_CHAIN
             keep_old = "shift" in modifiers

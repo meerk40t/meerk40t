@@ -211,7 +211,7 @@ def plugin(kernel, lifecycle):
                 idy = spooler._dy
             except AttributeError:
                 return
-            confined = getattr(kernel.root, 'confined', False)
+            confined = getattr(kernel.root, "confined", True)
 
             if force:
                 spooler.command("move_rel", idx, idy, False)
@@ -264,7 +264,7 @@ def plugin(kernel, lifecycle):
         def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
             if data is None:
                 data = kernel.device.spooler
-            confined = getattr(kernel.root, 'confined', False)
+            confined = getattr(kernel.root, "confined", True)
             spooler = data
             if dy is None:
                 raise CommandSyntaxError
@@ -449,6 +449,8 @@ class Spooler:
 
         self._shutdown = False
         self._thread = None
+        self._abort_clear = False
+        self._user_aborted = False
         # If True, jobs that are stopped and have priority will be reinserted into the queue.
         # This can affect job ordering and execution, as stopped priority jobs may be retried or reordered.
         # Use with caution: enabling this may lead to repeated execution of certain jobs
@@ -619,6 +621,7 @@ class Spooler:
         )
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
+        self._user_aborted = False
         with self._lock:
             stopped_jobs = self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
@@ -635,6 +638,7 @@ class Spooler:
         )
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
+        self._user_aborted = False
         with self._lock:
             stopped_jobs = self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
@@ -654,6 +658,7 @@ class Spooler:
         @return:
         """
         job.uid = self.context.logging.uid("job")
+        self._user_aborted = False
         with self._lock:
             if prevent_duplicate:
                 for q in self._queue:
@@ -682,39 +687,54 @@ class Spooler:
         return stopped_jobs
 
     def clear_queue(self):
-        with self._lock:
-            for element in self._queue:
-                loop = getattr(element, "loops_executed", 0)
-                total = getattr(element, "loops", 0)
-                if isinf(total):
-                    status = "stopped"
-                elif loop < total:
-                    status = "stopped"
-                else:
-                    status = "completed"
-                self.context.logging.event(
-                    {
-                        "uid": getattr(element, "uid"),
-                        "status": status,
-                        "loop": getattr(element, "loops_executed", None),
-                        "total": getattr(element, "loops", None),
-                        "label": getattr(element, "label", None),
-                        "start_time": getattr(element, "time_started", None),
-                        "duration": getattr(element, "runtime", None),
-                        "device": self.context.label,
-                        "important": not getattr(element, "helper", False),
-                        "estimate": element.estimate_time()
-                        if hasattr(element, "estimate_time")
-                        else None,
-                        "steps_done": getattr(element, "steps_done", None),
-                        "steps_total": getattr(element, "steps_total", None),
-                    }
-                )
-                self.context.signal("spooler;completed")
-                element.stop()
-            self._queue.clear()
-            self._lock.notify()
+        """Stop all queued jobs. Must return quickly so the UI stays responsive."""
+        aborted = False
+        log_events = []
+        self._user_aborted = True
+        self._abort_clear = True
+        try:
+            with self._lock:
+                for element in list(self._queue):
+                    if hasattr(element, "is_running") and element.is_running():
+                        aborted = True
+                    element.stop()
+                    loop = getattr(element, "loops_executed", 0)
+                    total = getattr(element, "loops", 0)
+                    if isinf(total):
+                        status = "stopped"
+                    elif loop < total:
+                        status = "stopped"
+                    else:
+                        status = "completed"
+                    log_events.append(
+                        {
+                            "uid": getattr(element, "uid", None),
+                            "status": status,
+                            "loop": getattr(element, "loops_executed", None),
+                            "total": getattr(element, "loops", None),
+                            "label": getattr(element, "label", None),
+                            "start_time": getattr(element, "time_started", None),
+                            "duration": getattr(element, "runtime", None),
+                            "device": self.context.label,
+                            "important": not getattr(element, "helper", False),
+                            "estimate": element.estimate_time()
+                            if hasattr(element, "estimate_time")
+                            else None,
+                            "steps_done": getattr(element, "steps_done", None),
+                            "steps_total": getattr(element, "steps_total", None),
+                        }
+                    )
+                self._queue.clear()
+                self._current = None
+                self._lock.notify()
+        finally:
+            self._abort_clear = False
+        for entry in log_events:
+            self.context.logging.event(entry)
+        if aborted:
+            self.context.signal("spooler;aborted")
         self.context.signal("spooler;queue", len(self._queue))
+        self.context.signal("spooler;completed")
 
     def remove(self, element):
         with self._lock:

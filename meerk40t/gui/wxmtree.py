@@ -51,6 +51,8 @@ from meerk40t.gui.wxutils import (
     get_key_name,
     is_navigation_key,
     wxButton,
+    wxComboBox,
+    wxStaticText,
     wxTreeCtrl,
 )
 
@@ -153,7 +155,28 @@ class TreePanel(wx.Panel):
 
         self.setup_warn_panel()
 
+        self._material_combo_loading = False
+        self._material_sections = [""]
+        mat_row = wx.BoxSizer(wx.HORIZONTAL)
+        mat_label = wxStaticText(self, wx.ID_ANY, _("Material:"))
+        self.material_combo = wxComboBox(
+            self,
+            wx.ID_ANY,
+            choices=[_("— Load preset —")],
+            style=wx.CB_READONLY,
+        )
+        self.material_combo.SetToolTip(
+            _(
+                "Load a Material Manager preset into Operations "
+                "(replaces current operation list)"
+            )
+        )
+        mat_row.Add(mat_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 4)
+        mat_row.Add(self.material_combo, 1, wx.EXPAND | wx.RIGHT, 4)
+        self.material_combo.Bind(wx.EVT_COMBOBOX, self.on_material_combo_select)
+
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(mat_row, 0, wx.EXPAND | wx.TOP, 4)
         main_sizer.Add(self.wxtree, 1, wx.EXPAND, 0)
         main_sizer.Add(self.warn_panel, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
@@ -163,6 +186,72 @@ class TreePanel(wx.Panel):
         self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree", "all")
+        self.refresh_material_combo_list()
+
+    def _material_preset_label(self, section, opinfo):
+        material_name = opinfo.get("material", "")
+        material_title = opinfo.get("title", "")
+        material_thickness = opinfo.get("thickness", "")
+        if material_title == "":
+            if material_name:
+                material_title = material_name
+            elif section == "_default":
+                material_title = _("Generic Defaults")
+            elif section.startswith("_default_"):
+                material_title = _("Default for {dev}").format(dev=section[9:])
+            else:
+                material_title = section.replace("_", " ")
+        parts = []
+        if material_name:
+            parts.append(material_name)
+        if material_thickness:
+            parts.append(material_thickness)
+        if material_title and material_title not in parts:
+            parts.append(material_title)
+        return " — ".join(parts) if parts else section.replace("_", " ")
+
+    def refresh_material_combo_list(self):
+        if not hasattr(self, "material_combo"):
+            return
+        self._material_combo_loading = True
+        choices = [_("— Load preset —")]
+        sections = [""]
+        entries = []
+        elems = self.context.elements
+        elems.op_data.read_configuration()
+        for section in elems.op_data.section_set():
+            if section.startswith("previous"):
+                continue
+            opinfo = elems.load_persistent_op_info(section)
+            entries.append((section, self._material_preset_label(section, opinfo)))
+        entries.sort(key=lambda e: e[1].lower())
+        for section, label in entries:
+            sections.append(section)
+            choices.append(label)
+        self._material_sections = sections
+        self.material_combo.Set(choices)
+        self.material_combo.SetSelection(0)
+        self._material_combo_loading = False
+
+    def on_material_combo_select(self, event):
+        if self._material_combo_loading:
+            return
+        idx = self.material_combo.GetSelection()
+        if idx <= 0 or idx >= len(self._material_sections):
+            return
+        opname = self._material_sections[idx]
+        self.context(f"material load {opname}\n")
+        elems = self.context.elements
+        if elems.update_statusbar_on_material_load:
+            op_list, op_info = elems.load_persistent_op_list(opname)
+            if len(op_list) > 0:
+                elems.default_operations = list(op_list)
+                elems.default_operations_title = elems._get_default_list_title(op_info)
+                elems.default_operation_info = dict(op_info)
+                elems.signal("default_operations")
+        self._material_combo_loading = True
+        self.material_combo.SetSelection(0)
+        self._material_combo_loading = False
 
     def setup_warn_panel(self):
         def fix_unassigned_create(event):
@@ -342,7 +431,7 @@ class TreePanel(wx.Panel):
         # probably there is an issue there, but we use the opportunity not
         # only to catch these but to establish a forced delete via ctrl-delete as well
 
-        if keyvalue == "delete":
+        if keyvalue in ("delete", "numpad_delete"):
             self.context("tree selected delete\n")
             return
         if keyvalue == "ctrl+delete":
@@ -363,7 +452,7 @@ class TreePanel(wx.Panel):
                 self._keybind_channel(f"Tree key_up: {keyvalue} was unbound.")
 
     def pane_show(self):
-        pass
+        self.refresh_material_combo_list()
 
     def pane_hide(self):
         pass
@@ -472,6 +561,7 @@ class TreePanel(wx.Panel):
         if target is None:
             target = "all"
         self.shadow_tree.rebuild_tree(source="signal", target=target)
+        self.refresh_material_combo_list()
 
     @signal_listener("refresh_tree")
     def on_refresh_tree_signal(self, origin, nodes=None, *args):

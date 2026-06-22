@@ -103,6 +103,8 @@ and a wxpython version <= 4.1.1."""
         ]
         kernel.register_choices("units", choices)
     elif lifecycle == "postboot":
+        kernel.root.setting(bool, "confined", True)
+        kernel.root.confined = True
         choices = [
             {
                 "attr": "supress_non_visible",
@@ -257,6 +259,40 @@ and a wxpython version <= 4.1.1."""
                 # Hint for translation _("Tooltips")
                 "section": "Tooltips",
                 "signals": "restart",
+            },
+            {
+                "attr": "ribbon_tooltip_delay_ms",
+                "object": kernel.root,
+                "default": 2000,
+                "type": int,
+                "style": "flat",
+                "label": _("Ribbon: hover before description"),
+                "trailer": "ms",
+                "tip": _(
+                    "How long to hover over a ribbon toolbar button before its "
+                    "tooltip appears. The tooltip combines the short hint and any "
+                    "extended help text for that button. Other windows still use "
+                    "'ToolTip delay' below."
+                ),
+                "page": "Gui",
+                "section": "Tooltips",
+            },
+            {
+                "attr": "ribbon_verbose_hover_help",
+                "object": kernel.root,
+                "default": True,
+                "type": bool,
+                "label": _("Long UI descriptions (ribbon + menus)"),
+                "tip": _(
+                    "When enabled, ribbon toolbar buttons use the ribbon hover delay and "
+                    "may show extended help in the tooltip. Tree and scene context menus "
+                    "use the same flag: menu entries show full help text in the status bar "
+                    "while you highlight them, and may use the function docstring if no "
+                    "help was defined. Also toggled from Panes → Help. When disabled, "
+                    "ribbon tooltips match the normal ToolTip delay and show only the short hint."
+                ),
+                "page": "Gui",
+                "section": "Tooltips",
             },
             {
                 "attr": "tooltip_autopop",
