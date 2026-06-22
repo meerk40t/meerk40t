@@ -461,6 +461,11 @@ class GRBLDriver(Parameters):
         self._g90_absolute()
         self._g94_feedrate()
         self._clean()
+        self._rotary_firmware_active = False
+        rotary = getattr(self.service, "rotary", None)
+        if rotary is not None and rotary.active:
+            if rotary.apply_firmware_steps(self):
+                self._rotary_firmware_active = True
         if self.service.use_m3:
             self(f"M3{self.line_end}")
         else:
@@ -470,6 +475,7 @@ class GRBLDriver(Parameters):
         current = 0
         for q in self.queue:
             if self._job_aborted():
+                self._rotary_restore_firmware_steps()
                 self.queue.clear()
                 return
             # Are there any custom commands to be executed?
@@ -633,11 +639,13 @@ class GRBLDriver(Parameters):
                         self.move_mode = 1
                     self._move(x, y)
         if self._job_aborted():
+            self._rotary_restore_firmware_steps()
             self.queue.clear()
             self._set_queue_status(0, 0)
             return
         self.queue.clear()
         self._set_queue_status(0, 0)
+        self._rotary_restore_firmware_steps()
 
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
@@ -667,6 +675,35 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        rotary = getattr(self.service, "rotary", None)
+        if rotary is not None and rotary.active:
+            channel = self.service.channel("grbl")
+            _ = self.service._
+            old_current = self.service.current
+            self.native_x = 0
+            self.native_y = 0
+            if self.service.has_endstops and rotary.home_x_only:
+                channel(
+                    _(
+                        "Rotary mode: homing X axis only ($HX). Y is the chuck — do not $HY."
+                    )
+                )
+                self(f"$HX{self.line_end}")
+            else:
+                channel(
+                    _(
+                        "Rotary mode: physical homing blocked. Console: $HX for X only, "
+                        "or disable rotary mode for flat-bed."
+                    )
+                )
+                return
+            new_current = self.service.current
+            if self._signal_updates:
+                self.service.signal(
+                    "driver;position",
+                    (old_current[0], old_current[1], new_current[0], new_current[1]),
+                )
+            return
         old_current = self.service.current
         self.native_x = 0
         self.native_y = 0
@@ -925,8 +962,45 @@ class GRBLDriver(Parameters):
     # PROTECTED DRIVER CODE
     ####################
 
+    def _rotary_y_grbl_factor(self):
+        rotary = getattr(self.service, "rotary", None)
+        if rotary is None:
+            return 1.0
+        return rotary.y_grbl_factor()
+
+    def _rotary_restore_firmware_steps(self):
+        if not getattr(self, "_rotary_firmware_active", False):
+            return
+        rotary = getattr(self.service, "rotary", None)
+        if rotary is not None:
+            rotary.restore_firmware_steps(self)
+        self._rotary_firmware_active = False
+
+    def _rotary_transform_move(self, x, y):
+        """Mirror output at G-code time (does not distort scene preview)."""
+        rotary = getattr(self.service, "rotary", None)
+        if rotary is None or not rotary.active:
+            return x, y
+        if self._absolute:
+            try:
+                bw = float(Length(self.service.view.width))
+                bh = float(Length(self.service.view.height))
+            except (ValueError, TypeError):
+                return x, y
+            if rotary.flip_x:
+                x = bw - x
+            if rotary.flip_y:
+                y = bh - y
+        else:
+            if rotary.flip_x:
+                x = -x
+            if rotary.flip_y:
+                y = -y
+        return x, y
+
     def _move(self, x, y, absolute=False):
         old_current = self.service.current
+        x, y = self._rotary_transform_move(x, y)
         if self._absolute:
             self.native_x = x
             self.native_y = y
@@ -944,7 +1018,7 @@ class GRBLDriver(Parameters):
         else:
             line.append("G1")
         x /= self.unit_scale
-        y /= self.unit_scale
+        y = (y * self._rotary_y_grbl_factor()) / self.unit_scale
         line.append(f"X{x:.3f}")
         line.append(f"Y{y:.3f}")
         if self.zaxis_dirty:

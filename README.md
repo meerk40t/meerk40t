@@ -4,7 +4,7 @@
 
 **Workspace (hardware, EEPROM, workflow):** [meerk40t_Makerbase_DLC32](https://github.com/Andre6553/meerk40t_Makerbase_DLC32)
 
-**Current version:** `0.9.9034` · **Upstream:** [meerk40t/meerk40t](https://github.com/meerk40t/meerk40t)
+**Current version:** `0.9.9040` · **Upstream:** [meerk40t/meerk40t](https://github.com/meerk40t/meerk40t)
 
 Personal fork for a **Makerbase MKS DLC32** GRBL controller on a **30×40 cm, 60 W CO2** laser. Active local development — not the upstream maintenance branch.
 
@@ -14,9 +14,31 @@ Personal fork for a **Makerbase MKS DLC32** GRBL controller on a **30×40 cm, 60
 
 ## Fork changelog (MeerK40t)
 
-**Latest entry:** **v0.9.9034**. Canonical copy also lives in the workspace repo at [`docs/meerk40t/15-meerkat-local-changes.md`](https://github.com/Andre6553/meerk40t_Makerbase_DLC32/blob/main/docs/meerk40t/15-meerkat-local-changes.md) (keep in sync when editing).
+**Latest entry:** **v0.9.9040**. Canonical copy also lives in the workspace repo at [`docs/meerk40t/15-meerkat-local-changes.md`](https://github.com/Andre6553/meerk40t_Makerbase_DLC32/blob/main/docs/meerk40t/15-meerkat-local-changes.md) (keep in sync when editing).
 
 All entries are **fork-style edits** in this repository, not upstream MeerK40t releases.
+
+## 2026-06 — Rotary: Fit uses native units → mm correctly (v0.9.9040)
+
+**Files:** `meerk40t/meerk40t/rotary/rotary.py`
+
+**Problem:** Fit treated scene bounds as mm but MeerK40t stores them in **native units** (~2580 per mm). It also stripped the normal text matrix `scale(UNITS_PER_PIXEL)`, which blew up font size and triggered false “bounds look wrong” errors on **new** text.
+
+**Fix:** Convert selection size with `UNITS_PER_MM`; only remove **extra** matrix scale (old bugs), always keep `UNITS_PER_PIXEL` on text; use standard `selected_area()` for bounds.
+
+## 2026-06 — Rotary: Fit selection fixes text (v0.9.9038)
+
+**Files:** `meerk40t/meerk40t/rotary/rotary.py`
+
+**Problem:** **Fit selection to rotary** scaled text by multiplying its matrix. wxPython draws text with `DrawText` + matrix, so scaled text looked like a shattered round blob.
+
+**Fix:** Text is scaled via **font size** (and position nudge), not matrix scale.
+
+## 2026-06 — Rotary Pro: diameter, steps calibration, GRBL hooks (v0.9.9035)
+
+**Files:** `meerk40t/meerk40t/rotary/rotary.py`, `meerk40t/meerk40t/rotary/rotary_cam.py`, `meerk40t/meerk40t/grbl/driver.py`, `meerk40t/meerk40t/rotary/gui/rotarysettings.py`
+
+**Feature:** Y-motor-swap chuck rotary for GRBL/DLC32 — diameter, usable length, Y steps compensation, homing guards, **Fit selection to rotary**, console `rotary` / `rotaryfit` / `rotarycal` / `rotarysuggest`.
 
 ## 2026-06 — Living Hinges: Apply to scene button visible (v0.9.9034)
 
