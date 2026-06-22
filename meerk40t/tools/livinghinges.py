@@ -186,7 +186,7 @@ class HingePanel(wx.Panel):
             +50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
-        self.button_generate = wxButton(self, wx.ID_ANY, _("Generate"))
+        self.button_generate = wxButton(self, wx.ID_ANY, _("Apply to scene"))
         self.button_close = wxButton(self, wx.ID_ANY, _("Close"))
         self.context.setting(bool, "hinge_preview_pattern", True)
         self.context.setting(bool, "hinge_preview_shape", True)
@@ -455,11 +455,13 @@ class HingePanel(wx.Panel):
         # main_left.Add(self.check_debug_outline, 0, wx.EXPAND, 0)
 
         hsizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        main_left.Add(hsizer_buttons, 0, wx.EXPAND, 0)
 
-        self.button_generate.SetToolTip(_("Generates the hinge"))
+        self.button_generate.SetToolTip(
+            _("Add hinge cut paths to the main scene (assign to Cut, then burn)")
+        )
         hsizer_buttons.Add(self.button_generate, 2, 0, 0)
 
+        self.button_close.SetToolTip(_("Close this window"))
         hsizer_buttons.Add(self.button_close, 1, 0, 0)
 
         main_right = StaticBoxSizer(self, wx.ID_ANY, _("Preview"), wx.VERTICAL)
@@ -473,6 +475,7 @@ class HingePanel(wx.Panel):
         hsizer_preview.Add(self.check_preview_show_shape, 1, wx.EXPAND, 0)
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
         main_right.Add(self.panel_preview, 1, wx.EXPAND, 0)
+        main_right.Add(hsizer_buttons, 0, wx.EXPAND | wx.TOP, 4)
         main_left.Layout()
         main_right.Layout()
         main_sizer.Layout()
@@ -1328,7 +1331,7 @@ class LivingHingeTool(MWindow):
     """
 
     def __init__(self, *args, **kwds):
-        super().__init__(570, 420, submenu="Laser-Tools", *args, **kwds)
+        super().__init__(570, 480, submenu="Laser-Tools", *args, **kwds)
         self.panel_template = HingePanel(
             self,
             wx.ID_ANY,
