@@ -921,6 +921,9 @@ class RibbonBarPanel(wx.Control):
         self._paint_dirty = True
         self._layout_dirty = True
         self._ribbon_buffer = None
+        self._dock_cap = None
+        self._dock_snap_timer = None
+        self._snapping = False
 
         # self._overflow = list()
         # self._overflow_position = None
@@ -932,6 +935,7 @@ class RibbonBarPanel(wx.Control):
         self.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
@@ -988,6 +992,16 @@ class RibbonBarPanel(wx.Control):
     def on_size(self, event: wx.SizeEvent):
         self._set_buffer()
         self.modified()
+        self._schedule_dock_snap()
+
+    def on_destroy(self, event):
+        if self._dock_snap_timer is not None:
+            try:
+                self._dock_snap_timer.Stop()
+            except RuntimeError:
+                pass
+            self._dock_snap_timer = None
+        event.Skip()
 
     def on_erase_background(self, event):
         pass
@@ -1089,6 +1103,7 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
+        dock_extent = None
         if self._redraw_lock.acquire(timeout=0.2):
             try:
                 buf = self._set_buffer()
@@ -1098,6 +1113,7 @@ class RibbonBarPanel(wx.Control):
                     self.art.layout(dc, self)
                     self._layout_dirty = False
                 self.art.paint_main(dc, self)
+                dock_extent = self.art.dock_extent(self)
                 dc.SelectObject(wx.NullBitmap)
                 del dc
                 self._paint_dirty = False
@@ -1106,11 +1122,60 @@ class RibbonBarPanel(wx.Control):
                 # Shutdown error
             finally:
                 self._redraw_lock.release()
+        self._dock_cap = dock_extent
+        self._schedule_dock_snap()
         try:
             self.Refresh()  # Paint buffer on screen.
         except RuntimeError:
             # Shutdown error
             pass
+
+    def _schedule_dock_snap(self):
+        if self._snapping:
+            return
+        cap = self._dock_cap
+        if cap is None:
+            return
+        try:
+            if not self.prefer_horizontal():
+                return
+            if self.GetSize().GetHeight() <= cap + 2:
+                return
+        except RuntimeError:
+            return
+        if self._dock_snap_timer is not None:
+            self._dock_snap_timer.Stop()
+        self._dock_snap_timer = wx.CallLater(150, self._snap_dock)
+
+    def _snap_dock(self):
+        cap = self._dock_cap
+        if cap is None or self.pane is None:
+            return
+        try:
+            if self.context.kernel.is_shutdown:
+                return
+        except AttributeError:
+            return
+        self._snapping = True
+        try:
+            if not self.prefer_horizontal():
+                return
+            if self.GetSize().GetHeight() <= cap + 2:
+                return
+            mgr = self.pane.manager
+            pane = mgr.GetPane(self.pane.name)
+            if not pane.IsOk() or not pane.IsDocked():
+                return
+            # Resize a docked pane by briefly fixing it to the target size.
+            pane.Fixed()
+            pane.BestSize(wx.Size(-1, cap))
+            mgr.Update()
+            pane.Resizable(True)
+            mgr.Update()
+        except (AttributeError, RuntimeError):
+            pass
+        finally:
+            self._snapping = False
 
     def prefer_horizontal(self):
         result = None
@@ -1733,8 +1798,6 @@ class Art:
                         if ptsize < 6:  # too small
                             break
                     if not wouldfit:
-                        # A single button that cannot show its label turns
-                        # labels off for the whole bar (all-or-nothing).
                         self.all_labels_fit = False
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
@@ -2002,8 +2065,8 @@ class Art:
             button.toggle,  # Toggle state affects colors
             self.hover_button is button and self.hover_dropdown is None,  # Hover state
             self.show_labels,  # Whether labels are shown
-            self.all_labels_fit,  # Labels are all-or-nothing for the bar
-            self.label_reserve,  # Reserved label height affects icon size
+            self.all_labels_fit,
+            self.label_reserve,
             button.icon_size,  # Icon size affects rendering
         )
 
@@ -2020,8 +2083,7 @@ class Art:
         # No cached version - calculate text layout and render using helper
         start_y = y
         img_h = h
-        # Reserve space for labels only when they will actually be shown; when
-        # labels are suppressed for the bar the icon reclaims the full height.
+        # do we have text? if yes let's reduce the available space in y
         if self.show_labels and self.all_labels_fit:
             img_h -= self.bitmap_text_buffer
             img_h -= self.label_reserve
@@ -2033,22 +2095,16 @@ class Art:
             bitmap = button.bitmap_disabled
 
         bitmap_width, bitmap_height = bitmap.Size
-        # Reposition the drop-down caret for the icon at its just-rendered size.
         self._position_dropdown(button)
         ptsize = self.get_best_font_size(self.label_font_ceiling(w))
         # Use cached font instead of creating new one
         font = self.get_cached_font(ptsize)
 
         text_edge = self.bitmap_text_buffer
-        # Whether labels are shown is an all-or-nothing decision already made
-        # for the whole bar in look_at_button_font_sizes; never hide an
-        # individual button here. The uniform ptsize fits every button.
         show_text = bool(button.label) and self.show_labels and self.all_labels_fit
         if show_text:
             label_text = button.label.split(" ")
             dc.SetFont(font)
-            # Measure the wrapped label height so it can be centered below the
-            # icon (this mirrors the wrapping done in _render_button_content).
             total_text_height = 0
             i = 0
             while i < len(label_text):
@@ -2248,6 +2304,34 @@ class Art:
             # if self.parent.visible_pages() == 1:
             #     print(f"page: {page.position}")
             self.page_layout(dc, page)
+
+    def dock_extent(self, ribbon):
+        if not self.parent.prefer_horizontal():
+            return None
+        page = self.current_page
+        if page is None:
+            page = ribbon.first_page()
+        if page is None or page.position is None:
+            return None
+        bottom = 0
+        found = False
+        for panel in page.panels:
+            if panel is None or panel.visible_button_count == 0:
+                continue
+            for button in panel.visible_buttons():
+                if button.overflow or not button.visible or button.position is None:
+                    continue
+                found = True
+                x, y, x1, y1 = button.position
+                icon = min(button.max_size, int(round(x1 - x)))
+                content = y + icon + 2 * (icon // 25 + 1)
+                if self.show_labels and self.all_labels_fit:
+                    content += self.bitmap_text_buffer + self.label_reserve
+                bottom = max(bottom, content)
+        if not found:
+            return None
+        bottom += self.panel_button_buffer + self.page_panel_buffer
+        return int(bottom)
 
     def preferred_button_size_for_page(self, dc, page):
         x, y, max_x, max_y = page.position
@@ -2672,15 +2756,15 @@ class Art:
         self._position_dropdown(button)
 
     def _position_dropdown(self, button):
-        # Place the drop-down caret at the lower-right of the icon at its
-        # current size. Called on every paint so the caret tracks the icon as
-        # it is resized, rather than being frozen at its layout-time size.
         if button.dropdown is None or button.position is None:
             return
         if button.kind != "hybrid" or button.key == "toggle":
             return
         x, y, max_x, max_y = button.position
         bitmap_width, bitmap_height = button.bitmap.Size
+        # Calculate text height/width
+        # Calculate dropdown
+        # Same size regardless of bitmap-size
         sizx = 15
         sizy = 15
         if min(bitmap_width, bitmap_height) > 70:
@@ -2699,23 +2783,28 @@ class Art:
         if bitmap_height < 30:
             gap = 3
 
+        # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
         button.dropdown.position = (
             extx - sizx,
             exty - sizy - gap,
             extx,
             exty - gap,
         )
+        # button.dropdown.position = (
+        #     x + bitmap_width / 2,
+        #     y + bitmap_height / 2,
+        #     x + bitmap_width,
+        #     y + bitmap_height,
+        # )
+        # print (
+        #     f"Required for {button.label}: button: {x},{y} to {max_x},{max_y}," +
+        #     f"dropd: {extx-sizx},{exty-sizy} to {extx},{exty}"
+        # )
 
     def label_font_ceiling(self, w):
-        # Largest label size we attempt for a button of this width. Height is
-        # deliberately not a factor, so a shorter bar shrinks the icon (which
-        # takes the leftover height) before it shrinks the text. Floored at 6,
-        # the smallest readable size, below which labels are hidden instead.
         return max(6, min(18, int(round(w / 5.0, 2)) * 2))
 
     def _label_block_height(self, dc, label, w, ptsize):
-        # Wrapped height of `label` rendered at `ptsize` within width w.
-        # Returns 0 if any (combined) word is wider than w.
         words = label.split(" ")
         total_h = 0
         i = 0
@@ -2739,8 +2828,6 @@ class Art:
         return total_h
 
     def _label_width_fit(self, dc, label, w):
-        # Largest font size <= ceiling(w) at which every word in `label` fits
-        # width w. Height-independent. Returns 0 if it cannot fit even at 6.
         ptsize = self.label_font_ceiling(w)
         while ptsize >= 6:
             if self._label_block_height(dc, label, w, ptsize) > 0:
@@ -2749,12 +2836,6 @@ class Art:
         return 0
 
     def _compute_label_reserve(self, dc, page):
-        # Uniform vertical space for labels across the whole bar. First find the
-        # single largest font size at which every label still fits its width
-        # (height is irrelevant here, so it is stable while the bar resizes),
-        # then reserve the tallest label block at that one size. The icon takes
-        # the remaining height, so icons — not text — shrink first, and only by
-        # as much as the actual (uniform) text really needs.
         if not self.show_labels:
             return 0
         labels = []
@@ -2771,7 +2852,7 @@ class Art:
                 w = int(round(x1 - x))
                 labels.append((button.label, w))
                 fit = self._label_width_fit(dc, button.label, w)
-                if fit:  # ignore labels that cannot fit even at 6 (they hide)
+                if fit:
                     uniform = fit if uniform is None else min(uniform, fit)
         if uniform is None:
             return 0
