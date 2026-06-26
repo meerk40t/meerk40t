@@ -921,6 +921,9 @@ class RibbonBarPanel(wx.Control):
         self._paint_dirty = True
         self._layout_dirty = True
         self._ribbon_buffer = None
+        self._dock_cap = None
+        self._dock_snap_timer = None
+        self._snapping = False
 
         # self._overflow = list()
         # self._overflow_position = None
@@ -932,6 +935,7 @@ class RibbonBarPanel(wx.Control):
         self.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
@@ -988,6 +992,16 @@ class RibbonBarPanel(wx.Control):
     def on_size(self, event: wx.SizeEvent):
         self._set_buffer()
         self.modified()
+        self._schedule_dock_snap()
+
+    def on_destroy(self, event):
+        if self._dock_snap_timer is not None:
+            try:
+                self._dock_snap_timer.Stop()
+            except RuntimeError:
+                pass
+            self._dock_snap_timer = None
+        event.Skip()
 
     def on_erase_background(self, event):
         pass
@@ -1089,6 +1103,7 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
+        dock_extent = None
         if self._redraw_lock.acquire(timeout=0.2):
             try:
                 buf = self._set_buffer()
@@ -1098,6 +1113,7 @@ class RibbonBarPanel(wx.Control):
                     self.art.layout(dc, self)
                     self._layout_dirty = False
                 self.art.paint_main(dc, self)
+                dock_extent = self.art.dock_extent(self)
                 dc.SelectObject(wx.NullBitmap)
                 del dc
                 self._paint_dirty = False
@@ -1106,11 +1122,60 @@ class RibbonBarPanel(wx.Control):
                 # Shutdown error
             finally:
                 self._redraw_lock.release()
+        self._dock_cap = dock_extent
+        self._schedule_dock_snap()
         try:
             self.Refresh()  # Paint buffer on screen.
         except RuntimeError:
             # Shutdown error
             pass
+
+    def _schedule_dock_snap(self):
+        if self._snapping:
+            return
+        cap = self._dock_cap
+        if cap is None:
+            return
+        try:
+            if not self.prefer_horizontal():
+                return
+            if self.GetSize().GetHeight() <= cap + 2:
+                return
+        except RuntimeError:
+            return
+        if self._dock_snap_timer is not None:
+            self._dock_snap_timer.Stop()
+        self._dock_snap_timer = wx.CallLater(150, self._snap_dock)
+
+    def _snap_dock(self):
+        cap = self._dock_cap
+        if cap is None or self.pane is None:
+            return
+        try:
+            if self.context.kernel.is_shutdown:
+                return
+        except AttributeError:
+            return
+        self._snapping = True
+        try:
+            if not self.prefer_horizontal():
+                return
+            if self.GetSize().GetHeight() <= cap + 2:
+                return
+            mgr = self.pane.manager
+            pane = mgr.GetPane(self.pane.name)
+            if not pane.IsOk() or not pane.IsDocked():
+                return
+            # Resize a docked pane by briefly fixing it to the target size.
+            pane.Fixed()
+            pane.BestSize(wx.Size(-1, cap))
+            mgr.Update()
+            pane.Resizable(True)
+            mgr.Update()
+        except (AttributeError, RuntimeError):
+            pass
+        finally:
+            self._snapping = False
 
     def prefer_horizontal(self):
         result = None
@@ -1439,6 +1504,8 @@ class Art:
         self.edge_page_buffer = 4
         self.rounded_radius = 3
         self.font_sizes = {}
+        self.all_labels_fit = True
+        self.label_reserve = 0
 
         # Font cache for performance optimization
         self._font_cache = {}
@@ -1646,11 +1713,15 @@ class Art:
 
     def look_at_button_font_sizes(self, dc, page):
         self.font_sizes = {}
+        self.all_labels_fit = True
+        self.label_reserve = self._compute_label_reserve(dc, page)
         for panel in page.panels:
             # We suppress empty panels
             if panel is None or panel.visible_button_count == 0:
                 continue
             for button in panel.visible_buttons():
+                if button.overflow or not button.visible or button.position is None:
+                    continue
                 x, y, x1, y1 = button.position
                 w = int(round(x1 - x))
                 h = int(round(y1 - y))
@@ -1658,8 +1729,7 @@ class Art:
                 # do we have text? if yes let's reduce the available space in y
                 if self.show_labels:  # Regardless whether we have a label or not...
                     img_h -= self.bitmap_text_buffer
-                    ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
-                    img_h -= int(ptsize * 1.35)
+                    img_h -= self.label_reserve
 
                 button.get_bitmaps(min(w, img_h))
                 if button.enabled:
@@ -1668,8 +1738,7 @@ class Art:
                     bitmap = button.bitmap_disabled
 
                 bitmap_width, bitmap_height = bitmap.Size
-                bs = min(bitmap_width, bitmap_height)
-                ptsize = self.get_font_size(bs)
+                ptsize = self.label_font_ceiling(w)
                 y += bitmap_height
 
                 text_edge = self.bitmap_text_buffer
@@ -1728,6 +1797,8 @@ class Art:
                         ptsize -= 2
                         if ptsize < 6:  # too small
                             break
+                    if not wouldfit:
+                        self.all_labels_fit = False
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         """
@@ -1994,6 +2065,8 @@ class Art:
             button.toggle,  # Toggle state affects colors
             self.hover_button is button and self.hover_dropdown is None,  # Hover state
             self.show_labels,  # Whether labels are shown
+            self.all_labels_fit,
+            self.label_reserve,
             button.icon_size,  # Icon size affects rendering
         )
 
@@ -2011,10 +2084,9 @@ class Art:
         start_y = y
         img_h = h
         # do we have text? if yes let's reduce the available space in y
-        if self.show_labels:  # Regardless whether we have a label or not...
+        if self.show_labels and self.all_labels_fit:
             img_h -= self.bitmap_text_buffer
-            ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
-            img_h -= int(ptsize * 1.35)
+            img_h -= self.label_reserve
 
         button.get_bitmaps(min(w, img_h))
         if button.enabled:
@@ -2023,76 +2095,39 @@ class Art:
             bitmap = button.bitmap_disabled
 
         bitmap_width, bitmap_height = bitmap.Size
-        bs = min(bitmap_width, bitmap_height)
-        ptsize = self.get_best_font_size(bs)
+        self._position_dropdown(button)
+        ptsize = self.get_best_font_size(self.label_font_ceiling(w))
         # Use cached font instead of creating new one
         font = self.get_cached_font(ptsize)
 
         text_edge = self.bitmap_text_buffer
-        if button.label and self.show_labels:
-            show_text = True
+        show_text = bool(button.label) and self.show_labels and self.all_labels_fit
+        if show_text:
             label_text = button.label.split(" ")
-            # We try to establish whether this would fit properly.
-            # We allow a small oversize of 25% to the button,
-            # before we try to reduce the fontsize
-            wouldfit = False
-            font = None  # Initialize font variable
-            while not wouldfit:
-                total_text_height = 0
-                # Use cached font instead of creating new one each time
-                font = self.get_cached_font(ptsize)
-                test_y = y + bitmap_height + text_edge
-                dc.SetFont(font)
-                wouldfit = True
-                i = 0
-                while i < len(label_text):
-                    # We know by definition that all single words
-                    # are okay for drawing, now we check whether
-                    # we can draw multiple in one line
-                    word = label_text[i]
-                    cont = True
-                    while cont:
-                        cont = False
-                        if i < len(label_text) - 1:
-                            nextword = label_text[i + 1]
-                            test = word + " " + nextword
-                            # Use cached text extent
-                            tw, th = self.get_cached_text_extent(dc, test, ptsize)
-                            if tw < w:  # Use full button width for text fitting
-                                word = test
-                                i += 1
-                                cont = True
-
-                    text_width, text_height = self.get_cached_text_extent(
-                        dc, word, ptsize
-                    )
-                    if text_width > w:
-                        wouldfit = False
-                        break
-                    test_y += text_height
-                    total_text_height += text_height
-                    if test_y > y + h:
-                        wouldfit = False
-                        text_edge = 0
-                        break
-                    i += 1
-
-                if wouldfit:
-                    # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
-                    text_edge = min(
-                        max(0, start_y + h - (y + bitmap_height) - total_text_height),
-                        self.bitmap_text_buffer,
-                    )
-                    break
-
-                ptsize -= 2
-                if ptsize < 6:  # too small
-                    break
-            if not wouldfit:
-                show_text = False
-                label_text = []
+            dc.SetFont(font)
+            total_text_height = 0
+            i = 0
+            while i < len(label_text):
+                word = label_text[i]
+                cont = True
+                while cont:
+                    cont = False
+                    if i < len(label_text) - 1:
+                        nextword = label_text[i + 1]
+                        test = word + " " + nextword
+                        tw, th = self.get_cached_text_extent(dc, test, ptsize)
+                        if tw < w:
+                            word = test
+                            i += 1
+                            cont = True
+                _, text_height = self.get_cached_text_extent(dc, word, ptsize)
+                total_text_height += text_height
+                i += 1
+            text_edge = min(
+                max(0, start_y + h - (y + bitmap_height) - total_text_height),
+                self.bitmap_text_buffer,
+            )
         else:
-            show_text = False
             label_text = []
 
         # Render button content using helper method
@@ -2269,6 +2304,34 @@ class Art:
             # if self.parent.visible_pages() == 1:
             #     print(f"page: {page.position}")
             self.page_layout(dc, page)
+
+    def dock_extent(self, ribbon):
+        if not self.parent.prefer_horizontal():
+            return None
+        page = self.current_page
+        if page is None:
+            page = ribbon.first_page()
+        if page is None or page.position is None:
+            return None
+        bottom = 0
+        found = False
+        for panel in page.panels:
+            if panel is None or panel.visible_button_count == 0:
+                continue
+            for button in panel.visible_buttons():
+                if button.overflow or not button.visible or button.position is None:
+                    continue
+                found = True
+                x, y, x1, y1 = button.position
+                icon = min(button.max_size, int(round(x1 - x)))
+                content = y + icon + 2 * (icon // 25 + 1)
+                if self.show_labels and self.all_labels_fit:
+                    content += self.bitmap_text_buffer + self.label_reserve
+                bottom = max(bottom, content)
+        if not found:
+            return None
+        bottom += self.panel_button_buffer + self.page_panel_buffer
+        return int(bottom)
 
     def preferred_button_size_for_page(self, dc, page):
         x, y, max_x, max_y = page.position
@@ -2690,48 +2753,113 @@ class Art:
         # print (f"layout for {button.label} ({button.bitmapsize}): {button.min_width}x{button.min_height}, icon={bitmap_width}x{bitmap_height}")
 
     def button_layout(self, dc: wx.DC, button):
+        self._position_dropdown(button)
+
+    def _position_dropdown(self, button):
+        if button.dropdown is None or button.position is None:
+            return
+        if button.kind != "hybrid" or button.key == "toggle":
+            return
         x, y, max_x, max_y = button.position
-        bitmap = button.bitmap
-        bitmap_width, bitmap_height = bitmap.Size
-        if button.kind == "hybrid" and button.key != "toggle":
-            # Calculate text height/width
-            # Calculate dropdown
-            # Same size regardless of bitmap-size
-            sizx = 15
-            sizy = 15
-            if min(bitmap_width, bitmap_height) > 70:
-                sizx = 20
-                sizy = 20
-            elif min(bitmap_width, bitmap_height) > 100:
-                sizx = 25
-                sizy = 25
+        bitmap_width, bitmap_height = button.bitmap.Size
+        # Calculate text height/width
+        # Calculate dropdown
+        # Same size regardless of bitmap-size
+        sizx = 15
+        sizy = 15
+        if min(bitmap_width, bitmap_height) > 70:
+            sizx = 20
+            sizy = 20
+        elif min(bitmap_width, bitmap_height) > 100:
+            sizx = 25
+            sizy = 25
 
-            # Let's see whether we have enough room
-            extx = (x + max_x) / 2 + bitmap_width / 2 + sizx - 1
-            exty = y + bitmap_height + sizy - 1
-            extx = max(x - sizx, min(extx, max_x - 1))
-            exty = max(y + sizy, min(exty, max_y - 1))
-            gap = 15
-            if bitmap_height < 30:
-                gap = 3
+        # Let's see whether we have enough room
+        extx = (x + max_x) / 2 + bitmap_width / 2 + sizx - 1
+        exty = y + bitmap_height + sizy - 1
+        extx = max(x - sizx, min(extx, max_x - 1))
+        exty = max(y + sizy, min(exty, max_y - 1))
+        gap = 15
+        if bitmap_height < 30:
+            gap = 3
 
-            # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
-            button.dropdown.position = (
-                extx - sizx,
-                exty - sizy - gap,
-                extx,
-                exty - gap,
-            )
-            # button.dropdown.position = (
-            #     x + bitmap_width / 2,
-            #     y + bitmap_height / 2,
-            #     x + bitmap_width,
-            #     y + bitmap_height,
-            # )
-            # print (
-            #     f"Required for {button.label}: button: {x},{y} to {max_x},{max_y}," +
-            #     f"dropd: {extx-sizx},{exty-sizy} to {extx},{exty}"
-            # )
+        # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
+        button.dropdown.position = (
+            extx - sizx,
+            exty - sizy - gap,
+            extx,
+            exty - gap,
+        )
+        # button.dropdown.position = (
+        #     x + bitmap_width / 2,
+        #     y + bitmap_height / 2,
+        #     x + bitmap_width,
+        #     y + bitmap_height,
+        # )
+        # print (
+        #     f"Required for {button.label}: button: {x},{y} to {max_x},{max_y}," +
+        #     f"dropd: {extx-sizx},{exty-sizy} to {extx},{exty}"
+        # )
+
+    def label_font_ceiling(self, w):
+        return max(6, min(18, int(round(w / 5.0, 2)) * 2))
+
+    def _label_block_height(self, dc, label, w, ptsize):
+        words = label.split(" ")
+        total_h = 0
+        i = 0
+        while i < len(words):
+            word = words[i]
+            cont = True
+            while cont:
+                cont = False
+                if i < len(words) - 1:
+                    test = word + " " + words[i + 1]
+                    tw, _th = self.get_cached_text_extent(dc, test, ptsize)
+                    if tw < w:
+                        word = test
+                        i += 1
+                        cont = True
+            tw, th = self.get_cached_text_extent(dc, word, ptsize)
+            if tw > w:
+                return 0
+            total_h += th
+            i += 1
+        return total_h
+
+    def _label_width_fit(self, dc, label, w):
+        ptsize = self.label_font_ceiling(w)
+        while ptsize >= 6:
+            if self._label_block_height(dc, label, w, ptsize) > 0:
+                return ptsize
+            ptsize -= 2
+        return 0
+
+    def _compute_label_reserve(self, dc, page):
+        if not self.show_labels:
+            return 0
+        labels = []
+        uniform = None
+        for panel in page.panels:
+            if panel is None or panel.visible_button_count == 0:
+                continue
+            for button in panel.visible_buttons():
+                if button.overflow or not button.visible or button.position is None:
+                    continue
+                if not button.label:
+                    continue
+                x, y, x1, y1 = button.position
+                w = int(round(x1 - x))
+                labels.append((button.label, w))
+                fit = self._label_width_fit(dc, button.label, w)
+                if fit:
+                    uniform = fit if uniform is None else min(uniform, fit)
+        if uniform is None:
+            return 0
+        reserve = 0
+        for label, w in labels:
+            reserve = max(reserve, self._label_block_height(dc, label, w, uniform))
+        return reserve
 
     def get_font_size(self, imgsize):
         if imgsize <= 20:
@@ -2748,14 +2876,9 @@ class Art:
             ptsize = 16
         return ptsize
 
-    def get_best_font_size(self, imgsize):
-        sizes = [(pt, amount) for pt, amount in self.font_sizes.items()]
-        sizes.sort(key=lambda e: e[1], reverse=True)
-        best = 32768
-        if len(sizes):
-            # Take the one where we have most...
-            best = sizes[0][0]
-        ptsize = self.get_font_size(imgsize)
-        if ptsize > best:
-            ptsize = best
-        return ptsize
+    def get_best_font_size(self, fallback):
+        if not self.font_sizes:
+            return fallback
+        # The smallest size that fits any button is the largest size that
+        # fits them all, giving every button a single uniform text size.
+        return min(self.font_sizes)
