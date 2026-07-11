@@ -3773,15 +3773,25 @@ class Kernel(Settings):
                             setattr(relevant_context, attr, str(value))
                         else:
                             # Typed settings (e.g. Length, Angle): reconstruct
-                            # from the string value so `set` can address any
-                            # registered choice attribute.
+                            # the typed value from the string form and keep it
+                            # typed on the live context; persistence serializes
+                            # via str() at the storage boundary.
                             setattr(relevant_context, attr, type(v)(value))
+                        channel(
+                            f'"{attr}" := {str(getattr(relevant_context, attr))}'
+                        )
+                    else:
+                        channel(
+                            _("No such attribute: {attr}").format(attr=attr)
+                        )
                 except RuntimeError:
                     channel(_("Attempt failed. Produced a runtime error."))
                 except ValueError:
                     channel(_("Attempt failed. Produced a value error."))
                 except AttributeError:
                     channel(_("Attempt failed. Produced an attribute error."))
+                except TypeError:
+                    channel(_("Attempt failed. Produced a type error."))
             return
 
         @self.console_command("flush", help=_("flush current settings to disk"))

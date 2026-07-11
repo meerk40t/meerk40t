@@ -421,6 +421,11 @@ class Settings:
                 continue
             if isinstance(value, (str, int, float, bool, list, tuple)):
                 self.write_persistent(section, key, value)
+            elif type(value).__module__ == "meerk40t.core.units":
+                # Typed settings (e.g. Length, Angle): persist the canonical
+                # string form; consumers reconstruct through the registered
+                # choice type.
+                self.write_persistent(section, key, str(value))
 
     def write_persistent_attributes(self, section: str, obj: Any) -> None:
         """
