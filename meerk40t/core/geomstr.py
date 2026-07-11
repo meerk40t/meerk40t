@@ -72,6 +72,15 @@ from copy import copy
 
 import numpy as np
 
+
+def _cross2d(a, b):
+    """z-component of the 2D cross product (np.cross for 2D vectors was
+    removed in numpy 2.0)."""
+    a = np.asarray(a)
+    b = np.asarray(b)
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+
 # Import numba for JIT compilation optimization
 try:
     from numba import njit
@@ -7175,7 +7184,7 @@ class Geomstr:
         """
 
         def process(S, P, a, b):
-            signed_dist = np.cross(S[P] - S[a], S[b] - S[a])
+            signed_dist = _cross2d(S[P] - S[a], S[b] - S[a])
             K = [i for s, i in zip(signed_dist, P) if s > 0 and i != a and i != b]
 
             if len(K) == 0:
@@ -8282,7 +8291,7 @@ class Geomstr:
             if line_length == 0:
                 return np.linalg.norm(points - start, axis=-1)
             if line.size == 2:
-                return abs(np.cross(line, start - points)) / line_length  # 2D case
+                return abs(_cross2d(line, start - points)) / line_length  # 2D case
             return (
                 abs(np.linalg.norm(np.cross(line, start - points), axis=-1))
                 / line_length
@@ -8410,7 +8419,7 @@ class Geomstr:
                 side2 = sides[i + 2]
 
                 # Check if parallel (cross product should be near zero)
-                cross = abs(np.cross(side1, side2))
+                cross = abs(_cross2d(side1, side2))
                 side1_len = np.linalg.norm(side1)
                 side2_len = np.linalg.norm(side2)
 
@@ -8493,7 +8502,7 @@ class Geomstr:
             for i in range(n):
                 v1 = points[i] - center
                 v2 = points[(i + 1) % n] - center
-                angle = np.arctan2(np.cross(v1, v2), np.dot(v1, v2))
+                angle = np.arctan2(_cross2d(v1, v2), np.dot(v1, v2))
                 angles.append(angle)
 
             expected_angle = 2 * np.pi / n
