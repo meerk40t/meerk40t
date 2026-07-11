@@ -3771,6 +3771,11 @@ class Kernel(Settings):
                             setattr(relevant_context, attr, float(value))
                         elif isinstance(v, str):
                             setattr(relevant_context, attr, str(value))
+                        else:
+                            # Typed settings (e.g. Length, Angle): reconstruct
+                            # from the string value so `set` can address any
+                            # registered choice attribute.
+                            setattr(relevant_context, attr, type(v)(value))
                 except RuntimeError:
                     channel(_("Attempt failed. Produced a runtime error."))
                 except ValueError:
