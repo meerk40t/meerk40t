@@ -89,17 +89,18 @@ def plugin(kernel, lifecycle=None):
                     pos = root.__console_buffer.find("\n")
                     command = root.__console_buffer[0:pos].strip("\r")
                     root.__console_buffer = root.__console_buffer[pos + 1 :]
+                    handover = find_handover()
                     if handover is None:
                         root.console(command + "\n")
                     else:
                         handover(command)
 
-            handover = None
-            for result in root.find("gui/handover"):
-                # Do we have a thread handover routine?
-                if result is not None:
-                    handover, _path, suffix_path = result
-                    break
+            def find_handover():
+                # Resolve at execution time: the gui (and its thread handover
+                # routine) may not exist yet when the server is started, e.g.
+                # from a batch file at boot. lookup() is an exact-key access
+                # and safe against concurrent registration, unlike find().
+                return root.lookup("gui/handover")
             recv.watch(exec_command)
 
             channel(

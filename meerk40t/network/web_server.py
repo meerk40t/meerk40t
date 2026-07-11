@@ -440,6 +440,12 @@ class WebServer(Module):
             self.debug_channel(f"[WEB CMD] {command}")
 
             if self.handover is None:
+                # Resolve at execution time: the gui (and its thread handover
+                # routine) may not exist yet when the server is started.
+                # lookup() is an exact-key access and safe against concurrent
+                # registration, unlike find().
+                self.handover = self.context.root.lookup("gui/handover")
+            if self.handover is None:
                 self.context(f"{command}\n")
             else:
                 self.handover(command)
