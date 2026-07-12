@@ -17,8 +17,9 @@ command: meerk40t
 finish-args:
   - --share=network
   - --share=ipc
+  # x11 (not fallback-x11) so XWayland is reachable for AUI pane drag/dock.
   - --socket=wayland
-  - --socket=fallback-x11
+  - --socket=x11
   - --device=all
   - --filesystem=home
   # Suppress the in-app updater. The install path is read-only and updates
