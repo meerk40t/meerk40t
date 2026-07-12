@@ -46,11 +46,11 @@ listMarkSpeed        0008 0000 0000 0000 0000
 listLaserOnDelay     0064 0000 0000 0000 0000
 listLaserOffDelay    0064 0000 0000 0000 0000
 listPolygonDelay     000a 0000 0000 0000 0000
-listJumpTo           d174 5d17 0000 589e 0000
-listMarkTo           d174 8ba2 0000 2e8b 0000
+listJumpTo           d174 5d16 0000 589e 0000
+listMarkTo           d174 8ba2 0000 2e8c 0000
 listMarkTo           ba2e 8ba2 0000 1746 0000
-listMarkTo           ba2e 5d17 0000 2e8b 0000
-listMarkTo           d174 5d17 0000 1746 0000
+listMarkTo           ba2e 5d16 0000 2e8c 0000
+listMarkTo           d174 5d16 0000 1746 0000
 listDelayTime        001e 0000 0000 0000 0000
 listEndOfList        0000 0000 0000 0000 0000
 """
@@ -192,6 +192,7 @@ class TestDriverGalvoRotary(unittest.TestCase):
             device = kernel.device
             rotary_path = kernel.device.path
             device(f"set -p {rotary_path} rotary_active True")
+            device(f"set -p {rotary_path} rotary_auto_wrap_scale False")
             device(f"set -p {rotary_path} rotary_scale_y 2.0")
             device.signal("rotary_active", True)
             kernel.device.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
