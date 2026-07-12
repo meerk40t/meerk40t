@@ -27,29 +27,6 @@ from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_S
 from meerk40t.kernel import channel
 
 
-class RotaryModifier:
-    def __init__(self, wrapped_instance, rotary):
-        self._wrapped_instance = wrapped_instance
-        self.scale_x = rotary.scale_x
-        self.scale_y = rotary.scale_y
-
-    def _scale(self, x, y):
-        return x * self.scale_x, y * self.scale_y
-
-    def goto(self, x, y, **kwargs):
-        return self._wrapped_instance.goto(*self._scale(x, y), **kwargs)
-
-    def mark(self, x, y, **kwargs):
-        return self._wrapped_instance.mark(*self._scale(x, y), **kwargs)
-
-    def get_last_xy(self):
-        x, y = self._wrapped_instance.get_last_xy()
-        return x / self.scale_x, y / self.scale_y
-
-    def __getattr__(self, item):
-        return getattr(self._wrapped_instance, item)
-
-
 class BalorDriver:
     """Balor (Galvo) device driver.
 
@@ -409,8 +386,6 @@ class BalorDriver:
         # preprocess queue to establish steps
         self.service.laser_status = "active"
         con = self.connection
-        if self.service.rotary.active:
-            con = RotaryModifier(con, self.service.rotary)
         con._light_speed = None
         con._dark_speed = None
         con._goto_speed = None

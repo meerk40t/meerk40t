@@ -153,7 +153,10 @@ class CutPlan:
         """
         device = self.context.device
 
-        scene_to_device_matrix = device.view.matrix
+        scene_to_device_matrix = Matrix(device.view.matrix)
+        rotary = getattr(device, "rotary", None)
+        if rotary is not None and rotary.active:
+            scene_to_device_matrix.post_scale(rotary.scale_x, rotary.scale_y)
 
         # ==========
         # Determine the jobs bounds.
@@ -171,10 +174,10 @@ class CutPlan:
                 self.outline = None
             else:
                 self.outline = (
-                    device.view.position(min_x, min_y, margins=False),
-                    device.view.position(max_x, min_y, margins=False),
-                    device.view.position(max_x, max_y, margins=False),
-                    device.view.position(min_x, max_y, margins=False),
+                    scene_to_device_matrix.point_in_matrix_space([min_x, min_y]),
+                    scene_to_device_matrix.point_in_matrix_space([max_x, min_y]),
+                    scene_to_device_matrix.point_in_matrix_space([max_x, max_y]),
+                    scene_to_device_matrix.point_in_matrix_space([min_x, max_y]),
                 )
 
         # ==========
