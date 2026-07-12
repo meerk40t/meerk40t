@@ -9,7 +9,7 @@ hundreds to thousands of operations.
 
 import math
 import time
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
@@ -125,7 +125,7 @@ class SpatialWorkflowOptimizer:
         self,
         operations: List[Any],
         optimization_level: OptimizationLevel = OptimizationLevel.BALANCED,
-        progress_callback=None,
+        progress_callback: Optional[Callable[[int, str], Any]] = None,
     ) -> Tuple[List[Any], OptimizationStats]:
         """
         Optimize workflow with configurable performance levels.
@@ -250,7 +250,9 @@ class SpatialWorkflowOptimizer:
                 return "advanced"
 
     def _spatial_optimization(
-        self, operations: List[Any], progress_callback=None
+        self,
+        operations: List[Any],
+        progress_callback: Optional[Callable[[int, str], Any]] = None,
     ) -> Tuple[List[Any], float]:
         """
         Spatial partitioning optimization with O(n log n) complexity.
@@ -790,7 +792,9 @@ class SpatialWorkflowOptimizer:
         return optimized, total_distance
 
     def _greedy_optimization(
-        self, operations: List[Any], progress_callback=None
+        self,
+        operations: List[Any],
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> Tuple[List[Any], float]:
         """Standard greedy nearest-neighbor optimization."""
         if not operations:
@@ -831,7 +835,9 @@ class SpatialWorkflowOptimizer:
         return optimized, total_distance
 
     def _advanced_optimization(
-        self, operations: List[Any], progress_callback=None
+        self,
+        operations: List[Any],
+        progress_callback: Optional[Callable[[int, str], Any]] = None,
     ) -> Tuple[List[Any], float]:
         """
         Advanced optimization for very large datasets.
@@ -1059,7 +1065,10 @@ class EnhancedOperationWorkflow(OperationWorkflow):
         """Configure optimization performance level."""
         self.optimization_level = level
 
-    def generate_workflow(self, progress_callback=None) -> List[Any]:
+    def generate_workflow(
+        self,
+        progress_callback: Optional[Callable[[int, str], Any]] = None,
+    ) -> List[Any]:
         """
         Generate optimized workflow with progress reporting.
         """
@@ -1181,9 +1190,9 @@ class EnhancedOperationWorkflow(OperationWorkflow):
             "total_travel_distance": total_distance,
             "total_optimization_time": total_time,
             "optimization_level": self.optimization_level.name,
-            "average_ops_per_group": total_ops / len(self.workflow_groups)
-            if self.workflow_groups
-            else 0,
+            "average_ops_per_group": (
+                total_ops / len(self.workflow_groups) if self.workflow_groups else 0
+            ),
         }
 
 
