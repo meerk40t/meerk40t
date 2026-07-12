@@ -1232,6 +1232,20 @@ class MaterialPanel(ScrolledPanel):
 
         return handler
 
+    def _entry_category_label(self, entry, sort_key):
+        """Display label for tree/delete matching (laser is stored as int index)."""
+        if sort_key == "laser":
+            ltype = entry.get("laser")
+            if ltype is None:
+                ltype = 0
+            if 0 <= ltype < len(self.laser_choices):
+                return self.laser_choices[ltype]
+            return "???"
+        val = entry.get(sort_key, "")
+        if val is None or val == "":
+            return _("No " + sort_key)
+        return str(val).replace("_", " ")
+
     def _delete_according_to_key(self, keytype: int, primary: str, secondary: str):
         if self.categorisation == 1:
             # lasertype
@@ -1251,12 +1265,14 @@ class MaterialPanel(ScrolledPanel):
             to_delete = False
             if keytype == 0:
                 to_delete = True
-            elif keytype == 1 and entry[sort_key_primary].replace("_", " ") == primary:
+            elif keytype == 1 and self._entry_category_label(
+                entry, sort_key_primary
+            ) == primary:
                 to_delete = True
             elif (
                 keytype == 2
-                and entry[sort_key_primary].replace("_", " ") == primary
-                and entry[sort_key_secondary].replace("_", " ") == secondary
+                and self._entry_category_label(entry, sort_key_primary) == primary
+                and self._entry_category_label(entry, sort_key_secondary) == secondary
             ):
                 to_delete = True
             if to_delete:
@@ -1280,16 +1296,13 @@ class MaterialPanel(ScrolledPanel):
                 busy.change(msg=f"{idx + 1}/{len(self.display_list)}", keep=1)
 
                 to_delete = False
-                prim_key = (
-                    entry[sort_key_primary].replace("_", " ")
-                    if entry[sort_key_primary]
-                    else _("No " + sort_key_primary)
-                )
+                prim_key = self._entry_category_label(entry, sort_key_primary)
+                sec_key = self._entry_category_label(entry, sort_key_secondary)
                 if keytype == 0:
                     to_delete = True
                 elif keytype == 1 and prim_key == primary:
                     to_delete = True
-                elif keytype == 2 and prim_key == primary and prim_key == secondary:
+                elif keytype == 2 and prim_key == primary and sec_key == secondary:
                     to_delete = True
 
                 # print (f"Keytype={keytype}, primary: {prim_key} vs {primary}, secondary: {entry[sort_key_secondary].replace('_', ' ')} vs {secondary} -> {to_delete}")

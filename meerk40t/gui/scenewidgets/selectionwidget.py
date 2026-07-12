@@ -144,6 +144,8 @@ def process_event(
         if widget.scene.pane.tool_active:
             # print ("ignore")
             return RESPONSE_CHAIN
+        if getattr(widget.scene.pane, "active_tool", "none") != "none":
+            return RESPONSE_CHAIN
 
         single_modifier = (
             modifiers
@@ -3659,8 +3661,8 @@ class SelectionWidget(Widget):
                         self.scene.context.signal("statusmsg", "")
 
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
-            # self.scene.pane.tool_active = False
-            pass
+            if getattr(self.scene.pane, "active_tool", "none") != "none":
+                return RESPONSE_CHAIN
         elif event_type == "rightdown":
             self.scene.pane.tool_active = False
             self.scene.pane.modif_active = False

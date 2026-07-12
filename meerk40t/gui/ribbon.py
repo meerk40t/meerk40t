@@ -892,6 +892,42 @@ class RibbonPage:
         self.parent.modified()
 
 
+def _ribbon_button_description(button):
+    """Text for the ribbon hover tooltip: short tip plus extended help when present."""
+    if button is None:
+        return ""
+    tip = button.tip
+    if callable(tip):
+        try:
+            tip = tip()
+        except Exception:
+            tip = ""
+    if tip is None:
+        tip = ""
+    help_text = button.help
+    if help_text is None:
+        help_text = ""
+    elif callable(help_text):
+        try:
+            help_text = help_text()
+        except Exception:
+            help_text = ""
+    help_text = str(help_text).strip()
+    tip = str(tip).strip()
+    if help_text:
+        if tip:
+            return f"{tip}\n\n{help_text}"
+        return help_text
+    return tip
+
+
+def _ribbon_hover_delay_ms(context):
+    """Delay before ribbon tooltip; long + rich when verbose help is on."""
+    if context.setting(bool, "ribbon_verbose_hover_help", True):
+        return context.setting(int, "ribbon_tooltip_delay_ms", 2000)
+    return context.setting(int, "tooltip_delay", 100)
+
+
 class RibbonBarPanel(wx.Control):
     """RibbonBarPanel - User interface panel for laser cutting operations
     **Technical Purpose:**
@@ -946,8 +982,9 @@ class RibbonBarPanel(wx.Control):
         self._tooltip = ""
         jobname = f"tooltip_ribbon_bar_{self.GetId()}"
         #  print (f"Requesting job with name: '{jobname}'")
-        tooltip_delay = self.context.setting(int, "tooltip_delay", 100)
-        interval = tooltip_delay / 1000.0
+        # Ribbon uses its own delay so global wx.ToolTip.SetDelay stays fast for other controls.
+        ribbon_delay_ms = _ribbon_hover_delay_ms(self.context)
+        interval = max(0.05, ribbon_delay_ms / 1000.0)
         self._tooltip_job = Job(
             process=self._exec_tooltip_job,
             job_name=jobname,
@@ -1020,6 +1057,8 @@ class RibbonBarPanel(wx.Control):
 
     def start_tooltip_job(self):
         # print (f"Schedule a job with {self._tooltip_job.interval:.2f}sec")
+        ribbon_delay_ms = _ribbon_hover_delay_ms(self.context)
+        self._tooltip_job.interval = max(0.05, ribbon_delay_ms / 1000.0)
         self.context.schedule(self._tooltip_job)
 
     def _exec_tooltip_job(self):
@@ -1065,7 +1104,18 @@ class RibbonBarPanel(wx.Control):
         if hover is None:
             hover = self._button_at_position(pos, use_all=True)
         if hover is not None:
-            self.SetToolTip(hover.tip)
+            if self.context.setting(bool, "ribbon_verbose_hover_help", True):
+                self.SetToolTip(_ribbon_button_description(hover))
+            else:
+                tip = hover.tip
+                if callable(tip):
+                    try:
+                        tip = tip()
+                    except Exception:
+                        tip = ""
+                if tip is None:
+                    tip = ""
+                self.SetToolTip(str(tip))
             hhelp = hover.help
             if hhelp is None:
                 hhelp = ""

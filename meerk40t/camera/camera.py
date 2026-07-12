@@ -54,6 +54,10 @@ class Camera(Service):
         self.setting(bool, "autonormal", False)
         self.setting(bool, "aspect", False)
         self.setting(str, "preserve_aspect", "xMinYMin meet")
+        self.setting(bool, "flip_x", False)
+        self.setting(bool, "flip_y", False)
+        self.setting(float, "align_offset_x", 0.0)
+        self.setting(float, "align_offset_y", 0.0)
         self.fisheye_k = None
         self.fisheye_d = None
         if self.fisheye is not None and len(self.fisheye) != 0:
@@ -84,6 +88,12 @@ class Camera(Service):
             return False
 
     def get_frame(self):
+        return self._last_frame
+
+    def get_display_frame(self):
+        """Latest RGB frame for UI; prefers the current frame over last."""
+        if self._current_frame is not None:
+            return self._current_frame
         return self._last_frame
 
     def get_raw(self):
@@ -249,7 +259,7 @@ class Camera(Service):
 
     def logger(self, msg):
         # print (msg)
-        self.channel(msg)
+        camera_user_log(self.kernel, msg)
 
     def guess_supported_resolutions(self):
         # List of supported resolutions
@@ -311,8 +321,65 @@ class Camera(Service):
             pass
         return supported_resolutions
 
+    def nudge_align(self, dx_mm=0.0, dy_mm=0.0):
+        self.align_offset_x = float(self.align_offset_x or 0.0) + float(dx_mm)
+        self.align_offset_y = float(self.align_offset_y or 0.0) + float(dy_mm)
+
+    def align_offset_scene_units(self):
+        from meerk40t.core.units import Length
+
+        return (
+            float(Length(f"{float(self.align_offset_x or 0.0)}mm")),
+            float(Length(f"{float(self.align_offset_y or 0.0)}mm")),
+        )
+
+    def _orient_frame(self, frame):
+        if frame is None:
+            return frame
+        if self.flip_x and self.flip_y:
+            return cv2.flip(frame, -1)
+        if self.flip_x:
+            return cv2.flip(frame, 1)
+        if self.flip_y:
+            return cv2.flip(frame, 0)
+        return frame
+
+    def _perspective_frame_size(self):
+        frame = self._orient_frame(self._current_raw)
+        if frame is None:
+            frame = self._orient_frame(self._last_raw)
+        if frame is not None:
+            height, width = frame.shape[:2]
+            return width, height
+        if self.image_width > 0 and self.image_height > 0:
+            return self.image_width, self.image_height
+        return self.width, self.height
+
+    def ensure_perspective(self):
+        if self.perspective is not None:
+            return
+        width, height = self._perspective_frame_size()
+        self.perspective = [
+            [0, 0],
+            [width, 0],
+            [width, height],
+            [0, height],
+        ]
+
+    def set_image_flip(self, flip_x=None, flip_y=None, reset_corners=True):
+        changed = False
+        if flip_x is not None and bool(flip_x) != bool(self.flip_x):
+            self.flip_x = bool(flip_x)
+            changed = True
+        if flip_y is not None and bool(flip_y) != bool(self.flip_y):
+            self.flip_y = bool(flip_y)
+            changed = True
+        if changed and reset_corners:
+            self.reset_perspective()
+        return changed
+
     def process_frame(self):
-        frame = self._current_raw
+        frame = self._orient_frame(self._current_raw)
         if (
             self.fisheye_k is not None
             and self.fisheye_d is not None
@@ -333,6 +400,9 @@ class Camera(Service):
                 borderMode=cv2.BORDER_CONSTANT,
             )
         width, height = frame.shape[:2][::-1]
+        if width > 0 and height > 0:
+            self.width = width
+            self.height = height
         if self.perspective is None:
             self.perspective = [
                 [0, 0],
@@ -341,9 +411,14 @@ class Camera(Service):
                 [0, height],
             ]
         if self.correction_perspective:
-            # Perspective the drawing.
-            dest_width = self.width
-            dest_height = self.height
+            dest_width = int(self.width)
+            dest_height = int(self.height)
+            max_edge = 1280
+            edge = max(dest_width, dest_height)
+            if edge > max_edge and edge > 0:
+                scale = max_edge / float(edge)
+                dest_width = max(1, int(dest_width * scale))
+                dest_height = max(1, int(dest_height * scale))
             rect = np.array(
                 self.perspective,
                 dtype="float32",
@@ -471,6 +546,7 @@ class Camera(Service):
         @return:
         """
         self.perspective = None
+        self.ensure_perspective()
 
     def backtrack_fisheye(self):
         if self._object_points:
@@ -490,10 +566,11 @@ class Camera(Service):
         self.fisheye = None
 
     def set_uri(self, uri):
+        uri = normalize_camera_uri(uri)
         self.uri = uri
         try:
             self.uri = int(self.uri)  # URI is an index.
-        except ValueError:
+        except (ValueError, TypeError):
             pass
 
     def background(self):
@@ -501,12 +578,42 @@ class Camera(Service):
         Sets image background to main scene.
         @return:
         """
-        frame = self._last_frame
-        if frame is not None:
-            self.image_height, self.image_width = frame.shape[:2]
-            self.signal("background", (self.image_width, self.image_height, frame))
-            return self.image_width, self.image_height, frame
-        return None
+        frame = self.get_display_frame()
+        if frame is None:
+            if self.capture is None:
+                camera_user_log(
+                    self.kernel,
+                    self._(
+                        "No camera frame — camera is stopped. Click Reconnect or run: camera{index} start"
+                    ).format(index=self.index),
+                )
+            else:
+                camera_user_log(
+                    self.kernel,
+                    self._("No camera frame yet — wait for live video, then try again."),
+                )
+            return None
+        frame = frame_for_wx_bitmap(frame)
+        if frame is None:
+            camera_user_log(
+                self.kernel,
+                self._("Camera frame could not be converted for the bed overlay."),
+            )
+            return None
+        self.image_height, self.image_width = frame.shape[:2]
+        bed_bitmap = make_bed_bitmap_from_frame(frame)
+        if bed_bitmap is None:
+            camera_user_log(
+                self.kernel,
+                self._("Camera frame could not be converted for the bed overlay."),
+            )
+            return None
+        if not push_bed_background_bitmap(self.kernel, bed_bitmap):
+            camera_user_log(
+                self.kernel, self._("Bed overlay could not be sent to the main scene.")
+            )
+            return None
+        return self.image_width, self.image_height, frame
 
     def export(self):
         """
@@ -518,3 +625,441 @@ class Camera(Service):
             self.signal("export-image", (self.image_width, self.image_height, frame))
             return self.image_width, self.image_height, frame
         return None
+
+
+def normalize_camera_uri(text):
+    """
+    Turn a pasted camera address into an OpenCV VideoCapture URI.
+
+    Accepts:
+    - USB index: ``0``, ``1``, …
+    - Full stream URL: ``rtsp://…``, ``http://…`` (unchanged)
+    - ``user:pass@host``, ``user:pass@host:8554/stream1``
+    - Bare IP/hostname: ``192.168.10.133`` → ``rtsp://192.168.10.133:8554/profile0``
+
+    Andre's IP camera (unchanged when pasted in full):
+    ``rtsp://admin:***@192.168.10.133:8554/stream1``
+    or shorthand ``admin:***@192.168.10.133:8554/stream1``.
+    """
+    import re
+
+    if text is None:
+        return None
+    text = str(text).strip()
+    if not text:
+        return None
+
+    lower = text.lower()
+    if lower.startswith(("rtsp://", "http://", "https://", "rtmp://", "file://")):
+        return text
+
+    if re.fullmatch(r"\d+", text):
+        return int(text)
+
+    if "@" in text and "://" not in text:
+        text = f"rtsp://{text}"
+        lower = text.lower()
+
+    if lower.startswith("rtsp://"):
+        body = text[7:]
+        path_part = body.split("?", 1)[0]
+        if "/" not in path_part:
+            host_part = path_part.rsplit("@", 1)[-1]
+            if ":" in host_part:
+                text = f"{text}/profile0"
+            else:
+                text = f"{text}:8554/profile0"
+        return text
+
+    if re.match(r"^[\w.:-]+/", text) or re.match(r"^\d+\.\d+\.\d+\.\d+", text):
+        if "/" in text:
+            return f"rtsp://{text}"
+        if ":" in text:
+            return f"rtsp://{text}/profile0"
+        return f"rtsp://{text}:8554/profile0"
+
+    return text
+
+
+def _ensure_camera_service(kernel, camera_index):
+    """Return Camera service for camera/N, creating it if needed."""
+    cam = _camera_service_for_index(kernel, camera_index)
+    if cam is not None:
+        return cam
+    path = f"camera/{camera_index}"
+    try:
+        if path not in kernel.contexts:
+            kernel.add_service("camera", Camera(kernel, path))
+        kernel.activate_service_path("camera", path)
+    except (AttributeError, ValueError, KeyError):
+        return None
+    return _camera_service_for_index(kernel, camera_index)
+
+
+def connect_camera_from_paste(kernel, camera_index, raw_text, start=True):
+    """
+    Normalize a pasted address, save it in the URI list, and connect camera/N.
+    """
+    uri = normalize_camera_uri(raw_text)
+    if uri is None:
+        return None
+
+    cam = _ensure_camera_service(kernel, camera_index)
+    if cam is None:
+        _ = kernel.translation
+        camera_user_log(
+            kernel,
+            _("Camera {n} could not be opened.").format(n=camera_index),
+        )
+        return None
+
+    try:
+        camera_root = kernel.get_context("camera")
+        camera_root.setting(list, "uris", [])
+        store = uri if isinstance(uri, int) else str(uri)
+        known = [str(u) for u in camera_root.uris]
+        if str(store) not in known:
+            camera_root.uris.append(store)
+    except (AttributeError, TypeError):
+        pass
+
+    cam.set_uri(uri)
+    if start:
+        cam.close_camera()
+        cam.open_camera()
+
+    _ = kernel.translation
+    camera_user_log(
+        kernel,
+        _("Camera {n} set to: {uri}").format(n=camera_index, uri=uri),
+    )
+    return uri
+
+
+def camera_user_log(kernel, message):
+    """Write camera/bed messages to the main Console (and camera log)."""
+    for channel_name in ("console", "camera"):
+        channel = kernel.channel(channel_name)
+        if channel:
+            channel(message)
+
+
+def frame_for_wx_bitmap(frame):
+    """Return uint8 contiguous RGB numpy array for wx.Bitmap.FromBuffer, or None."""
+    if frame is None:
+        return None
+    arr = np.ascontiguousarray(frame)
+    if arr.ndim == 2:
+        arr = np.stack([arr, arr, arr], axis=-1)
+    if arr.ndim != 3 or arr.shape[2] < 3:
+        return None
+    if arr.shape[2] > 3:
+        arr = arr[:, :, :3]
+    if arr.dtype != np.uint8:
+        arr = np.clip(arr, 0, 255).astype(np.uint8)
+    return np.ascontiguousarray(arr)
+
+
+def frame_to_wx_buffer(frame):
+    """Return RGB byte buffer for wx.Bitmap.FromBuffer, or None."""
+    arr = frame_for_wx_bitmap(frame)
+    if arr is None:
+        return None
+    return arr.tobytes()
+
+
+def make_bed_bitmap_from_frame(frame):
+    """Owned wx.Bitmap for bed overlay (not tied to the camera refresh buffer)."""
+    import wx
+
+    arr = frame_for_wx_bitmap(frame)
+    if arr is None:
+        return None
+    h, w = arr.shape[:2]
+    data = arr.tobytes()
+    try:
+        img = wx.Image(w, h)
+        img.SetData(data)
+        if img.IsOk():
+            bmp = wx.Bitmap(img)
+            if bmp.IsOk():
+                return bmp
+    except (TypeError, ValueError, wx.wxAssertionError):
+        pass
+    try:
+        bmp = wx.Bitmap(img, wx.BITMAP_SCREEN_DEPTH)
+        if bmp.IsOk():
+            return bmp
+    except (TypeError, ValueError, wx.wxAssertionError):
+        pass
+    try:
+        bmp = wx.Bitmap.FromBuffer(w, h, data)
+        if bmp.IsOk():
+            return bmp
+    except (TypeError, ValueError, wx.wxAssertionError):
+        pass
+    return None
+
+
+def _camera_service_for_index(kernel, idx):
+    """Return the Camera service for camera/{idx}, or None if not instantiated."""
+    path = f"camera/{idx}"
+    try:
+        services = kernel.services("camera") or []
+    except (AttributeError, TypeError):
+        services = []
+    for service in services:
+        if getattr(service, "path", None) == path:
+            return service
+    try:
+        obj = kernel.get_context(path)
+        if obj is not None and hasattr(obj, "align_offset_scene_units"):
+            return obj
+    except (AttributeError, KeyError):
+        pass
+    return None
+
+
+def composite_bed_photo_on_device_dc(scene, dc):
+    """
+    Paint the bed camera photo with MemoryDC.DrawBitmap in device pixels.
+
+    wx.GraphicsContext.DrawBitmap inside the scene layer cache is unreliable on
+    Windows; this path runs after the background layer widgets are drawn.
+    """
+    import wx
+
+    try:
+        if not scene.has_background:
+            return False
+        bg = scene.active_background
+        if bg is None or isinstance(bg, int):
+            return False
+        if not isinstance(bg, wx.Bitmap) or not bg.IsOk():
+            return False
+        root = scene.widget_root
+        if root is None:
+            return False
+        matrix = root.scene_widget.matrix
+        if matrix is None:
+            from meerk40t.svgelements import Matrix
+
+            matrix = Matrix()
+    except AttributeError:
+        return False
+
+    context = scene.context
+    try:
+        vw = context.device.view
+        unit_width = vw.unit_width
+        unit_height = vw.unit_height
+    except AttributeError:
+        return False
+
+    from meerk40t.gui.scenewidgets.bedwidget import _bed_rect
+
+    try:
+        offset_x, offset_y = camera_align_offsets_for_context(context)
+    except (AttributeError, TypeError, ValueError):
+        offset_x, offset_y = 0.0, 0.0
+    x, y, w, h = _bed_rect(offset_x, offset_y, unit_width, unit_height)
+
+    def to_device(px, py):
+        return (
+            matrix.a * px + matrix.c * py + matrix.e,
+            matrix.b * px + matrix.d * py + matrix.f,
+        )
+
+    corners = (
+        to_device(x, y),
+        to_device(x + w, y),
+        to_device(x + w, y + h),
+        to_device(x, y + h),
+    )
+    xs = [c[0] for c in corners]
+    ys = [c[1] for c in corners]
+    dev_x = min(xs)
+    dev_y = min(ys)
+    dev_w = max(xs) - dev_x
+    dev_h = max(ys) - dev_y
+    if dev_w < 1 or dev_h < 1:
+        return False
+
+    pw = max(1, int(round(dev_w)))
+    ph = max(1, int(round(dev_h)))
+    try:
+        img = bg.ConvertToImage()
+        if not img.IsOk():
+            return False
+        if img.GetWidth() != pw or img.GetHeight() != ph:
+            scaled = img.Scale(pw, ph, wx.IMAGE_QUALITY_HIGH)
+            if scaled.IsOk():
+                img = scaled
+        bmp = wx.Bitmap(img, wx.BITMAP_SCREEN_DEPTH)
+        if not bmp.IsOk():
+            bmp = wx.Bitmap(img)
+        if not bmp.IsOk():
+            return False
+        dc.DrawBitmap(bmp, int(round(dev_x)), int(round(dev_y)), True)
+        return True
+    except (AttributeError, TypeError, ValueError, wx.wxAssertionError):
+        return False
+
+
+def _bed_bitmap_sample_rgb(bed_bitmap):
+    """Return center-pixel RGB tuple for console diagnostics, or None."""
+    import wx
+
+    try:
+        img = bed_bitmap.ConvertToImage()
+        if not img.IsOk():
+            return None
+        cx = max(0, img.GetWidth() // 2)
+        cy = max(0, img.GetHeight() // 2)
+        return img.GetRed(cx, cy), img.GetGreen(cx, cy), img.GetBlue(cx, cy)
+    except (AttributeError, TypeError, ValueError, wx.wxAssertionError):
+        return None
+
+
+def get_main_scene_panel(kernel):
+    """Return the docked main MeerK40tScenePanel, if the GUI is up."""
+    gui = getattr(kernel.root, "gui", None)
+    if gui is None:
+        return None
+    try:
+        pane_info = gui._mgr.GetPane("scene")
+        window = getattr(pane_info, "window", None)
+        if window is not None and hasattr(window, "widget_scene"):
+            return window
+    except (AttributeError, RuntimeError):
+        pass
+    try:
+        for pane_info in gui._mgr.GetAllPanes():
+            window = getattr(pane_info, "window", None)
+            if window is not None and hasattr(window, "widget_scene"):
+                return window
+    except (AttributeError, RuntimeError):
+        pass
+    return None
+
+
+def iter_bed_widgets(widget):
+    """Yield every BedWidget under a scene widget root."""
+    from meerk40t.gui.scenewidgets.bedwidget import BedWidget
+
+    if isinstance(widget, BedWidget):
+        yield widget
+    try:
+        children = list(widget)
+    except TypeError:
+        return
+    for child in children:
+        if child is not None:
+            yield from iter_bed_widgets(child)
+
+
+def _ensure_show_bed_background(context):
+    from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND
+
+    if context.draw_mode & DRAW_MODE_BACKGROUND:
+        context.draw_mode &= ~DRAW_MODE_BACKGROUND
+        context.signal("draw_mode", context.draw_mode)
+
+
+def _apply_bed_background_to_scene(scene, bed_bitmap):
+    """Set bed bitmap on scene bed widget(s) and scene background flags."""
+    scene._signal_widget(scene.widget_root, "background", bed_bitmap)
+    for bed in iter_bed_widgets(scene.widget_root):
+        bed.background = bed_bitmap
+    if bed_bitmap is None:
+        scene.has_background = False
+    elif isinstance(bed_bitmap, int):
+        scene.has_background = False
+    else:
+        scene.has_background = True
+        scene.active_background = bed_bitmap
+    scene.invalidate_background()
+
+
+def push_bed_background_bitmap(kernel, bed_bitmap):
+    """
+    Push an owned bed bitmap to the main scene bed widget.
+    Also clears Hide Background draw mode and refreshes the scene.
+    """
+    from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND
+
+    if bed_bitmap is None or not bed_bitmap.IsOk():
+        return False
+
+    ctx = kernel.root
+    panel = get_main_scene_panel(kernel)
+    if panel is None:
+        _ = kernel.translation
+        camera_user_log(kernel, _("Bed background: main scene panel not found."))
+        return False
+
+    scene = panel.widget_scene
+    for show_ctx in (ctx, scene.context, panel.context):
+        try:
+            _ensure_show_bed_background(show_ctx)
+        except AttributeError:
+            pass
+
+    _apply_bed_background_to_scene(scene, bed_bitmap)
+    ctx.signal("background", bed_bitmap)
+
+    def _refresh():
+        try:
+            scene.invalidate_background()
+            panel.request_refresh()
+            panel.scene_panel.Refresh()
+            ctx.signal("refresh_scene", "Scene")
+        except (AttributeError, RuntimeError):
+            pass
+
+    import wx
+
+    wx.CallAfter(_refresh)
+    _ = kernel.translation
+    bed_count = sum(1 for _ in iter_bed_widgets(scene.widget_root))
+    sample = _bed_bitmap_sample_rgb(bed_bitmap)
+    if sample is not None:
+        camera_user_log(
+            kernel,
+            _("Bed photo center pixel RGB: {r}, {g}, {b}.").format(
+                r=sample[0], g=sample[1], b=sample[2]
+            ),
+        )
+    camera_user_log(
+        kernel,
+        _("Bed background applied ({w} x {h} px, {n} bed widget(s)).").format(
+            w=bed_bitmap.GetWidth(),
+            h=bed_bitmap.GetHeight(),
+            n=bed_count,
+        ),
+    )
+    return True
+
+
+def camera_align_offsets_for_context(context):
+    """Return (offset_x, offset_y) in scene units from the active camera service."""
+    try:
+        kernel = context.kernel
+    except AttributeError:
+        return 0.0, 0.0
+    fallback = (0.0, 0.0)
+    for idx in range(8):
+        cam = _camera_service_for_index(kernel, idx)
+        if cam is None:
+            continue
+        try:
+            units = cam.align_offset_scene_units()
+        except AttributeError:
+            continue
+        if idx == 0:
+            fallback = units
+        ox = float(getattr(cam, "align_offset_x", 0.0) or 0.0)
+        oy = float(getattr(cam, "align_offset_y", 0.0) or 0.0)
+        if ox != 0.0 or oy != 0.0:
+            return units
+    return fallback

@@ -146,18 +146,20 @@ class PointListTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
             self.scene.pane.tool_active = True
-            if nearest_snap is None:
-                self.mouse_position = space_pos[0], space_pos[1]
-            else:
-                self.mouse_position = nearest_snap[0], nearest_snap[1]
+            # Preview tracks the raw cursor; snap is applied only on leftclick.
+            self.mouse_position = space_pos[0], space_pos[1]
             if self.point_series:
                 self.scene.request_refresh()
             response = RESPONSE_CONSUME
         elif event_type in ("leftup", "move", "hover"):
-            if nearest_snap is None:
-                self.mouse_position = space_pos[0], space_pos[1]
-            else:
-                self.mouse_position = nearest_snap[0], nearest_snap[1]
+            # Let middle-button drag pan the scene while a point tool is active.
+            if (
+                event_type == "move"
+                and modifiers is not None
+                and "m_middle" in modifiers
+            ):
+                return RESPONSE_CHAIN
+            self.mouse_position = space_pos[0], space_pos[1]
             if self.point_series:
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME

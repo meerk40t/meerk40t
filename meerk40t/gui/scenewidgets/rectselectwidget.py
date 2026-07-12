@@ -498,6 +498,9 @@ class RectSelectWidget(Widget):
             self.modifiers = []
 
         elements = self.scene.context.elements
+        if getattr(self.scene.pane, "active_tool", "none") != "none":
+            if event_type in ("leftdown", "leftup", "leftclick", "move", "hover"):
+                return RESPONSE_CHAIN
         if event_type == "leftdown":
             check_leftdown(space_pos)
             # print ("RectSelect consumed leftdown")

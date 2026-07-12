@@ -603,7 +603,19 @@ class SpeedPpiPanel(wx.Panel):
                 set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
             if self.use_percent:
-                set_ctrl_value(self.text_power, f"{self.operation.power / 10.0:.0f}")
+                display_pct = self.operation.power / 10.0
+                if display_pct > 100:
+                    set_ctrl_value(self.text_power, "100")
+                    self.text_power.SetToolTip(
+                        _(
+                            "This operation is stored above 100% ({stored:.0f}%). "
+                            "The laser maximum is 100% — the field is capped here. "
+                            "Lower it and press Enter, or regenerate the Parameter-Test "
+                            "grid with power max ≤ 100."
+                        ).format(stored=display_pct)
+                    )
+                else:
+                    set_ctrl_value(self.text_power, f"{display_pct:.0f}")
             else:
                 set_ctrl_value(self.text_power, f"{self.operation.power:.0f}")
             self.update_power_label()

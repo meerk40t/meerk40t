@@ -288,7 +288,17 @@ class LayerCache:
     def ensure_size(self, width, height):
         """Allocate (or reallocate) cache bitmaps when the window size changes.
         A size change invalidates all four caches."""
-        if self._size == (width, height):
+        # wx.Bitmap(0, 0) is invalid on Windows; startup ClientSize can be 0×0 while
+        # _size is already (0, 0) — do not skip allocation and leave bitmaps None.
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        if (
+            self._size == (width, height)
+            and self._bg_bitmap is not None
+            and self._bg_bitmap.IsOk()
+        ):
             return
         self._size = (width, height)
         self._bg_bitmap = wx.Bitmap(width, height)
@@ -738,6 +748,8 @@ class Scene(Module, Job):
             buf = self.gui.scene_buffer
 
         w, h = self.gui.ClientSize
+        if w <= 0 or h <= 0:
+            return
 
         # Reset clip rect (no partial invalidation with multi-level cache)
         self.clip.SetX(0)
@@ -776,6 +788,11 @@ class Scene(Module, Job):
 
         # --- Cache A: background (bg color + LAYER_BACKGROUND) ---
         if not self._cache.background_valid:
+            if (
+                self._cache.background_bitmap is None
+                or not self._cache.background_bitmap.IsOk()
+            ):
+                return
             start_time = time.perf_counter()
             dc = wx.MemoryDC()
             dc.SelectObject(self._cache.background_bitmap)
@@ -793,6 +810,9 @@ class Scene(Module, Job):
             gc.SetFont(font, wx.BLACK)
             self._draw_scene_layers(gc, 0, LAYER_GENERIC_NODES)
             gc.Destroy()
+            from meerk40t.camera.camera import composite_bed_photo_on_device_dc
+
+            composite_bed_photo_on_device_dc(self, dc)
             dc.SelectObject(wx.NullBitmap)
             self._cache.mark_background_valid()
             render_time = time.perf_counter() - start_time

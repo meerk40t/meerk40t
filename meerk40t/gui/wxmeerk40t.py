@@ -88,6 +88,7 @@ from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
+from .batchrun import BatchRunWindow
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -504,6 +505,7 @@ class wxMeerK40t(wx.App, Module):
         wx.ToolTip.SetAutoPop(autopop_ms)
         wx.ToolTip.SetDelay(delay_ms)
         wx.ToolTip.SetReshow(0)
+        self.context.setting(bool, "ribbon_verbose_hover_help", True)
 
     def _get_usb_config_instructions(self):
         """Get the technical USB configuration instructions.
@@ -1123,6 +1125,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
+        kernel.register("window/BatchRun", BatchRunWindow)
         kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
