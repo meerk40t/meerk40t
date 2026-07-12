@@ -91,7 +91,7 @@ Functions:
 
 import os.path
 import re
-from typing import Optional
+from typing import Optional, Tuple
 
 from meerk40t.kernel import Kernel
 
@@ -119,7 +119,7 @@ def init_commands(kernel: Kernel) -> None:
         help=_("Wordlist base operation"),
         output_type="wordlist",
     )
-    def wordlist_base(command, channel, _, remainder=None, **kwargs) -> tuple[str, str]:
+    def wordlist_base(command, channel, _, remainder=None, **kwargs) -> Tuple[str, str]:
         return "wordlist", ""
 
     @self.console_argument("key", help=_("Wordlist value"))
