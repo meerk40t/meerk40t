@@ -3250,7 +3250,7 @@ class Elemental(Service):
                     bounds = e.bounds
                     bounds_painted = e.paint_bounds
                 e_list.append(e)
-                if self._emphasized_bounds is not None:
+                if bounds is not None and self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
                     bounds = (
                         min(bounds[0], cc[0]),
@@ -3258,9 +3258,9 @@ class Elemental(Service):
                         max(bounds[2], cc[2]),
                         max(bounds[3], cc[3]),
                     )
-                if self._emphasized_bounds_painted is not None:
+                if bounds_painted is not None and self._emphasized_bounds_painted is not None:
                     cc = self._emphasized_bounds_painted
-                    bounds = (
+                    bounds_painted = (
                         min(bounds_painted[0], cc[0]),
                         min(bounds_painted[1], cc[1]),
                         max(bounds_painted[2], cc[2]),
