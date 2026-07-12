@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.meerk40t.meerk40t</id>
   <name>MeerK40t</name>
-  <summary>Laser Cutter Control Software</summary>
+  <summary>Laser Cutter Software</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
@@ -11,6 +11,9 @@
   </developer>
 
   <url type="homepage">https://github.com/meerk40t/meerk40t</url>
+  <url type="bugtracker">https://github.com/meerk40t/meerk40t/issues</url>
+  <url type="vcs-browser">https://github.com/meerk40t/meerk40t</url>
+
   <description>
     <p>
       MeerK40t is a free and open-source laser cutter control application for
@@ -18,10 +21,62 @@
       devices.
     </p>
   </description>
+
   <launchable type="desktop-id">io.github.meerk40t.meerk40t.desktop</launchable>
   <content_rating type="oars-1.1"/>
+
   <categories>
     <category>Graphics</category>
     <category>VectorGraphics</category>
   </categories>
+
+  <keywords>
+    <keyword>laser</keyword>
+    <keyword>K40</keyword>
+    <keyword>GRBL</keyword>
+    <keyword>Ruida</keyword>
+    <keyword>Moshiboard</keyword>
+    <keyword>Newly</keyword>
+    <keyword>galvo</keyword>
+    <keyword>engraving</keyword>
+    <keyword>cutting</keyword>
+    <keyword>CNC</keyword>
+    <keyword>CAM</keyword>
+  </keywords>
+
+  <provides>
+    <mediatype>image/svg+xml</mediatype>
+    <mediatype>image/vnd.dxf</mediatype>
+    <mediatype>image/png</mediatype>
+    <mediatype>image/bmp</mediatype>
+    <mediatype>image/tiff</mediatype>
+    <mediatype>image/gif</mediatype>
+    <mediatype>application/postscript</mediatype>
+    <mediatype>application/x-lbrn</mediatype>
+    <mediatype>application/x-xcs</mediatype>
+    <mediatype>application/x-ezd</mediatype>
+    <mediatype>application/x-rd</mediatype>
+    <mediatype>application/x-egv</mediatype>
+    <mediatype>application/x-gcode</mediatype>
+  </provides>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/meerk40t/meerk40t/main/docs/screenshots/main.png</image>
+      <caption>The main MeerK40t workspace</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/meerk40t/meerk40t/main/docs/screenshots/loaded.png</image>
+      <caption>Editing a loaded design</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/meerk40t/meerk40t/main/docs/screenshots/devices.png</image>
+      <caption>Choose from a wide range of supported laser devices</caption>
+    </screenshot>
+  </screenshots>
+
+  <releases>
+    <release version="0.9.9000" date="2026-05-27" type="development"/>
+  </releases>
 </component>
+

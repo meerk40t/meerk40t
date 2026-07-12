@@ -1,0 +1,102 @@
+app-id: io.github.meerk40t.meerk40t
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: meerk40t
+
+# ---------------------------------------------------------------------------
+# Runtime permissions
+#
+#   --device=all      USB (K40 CH341 controllers via pyusb) + serial
+#                     (/dev/tty* for GRBL).  Hardware access is the reason
+#                     this app exists; narrower flags are not viable.
+#   --share=network   Networked controllers (ruida, newly TCP/UDP).
+#   --filesystem=home Opening user-supplied SVG/DXF files.  A future pass
+#                     could replace this with FileChooser portal access.
+# ---------------------------------------------------------------------------
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=all
+  - --filesystem=home
+  # Suppress the in-app updater. The install path is read-only and updates
+  # are handled via `flatpak update`; meerk40t/extra/updater.py honors this
+  # by skipping startup checks and the preferences UI.
+  - --env=MEERK40T_DISABLE_UPDATER=1
+
+# ---------------------------------------------------------------------------
+# Flathub-migration TODO (not blocking for self-hosted bundle builds):
+#   1. Replace --share=network in build modules with a pre-pinned
+#      python3-requirements.json generated via flatpak-pip-generator.
+#   2. Switch the `meerk40t` source from type: dir to type: git pinned at a
+#      release tag.
+#   3. Validate metainfo with `appstreamcli validate --strict`; the current
+#      appdata.xml may need <screenshots> and <releases> sections added.
+# ---------------------------------------------------------------------------
+
+modules:
+
+  - name: python3-deps
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - |
+        pip3 install --prefix=${FLATPAK_DEST} --no-cache-dir \
+          setuptools wheel sip typing_extensions \
+          Pillow numpy requests \
+          ezdxf "opencv-python-headless>=4.10.0.84" \
+          pyserial pyusb websocket-client
+      # Optional deps mirroring requirements-optional-linux.txt (used by the
+      # AppImage build). pypotrace is skipped — it requires libpotrace/libagg/
+      # libeigen built as flatpak modules. meerk40t accepts `potracer` as a
+      # drop-in (both expose `import potrace`), falling back to the bundled
+      # mk_potrace if neither is present. bitarray is needed by extra/ezd.py.
+      - pip3 install --prefix=${FLATPAK_DEST} --no-cache-dir --use-pep517 pyclipr
+      - |
+        pip3 install --prefix=${FLATPAK_DEST} --no-cache-dir \
+          potracer meerk40t-barcodes numba "scipy>=1.12.0" vtracer psutil bitarray
+
+  - name: python3-wxpython
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      # --no-build-isolation so the build sees typing_extensions etc.
+      # installed in the previous module.  Without it, wxPython 4.2.4's
+      # build script crashes on `from typing_extensions import Self`.
+      - pip3 install --verbose --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation wxpython-4.2.4.tar.gz
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/80/6e/b70e6dbdd7cb4f154b7ca424b4c7799f7b067f7a9f4204b8d16d6464648f/wxpython-4.2.4.tar.gz
+        sha256: 2eb123979c87bcb329e8a2452269d60ff8f9f651e9bf25c67579e53c4ebbae3c
+
+  - name: meerk40t
+    buildsystem: simple
+    build-commands:
+      # Disable external plugin discovery — matches the AppImage build.
+      - mv meerk40t/external_plugins.py meerk40t/external_plugins.unused
+      - mv meerk40t/external_plugins_build.py meerk40t/external_plugins.py
+      - pip3 install --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation .
+      - install -Dm644 .github/workflows/linux/io.github.meerk40t.meerk40t.desktop
+          ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
+      # Desktop file's Icon=meerk40t works for the AppImage; Flatpak requires
+      # the icon basename to match the app-id, so patch in place.
+      - sed -i 's/^Icon=meerk40t$/Icon=io.github.meerk40t.meerk40t/'
+          ${FLATPAK_DEST}/share/applications/io.github.meerk40t.meerk40t.desktop
+      - install -Dm644 .github/workflows/linux/meerk40t.appdata.xml
+          ${FLATPAK_DEST}/share/metainfo/io.github.meerk40t.meerk40t.metainfo.xml
+      - install -Dm644 images/meerk40t_simple_transparent.svg
+          ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/io.github.meerk40t.meerk40t.svg
+      # Vendor MIME types (LightBurn, XTool, EZCad2, Ruida, Lihuiyu, G-code).
+      # Standard types (svg, dxf, png, etc.) are already in shared-mime-info;
+      # only the application/x-* types need registration here.
+      - install -Dm644 .github/workflows/linux/io.github.meerk40t.meerk40t.mime.xml
+          ${FLATPAK_DEST}/share/mime/packages/io.github.meerk40t.meerk40t.xml
+    sources:
+      - type: dir
+        path: ../../..

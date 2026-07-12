@@ -73,6 +73,8 @@ class MockContext:
         self.opt_inners_grouped = opt_inners_grouped
         self.opt_inner_tolerance = 0
         self.opt_effect_combine = False
+        self.opt_effect_optimize = False
+        self.opt_complete_subpaths = False
         self.kernel = MockKernel()
         self.device = MockDevice()
 

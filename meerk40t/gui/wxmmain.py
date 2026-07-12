@@ -3196,6 +3196,7 @@ class MeerK40t(MWindow):
             with wx.FileDialog(
                 gui,
                 _("Open"),
+                defaultDir=context.elements.last_file_dir,
                 wildcard=files,
                 style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
             ) as fileDialog:
@@ -3208,6 +3209,7 @@ class MeerK40t(MWindow):
                     preferred_loader = None
 
                 pathname = fileDialog.GetPath()
+                context.elements.last_file_dir = os.path.dirname(pathname)
                 gui.clear_and_open(pathname, preferred_loader=preferred_loader)
 
         @context.console_command("dialog_import", hidden=True)
@@ -3216,6 +3218,7 @@ class MeerK40t(MWindow):
             with wx.FileDialog(
                 gui,
                 _("Import"),
+                defaultDir=context.elements.last_file_dir,
                 wildcard=files,
                 style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
             ) as fileDialog:
@@ -3227,6 +3230,7 @@ class MeerK40t(MWindow):
                 except IndexError:
                     preferred_loader = None
                 pathname = fileDialog.GetPath()
+                context.elements.last_file_dir = os.path.dirname(pathname)
                 gui.load(pathname, preferred_loader, execution=False)
 
         @context.console_option("quit", "q", action="store_true", type=bool)
@@ -3245,6 +3249,7 @@ class MeerK40t(MWindow):
             with wx.FileDialog(
                 gui,
                 _("Save Project"),
+                defaultDir=context.elements.last_file_dir,
                 wildcard=files,
                 style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
             ) as fileDialog:
@@ -3254,6 +3259,7 @@ class MeerK40t(MWindow):
                     fileDialog.GetFilterIndex()
                 ]
                 pathname = fileDialog.GetPath()
+                context.elements.last_file_dir = os.path.dirname(pathname)
                 if not pathname.lower().endswith(f".{extension}"):
                     pathname += f".{extension}"
                 try:
@@ -5507,6 +5513,7 @@ class MeerK40t(MWindow):
             except IndexError:
                 preferred_loader = None
             pathname = fileDialog.GetPath()
+            self.context.elements.last_file_dir = os.path.dirname(pathname)
             self.load(pathname, preferred_loader, execution=True)
 
     def populate_recent_menu(self):
@@ -5613,7 +5620,7 @@ class MeerK40t(MWindow):
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)
-        if self.load(pathname, preferred_loader, execution=True):
+        if self.load(pathname, preferred_loader, execution=True, replace_ops=True):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
                     # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -5623,7 +5630,7 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
-    def load(self, pathname, preferred_loader=None, execution=False):
+    def load(self, pathname, preferred_loader=None, execution=False, **kwargs):
         def unescaped(filename):
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
@@ -5744,6 +5751,7 @@ class MeerK40t(MWindow):
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.elements.svg_ppi,
                 preferred_loader=preferred_loader,
+                **kwargs,
             )
             kernel.busyinfo.end()
             if post_process:

@@ -203,6 +203,16 @@ class CachedColor:
         return inst
 
     # Instance delegation -------------------------------------------------
+    def __copy__(self):
+        """Return a new CachedColor wrapping an independent copy of the underlying Color."""
+        target_class = _original_color_class or svgelements_module.Color
+        new_color = target_class.__new__(target_class)
+        new_color.__dict__.update(self._color.__dict__)
+        inst = object.__new__(CachedColor)
+        object.__setattr__(inst, "_color", new_color)
+        object.__setattr__(inst, "_key", None)
+        return inst
+
     def __getattr__(self, name):
         """Delegate attribute access to the underlying Color instance."""
         return getattr(self._color, name)

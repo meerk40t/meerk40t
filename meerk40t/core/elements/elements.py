@@ -652,6 +652,7 @@ class Elemental(Service):
         self._node_lock = threading.RLock()
 
         self.note = None
+        self.last_file_dir = ""
         self.last_file_autoexec = None
         self.last_file_autoexec_active = False
         self._filename = None
@@ -1607,6 +1608,12 @@ class Elemental(Service):
                 op.settings["effects"] = effects
                 # print (f"{op.type}.{op.display_label()} - effect={effects}")
             op.save(settings, section)
+            if effects:
+                # Clean up so the SVG writer doesn't also emit this as an attribute
+                # (the effect is already saved as a child node in the SVG).
+                del op.settings["effects"]
+                if hasattr(op, "effects"):
+                    del op.effects
             # We will save the effect information, ie whether an operation does contain a hatch/wobble/warp
 
             # We need to save the children as well.

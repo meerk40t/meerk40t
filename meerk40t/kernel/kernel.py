@@ -4053,8 +4053,7 @@ class Kernel(Settings):
                     _("Finished command {cmd} after {duration}sec").format(
                         cmd=remainder, duration=f"{t1 - t0:.2f}"
                     )
-                )
-                self.signal("thread_update", "/", job_identifier, "ended")
+                    self.signal("thread_update", "/", job_identifier, "ended")
 
             if remainder is None:
                 # List all scheduled jobs that fit our format

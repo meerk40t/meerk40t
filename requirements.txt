@@ -1,10 +1,10 @@
-numpy<=1.26.4
+numpy
 wheel
 Pillow
 pyusb
 pyserial
 wxPython
 ezdxf>=0.14
-opencv-python-headless
+opencv-python-headless>=4.10.0.84
 websocket-client
 requests>=2.25.0

@@ -506,6 +506,12 @@ class ImageNode(Node, LabelDisplay, Suppressable):
             self._processed_matrix = actualized_matrix * inverted_main_matrix
             self._processed_image = image
             self._process_image_failed = False
+            # The rendered cache reflects the *previous* processed image; once
+            # the processed image is replaced, the cache is stale and must not
+            # be reused. (Reusing it across cutplan copy + matrix-flip
+            # preprocess caused raster ops to render unflipped pixels at flipped
+            # device coords, producing a mirrored simulation.)
+            self._cache = None
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
@@ -945,13 +951,7 @@ class ImageNode(Node, LabelDisplay, Suppressable):
                 height = cbox[3] - cbox[1]
                 if width != image.width or height != image.height:
                     image = image.crop(cbox)
-                    # TODO:
-                    # We did not crop the image so far, but we already applied
-                    # the cropped transformation! That may be faulty, and needs to
-                    # be corrected at a later stage, but this logic, even if clumsy
-                    # is good enough: don't shift things twice!
-                    if orgbox[0] == 0 and orgbox[1] == 0:
-                        actualized_matrix.post_translate(cbox[0], cbox[1])
+                    actualized_matrix.post_translate(cbox[0], cbox[1])
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)
