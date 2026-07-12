@@ -2802,7 +2802,24 @@ class Art:
         # )
 
     def label_font_ceiling(self, w):
-        return max(6, min(18, int(round(w / 5.0, 2)) * 2))
+        # Lets clamp the font size between 6pt and 18 ppt
+        # For a 120 pt wide button, we want 18 pt font size. For a 60 pt wide button, we want 12 pt font size.
+        if w<=20:
+            label_size = 6
+        elif w<=30:
+            label_size = 8  
+        elif w<=40:
+            label_size = 10
+        elif w<=60:
+            label_size = 12     
+        elif w<=80:
+            label_size = 14
+        elif w<=100:
+            label_size = 16
+        else:
+            label_size = 18
+        # print (f"Width: {w}, label_size: {label_size}")   
+        return label_size
 
     def _label_block_height(self, dc, label, w, ptsize):
         words = label.split(" ")
