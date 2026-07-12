@@ -232,6 +232,19 @@ def distance_squared(p1_x, p1_y, p2_x, p2_y):
     return dx * dx + dy * dy
 
 
+def _cross_2d(a, b):
+    """
+    2D scalar cross product (z-component), broadcasting over the last axis.
+
+    NumPy 2.3 removed support for 2-dimensional inputs to ``np.cross``; this
+    helper replaces those calls. Accepts single vectors or arrays of vectors
+    shaped ``(..., 2)`` and returns ``a_x * b_y - a_y * b_x``.
+    """
+    a = np.asarray(a)
+    b = np.asarray(b)
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+
 # Centralized utilities for NumPy and point conversion
 def _convert_points_to_arrays(points):
     """
@@ -7184,7 +7197,7 @@ class Geomstr:
         """
 
         def process(S, P, a, b):
-            signed_dist = _cross2d(S[P] - S[a], S[b] - S[a])
+            signed_dist = _cross_2d(S[P] - S[a], S[b] - S[a])
             K = [i for s, i in zip(signed_dist, P) if s > 0 and i != a and i != b]
 
             if len(K) == 0:
