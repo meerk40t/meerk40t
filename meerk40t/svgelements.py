@@ -8683,7 +8683,7 @@ class Image(SVGElement, GraphicObject, Transformable):
             if self.data is not None:
                 from io import BytesIO
 
-                self.image = PILImage.open(BytesIO(self.data))
+                self.image = _open_image_ignoring_large_png_text(PILImage, self.data)
             else:
                 return
         except ImportError:
@@ -8697,14 +8697,16 @@ class Image(SVGElement, GraphicObject, Transformable):
 
             if self.url is not None:
                 try:
-                    self.image = PILImage.open(self.url)
+                    self.image = _open_image_ignoring_large_png_text(PILImage, self.url)
                 except IOError:
                     try:
                         if directory is not None:
                             from os.path import join
 
                             relpath = join(directory, self.url)
-                            self.image = PILImage.open(relpath)
+                            self.image = _open_image_ignoring_large_png_text(
+                                PILImage, relpath
+                            )
                     except IOError:
                         return
         except ImportError:
@@ -8757,6 +8759,72 @@ class Image(SVGElement, GraphicObject, Transformable):
 
 
 SVGImage = Image
+
+
+def _open_image_ignoring_large_png_text(pil_image, source):
+    from io import BytesIO
+
+    open_source = BytesIO(source) if isinstance(source, (bytes, bytearray)) else source
+    try:
+        return pil_image.open(open_source)
+    except ValueError as e:
+        if "PngImagePlugin.MAX_TEXT_CHUNK" not in str(e):
+            raise
+        png_data = _source_png_data(source)
+        if png_data is None:
+            raise
+        stripped_data = _strip_png_oversized_metadata_chunks(png_data)
+        if stripped_data == png_data:
+            raise
+
+        return pil_image.open(BytesIO(stripped_data))
+
+
+def _source_png_data(source):
+    if isinstance(source, bytes):
+        return source
+    if isinstance(source, bytearray):
+        return bytes(source)
+    if hasattr(source, "read"):
+        try:
+            position = source.tell()
+        except (AttributeError, OSError):
+            position = None
+        try:
+            if position is not None:
+                source.seek(0)
+            return source.read()
+        finally:
+            if position is not None:
+                source.seek(position)
+    if isinstance(source, str):
+        with open(source, "rb") as png_file:
+            return png_file.read()
+    return None
+
+
+def _strip_png_oversized_metadata_chunks(png_data):
+    png_signature = b"\x89PNG\r\n\x1a\n"
+    if not png_data.startswith(png_signature):
+        return png_data
+    oversized_metadata_chunks = {b"iCCP", b"iTXt", b"tEXt", b"zTXt"}
+    position = len(png_signature)
+    chunks = [png_signature]
+    data_length = len(png_data)
+    while position + 12 <= data_length:
+        chunk_length = int.from_bytes(png_data[position : position + 4], "big")
+        chunk_end = position + 12 + chunk_length
+        if chunk_end > data_length:
+            return png_data
+        chunk_type = png_data[position + 4 : position + 8]
+        if chunk_type not in oversized_metadata_chunks:
+            chunks.append(png_data[position:chunk_end])
+        position = chunk_end
+        if chunk_type == b"IEND":
+            break
+    if position != data_length:
+        chunks.append(png_data[position:])
+    return b"".join(chunks)
 
 
 class Desc(SVGElement):

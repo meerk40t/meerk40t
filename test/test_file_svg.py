@@ -1,12 +1,48 @@
 import os
 import unittest
+from base64 import b64encode
+from io import BytesIO
 
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import Length
+from meerk40t.svgelements import Image as SVGImage
 from test import bootstrap
 
 
 class TestFileSVG(unittest.TestCase):
+    def test_load_svg_image_with_large_png_text_chunk(self):
+        """
+        SVGs can contain embedded PNGs with oversized compressed metadata chunks.
+
+        Pillow raises a MAX_TEXT_CHUNK ValueError before pixel data is available
+        for these files. MeerK40t should discard the oversized ancillary metadata
+        and still import the raster image.
+        """
+        from PIL import Image as PILImage
+        from PIL.PngImagePlugin import MAX_TEXT_CHUNK, PngInfo
+
+        pnginfo = PngInfo()
+        pnginfo.add_text("oversized", "x" * (MAX_TEXT_CHUNK + 1), zip=True)
+        save_kwargs = (
+            # zTXt/iTXt-style compressed text metadata.
+            ("compressed text", {"pnginfo": pnginfo}),
+            # iCCP compressed color-profile metadata, as seen in real SVG imports.
+            ("icc profile", {"icc_profile": b"x" * (MAX_TEXT_CHUNK + 1)}),
+        )
+        for label, kwargs in save_kwargs:
+            with self.subTest(label=label):
+                buffer = BytesIO()
+                PILImage.new("RGBA", (1, 1), (255, 0, 0, 255)).save(
+                    buffer, format="PNG", **kwargs
+                )
+                data = b64encode(buffer.getvalue()).decode("ascii")
+
+                image = SVGImage(href=f"data:image/png;base64,{data}")
+                image.load()
+
+                self.assertIsNotNone(image.image)
+                self.assertEqual(image.image.size, (1, 1))
+
     def test_load_save_svg(self):
         """
         test svg saving and loading of various files.
