@@ -335,64 +335,23 @@ class TestESP3DExecute(unittest.TestCase):
         """Test successful file execution."""
         from meerk40t.grbl.esp3d_upload import ESP3DConnection
         
-        # Mock firmware detection
-        mock_firmware_response = MagicMock()
-        mock_firmware_response.raise_for_status.return_value = None
-        mock_firmware_response.text = '{"status": "ok", "data": {"FWTarget": "grbl"}}'
-        
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = "ok"
-        
-        mock_requests.get.side_effect = [mock_firmware_response, mock_response]
-        
+        mock_execute_response = Mock()
+        mock_execute_response.status_code = 200
+        mock_execute_response.text = "ok"
+        mock_status_response = Mock()
+        mock_status_response.status_code = 200
+        mock_status_response.text = "<Run|MPos:0.000,0.000,0.000>"
+        mock_requests.get.side_effect = [mock_execute_response, mock_status_response]
+
         conn = ESP3DConnection("192.168.1.100", 80)
         result = conn.execute_file("test.gc")
-        
+
         self.assertTrue(result["success"])
-        # Verify two get calls were made: firmware detection and command execution
+        self.assertEqual(result["grbl_state"], "run")
+        # Verify one get call was made for execution and one for status verification.
         self.assertEqual(mock_requests.get.call_count, 2)
-    def test_upload_file_not_found(self):
-        """Test upload of non-existent file."""
-        from meerk40t.grbl.esp3d_upload import ESP3DConnection, ESP3DUploadError
-        
-        # Mock firmware detection to avoid network calls
-        with patch('meerk40t.grbl.esp3d_upload.requests') as mock_requests:
-            mock_firmware_response = MagicMock()
-            mock_firmware_response.raise_for_status.return_value = None
-            mock_firmware_response.text = '{"status": "ok", "data": {"FWTarget": "grbl"}}'
-            mock_requests.get.return_value = mock_firmware_response
-            
-            conn = ESP3DConnection("192.168.1.100", 80)
-            
-            with self.assertRaises(ESP3DUploadError) as context:
-                conn.upload_file("/nonexistent/file.gc", "test.gc", "/")
-        
-        self.assertIn("not found", str(context.exception))
 
-
-class TestESP3DExecute(unittest.TestCase):
-    """Test ESP3D file execution functionality."""
-
-    @patch('meerk40t.grbl.esp3d_upload.REQUESTS_AVAILABLE', True)
-    @patch('meerk40t.grbl.esp3d_upload.requests')
-    def test_execute_file_success(self, mock_requests):
-        """Test successful file execution."""
-        from meerk40t.grbl.esp3d_upload import ESP3DConnection
-        
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = "ok"
-        mock_requests.get.return_value = mock_response
-
-        conn = ESP3DConnection("192.168.1.100", 80)
-        result = conn.execute_file("test.gc")
-
-        self.assertTrue(result["success"])
-        # Verify one get call was made for execution
-        self.assertEqual(mock_requests.get.call_count, 1)
-
-        call_args = mock_requests.get.call_args
+        call_args = mock_requests.get.call_args_list[0]
         self.assertEqual(call_args[1]["params"]["commandText"], "[ESP220]/test.gc")
 
     @patch('meerk40t.grbl.esp3d_upload.REQUESTS_AVAILABLE', True)
