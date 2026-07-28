@@ -1,116 +1,59 @@
-# Meerk40t structure
+# Welcome to MeerK40t!
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
 
-This ReadMe page describes how the Meerk40t python code is structured and provides a very brief description of each of
-the major subdirectories.
+The primary goals of this software is simple:
 
-## Kernel
 
-The Kernel serves as the central code that binds modules together within Meerk40t.
-It is intended to be useful for other such ecosystems and agnostic with regard to the plugins used.
-It provides several methods of interactions including signals, channels, persistent settings,
-timers, schedulers, console commands, contexts, services and registered values.
+* Provide users with high quality laser control software.
+* Provide developers with a highly extensible platform to help further their own ideas, and provide novel work to the laser community at large.
 
-The Kernel is responsible for booting / bootstrapping the application and providing core basic services
-for use by plugins, including registering functionality, signalling events to other plugins, handling settings,
-providing channels for information to be sent from plugins to the user or to other plugins, etc.
+## Getting started
+To get up and running, simply download Meerk40t from [here](https://github.com/meerk40t/meerk40t/releases) for your specific platform. (Windows, Mac OSX, Linux, and by extension, Raspberry Pi).
 
-The kernel is intended to provide generalised functionality that could be used by any complex application.
-Whilst the kernel has been written initially for Meerk40t, there is no reason why it should not be used as the core
-of other applications.
+## 🛠 Project Status: Maintenance Mode
+**MeerK40t is currently in a low-maintenance phase.** The original maintainers have limited bandwidth for active development. What this means for users and contributors:
+* **Response Times:** Issues and Pull Requests may not receive immediate feedback. Silence is not a lack of interest, but a lack of time.
+* **Weekly Builds:** These are automated experimental snapshots. They **will** contain bugs and regressions. If you require a stable experience, please stick to the [latest stable Release](https://github.com/meerk40t/meerk40t/releases).
+* **Contributions Welcome:** This project survives on community involvement. If you find a bug in a weekly build, the fastest way to get it fixed is to submit a Pull Request. 
+* **Support:** Please use the [Discussions] tab or community forums for general help, as the Issue tracker is reserved for actionable bug reports and development tasks.
 
-Plugins are classified as follows:
+<details>
+<summary>Release Versions (Just use the latest)</summary>
 
-## Core
 
-Core modules are largely tools and classes that define Meerk40t specific ecosystem requirements within the kernel.
+> * 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.9000](https://github.com/meerk40t/meerk40t/releases/tag/0.9.9000) (Jan 17, 2026) or try a prerelease even: [release list](https://github.com/meerk40t/meerk40t/releases)
+> * 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
+> * 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
+> * 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)
 
-## Device Drivers
 
-Device driver modules provide hardware-specific implementations for different laser controllers and cutting systems.
+</details>
 
-### balormk
-JCZ controllers for galvo-based laser systems.
+### Command Line Interface
 
-### grbl
-GRBL-compatible devices including popular brands like Ortur, Atomstack, and Creality.
+Meerk40t has an advanced internal console system allowing access to most parts of the code with various commands. It also provides a command line interface which should allow you to automate any processes. To learn more, download a version of Meerk40t for your platform, and execute it in a terminal with the ``--help`` argument to get a list of options.
 
-### lihuiyu
-Lihuiyu M2/M3-Nano controllers (K40 laser systems).
+## Compiling from source
 
-### moshi
-Moshiboard laser controllers.
+Alternatively you can run MeerK40t directly from Python. `pip install meerk40t[all]` with python installed will usually be sufficient. Then merely run `meerk40t` at the command line.
 
-### newly
-NewlyDraw System 8.1 laser controllers.
+See [Install: Source wiki page](https://github.com/meerk40t/meerk40t/wiki/Install:-Source)
 
-### ruida
-Ruida laser controllers and emulators.
+The wxMeerK40t is the GUI and is written in wxPython. We use AUI to allow to have a very highly configurable UI. We can easily add panes and tools and there are quite a few available already.
 
-## Hardware Abstraction
+## Screenshots
+![grafik](https://github.com/user-attachments/assets/e56135a2-7b1f-44be-9761-b92931e300f6)
 
-### camera
-Camera integration and image capture functionality.
+## Drivers
 
-### ch341
-CH341 USB interface chip support for hardware communication.
+Meerk40t provides a variety of drivers with an extensible framework to provide support for other new laser devices. The code was written with the myriad of possibilities for different software in mind. For example, it may be essential that GRBL be able to reset an alarm or notify the user of particular error codes. The configuration for GRBL is not the same for the configuration of other laser control drivers. With this in mind, MeerK40t can radically change how and when it works
 
-### device
-Hardware abstraction layer providing unified interfaces for device management.
 
-## Specialized Features
-
-### cylinder
-Galvo correction and coordinate transformation for cylindrical engraving.
-
-### fill
-Hatch fill patterns, wobble effects, and living hinge generation.
-
-### rotary
-Rotary engraving support for cylindrical objects.
-
-## File Formats
-
-### dxf
-Digital Exchange Format (DXF) file processing and conversion.
-
-## User Interface
-
-### gui
-Graphical user interface modules using wxPython and AUI framework for highly configurable UI.
-
-## Image Processing
-
-### image
-Image processing tools using Pillow (Python Image Library) for laser engraving preparation.
-
-## Network
-
-Network modules handle TCP and UDP socket communications for remote access and control.
-
-## Utilities
-
-### extra
-Additional non-core functionality and extended features.
-
-### tools
-Standalone data structures and algorithms for geometric operations, font processing, and optimization.
-
-## Main
-
-The main file handles the command line interface for Meerk40t as well as loading and processing of different plugins, both internal and external.
-
-## svgelements
-
-The svgelements file is a directly included version of the svgelements project
-[https://github.com/meerk40t/svgelements](https://github.com/meerk40t/svgelements)
-which deals with the high fidelity parsing of SVG data and geometric rendering.
-It implements the core parts of SVG v1.1 and SVG 2.0 and provides a number of robust objects
-like `Angle`, `Length`, `Color`, `Point` and `Matrix` which are used throughout MeerK40t.
-
-The Paths are used as the elements for vector shapes.
-
-Many commands accept Angles and Lengths as real values. Though the Length is now preferred used within core/units.py.
-
-The Viewbox functions is used to do things like center the camera image in the window.
-
-Many of these are fundamental objects within MeerK40t. 
+### Supported devices
+*   Lihuiyu M2/M3-Nano (aka K40 lasers)
+*   Any GRBL device (Atomstack, Creality, Longer, Ortur etc...)
+*   Ezcad2-compatible JCZ controllers galvo lasers
+*   Moshiboard
+*   NewlyDraw System 8.1 Lasers
+*   Devices with Ruida-controller
+*   Ruida-Emulation (Middleman between Lightburn and K40)
