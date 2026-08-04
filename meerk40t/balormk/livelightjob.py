@@ -274,6 +274,8 @@ class LiveLightJob:
         """
         if not self.listen:
             return
+        # Deletion fires element_removed/tree_changed. Without them a
+        # deleted shape keeps being traced by the live light job.
         for method in (
             "emphasized",
             "modified_by_tool",
@@ -281,6 +283,8 @@ class LiveLightJob:
             "view;realized",
             "update_group_labels",
             "element_property_reload",
+            "element_removed",
+            "tree_changed",
         ):
             if start:
                 self.service.listen(method, self.on_emphasis_changed)
