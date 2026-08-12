@@ -138,7 +138,7 @@ class NewlyDevice(Service, Status):
                 "attr": "bedwidth",
                 "object": self,
                 "default": "310mm",
-                "type": str,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 # Hint for translation _("General")
@@ -152,7 +152,7 @@ class NewlyDevice(Service, Status):
                 "attr": "bedheight",
                 "object": self,
                 "default": "210mm",
-                "type": str,
+                "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 # Hint for translation _("General")
