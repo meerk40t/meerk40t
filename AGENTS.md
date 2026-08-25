@@ -8,10 +8,10 @@ point here and must not be treated as separate references.
 
 MeerK40t (pronounced "MeerKat") is an open-source laser cutting/engraving control software. It provides a highly extensible, plugin-based platform supporting multiple laser hardware types including K40 (Lihuiyu), GRBL, Ruida, Moshiboard, Newly, and galvo (Balor) lasers.
 
-**Version:** 0.9.9000 (Active Development)
 **License:** MIT
 **Python:** 3.6+
 **Platforms:** Windows, macOS, Linux, Raspberry Pi
+**Version:** defined as `APPLICATION_VERSION` in `meerk40t/main.py` (avoid hard-coding it here — check the source)
 
 See `NOTES.md` for current device stability status.
 
@@ -24,9 +24,10 @@ See `NOTES.md` for current device stability status.
 pip install meerk40t[all]
 
 # Run application
-python -m meerk40t              # Full GUI
-python -m meerk40t --no-gui     # Console mode
-python -m meerk40t --simpleui   # Simplified interface
+meerk40t                        # Installed console script (full GUI)
+python -m meerk40t.main         # Full GUI
+python -m meerk40t.main --no-gui     # Console mode
+python -m meerk40t.main --simpleui   # Simplified interface
 
 # Run tests
 python -m unittest discover test -v
