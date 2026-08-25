@@ -1,12 +1,12 @@
-Issue this at the start of a copilot session in Windows:
+MeerK40t AI Coding Agent Instructions
 
-PowerShell Environment Reminder: We're working in Windows PowerShell. 
-Please use native PowerShell cmdlets (e.g., Remove-Item instead of rm, 
-Get-ChildItem instead of ls, Set-Location instead of cd) 
-and proper PowerShell syntax. Avoid Unix-style commands unless explicitly needed.
-For Python testing, create script files rather than inline execution 
-to avoid PowerShell quoting issues. Focus on the Geomstr class for geometric operations, 
-and follow the project's plugin architecture with lifecycle hooks. 
-Prioritize testing with the existing test suite in the test directory.
+**This file has been superseded.** All AI coding agent instructions for
+MeerK40t now live in the unified [AGENTS.md](AGENTS.md) at the repository root.
 
-------------
+Please read and follow [AGENTS.md](AGENTS.md) instead — it is the single source
+of truth for project overview, architecture, development patterns, testing,
+and conventions.
+
+Note: AGENTS.md covers the platform/shell guidance from this file (Windows
+PowerShell cmdlet preferences, avoiding inline Python execution in PowerShell)
+under "Common Pitfalls" #8, and its testing guidance under "Testing".
