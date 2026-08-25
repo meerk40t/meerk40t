@@ -25,9 +25,9 @@ pip install meerk40t[all]
 
 # Run application
 meerk40t                        # Installed console script (full GUI)
-python -m meerk40t.main         # Full GUI
-python -m meerk40t.main --no-gui     # Console mode
-python -m meerk40t.main --simpleui   # Simplified interface
+python meerk40t.py              # From a source checkout
+python meerk40t.py --no-gui     # Console mode
+python meerk40t.py --simpleui   # Simplified interface
 
 # Run tests
 python -m unittest discover test -v
@@ -607,7 +607,7 @@ The main entry point is `meerk40t/main.py`:
 - Defines `APPLICATION_NAME` and `APPLICATION_VERSION`.
 - Version detection appends "git", "src", or "pkg" based on environment.
 - Initializes the Kernel and loads internal/external plugins.
-- Invoked via `meerk40t.py`, `python -m meerk40t.main`, or the console script.
+- Invoked via the root-level `meerk40t.py` launcher, or the installed `meerk40t` console script (`setup.cfg`: `meerk40t = meerk40t.main:run`). Note that `meerk40t/main.py` has no `if __name__ == "__main__"` block, so `python -m meerk40t.main` does nothing.
 
 Key CLI arguments:
 - `-z, --no-gui` — run without GUI
