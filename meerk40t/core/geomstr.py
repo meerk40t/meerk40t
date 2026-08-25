@@ -5781,7 +5781,7 @@ class Geomstr:
             # 2d means axis 1 is lines:
             results = np.zeros(line.shape[0], dtype=complex)
             for i, _line in enumerate(line):
-                results[i] = self._arc_position(line, positions)
+                results[i] = self._arc_position(_line, positions)[0]
             return results
         start, control, info, control2, end = line
 
@@ -6130,6 +6130,10 @@ class Geomstr:
             yield from self._split_quad(e, t, breaks=breaks)
         if segtype == TYPE_CUBIC:
             yield from self._split_cubic(e, t, breaks=breaks)
+        if segtype == TYPE_ARC:
+            yield from self._split_arc(e, t, breaks=breaks)
+
+        
 
     def _split_quad(self, e, t, breaks):
         """
@@ -6197,6 +6201,32 @@ class Geomstr:
         yield start, r1_0, info, r2_0, r3
         # yield r3, 0, complex(TYPE_END, info.imag), 0, r3
         yield r3, r2_1, info, r1_2, end
+
+    def _split_arc(self, e, t, breaks=False):
+        if (
+            not isinstance(e, (np.ndarray, tuple, list))
+            or len(e) == 0
+            or not isinstance(e[0], complex)
+        ):
+            e = self.segments[e]
+        else:
+            e = np.asarray(e, dtype=complex)
+        if isinstance(t, (np.ndarray, tuple, list)):
+            split_positions = np.sort(np.atleast_1d(np.asarray(t, dtype=float)))
+        else:
+            split_positions = np.asarray([t], dtype=float)
+
+        positions = np.concatenate(([0.0], split_positions, [1.0]))
+        starts_and_ends = self._arc_position(e, positions)
+        controls = self._arc_position(e, (positions[:-1] + positions[1:]) / 2.0)
+        info = e[2]
+
+        for index, control in enumerate(controls):
+            start = starts_and_ends[index]
+            end = starts_and_ends[index + 1]
+            yield start, control, info, control, end
+            if breaks and index < len(controls) - 1:
+                yield end, end, complex(TYPE_END, info.imag), end, end
 
     def normal(self, e, t):
         """
