@@ -163,8 +163,13 @@ def plugin(kernel, lifecycle=None):
                 choices = entry.get("choices")
                 if label:
                     # There is a label, override the otherwise preferred label.
-                    choices = dict(choices)  # create copy rather than modify original
-                    choices["label"] = label
+                    choices = [dict(c) for c in choices]          # deep-ish copy, list preserved
+                    for c in choices:
+                        if c.get("attr") == "label":
+                            c["default"] = label
+                            break
+                    else: # empty for loop, no label found, add one
+                        choices.append({"attr": "label", "default": label})                    
                 path = list(provider_path.split("/"))[-1]
                 service_path = path
                 i = 1
