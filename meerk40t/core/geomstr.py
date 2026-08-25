@@ -6212,7 +6212,7 @@ class Geomstr:
         else:
             e = np.asarray(e, dtype=complex)
         if isinstance(t, (np.ndarray, tuple, list)):
-            split_positions = np.sort(np.asarray(t, dtype=float))
+            split_positions = np.sort(np.atleast_1d(np.asarray(t, dtype=float)))
         else:
             split_positions = np.asarray([t], dtype=float)
 
