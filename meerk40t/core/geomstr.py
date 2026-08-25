@@ -5781,7 +5781,7 @@ class Geomstr:
             # 2d means axis 1 is lines:
             results = np.zeros(line.shape[0], dtype=complex)
             for i, _line in enumerate(line):
-                results[i] = self._arc_position(line, positions)
+                results[i] = self._arc_position(_line, positions)[0]
             return results
         start, control, info, control2, end = line
 

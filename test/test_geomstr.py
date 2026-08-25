@@ -536,6 +536,14 @@ class TestGeomstr(unittest.TestCase):
             self.assertAlmostEqual(c.rx, path.arc_radius(0))
             self.assertAlmostEqual(c.ry, path.arc_radius(0))
 
+    def test_geomstr_batched_arc_position(self):
+        path = Geomstr.circle(60, 100, 50)
+        expected = np.array([path.position(index, 0.5) for index in range(path.index)])
+
+        actual = path.position(slice(path.index), 0.5)
+
+        np.testing.assert_allclose(actual, expected)
+
     def test_geomstr_split_arc(self):
         path = Geomstr()
         path.arc(1 + 0j, 0 + 1j, -1 + 0j, settings=7)
