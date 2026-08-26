@@ -5,7 +5,7 @@ A simple HTTP server that emulates ESP3D-WEBUI API for testing purposes.
 Provides endpoints for connection testing, file upload, SD card management, and file execution.
 
 Usage:
-    python -m meerk40t.grbl.esp3d_emulator [--port PORT] [--host HOST]
+    python -m meerk40t.vendors.grbl.esp3d_emulator [--port PORT] [--host HOST]
 """
 
 import argparse

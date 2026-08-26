@@ -28,19 +28,19 @@ def plugin(kernel, lifecycle):
 
         plugins.append(coolantplugin)
 
-        from .lihuiyu import plugin as lihuiyu_driver
+        from .vendors.lihuiyu import plugin as lihuiyu_driver
 
         plugins.append(lihuiyu_driver.plugin)
 
-        from .moshi import plugin as moshi_driver
+        from .vendors.moshi import plugin as moshi_driver
 
         plugins.append(moshi_driver.plugin)
 
-        from .grbl.plugin import plugin as grbl_driver_plugin
+        from .vendors.grbl.plugin import plugin as grbl_driver_plugin
 
         plugins.append(grbl_driver_plugin)
 
-        from .ruida import plugin as ruida_driver
+        from .vendors.ruida import plugin as ruida_driver
 
         plugins.append(ruida_driver.plugin)
 
@@ -128,11 +128,11 @@ def plugin(kernel, lifecycle):
 
         plugins.append(cag.plugin)
 
-        from .balormk.plugin import plugin as balorplugin
+        from .vendors.balormk.plugin import plugin as balorplugin
 
         kernel.add_plugin(balorplugin)
 
-        from .newly.plugin import plugin as newlyplugin
+        from .vendors.newly.plugin import plugin as newlyplugin
 
         kernel.add_plugin(newlyplugin)
 

@@ -34,27 +34,27 @@ def bootstrap(profile="MeerK40t_TEST", ignore_settings=True, plugins=None):
 
     kernel.add_plugin(coolantplugin)
 
-    from meerk40t.lihuiyu import plugin as lhystudiosdevice
+    from meerk40t.vendors.lihuiyu import plugin as lhystudiosdevice
 
     kernel.add_plugin(lhystudiosdevice.plugin)
 
-    from meerk40t.moshi import plugin as moshidevice
+    from meerk40t.vendors.moshi import plugin as moshidevice
 
     kernel.add_plugin(moshidevice.plugin)
 
-    from meerk40t.grbl import plugin as grbldevice
+    from meerk40t.vendors.grbl import plugin as grbldevice
 
     kernel.add_plugin(grbldevice.plugin)
 
-    from meerk40t.ruida import plugin as ruidadevice
+    from meerk40t.vendors.ruida import plugin as ruidadevice
 
     kernel.add_plugin(ruidadevice.plugin)
 
-    from meerk40t.newly import plugin as newlydevice
+    from meerk40t.vendors.newly import plugin as newlydevice
 
     kernel.add_plugin(newlydevice.plugin)
 
-    from meerk40t.balormk import plugin as balormkdevice
+    from meerk40t.vendors.balormk import plugin as balormkdevice
 
     kernel.add_plugin(balormkdevice.plugin)
 
