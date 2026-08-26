@@ -27,6 +27,7 @@ Core modules are largely tools and classes that define Meerk40t specific ecosyst
 ## Device Drivers
 
 Device driver modules provide hardware-specific implementations for different laser controllers and cutting systems.
+These live under the `vendors/` directory (one subpackage per controller ecosystem).
 
 ### balormk
 JCZ controllers for galvo-based laser systems.
@@ -52,7 +53,7 @@ Ruida laser controllers and emulators.
 Camera integration and image capture functionality.
 
 ### ch341
-CH341 USB interface chip support for hardware communication.
+CH341 USB interface chip support for hardware communication (in `vendors/`).
 
 ### device
 Hardware abstraction layer providing unified interfaces for device management.

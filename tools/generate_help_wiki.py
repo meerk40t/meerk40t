@@ -549,14 +549,17 @@ def find_related_help_sections(current_section, all_sections, help_context):
             break
 
     # Find sections from same module
+    # Extract module path (e.g., meerk40t/vendors/grbl/gui/ -> grbl)
     current_module = None
     for file_path in current_files:
-        # Extract module path (e.g., meerk40t/grbl/gui/ -> grbl)
         parts = file_path.replace("\\", "/").split("/")
         if "meerk40t" in parts:
             idx = parts.index("meerk40t")
             if idx + 1 < len(parts):
                 current_module = parts[idx + 1]
+                # Skip the vendors container level (e.g. vendors/grbl -> grbl)
+                if current_module == "vendors" and idx + 2 < len(parts):
+                    current_module = parts[idx + 2]
                 break
 
     if current_module:
@@ -566,7 +569,10 @@ def find_related_help_sections(current_section, all_sections, help_context):
                     parts = file_path.replace("\\", "/").split("/")
                     if "meerk40t" in parts:
                         idx = parts.index("meerk40t")
-                        if idx + 1 < len(parts) and parts[idx + 1] == current_module:
+                        module = parts[idx + 1] if idx + 1 < len(parts) else None
+                        if module == "vendors" and idx + 2 < len(parts):
+                            module = parts[idx + 2]
+                        if module == current_module:
                             related.append(section)
                             break
 

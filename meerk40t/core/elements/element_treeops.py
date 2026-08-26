@@ -1952,7 +1952,7 @@ def init_tree(kernel):
         grouping="85_OPS_BLOB",
     )
     def egv2path(node, **kwargs):
-        from meerk40t.lihuiyu.parser import LihuiyuParser
+        from meerk40t.vendors.lihuiyu.parser import LihuiyuParser
 
         parser = LihuiyuParser()
         parser.fix_speeds = True

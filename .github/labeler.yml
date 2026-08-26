@@ -22,13 +22,13 @@
 
 "Context: Devices":
 - 'meerk40t/device/**/*.py'
-- 'meerk40t/grbl/**/*.py'
-- 'meerk40t/lihuiyu/**/*.py'
-- 'meerk40t/ruida/**/*.py'
-- 'meerk40t/moshi/**/*.py'
-- 'meerk40t/newly/**/*.py'
-- 'meerk40t/balormk/**/*.py'
-- 'meerk40t/ch341/**/*.py'
+- 'meerk40t/vendors/grbl/**/*.py'
+- 'meerk40t/vendors/lihuiyu/**/*.py'
+- 'meerk40t/vendors/ruida/**/*.py'
+- 'meerk40t/vendors/moshi/**/*.py'
+- 'meerk40t/vendors/newly/**/*.py'
+- 'meerk40t/vendors/balormk/**/*.py'
+- 'meerk40t/vendors/ch341/**/*.py'
 
 "Context: GUI":
 - 'meerk40t/gui/**/*.py'

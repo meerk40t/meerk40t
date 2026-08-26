@@ -103,7 +103,7 @@ External plugins are disabled with `--no-plugins`, disabled in frozen builds (Py
 2. **Core** (`meerk40t/core/`) - Element/node tree, operations, cutcode, planning, spooling, units
 3. **Device** (`meerk40t/device/`) - Hardware abstraction layer and base device
 4. **GUI** (`meerk40t/gui/`) - wxPython interface with AUI docking
-5. **Drivers** - Hardware-specific: `grbl/`, `lihuiyu/`, `ruida/`, `moshi/`, `newly/`, `balormk/`
+5. **Drivers** - Hardware-specific integrations under `vendors/`: `grbl/`, `lihuiyu/`, `ruida/`, `moshi/`, `newly/`, `balormk/`, `ch341/`
 6. **Extra** (`meerk40t/extra/`) - File format parsers, tracing, fonts, parametric shapes, utilities
 
 ---
@@ -119,13 +119,8 @@ meerk40t/
 │   │   ├── elements/    #   Element tree service (management, selection, undo)
 │   │   └── cutcode/     #   CutCode data structures and primitives
 │   ├── device/          # Hardware abstraction (basedevice.py)
+│   ├── vendors/         # Vendor-specific device drivers (incl. grbl/, lihuiyu/, ruida/, moshi/, newly/, balormk/, ch341/)
 │   ├── gui/             # wxPython UI panels, dialogs, scene rendering
-│   ├── grbl/            # GRBL driver
-│   ├── lihuiyu/         # K40 (Lihuiyu) driver
-│   ├── ruida/           # Ruida driver
-│   ├── moshi/           # Moshiboard driver
-│   ├── newly/           # Newly driver
-│   ├── balormk/         # Balor galvo driver
 │   ├── image/           # Image processing and rasterization tools
 │   ├── fill/            # Hatch fills (scanline, Eulerian) and wobble patterns
 │   ├── tools/           # Geometric algorithms
@@ -421,7 +416,7 @@ def my_tree_op(node, **kwargs):
 3. **Controller** (`controller.py`) handles the low-level communication protocol.
 4. **Spooler** manages the job queue and execution.
 
-Follow existing driver patterns (see `meerk40t/grbl/` as reference); implement proper error handling and reconnection logic; use kernel channels for status updates; keep communication operations thread-safe.
+Follow existing driver patterns (see `meerk40t/vendors/grbl/` as reference); implement proper error handling and reconnection logic; use kernel channels for status updates; keep communication operations thread-safe.
 
 ---
 
