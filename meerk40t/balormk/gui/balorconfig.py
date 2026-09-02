@@ -118,6 +118,7 @@ class BalorConfiguration(MWindow):
                     injector=injection,
                 )
                 self.panels.append(newpanel)
+                newpanel.Reparent(self.notebook_main)
                 self.notebook_main.AddPage(newpanel, pagetitle)
 
         # newpanel = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
@@ -126,14 +127,17 @@ class BalorConfiguration(MWindow):
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Warning"))
 
         newpanel = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Default Actions"))
 
         newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()

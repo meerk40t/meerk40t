@@ -70,6 +70,9 @@ class MoshiDriverGui(MWindow):
         self.panels.append(panel_actions)
         self.panels.append(newpanel)
 
+        for panel in self.panels:
+            panel.Reparent(self.notebook_main)
+
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_effects, _("Effects"))
         self.notebook_main.AddPage(panel_defaults, _("Operation Defaults"))

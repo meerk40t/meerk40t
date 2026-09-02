@@ -90,6 +90,7 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 name = instance.__class__.__name__
 
+            page_panel.Reparent(self.notebook_main)
             self.notebook_main.AddPage(page_panel, _(name))
             if hasattr(page_panel, "set_widgets"):
                 page_panel.set_widgets(instance)

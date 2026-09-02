@@ -442,6 +442,9 @@ class LihuiyuDriverGui(MWindow):
         self.panels.append(panel_actions)
         self.panels.append(panel_format)
 
+        for panel in self.panels:
+            panel.Reparent(self.notebook_main)
+
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
