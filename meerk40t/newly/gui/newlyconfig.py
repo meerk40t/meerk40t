@@ -61,35 +61,42 @@ class NewlyConfiguration(MWindow):
                     self, wx.ID_ANY, context=self.context, choices=section
                 )
                 self.panels.append(newpanel)
+                newpanel.Reparent(self.notebook_main)
                 self.notebook_main.AddPage(newpanel, pagetitle)
         newpanel = ChoicePropertyPanel(
             self, id=wx.ID_ANY, context=self.context, choices="newly-speedchart"
         )
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Raster Chart"))
 
         newpanel = ChoicePropertyPanel(
             self, id=wx.ID_ANY, context=self.context, choices="newly-effects"
         )
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Effects"))
 
         newpanel = ChoicePropertyPanel(
             self, id=wx.ID_ANY, context=self.context, choices="newly-defaults"
         )
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Operation Defaults"))
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Warning"))
 
         newpanel = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Default Actions"))
 
         newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()

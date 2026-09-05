@@ -54,6 +54,7 @@ class LaserToolPanel(wx.Panel):
         # ------------------------ Circle with 3 points
 
         self.nb_circle = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
+        self.nb_circle.Reparent(self.nbook_lasertools)
         self.nbook_lasertools.AddPage(self.nb_circle, _("Find center"))
 
         self.sizer_circle = wx.BoxSizer(wx.VERTICAL)
@@ -146,6 +147,7 @@ class LaserToolPanel(wx.Panel):
         # ------------------------ Rectangle with 2 points
 
         self.nb_rectangle = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
+        self.nb_rectangle.Reparent(self.nbook_lasertools)
         self.nbook_lasertools.AddPage(self.nb_rectangle, _("Place frame"))
 
         self.sizer_rectangle = wx.BoxSizer(wx.VERTICAL)
@@ -215,6 +217,7 @@ class LaserToolPanel(wx.Panel):
         # ------------------------ Square with 3 points
 
         self.nb_square = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
+        self.nb_square.Reparent(self.nbook_lasertools)
         self.nbook_lasertools.AddPage(self.nb_square, _("Place square"))
 
         self.sizer_square = wx.BoxSizer(wx.VERTICAL)

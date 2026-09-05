@@ -272,6 +272,9 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
 
+        for panel in self.panels:
+            panel.Reparent(self.notebook_main)
+
         self.notebook_main.AddPage(panel_dim, _("Device"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_protocol, _("Protocol"))

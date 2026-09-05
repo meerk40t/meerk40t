@@ -509,6 +509,11 @@ class RenderSplit(MWindow):
         self.panel_keyhole = KeyholePanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene
         )
+        for panel in (
+            self.panel_split,
+            self.panel_keyhole
+        ):
+            panel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_split, _("Render + Split"))
         self.notebook_main.AddPage(self.panel_keyhole, _("Keyhole operation"))
 

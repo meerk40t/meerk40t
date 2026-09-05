@@ -181,6 +181,14 @@ def register_panel_laser(window, context):
     pane.helptext = _("Laser job control panel")
     pane.control = notebook
     pane.dock_proportion = 270
+    for panel in (
+        laser_panel,
+        jog_drag,
+        plan_panel,
+        optimize_panel,
+        move_panel
+    ):
+        panel.Reparent(notebook)
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(plan_panel, _("Plan"))

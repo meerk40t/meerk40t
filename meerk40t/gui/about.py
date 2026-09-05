@@ -2120,6 +2120,13 @@ class About(MWindow):
         self.panel_david = DavidPanel(self, wx.ID_ANY, context=self.context)
         self.panel_info = InformationPanel(self, wx.ID_ANY, context=self.context)
         self.panel_component = ComponentPanel(self, wx.ID_ANY, context=self.context)
+        for panel in (
+            self.panel_about,
+            self.panel_david,
+            self.panel_info,
+            self.panel_component,
+        ):
+            panel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_about, _("About"))
         self.notebook_main.AddPage(self.panel_david, _("In Memory of David Olsen"))
         self.notebook_main.AddPage(self.panel_info, _("System-Information"))

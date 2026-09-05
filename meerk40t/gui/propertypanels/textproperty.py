@@ -507,7 +507,13 @@ class TextPropertyPanel(ScrolledPanel):
             page_fonthistory.Layout()
 
         page_fonthistory.Bind(wx.EVT_SIZE, on_size_fh)
-
+        for panel in (
+            page_main,
+            page_variables,
+            page_fonthistory,
+            page_extended,
+        ):
+            panel.Reparent(self.notebook)
         self.notebook.AddPage(page_main, _("Colors"))
         self.notebook.AddPage(page_variables, _("Text-Variables"))
         self.notebook.AddPage(page_fonthistory, _("Font-History"))

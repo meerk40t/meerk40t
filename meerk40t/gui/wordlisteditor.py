@@ -1841,6 +1841,14 @@ class WordlistEditor(MWindow):
         self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
 
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
+
+        for panel in (
+            self.panel_editor,
+            self.panel_import,
+            self.panel_about
+        ):
+            panel.Reparent(self.notebook_main)
+
         self.notebook_main.AddPage(self.panel_editor, _("Editing"))
         self.notebook_main.AddPage(self.panel_import, _("Import/Export"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
