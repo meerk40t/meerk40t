@@ -114,6 +114,11 @@ def register_panel_tree(window, context):
         .TopDockable(False)
     )
     pane.helptext = _("Tree containing all objects")
+    for panel in (
+        basic_op,
+        wxtree,
+    ):
+        panel.Reparent(notetab)
     notetab.AddPage(basic_op, _("Burn-Operation"))
     notetab.AddPage(wxtree, _("Details"))
     notetab.SetSelection(lastpage)

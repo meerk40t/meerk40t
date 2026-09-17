@@ -231,12 +231,14 @@ class RuidaConfiguration(MWindow):
                     self, wx.ID_ANY, context=self.context, choices=section
                 )
                 self.panels.append(newpanel)
+                newpanel.Reparent(self.notebook_main)
                 self.notebook_main.AddPage(newpanel, pagetitle)
 
         panel_interface = ConfigurationInterfacePanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
         self.panels.append(panel_interface)
+        panel_interface.Reparent(self.notebook_main)
         self.notebook_main.AddPage(panel_interface, _("Interface"))
 
         panel_config = ChoicePropertyPanel(
@@ -246,12 +248,14 @@ class RuidaConfiguration(MWindow):
             choices=("ruida-global", "ruida-magic"),
         )
         self.panels.append(panel_config)
+        panel_config.Reparent(self.notebook_main)
         self.notebook_main.AddPage(panel_config, _("Configuration"))
 
         panel_effects = ChoicePropertyPanel(
             self.notebook_main, wx.ID_ANY, context=self.context, choices="ruida-effects"
         )
         self.panels.append(panel_effects)
+        panel_effects.Reparent(self.notebook_main)
         self.notebook_main.AddPage(panel_effects, _("Effects"))
 
         panel_defaults = ChoicePropertyPanel(
@@ -261,18 +265,22 @@ class RuidaConfiguration(MWindow):
             choices="ruida-defaults",
         )
         self.panels.append(panel_defaults)
+        panel_defaults.Reparent(self.notebook_main)
         self.notebook_main.AddPage(panel_defaults, _("Operation Defaults"))
 
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Warning"))
 
         newpanel = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Default Actions"))
 
         newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
+        newpanel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()

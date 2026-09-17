@@ -1598,14 +1598,17 @@ class Alignment(MWindow):
         self.panel_align = AlignmentPanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene
         )
+        self.panel_align.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_align, _("Align"))
         self.panel_distribution = DistributionPanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene
         )
+        self.panel_distribution.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_distribution, _("Distribute"))
         self.panel_arrange = ArrangementPanel(
             self, wx.ID_ANY, context=self.context, scene=self.scene
         )
+        self.panel_arrange.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.Layout()

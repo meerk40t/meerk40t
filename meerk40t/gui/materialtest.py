@@ -2099,11 +2099,13 @@ class TemplateTool(MWindow):
         self.notebook_main.GetArtProvider().SetColour(bg_std)
         self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
+        self.panel_template.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
 
         self.panel_template.set_callback(self.set_node)
         self.add_module_delegate(self.panel_template)
 
+        self.panel_saveload.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_saveload, _("Templates"))
         self.panel_saveload.set_callback(self.callback_templates)
         self.add_module_delegate(self.panel_saveload)

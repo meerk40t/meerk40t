@@ -305,6 +305,7 @@ class SimpleUI(MWindow):
             except AttributeError:
                 name = page_panel.__class__.__name__
 
+            page_panel.Reparent(self.notebook_main)
             self.notebook_main.AddPage(page_panel, _(name))
             self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)

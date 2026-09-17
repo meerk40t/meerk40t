@@ -551,6 +551,8 @@ class MagnetPanel(wx.Panel):
             self.notebook, wx.ID_ANY, context=self.context
         )
         self.panels = (panel_action, panel_options)
+        for panel in self.panels:
+            panel.Reparent(self.notebook)
         self.notebook.AddPage(panel_action, _("Actions"))
         self.notebook.AddPage(panel_options, _("Options"))
         self.SetSizer(sizer_main)

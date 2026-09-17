@@ -3481,6 +3481,12 @@ class MaterialManager(MWindow):
         self.notebook_main.GetArtProvider().SetActiveColour(bg_active)
 
         self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
+        for panel in (
+            self.panel_library,
+            # self.panel_import,
+            self.panel_about,
+        ):
+            panel.Reparent(self.notebook_main)
         self.notebook_main.AddPage(self.panel_library, _("Library"))
         # self.notebook_main.AddPage(self.panel_import, _("Import"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
