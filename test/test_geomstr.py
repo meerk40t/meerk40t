@@ -11,8 +11,12 @@ from meerk40t.fill.fills import scanline_fill
 from meerk40t.fill.patterns import set_diamond1, set_line
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.core.geomstr import (
+    TYPE_ARC,
+    TYPE_CUBIC,
+    TYPE_END,
     TYPE_LINE,
     TYPE_POINT,
+    TYPE_QUAD,
     BeamTable,
     Clip,
     Geomstr,
@@ -531,6 +535,97 @@ class TestGeomstr(unittest.TestCase):
 
             self.assertAlmostEqual(c.rx, path.arc_radius(0))
             self.assertAlmostEqual(c.ry, path.arc_radius(0))
+
+    def test_geomstr_batched_arc_position(self):
+        path = Geomstr.circle(60, 100, 50)
+        expected = np.array([path.position(index, 0.5) for index in range(path.index)])
+
+        actual = path.position(slice(path.index), 0.5)
+
+        np.testing.assert_allclose(actual, expected)
+
+    def test_geomstr_split_arc(self):
+        path = Geomstr()
+        path.arc(1 + 0j, 0 + 1j, -1 + 0j, settings=7)
+
+        splits = list(path.split(0, [0.75, 0.25]))
+
+        self.assertEqual(len(splits), 3)
+        for split in splits:
+            self.assertEqual(split[2], complex(TYPE_ARC, 7))
+            self.assertEqual(split[1], split[3])
+        np.testing.assert_allclose(
+            [split[0] for split in splits] + [splits[-1][4]],
+            path._arc_position(path.segments[0], [0.0, 0.25, 0.75, 1.0]),
+        )
+        np.testing.assert_allclose(
+            [split[1] for split in splits],
+            path._arc_position(path.segments[0], [0.125, 0.5, 0.875]),
+        )
+
+        splits_with_break = list(path.split(0, 0.5, breaks=True))
+        self.assertEqual(len(splits_with_break), 3)
+        self.assertEqual(splits_with_break[1][2], complex(TYPE_END, 7))
+
+        splits_from_segment = list(path._split_arc(tuple(path.segments[0]), 0.5))
+        self.assertEqual(len(splits_from_segment), 2)
+
+    def test_geomstr_split_line(self):
+        path = Geomstr()
+        path.line(1 + 2j, 9 + 6j, settings=3)
+
+        splits = list(path.split(0, [0.75, 0.25]))
+
+        self.assertEqual(len(splits), 3)
+        self.assertTrue(all(split[2] == complex(TYPE_LINE, 3) for split in splits))
+        np.testing.assert_allclose(
+            [split[0] for split in splits] + [splits[-1][4]],
+            path._line_position(path.segments[0], [0.0, 0.25, 0.75, 1.0]),
+        )
+
+        splits_with_break = list(path.split(0, 0.5, breaks=True))
+        self.assertEqual(len(splits_with_break), 3)
+        self.assertEqual(splits_with_break[1][2], complex(TYPE_END, 3))
+
+    def test_geomstr_split_quad(self):
+        path = Geomstr()
+        path.quad(0 + 0j, 2 + 4j, 6 + 0j, settings=5)
+
+        splits = list(path.split(0, [0.75, 0.25]))
+
+        self.assertEqual(len(splits), 3)
+        self.assertTrue(all(split[2] == complex(TYPE_QUAD, 5) for split in splits))
+        for index, split in enumerate(splits):
+            interval_start = (0.0, 0.25, 0.75)[index]
+            interval_end = (0.25, 0.75, 1.0)[index]
+            local_positions = np.array([0.0, 0.5, 1.0])
+            np.testing.assert_allclose(
+                path._quad_position(np.asarray(split), local_positions),
+                path._quad_position(
+                    path.segments[0],
+                    interval_start + local_positions * (interval_end - interval_start),
+                ),
+            )
+
+    def test_geomstr_split_cubic(self):
+        path = Geomstr()
+        path.cubic(0 + 0j, 1 + 4j, 5 - 3j, 7 + 1j, settings=6)
+
+        splits = list(path.split(0, [0.75, 0.25]))
+
+        self.assertEqual(len(splits), 3)
+        self.assertTrue(all(split[2] == complex(TYPE_CUBIC, 6) for split in splits))
+        for index, split in enumerate(splits):
+            interval_start = (0.0, 0.25, 0.75)[index]
+            interval_end = (0.25, 0.75, 1.0)[index]
+            local_positions = np.array([0.0, 0.5, 1.0])
+            np.testing.assert_allclose(
+                path._cubic_position(np.asarray(split), local_positions),
+                path._cubic_position(
+                    path.segments[0],
+                    interval_start + local_positions * (interval_end - interval_start),
+                ),
+            )
 
     def test_geomstr_line_point(self):
         for i in range(1000):
