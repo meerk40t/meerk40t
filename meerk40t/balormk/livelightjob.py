@@ -9,7 +9,7 @@ This job works as a spoolerjob. Implementing all the regular calls for being a s
 
 import threading
 import time
-from math import isinf
+from math import isinf, isnan
 
 import numpy as np
 
@@ -510,6 +510,62 @@ class LiveLightJob:
         redlight_adjust_matrix.post_translate(x_offset, y_offset)
         return redlight_adjust_matrix
 
+    def _plan_matrix(self):
+        """The scene-to-device matrix the burn builds for this device.
+
+        Mirrors CutPlan.preprocess: the device view mapping, plus the rotary scale while the
+        rotary is active.
+        """
+        matrix = Matrix(self.service.view.matrix)
+        rotary = getattr(self.service, "rotary", None)
+        if rotary is not None and rotary.active:
+            matrix.post_scale(rotary.scale_x, rotary.scale_y)
+        return matrix
+
+    def _job_matrices(self, geometry):
+        """Scene-to-device matrices, one per copy of the job the burn will execute.
+
+        CutPlan.preprocess runs a copy of the plan for every enabled `place ...` operation, so a
+        preview that ignores placements shows the job somewhere it will not burn. The placements
+        position the job's bounds, which is why the bounds of the drawn geometry are used as the
+        reference. The operations are the ones the standard job takes: `planN clear copy
+        preprocess ...` collects `elements.ops()`, placements inside an operations group
+        included, and a placement with `loops` is asked once per loop, as preprocess does. A
+        `copy-selected` job is not modeled, the preview has no plan to read a selection from.
+        Without placements the plain scene-to-device matrix is the whole job.
+
+        Args:
+            geometry (Geomstr): The drawn geometry, in scene coordinates.
+
+        Returns:
+            list: matrices to map each copy of the geometry into device space
+        """
+        matrix = self._plan_matrix()
+        bounds = geometry.bbox()
+        if bounds is None or any(isinf(v) or isnan(v) for v in bounds):
+            return [matrix]
+        min_x, min_y, max_x, max_y = bounds
+        outline = (
+            matrix.point_in_matrix_space([min_x, min_y]),
+            matrix.point_in_matrix_space([max_x, min_y]),
+            matrix.point_in_matrix_space([max_x, max_y]),
+            matrix.point_in_matrix_space([min_x, max_y]),
+        )
+        matrices = []
+        for op in self.service.elements.ops():
+            if not getattr(op, "type", "").startswith("place "):
+                continue
+            if not getattr(op, "output", False):
+                # CutPlan.preprocess only applies placements that carry an enabled output flag.
+                continue
+            loops = getattr(op, "loops", 1)
+            if not loops or loops < 1:
+                loops = 1
+            for _ in range(loops):
+                # preprocess asks a placement for its matrices once for every loop.
+                matrices.extend(op.placements(self.service, outline, matrix, None))
+        return matrices or [matrix]
+
     def prepare_redlight_point(self, draw_geometry, adjust, source):
         """Prepare the redlight points for tracing.
 
@@ -519,7 +575,7 @@ class LiveLightJob:
 
         Args:
             draw_geometry (Geomstr): The geometry to trace.
-            adjust (bool): Whether to apply view transformations.
+            adjust (bool): Whether to map scene coordinates into device space.
             source (str): The source of the geometry.
         """
         # draw_geometry.debug_me()
@@ -529,13 +585,28 @@ class LiveLightJob:
         geometry.transform(rotate)
         # print(f"After redlight: {geometry.bbox()}")
         if adjust:
-            geometry.transform(self.service.view.matrix)
-            # print(f"Adjusted to {geometry.bbox()}")
-        self.points = list(
-            geometry.as_equal_interpolated_points(
-                distance=self.quantization,  # expand_lines=True
+            # One traced copy per placement, so the trace lands where the job will burn. The
+            # placement is relative to the job bounds, so those come from the unadjusted
+            # geometry.
+            targets = []
+            for matrix in self._job_matrices(Geomstr(draw_geometry)):
+                copy = Geomstr(geometry)
+                copy.transform(matrix)
+                targets.append(copy)
+        else:
+            targets = [geometry]
+        # print(f"Adjusted to {geometry.bbox()}")
+        points = []
+        for index, target in enumerate(targets):
+            if index:
+                # Separate the copies, otherwise the light draws a line between them.
+                points.append(None)
+            points.extend(
+                target.as_equal_interpolated_points(
+                    distance=self.quantization,  # expand_lines=True
+                )
             )
-        )
+        self.points = points
         # print (f"Interpolation delivered: {len(self.points)} segments")
 
     def _gather_source(self):
