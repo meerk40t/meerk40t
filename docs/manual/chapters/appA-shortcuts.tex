@@ -1,0 +1,404 @@
+\chapter{Keyboard shortcuts and mouse controls}
+\label{app:shortcuts}
+
+Read this appendix when you already know what you want to do and only need the
+keystroke for it, or when a key that is described somewhere else does not appear
+to work. Chapter~\ref{ch:interface} describes the interface these keys drive,
+and the commands behind them are documented in Appendix~\ref{app:console}.
+
+Every keyboard shortcut in MeerK40t is a console command (Chapter~\ref{ch:console}).
+The keymap is data, not code: the ``nudge the selection 1\unit{mm} right''
+instruction that \key{Right} sends is the same \cmd{translate 1mm 0} you could
+type by hand. That is why shortcuts can be moved to other keys, and why a key
+with no shortcut can be given one.
+
+Shortcuts are edited in the \panel{Keymap} window
+(\menu{Edit>Settings>Key-Bindings}, or \cmd{window open Keymap} in the console).
+It lists one row per binding, a \tabname{Key} and the \tabname{Command} it runs,
+and applies every change at once. A command beginning with \cmd{+} runs while
+the key is held down and is cancelled when it is released; all other commands
+run once per press.
+
+\begin{tipbox}[Remapping and restoring shortcuts]
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Open \menu{Edit>Settings>Key-Bindings}.
+  \item Click into the left-hand field and press the key combination you want to
+        use. What you press is what is stored.
+  \item Type the console command into the right-hand field, for example
+        \cmd{outline 1mm}.
+  \item Press \btn{Add Hotkey}. A binding that already exists for that key is
+        replaced.
+  \item To remove bindings, select one or more rows, right-click and choose
+        \btn{Remove \ldots} (or \btn{Remove N entries}).
+  \item To start again: \menu{Standard>Reset Keymap to defaults} in the same
+        window restores every default; the console equivalents are
+        \cmd{bind default} for the keys and \cmd{alias default} for the
+        held-key timers.
+\end{enumerate}
+Bindings are stored in your settings, so they survive a restart. The
+\panel{Keymap} window lists key names in the spelling the keymap stores them in,
+for example \cmd{ctrl+shift+right}; on macOS it shows \key{Cmd} where the map
+stores \ui{ctrl}.
+\end{tipbox}
+
+\section{Movement and nudging}
+
+Two different things move here: the arrow keys move \emph{selected elements},
+while the held keys \key{A}, \key{D}, \key{W} and \key{S} jog the \emph{laser
+head}. Nothing selected (or nothing connected), nothing moves.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.6cm}L{5.6cm}L{5.6cm}@{}}
+\toprule
+\textbf{Key} & \textbf{Command} & \textbf{What happens} \\
+\midrule
+\key{Right}, \key{Left}, \key{Up}, \key{Down} & \cmd{translate 1mm 0} and the
+\cmd{-1mm 0}, \cmd{0 1mm}, \cmd{0 -1mm} companions & The selected elements move
+1\unit{mm} in that direction, once per press. \\
+\key{Shift+Right} and the other arrows & \cmd{translate 10mm 0} and companions &
+The same move in 10\unit{mm} steps. \\
+\key{Ctrl+Shift+Right} and the other arrows & \cmd{translate 0.1mm 0} and
+companions & Fine positioning: 0.1\unit{mm} per press. \\
+\key{Alt+Right} and the other arrows & \cmd{translate 1spx 0} and companions &
+One scene pixel (\ui{spx}): the smallest step, independent of the unit in
+use. \\
+\key{Alt+Shift+Right} and the other arrows & \cmd{translate 10spx 0} and
+companions & Ten scene pixels. \\
+\midrule
+\key{A}, \key{D}, \key{W}, \key{S} & \cmd{+left}, \cmd{+right}, \cmd{+up},
+\cmd{+down} & Hold to jog the laser head 1\unit{mm} every 0.1\unit{s} in that
+direction; releasing the key stops it. Device required. \\
+\key{Numpad Left}, \key{Numpad Right}, \key{Numpad Up}, \key{Numpad Down} &
+\cmd{+translate_left}, \cmd{+translate_right}, \cmd{+translate_up},
+\cmd{+translate_down} & Hold to move the selection 1\unit{mm} every
+0.1\unit{s}. \\
+\key{Numpad *}, \key{Numpad /} & \cmd{+scale_up} / \cmd{+scale_down} & Hold to
+grow or shrink the selection by 2\,\% every 0.1\unit{s}, about its own
+centre. \\
+\key{Numpad +}, \key{Numpad -} & \cmd{+rotate_cw} / \cmd{+rotate_ccw} & Hold to
+rotate the selection 2\textdegree{} clockwise or anticlockwise every
+0.1\unit{s}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The held keys are aliases rather than simple commands: each one starts
+a repeating timer, and the matching release (\cmd{-left}, \cmd{-translate_left},
+and so on) cancels it. \cmd{alias} in the console lists them. The \panel{Keymap}
+window spells the keypad keys \cmd{numpad_left}, \cmd{numpad_right},
+\cmd{numpad_up}, \cmd{numpad_down}, \cmd{numpad_multiply}, \cmd{numpad_divide},
+\cmd{numpad_add} and \cmd{numpad_subtract}.
+
+\section{Selection, editing and document keys}
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.0cm}L{5.8cm}L{6.0cm}@{}}
+\toprule
+\textbf{Key} & \textbf{Command} & \textbf{What happens} \\
+\midrule
+\key{Ctrl+D} & \cmd{element copy} & Duplicates the selected elements, in place on
+top of the originals. \\
+\key{Ctrl+G} & \cmd{planz clear copy preprocess validate blob preopt optimize
+spool} & Builds the job from the current operations and sends it to the spooler
+--- the same pipeline the ribbon \btn{Start} button runs. \\
+\key{Ctrl+1} \ldots{} \key{Ctrl+5} & \cmd{bind 1 move $x $y}, \cmd{bind 2 move $x
+$y}, and so on & Stores the laser head's current position in the number keys:
+after pressing \key{Ctrl+3}, the key \key{3} moves the head back to that point.
+Device required. \\
+\key{Ctrl+Shift+C} & \cmd{align bed group xy center center} & Centres the
+selection, treated as one group, on the bed. \\
+\key{Delete}, \key{Numpad Del} (\cmd{numpad_delete}) & \cmd{tree selected delete}
+& Deletes the selected nodes. A selection made in the scene is mirrored in the
+\panel{Tree} pane, so this deletes the selected elements. \\
+\key{Escape} & --- & Not a keymap entry: it is handled by the active tool, which
+returns you to the selection tool. The old \cmd{pause} binding on this key has
+been removed; use the \key{Pause} key instead. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Selection and clipboard keys you may expect here --- \key{Ctrl+A}
+(select all), \key{Ctrl+I} (invert), \key{Ctrl+C}, \key{Ctrl+V}, \key{Ctrl+X},
+\key{Ctrl+Z} and \key{Ctrl+Shift+Z} (undo, redo), \key{Ctrl+O} (open project) ---
+belong to the menus rather than the keymap (\S\ref{sec:shortcuts-menu}). They
+work, but they do not appear in the \panel{Keymap} window and cannot be
+reassigned there.
+
+\section{Machine, windows and panels}
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.4cm}L{4.8cm}L{6.6cm}@{}}
+\toprule
+\textbf{Key} & \textbf{Command} & \textbf{What happens} \\
+\midrule
+\key{Home} & \cmd{home} & Homes the laser (sends it to the endstops). Device
+required. \\
+\key{Pause} & \cmd{pause} & Real-time pause and resume of the running job.
+Device required. \\
+\key{L}, \key{U} & \cmd{lock} / \cmd{unlock} & Locks or unlocks the rail, so the
+gantry cannot be pushed around by hand. Needs a driver that supports a rail
+lock. \\
+\key{F5} & \cmd{refresh} & Refreshes the main window: caches are invalidated and
+the scene is redrawn. \\
+\midrule
+\key{Ctrl+F6} & \cmd{page home} & Switches the ribbon to its \tabname{Project}
+page. \\
+\key{Ctrl+F7} & \cmd{page design} & Switches the ribbon to a page named
+\ui{design}. The stock ribbon has only \tabname{Project}, \tabname{Modify} and
+\tabname{Config} pages, so on a default profile this command finds nothing. \\
+\key{Ctrl+F8} & \cmd{page modify} & Switches the ribbon to its \tabname{Modify}
+page. \\
+\key{Ctrl+F9} & \cmd{page config} & Switches the ribbon to its \tabname{Config}
+page. \\
+\midrule
+\key{F1} & (Help menu) & Opens the wiki page of the control under the pointer,
+falling back to the general GUI page. Menu accelerator, not remappable. \\
+\key{F11} & (Help menu) & The same handler as \key{F1}, from the \menu{Help}
+menu. Not remappable. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The F-keys that older instructions associate with windows ---
+\key{F4}, \key{F6}, \key{F7}, \key{F9} and \key{F12} --- have no default binding
+in this version; see \S\ref{sec:shortcuts-removed}.
+
+\section{Test, rotary, wizard and reset bindings}
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.8cm}L{5.0cm}L{6.0cm}@{}}
+\toprule
+\textbf{Key} & \textbf{Command} & \textbf{What happens} \\
+\midrule
+\key{Ctrl+E} & \cmd{circle 0.5in 0.5in 0.5in stroke red classify} & Draws a test
+circle --- a radius of 0.5\unit{in} about a centre 0.5\unit{in} from the origin
+on both axes, stroked red --- and hands it to classification, which assigns it
+to a matching operation. \\
+\key{Ctrl+R} & \cmd{rect 0 0 1in 1in stroke red classify} & Draws a
+1\unit{in} \(\times\) 1\unit{in} test square with its top left corner on the
+origin, stroked red, and classifies it the same way. \\
+\key{Ctrl+Shift+O} & \cmd{outline 1mm} & Outlines the selection with a
+1\unit{mm} offset. \\
+\key{Ctrl+Shift+H} & \cmd{scale -1 1} & Mirrors the selection horizontally,
+about its own centre. \\
+\key{Ctrl+Shift+V} & \cmd{scale 1 -1} & Mirrors the selection vertically. \\
+\midrule
+\key{Ctrl+Alt+D} & \cmd{image wizard Gold} & Runs the \ui{Gold} image wizard on
+the selected image. \\
+\key{Ctrl+Alt+E} & \cmd{image wizard Simple} & \ui{Simple} wizard. \\
+\key{Ctrl+Alt+N} & \cmd{image wizard Newsy} & \ui{Newsy} wizard. \\
+\key{Ctrl+Alt+O} & \cmd{image wizard Stipo} & \ui{Stipo} wizard. \\
+\key{Ctrl+Alt+X} & \cmd{image wizard Xin} & \ui{Xin} wizard. \\
+\key{Ctrl+Alt+Y} & \cmd{image wizard Gravy} & \ui{Gravy} wizard. \\
+\midrule
+\key{Ctrl+Alt+Shift+A} & \cmd{arm;startjob} & Arms the laser and starts the job
+in one press: the two steps of \btn{Arm} followed by \btn{Start}. \\
+\key{Ctrl+Alt+Shift+Home} & \cmd{bind default;alias default} & Restores every
+default binding and alias. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent A wizard works on an image, so select the image first; a locked image
+is skipped and reported in the console.
+
+\section{Keys with no default binding}
+\label{sec:shortcuts-removed}
+
+Several keys that older MeerK40t releases, and some third-party instructions,
+bind are deliberately unbound in this version. The defaults live in
+\file{meerk40t/core/bindalias.py} as a list of values per key, newest first; a
+leading empty value means ``no binding'', and it also removes that key from a
+profile that still carries an older default. The table lists the command each
+key used to run, so that you can put it back with \btn{Add Hotkey} if you want
+it.
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.4cm}L{4.8cm}L{5.6cm}@{}}
+\toprule
+\textbf{Key} & \textbf{Command it used to run} & \textbf{How to get the same
+thing now} \\
+\midrule
+\key{F4} & \cmd{window open CameraInterface} & \menu{Tools>CameraInterface};
+requires a camera. \\
+\key{F6} & \cmd{window open JobSpooler} & \menu{Tools>Spooler}, or the
+\panel{Spooler} pane. \\
+\key{F7} & \cmd{window open Controller} & \menu{Tools>Controller}. The window is
+provided by the driver of the loaded device, so a device must be connected ---
+with no device there is no Controller window to open. \\
+\key{F8} & \cmd{dialog_path} & The path entry dialog, from the tree's
+right-click menu. \\
+\key{F9} & \cmd{dialog_transform} & The transform dialog, from the same
+menu. \\
+\key{F12} & \cmd{window open Console} & \menu{Tools>Console}, the \btn{Console}
+ribbon button, or the \panel{Console} pane. \\
+\key{Escape} & \cmd{pause} & \key{Pause}. \key{Escape} still cancels the active
+tool. \\
+\midrule
+\key{Ctrl+A}, \key{Ctrl+C}, \key{Ctrl+V}, \key{Ctrl+X}, \key{Ctrl+I},
+\key{Ctrl+O}, \key{Ctrl+S}, \key{Ctrl+Z}, \key{Ctrl+Shift+Z} & \cmd{element*
+select}, \cmd{clipboard copy}, \cmd{clipboard paste}, \cmd{clipboard cut},
+\cmd{element* select^}, \cmd{outline}, \cmd{dialog_stroke}, \cmd{undo},
+\cmd{redo} & The menus now own these keys --- see
+\S\ref{sec:shortcuts-menu}. The commands themselves still exist. \\
+\key{Ctrl+F}, \key{Ctrl+S} & \cmd{dialog_fill} / \cmd{dialog_stroke} & The fill
+and stroke entry dialogs, from the tree's right-click menu. \\
+\key{Alt+C}, \key{Alt+E}, \key{Alt+R} & \cmd{cut} / \cmd{engrave} / \cmd{raster}
+& Groups the selection into that kind of operation; use the \panel{Operations}
+pane or the right-click menu. \\
+\key{Alt+F}, \key{Alt+S}, \key{Alt+H}, \key{Alt+P}, \key{Alt+T} & \cmd{dialog_fill},
+\cmd{dialog_stroke}, \cmd{dialog_path}, \cmd{dialog_flip}, \cmd{dialog_transform}
+& The same entry and flip dialogs. \\
+\midrule
+\key{Alt+F3}, \key{Ctrl+F3} & \cmd{rotaryscale} / \cmd{rotaryview} & Both
+commands still exist: \cmd{rotaryscale} scales the selected elements for rotary
+work, \cmd{rotaryview} toggles the stretched scene preview. Bind them, or type
+them in the console. \\
+\key{Ctrl+Alt+G}, \key{Ctrl+Alt+S} & \cmd{image wizard Gold} /
+\cmd{image wizard Stipo} & Duplicates of \key{Ctrl+Alt+D} and \key{Ctrl+Alt+O}
+above. \\
+\key{Ctrl+Alt+Shift+Escape} & \cmd{reset_bind_alias} & Reset the shortcuts in
+the \panel{Keymap} window, or with \cmd{bind default;alias default}. \\
+\key{Ctrl+Shift+L} & \cmd{signal lock_helper} & Removed upstream, with the
+comment that it does not work. Rail lock and unlock are on \key{L} and
+\key{U}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Menu accelerators that are not in the keymap}
+\label{sec:shortcuts-menu}
+
+These keys are wired directly into the menus. They work exactly as the menu
+entry does, they are printed next to the menu label, and they cannot be changed
+in the \panel{Keymap} window --- rebinding one would mean editing the menu.
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.6cm}L{5.4cm}L{6.8cm}@{}}
+\toprule
+\textbf{Key} & \textbf{Menu item} & \textbf{What happens} \\
+\midrule
+\key{Ctrl+N} & \menu{File>New} & Clears operations, elements and notes. \\
+\key{Ctrl+O} & \menu{File>Open Project} & Opens a project; hold \key{Shift} to be
+asked where to place it. \\
+\key{Ctrl+S} & \menu{File>Save} & Saves the project as an SVG file, overwriting
+the existing file. \\
+\key{Ctrl+Shift+S} & \menu{File>Save As} & Saves into a new SVG file. \\
+\midrule
+\key{Ctrl+Z} & \menu{Edit>Undo} & Undoes the last action. \\
+\key{Ctrl+Shift+Z} & \menu{Edit>Redo} & Reverts the last undo. \\
+\key{Ctrl+X}, \key{Ctrl+C}, \key{Ctrl+V} & \menu{Edit>Cut}, \menu{Edit>Copy},
+\menu{Edit>Paste} & Cut, copy and paste the selected elements. \\
+\key{Ctrl+Shift+V} & \menu{Edit>Paste from system} & Pastes data copied in
+another application. \\
+\key{Ctrl+A} & \menu{Edit>Select all} & Selects every element on the scene. \\
+\key{Ctrl+I} & \menu{Edit>Invert selection} & Inverts which elements are
+selected. \\
+\midrule
+\key{Ctrl+-}, \key{Ctrl++} & \menu{View>Zoom Out}, \menu{View>Zoom In} & Zooms
+the scene out or in. \\
+\key{Ctrl+B} & \menu{View>Zoom to Bed} & Fits the machine bed in the window. \\
+\key{Ctrl+Shift+B} & \menu{View>Zoom to Selected} & Fits the current selection
+in the window. \\
+\key{Ctrl+U} & \menu{View>GUI Appearance>Show/Hide UI-Panels} & Hides or shows
+every pane except the scene. \\
+\key{Ctrl+,} & \menu{Edit>Settings>Preferences} & Opens the \panel{Preferences}
+window. \\
+\midrule
+\key{F1} & \menu{Help>Help} & Help for the control under the pointer (not on
+macOS). \\
+\key{F11} & \menu{Help>Online Reference} & The same help handler. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Mouse and trackpad}
+
+The left button is for working on the design; the right and middle buttons ---
+with a modifier where needed --- move the camera you look at it with.
+Chapter~\ref{ch:interface} introduces these in context; this is the complete
+list.
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.8cm}L{10.0cm}@{}}
+\toprule
+\textbf{Input} & \textbf{What happens} \\
+\midrule
+Wheel up / down & Zooms in or out around the pointer. \\
+Wheel with \key{Ctrl} & The other of zoom and pan; by default that means
+\key{Ctrl}+wheel pans vertically. \\
+Wheel left / right, or \key{Shift}+wheel & Pans horizontally. \\
+Right-drag with \key{Alt} & Drag-zoom: dragging down or right zooms in, up or
+left zooms out. \\
+Middle-drag with \key{Ctrl} & Drag-zoom, identical to the above. \\
+Right-drag with \key{Ctrl} & Drag-pan: the scene follows the pointer. \\
+Middle-drag & Nothing; the event is consumed so that it does not disturb the
+scene. \\
+Trackpad pinch, or gesture zoom & Zooms in and out about the pointer. \\
+Trackpad two-finger pan & Pans the scene. \\
+\midrule
+Left-drag on empty space & Rubber-band selection. Dragging \emph{right}
+(enclosing the elements) selects everything the rectangle contains; dragging
+\emph{left} (touching them) selects everything the rectangle touches. The
+status bar names the method in use, and the rectangle is drawn in the matching
+colour. \key{Shift} adds to the existing selection, \key{Ctrl} inverts the
+selection state of what it catches. \\
+Left click & Selects the element under the pointer. \\
+Left-drag on the selection & Moves the selected elements. Press inside the
+selection, hold for about half a second, then drag: the pointer changes and the
+elements follow. Start dragging straight away and you get a rubber band
+instead. Grid snapping and magnet lines apply while you drag. \\
+Right click & The scene menu: background and grid switches, \ui{Move laser head
+here}, \ui{Zoom Out}, \ui{Zoom In}, \menu{Zoom to Bed} and
+\menu{Zoom to Selected}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Three preferences change this behaviour: \setting{mouse_wheel_pan}
+makes the wheel pan instead of zoom, and \setting{mouse_pan_invert} and
+\setting{mouse_zoom_invert} reverse the pan and zoom directions. They live in
+\menu{Edit>Settings>Preferences}, \tabname{GUI}.
+
+\section{Where these defaults come from}
+
+The defaults are built from tables in \file{meerk40t/core/bindalias.py}:
+\cmd{DEFAULT_KEYMAP} for the keys, \cmd{DEFAULT_ALIAS} for the held-key timers.
+Each entry keeps its current value first and its older values after it, so a
+default that has changed since you last saved your settings can be migrated to
+the new value --- unless you had already bound that key yourself, in which case
+your version wins.
+
+\begin{itemize}
+  \item \textbf{Nothing happens at all.} The key has no binding in this version.
+        Compare it with \S\ref{sec:shortcuts-removed} --- \key{F12} for the
+        console, \key{F6} for the spooler and \key{F7} for the controller window
+        are the frequent cases --- and add it with \btn{Add Hotkey} if you want
+        it.
+  \item \textbf{Nothing happens, and the key is bound.} Most likely nothing was
+        selected, or the command needs a machine. \cmd{translate}, \cmd{scale},
+        \cmd{rotate}, \cmd{outline}, \cmd{element copy} and the alignment
+        commands all work on the selection. \cmd{home}, \cmd{pause},
+        \cmd{lock}, \cmd{unlock}, the \key{A}/\key{D}/\key{W}/\key{S} jogs and
+        the \key{Ctrl+1} to \key{Ctrl+5} position keys need a connected
+        device.
+  \item \textbf{A window will not open.} Window commands such as
+        \cmd{window open Controller} are registered by the driver of the loaded
+        device. With no device loaded there is no window to show, so connect or
+        add the device first (Chapter~\ref{ch:connect}).
+  \item \textbf{The key types instead.} Keyboard events go to whatever has
+        focus. Inside the console, a text field or a numeric field, a key is
+        text --- click in the scene, or leave the field, first. While a creation
+        or node-editing tool is active it consumes keys as well; press
+        \key{Escape} to leave the tool.
+\end{itemize}
+
+\begin{behindbox}[Reading the current keymap]
+\cmd{bind} with no arguments prints every binding as a numbered list;
+\cmd{bind <key> <command>} sets one, and \cmd{alias} does the same for the
+held-key timers. The \panel{Keymap} window is a front end to exactly those two
+commands, which is why anything you can type in the console can be bound to a
+key. Bindings are stored in your settings profile, and
+\cmd{bind default;alias default} discards your changes and rebuilds the defaults
+listed in this appendix.
+\end{behindbox}

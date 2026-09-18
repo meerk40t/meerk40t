@@ -1,0 +1,262 @@
+\chapter{Moving, scaling, rotating, aligning}
+\label{ch:transform}
+
+Nothing in a laser job is approximate. A part is the size it says it is, the holes
+are where the drawing says they are, and the two halves of a box either fit or
+they do not. This chapter is about the tools that make geometry exact: handles,
+numbers, alignment, distribution and snapping.
+
+\section{The transformation handles}
+
+Select anything and the scene grows handles around it. Each handle does one job:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.0cm}L{11.2cm}@{}}
+\toprule
+\textbf{Handle} & \textbf{What it does, and the modifiers that matter} \\
+\midrule
+Border & The selection box itself; drag inside it to move. \\
+Rotation & The round handle above the box. \key{Shift} rotates in 5\textdegree{}
+steps --- which is how you get exactly 45\textdegree. \\
+Corners & Scale both axes. \key{Alt} lets the two axes move independently;
+\key{Ctrl+Shift} scales from the centre. \\
+Sides & Scale one axis. \\
+Skew & Slant the element: useful for italic-looking effects and perspective
+corrections. \\
+Move (centre) & Move the selection. \key{Shift} temporarily ignores magnets and
+snapping --- the fastest way to place something exactly where you clicked. \\
+Rotation centre & Move the pivot the rotation handle turns around. \\
+Reference & Toggle the element's status as the \emph{reference object}. \\
+Lock & Removes the locked status of an element. Locked elements cannot be
+dragged by accident. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Which handles are drawn is controlled by the \btn{Move},
+\btn{Resize}, \btn{Rotate} and \btn{Skew} checkboxes in the status bar, and the
+current handle's meaning is spelled out in the status bar as you hover it.
+
+\begin{tipbox}[Building a grid from one hole]
+Make one circle, set its size numerically, then use \menu{Duplicate element(s)}
+with \emph{Make 1 copy} and the arrow keys to step it across. For anything with
+more than a handful of repetitions, do the copy-and-step once, then use the
+\panel{Alignment} window's \btn{Distribute} tab (see below) to space them evenly.
+\end{tipbox}
+
+\section{Exact numbers: the Position pane}
+
+The \panel{Position} pane (\menu{Panes>Editing>Position}) is where precision
+lives. It has four fields --- \btn{X}, \btn{Y}, \btn{Width}, \btn{Height} ---
+plus two options:
+
+\begin{itemize}
+  \item \btn{Individ.} --- apply the new value to each selected element
+        \emph{individually} rather than treating the selection as one box. This
+        is the difference between ``make all four holes 4\unit{mm}'' and ``make
+        their bounding box 4\unit{mm}''.
+  \item \btn{Keep ratio} --- scale width and height together.
+\end{itemize}
+
+\noindent Press \key{Enter} in a field to apply it. The units combo
+(\cmd{mm}, \cmd{cm}, \cmd{inch}, \cmd{mil}, \cmd{\%}) decides how your typed
+numbers are interpreted: with \cmd{\%} selected, a width of \cmd{50\%} means half
+of the current width, which is a neat way to halve a shape without arithmetic.
+The small button beside the fields sets the \emph{reference point} --- which
+corner or edge of the element the X and Y coordinates refer to. If typing
+\cmd{X 20mm} appears to move a shape to the wrong place, the reference point is
+why.
+
+\begin{tipbox}[Type, do not drag]
+Dragging is for exploring; typing is for deciding. As soon as you know a
+dimension --- ``the plate is 90\unit{mm} wide'' --- put the number in the
+\panel{Position} pane and stop fiddling.
+\end{tipbox}
+
+\section{Nudging with the keyboard}
+
+When you know the direction but not the exact number, the arrow keys are faster
+than any dialog:
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.4cm}L{9.8cm}@{}}
+\toprule
+\textbf{Keys} & \textbf{Movement per press} \\
+\midrule
+Arrow keys & 1\unit{mm} \\
+\key{Shift}+arrows & 10\unit{mm} \\
+\key{Ctrl+Shift}+arrows & 0.1\unit{mm} --- the finishing adjustment \\
+\key{Alt}+arrows & One screen pixel, scaled to the current zoom \\
+\key{Alt+Shift}+arrows & Ten screen pixels \\
+\key{a}, \key{d}, \key{w}, \key{s} & Continuous movement left, right, up, down
+while held (they are bound to timer commands, so they repeat smoothly) \\
+Numpad arrows & The same continuous movement as \key{a}/\key{d}/\key{w}/\key{s} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent All of these act on the emphasised elements. They are ordinary console
+commands underneath (\cmd{translate 1mm 0} and friends), which means you can
+rebind them, script them, or use them in a macro by typing them into the console.
+
+\section{Alignment, distribution and arrangement}
+
+\menu{Tools>Navigation}, or the \btn{Expert Mode} ribbon button, opens the
+\panel{Alignment} window. It has three tabs, and it is one of the most
+under-used parts of the program.
+
+\subsection*{Align}
+
+Two independent axes, each with four choices: \emph{Leave}, \emph{Left},
+\emph{Center}, \emph{Right} for X, and \emph{Leave}, \emph{Top}, \emph{Center},
+\emph{Bottom} for Y.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.1cm}L{11.1cm}@{}}
+\toprule
+\textbf{Control} & \textbf{Meaning} \\
+\midrule
+\emph{Relative to:} & What the selection is aligned against: \emph{Selection}
+(the selection's own bounding box), \emph{First Selected}, \emph{Last Selected},
+\emph{Laserbed} (the bed rectangle) or \emph{Reference-Object}. \\
+\emph{Treatment:} & \emph{Individually} aligns each element to the reference;
+\emph{As Group} moves the selection as one rigid block. Choosing wrongly here is
+the most common reason an alignment ``does nothing useful''. \\
+\btn{Align} & Applies it. The info panel below tells you how many elements are
+selected. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The two instant recipes worth memorising: select everything and align
+to the \emph{Laserbed} centre to place a job in the middle of the machine; select
+two elements and align \emph{First Selected} to stack one exactly on the other.
+
+\subsection*{Distribute}
+
+Distribution takes a row of objects and spaces them evenly. For each axis you
+choose what aspect is being distributed --- \emph{Leave}, \emph{Left},
+\emph{Center}, \emph{Right}, \emph{Space} for X; \emph{Top}, \emph{Center},
+\emph{Bottom}, \emph{Space} for Y --- then:
+
+\begin{itemize}
+  \item \btn{Keep first + last inside} keeps the two end elements where they are
+        and distributes everything between them. With it off, the whole row is
+        laid out from the ends inward.
+  \item \btn{Rotate} rotates each element to follow the path it is being placed
+        along --- the tool for a row of tick marks around a curve.
+  \item \emph{Work-Sequence} (\emph{Position}, \emph{First Selected},
+        \emph{Last Selected}) decides the order the elements are considered in,
+        which matters when they are not in a clean line.
+  \item \emph{Treatment} (\emph{Position}, \emph{Shape}, \emph{Points},
+        \emph{Laserbed}, \emph{Ref-Object}) decides what is measured: element
+        origins, bounding boxes, individual path points, and so on. \emph{Points}
+        is the one to reach for when distributing the nodes of a single path.
+\end{itemize}
+
+\subsection*{Arrange}
+
+The \tabname{Arrange} tab lays a selection out as a grid: choose the number of
+columns and rows and the gaps, and press the button. It is the fastest way to
+build a sheet of small parts for cutting --- twelve keyring tags on one piece of
+plywood, evenly spaced.
+
+\section{Reference objects}
+
+A reference object is a shape that other alignment operations measure against
+without being moved by them. Two things make it useful:
+
+\begin{itemize}
+  \item It gives you a fixed origin that is not the bed --- the corner of a
+        pre-cut panel, for instance.
+  \item It survives multiple alignment passes, because it is never treated as one
+        of the things being aligned.
+\end{itemize}
+
+\noindent Right-click a selected element and choose \menu{Reference Object} ---
+\btn{Become reference object}, \btn{Align to reference object},
+\btn{Clear reference object}. The reference object is drawn with a distinctive
+handle so you can see which one it is.
+
+\section{Snapping and magnets}
+
+Snapping pulls the pointer to interesting places while you drag. Magnets are the
+same idea with permanent, user-defined lines. Together they make manual work
+accurate enough to trust.
+
+\subsection*{Snap-Options}
+
+The \panel{Snap-Options} pane (\menu{Panes>Editing>Snap-Options}) collects the
+snap preferences:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.9cm}L{2.0cm}L{8.4cm}@{}}
+\toprule
+\textbf{Label} & \textbf{Default} & \textbf{Meaning} \\
+\midrule
+\btn{Snap to Grid} & on & Snap to the nearest grid intersection. \\
+\btn{Snap to Element} & off & Snap to the nearest point of another element. \\
+\emph{Display-Distance} & 45\unit{px} & How far away snap points light up on
+screen. \\
+\emph{Element-Point-Snap-Threshold} & 20\unit{px} & Attraction radius for element
+points (1--75). \\
+\emph{Grid-Point-Snap-Threshold} & 15\unit{px} & Attraction radius for the grid
+(1--75). \\
+\emph{Show snap line} & on & Draw a preview line from the pointer to the snap
+point. \\
+\emph{Instant Snap Display} & off & Compute and show snap points continuously
+while moving. Costs performance on complex drawings. \\
+\emph{Clear magnets on File/New} & on & A new project starts without leftover
+magnet lines. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \btn{Snap to Grid} and \btn{Snap to Element} also appear as checkboxes
+in the status bar, which is where most people toggle them while working.
+
+\subsection*{Magnet-Options}
+
+Magnets are alignment lines you place deliberately. The \panel{Magnet-Options}
+pane has two tabs.
+
+\emph{Actions} places and clears them:
+
+\begin{itemize}
+  \item \emph{Set single line}: type a \emph{Position} and press \btn{X} or
+        \btn{Y} to place a magnet line there.
+  \item \emph{Set around selection}: horizontal buttons \btn{Left},
+        \btn{Center}, \btn{Right}, plus \btn{3}, \btn{4}, \btn{5} to divide the
+        selection into thirds, quarters or fifths; the same set vertically with
+        \btn{Top}, \btn{Center}, \btn{Bottom}.
+  \item \btn{Clear all}, \btn{Clear X}, \btn{Clear Y}.
+\end{itemize}
+
+\noindent \emph{Options} controls how strongly magnets pull and where they act:
+\emph{Attraction areas\dots} (\btn{Left/Right Side}, \btn{Top/Bottom Side},
+\btn{Center}) and \emph{Attraction strength\dots} (\emph{Off}, \emph{Weak},
+\emph{Normal}, \emph{Strong}, \emph{Very Strong}, \emph{Enormous}), with
+\btn{Load}/\btn{Save} and a named template combo for storing a configuration.
+
+\noindent Regmark elements can carry magnet lines around their border or centre
+(\menu{Toggle magnet-lines} on a regmark). That combination --- a regmark that
+represents a physical feature, with magnets along its edges --- is how you place
+artwork precisely onto a pre-existing object.
+
+\begin{tryit}{Build a twelve-tag cutting sheet}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Draw or import a single small part. Check its real size in the
+        \panel{Position} pane and set it exactly.
+  \item Select it and \menu{Duplicate element(s)>Make 1 copy}. Position the copy
+        to the right of the original, using the arrow keys for the last few
+        millimetres.
+  \item Select both, duplicate again, and use the \panel{Alignment} window's
+        \btn{Distribute} tab (X axis: \emph{Space}) to make the row even.
+  \item Select the row and duplicate it; align the copy below the first with
+        \emph{Align>Y: Bottom}, \emph{Relative to: First Selected}.
+  \item With all four, duplicate twice more and use \tabname{Arrange} to lay out
+        three columns and four rows with a 5\unit{mm} gap.
+  \item Check the whole sheet against the bed rectangle with \key{Ctrl+B}, then
+        assign everything to your cut operation.
+\end{enumerate}
+\end{tryit}

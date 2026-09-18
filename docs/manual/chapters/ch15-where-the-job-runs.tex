@@ -1,0 +1,254 @@
+\chapter{Where the job runs}
+\label{ch:where}
+
+A job is not sent to ``the laser'' in the abstract; it is cut at a physical
+position on a physical sheet, and everything before that moment is guesswork.
+This chapter is about controlling where the burn lands: the coordinate system,
+the alignment aids MeerK40t gives you, and the camera.
+
+\section{The scene is the bed}
+
+The most important idea in this chapter is also the simplest: \textbf{the scene is
+the machine's bed at full size, in millimetres}. If your artwork sits 20\unit{mm}
+from the left edge of the bed rectangle on screen and 30\unit{mm} from the top,
+that is where it will burn, relative to the machine's zero point. There is no
+separate ``send to bed'' step and no hidden offset.
+
+\noindent The bed rectangle and its internal origin come from three device
+settings, all covered in Chapter~\ref{ch:connect}:
+
+\begin{itemize}
+  \item \btn{Width} and \btn{Height} --- the bed.
+  \item \btn{Flip X}, \btn{Flip Y}, \btn{Swap X and Y} --- the direction of each
+        axis as the machine sees it.
+  \item \btn{Force Declared Home} --- which corner the machine calls zero.
+\end{itemize}
+
+\begin{notebox}[Two things called ``origin'']
+\emph{Machine origin} is where the controller's native zero sits, and it is
+decided by the driver and the machine. \emph{User origin} is the corner of the bed
+rectangle as drawn on your scene, which you can move by changing the home-corner
+setting. When you read \cmd{devinfo} in the console you get both numbers: the
+logical position in scene coordinates and the native position in machine counts.
+Confusing the two is the root cause of most ``the job is offset by exactly the
+width of the bed'' complaints.
+\end{notebox}
+
+\section{Positioning the workpiece instead of the artwork}
+
+Beginners move the drawing to match the material. Professionals move the machine
+to match a known datum. Both are supported; the second is more reliable.
+
+\begin{walkthrough}{Place a job against a physical corner}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Put the material in the machine and align it by eye against a bed edge or
+        a jig.
+  \item In the \panel{Jog} pane, jog the head to the material's corner and
+        remember the coordinates (the \panel{Position} pane or the status bar
+        shows them).
+  \item Right-click the scene and choose \btn{Move laser head here} to send the
+        head to a chosen point on the drawing --- useful in the other direction,
+        when you want to confirm where a feature will land.
+  \item Set the artwork's X and Y in the \panel{Position} pane so that its corner
+        sits at the coordinates you measured.
+  \item Press \btn{Outline} on the Laser tab. If your machine has a pilot laser
+        or a low-power mode, it frames the job on the material; if not, verify
+        the position by jogging the head to two corners of the drawing's bounding
+        box.
+  \item Only then press \btn{Start}.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent The \btn{Move Laser to:} panel does the same job numerically: type
+coordinates, press the go button, and the head goes there. The nine buttons beside
+it are stored positions --- left-click to travel to one, right-click to store the
+current position. Storing ``front-left of jig'', ``hole centre'' and ``pen
+holder'' once saves minutes on every subsequent job.
+
+\section{Placements: job start positions}
+
+A \emph{placement} is a marker in the design that tells the job where to begin.
+You can add one from the ribbon (\btn{Job Start} / \cmd{tool placement}), and the
+operations branch can hold \btn{Append absolute placement} and \btn{Append
+relative placement} commands. Placements are how you say ``start burning from
+this point'' rather than ``start burning wherever the file begins'', which
+matters when you are positioning by eye and want the pilot route to be
+predictable.
+
+\section{Registration marks}
+
+A registration mark is a shape that represents something already on the material.
+The workflow has three parts:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Model the feature.} Draw the corner, hole or printed box that
+        physically exists, and move it to the Regmarks branch with
+        \menu{Move to regmarks}.
+  \item \textbf{Align the artwork to it.} Position the design relative to the
+        regmark, ideally with the \panel{Alignment} window and a reference object
+        (Chapter~\ref{ch:transform}).
+  \item \textbf{Find the mark on the machine.} Either burn the regmark lightly
+        onto a test piece, or use the machine's pilot laser and \btn{Outline} to
+        frame it --- with the material in place, nudge the material until the
+        frame lands where the mark should be.
+\end{enumerate}
+
+\noindent Regmarks can carry \emph{magnet lines} around their border or centre
+(\menu{Toggle magnet-lines}), which makes snapping artwork to a modelled physical
+feature easy. They are saved as a hidden group inside the project file, so an
+imported project's alignment aids come back with it. Remember that
+\btn{Toggle visibility of regmarks} exists --- half of all ``where did my
+regmark go'' questions are answered by that toggle.
+
+\section{Reading positions off the machine: Place Template}
+
+\menu{Tools>Laser-Tools>Place Template} builds geometry from where the head
+actually is. It has three tabs, and each has \btn{Use position} buttons that
+capture the laser's current position:
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[\tabname{Find center}] Three points \emph{A}, \emph{B}, \emph{C}. Jog the
+        head to three points on the circumference of a physical hole, capture
+        each with \btn{Use position}, then \btn{Mark Center} to create a mark at
+        the circle's centre, \btn{Move to center} to send the head there and
+        \btn{Create circle} to draw the hole in the design. This is how you
+        engrave concentric with an existing feature.
+  \item[\tabname{Place frame}] \emph{Corner 1} and \emph{Corner 2} with
+        \btn{Use position} and \btn{Create frame} --- model a rectangular region
+        of the material (a panel, a wallet, a jig cut-out) by touching its
+        corners.
+  \item[\tabname{Place square}] \emph{Side A 1}, \emph{Side A 2} and \emph{Side
+        B}, plus a \emph{Dimension} field (5\unit{cm} by default), \emph{Mark
+        Corner} and \btn{Create square} --- build a square from one measured
+        physical edge and a given size.
+\end{description}
+
+\noindent Like the jog positions, all of these are references rather than
+movements: they create elements and regmarks you can then align to, and they are
+just as useful for establishing a datum on a machine with no camera at all.
+
+\section{The camera}
+
+If your machine has a camera looking at the bed, MeerK40t can use it as a
+background layer: a live picture of the material, aligned with the bed
+coordinates, so that you can position artwork onto what you can see. Camera
+support needs OpenCV installed (\cmd{opencv-python-headless}).
+
+\subsection*{Opening and configuring a camera}
+
+Each camera is its own pane, \panel{Camera \emph{n}} (\menu{Panes>Camera}).
+Camera~0 is the usual one. The pane's buttons are:
+
+\begin{center}\small
+\begin{tabular}{@{}L{5.8cm}L{8.4cm}@{}}
+\toprule
+\textbf{Control} & \textbf{What it does} \\
+\midrule
+\btn{Update Image} & Take a fresh frame. \\
+\btn{Export Snapshot} & Save the current image to disk. \\
+\btn{Reconnect Camera} & Reopen the device --- the first thing to try when the
+picture freezes. \\
+\btn{Detect Distortions / Calibration} & The guided calibration path (below). \\
+FPS slider & Frame rate; a value of 0 means a frame every five seconds, which is
+plenty for alignment work and much lighter on the machine. \\
+\btn{Correct Fisheye} & Applies a fisheye correction, once trained with a
+checkerboard. \\
+\btn{Correct Perspective} & Applies a four-corner perspective correction so the
+picture matches the bed's rectangle. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Right-clicking the camera scene offers the operational menu: background
+refresh rates (\emph{2x/1sec}, \emph{1x/1sec}, \emph{1x/2sec}, \emph{1x/5sec},
+\emph{1x/10sec}, \emph{Disable}), the device link (\emph{Device independent} plus
+each device label), \emph{Update Background}, \emph{Export Snapshot},
+\emph{Reconnect Camera}, \emph{Stop Camera}, \emph{Set camera resolution\dots},
+\emph{Aspect} and \emph{Preserve} submenus, the flips (\emph{Flip horizontal},
+\emph{Flip vertical}, \emph{Flip 180°}), the fisheye and perspective corrections
+with their resets, \emph{Manage URIs} (\btn{URI Manager}), and
+\emph{Change Label}.
+
+\subsection*{Alignment}
+
+\begin{walkthrough}{Align the camera to the bed}
+The guided wizard (\btn{Camera Calib}) walks through exactly this list; the version
+here adds the reasoning.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item \textbf{Home the machine} so the head and bed are in a known state.
+  \item \textbf{Open the camera window} and watch the live picture. If the bed's
+        top-left appears in the wrong corner of the image, use \emph{Flip camera
+        180°}.
+  \item \textbf{Reset the perspective}, then --- with \btn{Correct Perspective}
+        switched \emph{off} --- drag the large coloured corner markers
+        (TL, TR, BR, BL) to the four corners of the bed in the picture.
+  \item \textbf{Turn \btn{Correct Perspective} on.} After this, dragging the
+        corners is no longer possible; you have told the program what the bed
+        looks like from here.
+  \item \textbf{Link the camera to your device} (right-click the camera scene and
+        choose the device). Without the link, the picture cannot be placed on the
+        bed's coordinates.
+  \item \textbf{Update the background.} The bed photograph now appears on the
+        main scene, correctly scaled, under your artwork.
+  \item \textbf{Check with corner test marks}: \btn{Add corner test marks} places
+        four red 12\unit{mm} squares inset 15\unit{mm} from the bed corners. Cut
+        them at low power and see whether the burn lands inside the marks.
+  \item \textbf{Fine-tune with the offset controls} in the \emph{Fine alignment
+        (mm)} group --- \emph{Offset X}, \emph{Offset Y} and the
+        \emph{Overlay} arrow buttons, then \btn{Apply offset}. This nudges the
+        picture without changing anything about the machine's own calibration.
+\end{enumerate}
+\end{walkthrough}
+
+\subsection*{Cameras over the network, and their limits}
+
+The camera \btn{Connect} box accepts a USB index (\cmd{0}, \cmd{1}, \dots), an
+RTSP URL (of the form
+\file{rtsp://}\,\file{user:pass@host:8554/}\,\file{stream1}), a
+\cmd{user:pass@IP} form, or a bare IP address, which is expanded to
+\file{rtsp://IP:8554/profile0}. The \btn{URI Manager} window stores a list of
+addresses with \btn{Add URI}, \btn{Connect} and a right-click menu
+(\emph{Remove}, \emph{Duplicate}, \emph{Edit}, \emph{Clear All}).
+
+\noindent Three limitations are worth knowing before you invest in camera
+alignment:
+
+\begin{itemize}
+  \item \textbf{Fisheye correction needs a 9\,$\times$\,6 checkerboard} printed
+        from the OpenCV pattern and several good captures. If the maths is
+        ill-conditioned the program says so and asks you to keep trying. A cheap
+        lens that cannot be corrected is a lens to avoid.
+  \item \textbf{Perspective correction uses exactly four markers} and is frozen
+        once enabled. \emph{Flip 180°} resets the corners, and you must drag them
+        again.
+  \item \textbf{The overlay needs the device link.} A camera that is not linked
+        to a device can show you a picture, but it cannot put that picture on the
+        bed.
+\end{itemize}
+
+\begin{machinebox}{A camera is a convenience, not a datum}
+Camera alignment is typically good to a fraction of a millimetre and drifts with
+focus, lens height and how the lid sits. Use it for ``is my artwork on the
+wallet?'' --- not for ``will this hole be 0.2\unit{mm} from the edge?''. For
+precision on existing objects, \btn{Place Template} and a jig still win.
+\end{machinebox}
+
+\begin{tryit}{Engrave onto an object you did not make}
+This is the classic camera-and-regmark job: personalising something already
+manufactured.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Measure the object: overall width and height, and the position of one
+        obvious feature relative to its corner.
+  \item Draw that rectangle in MeerK40t, put it in the Regmarks branch, and treat
+        it as the object.
+  \item Place your artwork relative to the rectangle --- centred, or offset as the
+        product demands.
+  \item Put the object in the machine. Either link the camera and position it
+        against the bed image, or jog the head to the object's corner and align
+        the regmark's coordinates to the jogged position numerically.
+  \item Frame the job with \btn{Outline} on a piece of scrap cardboard in the
+        object's place, and check the landing position.
+  \item Burn the real object at low power first to check placement, then at full
+        power once you are sure.
+\end{enumerate}
+\end{tryit}

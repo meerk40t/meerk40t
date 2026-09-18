@@ -1,0 +1,249 @@
+\chapter{Rotary, coolant and remote control}
+\label{ch:remote}
+
+Three accessories change how a laser is used rather than what it can burn: a
+rotary chuck turns cylinders into engravable objects, coolant and air assist keep
+the cut alive, and a network connection lets a job be started from somewhere else.
+This chapter covers all three, plus the remote-control servers that make MeerK40t
+scriptable from a browser or another machine.
+
+\section{Rotary: engraving on cylinders}
+
+A rotary attachment replaces one axis with a chuck that rotates the workpiece.
+The coordination problem is the same on every machine: the circumference of the
+object must be mapped onto the axis that used to be the bed's height.
+
+\begin{walkthrough}{Rotary, step by step}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Open the rotary settings: \menu{Tools>Rotary} (device settings), or the
+        \btn{Rotary} button on the device's ribbon.
+  \item Tick \btn{Rotary-Mode active}, then --- before anything else --- set
+        \btn{Outside diameter (mm)} and \btn{Usable length (mm)}. The fields
+        below them depend on these two values.
+  \item Leave \btn{Auto Y wrap from diameter} on for your first run. The Y axis
+        is then scaled so that the bed height corresponds to the object's
+        circumference ($\pi \times \text{diameter}$).
+  \item Select your artwork on the scene and click \btn{Fit selection to rotary}.
+        It scales the selection uniformly to fit usable length $\times$
+        circumference.
+  \item Burn a test strip on a piece of scrap tube before committing to the real
+        object. Check the join line where the engraving wraps around: if the
+        pattern does not meet cleanly, the circumference is wrong --- measure the
+        object rather than trusting a stated size.
+  \item With rotary mode active, the Home command is suppressed by default
+        (\setting{suppress_home}), so the machine does not drive the head to a
+        home position that may be occupied by the chuck.
+\end{enumerate}
+\end{walkthrough}
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.6cm}L{1.9cm}L{7.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Default} & \textbf{Meaning} \\
+\midrule
+\setting{rotary_active} & off & Master switch for rotary mode. \\
+\setting{rotary_diameter_mm} & 80.0 & Outside diameter; $\pi D$ becomes the wrap
+height. \\
+\setting{rotary_length_mm} & 200.0 & Usable length along the axis. \\
+\setting{rotary_auto_wrap_scale} & on & Derive the Y scale from the diameter
+rather than using a manual factor. \\
+\setting{rotary_auto_length_scale} & off & Derive the X scale from the usable
+length. \\
+\setting{rotary_scale_x}, \setting{rotary_scale_y} & 1.0 & Manual scales, used
+when the automatic ones are off. \\
+\setting{rotary_flat_y_steps} & 159.6 & The flat-bed steps/mm to return to
+afterwards (GRBL). \\
+\setting{rotary_y_steps} & 80.0 & Steps/mm of the rotary axis (GRBL). \\
+\setting{rotary_steps_compensate} & on & Compensate in software, leaving the
+controller's own settings untouched (GRBL). \\
+\setting{rotary_firmware_steps} & off & Write the rotary steps into the
+controller at job start and restore them afterwards (GRBL). \\
+\setting{rotary_cal_test_mm} & 100.0 & Length of the calibration test burn. \\
+\setting{suppress_home} & on & Skip the home command while rotary mode is
+active. \\
+\setting{rotary_home_x_only} & on & Home only X, never Y, with a chuck fitted
+(GRBL). \\
+\setting{rotary_flip_x}, \setting{rotary_flip_y} & off & Mirror the axes. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The console side is short and worth knowing, because it is what a
+repeatable rotary process ends up being driven by:
+
+\begin{lstlisting}[style=konsole]
+rotary                       # show status: active, diameter, circumference, scales
+rotaryfit                    # scale emphasised elements to length x circumference
+rotaryscale                  # scale by the effective scales
+rotarysuggest 80 200 8 1     # estimate steps/mm: diameter, motor steps, microsteps, ratio
+rotarycal 314.2              # recalibrate from a measured test burn
+\end{lstlisting}
+
+\subsection*{Cylinder correction (galvo machines)}
+
+Galvo markers with a JCZ controller can also engrave curved surfaces without
+rotating them, by projecting the design onto the cylinder. This is a
+\emph{different} feature, and it applies to Balor devices only:
+
+\begin{lstlisting}[style=konsole]
+cylinder axis X 50mm     # the cylinder's diameter, and which axis runs around it
+cylinder distance 120mm  # distance from the cylinder to the mirror
+cylinder on
+\end{lstlisting}
+
+\noindent The matching settings are \setting{cylinder_active},
+\setting{cylinder_mirror_distance} (100\unit{mm} by default),
+\setting{cylinder_x_axis} / \setting{cylinder_y_axis} and the diameters
+\setting{cylinder_x_diameter} / \setting{cylinder_y_diameter} (50\unit{mm}).
+Curved-surface correction keeps straight lines straight when the surface falls
+away from the lens --- which, for a small tube entirely inside the galvo field,
+is often better than rotating it.
+
+\section{Coolant, air assist and sleep}
+
+\subsection*{Coolant and air assist}
+
+Each device has a \btn{Coolant} setting that names how the machine's coolant or
+air assist is switched. The built-in methods are:
+
+\begin{itemize}
+  \item \emph{Warnmessage} --- shows a dialog asking you to switch the air assist
+        on or off at the right moment;
+  \item \emph{GCode M7/M9} and \emph{GCode M8/M9} --- for GRBL controllers with a
+        controllable output.
+\end{itemize}
+
+\noindent Where you use it:
+
+\begin{itemize}
+  \item Per operation, with the \emph{Coolant} field on the operation's
+        properties: \emph{No changes}, \emph{Turn on} or \emph{Turn off}. Put
+        ``turn on'' on your first operation and ``turn off'' on your last.
+  \item In the operations tree, with \btn{Append Coolant On} and
+        \btn{Append Coolant Off} as explicit steps in the job.
+  \item From the ribbon with the \btn{Coolant} button, which is only visible when
+        the device has a coolant configured.
+\end{itemize}
+
+\noindent The console commands are \cmd{coolants} (list the available methods),
+\cmd{coolant\_on}/\cmd{coolant\_off}, and
+\cmd{coolant\_on\_by\_id <id>}/\cmd{coolant\_off\_by\_id <id>} for choosing a
+method explicitly.
+
+\subsection*{Preventing the computer from sleeping}
+
+A long job that outlives the screen saver is a job that can be interrupted.
+\cmd{system\_hibernate prevent} stops the machine from sleeping;
+\cmd{system\_hibernate allow} releases it. On Linux this masks the sleep, suspend,
+hibernate and hybrid-sleep targets through \cmd{systemctl} --- which is why the
+program mentions that administrative privileges may be required --- and on Windows
+it uses the standard execution-state API. The device configuration's
+\emph{Default Actions} can bind \emph{Hibernation off} and \emph{Hibernation on}
+to the start and end of a job.
+
+\section{Remote control over the network}
+
+\menu{Network} starts and stops MeerK40t's own servers. Each one speaks a
+different language to a different kind of client:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.2cm}L{3.0cm}L{8.0cm}@{}}
+\toprule
+\textbf{Server} & \textbf{Default port} & \textbf{What it is for} \\
+\midrule
+Webserver & 8080 (menu), 2080 (console command default) & A small web console:
+device status, the job queue with pause/stop, a command box and the last console
+output as HTML. It listens on localhost only. \\
+Telnet (\emph{consoleserver}) & 23 & The full MeerK40t console over telnet. Every
+command you can type locally, you can type from another machine. \\
+GRBL-Server (\emph{grblcontrol}) & 23 & Emulates a GRBL controller, so software
+that expects to talk to GRBL (or a sender like a g-code streaming tool) can drive
+your machine through MeerK40t. \cmd{grblmock} is a trivial mock version for
+testing clients. \\
+Ruida-Server (\emph{ruidacontrol}) & UDP 50200, jog 50207 & Emulates a Ruida
+controller --- the bridge that lets Ruida-speaking software drive a K40. It can
+also work as a man in the middle (40200/40207) or as a LightBurn-to-Ruida bridge
+on TCP 5005. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Start them from the menu, or from the console, which is how you script
+them:
+
+\begin{lstlisting}[style=konsole]
+webserver -p 8080          # start the web console on a chosen port
+consoleserver -p 2323      # a second telnet console, no privilege needed
+grblcontrol -p 23          # GRBL emulator, spooling to the active device
+ruidacontrol               # Ruida emulation (UDP 50200/50207)
+\end{lstlisting}
+
+\noindent The web console accepts commands as \cmd{?cmd=<command>} in a GET or
+POST request, and job control as \cmd{job\_cmd=<index>:<operation>} where the
+operations are \cmd{stop\_job}, \cmd{remove\_job}, \cmd{pause\_device} and
+\cmd{resume\_device}. That is enough to build a simple shop-floor dashboard:
+pause every machine, see what is running, and start the next job, from a browser.
+
+\begin{warnbox}[Remote control is real control]
+A telnet console or an emulated controller accepts commands that move the head,
+fire the laser and run jobs. The web server binds to localhost by default for
+exactly this reason --- do not expose these ports to a network you do not
+control, and never leave a server running on a machine that is also reachable
+from the internet.
+\end{warnbox}
+
+\subsection*{A networked K40}
+
+Lihuiyu devices can also be driven over the network: in the device's
+\tabname{Interface} tab, choose \btn{Networked} and set the \emph{Address} and
+\emph{Port} of a machine running MeerK40t as a server (the default ports are 1025
+on Linux/macOS and 1022 on Windows). The \btn{Network-Controller} window then
+replaces the USB controller window. This is the standard way to put the noisy
+machine in one room and the computer in another.
+
+\subsection*{GRBL over Wi-Fi: ESP3D}
+
+Diode machines with an ESP32-based Wi-Fi module --- MKS DLC32 boards are the
+common ones --- can be driven without a cable. Enable it in the GRBL
+configuration's \tabname{ESP3D Upload} tab: \btn{Enable ESP3D Upload}, then
+\btn{ESP3D Host} (default \file{192.168.1.100}), \btn{ESP3D Port} (80),
+\btn{ESP3D SD Path} (\file{/}) and optional credentials, with
+\btn{Test Connection} and \btn{List Files} showing the SD card's usage. The
+ribbon then gains \btn{ESP3D Upload+Run} (right-click to upload without
+starting), \btn{ESP3D Pause}, \btn{ESP3D Resume}, \btn{ESP3D Stop} and
+\btn{ESP3D Files}. \btn{Prepare Plan exports for SD card} adjusts exported files
+for the MKS DLC32 (LF line endings, M3 laser mode, no \cmd{G28}), and
+\btn{Cleanup Local Files} deletes the local copy after upload. The console
+equivalents are \cmd{esp3d\_config test|set <param> <value>} and
+\cmd{esp3d\_list}.
+
+\section{Connecting to other software}
+
+Two bridges are worth knowing about even if you never use them:
+
+\begin{itemize}
+  \item \btn{GRBL-Server} lets a phone app or a g-code sender think it is talking
+        to a normal GRBL machine while MeerK40t does the work --- useful when you
+        want someone else's jogging interface or a CAM program's streamer.
+  \item \btn{Ruida-Server} does the same trick in the other direction: software
+        that only knows Ruida can drive a K40, because MeerK40t emulates the
+        controller the software expects.
+\end{itemize}
+
+\begin{tryit}{Drive a job from a browser}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Start the web server: \menu{Network>Start Webserver}, or
+        \cmd{webserver} in the console.
+  \item Open a browser at \file{http://127.0.0.1:8080}. You should see the web
+        console with the active device, the job list and a command box.
+  \item Queue a small job from the desktop interface and watch it appear in the
+        web page's job list.
+  \item Use the web page to pause and resume the device. The desktop interface
+        should follow along --- they are two views of one program.
+  \item Stop the server from the \menu{Network} menu, and confirm in the console
+        that the port is closed.
+  \item If you use a shop network, repeat with \cmd{consoleserver} and a real
+        second machine --- then decide, deliberately, whether that convenience is
+        worth the risk.
+\end{enumerate}
+\end{tryit}

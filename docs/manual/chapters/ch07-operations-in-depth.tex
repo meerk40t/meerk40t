@@ -1,0 +1,289 @@
+\chapter{Operations in depth}
+\label{ch:ops}
+
+An \emph{operation} is a recipe: it says \emph{how} to burn the artwork attached
+to it. Five burn operation types exist, plus three effects that modify them and a
+family of utility operations that move or pause the machine. This chapter is the
+reference-tutorial for all of them: what they do, which settings matter, and how
+to attach artwork to them.
+
+\section{The five burn operations}
+
+\begin{center}\small
+\begin{tabular}{@{}L{1.8cm}L{1.4cm}L{3.2cm}L{3.2cm}L{4.3cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Colour} & \textbf{Accepts} & \textbf{Ignores} &
+\textbf{Use it for} \\
+\midrule
+\textbf{Cut} & red & paths, rectangles, ellipses, lines, polylines (and effects)
+& images & cutting through: high power, slow speed, a few passes \\
+\textbf{Engrave} & blue & the same vector shapes & images & scoring, marking,
+thin vector engraving; dense hatching \\
+\textbf{Raster} & black & vectors \emph{and} text, converted to a raster image &
+images & filling an area quickly, engraving shapes and lettering \\
+\textbf{Image} & (none) & image elements only & everything else & engraving a
+raster image, with the image's own dither and contrast settings \\
+\textbf{Dots} & (none) & points only & everything else & drilling, perforating,
+dot marking: the head dwells in place instead of moving \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The ``Ignores'' column matters more than it looks. Assigning a
+photograph to a \mkseries{Cut} operation gets you nothing, and by default a
+\mkseries{Dots} or \mkseries{Image} operation \emph{stops} classification, so
+elements landing there are not also picked up by later operations. When in doubt,
+watch the operation's icon: unusable children are greyed out or flagged.
+
+\begin{notebox}[Raster versus Image --- the difference that confuses everyone]
+\mkseries{Raster} takes \emph{vector} artwork and turns it into a raster at job
+time, using the operation's own DPI and direction settings. It is how you fill an
+engraved logo or a rectangle of text. \mkseries{Image} takes an \emph{existing
+raster image} and burns it, using the dither, contrast and halftone settings
+stored on the image element itself. If the thing on your scene is a
+\file{.png} or \file{.jpg}, you want \mkseries{Image}; if it is a path or a text
+element, you want \mkseries{Raster}.
+\end{notebox}
+
+\section{Creating an operation}
+
+Right-click the \emph{Operations} branch in the tree and choose \menu{Append
+operation}, then one of: \btn{Append Image}, \btn{Append Raster},
+\btn{Append Engrave}, \btn{Append Cut}, \btn{Append new Hatch} (which creates an
+Engrave operation carrying a Hatch effect) or \btn{Append Dots}.
+
+Notice that a new operation arrives with defaults taken from your device --- the
+device can define what ``cut'' or ``engrave'' means for that machine, so a GRBL
+diode machine and a CO\textsubscript{2} cutter do not start from the same
+numbers. Typical starting points are around 5\unit{mm/s} for a cut,
+25--35\unit{mm/s} for an engrave and 150--500\unit{mm/s} for a raster. These are
+starting points, not answers: Chapter~\ref{ch:tuning} is about finding your own.
+
+Under the same right-click menu, \menu{Append special operation(s)} adds the
+non-burning steps. These run in the order they appear in the operations list,
+which lets you build a job with a preamble (home, coolant on, wait for you to
+press the machine's button) and a postscript (coolant off, return home).
+
+\begin{itemize}[leftmargin=1.4em,itemsep=0pt]
+  \item Movement and time: \btn{Append Home}, \btn{Append Physical Home},
+        \btn{Append Return to Origin}, \btn{Append Goto Location}.
+  \item Operator interaction: \btn{Append Beep}, \btn{Append Interrupt},
+        \btn{Append Wait}, \btn{Append Output}, \btn{Append Input}.
+  \item Ancillaries: \btn{Append Coolant On}, \btn{Append Coolant Off}.
+  \item Combinations that do the above in one step, such as
+        \btn{Append Home/Beep/Interrupt} and
+        \btn{Append Origin/Beep/Interrupt}.
+\end{itemize}
+
+\section{Attaching artwork to an operation}
+
+There are four ways, and you will settle into one of them within an hour.
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Drag and drop.} Select elements in the scene, drag them onto the
+        operation in the tree, and drop. The operation gains \emph{references} to
+        those elements.
+  \item \textbf{Right-click assign.} Right-click the selected elements in the
+        scene, choose \menu{Assign Operation}, and pick the operation by name. The
+        same submenu offers \btn{Remove all assignments from operations},
+        \btn{Exclusive assignment}, \btn{Inherit stroke and classify similar} and
+        \btn{Inherit fill and classify similar}.
+  \item \textbf{Operation squares.} Open the \panel{Operations} pane
+        (\menu{Panes>Tools>Operations}). It shows up to 24 coloured squares, one
+        per operation. Left-click assigns using the element's \emph{stroke}
+        colour as the classification colour; right-click uses the \emph{fill}
+        colour instead. Options in the pane let you choose what a click does
+        (\emph{Leave} / \emph{-> OP} / \emph{-> Elem}) and whether assignments are
+        \emph{Similar} (colour-matched) or \emph{Exclusive}.
+  \item \textbf{The operation list panel.} The compact operations panel shows one
+        row per operation with an \emph{A} (active) toggle, an \emph{S} (visible)
+        toggle, a coolant indicator, and editable \emph{Power} and \emph{Speed}
+        columns --- the fastest way to tune a job by eye. Its
+        \emph{Classification} section chooses whether colours are left alone, the
+        operation inherits the element's colour, or the element inherits the
+        operation's colour.
+\end{enumerate}
+
+\begin{warnbox}[Elements that are not assigned anywhere are invisible to the job]
+An operation only burns what it references. A shape sitting in the elements
+branch that is referenced by no operation will simply not be cut --- and
+MeerK40t will warn you: ``Some shapes are not assigned to any operation \dots{}
+Queue anyway?''. Learn to check for it: \menu{Edit>Select all non-assigned}
+highlights the orphans. The \panel{Operation Info} window
+(\menu{Tools>Operation Info}) lists every operation, its item count and its
+runtime, and shows an \emph{Unassigned} row marked with \texttt{!} for elements
+that belong to nothing.
+\end{warnbox}
+
+\section{Colour classification}
+
+Each operation has a colour, and MeerK40t can use colour to decide where artwork
+belongs. This is how an imported SVG with a black outline and a red fill becomes
+``cut the red things, engrave the black things'' without you selecting anything.
+
+\begin{itemize}
+  \item A \textbf{Cut} operation is red by default. Elements whose stroke or fill
+        matches that red are classified into it.
+  \item An \textbf{Engrave} operation is blue by default.
+  \item A \textbf{Raster} operation is black by default.
+\end{itemize}
+
+\noindent Classification is configured in
+\menu{Edit>Settings>Preferences}, tab \tabname{Classification}, which offers two
+presets: \btn{Automatic} and \btn{Manual}. Automatic classification on load is
+what people usually want for production work with colour-keyed SVG files;
+turn it off when you want to place everything by hand.
+
+\begin{tipbox}
+If colours confuse you, make them honest: in the element's own properties set its
+stroke to the operation colour you intend to use. Then the scene itself shows the
+plan --- red lines will be cut, blue lines engraved --- and mistakes are visible
+at a glance.
+\end{tipbox}
+
+\section{The settings of a burn operation}
+
+Select an operation in the tree and its properties appear in the \panel{Properties}
+window (\menu{Tools>Properties}, or double-click). The settings below are the ones
+that actually change results.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.2cm}L{2.2cm}L{8.7cm}@{}}
+\toprule \textbf{Label} & \textbf{Default} & \textbf{Meaning} \\
+\midrule \btn{Speed} & 10\unit{mm/s} (cut), 35 (engrave), 150 (raster/image), 35 (dots) & Head travel speed while burning. Shown as \unit{mm/min} instead when the device uses that convention. \\
+\btn{Power} & 1000 & Power on a 0--1000 scale, or as a percentage when the device displays percentages. \\
+\btn{Frequency} & 20\unit{kHz} & Pulse frequency. Only shown for machines that expose it. \\
+\btn{Passes} & off, 1 pass & Repeat the whole operation. Tick \emph{custom} to set a count. \\
+\btn{Kerf compensation} & 0\unit{mm} & Offset every path by half the kerf so finished parts come out the intended size (Chapter~\ref{ch:tuning}). \\
+\btn{Enable} & on & Include this operation when the job is built. \\
+\btn{Stop} & off (on for Image/Dots) & Stop classification here: later operations do not also capture these elements. \\
+\btn{Coolant} & 0 = no change & 0 no change, 1 turn on, 2 turn off, for machines with coolant or air-assist control. \\
+\btn{Color} & red / blue / black & The classification colour. \\
+\btn{Loops} & 1 & Loop the operation branch (used with effects). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The raster and image operations add their own settings:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.2cm}L{2.2cm}L{8.8cm}@{}}
+\toprule \textbf{Label} & \textbf{Default} & \textbf{Meaning} \\
+\midrule \btn{DPI} (with \emph{overrule}) & 500\unit{dpi} & Scan-line density. Higher = finer and much slower. \\
+\btn{Overscan} & 0.5\unit{mm} & Extra travel at each end of a scan line so the head is already at speed when the beam starts. \\
+\btn{Direction} & Bottom-to-top & Scan direction: top-to-bottom, bottom-to-top, right-to-left, left-to-right, crosshatch, greedy horizontal/vertical, crossover, spiral or diagonal. \\
+\btn{Directional Raster} & Bidirectional & Burn on the way back as well, doubling throughput; uncheck for a directional look (or when your machine cannot handle it accurately). \\
+\btn{Use grayscale instead} & on & Rasterise a black-and-white image as grayscale --- the raster op's answer to ``Override black/white image''. \\
+\btn{Consider laserdot} & off & Skip pixels already covered by the laser's spot; saves time at low DPI. \\
+\btn{Start Preference} & both on & Which corner of the raster the head starts from. \\
+\btn{Dwell Time (ms)} & 50\unit{ms} & (Dots) how long the head rests on each point. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent DPI and raster step are two views of the same number: the step is the
+distance between scan lines, and DPI is how many of them fit in an inch. At
+500\unit{dpi} the step is 0.0508\unit{mm} --- about twice the spot size of a
+typical 40\unit{W} CO\textsubscript{2} machine. Pushing DPI far beyond the spot
+size buys darkness, not detail, and costs time linearly.
+
+\section{Effects: hatch, wobble and warp}
+
+Effects are children of a Cut or Engrave operation. They modify how that
+operation's paths are burned.
+
+\subsection*{Hatch}
+
+\menu{Add effect>Add hatch effect} fills a closed shape with parallel lines
+instead of tracing its outline --- the classic way to engrave a solid area with a
+\emph{vector} (not raster) operation.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.1cm}L{1.9cm}L{9.4cm}@{}}
+\toprule \textbf{Label} & \textbf{Default} & \textbf{Meaning} \\
+\midrule \btn{Hatch Distance} & 1\unit{mm} & Spacing between hatch lines: smaller is darker and slower. \\
+\btn{Angle} & 0\unit{deg} & Direction of the lines. \\
+\btn{Angle Delta} & 0\unit{deg} & Rotate the pattern on each loop: 90\unit{deg} with 2 loops gives a cross-hatch. \\
+\btn{Loops} & 1 & Repeat the fill, rotating per angle delta. \\
+\btn{Unidirectional} & off & Burn every line in the same direction instead of back-and-forth. \\
+\btn{Include Outline} & off & Also trace the shape's outline. \\
+\btn{Fill Style} & scanline & Scanline, Eulerian or spiral fill algorithms. \\
+\btn{Algorithm} & auto & \emph{Auto-Select}, \emph{Scanbeam (Default)} or \emph{Direct Grid (Fast)}. Jumping to a specific algorithm is a speed fix for pathological shapes. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Wobble}
+
+\menu{Add effect>Add wobble effect} replaces a path with a decorative oscillation
+--- a wave, a row of circles, a gear feel --- by moving the head side to side as
+it advances. Used for leather stitching effects, cork, and lines that should look
+scratched or hand-drawn.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.1cm}L{2.0cm}L{9.3cm}@{}}
+\toprule \textbf{Label} & \textbf{Default} & \textbf{Meaning} \\
+\midrule \btn{Wobble Radius} & 0.5--1.5\unit{mm} & Amplitude of the sideways movement. \\
+\btn{Wobble Interval} & 0.1\unit{mm} & How far the head travels before the pattern repeats. \\
+\btn{Wobble Speed} & 50 & How quickly the pattern revolves along the path. \\
+\btn{Fill Style} & circle & Circle, left/right circle, sinewave, sawtooth, jigsaw, gear, slowtooth or one of three meanders. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Warp}
+
+\menu{Add effect>Add warp effect} distorts the operation's artwork to fit a
+containing shape you edit with the finger tool --- useful for engraving onto
+curved or irregular objects where a straight projection would not follow the
+surface.
+
+\begin{notebox}[Effects hide their children]
+A wobble effect, in particular, is drawn as the wobbled result rather than as
+the original path. If a shape looked right before you added the effect and
+strange after, remove the effect and compare; \menu{View>Scene Appearance} and
+the operation's \emph{S} (visible) toggle control what you see without changing
+what burns.
+\end{notebox}
+
+\section{Estimating before you commit}
+
+Two windows tell you what a job will cost in time:
+
+\begin{itemize}
+  \item \panel{Operation Info} (\menu{Tools>Operation Info}) lists each
+        operation with its type, name, item count and runtime; press \btn{Get Time
+        Estimates} to fill in the last column. Unassigned elements appear as their
+        own row, marked \texttt{!}.
+  \item \panel{Simulation} (\btn{Simulate} on the Laser tab, or \menu{Tools}
+        \menu{Simulation}) replays the job on screen and reports
+        \emph{Laser Time}, \emph{Travel Time}, \emph{Total Time},
+        \emph{Extra Time}, and the corresponding distances.
+        Chapter~\ref{ch:order} uses this window properly.
+\end{itemize}
+
+\begin{machinebox}{Burn scrap first, always}
+For any new material or any setting you have not personally verified on this
+machine, run the job on scrap with the lid closed and watch it. The estimate is
+arithmetic done on your settings; the burn is physics. They agree most of the
+time.
+\end{machinebox}
+
+\begin{tryit}{Build a two-operation test plaque}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item In the console, make two shapes:
+        \cmd{rect 10mm 10mm 40mm 40mm} then \cmd{circle 80mm 30mm 15mm}.
+  \item Right-click \emph{Operations} in the tree, \menu{Append operation>Append
+        Cut}. Note it appears red.
+  \item Right-click \emph{Operations} again, \menu{Append operation>Append
+        Engrave}. Note it appears blue. Now two operations exist and the first is
+        ``exclusive'' by default --- only one of them will own the shapes.
+  \item Select both shapes in the scene (\key{Ctrl+A}), open the
+        \panel{Operations} pane, and click the blue \emph{Engrave} square.
+  \item Select only the circle, and click the red \emph{Cut} square.
+  \item Open \menu{Tools>Operation Info} and press \btn{Get Time Estimates}.
+        You should see both operations with one item each.
+  \item Select the rectangle's operation and change its \emph{Speed} and
+        \emph{Power}. Watch the estimate change.
+\end{enumerate}
+\end{tryit}

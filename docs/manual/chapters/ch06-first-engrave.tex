@@ -1,0 +1,277 @@
+\chapter{Your first engrave}
+\label{ch:engrave}
+
+Cutting is one-dimensional: the beam follows a line. Engraving removes material
+from an \emph{area}, and that makes it a different craft with different dials ---
+resolution, direction, dot patterns. This chapter covers both flavours of it:
+
+\begin{itemize}
+  \item \textbf{raster engraving}, where MeerK40t converts vector artwork into
+        scan lines and burns it, and
+  \item \textbf{image engraving}, where the artwork is a picture and the pixel
+        values decide how hard the beam burns.
+\end{itemize}
+
+\noindent Both end up as scan lines at the machine. The difference is where the
+decisions are made.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=1.0]
+\draw[fill=mklight,draw=mkgrey!60] (0,0) rectangle (7.2,2.2);
+\foreach \y in {0.2,0.5,0.8,1.1,1.4,1.7,2.0} {
+  \draw[mkred,line width=0.7pt] (1.0,\y) -- (6.2,\y);
+  \draw[mkblue,line width=0.5pt,-{Stealth[length=1.4mm]}] (6.2,\y) -- (6.6,\y);
+  \draw[mkblue,line width=0.5pt,-{Stealth[length=1.4mm]}] (1.0,\y) -- (0.6,\y);
+}
+\draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},mkdark] (0.6,-0.35) -- (1.0,-0.35);
+\node[font=\sffamily\scriptsize,color=mkdark] at (0.0,-0.35) {overscan};
+\draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},mkdark] (1.0,2.55) -- (6.2,2.55);
+\node[font=\sffamily\scriptsize,color=mkdark,fill=white] at (3.6,2.55)
+  {scan line, burned left to right and right to left};
+\draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},mkdark] (7.6,0.2) -- (7.6,0.5);
+\node[font=\sffamily\scriptsize,color=mkdark,anchor=west] at (7.7,0.35) {step (DPI)};
+\end{tikzpicture}
+\caption{How a raster is burned. The head sweeps across the shape, reverses, and
+steps down one line at a time. \emph{Overscan} is the extra run-up at each end
+that lets the head reach full speed before the beam starts; without it, the edges
+of the raster are darker than the middle. \emph{Directional Raster} decides
+whether the return pass also burns. The line spacing is set by DPI.}
+\label{fig:raster}
+\end{figure}
+
+\section{Raster: filling vector artwork}
+
+Use this when the thing you want is a \emph{shape} --- a filled logo, a block of
+text, a data plate --- and you want it engraved rather than cut. MeerK40t renders
+the assigned elements to an image internally and scans it out.
+
+\begin{walkthrough}{Engrave a filled logo or text block}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Draw or import the artwork. Filled shapes work best; a thin outline
+        engraves as a thin outline.
+  \item Right-click \emph{Operations} in the tree and choose \menu{Append
+        operation>Append Raster}. A black operation appears.
+  \item Select the artwork and assign it --- \key{Ctrl+A} then click the black
+        square in the \panel{Operations} pane, or right-click the elements and
+        use \menu{Assign Operation}.
+  \item Open \menu{Tools>Properties} on the raster operation and set the two dials
+        that matter first: \btn{DPI} and \btn{Speed}.
+  \item Add \btn{Passes} if one pass is too pale; a second pass doubles the time
+        and usually darkens more evenly than raising power does.
+\end{enumerate}
+\end{walkthrough}
+
+\subsection*{Choosing DPI}
+
+DPI and the machine's spot size are the same conversation. If your spot is about
+0.1\unit{mm}, then your step is 0.1\unit{mm}, and there is no point scanning at
+more than about 250\unit{dpi}, because the next line lands where the last one
+burned. In practice:
+
+\begin{center}\small
+\begin{tabular}{@{}L{1.9cm}L{2.6cm}L{3.1cm}L{6.7cm}@{}}
+\toprule
+\textbf{DPI} & \textbf{Step} & \textbf{Typical use} & \textbf{Notes} \\
+\midrule
+100 & 0.254\unit{mm} & quick marking, deep text & visible lines; fast \\
+250 & 0.102\unit{mm} & general CO\textsubscript{2} engraving &
+    matches a normal focus spot; a good default \\
+500 & 0.051\unit{mm} & fine detail, photographs & the shipped default; twice
+    the time of 250 for often the same practical darkness \\
+1000 & 0.025\unit{mm} & diode machines with tiny spots & slow; check that the
+    result is actually finer before keeping it \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Time scales with the \emph{area} you fill and inversely with the line
+step and the speed: doubling DPI doubles the number of lines, halving the area of
+the same shape cuts the time in half. The \panel{Simulation} window's time
+estimate will tell you the number exactly; the arithmetic above tells you which
+way to push.
+
+\subsection*{Direction, overscan and the rest}
+
+\begin{itemize}
+  \item \btn{Direction} (top-to-bottom, bottom-to-top, left/right, crosshatch,
+        greedy, crossover, spiral, diagonal) changes the grain of the fill. For
+        wood, a crosshatch looks woven; a single direction looks brushed.
+  \item \btn{Directional Raster} on means the return pass also burns, roughly
+        halving the time. Turn it off if your machine shows backlash at line ends
+        --- the classic symptom is a faint ghosting to one side of each line.
+  \item \btn{Overscan} (default 0.5\unit{mm}) is the run-up described in
+        Figure~\ref{fig:raster}. If the first and last few millimetres of your
+        engraving are noticeably darker, increase it. Ruida machines are reported
+        to need it at zero, so check the device notes in Appendix~\ref{app:drivers}.
+  \item \btn{Use grayscale instead} and \btn{Consider laserdot} are refinement
+        switches: the first rasterises the artwork's antialiasing, the second
+        skips pixels the beam already covered.
+  \item \btn{Start Preference} decides which corner the scan begins in. On
+        machines that are slow to reach speed, starting from the corner nearest
+        the previous operation saves real seconds.
+\end{itemize}
+
+\section{Image: engraving a picture}
+
+Photographs and logos supplied as \file{.png}, \file{.jpg} or another bitmap
+format become image elements, and image elements are burned by an
+\mkseries{Image} operation. The image's own properties carry the dithering and
+tone controls, so the workflow is: import, adjust the picture, then engrave.
+
+\subsection*{Importing}
+
+\begin{walkthrough}{Bring in a photograph}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item \menu{File>Import File}, choose your picture. It lands in the elements
+        branch, selected.
+  \item Check its size. Preferences (\tabname{Input/Output}) control what happens
+        on import: \btn{Image DPI Scaling} decides whether the picture's stored
+        DPI is trusted for physical size (unset: treat it as 96\unit{dpi});
+        \btn{Center image on import} places it in the middle of the bed instead
+        of the top-left corner; \btn{Scale oversized images} shrinks anything
+        bigger than the bed; \btn{Create a file-node for imported image} wraps it
+        in a file node for tidier trees.
+  \item Resize deliberately. Set the real width in the \panel{Position} pane
+        rather than dragging --- you usually know how wide the engraved picture
+        should be, and DPI is derived from it.
+  \item Right-click \emph{Operations}, \menu{Append operation>Append Image}.
+        Assign the image to it.
+  \item Open \menu{Tools>Properties} on the image element (or right-click it in
+        the tree and choose \menu{Image properties}) to reach the panels that
+        matter: \btn{DPI}, \btn{Dither}, \btn{Contrast}, \btn{Halftone},
+        \btn{Tone}, \btn{Sharpen}, \btn{Gamma}, \btn{Edge Enhance},
+        \btn{Auto Contrast}, and the \btn{Modification} script list.
+\end{enumerate}
+\end{walkthrough}
+
+\subsection*{Dither: how a photograph becomes laser pulses}
+
+A laser is either on or off. A photograph has thousands of shades. Dithering is
+the trick that bridges them: shades become patterns of dots, dense where the
+picture is dark and sparse where it is light. The pattern you choose changes the
+character of the result as much as its darkness.
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.3cm}L{9.9cm}@{}}
+\toprule
+\textbf{Dither algorithm} & \textbf{Character} \\
+\midrule
+\emph{Floyd-Steinberg} (default) & Error-diffusion classic. Smooth gradients,
+fine grain. The safe default for photographs. \\
+\emph{Legacy-Floyd-Steinberg} & The older implementation; use it to reproduce
+work made before 0.9. \\
+\emph{Atkinson} & Softer, more contrast, less error carried --- the old
+Macintosh look. Good for portraits on wood. \\
+\emph{Jarvis-Judice-Ninke}, \emph{Stucki}, \emph{Burkes}, \emph{Sierra3},
+\emph{Sierra2}, \emph{Sierra-2-4a}, \emph{Shiau-Fan}, \emph{Shiau-Fan-2} &
+Variants of error diffusion with progressively sharper or smoother character.
+Try two or three on a test piece rather than over-thinking the names. \\
+\emph{Bayer}, \emph{Bayer-Blue} & Ordered dithering: a regular grid of dots.
+Looks intentional and graphic --- excellent for graphics, logos and gradients you
+want to look mechanical, poor for photographs. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Turn \btn{Dither} off if the image is already pure black and white (a
+scanned line drawing, for instance) --- there is nothing to dither, and the result
+is cleaner without it.
+
+\subsection*{Tone controls}
+
+The panels under the image properties do what the equivalent commands in an image
+editor do, and they apply to the laser output rather than to a screen:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.0cm}L{11.2cm}@{}}
+\toprule
+\textbf{Panel} & \textbf{What it does} \\
+\midrule
+\btn{Contrast} & \emph{Contrast Amount} ($-127$\dots127) and \emph{Brightness
+Amount}. The first thing to reach for on a flat-looking photo. \\
+\btn{Halftone} & Converts to dot-screen style output with \emph{Sample},
+\emph{Angle} and \emph{Oversample} sliders and a \emph{Use black rather than
+white dots} switch. This is how you get a newspaper-print look. \\
+\btn{Tone} & A full 256-point tone curve. Precise and slow to use; the right tool
+when a specific band of the picture must burn darker. \\
+\btn{Gamma} & Shifts midtones with a single factor. The most useful control for
+matching a photo to a material's burn response. \\
+\btn{Sharpen}, \btn{Edge Enhance} & Emphasise edges. Useful on wood, where
+subtle detail is lost in the grain. \\
+\btn{Auto Contrast} & A one-click stretch of the tonal range. \\
+\btn{Modification} & Applies a named \emph{Raster-Wizard} script ---
+\emph{Gold}, \emph{Stipo}, \emph{Gravy}, \emph{Xin}, \emph{Newsy} or
+\emph{Simple} --- as an ordered list of image operations you can edit. \\
+\btn{Crop} & Crop by pixel, with four sliders. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent If the picture needs more than this --- retouching, colour removal,
+serious sharpening --- do it in an image editor first. MeerK40t's job is to burn
+the picture well, not to be Photoshop.
+
+\subsection*{Grayscale and depth maps}
+
+For materials that respond to dwell rather than to dots --- and for diode lasers
+where power modulation is smooth --- the image can be burned as \emph{grayscale}
+instead of dithered: the pixel's brightness sets the power. The
+\btn{Depthmap} checkbox goes further: it treats every grey level as a number of
+times that pixel will be burned, with a selectable resolution from \emph{256 -
+8bit} down to \emph{4 - 2bit}. Depth maps are ideal for engraving height into
+wood, and they are slow, because repeated burns mean repeated passes over the
+same area. The \btn{Grayscale} box also offers \emph{Invert} and
+\emph{Red}/\emph{Green}/\emph{Blue}/\emph{Lightness} sliders --- the last is the
+quickest way to lift a dark photograph before engraving.
+
+\section{Big images, tiles and keyholes}
+
+Two tools exist for the practical problems of large or awkward artwork, both
+under \panel{Image ops} (\menu{Tools>Editing>Image Splitting}):
+
+\begin{itemize}
+  \item \textbf{Create split images} (\tabname{Render + Split}) renders the
+        selection to an image at a chosen \textbf{DPI} and cuts it into an
+        \emph{X-Axis} $\times$ \emph{Y-Axis} grid (up to 25 by 25). Each tile
+        becomes its own element, which is what you want when a pattern is wider
+        than the bed: engrave the tiles in separate runs, moving the material or
+        using the machine's own repeat feature.
+  \item \textbf{Keyhole operation} (\tabname{Keyhole operation}) renders the
+        chosen object as a mask at a given \textbf{DPI}, with options to
+        \emph{Invert} the mask and to \emph{Trace} the keyhole outline. This is
+        how you engrave one shape \emph{through} another --- a picture inside a
+        frame, or a logo that must avoid a pre-existing hole.
+\end{itemize}
+
+\noindent The same two operations are available in the console as
+\cmd{render_split <cols> <rows> <dpi>} and \cmd{render_keyhole <dpi>}, which is
+the faster route once you know your numbers.
+
+\begin{machinebox}{Engraving is where fires start}
+Raster and image jobs concentrate energy in one small area for minutes at a time,
+on the same spot. Three habits prevent trouble: keep air assist on, keep the
+extraction running, and do not walk away. If a job smells like a bonfire rather
+than like wood, stop it and lower the power --- the smell of a raster job that is
+too aggressive is unmistakeable once you have met it.
+\end{machinebox}
+
+\begin{tryit}{Three-pass test on the same picture}
+The fastest way to learn the tone controls is to burn the same small photograph
+three times, changing one thing each time.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Import a photograph roughly 40\unit{mm} wide; convert it to grayscale and
+        raise its contrast in an image editor first.
+  \item Duplicate it twice (\menu{Edit>Copy}, \menu{Edit>Paste}) and line the
+        three copies up side by side with the \panel{Alignment} window
+        (\btn{Align} tab, \emph{Relative to: Selection}, \emph{Treatment: As
+        Group}).
+  \item Give all three copies one \mkseries{Image} operation at 250\unit{dpi},
+        then set different dither algorithms on each element ---
+        \emph{Floyd-Steinberg}, \emph{Atkinson} and \emph{Bayer}.
+  \item Engrave once and compare. Repeat with \emph{DPI} 250 versus 500 on the
+        best-looking setting.
+  \item Keep the sample in your material notebook and write the settings on the
+        back. The next photo job takes one minute instead of thirty.
+\end{enumerate}
+\end{tryit}

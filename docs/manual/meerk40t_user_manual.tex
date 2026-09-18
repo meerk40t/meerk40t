@@ -1,0 +1,307 @@
+% ============================================================================
+%  MeerK40t -- User Manual (tutorial style)
+%  Build: ./build.sh   (or: pdflatex -interaction=nonstopmode meerk40t_user_manual)
+%  Requires: standard TeX Live (geometry, tcolorbox, tikz, booktabs, hyperref)
+% ============================================================================
+\documentclass[11pt,oneside]{book}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,top=2.4cm,bottom=2.6cm,left=2.4cm,right=2.4cm,headsep=10pt]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{textcomp}
+\usepackage{xspace}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds,decorations.pathreplacing}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{microtype}
+% Keep -- and --- literal in code/keys rather than turning them into dashes
+\DisableLigatures{encoding = T1, family = tt*}
+\usepackage{appendix}
+\usepackage[hidelinks,
+            pdftitle={MeerK40t User Manual},
+            pdfsubject={Using MeerK40t to design, plan and run laser jobs},
+            pdfauthor={The MeerK40t project}]{hyperref}
+
+% ---------------------------------------------------------------- palette ---
+\definecolor{mkblue}{HTML}{0F5E8C}      % primary accent
+\definecolor{mkdark}{HTML}{123B52}      % dark accent
+\definecolor{mkamber}{HTML}{B8791A}     % caution
+\definecolor{mkred}{HTML}{A3312A}       % danger
+\definecolor{mkgreen}{HTML}{2C6E49}     % tip
+\definecolor{mkgrey}{HTML}{5A6570}
+\definecolor{mklight}{HTML}{EEF4F8}
+
+% --------------------------------------------------------------- listings ---
+\lstdefinestyle{konsole}{
+  basicstyle=\ttfamily\footnotesize,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{mkgrey!50},
+  backgroundcolor=\color{black!4},
+  xleftmargin=3mm,
+  xrightmargin=1mm,
+  aboveskip=1.0em,
+  belowskip=0.8em,
+}
+\lstdefinestyle{file}{
+  basicstyle=\ttfamily\scriptsize,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{mkgrey!50},
+  backgroundcolor=\color{black!3},
+  xleftmargin=3mm,
+  aboveskip=1.0em,
+  belowskip=0.8em,
+}
+\lstset{style=konsole}
+
+% ------------------------------------------------------------------ boxes ---
+\newtcolorbox[auto counter,number within=chapter]{walkthrough}[2][]{%
+  enhanced,breakable,colback=mkblue!5,colframe=mkblue,coltitle=white,
+  fonttitle=\bfseries\sffamily\small,
+  title={Walkthrough \thetcbcounter\ ---\ #2},#1}
+\newtcolorbox[auto counter,number within=chapter]{tryit}[2][]{%
+  enhanced,breakable,colback=mkgreen!6,colframe=mkgreen,coltitle=white,
+  fonttitle=\bfseries\sffamily\small,
+  title={Try it \thetcbcounter\ ---\ #2},#1}
+\newtcolorbox[auto counter,number within=chapter]{machinebox}[2][]{%
+  enhanced,breakable,colback=mkamber!6,colframe=mkamber,coltitle=white,
+  fonttitle=\bfseries\sffamily\small,
+  title={At the machine \thetcbcounter\ ---\ #2},#1}
+\newtcolorbox{notebox}[1][Note]{%
+  enhanced,breakable,colback=black!4,colframe=mkgrey,coltitle=black,
+  fonttitle=\bfseries\sffamily\small,title={#1}}
+\newtcolorbox{tipbox}[1][Tip]{%
+  enhanced,breakable,colback=mkgreen!5,colframe=mkgreen,coltitle=mkgreen!80!black,
+  fonttitle=\bfseries\sffamily\small,title={#1}}
+\newtcolorbox{warnbox}[1][Warning]{%
+  enhanced,breakable,colback=mkred!5,colframe=mkred,coltitle=mkred!80!black,
+  fonttitle=\bfseries\sffamily\small,title={#1}}
+\newtcolorbox{behindbox}[1][Behind the scenes]{%
+  enhanced,breakable,colback=mkblue!4,colframe=mkblue!65,coltitle=mkdark,
+  fonttitle=\bfseries\sffamily\small,title={#1}}
+
+% ---------------------------------------------------------------- macros ----
+\newcommand{\mkmenuarrow}{\,{\small\color{mkgrey}\(\blacktriangleright\)}\allowbreak\,}
+\ExplSyntaxOn
+\seq_new:N \l__mk_menu_seq
+\NewDocumentCommand{\menu}{m}{
+  \seq_set_split:Nnn \l__mk_menu_seq {>} {#1}
+  \textsf{\seq_use:Nn \l__mk_menu_seq {\mkmenuarrow}}
+}
+\ExplSyntaxOff
+\newcommand{\key}[1]{\mbox{\texttt{\footnotesize\colorbox{black!7}{\,#1\,}}}}
+\newcommand{\btn}[1]{\textsf{\small\colorbox{mkblue!12}{\,#1\,}}}
+\newcommand{\tabname}[1]{\mbox{\textsf{\small\colorbox{black!7}{\,#1\,}}}}
+\newcommand{\panel}[1]{\mbox{\textsf{\textbf{#1}}}}
+\newcommand{\setting}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\cmd}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\file}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\unit}[1]{\,\text{#1}}
+\newcommand{\mkseries}[1]{\textsf{\textbf{#1}}}
+\newcommand{\ui}[1]{\textit{#1}}
+
+\captionsetup{font=small,labelfont={bf,sf,color=mkblue},width=0.92\textwidth}
+
+% headings ------------------------------------------------------------------
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\bfseries\color{mkdark}}
+  {\filright\large\color{mkblue}Chapter \thechapter}
+  {6pt}
+  {\Large\filright}
+  [\vspace{4pt}{\color{mkblue}\titlerule[1pt]}]
+\titleformat{\section}
+  {\normalfont\sffamily\large\bfseries\color{mkdark}}{\thesection}{0.7em}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\normalsize\bfseries\color{mkblue}}{\thesubsection}{0.7em}{}
+\titleformat{\part}[display]
+  {\normalfont\sffamily\bfseries\color{mkdark}\centering}
+  {\Large\color{mkblue}Part \thepart}{12pt}{\Huge}
+\setcounter{tocdepth}{1}
+\setcounter{secnumdepth}{2}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily\color{mkgrey}\leftmark}
+\fancyhead[R]{\small\sffamily\color{mkgrey}MeerK40t User Manual}
+\fancyfoot[C]{\small\sffamily\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{mkblue!40}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+
+\setlist{itemsep=2pt,parsep=0pt,topsep=3pt}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\emergencystretch}{4em}
+\tolerance=1200
+\hbadness=5000
+\setlength{\tabcolsep}{4pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% ============================================================================
+\begin{document}
+
+% ------------------------------------------------------------- title page ---
+\frontmatter
+\begin{titlepage}
+\centering
+\vspace*{1.2cm}
+\includegraphics[width=6.5cm]{../../images/meerk40t.png}
+
+\vspace{1.0cm}
+{\sffamily\Huge\bfseries\color{mkdark} MeerK40t User Manual\par}
+\vspace{0.5cm}
+{\sffamily\Large\color{mkblue} A hands-on tutorial\par}
+\vspace{1.4cm}
+{\large Design it, plan it, cut it --- from your first square to
+production-style batches on a CO\textsubscript{2} cutter, a diode
+engraver, a fibre galvo or a K40.\par}
+\vfill
+{\large\sffamily Written for MeerK40t 0.9.9040\par}
+\vspace{0.3cm}
+{\sffamily\color{mkgrey} The MeerK40t project and contributors\par}
+\vspace{0.2cm}
+{\sffamily\color{mkgrey} 17 September 2026\par}
+\vspace{0.8cm}
+{\small\color{mkgrey}\itshape This manual is a tutorial, not a reference:
+it teaches a workflow, in order, with exercises.\par}
+\end{titlepage}
+
+% ----------------------------------------------------------------- preface ---
+\chapter*{How to use this manual}
+\addcontentsline{toc}{chapter}{How to use this manual}
+\markboth{How to use this manual}{}
+
+MeerK40t is a laser control program: it holds your artwork, turns that artwork
+into machine instructions, and talks to the laser. This manual teaches you to do
+that in the order you will actually do it. Read it front to back once; after that
+use the contents pages and the appendices.
+
+\section*{Who this is for}
+
+You have a laser cutter or engraver and you want to use it. You do not need to
+know Python, and you do not need to know how MeerK40t is built internally. You do
+need to know the difference between rastering and cutting --- Chapter~1 covers the
+vocabulary.
+
+\section*{How the chapters are arranged}
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[Part I --- Getting started] What the program is, how to install it, how
+        the window is organised, and how to connect a machine.
+  \item[Part II --- Your first projects] Two complete jobs, from empty scene to
+        finished part: a vector cut and a raster engrave. Then the full
+        operation vocabulary and how to dial settings in with test grids.
+  \item[Part III --- Working with artwork] Files in and out, the element tree,
+        selection, transforms, node editing, text, images and tracing.
+  \item[Part IV --- The machine] Where the job will be cut, in what order, at
+        what cost in time, plus the console, scripting, remote control and
+        troubleshooting.
+  \item[Appendices] Shortcut tables, a console command reference, per-driver
+        settings, a glossary and where to get help.
+\end{description}
+
+\section*{Conventions}
+
+\begin{center}
+\begin{tabular}{@{}L{5.2cm}L{9.6cm}@{}}
+\toprule
+\textbf{This} & \textbf{Means this} \\
+\midrule
+\menu{File>Open} & A menu path. Start at the menu bar, finish on the last item. \\
+\btn{Start} & A button, checkbox or field caption you can read on screen. \\
+\panel{Tree} & The name of a dockable window (a \emph{pane}). \\
+\key{Ctrl+S} & A keyboard shortcut. \\
+\cmd{rect 2cm 2cm 1cm 1cm} & Something typed into the MeerK40t console (Chapter~19). \\
+\setting{bed_width} & The internal name of a setting; useful in the console and in scripts. \\
+\file{tag.svg} & A file name, path or file format. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Safety, briefly}
+
+A laser cutter is a Class~4 laser product wrapped around a machine tool. It
+starts fires, blinds people and burns through things that should not burn. A
+software manual is not a substitute for your machine's own manual, but three
+rules belong in any manual:
+
+\begin{warnbox}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Never run a job with the lid open or the enclosure removed. The
+        interlocks exist because the beam is invisible and instant.
+  \item Never leave a running job unattended, and keep a suitable extinguisher
+        or a CO\textsubscript{2}-safe method of smothering a fire next to the
+        machine.
+  \item Know which materials you may cut. PVC, polyurethane, vinyl and
+        ABS release chlorine or cyanide; coated and composite materials may
+        contain glues you have not considered. If you cannot identify the
+        material, do not cut it.
+\end{enumerate}
+\end{warnbox}
+
+\noindent Other practical rules --- air assist on, focus checked, workpiece
+secured, settings tested on scrap --- appear as \textsf{At the machine} boxes next
+to the tutorials that need them.
+
+\tableofcontents
+
+\mainmatter
+
+\part{Getting started}
+\input{chapters/ch01-what-meerk40t-does}
+\input{chapters/ch02-install-and-launch}
+\input{chapters/ch03-interface-tour}
+\input{chapters/ch04-connecting-your-laser}
+
+\part{Your first projects}
+\input{chapters/ch05-first-cut}
+\input{chapters/ch06-first-engrave}
+\input{chapters/ch07-operations-in-depth}
+\input{chapters/ch08-dialling-in-settings}
+
+\part{Working with artwork}
+\input{chapters/ch09-files-and-formats}
+\input{chapters/ch10-tree-and-selection}
+\input{chapters/ch11-move-scale-rotate-align}
+\input{chapters/ch12-paths-and-nodes}
+\input{chapters/ch13-text-and-fonts}
+\input{chapters/ch14-images-and-tracing}
+
+\part{The machine}
+\input{chapters/ch15-where-the-job-runs}
+\input{chapters/ch16-order-optimisation-and-simulation}
+\input{chapters/ch17-rotary-coolant-remote}
+\input{chapters/ch18-console-and-scripting}
+\input{chapters/ch19-preferences-and-troubleshooting}
+
+\begin{appendices}
+\input{chapters/appA-shortcuts}
+\input{chapters/appB-console-reference}
+\input{chapters/appC-driver-settings}
+\input{chapters/appD-glossary-and-help}
+\end{appendices}
+
+\end{document}

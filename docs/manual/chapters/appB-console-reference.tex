@@ -1,0 +1,1071 @@
+\chapter{Console command reference}
+\label{app:console}
+
+The console is MeerK40t's command line, and it is not a side door: every button,
+menu item and pane action ends up as a console command, and many things the
+interface does not offer at all are console commands. This appendix is the lookup
+table to keep open while you type. Chapter~\ref{ch:console} is the tutorial that
+teaches the console; read that first if you have never used a command line.
+
+Open the \panel{Console} window with the ribbon's \btn{Console} button, or toggle
+the pane from \menu{Panes>Console} (panes are described in
+Section~\ref{sec:panes}). \key{F12} is a popular key to bind to
+\cmd{window open Console} in the Keymap window, but it has no binding by default
+(Appendix~\ref{app:shortcuts}). In the
+console window, \key{Tab} completes command names, \key{Up} and \key{Down} walk
+the history, and \key{Enter} runs the line. Three commands answer almost every
+question you will have while typing:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \cmd{help} lists every command, grouped by the context it belongs to;
+        \cmd{help <command>} prints that command's arguments and options.
+  \item \cmd{find <text>} searches command and argument names, e.g.
+        \cmd{find dpi}.
+  \item \cmd{load_types} and \cmd{save_types} list every file format this
+        installation can read and write.
+\end{itemize}
+
+\noindent The tables below follow the grouping of \cmd{help}. Every row is one
+complete command line that you can type as printed once you have replaced the
+placeholders with your own values.
+
+\section*{How to read the syntax column}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \cmd{command} --- literal text: type it exactly like this.
+  \item \cmd{<value>} --- a required value that you supply.
+  \item \cmd{[<value>]} --- the same, but optional.
+  \item \cmd{[--long/-s <value>]} --- one option with two spellings; use either
+        \cmd{-}\cmd{-long} or \cmd{-s}, and put a space before its value. Options may
+        appear before or after the plain arguments.
+  \item \cmd{a|b} --- choose one of the alternatives.
+  \item \cmd{...} --- the preceding pattern repeats (used for point lists and for
+        multi-part commands).
+\end{itemize}
+
+\noindent The brackets, angle brackets, vertical bars and dots are notation and
+are never typed. Curly braces mean something else entirely: in a text element they
+mark a wordlist reference, as in \cmd{text "Job {serial}"}.
+
+\section*{Session, help and scripting}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{help} \cmd{?}} &
+\cmd{help [<command>] [--input <context>] [--output <context>]} &
+List all commands, or the arguments and options of one command. \\
+{\footnotesize\cmd{find} \cmd{??}} &
+\cmd{find <text>} &
+List every command and argument name containing \cmd{<text>}. \\
+{\footnotesize\cmd{echo}} &
+\cmd{echo <text>} &
+Print \cmd{<text>} in the console. Mainly useful in scripts, which otherwise run
+silently. \\
+{\footnotesize\cmd{timer}} &
+\cmd{timer[<name>] <count> <seconds> <command>} &
+Run \cmd{<command>} \cmd{<count>} times, \cmd{<seconds>} apart. A named timer can be
+cancelled with \cmd{timer<name> off}. Bare \cmd{timer} lists the running timers.
+Options: \cmd{-}\cmd{-off/-o}, \cmd{-}\cmd{-gui/-g}, \cmd{-}\cmd{-quiet/-q}. \\
+{\footnotesize\cmd{loop}} &
+\cmd{loop <first> <last> [--variable/-v <name>] <command>} &
+Repeat \cmd{<command>} once for every integer from \cmd{<first>} to
+\cmd{<last>}. The loop number is written into the command as a brace reference
+(default name \cmd{loop}). On Python 3.12 and newer the substitution fails
+silently and the literal braces are passed through, so check one loop before you
+rely on it. \\
+{\footnotesize\cmd{threaded}} &
+\cmd{threaded <command>} &
+Run the rest of the line in the background so the console is usable again
+immediately. This is the prefix the batch and simulation buttons use. \\
+{\footnotesize\cmd{wait}} &
+\cmd{wait <seconds>} &
+Wait before running the next command. This blocks the console, so it belongs in
+scripts, not in things you type interactively. \\
+{\footnotesize\cmd{quit} \cmd{shutdown}} &
+\cmd{quit} &
+Shut the program down. Both spellings exist. \\
+{\footnotesize\cmd{restart}} &
+\cmd{restart} &
+Shut down, exit and start MeerK40t again. \\
+{\footnotesize\cmd{context}} &
+\cmd{context} &
+List the context names. A context is a settings scope with its own variables. \\
+{\footnotesize\cmd{service}} &
+\cmd{service [<domain>]} &
+List the services and providers, or enter a service domain. \\
+{\footnotesize\cmd{service start}} &
+\cmd{service <domain> start <name> [--label/-l <label>] [--path/-p <path>] [--init/-i]} &
+Create and start a service from a registered provider, for example
+\cmd{service device start grbl}. \\
+{\footnotesize\cmd{service activate}} &
+\cmd{service <domain> activate <index>} &
+Make the service at \cmd{<index>} the active one of its domain. \\
+{\footnotesize\cmd{service destroy}} &
+\cmd{service <domain> destroy <index>} &
+Destroy the service at \cmd{<index>}. \\
+{\footnotesize\cmd{module}} &
+\cmd{module [(open|close) <name>] [--path/-p <path>]} &
+List the open modules, or open and close one. \\
+{\footnotesize\cmd{channel}} &
+\cmd{channel open <name> [--force/-f]} &
+Watch a kernel channel in the console. There is no channel called
+\cmd{console}, and unknown names are refused unless you force them. \\
+{\footnotesize\cmd{channel close}} &
+\cmd{channel close <name>} &
+Stop watching a channel. \\
+{\footnotesize\cmd{channel list}} &
+\cmd{channel list} &
+List the channels and mark the ones being watched. \\
+{\footnotesize\cmd{channel print}} &
+\cmd{channel print <name> [--close/-c]} &
+Print a channel to standard output (starting a terminal run). \\
+{\footnotesize\cmd{channel save}} &
+\cmd{channel save <name> [--filename/-f <file>]} &
+Record a channel to disk, by default a timestamped file in the working
+directory. \\
+{\footnotesize\cmd{execute}} &
+\cmd{execute <file>} &
+Run every line of \cmd{<file>} as a console command. Blank lines are skipped and
+lines starting with \texttt{\#} are comments. \\
+{\footnotesize\cmd{batch}} &
+\cmd{batch} &
+List the stored batch lines with their indices. \\
+{\footnotesize\cmd{batch add}} &
+\cmd{batch add <line>} &
+Append one command to the stored batch list. \\
+{\footnotesize\cmd{batch remove}} &
+\cmd{batch remove <index>} &
+Delete the batch line at \cmd{<index>} (indices are the ones \cmd{batch} prints). \\
+{\footnotesize\cmd{batch run}} &
+\cmd{batch run <index>} &
+Run one batch line. \\
+{\footnotesize\cmd{batch enable}} &
+\cmd{batch disable|enable <index>} &
+Disable or re-enable a batch line without deleting it. \\
+{\footnotesize\cmd{alias}} &
+\cmd{alias} &
+List the defined aliases and the keystroke bound to each. \\
+{\footnotesize\cmd{alias set}} &
+\cmd{alias <name> <commands>} &
+Define an alias. Several commands are separated by \cmd{;}, and the alias is then
+a single word you can type (or bind). \\
+{\footnotesize\cmd{alias unset}} &
+\cmd{alias <name>} &
+Delete that alias. \\
+{\footnotesize\cmd{alias default}} &
+\cmd{alias default} &
+Restore the built-in aliases. Note that this discards your own. \\
+{\footnotesize\cmd{bind}} &
+\cmd{bind} &
+List the key bindings and the commands they run. \\
+{\footnotesize\cmd{bind set}} &
+\cmd{bind <key> <command>} &
+Bind a keystroke to a command. An empty command unbinds the key, and
+\cmd{bind default} restores the built-in keymap. \\
+\bottomrule
+\end{longtable}}
+
+\begin{notebox}[Scripts run without feedback]
+\cmd{execute} and the batch list run line by line and never wait for you. Anything
+that needs a pause (a move, a laser pulse, a human) works better as a plan stage:
+add the matching utility operation to the tree rather than relying on
+\cmd{wait}. A file run with \cmd{execute} is also the easiest way to keep a job
+recipe under version control.
+\end{notebox}
+
+\section*{Settings and configuration}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{set}} &
+\cmd{set [--path/-p <context>] [<key> <value>]} &
+With no key, list the scalar variables of a context (the kernel root by default).
+With a key and a value, change that variable. \\
+{\footnotesize\cmd{flush}} &
+\cmd{flush} &
+Write the persistent settings to disk immediately, instead of waiting for the
+program to exit. \\
+{\footnotesize\cmd{setting_export}} &
+\cmd{setting_export <directory>} &
+Write a timestamped copy of the whole configuration into \cmd{<directory>}. \\
+{\footnotesize\cmd{setting_import}} &
+\cmd{setting_import <file>} &
+Read a configuration file written by \cmd{setting_export} back in. \\
+\bottomrule
+\end{longtable}}
+
+\begin{warnbox}[There is no \texttt{get} command]
+There is no top-level \cmd{get} or \cmd{setting} command: to read a value, run
+\cmd{set} with nothing after it and look through the listing. \cmd{set} also only
+writes keys that already exist on that context, and it fails silently when the key
+name is wrong, so list first:
+
+\begin{lstlisting}[style=konsole]
+set -p elements
+set -p elements classify_new False
+set -p elements
+flush
+\end{lstlisting}
+
+\noindent\texttt{get} and \texttt{set} do exist as wordlist subcommands; see the
+materials and wordlist table below. Changes made with \cmd{set} are permanent:
+they are stored in the configuration and reloaded on the next start.
+\end{warnbox}
+
+\section*{Files and documents}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{load}} &
+\cmd{load <file>} &
+Load a project or drawing. The reader is chosen from the file, so the format
+usually does not have to be named. \\
+{\footnotesize\cmd{load_types}} &
+\cmd{load_types} &
+List every format this installation can load. \\
+{\footnotesize\cmd{save}} &
+\cmd{save <file> [--version/-v <version>]} &
+Save the whole scene to \cmd{<file>}. The version must be one of the versions
+\cmd{save_types} prints, and it has to match the file extension: the plain and
+default versions write \file{.svg}, the compressed version writes \file{.svgz}. \\
+{\footnotesize\cmd{save_types}} &
+\cmd{save_types} &
+List the formats and versions that can be saved. \\
+{\footnotesize\cmd{file_startup}} &
+\cmd{file_startup} &
+Run the stored file-startup commands, the list you edit in the
+\panel{AutoExec} pane. \\
+{\footnotesize\cmd{xload}} &
+\cmd{xload <file> <x> <y> <width> <height>} &
+Load a file and place it into the given rectangle on the bed. \\
+\bottomrule
+\end{longtable}}
+
+\section*{Creating elements}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{rect}} &
+\cmd{rect <x> <y> <width> <height> [--rx/-x <r>] [--ry/-y <r>]} &
+Rectangle whose top-left corner is at \cmd{<x> <y>}, optionally with rounded
+corners. \\
+{\footnotesize\cmd{circle}} &
+\cmd{circle <x> <y> <r>} &
+Circle centred on \cmd{<x> <y>} with radius \cmd{<r>}. \\
+{\footnotesize\cmd{ellipse}} &
+\cmd{ellipse <cx> <cy> <rx> <ry>} &
+Ellipse centred on \cmd{<cx> <cy>}. \\
+{\footnotesize\cmd{arc}} &
+\cmd{arc <cx> <cy> <rx> <ry> <start> <end> [--rotation/-r <angle>]} &
+Arc of an ellipse from \cmd{<start>} to \cmd{<end>}. Write the angles as angles
+with a unit, e.g. \cmd{90deg}. \\
+{\footnotesize\cmd{line}} &
+\cmd{line <x0> <y0> <x1> <y1>} &
+Straight line between two points. \\
+{\footnotesize\cmd{polyline}} &
+\cmd{polyline <x1> <y1> <x2> <y2> ...} &
+Open polyline through the listed points. \\
+{\footnotesize\cmd{polygon}} &
+\cmd{polygon <x1> <y1> <x2> <y2> ...} &
+Closed polygon through the listed points. \\
+{\footnotesize\cmd{path}} &
+\cmd{path "<svg path data>"} &
+Path element built from SVG path syntax. Quote the whole path string. \\
+{\footnotesize\cmd{text}} &
+\cmd{text "<string>" [--size/-s <pt>]} &
+Bitmap text element. \\
+{\footnotesize\cmd{linetext}} &
+\cmd{linetext <x> <y> "<text>" [--font/-f <file>] [--font_size/-s <size>] [--font_spacing/-g <factor>]} &
+Single-line vector text drawn with a Hershey font, so it can be cut rather than
+engraved. \\
+\bottomrule
+\end{longtable}}
+
+\begin{notebox}[Elements appear selected]
+Every command in this table puts the new element into the selection, so the next
+command can act on it, and it is classified into a matching operation if you have
+\texttt{classify new} enabled. There is no console command that creates a raster
+image element: images arrive through \cmd{load} or the interface's import, which
+is why the image commands below take an existing image as their input.
+\end{notebox}
+
+\section*{Selecting, transforming and editing elements}
+
+Commands whose first column contains a bare \cmd{element} or \cmd{operation}
+prefix take their input from the console's current data rather than from the
+selection. Commands without such a prefix, such as \cmd{scale}, start a new chain
+and fall back to the current selection.
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{element}} &
+\cmd{element} &
+The currently selected elements, ready to be passed to the next command. \\
+{\footnotesize\cmd{element*}} &
+\cmd{element*} &
+Every element in the scene. \\
+{\footnotesize\cmd{element~}} &
+\cmd{element~} &
+Every element that is not selected. \\
+{\footnotesize\cmd{element0,3,4}} &
+\cmd{element<n>,<n>} &
+The elements with those indices, as printed by \cmd{element* list}. \\
+{\footnotesize\cmd{select}} &
+\cmd{<data> select} &
+Make the data the selection, e.g. \cmd{element* select} to select everything. \\
+{\footnotesize\cmd{select+}} &
+\cmd{<data> select+} &
+Add the data to the selection. \\
+{\footnotesize\cmd{select-}} &
+\cmd{<data> select-} &
+Remove the data from the selection. \\
+{\footnotesize\cmd{select^}} &
+\cmd{<data> select^} &
+Toggle the data in the selection. \\
+{\footnotesize\cmd{range}} &
+\cmd{<data> range <first> <last> [--step/-s <n>]} &
+Reduce the data to a slice by index before passing it on. \\
+{\footnotesize\cmd{id}} &
+\cmd{<data> id [<id>]} &
+Print, or set, the ids of the data. \\
+{\footnotesize\cmd{scale}} &
+\cmd{scale <sx> [<sy>] [--px/-x <x>] [--py/-y <y>] [--absolute/-a]} &
+Scale the selection, optionally differently in \cmd{y} and from a chosen origin
+instead of the centre of the selection. \\
+{\footnotesize\cmd{rotate}} &
+\cmd{rotate <angle> [--cx/-x <x>] [--cy/-y <y>] [--absolute/-a]} &
+Rotate the selection around its centre, or around \cmd{<cx> <cy>}. \\
+{\footnotesize\cmd{translate}} &
+\cmd{translate <tx> <ty> [--absolute/-a]} &
+Move the selection by an offset. \\
+{\footnotesize\cmd{position}} &
+\cmd{position <x> <y>} &
+Move the selection so that it starts at \cmd{<x> <y>}. \\
+{\footnotesize\cmd{move_to_laser}} &
+\cmd{move_to_laser} &
+Move the selection to the current laser position. \\
+{\footnotesize\cmd{matrix}} &
+\cmd{matrix <sx> <kx> <ky> <sy> <tx> <ty>} &
+Set the selection's transformation matrix directly. \\
+{\footnotesize\cmd{resize}} &
+\cmd{resize <x> <y> <width> <height>} &
+Move and scale the selection so that it fills the given rectangle. \\
+{\footnotesize\cmd{reset}} &
+\cmd{reset} &
+Reset the affine transforms of the selection back to identity. \\
+{\footnotesize\cmd{area}} &
+\cmd{area [--new_area/-n <area>] [--density/-d <n>]} &
+Report, or change, the area a raster element covers. \\
+{\footnotesize\cmd{copy}} &
+\cmd{copy [--dx/-x <dx>] [--dy/-y <dy>] [--copies/-c <n>]} &
+Duplicate the selection, optionally offset and repeated. \\
+{\footnotesize\cmd{delete}} &
+\cmd{<data> delete} &
+Delete the data, e.g. \cmd{element delete}. \cmd{delete} on its own is rejected,
+because it does not accept the base context. \\
+{\footnotesize\cmd{group}} &
+\cmd{group <label> [--reparent/-r]} &
+Group the selection under a new label. \\
+{\footnotesize\cmd{ungroup}} &
+\cmd{ungroup} &
+Dissolve the selected groups. \\
+\bottomrule
+\end{longtable}}
+
+\noindent Note the asymmetry: \cmd{scale}, \cmd{rotate}, \cmd{translate},
+\cmd{position}, \cmd{resize}, \cmd{copy} and \cmd{area} can be typed on their own
+and then work on the selection, while \cmd{delete}, \cmd{select},
+\cmd{select+}, \cmd{select-}, \cmd{select^}, \cmd{range} and \cmd{id} must be
+given their data, for example \cmd{element* select} or \cmd{element delete}.
+\cmd{move} is not an element command at all: it moves the laser head, and lives in
+the device table below.
+
+\section*{Operations and the plan pipeline}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{cut} \cmd{engrave} \cmd{raster} \cmd{imageop} \cmd{dots} \cmd{hatch}} &
+\cmd{<type> [--speed/-s <mm/s>] [--power/-p <ppi>] [--dpi/-d <n>] [--overscan/-o <length>] [--passes/-x <n>] [--color/-c <colour>] [--default/-D] [--parallel/-P] [--stroke/-K] [--fill/-F]} &
+Create an operation of that type and attach the elements it is given to it. With
+\cmd{-}\cmd{-parallel} every element gets its own operation instead. \\
+{\footnotesize\cmd{operation} \cmd{operation*} \cmd{operation~}} &
+\cmd{operation}, \cmd{operation*}, \cmd{operation<n>,<n>} &
+The selected, all, unselected or listed operations, ready to be passed on. \\
+{\footnotesize\cmd{operation* list}} &
+\cmd{operation* list} &
+List the operations with their children. \\
+{\footnotesize\cmd{operation* empty}} &
+\cmd{operation* empty} &
+Remove every child from the selected operations, leaving the operations. \\
+{\footnotesize\cmd{operation* enable}} &
+\cmd{operation* disable}, \cmd{operation* enable} &
+Disable or enable operations, so they are left out of the plan. \\
+{\footnotesize\cmd{plan}} &
+\cmd{plan[<name>] <command>} &
+Work on the plan called \cmd{<name>}. Bare \cmd{plan} uses the plan named
+\cmd{0}; typing \cmd{planz} renames the default plan to \cmd{z} for this session,
+and \cmd{plan2} switches to the plan named \cmd{2}. \\
+{\footnotesize\cmd{list-plans}} &
+\cmd{list-plans} &
+List the plans that exist and the stage each one has reached. \\
+{\footnotesize\cmd{plan clear}} &
+\cmd{plan clear} &
+Empty the plan. \\
+{\footnotesize\cmd{plan copy}} &
+\cmd{plan copy} &
+Copy the artwork of every operation into the plan. \\
+{\footnotesize\cmd{plan copy-selected}} &
+\cmd{plan copy-selected} &
+Copy the artwork of the selected operations only. \\
+{\footnotesize\cmd{plan preprocess}} &
+\cmd{plan preprocess} &
+Prepare the plan for execution: convert the scene into device coordinates. \\
+{\footnotesize\cmd{plan validate}} &
+\cmd{plan validate} &
+Run the plan's validation. \\
+{\footnotesize\cmd{plan blob}} &
+\cmd{plan blob} &
+Convert the plan into the device's own instruction format. \\
+{\footnotesize\cmd{plan preopt}} &
+\cmd{plan preopt} &
+Prepare the plan for optimisation. \\
+{\footnotesize\cmd{plan optimize}} &
+\cmd{plan optimize} &
+Optimise the plan, for example to reduce travel between cuts. \\
+{\footnotesize\cmd{plan finish}} &
+\cmd{plan finish} &
+Mark the plan finished, which is what the simulation expects. \\
+{\footnotesize\cmd{plan return}} &
+\cmd{plan return} &
+Push the plan's operations back into the tree. \\
+{\footnotesize\cmd{plan sublist}} &
+\cmd{plan sublist [<first>] [<last>]} &
+Keep only that slice of the plan, where the last index \cmd{-1} means the end. \\
+{\footnotesize\cmd{plan console}} &
+\cmd{plan console [--index/-i <n>] <command>} &
+Insert a console command into the plan at that position. \\
+{\footnotesize\cmd{spool}} &
+\cmd{spool} &
+Send the plan it is given to the device spooler. Typed on its own it prints the
+spooler queue instead. \\
+{\footnotesize\cmd{save_job}} &
+\cmd{plan <stages> save_job <file>} &
+Export the plan in the active driver's own file format instead of burning it.
+Only drivers that have such a format offer this. \\
+\bottomrule
+\end{longtable}}
+
+\begin{description}[leftmargin=1.2em,style=nextline]
+  \item[The order matters.] \cmd{copy}, \cmd{preprocess}, \cmd{validate},
+        \cmd{blob}, \cmd{preopt}, \cmd{optimize} must run in that order;
+        \cmd{spool} refuses a plan that has not been through \cmd{blob}, because
+        there is nothing in the device's language yet. Each stage records itself,
+        which is what \cmd{list-plans} shows you.
+  \item[\cmd{copy} or \cmd{copy-selected}?] \cmd{copy} takes the artwork of every
+        operation that produces output. \cmd{copy-selected} takes only the
+        selected ones, which is how the interface burns a single operation.
+\end{description}
+
+\section*{Device, motion and the spooler}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{device}} &
+\cmd{device} &
+List the device providers that can be added, with the family each one belongs
+to. \\
+{\footnotesize\cmd{device add}} &
+\cmd{device add <provider> [--label/-l <label>]} &
+Create and start a new device from a provider, e.g.
+\cmd{device add grbl-generic}. \\
+{\footnotesize\cmd{device activate}} &
+\cmd{device activate [<name>|<index>]} &
+With no argument, list the defined devices with their labels, types and status.
+With a label or an index, make that one the active device. \\
+{\footnotesize\cmd{device duplicate}} &
+\cmd{device duplicate <name>|<index> [<label>]} &
+Copy an existing device entry, which is how you keep two configurations of the
+same machine. \\
+{\footnotesize\cmd{device delete}} &
+\cmd{device delete <name>|<index>} &
+Delete a device entry. The active device is protected. \\
+{\footnotesize\cmd{devinfo}} &
+\cmd{devinfo} &
+Print the current position in the form \cmd{x,y;nx,ny;}. \\
+{\footnotesize\cmd{home}} &
+\cmd{home} &
+Home the laser, according to the device's own definition of home. \\
+{\footnotesize\cmd{physical_home}} &
+\cmd{physical_home} &
+Home against the physical endstops. \\
+{\footnotesize\cmd{lock} \cmd{unlock}} &
+\cmd{lock}, \cmd{unlock} &
+Lock or unlock the rail, so the head cannot be pushed around by accident. \\
+{\footnotesize\cmd{move} \cmd{move_absolute}} &
+\cmd{move <x> <y> [--force/-f]} &
+Move the head to an absolute position. Without \cmd{-}\cmd{-force} the move is refused
+while the spooler is busy (\cmd{Busy Error}). \\
+{\footnotesize\cmd{move_relative}} &
+\cmd{move_relative <dx> <dy> [--force/-f]} &
+Move the head by an offset. Same busy rule. \\
+{\footnotesize\cmd{left} \cmd{right} \cmd{up} \cmd{down}} &
+\cmd{left <amount>} &
+Queue a relative jog, \unit{1}\unit{mm} when no amount is given. The move is sent
+a moment later by \cmd{jog}, which is how the arrow keys produce a continuous
+nudge while held. \\
+{\footnotesize\cmd{jog}} &
+\cmd{jog [--force/-f]} &
+Send the queued jog move. \cmd{-}\cmd{-force} sends it even when the device would
+otherwise confine it. \\
+{\footnotesize\cmd{+laser} \cmd{-laser}} &
+\cmd{+laser}, \cmd{-laser} &
+Turn the laser on or off without moving the head. \\
+{\footnotesize\cmd{spool list}} &
+\cmd{spool list} &
+List the jobs in the spooler queue. \\
+{\footnotesize\cmd{spooler clear}} &
+\cmd{spooler clear} &
+Empty the spooler queue. \\
+{\footnotesize\cmd{spooler send}} &
+\cmd{spooler send <command>} &
+Send a single plan command (\cmd{home}, \cmd{unlock}, \cmd{origin}, \ldots) to the
+spooler as a small job. \\
+{\footnotesize\cmd{pause} \cmd{resume}} &
+\cmd{pause}, \cmd{resume} &
+Pause or resume the running job. Only registered by drivers that can hold a job. \\
+{\footnotesize\cmd{estop} \cmd{abort}} &
+\cmd{estop}, \cmd{abort} &
+Abort the running job. Driver dependent. \\
+{\footnotesize\cmd{goto}} &
+\cmd{goto <x> <y>} &
+Send a goto to a galvo controller. Driver dependent. \\
+\bottomrule
+\end{longtable}}
+
+\begin{warnbox}[Motion needs a device]
+The motion and job commands come from the active device's driver, not from the
+kernel: a machine without endstops has no \cmd{physical_home} that does anything
+useful, and \cmd{pause} does not exist on every driver. If a command in this table
+is rejected as ``not a registered command'', check which device is active with
+\cmd{device activate} and see Appendix~\ref{app:drivers} for what that driver
+supports.
+\end{warnbox}
+
+\section*{Materials and wordlists}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{material}} &
+\cmd{material} &
+Enter the materials context, which holds the sections of your material library. \\
+{\footnotesize\cmd{material save}} &
+\cmd{material save <name> [--author/-a <author>] [--description/-d <text>]} &
+Save the current materials into the settings under \cmd{<name>}. \\
+{\footnotesize\cmd{material load}} &
+\cmd{material load <name>} &
+Load a saved material library. \\
+{\footnotesize\cmd{material list}} &
+\cmd{material list [<name>]} &
+Show the material sections, or one named library. \\
+{\footnotesize\cmd{material delete}} &
+\cmd{material delete <name>} &
+Delete a saved material library. \\
+{\footnotesize\cmd{wordlist}} &
+\cmd{wordlist} &
+Enter the wordlist context. \\
+{\footnotesize\cmd{wordlist add}} &
+\cmd{wordlist add <key> [<value>]} &
+Add a key with a value (empty when none is given). \\
+{\footnotesize\cmd{wordlist addcounter}} &
+\cmd{wordlist addcounter <key> [<start>]} &
+Add a numeric counter that starts at \cmd{<start>}, or 1. \\
+{\footnotesize\cmd{wordlist get}} &
+\cmd{wordlist get <key> [<index>]} &
+Print the value the key has at that index. \\
+{\footnotesize\cmd{wordlist set}} &
+\cmd{wordlist set <key> <value> [<index>]} &
+Write a value at an index. \\
+{\footnotesize\cmd{wordlist index}} &
+\cmd{wordlist index <key|@ALL> <index|+n>} &
+Move an index, where \cmd{+2} means ``two on'' rather than ``set to 2''. \\
+{\footnotesize\cmd{wordlist list}} &
+\cmd{wordlist list [<key>]} &
+List the keys, or the values stored under one key. \\
+{\footnotesize\cmd{wordlist advance}} &
+\cmd{wordlist advance} &
+Move every index on, so the next job gets the next values. Spooling a plan runs
+this for you. \\
+{\footnotesize\cmd{wordlist restore}} &
+\cmd{wordlist restore [<file>]} &
+Load a saved wordlist, by default the standard one. \\
+{\footnotesize\cmd{wordlist backup}} &
+\cmd{wordlist backup [<file>]} &
+Save the current wordlist. \\
+{\footnotesize\cmd{wordlist load}} &
+\cmd{wordlist load <csv-file>} &
+Attach a CSV file to the wordlist, which is how you import a list of names or
+serial numbers. \\
+\bottomrule
+\end{longtable}}
+
+\begin{notebox}[How the wordlist reaches the machine]
+A text element can contain brace references such as \cmd{{name}} or
+\cmd{{serial}}. They are left alone on screen and replaced by the wordlist
+values while the plan is built, which is why the preview still shows the braces.
+The job that is built is the one that carries the substituted text, so build a
+plan and spool it before judging the result.
+\end{notebox}
+
+\section*{Images, rendering and tracing}
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{image}} &
+\cmd{image} &
+Enter the image context for the selected images, which is how the raster
+commands below are reached. \\
+{\footnotesize\cmd{image dewhite}} &
+\cmd{image dewhite} &
+Remove the white background from the image. \\
+{\footnotesize\cmd{image rgba}} &
+\cmd{image rgba} &
+Convert the image to RGBA. \\
+{\footnotesize\cmd{image quantize}} &
+\cmd{image quantize [<colours>]} &
+Reduce the image to that many colours, 10 by default. \\
+{\footnotesize\cmd{image solarize}} &
+\cmd{image solarize [<threshold>]} &
+Solarise the tones, with a threshold of 250 by default. \\
+{\footnotesize\cmd{image save}} &
+\cmd{image save <file> [--processed/-p]} &
+Write the image to disk, optionally the processed result rather than the
+original. \\
+{\footnotesize\cmd{render}} &
+\cmd{render [--dpi/-d <dpi>]} &
+Rasterise the selected elements into an image element, 500\unit{dpi} by
+default. \\
+{\footnotesize\cmd{render_split}} &
+\cmd{render_split <columns> <rows> <dpi> [--order/-o <mode>]} &
+Rasterise and cut the result into a grid of image parts, for tiling a large
+engraving. \\
+{\footnotesize\cmd{render_keyhole}} &
+\cmd{render_keyhole <dpi> [--order/-o <mode>] [--invert/-i] [--outline/-b]} &
+Rasterise the selection as a keyhole mask, with optional inverted mask and
+outline. \\
+{\footnotesize\cmd{vectorize}} &
+\cmd{vectorize [--dpi/-d <dpi>] [--turnpolicy/-z <policy>] [--turdsize/-t <n>] [--alphamax/-a <f>] [--opticurve/-n] [--opttolerance/-O <f>] [--color/-C <colour>] [--invert/-i] [--blacklevel/-k <f>]} &
+Convert the selected elements into paths by rasterising them and tracing the
+result. \\
+{\footnotesize\cmd{potrace}} &
+\cmd{image potrace [<options>]} &
+Trace the selected image into paths with Potrace. It takes the image options
+above. \\
+{\footnotesize\cmd{vectrace}} &
+\cmd{image vectrace} &
+Trace the selected image into paths by following the boundaries between black
+and white. \\
+{\footnotesize\cmd{vtracer}} &
+\cmd{vtracer} &
+Trace the selection into paths with VTracer, which also handles colour images.
+It needs the optional \file{vtracer} package installed. \\
+{\footnotesize\cmd{trace}} &
+\cmd{trace <method> <resolution> [--start/-s <0|1|2>] [--force/-f]} &
+Work out the outline of the selection and send that outline to the device as a
+job, so you can see where the job would run. Methods: \cmd{quick}, \cmd{hull},
+\cmd{segment}, \cmd{circle}. \\
+{\footnotesize\cmd{tracegen}} &
+\cmd{tracegen <method> <resolution>} &
+The same outline, but created as a new element instead of being burned. \\
+\bottomrule
+\end{longtable}}
+
+\noindent \cmd{trace} and \cmd{tracegen} default to the selection and can be
+redirected with a chain. Elements that are not in an enabled operation are left
+out of the outline unless you pass \cmd{-}\cmd{-force}, and the console tells you how
+many were skipped.
+
+\section*{Windows, panes and dialogs}
+
+These commands need the graphical interface; in a console-only run
+(\cmd{-}\cmd{-no-gui}) they are not registered at all.
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{window}} &
+\cmd{window [--path/-p <context>]} &
+List the open and registered windows in that context. \\
+{\footnotesize\cmd{window list}} &
+\cmd{window list} &
+List the window names that can be opened. \\
+{\footnotesize\cmd{window displays}} &
+\cmd{window displays} &
+Show the displays and where each open window currently sits. \\
+{\footnotesize\cmd{window open} \cmd{window toggle}} &
+\cmd{window open <window> [--multi/-m <n>]} &
+Open a window, or close it again if it is open. \cmd{-}\cmd{-multi/-m} with an index
+opens another copy. Typical names: \cmd{Console}, \cmd{AutoExec},
+\cmd{Preferences}, \cmd{JobSpooler}, \cmd{Simulation}, \cmd{DeviceManager}. \\
+{\footnotesize\cmd{window close}} &
+\cmd{window close <window>} &
+Close the window. \\
+{\footnotesize\cmd{window reset}} &
+\cmd{window reset <window>} &
+Forget the stored position and size of one window, or of all of them with
+\cmd{*}. \\
+{\footnotesize\cmd{page}} &
+\cmd{page [<page>]} &
+Switch the ribbon bar to a page, or report which page is active. \\
+{\footnotesize\cmd{pane}} &
+\cmd{pane} &
+Enter the pane context. \\
+{\footnotesize\cmd{pane show} \cmd{pane hide} \cmd{pane toggle}} &
+\cmd{pane show <pane>}, \cmd{pane hide <pane>}, \cmd{pane toggle <pane>} &
+Show, hide, or show-or-hide a docked pane, e.g. \cmd{pane toggle spooler}. \\
+{\footnotesize\cmd{pane float} \cmd{pane dock}} &
+\cmd{pane float [--always/-a] <pane>}, \cmd{pane dock <pane>} &
+Float a pane as a free window, or put it back in the frame. \\
+{\footnotesize\cmd{pane save} \cmd{pane load}} &
+\cmd{pane save <name>}, \cmd{pane load <name>} &
+Store the current pane layout under a name, or restore a stored one. \\
+{\footnotesize\cmd{pane reset}} &
+\cmd{pane reset} &
+Restore the default layout. \\
+{\footnotesize\cmd{pane lock} \cmd{pane unlock}} &
+\cmd{pane lock}, \cmd{pane unlock} &
+Lock the panes so they cannot be moved, or unlock them. \\
+{\footnotesize\cmd{pane toggleui}} &
+\cmd{pane toggleui} &
+Hide every pane except the scene, or bring them all back. \\
+{\footnotesize\cmd{dialog_path}} &
+\cmd{dialog_path} &
+Open a dialog to type SVG path data and add the path to the scene. \\
+{\footnotesize\cmd{dialog_transform}} &
+\cmd{dialog_transform} &
+Open a dialog to type an SVG transform such as \cmd{scale(1.5)} and apply it to
+the elements. \\
+{\footnotesize\cmd{dialog_fill} \cmd{dialog_stroke}} &
+\cmd{dialog_fill}, \cmd{dialog_stroke} &
+Open the colour picker for the fill or the stroke of the selection. \\
+\bottomrule
+\end{longtable}}
+
+\noindent The four dialog commands are hidden from \cmd{help}, because they exist
+only to put a keyboard shortcut on an interface dialog. They are listed here so
+that a macro of yours can use them.
+
+\section*{Remote control and server commands}
+
+These start servers that let other software drive this copy of MeerK40t, or let
+another computer forward data to the laser. \cmd{-}\cmd{-quit/-q} stops the server
+again, and \cmd{-}\cmd{-verbose/-v} mirrors the server's own channel into the console.
+
+{\small
+\setlength{\LTleft}{0pt plus 1fill}
+\setlength{\LTright}{0pt plus 1fill}
+\begin{longtable}{@{}p{3.1cm}p{6.2cm}p{5.1cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Syntax} & \textbf{What it does} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+{\footnotesize\cmd{grblcontrol}} &
+\cmd{grblcontrol [--port/-p <port>] [--verbose/-v] [--quit/-q]} &
+Listen on a TCP port (23 by default) and answer as a GRBL controller, so GRBL
+software can send jobs through MeerK40t to this machine. \\
+{\footnotesize\cmd{ruidacontrol}} &
+\cmd{ruidacontrol [--verbose/-v] [--quit/-q] [--jogless/-j] [--man_in_the_middle/-m <host>] [--bridge/-b]} &
+The same idea for Ruida software. \cmd{-}\cmd{-man_in_the_middle} forwards the
+traffic to a real laser instead of emulating it, and \cmd{-}\cmd{-bridge} uses the
+bridge protocol. \\
+{\footnotesize\cmd{lhyserver}} &
+\cmd{lhyserver [--port/-p <port>] [--verbose/-v] [--watch/-w] [--quit/-q]} &
+Serve the lihuiyu (K40) controller over TCP, so a small computer next to the
+laser can forward its USB traffic. \cmd{-}\cmd{-watch} also logs the data. \\
+{\footnotesize\cmd{webserver}} &
+\cmd{webserver [--port/-p <port>] [--silent/-s] [--quit/-q]} &
+Start the built-in web server, port 2080 by default. \\
+\bottomrule
+\end{longtable}}
+
+\section*{Worked command chains}
+
+The console runs one command per line, but a line may hold several commands: a
+\cmd{|} between them splits the line, unless the bar sits inside a quoted string.
+Commands also chain without any separator at all, because each command passes its
+result to the next one. A command that cannot create its own input has to follow a
+command that produces it; when a command returns nothing, chaining stops and the
+console says so.
+
+\begin{lstlisting}[style=konsole]
+rect 0 0 20mm 10mm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize spool
+\end{lstlisting}
+
+\noindent Read from the left: \cmd{rect} creates the element and selects it;
+\cmd{engrave -s 15} creates an engrave operation at \unit{15}\unit{mm/s} and
+attaches the rectangle to it; \cmd{plan} hands that operation to the plan named
+\cmd{0}; \cmd{copy-selected} copies only the selected operations into the plan;
+\cmd{preprocess} converts the scene into device coordinates; \cmd{validate},
+\cmd{blob}, \cmd{preopt} and \cmd{optimize} prepare the device format and reduce
+travel; and \cmd{spool} queues the result on the device. Nothing moves until you
+press the machine's start button or run \cmd{startjob}.
+
+The same job written one stage per line is easier to read and easier to paste into
+the \panel{AutoExec} pane, because each line restates the plan:
+
+\begin{lstlisting}[style=konsole]
+rect 0 0 20mm 10mm | engrave -s 15
+plan copy-selected
+plan preprocess
+plan validate
+plan blob
+plan preopt
+plan optimize
+plan spool
+\end{lstlisting}
+
+\noindent To write the job to a file instead of burning it, replace the last stage
+with \cmd{save_job <file>}:
+
+\begin{lstlisting}[style=konsole]
+rect 0 0 20mm 10mm engrave plan copy preprocess validate blob preopt optimize save_job job.egv
+\end{lstlisting}
+
+\noindent\cmd{save_job} writes whatever the active driver sends to the machine, so
+the extension depends on the driver. Use \cmd{plan copy} here rather than
+\cmd{copy-selected} only when you want the whole project, not one operation.
+
+The two house aliases do the whole pipeline for you, and \cmd{alias} prints them
+along with everything else you have defined:
+
+\begin{lstlisting}[style=konsole]
+burn
+simulate
+alias
+\end{lstlisting}
+
+\noindent \cmd{burn} is \cmd{planz clear copy preprocess validate blob preopt
+optimize spool}, and \cmd{simulate} is the same chain with \cmd{finish} and the
+simulation window instead of \cmd{spool}. Both switch the default plan to \cmd{z}
+on the way, so a \cmd{plan} command you type afterwards refers to that plan.
+
+Loading, changing and saving a document is three lines, and the save format is
+chosen by the extension:
+
+\begin{lstlisting}[style=konsole]
+load drawing.svg
+element* select
+scale 0.5
+save smaller.svg
+\end{lstlisting}
+
+\noindent A saved copy of a scene can be compressed by asking for the matching
+version, \cmd{save smaller.svgz -v compressed}; the version and the extension must
+agree, which is what \cmd{save_types} lists.
+
+Adding a machine is the same three commands every time: list the providers, add
+one, and make it active. \cmd{device activate} on its own lists the devices you
+already have, with the index the other forms accept:
+
+\begin{lstlisting}[style=konsole]
+device
+device add grbl-generic
+device activate
+device activate Grbl
+\end{lstlisting}
+
+\noindent Personalising text is a wordlist plus a brace reference. The
+substitution happens while the plan is built, so build and spool the job to see
+it:
+
+\begin{lstlisting}[style=konsole]
+wordlist add name Alice
+wordlist addcounter serial 100
+wordlist list
+text "Hello {name}"
+\end{lstlisting}
+
+\noindent Between jobs, \cmd{wordlist advance} steps every index on, and spooling
+does that for you. To keep several jobs apart instead, put the whole recipe in a
+file and run it with \cmd{execute}, or store it in the batch list with
+\cmd{batch add <line>}.
+
+\section*{Gotchas}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Always write a unit.} A bare number is not a millimetre and not a
+        pixel: for lengths it is a raw internal unit of one 65535th of an inch, so
+        \cmd{rect 0 0 10 10} produces a rectangle you cannot see, and for angles
+        it is radians, so \cmd{rotate 45} turns the element seven times over
+        rather than 45 degrees. Write \cmd{rect 0 0 10mm 10mm} and
+        \cmd{rotate 45deg}. \cmd{cm}, \cmd{mm}, \cmd{in}, \cmd{mil}, \cmd{px},
+        \cmd{pt} and \texttt{\%} are all accepted; a percentage is a fraction of the
+        bed, the width for \cmd{x} and \cmd{width} and the height for \cmd{y} and
+        \cmd{height}. In the console of the graphical interface, \cmd{unit 2cm}
+        translates one value into every other unit.
+  \item \textbf{Elements and operations need selecting.} Transform and
+        element commands work on the selection when they start a chain, so
+        \cmd{scale 0.5} with nothing selected reports ``No selected elements'' and
+        does nothing. The pipeline is no different: \cmd{plan copy-selected}
+        copies the selected operations, and if none is selected the plan is
+        quietly empty. Run the selection commands first
+        (\cmd{element* select}, \cmd{operation* select}).
+  \item \textbf{Some commands cannot start a line.} \cmd{delete}, \cmd{select},
+        \cmd{range}, \cmd{id} and the \cmd{operation* list} family only accept
+        elements, operations or a plan as input. Typed first they are refused
+        (``not a registered command in this context: Base''); put the input in
+        front of them: \cmd{element* select}, \cmd{element delete},
+        \cmd{operation* list}.
+  \item \textbf{Quote anything with spaces.} Only double quotes group a value;
+        single quotes are not special, and there are no escape sequences. A comma
+        also separates arguments, so quote text that contains one:
+        \cmd{text "Hello world"}.
+  \item \textbf{Write options with a space.} \cmd{-s 15} is the speed option with
+        value 15. \cmd{-s15} is read as three separate options and will not do
+        what you meant.
+  \item \textbf{Case.} Command and option names are matched in lower case, so
+        \cmd{RECT} works, but the values you pass keep their case, which matters
+        for text and file names.
+  \item \textbf{\cmd{set} is scoped and silent.} \cmd{set -p <context> <key>
+        <value>} changes a variable that must already exist on that context; a
+        wrong key name does nothing at all and prints nothing. List with
+        \cmd{set -p <context>} first, and use \cmd{flush} to write settings to
+        disk. The change is permanent until you change it back.
+  \item \textbf{Plan names stick.} \cmd{planz} is not a typo: the letters after
+        \cmd{plan} become the name of the default plan for the rest of the
+        session, and bare \cmd{plan} then means ``the plan named z''. The plan
+        that a fresh session uses is named \cmd{0}.
+  \item \textbf{The pipeline is ordered.} \cmd{spool} refuses a plan that has not
+        been through \cmd{blob}, and \cmd{optimize} does nothing useful before
+        \cmd{blob} has run. When a chain half-works, \cmd{list-plans} shows how
+        far the plan got.
+  \item \textbf{Drivers differ.} Anything that moves the head or changes the state
+        of the machine belongs to the active device's driver. \cmd{pause},
+        \cmd{estop}, \cmd{status} and \cmd{goto} exist only where a driver
+        implements them, so a command that works on one machine may be rejected
+        on another.
+\end{itemize}

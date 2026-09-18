@@ -1,0 +1,246 @@
+\chapter{Order, optimisation and simulation}
+\label{ch:order}
+
+A laser job is a list of moves, and the order of those moves decides how long the
+job takes, how cleanly it cuts, and whether small parts stay where you put them.
+This chapter is about the planner --- the part of MeerK40t that turns your
+operations into instructions --- and about the two windows that let you inspect
+the result before it reaches the machine.
+
+\section{The plan}
+
+Between pressing \btn{Start} and the machine moving, MeerK40t runs a fixed
+sequence of stages. You have already met them in the console output; here is what
+each one does:
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.3cm}L{11.9cm}@{}}
+\toprule
+\textbf{Stage} & \textbf{What happens} \\
+\midrule
+\emph{copy} & The operations are copied into a plan; references to elements are
+replaced by real copies, so the plan is immune to later edits. \\
+\emph{preprocess} & Scene coordinates are converted to device coordinates, and
+validation operations are inserted. \\
+\emph{validate} & The validation operations run --- checking that what follows can
+actually be executed. \\
+\emph{blob} & Operations and elements become \emph{cutcode}: lines, arcs, raster
+strokes and moves. This is where an operation's settings finally become machine
+instructions. \\
+\emph{preopt} & Optimisation commands are injected --- inner-first ordering,
+travel reduction, sequencing. \\
+\emph{optimize} & Those commands run, reordering the cutcode. \\
+\emph{spool} & The finished job is wrapped up and handed to the spooler, which
+feeds the driver. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent You can drive the same stages by hand. The \btn{Execute Job} window
+(\menu{Tools>Execute Job}) is a staged wizard whose button changes label as you
+advance: \btn{Copy}, \btn{Preprocess Operations}, \btn{Validate}, \btn{Convert
+data}, \btn{Preprocess Optimizations}, \btn{Optimize}, \btn{Spool}. The
+\tabname{Plan} tab of the \panel{Laser-Control} pane shows the plan itself ---
+columns \emph{\#}, \emph{Plan}, \emph{Status} and \emph{Content} --- with
+\btn{Update}, \btn{Export} and \btn{Spool}, and a \btn{Hold} checkbox which
+preserves the plan between runs so you can inspect and rerun it. Right-clicking a
+plan offers \btn{Clear}, \btn{Update}, \btn{Update (background)}, \btn{Export},
+\btn{Spool} and \btn{Details}.
+
+\begin{behindbox}[Why you would ever do it by hand]
+Two reasons. First, diagnosing: if a job behaves oddly, stopping after
+\emph{blob} shows you the cutcode the plan produced, before optimisation had a
+chance to hide the problem. Second, iterating: with \btn{Hold} on, a plan can be
+optimised repeatedly and compared in the simulation window without rebuilding
+from scratch each time.
+\end{behindbox}
+
+\section{The optimisation settings}
+
+\menu{Edit>Settings>Preferences}, or the \tabname{Optimize} tab of the laser
+panel, exposes the planner's settings:
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.3cm}L{1.7cm}L{8.2cm}@{}}
+\toprule
+\textbf{Label} & \textbf{Default} & \textbf{Effect} \\
+\midrule
+\btn{Reduce Travel Time} & on & Reorders burns to shorten the distance travelled
+with the laser off. The single biggest time saver on most jobs. \\
+\btn{Burn Inner First} & on & Cuts inner contours before outer ones, so a part is
+still held by the surrounding material when its own holes are being cut. \\
+\btn{Group Inner Burns} & off & Completes one part --- inner and outer --- before
+starting the next, instead of doing all inner cuts first. Slower, but safer on
+sheets where parts could shift. \\
+\btn{Merge Passes} & off & Optimises the passes of an operation together rather
+than pass by pass. \\
+\btn{Merge Operations} & off & Optimises across operations instead of within
+each. \\
+\btn{Burn Complete Subpaths} & on & Finishes each open subpath in one go. \\
+\btn{Combine path segments} & off & Stitches nearly-touching path ends so they
+burn as one continuous move. With \emph{Tolerance} (default \cmd{0}). \\
+\btn{Cluster raster objects} & on & Groups rasters that do not overlap into
+separate optimisation groups, with a \emph{Margin} (default \cmd{1mm}). \\
+\btn{Keep effect lines together} & on & Treats hatch lines as one shape, so they
+are burned together rather than visited one by one. \\
+\btn{Optimize internally} & off & Optimises the lines inside a hatch
+individually. \\
+\btn{Reduce polyline details} & off & Thins redundant points, with a \emph{Level}
+(\emph{Minimal} \dots\ \emph{Coarse}). A fix for paths with absurd numbers of
+nodes. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Two further settings have no user interface but exist and can be set
+from the console: \setting{opt_nearest_neighbor} (on --- the travel algorithm
+used by \emph{Reduce Travel Time}), \setting{opt_2opt} (off --- a slower
+two-opt refinement), \setting{opt_start_from_position} (off --- begin from the
+head's current position) and \setting{opt_closed_distance} (15 --- the distance
+at which path ends are considered closed). Which strategy runs depends on the
+combination chosen: with \emph{Burn Inner First} on, the inner-first optimiser
+handles everything; otherwise travel reduction runs if it is enabled, and a basic
+sequencing pass is the fallback.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.9]
+\draw[mkgrey!70,line width=0.8pt] (0,0) rectangle (4.2,4.2);
+\draw[mkblue,line width=0.8pt] (0.5,0.5) rectangle (3.7,3.7);
+\draw[mkred,line width=0.8pt] (1.1,1.1) rectangle (3.1,3.1);
+\draw[mkgreen,line width=0.8pt] (1.7,1.7) rectangle (2.5,2.5);
+\node[mkdark,font=\sffamily\scriptsize,anchor=west] at (4.5,3.0)
+  {cut order matters, not nesting:};
+\node[mkred,font=\sffamily\scriptsize,anchor=west] at (4.5,2.6)
+  {1\quad innermost first};
+\node[mkgreen,font=\sffamily\scriptsize,anchor=west] at (4.5,2.2)
+  {2\quad then outwards};
+\node[mkblue,font=\sffamily\scriptsize,anchor=west] at (4.5,1.8)
+  {3\quad last};
+\node[mkgrey,font=\sffamily\scriptsize,anchor=west] at (4.5,1.4)
+  {4\quad outside, last of all};
+\end{tikzpicture}
+\caption{Why inner-first is the default. If the outer contour is cut first, the
+part is held by nothing but friction while its interior is being cut --- and on
+thin material, the vibration is enough to move it. Burning from the inside out
+keeps the surrounding material as a clamp until the very last cut.}
+\label{fig:innerfirst}
+\end{figure}
+
+\begin{tipbox}[A sensible default set for most sheet work]
+\btn{Reduce Travel Time} on, \btn{Burn Inner First} on, \btn{Group Inner Burns}
+off, \btn{Burn Complete Subpaths} on, \btn{Keep effect lines together} on. Build
+the plan, simulate it, then change one setting and compare. Optimisation is one of
+the few places where measurement beats intuition, because the numbers are right
+there in the simulation window.
+\end{tipbox}
+
+\section{The Simulation window}
+
+\btn{Simulate} on the Laser tab (right-clicking it simulates without
+optimisation) opens the \panel{Simulation} window: a replay of the job, drawn on
+the scene.
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.0cm}L{10.2cm}@{}}
+\toprule
+\textbf{Control} & \textbf{What it does} \\
+\midrule
+Play button & Start or stop the replay. \\
+\emph{Playback Speed} & Replay speed, with a percentage readout. \\
+\emph{Mode} & Whether the replay advances in \emph{Steps}, \emph{Time (sec.)} or
+\emph{Time (min)} --- so a four-hour job is watchable. \\
+\btn{Send to Laser} & Spools the currently displayed plan. This is the
+shortcut from ``looks right'' to ``running''. \\
+\btn{Recalculate} / \btn{Stop calculating} & Rebuild the plan, and stop a long
+rebuild. During the rebuild the button reads \emph{Calculating} and the window
+says the plan is still being processed. \\
+\btn{Optimize} & Whether the rebuild includes the optimisation stages. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The estimates are the most useful numbers the program produces:
+
+\begin{itemize}
+  \item \emph{Laser Time} and \emph{Laser Distance} --- beam on.
+  \item \emph{Travel Time} and \emph{Travel Distance} --- beam off.
+  \item \emph{Total Time} and \emph{Total Distance} --- the sum.
+  \item \emph{Extra Time} --- allowances for acceleration, delays and the machine's
+        own overheads, and usually the reason reality is longer than the
+        simulation.
+\end{itemize}
+
+\noindent Right-click on the simulation scene for the display options:
+\emph{Delete cuts before}, \emph{Delete cuts after} (trim the plan to a point in
+the replay), \emph{Show Background}, the three grid toggles, \emph{Show physical
+dimensions}, \emph{Show travel path} (draw the jump moves --- the fastest way to
+see whether optimisation did anything sensible), \emph{Raster as Image},
+\emph{Simulate laser width}, and the zoom commands. The embedded operations list
+in the window shows the plan's operations; the \emph{D} checkbox
+\emph{decompiles} the cutplan --- making the operations visible and editable
+again --- and the text field beside it lets you modify an operation parameter and
+press \key{Enter} to see the effect on the simulation.
+
+\begin{tipbox}[Watch the travel path, not the burn]
+The laser path is what you expect to see; the travel path is where the time goes.
+Turn on \emph{Show travel path} and look for long diagonal jumps between things
+that are physically next to each other. Each one is a missing optimisation --- or
+artwork that needs stitching (\cmd{stitch 0.1mm}).
+\end{tipbox}
+
+\section{The spooler and running many jobs}
+
+\panel{Spooler} (\menu{Tools>Spooler} or the ribbon's \btn{Spooler} button; the
+console form is \cmd{window toggle JobSpooler}, or \cmd{pane toggle spooler} to
+work on the pane itself) is a docked pane, not a window of its own, and it is the
+queue between planning and the machine.
+
+\begin{itemize}
+  \item The top row chooses the device and offers \btn{Pause}/\btn{Resume},
+        \btn{Abort} and a \emph{Silent} checkbox.
+  \item The queue lists each job with its \emph{\#}, \emph{Device}, \emph{Name},
+        \emph{Items}, \emph{Status}, \emph{Type}, \emph{Steps}, \emph{Passes},
+        \emph{Priority}, \emph{Runtime} and \emph{Estimate}. Right-click a job for
+        \btn{Stop} (while running) or \btn{Remove}, \btn{Disable}/\btn{Enable},
+        \emph{Finish after this loop} and \emph{Clear All}.
+  \item Below the queue, \emph{Completed jobs:} is the history, with columns for
+        device, name, start, end, runtime, estimate, steps, passes, status and job
+        information, and a \btn{Clear History} button. Right-clicking the history
+        offers \emph{Delete this entry}, \emph{Delete\dots}, \emph{All entries},
+        \emph{Older than \emph{n} week}, \emph{All incomplete jobs},
+        \emph{Clear history on startup}, \emph{Ignore helper jobs} and
+        \emph{Write CSV} --- which writes \file{history.csv} into the program's
+        working directory, and is how you keep a machine log without typing.
+\end{itemize}
+
+\noindent The \btn{Launch Spooler on Job Start} preference (on by default) brings
+the spooler up automatically whenever a job starts, which is a good default: the
+queue is where you see what is about to happen.
+
+\begin{machinebox}{Judge the order by the sound, then by the result}
+The simulation tells you what the planner thinks; the machine tells you the truth.
+Listen for the head crossing the sheet repeatedly, and look at the first finished
+part: if small pieces have shifted, you cut outer contours too early, and
+\btn{Group Inner Burns} or a reordered operation list is the fix. If the edges are
+charred on the last cut only, the part moved because it was no longer supported
+--- a tab (\btn{Tab Edit}) solves that more reliably than any optimiser.
+\end{machinebox}
+
+\begin{tryit}{Optimise a real job, with numbers}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Load a job with a mixture of cutting and engraving, or build one from a
+        duplicated part.
+  \item Simulate it with optimisation \emph{off}. Write down \emph{Total Time},
+        \emph{Travel Time} and \emph{Total Distance}.
+  \item Turn optimisation on, press \btn{Recalculate}, and write the numbers down
+        again. The difference is what the optimiser earned you.
+  \item Turn on \emph{Show travel path} and look for the remaining long jumps.
+  \item In the console, run \cmd{stitch 0.1mm} on the artwork and recalculate.
+        Note the change in total distance.
+  \item Try \btn{Group Inner Burns} on and compare both the numbers and a physical
+        test cut. Decide for your material which one holds the parts better.
+  \item Keep the winning combination as your default in the preferences, and
+        record the numbers with your material notes.
+\end{enumerate}
+\end{tryit}

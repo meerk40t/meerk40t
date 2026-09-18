@@ -1,0 +1,452 @@
+\chapter{Machine settings by driver}
+\label{app:drivers}
+
+A \emph{driver} is the part of MeerK40t that speaks one family of laser
+controller. Six families ship with the program: Lihuiyu (the K40 nano boards),
+GRBL, Ruida, Moshi, Newly and Balor (the JCZ galvo controllers). Each driver
+defines its own settings, and a device shows only the settings of its own
+driver --- two machines with similar-looking Configuration windows can hold
+quite different contents. This appendix is the lookup table for those settings.
+Every row gives the label that appears in the device's \btn{Config} window, the
+internal \emph{key}, the value the program ships with, and what the setting
+changes.
+
+Open the window from the \panel{Devices} pane with \btn{Config} for the active
+device, or through \menu{Device-Settings>Device Manager}. The key column is the
+name of the underlying variable, which is what the console \cmd{set} command
+reads and writes (Section~\ref{ch:console}, Appendix~\ref{app:console}).
+
+\begin{notebox}[Bed size and origin belong to the machine]
+Width, Height and \ui{Force Declared Home} describe the hardware, not the
+artwork. If you change them after placing a design, the job is re-mapped onto
+the new bed and the same drawing may end up somewhere else on the material. Set
+the bed up before you position anything, and check placement again afterwards
+(Chapter~\ref{ch:where}).
+\end{notebox}
+
+\section*{Common device settings}
+
+Most drivers offer the same handful of settings, usually under the same keys.
+Those are listed once below. The driver sections that follow give the values
+that differ, and the settings that only one family has. A driver is expected to
+show only the rows relevant to it.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Label & \setting{label} & shipped name & Device name in the \panel{Devices} list. \\
+Width, Height & \setting{bedwidth}, \setting{bedheight} & see each driver & Bed size. Sets the scene, the bed limits and jog confinement. \\
+Laserspot & \setting{laserspot} & 0.3\unit{mm} & Beam spot size used for display and planning. All six drivers. \\
+X-Axis, Y-Axis & \setting{scale_x}, \setting{scale_y} & 1.000 & Scale from board units to millimetres. Lihuiyu calls these \setting{user_scale_x} and \setting{user_scale_y}. \\
+Flip X, Flip Y & \setting{flip_x}, \setting{flip_y} & off & Mirror an axis. On for \setting{flip_y} on GRBL and Balor. \\
+Swap X and Y & \setting{swap_xy} & off & Exchanges the axes. Applied before the flips. On by default for Balor. \\
+Force Declared Home & \setting{home_corner} & \setting{auto} & Which corner counts as home. All drivers except Balor. \\
+Curve Interpolation & \setting{interp}; Ruida: \setting{interpolate} & 5 mils; Ruida 500\textmu m & Distance at which curves are flattened into straight segments. \\
+Device Position & \setting{signal_updates} & on & Draws the live position indicator. \\
+Coolant & \setting{device_coolant} & nothing & Coolant or air-assist method claimed for the device. All except Newly. \\
+Max vector speed, Max raster speed & \setting{max_vector_speed}, \setting{max_raster_speed} & 140, 750 & Highest reliable cutting and raster speeds. Lihuiyu and GRBL. \\
+Travel speed & \setting{rapid_speed} (Balor: \setting{default_rapid_speed}) & see drivers & Speed used for moves that do not cut. \\
+Operation Defaults, speed & \setting{default_speed_op_cut}, \setting{default_speed_op_engrave} and the matching keys for raster and image & Cut 5, Engrave 25, Raster 250 & Speed given to a newly created operation. Balor uses 150, 250 and 500. \\
+Operation Defaults, power & \setting{default_power_op_cut} and the same key pattern for the other three & 1000 & Power given to a newly created operation, in whatever unit the row below selects. \\
+Show power as \% & \setting{use_percent_}\allowbreak\setting{for_power_display} & on for GRBL, Newly, Balor & On: full power reads as 100\%. Off: full power reads as 1000. \\
+Show speed in mm/min & \setting{use_mm_min_for_}\allowbreak\setting{speed_display} & off & On: speeds are shown in mm/min. Off: mm/s. The Lihuiyu, Ruida and Moshi sources keep the same preference under the parallel key \setting{use_minute_}\allowbreak\setting{for_speed_display}. \\
+Limit the controller buffer size, Controller Buffer & \setting{limit_buffer}, \setting{max_buffer} & on, 200 lines & GRBL: stop sending once the controller holds the stated number of lines. \\
+Write Buffer & \setting{buffer_max}, \setting{buffer_limit} & 900, on & Lihuiyu: cap on the USB write queue. The Interface panel exposes it as \ui{Limit Write Buffer} with its own maximum. \\
+X-Margin, Y-Margin & \setting{user_margin_x}, \setting{user_margin_y} & 0 & Present in the source but marked as not working, so no driver shows it in the window. \\
+\end{longtable}
+}
+
+Two things that look like driver settings but are not. Homing on start is a job
+step, not a device setting: add \ui{Append Physical Home} or
+\ui{Append Return to Origin} in the Operations tree (Chapter~\ref{ch:order}).
+And the coolant list only expands after a coolant method has been registered, so
+the combo may hold nothing but \ui{Nothing} until you use one.
+
+\section*{Lihuiyu (K40)}
+
+The Lihuiyu driver runs the M2 and M3 nano boards found in K40-style CO\textsubscript{2}
+cutters and their clones. The board is a USB device reached through the CH341
+chip: choose \ui{USB} in the Interface panel for the normal case, \ui{Networked}
+to send the same packets to another MeerK40t instance over TCP, or \ui{Mock} for
+a dry run with no machine attached. These boards have no endstops, so \ui{Home}
+moves to the declared origin rather than seeking a switch. The Configuration
+window carries the tabs Configuration, Interface, Setup, Effects, Operation
+Defaults, Warning, Default Actions and Display Options.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Device Name & \setting{label} & \setting{M2-Nano}, \setting{M3-Nano} & Internal name used for the device; \setting{lihuiyu-device} when a device is added without a model entry. \\
+Width, Height & \setting{bedwidth}, \setting{bedheight} & 310\unit{mm}, 210\unit{mm} & Bed size of the usual K40. \\
+X Scale Factor, Y Scale Factor & \setting{user_scale_x}, \setting{user_scale_y} & 1.000 & Board units to millimetres. \\
+Board & \setting{board} & \setting{M2} & Which nano board is fitted: \setting{M2}, \setting{M3}, \setting{B2}, \setting{M}, \setting{M1}, \setting{A}, \setting{B} or \setting{B1}. This changes the speed codes sent to the board. \\
+Hardware-PWM & \setting{supports_pwm} & off & Power control by hardware PWM. Only M3 boards with firmware 2024.01.18g or newer; earlier M3 revisions behave as M2+. Shown only for the M3 board. \\
+Maximum Laser strength & \setting{power_scale} & 30\% & Ceiling that every operation's power is a fraction of; adjustable from 1 to 50, or to 100 with developer mode. Setting it too high can damage the laser tube. \\
+Strict & \setting{strict} & off & Enter and leave speed mode travelling in the same direction (an M2-V4 fix). \\
+Twitch Vectors & \setting{twitches} & off & Re-enables the old twitch behaviour when moving the vectors. \\
+Use legacy raster method & \setting{legacy_raster} & on & Uses the legacy raster engine: better at high speed, but with artifacts. \\
+Rapid Moves Between Objects & \setting{opt_rapid_between} & on & Travel at rapid speed between separate objects. \\
+Minimum Jog Distance & \setting{opt_jog_minimum} & 256 & Step below which a move is treated as a jog. \\
+Jog Method & \setting{opt_jog_mode} & 0 & \ui{Default}, \ui{Reset} or \ui{Finish}. \\
+Override Rapid Movements & \setting{rapid_override} & off & Replaces the travel speed with the two values below. \\
+X Travel Speed, Y Travel Speed & \setting{rapid_override_speed_x}, \setting{rapid_override_speed_y} & 50.0 & Per-axis travel speed used while the override is on. \\
+Max vector speed, Max raster speed & \setting{max_vector_speed}, \setting{max_raster_speed} & 140, 750 & Highest reliable speeds. \\
+Automatically lock rail & \setting{autolock} & on & Locks the rail when a job finishes. \\
+Phase Type, Phase Value & \setting{plot_phase_type}, \setting{plot_phase_value} & 0, 0 & Raster phase grouping: \ui{Sequential}, \ui{Random}, \ui{Progressive} or \ui{Static}, with a value out of 1000. \\
+Pulse Grouping & \setting{plot_shift} & off & Groups pulses in raster output. \\
+Fix rated to actual speed & \setting{fix_speeds} & off & These boards run at about 92\% of the rated speed; enable this to correct the displayed speed. \\
+Networked address, port & \setting{address}, \setting{port} & localhost, 1025 & Host and port used when the interface is set to \ui{Networked}. Windows builds default to port 1022. \\
+Write Buffer & \setting{buffer_max}, \setting{buffer_limit} & 900, on & Cap on the USB write queue, with the Interface panel's \ui{Limit Write Buffer} as the visible control. \\
+\end{longtable}
+}
+
+Outside the configuration window, the acceleration chart holds the vector and
+raster acceleration breakpoints: the groups \ui{Vector} and \ui{Vertical Raster}
+default to 25.4, 60, 127 and infinity, \ui{Horizontal Raster} to 25.4, 127, 320
+and infinity, each group with its own enable checkbox.
+
+\section*{GRBL}
+
+The GRBL driver covers a large group of diode and CO\textsubscript{2} machines:
+Ortur and Longer diode engravers, generic GRBL boards, FluidNC controllers and
+K40 cutters fitted with a GRBL controller such as the MKS DLC32. It reaches the
+board over a serial port (a USB-serial adapter appears as a port), over TCP or
+WebSocket for boards with a network socket, or over a mock. The shipped device
+entries already fill in the bed size and homing details for common machines, so
+start from the entry that matches your machine. The Configuration window has the
+tabs Device, Interface, Protocol, Advanced, Effects, Operation Defaults, ESP3D
+Upload, Warning, Default Actions and Display Options.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Label & \setting{label} & \setting{grbl} & Device name. The shipped entries use names such as \setting{GRBL-DLC32-400} or \setting{GRBL-K40-CO2}. \\
+Width, Height & \setting{bedwidth}, \setting{bedheight} & 235\texttimes235\unit{mm} & Bed size. The entries carry their own: 405\texttimes285\unit{mm} for the MKS DLC32, 400\texttimes430\unit{mm} for the Ortur, 450\texttimes450\unit{mm} for the Longer Ray5. \\
+X-Axis, Y-Axis & \setting{scale_x}, \setting{scale_y} & 1.000 & Board units to millimetres. \\
+Flip X & \setting{flip_x} & off & Mirrors X. +X is standard for GRBL; leave it off unless your machine differs. \\
+Flip Y & \setting{flip_y} & on & On this machine Y goes negative into the bed. Leave it on with a top-left home corner, or Y jogs can trip the soft limit (ALARM:2). \\
+Swap XY & \setting{swap_xy} & off & Exchanges the axes before the flips. \\
+Force Declared Home & \setting{home_corner} & \setting{auto} & Set the corner here if the machine homes somewhere other than the default. \\
+Supports Z-axis & \setting{supports_z_axis} & off & Enables Z commands for a machine with a Z axis. \\
+Z-Homing & \setting{z_home_command} & \cmd{$HZ} & Which command starts the Z homing sequence: \cmd{$HZ} or \cmd{G28 Z}. \\
+Interface Type & \setting{interface} & \setting{serial} & \ui{Serial}, \ui{TCP-Network}, \ui{WebSocket-Network} or \ui{Mock}. \\
+(serial port) & \setting{serial_port} & \cmd{UNCONFIGURED} & Combo of the ports detected on the computer. \\
+Baud Rate & \setting{baud_rate} & 115200 & Serial speed. \\
+Address, Port & \setting{address}, \setting{port} & localhost, 23 & Host and port for the TCP interface. \\
+Address, Port (WebSocket) & \setting{address}, \setting{port} & localhost, 81 & Host and port for the WebSocket interface. \\
+Use M3 & \setting{use_m3} & off & Starts the laser with M3 instead of M4. \\
+Use G1 before Rapid Moves & \setting{use_g1_for_power} & off & Sends \cmd{G1 S0} instead of \cmd{G0 X Y S0}, for firmwares that mishandle rapid moves carrying power. \\
+Reset on 'Clear Alarm' & \setting{extended_alarm_clear} & off & Clearing an alarm also soft-resets the controller. \\
+Device has endstops & \setting{has_endstops} & off & Enables physical homing with \cmd{$H}. \\
+Sequential homing (\cmd{$HY} then \cmd{$HX}) & \setting{sequential_homing} & off & For the MKS DLC32 and machines whose limit switches sit at the top left. Homing both axes at once can stop about 50\unit{mm} short with an ALARM:1. \\
+Simulate reddot & \setting{use_red_dot} & off & Burns a low-power visible dot for framing. GRBL has no separate red-dot output pin; this uses the laser itself. \\
+Reddot Laser strength & \setting{red_dot_level} & 30 & Strength of that dot, out of 1000. \\
+Active during Outline & \setting{use_red_dot_for_outline} & on & Uses the red dot automatically when outlining the burn area. \\
+Max vector speed & \setting{max_vector_speed} & 140 & Highest reliable speed for cutting and engraving moves. \\
+Max raster speed & \setting{max_raster_speed} & 750 & Highest reliable speed for raster moves. \\
+Travel speed & \setting{rapid_speed} & 600 & Speed of moves that do not cut. \\
+Limit the controller buffer size & \setting{limit_buffer} & on & Enables the buffer limit below. \\
+Controller Buffer & \setting{max_buffer} & 200 & Lines the controller may hold before sending pauses. \\
+Require Validator & \setting{require_validator} & off & Waits for the expected welcome text before validating a job. \\
+Welcome Validator & \setting{welcome} & \cmd{Grbl} & The welcome text to wait for. \\
+Reset on connect & \setting{reset_on_connect} & off & Soft-resets the controller when connecting. \\
+Check sequence on connect. & \setting{boot_connect_sequence} & on & Runs the information query when connecting. \\
+Sending Protocol & \setting{buffer_mode} & \setting{buffered} & \ui{buffered} or \ui{sync}. \\
+Planning Buffer Size & \setting{planning_buffer_size} & 128 & Size of the planning queue. \\
+Line Ending & \setting{line_end} & \setting{LF} & \ui{CR}, \ui{LF} or \ui{CRLF}. LF is required for the SD-card files of the MKS DLC32. \\
+Post Connection Delay & \setting{connect_delay} & 0 & Milliseconds to wait after connecting before sending. \\
+Startup commands & \setting{startup_commands} & empty & Multiline G-code sent on connect. \\
+Enable ESP3D Upload & \setting{esp3d_enabled} & off & Shows the ESP3D buttons on the ribbon and unlocks the page below. \\
+ESP3D Host, Port, SD Path & \setting{esp3d_host}, \setting{esp3d_port}, \setting{esp3d_path} & 192.168.1.100, 80, \file{/} & Where the ESP3D web interface lives and where its SD card is rooted. \\
+ESP3D Username, Password & \setting{esp3d_username}, \setting{esp3d_password} & empty, empty & Optional login for that interface. \\
+Cleanup Local Files & \setting{esp3d_cleanup} & on & Deletes the local G-code once it has been uploaded. \\
+Prepare Plan exports for SD card & \setting{sd_export_prepare} & on & Patches a Plan export for a MKS DLC32 SD card: LF line endings, M3 laser mode, no \cmd{G28}. Home the machine yourself before running such a file. \\
+\end{longtable}
+}
+
+\section*{Ruida}
+
+The Ruida driver targets CO\textsubscript{2} machines with a Ruida controller,
+the K50/K60 class. It connects over USB serial --- the Serial Interface field
+takes a Linux device path or a Windows \cmd{COM} port --- or over the network,
+where the driver talks UDP to the controller. It also ships the
+\cmd{ruidacontrol} emulator, which lets MeerK40t answer as a Ruida controller
+for LightBurn on UDP 50200 (jog on 50207), with optional man-in-the-middle
+(40200/40207) and LB2RD bridge (TCP 5005) modes. The Configuration window has
+the tabs Ruida, Interface, Configuration, Effects, Operation Defaults, Warning,
+Default Actions and Display Options.
+
+\begin{warnbox}[Under revision]
+The Ruida module is marked incomplete in the project. It has been tested on
+Linux only; the network emulation is described as untested and direct hardware
+control as not implemented. The project's own notes also require raster layers
+to use overscan 0 and, on the controller that was tested, Flip X to be enabled.
+Treat this driver as experimental.
+\end{warnbox}
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Label & \setting{label} & \setting{ruida} & Device name. \\
+Width, Height & \setting{bedwidth}, \setting{bedheight} & 24\unit{in}, 16\unit{in} & Bed size. \\
+X-Axis, Y-Axis & \setting{scale_x}, \setting{scale_y} & 1.000 & Board units to millimetres. \\
+Flip X & \setting{flip_x} & off & Mirrors X. The project's notes require this to be on for the tested machine. \\
+Flip Y & \setting{flip_y} & off & Mirrors Y. \\
+Swap X and Y & \setting{swap_xy} & off & Exchanges the axes. \\
+Force Declared Home & \setting{home_corner} & \setting{auto} & Which corner counts as home. \\
+Curve Interpolation & \setting{interpolate} & 500\textmu m & Distance at which curves are flattened. \\
+Laser Power & \setting{default_power} & 20.0 & Global default power, overridden by each operation. \\
+Cut Speed & \setting{default_speed} & 40.0 & Global default speed, overridden by each operation. \\
+Swizzle Magic Number & \setting{magic} & \cmd{0x88} & Value used to encode the job file sent to the laser. \\
+Baud Rate & \setting{baud_rate} & 115200 & Serial speed. \\
+Serial Interface & \setting{serial} & empty & Serial port the controller is on, for example a Linux device path or \cmd{COM3}. \\
+Interface & \setting{interface} & \setting{usb} & \ui{USB} or \ui{Networked} (UDP). The address field defaults to localhost and is only used when networked. \\
+Coolant & \setting{device_coolant} & empty & Coolant or air-assist method. \\
+\end{longtable}
+}
+
+Ruida jobs are exported as Ruida job files with the \file{.rd} extension. The
+Plan export uses \cmd{save_job <file>} and applies the swizzle magic number
+unless another value is passed for it. The ribbon adds \btn{Focus Z}, which
+sends the controller's FocusZ command.
+
+\section*{Moshi}
+
+The Moshi driver covers CO\textsubscript{2} cutters with a Moshiboard, a clone
+family that presents itself to the computer much like a Lihuiyu board. It
+connects over USB through the same CH341 chip and offers no network interface.
+There are no endstops, so \ui{Home} is simply a move to position 0,0; where the
+job sits on the material is decided entirely by the bed size and the home
+corner. The Configuration window has the tabs Configuration, Effects, Operation
+Defaults, Warning, Default Actions and Display Options.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Label & \setting{label} & \setting{Moshiboard} & Device name. \\
+Width, Height & \setting{bedwidth}, \setting{bedheight} & 330\unit{mm}, 210\unit{mm} & Bed size. \\
+X-Axis, Y-Axis & \setting{scale_x}, \setting{scale_y} & 1.000 & Board units to millimetres. \\
+Flip X, Flip Y & \setting{flip_x}, \setting{flip_y} & off, off & Mirror an axis. \\
+Swap XY & \setting{swap_xy} & off & Exchanges the axes before the flips. \\
+Force Declared Home & \setting{home_corner} & \setting{auto} & Which corner counts as home. \\
+Curve Interpolation & \setting{interp} & 5 & Distance at which curves are flattened, in mils. \\
+Use legacy raster method & \setting{legacy_raster} & on & Legacy raster engine: better at high speed, but with artifacts. \\
+Run mock-usb backend & \setting{mock} & off & Connects to a fake laser instead of the real board, for debugging. \\
+Device Position & \setting{signal_updates} & on & Draws the live position indicator. \\
+Coolant & \setting{device_coolant} & empty & Coolant or air-assist method. \\
+Travel speed & \setting{rapid_speed} & 40 & Speed of moves that do not cut. Present in the source but not shown in the window. \\
+\end{longtable}
+}
+
+\section*{Newly}
+
+The Newly driver covers CO\textsubscript{2} machines whose controller presents
+itself as a Newly or U-SET board: the RayLaser class and about twenty clones,
+including the Beijing SZTaiming, Gama, HPC, Rabit, Lion and Jinan families. It
+connects over USB and has no network option. Its distinguishing idea is the file
+slot: a job is sent to one of ten files on the machine, File 0 runs immediately,
+and the others can be sent and started later from the ribbon (\btn{File 0} to
+\btn{File 9}, \btn{Send Only} or \btn{Send \& Start}, \btn{Draw Frame},
+\btn{Move Frame}, \btn{Replay}). The Configuration window has the tabs Newly,
+Device, Global, Raster Chart, Effects, Operation Defaults, Warning, Default
+Actions and Display Options.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Label & \setting{label} & \setting{newly-device} & Device name. \\
+Width, Height & \setting{bedwidth}, \setting{bedheight} & 310\unit{mm}, 210\unit{mm} & Bed size. \\
+Output File & \setting{file_index} & 0 & Which machine file the job is sent to, 0 to 9. File 0 executes immediately; the rest must be sent and then started. \\
+Automatically Start & \setting{autoplay} & on & Starts the job as soon as the output file has been sent. Uncheck to send without running. \\
+Machine index to select & \setting{machine_index} & 0 & Which attached board to use; leave at 0 with a single machine. \\
+Max Power & \setting{max_power} & 20.0\% & Ceiling that operation power is scaled against. \\
+Max Pulse Power & \setting{max_pulse_power} & 65.0\% & Power level at which pulses are fired. \\
+PWM Power & \setting{pwm_enabled} & off & Enables pulse-width modulation for power control. \\
+PWM Frequency & \setting{pwm_frequency} & 2 kHz & 1, 2, 3, 4, 5, 10, 20, 50, 75, 100, 200 or 255 kilohertz. Shown only when PWM Power is on. \\
+Horizontal DPI, Vertical DPI & \setting{h_dpi}, \setting{v_dpi} & 1000, 1000 & Dots per inch along each axis. \\
+Horizontal Backlash, Vertical Backlash & \setting{h_backlash}, \setting{v_backlash} & 0\unit{mm}, 0\unit{mm} & Backlash compensation per axis. \\
+Cut Speed, Cut Power & \setting{default_cut_speed}, \setting{default_cut_power} & 15.0, 1000.0 & Global defaults for cutting; operations override them. \\
+Raster Speed & \setting{default_raster_speed} & 200.0 & Global default raster speed. \\
+On Delay, Off Delay & \setting{default_on_delay}, \setting{default_off_delay} & 0\unit{ms}, 0\unit{ms} & Delay before the laser turns on and after it turns off. \\
+Cut DC, Move DC & \setting{cut_dc}, \setting{move_dc} & 100, 100 & Current setting for cutting moves and for regular moves. \\
+Maximum Raster Jog & \setting{max_raster_jog} & 15 & Longest distance allowed in a single raster step or jog. \\
+Speed Chart & \setting{speedchart} & five rows & Raster chart of speed against acceleration length, backlash and corner speed: 100/8/0/20, 200/10/0/20, 300/14/0/20, 400/16/0/20 and 500/18/0/20. Rows can be added, changed and removed. \\
+Run mock-usb backend & \setting{mock} & off & Connects to a fake laser instead of the real board. \\
+Curve Interpolation & \setting{interp} & 5 & Distance at which curves are flattened, in mils. \\
+Force Declared Home & \setting{home_corner} & \setting{auto} & Which corner counts as home. \\
+Flip X, Flip Y & \setting{flip_x}, \setting{flip_y} & off, off & Mirror an axis. \\
+Swap X and Y & \setting{swap_xy} & off & Exchanges the axes. \\
+Device Position & \setting{signal_updates} & on & Draws the live position indicator. \\
+\end{longtable}
+}
+
+\section*{Balor (galvo)}
+
+The Balor driver runs galvo marking heads built on a JCZ controller: fibre,
+CO\textsubscript{2} and UV sources, including MOPA fibre lasers. It connects
+over USB only --- there is no host or port setting, and the device location
+reports either \setting{usb} or \setting{mock} --- with a machine index and an
+optional serial-number check to pick the right head when several are attached.
+The bed is the lens field, so the Width setting is labelled \ui{Lens Size} and
+defaults to 110\unit{mm}; a correction file can replace it with the measured
+field. The Configuration window has the tabs Balor, Redlight, Global, Timings,
+Extras, Effects, Operation Defaults, Warning, Default Actions and Display
+Options.
+
+{\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.2cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{4.6cm}@{\hspace{6pt}}>{\footnotesize\raggedright\arraybackslash}p{2.6cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Setting} & \textbf{Key} & \textbf{Default} & \textbf{What it changes} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r@{}}{\footnotesize\itshape continued overleaf} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Label & \setting{label} & \setting{balor-device} & Device name. \\
+Laser Source & \setting{source} & \setting{fiber} & \ui{fiber}, \ui{co2} or \ui{uv}. \\
+Enable (correction file) & \setting{corfile_enabled} & off & Uses a lens correction file. \\
+File & \setting{corfile} & none & The \file{.cor} correction file. Loading one updates Lens Size from its scale. \\
+Width (Lens Size) & \setting{lens_size} & 110\unit{mm} & Size of the galvo field; the bed is this square. \\
+Invert Power & \setting{power_invert} & off & Inverts the power scale. Shown for the UV source. \\
+Flip X, Flip Y & \setting{flip_x}, \setting{flip_y} & off, on & Mirror an axis. \\
+Swap XY & \setting{swap_xy} & on & Exchanges the axes. \\
+Rotate View & \setting{rotate} & 0 & Rotates the working view: 0, 90, 180 or 270 degrees. \\
+Curve Interpolation & \setting{interp} & 5 & Distance at which curves are flattened. \\
+Machine index to select & \setting{machine_index} & 0 & Which attached controller to use. \\
+Check serial no & \setting{serial_enable} & off & Requires a specific head, matched by serial number. \\
+serial & \setting{serial} & empty & The serial number to match. Shown when the check is enabled. \\
+Footpedal & \setting{footpedal_pin} & 15 & GPIO pin the foot pedal is wired to. \\
+Redlight laser & \setting{light_pin} & 8 & GPIO pin the red pilot laser is wired to. \\
+Pedal action & \setting{pedal_mode} & \setting{ignore} & What a pedal press does: \setting{ignore}, pause and resume the job, pause while pressed, stop the job, or arm and start the job. \\
+Active on low signal & \setting{pedal_active_low} & on & Treats the pedal as pressed when the signal is low. \\
+Pedal poll interval & \setting{pedal_poll_interval} & 0.25 & Seconds between checks of the pedal. \\
+Redlight travel speed & \setting{redlight_speed} & 3000 & Speed of the galvo while using the red pilot laser. \\
+Dark, Light & \setting{redlight_delay_dark}, \setting{redlight_delay_light} & 1, 1 & Microseconds of delay for dark and for light redlight moves. \\
+X-Offset, Y-Offset, Angle Offset & \setting{redlight_offset_x}, \setting{redlight_offset_y} & 0\unit{mm}, 0\unit{mm} & Shifts the redlight positions in x and in y. The angle offset, \setting{redlight_angle}, curves them around the centre and also defaults to 0\textdegree. \\
+Prefer redlight on & \setting{redlight_preferred} & off & Turns a toggleable redlight back on when a job completes. \\
+Restart light jobs & \setting{restart_light_jobs} & off & Restarts light jobs after they finish. \\
+Power & \setting{default_power} & 500.0 & Global default power; operations override it. \\
+Speed & \setting{default_speed} & 100.0 & Global default marking speed. \\
+Q Switch Frequency & \setting{default_frequency} & 30.0 & Q-switch frequency in kilohertz. \\
+First Pulse Killer & \setting{default_fpk} & 10.0\% & Percentage of first-pulse suppression, for the CO\textsubscript{2} and UV sources. \\
+Travel Speed & \setting{default_rapid_speed} & 2000.0 & Speed used when not marking. \\
+Enable (Pulse Width) & \setting{pulse_width_enabled} & off & MOPA heads: use pulse width as well as power. \\
+Set Pulse Width (ns) & \setting{default_pulse_width} & 4 & Pulse width in nanoseconds, chosen from a fixed list: 1, 2, 4, 6, 9, 13, 20, 30, 45, 55, 60, 80, 100, 150, 200 or 250. Shown when pulse width is enabled. \\
+Laser On, Laser Off & \setting{delay_laser_on}, \setting{delay_laser_off} & 100, 100 & Microseconds of delay at the start and at the end of each marking command. \\
+Polygon Delay & \setting{delay_polygon} & 100 & Microseconds of delay between points along a path. \\
+End Delay & \setting{delay_end} & 300 & Microseconds of delay at the end of the job. \\
+Long jump delay, Short jump delay & \setting{delay_jump_long}, \setting{delay_jump_short} & 200, 8 & Microseconds of delay for long and for short jumps. \\
+Run mock-usb backend & \setting{mock} & off & Connects to a fake controller instead of the real head. \\
+Device Position & \setting{signal_updates} & on & Draws the live position indicator. \\
+\end{longtable}
+}
+
+\section*{Where to check the current value}
+
+The Configuration window always shows the live values, under the same labels as
+the tables above: open the \panel{Devices} pane, select the device and press
+\btn{Config}. Three console commands help when a window is not enough.
+
+{\small
+\begin{longtable}{@{}>{\footnotesize\raggedright\arraybackslash}p{4.2cm}@{\hspace{6pt}}>{\raggedright\arraybackslash}p{10.4cm}@{}}
+\toprule
+\textbf{Command} & \textbf{What it shows} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\cmd{device} & The device entries that could be added, with their friendly names and providers. \\
+\cmd{device activate <name>} & Makes another device the active one, so its settings are the ones in force. \\
+\cmd{devinfo} & The current logical and native position, printed in the form \cmd{x,y;nx,ny;}. Compare the two to see how the driver's transform is placing the scene on the bed. \\
+\end{longtable}
+}
+
+Settings can also be read and written from the console. The \cmd{set} command
+works on variables in a context: \cmd{set -p <context> <key> <value>} writes one
+value, and \cmd{set -p <context>} with no value lists what that context
+currently holds --- the reliable way to confirm the exact key names and their
+present values on your installation.
+
+For diagnosis, the driver's own controller window shows the packet flow and the
+counters, the \panel{Buffer} window shows the command buffer being fed to the
+device, and the \ui{UsbConnect} window shows the USB pipe and accepts typed
+input. What those windows report, and what to do about it, is covered in
+Chapter~\ref{ch:connect}.

@@ -1,0 +1,282 @@
+\chapter{The console, and scripting}
+\label{ch:console}
+
+Every button in MeerK40t is a front end for a console command. That fact is what
+makes the program scriptable, reproducible and --- once you are comfortable ---
+much faster to use. This chapter teaches the console as a tool rather than as a
+reference; the complete command tables are in Appendix~\ref{app:console}.
+
+\section{Opening the console and reading it}
+
+\begin{itemize}
+  \item Open the \panel{Console} pane with the ribbon's \btn{Console} button, or
+        from \menu{Panes>Console}. (Many people bind \key{F12} to
+        \cmd{window open Console} in the Keymap window; it is not bound by
+default.)
+  \item Type a command and press \key{Enter}. Output appears above the input line,
+        coloured, with clickable links when a message contains a URL.
+  \item Up and Down arrows walk your command history, which is kept between
+        sessions --- the last fifty commands are stored in \file{cmdhistory.log}
+        in the program's working directory.
+  \item \btn{Tab} completes command names: type \cmd{sca} then \key{Tab} and the
+        console offers the candidates.
+  \item \cmd{cls} or \cmd{clear} empties the output; \cmd{console\_font} changes
+        the typeface, and \cmd{console\_font -r} resets it.
+\end{itemize}
+
+\noindent The console is also the quiet witness of everything the program does.
+When a job is planned, the stages go past in the console; when a device
+disconnects, the reason is very often printed here first. If you report a problem,
+the console text is the first thing anyone will ask for.
+
+\begin{tipbox}[Record a session]
+\cmd{channel save console} writes everything printed to the console channel into a
+timestamped file --- the polite way to hand a support question to someone else.
+\cmd{channel list} shows which channels exist, and \cmd{channel open <name>}
+watches an individual one (device traffic, for example).
+\end{tipbox}
+
+\section{Asking the console for help}
+
+\begin{lstlisting}[style=konsole]
+help                 # every command, grouped by the kind of data it acts on
+help rect            # one command, with its arguments and options
+?                    # same as help
+find rotary          # every command and option containing "rotary"
+?? rotary            # same as find
+\end{lstlisting}
+
+\noindent \cmd{help} with no argument is the real index: commands are grouped by
+category, and the groupings tell you how the console is structured --- some
+commands create data, some act on selected elements, some act on a plan.
+
+\section{The syntax rules that matter}
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.0cm}L{10.2cm}@{}}
+\toprule
+\textbf{Rule} & \textbf{Example and effect} \\
+\midrule
+Units are written with the number & \cmd{rect 2cm 2cm 1cm 1cm} makes a
+1\unit{cm} square 2\unit{cm} in from the origin. \cmd{mm}, \cmd{cm},
+\cmd{inch}, \cmd{mil}, \cmd{deg} and percentages all work. \\
+One command per line & A newline ends a command. Inside \cmd{-e "..."} on the
+command line, a newline separates commands too. \\
+\cmd{|} separates commands on one line & \cmd{rect 0 0 1cm 1cm | cut} runs both.
+A \cmd{|} inside quotes is not a separator. \\
+A leading \cmd{.} silences the echo & \cmd{.timer 1 0 spool jog} runs without
+printing the command itself --- useful in scripts that would otherwise flood the
+console. \\
+Pipelines pass data along & A command that produces elements hands them to the
+next command that accepts elements. \cmd{rect 0 0 1cm 1cm engrave -s 15} creates a
+rectangle and immediately groups it into an engrave operation. \\
+\cmd{; } belongs to aliases and stored batches & It is not a command separator in
+ordinary use. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The job pipeline in one line}
+
+The most useful sentence in MehrK40t's console is this:
+
+\begin{lstlisting}[style=konsole]
+planz clear copy preprocess validate blob preopt optimize spool
+\end{lstlisting}
+
+\noindent It builds a plan (\cmd{planz}), clears it, copies the enabled operations
+in, preprocesses and validates them, converts them to cutcode (\cmd{blob}),
+prepares and runs the optimisers, and sends the result to the spooler. It is
+exactly what the \btn{Start} button does. There are two built-in aliases for
+close relatives of it:
+
+\begin{lstlisting}[style=konsole]
+burn        # the chain above
+simulate    # the same without spooling, then opens the Simulation window
+\end{lstlisting}
+
+\noindent Substitute \cmd{save_job <file>} for \cmd{spool} and the same chain
+writes a device job file instead of running the machine:
+
+\begin{lstlisting}[style=konsole]
+plan0 clear copy preprocess validate blob preopt optimize save_job /tmp/tag.egv
+\end{lstlisting}
+
+\noindent \cmd{plan} with no name means the default plan, \cmd{plan0}; \cmd{planz}
+addresses the plan called \cmd{z}. Naming plans is how you keep several jobs in
+flight at once --- the Laser panel's \tabname{Plan} tab is a view of the same
+objects.
+
+\section{A complete example, typed}
+
+\begin{lstlisting}[style=konsole]
+rect 20mm 20mm 60mm 30mm          # the tag outline
+circle 26mm 33mm 2mm              # a hanging hole (radius form)
+select 0                          # nothing selected: element 0 is the rect
+cut -s 8 -p 70                    # cut it: 8 mm/s, 70% power
+select all
+engrave -s 30 -p 25               # engrave everything else
+planz clear copy preprocess validate blob preopt optimize spool
+\end{lstlisting}
+
+\noindent Note the shape of it: create, select, group into an operation with its
+settings, then run the standard pipeline. Once you can read that, you can write
+it.
+
+\section{Settings from the console}
+
+\cmd{set} is the single entry point for scalar settings. With no arguments it
+lists them; with a key and value it assigns:
+
+\begin{lstlisting}[style=konsole]
+set                                # list the variables in the current context
+set bedwidth 400mm                 # set a device value
+set -p balor rotary_active True    # set it in the device's own context
+set -p / rotary_diameter_mm 80     # explicit path form
+flush                              # write settings to disk now
+setting_export /home/me/backup     # copy the whole configuration out
+setting_import /home/me/backup/meerk40t_2026-09-17_10_00_00.cfg
+\end{lstlisting}
+
+\noindent There is no general-purpose \cmd{get}: to read a value, list the
+context with \cmd{set} and read the line you want. Device settings are covered in
+Appendix~\ref{app:drivers}; the important habit is to use \cmd{set -p <device>}
+rather than changing values globally.
+
+\section{Selecting and acting from the console}
+
+Element commands act on the current selection, and the console gives you several
+ways to build one:
+
+\begin{lstlisting}[style=konsole]
+element            # the currently selected elements
+element*           # all elements
+element~           # everything that is not selected
+element0,3,4       # specific elements by index
+element* select    # select everything (select+ adds, select- removes, select^ toggles)
+range 2 8          # indices 2 to 8
+filter speed>=10   # operations matching an expression
+tree selected delete
+\end{lstlisting}
+
+\noindent This is worth playing with rather than reading: create a few shapes and
+watch the different selectors change what a following \cmd{translate 5mm 0}
+affects.
+
+\section{Aliases: your own commands}
+
+An alias is a stored command line, and the console ships with some useful ones:
+
+\begin{lstlisting}[style=konsole]
+alias                      # list the aliases
+burn                       # alias: the full plan-and-spool chain
+simulate                   # alias: plan and open the simulation
+alias myburn cut -s 6 -p 80 ; planz clear copy preprocess validate blob preopt optimize spool
+\end{lstlisting}
+
+\noindent Note that \cmd{;} separates the individual commands \emph{inside} an
+alias body --- that is what the semicolon is for. Default aliases can be reset if
+you break them (\menu{Help} or the bind/alias commands), and keyboard bindings
+ultimately call these same console commands, which is why the Keymap window can
+bind a key to anything you can type.
+
+\section{Scripts: files, batches and the CLI}
+
+There are three ways to run a list of commands without typing them, and they are
+appropriate in different places.
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[A command file] \cmd{execute /home/me/scripts/tag.txt} runs each line of
+        the file as a console command. Lines beginning with \cmd{\#} are
+        comments. This is the general-purpose scripting route.
+  \item[The command line] \cmd{-e "command"} may be repeated, and \cmd{-b <file>}
+        runs a file of commands at startup:
+\begin{lstlisting}[style=konsole]
+meerk40t -z -e "load /home/me/tag.svg" \
+         -e "planz clear copy preprocess validate blob preopt optimize spool" -a -q
+\end{lstlisting}
+        That invocation loads a design, builds the job, starts the laser and quits
+        when the spooler finishes --- headless, from a script or a scheduler.
+  \item[The Auto-Exec window] \menu{Tools>Auto-Exec} (titled \emph{File startup
+        commands}) stores commands inside the project file itself, and runs them
+        when that file is loaded, if \btn{Execute on load} is ticked. The
+        \btn{Execute commands} button runs them immediately. Its small \cmd{*}
+        menu offers ready-made entries such as \emph{Start simulation},
+        \emph{Burn content on current device} and \cmd{device activate} for each
+        of your devices. This is the right place for the three lines a particular
+        project always needs.
+\end{description}
+
+\noindent Useful meta-commands for scripts: \cmd{wait <seconds>} pauses,
+\cmd{loop <from> <to> <command>} repeats, \cmd{threaded <command>} runs something
+in the background, and \cmd{timer <times> <duration> <command>} repeats on a
+schedule.
+
+\section{Batch production from a spreadsheet}
+
+The \btn{CSV Batch Run} window (\menu{Edit>Settings>CSV Batch Run}) is a
+production tool: it reads a CSV file, exposes the columns as variables, and can
+burn a job once per row.
+
+\begin{walkthrough}{Numbered tags for a list of names}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Prepare a CSV with a header row, for example \cmd{name,serial}, and one
+        row per item.
+  \item Design the job with text elements that use those variables ---
+        \cmd{{name}} and \cmd{{serial}} --- exactly as wordlists do
+        (Chapter~\ref{ch:text}).
+  \item Open the window and choose the \emph{File}. Press \btn{Import}.
+  \item Set \emph{First row} to \emph{Auto}, \emph{Data} or \emph{Headers}
+        depending on your file, and walk the rows with \btn{Prev}, \btn{Next} and
+        \btn{Go to}; the header shows \emph{Row x of y}.
+  \item Check the two preview panes: \emph{Preview (text with {variables})} shows
+        what the design will say, and \emph{Current row values} shows what the
+        variables currently hold.
+  \item Press \btn{Apply row to design} to see one row in place without burning.
+  \item Press \btn{Run current row} to burn just that row, or \btn{Run all rows}
+        to work through the file --- with
+        \emph{After each job completes, run the next row automatically} controlling
+        whether it waits for you between jobs.
+  \item \btn{Stop batch} stops the run; it does not unload the file, so you can
+        resume where you left off.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent The window builds each job with the same plan chain discussed above
+(with \cmd{threaded} in front when appropriate), which is why it behaves exactly
+like pressing \btn{Start} --- including honouring your optimisation settings.
+
+\section{Driving the interface from the console}
+
+Two more command families are worth knowing because they turn repetitive setup
+into one line:
+
+\begin{lstlisting}[style=konsole]
+window toggle Console            # open or close a window by name
+window open Simulation 0 1 1     # open Simulation for plan 0 with flags
+window reset *                   # forget all stored window positions
+pane show console                # show a pane
+pane hide tree ; pane float jog  # ... and the rest of the pane controls
+page modify                      # switch the ribbon page
+arm ; startjob                   # arm and start (same as the Ctrl+Alt+Shift+A binding)
+\end{lstlisting}
+
+\begin{tryit}{Script a repeatable production run}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Load the project you want to repeat and confirm it runs normally by
+        pressing \btn{Start}.
+  \item In the console, type \cmd{planz clear copy preprocess validate blob
+        preopt optimize spool} and watch the stages go past. Nothing should
+        differ from the button.
+  \item Write those commands into a file called \file{run-tag.txt}, one per line,
+        with a comment line at the top explaining what it is for.
+  \item Test it with \cmd{execute /full/path/run-tag.txt}.
+  \item Put the same commands into the Auto-Exec window and tick
+        \btn{Execute on load}. Now loading the project prepares the job for you.
+  \item Finally, try the headless form from a terminal: \cmd{meerk40t -z -e
+        "load /full/path/tag.svg" -e "burn" -a -q}. This is the same job with no
+        windows at all.
+  \item Save the command file next to the project. In six months, it will be the
+        only part of this exercise you still need.
+\end{enumerate}
+\end{tryit}
