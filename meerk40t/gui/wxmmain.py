@@ -2025,6 +2025,21 @@ class MeerK40t(MWindow):
             },
         )
 
+        @kernel.console_command("arm", help=_("Arm the laser for execution"))
+        def arm_cmd(command, channel, **kwargs):
+            arm_laser()
+            channel(_("Laser armed."))
+
+        @kernel.console_command("disarm", help=_("Disarm the laser"))
+        def disarm_cmd(command, channel, **kwargs):
+            disarm_laser()
+            channel(_("Laser disarmed."))
+
+        @kernel.console_command("startjob", help=_("Start the laser job"))
+        def startjob_cmd(command, channel, **kwargs):
+            run_job()
+            channel(_("Laser job started."))
+
         def has_coolant():
             # print (f"Checking coolant for: {kernel.device.label} - {getattr(kernel.device, 'device_coolant', 'invalid_attribute')}")
             if hasattr(kernel.device, "device_coolant"):
