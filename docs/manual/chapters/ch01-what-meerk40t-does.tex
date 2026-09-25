@@ -1,0 +1,226 @@
+\chapter{What MeerK40t does, and what you need}
+\label{ch:intro}
+
+Before you touch a menu, it is worth being clear about what this program is for
+and what the words mean. This chapter is the map; the rest of the manual is the
+walk.
+
+\section{The one-paragraph version}
+
+MeerK40t is a free, open-source program that drives laser cutters and engravers.
+You give it artwork --- a drawing, a photograph, a shape you drew in the program
+itself --- tell it how that artwork should be burned, and it converts both into
+the precise stream of movements and laser pulses your machine understands. It
+runs on Windows, macOS, Linux and the Raspberry~Pi, supports several popular
+controller families, and is extensible through plugins. It is free software under
+the MIT licence.
+
+\begin{behindbox}[Behind the name and the spelling]
+``MeerK40t'' is a pun on the K40, the inexpensive Chinese CO\textsubscript{2}
+laser cutter that the project originally targeted, and on ``meerkat''. ``K40''
+with ``t'' appended gives ``K40t'', read as the sound in ``meerkat''. You will
+see the name written both \emph{MeerK40t} (the program) and \emph{Meerk40t}
+(variant capitalisation in older text, screenshots and file names). It is the
+same thing.
+\end{behindbox}
+
+\section{The three things the program does}
+
+Everything in MeerK40t belongs to one of three activities, and every chapter of
+this manual is about one of them.
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Hold artwork} --- shapes, paths, text and images live in a
+        document called the \emph{element tree} (Chapter~\ref{ch:tree} covered
+        later). This is where you import, arrange, edit and position.
+  \item \textbf{Describe the burn} --- each group of artwork is attached to an
+        \emph{operation}: cut it, engrave it, raster it, dot it. Operations carry
+        the machine settings: speed, power, passes, resolution and so on.
+  \item \textbf{Run the job} --- MeerK40t turns operations into
+        \emph{cutcode}, optimises the order of the moves, wraps it in a
+        \emph{job}, hands it to a spooler and streams it to the controller.
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm,
+  box/.style={draw=mkblue!70,fill=mkblue!6,rounded corners=1pt,
+              text width=1.95cm,align=center,font=\sffamily\scriptsize,
+              minimum height=1.0cm,inner sep=3pt},
+  stage/.style={draw=mkgrey!60,fill=black!4,rounded corners=1pt,
+              text width=1.4cm,align=center,font=\sffamily\scriptsize,
+              minimum height=0.85cm,inner sep=2pt},
+  arrow/.style={-{Stealth[length=2mm]},draw=mkdark,thick}]
+\node[box] (art) {Artwork\\\scriptsize(element tree)};
+\node[box,right=7mm of art] (ops) {Operations\\\scriptsize(cut / engrave /\\raster / dots)};
+\node[box,right=7mm of ops] (code) {Cutcode\\\scriptsize(lines, raster\\ strokes, moves)};
+\node[box,right=7mm of code] (job) {Job\\\scriptsize(spooler)};
+\node[box,right=7mm of job] (dev) {Device\\\scriptsize(driver + USB / net)};
+\draw[arrow] (art) -- (ops);
+\draw[arrow] (ops) -- (code);
+\draw[arrow] (code) -- (job);
+\draw[arrow] (job) -- (dev);
+
+\node[stage,below=8mm of code,xshift=-1.5cm] (copy) {copy};
+\node[stage,right=1mm of copy] (pre) {preprocess};
+\node[stage,right=1mm of pre] (val) {validate};
+\node[stage,right=1mm of val] (blob) {blob};
+\node[stage,right=1mm of blob] (op1) {preopt};
+\node[stage,right=1mm of op1] (op2) {optimize};
+\node[stage,right=1mm of op2] (spool) {spool};
+\node[font=\sffamily\scriptsize,below=3mm of val,color=mkgrey,
+  text width=9cm,align=center]
+  {the six planning stages, plus spool, named in the Console output whenever a job is built};
+\draw[draw=mkgrey!70,dashed] ($(copy.north west)+(-2mm,2.5mm)$) rectangle ($(spool.south east)+(2mm,-1.5mm)$);
+\end{tikzpicture}
+\caption{The path from artwork to laser. The upper row is the journey you will
+follow all manual long; the lower row is the planning pipeline described in
+Chapter~\ref{ch:order} and printed in the console whenever a job is built.}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Laser vocabulary}
+
+You can use MeerK40t without this section, but you will misread the screens
+without it. Learn these ten terms.
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[Vector] A shape described mathematically: a line, an arc, a bezier
+        curve. Vectors scale without pixellating. SVG and DXF files are vector
+        files.
+  \item[Raster] A grid of pixels, as in a photograph or a PNG. Engraving a
+        raster means burning it line by line, switching the beam on and off (or
+        varying its power) as the head sweeps across.
+  \item[Cut / Score] A vector burned at high power and low speed, through the
+        material. A \emph{score} or \emph{mark} is the same path burned lightly
+        so it is visible but not severed --- a fold line, for example. In
+        MeerK40t both are done with a \mkseries{Cut} or \mkseries{Engrave}
+        operation, differing only in settings.
+  \item[Engrave] A vector burned at engraving settings: the beam traces the
+        path, removing a thin line of material. Dark, thin, precise --- but slow
+        over a large area. Filling an area by engraving a dense set of lines is
+        called \emph{hatching}.
+  \item[Speed and power] The two dials that decide everything. Speed is how fast
+        the head moves (millimetres per second, or per minute on some machines);
+        power is how hard the beam burns. Thicker material wants slower and/or
+        more power.
+  \item[Passes] How many times the beam repeats the same path. Two passes at
+        moderate power cut cleaner than one at maximum, especially on plywood
+        and acrylic.
+  \item[PPI / frequency] Pulses Per Inch --- how many laser pulses per inch of
+        travel. Older controllers expose pulse rate; modern ones expose
+        frequency in kHz. It changes how a cut edge looks more than whether it
+        cuts.
+  \item[Kerf] The width of material the beam destroys. A 0.15\unit{mm} kerf
+        means a part designed 20\unit{mm} wide comes out 19.85\unit{mm} wide
+        unless you compensate. MeerK40t can offset paths to compensate.
+  \item[DPI / raster step] Dots per inch --- how many scan lines per inch in a
+        raster engrave. More DPI is finer and much slower. MeerK40t usually
+        works in \emph{raster step} internally (the distance between lines) and
+        shows DPI beside it.
+  \item[Origin / home / jog] \emph{Home} is a fixed corner the machine can find
+        itself (usually by limit switches). \emph{Origin} is the zero point the
+        job is measured from. \emph{Jogging} is moving the head by hand without
+        cutting.
+\end{description}
+
+\begin{notebox}[Focus]
+Focus --- the height of the lens above the material --- is not controlled by
+MeerK40t on most hobby machines: you set it with a gauge or a motorised bed.
+Everything in this program assumes the focus is correct. Blurry cuts with
+otherwise sensible settings almost always mean focus, not software.
+\end{notebox}
+
+\section{Which machines are supported}
+
+MeerK40t drives machines through dedicated \emph{drivers}. Find your controller
+in the table below; if you do not know which one you have, Chapter~\ref{ch:connect}
+helps you identify it and the manufacturer's model name is usually enough.
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.6cm}L{5.4cm}L{5.9cm}@{}}
+\toprule
+\textbf{Driver} & \textbf{Typical machines} & \textbf{Notes} \\
+\midrule
+Lihuiyu & K40 and other M2-Nano / M3-Nano boards & USB, no controller-side
+settings, raster and vector both supported \\
+GRBL & Diode engravers: Ortur, Atomstack, Longer, Creality, Sculpfun, generic
+G-code machines & The most predictable driver; serial or USB, also network
+(Chapter~\ref{ch:remote}) \\
+Ruida & Black-and-yellow CO\textsubscript{2} machines with an RDC6442/RDC6445
+panel & Network-first, and also able to \emph{emulate} Ruida for other software \\
+Moshi & Older Moshiboard machines & USB \\
+Newly & NewlyDraw System 8.1 machines & USB, PWM frequency exposed \\
+Balor (galvo) & Fibre and UV galvo markers with Ezcad2-compatible JCZ controllers
+& Field-based marking, not gantry motion \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.6cm}L{3.2cm}L{3.9cm}L{4.2cm}@{}}
+\toprule
+\textbf{Driver} & \textbf{Use status} & \textbf{Development} & \textbf{Known issues} \\
+\midrule
+Lihuiyu & usable & under revision & reported raster Y-registration issues \\
+GRBL & good & stable & none known \\
+Moshi & good & stable & none known \\
+Newly & good & stable & none known \\
+Ruida & good & under revision & fit for testing rather than production \\
+Balor & good & stable & none known \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent That second table is worth reading carefully if your work matters: this
+manual describes features that are complete and supported, but a driver marked
+``under revision'' is exactly what it says. Test any new machine profile on
+scrap before running something expensive.
+
+\section{What MeerK40t is not}
+
+Setting expectations saves frustration:
+
+\begin{itemize}
+  \item It is \textbf{not a CAD or illustration program}. It can draw shapes,
+        edit paths and lay out text, and many people do whole projects in it ---
+        but serious artwork is usually made in Inkscape, Illustrator, Affinity
+        Designer or Fusion~360 and imported (Chapter~\ref{ch:files}).
+  \item It is \textbf{not a photo editor}. It rasterises photographs beautifully,
+        but cropping, retouching and levels belong in an image editor first.
+  \item It does \textbf{not replace your machine's manual}. Homing behaviour,
+        limit switches, interlocks, water chillers and lens maintenance are
+        machine matters.
+\end{itemize}
+
+\section{What you need before Chapter~\ref{ch:firstcut}}
+
+\begin{itemize}
+  \item A supported laser, powered, with its interlocks intact.
+  \item The cable your machine uses (usually USB; Ruida machines are usually
+        network).
+  \item MeerK40t installed and starting (Chapter~\ref{ch:install}).
+  \item A few offcuts of the material you intend to use. Your first job should
+        burn scrap, not your final workpiece.
+  \item A way to secure the workpiece: tape, magnets, or the machine's own
+        clamps. Nothing moves a laser cut like a workpiece that shifted
+        mid-job.
+  \item Air assist, if your machine has it, and a focused lens.
+\end{itemize}
+
+\begin{tryit}{Inventory your machine before you start}
+Write down, in one place, the answers to these questions. You will need every
+one of them when you configure the device in Chapter~\ref{ch:connect}:
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item What is the working area of the bed, in millimetres? (Measure it; the
+        specification is often optimistic.)
+  \item Where is the machine's origin --- front-left, front-right, or centre?
+  \item What controller is inside it --- Lihuiyu, GRBL, Ruida, Moshi, Newly,
+        or a galvo head?
+  \item What is the maximum power of the tube or diode, in watts?
+  \item Does it home itself on power-up, and in which corner?
+  \item Does it have air assist, a rotary attachment, or a camera?
+\end{enumerate}
+\end{tryit}

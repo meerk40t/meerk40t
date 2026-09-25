@@ -1,0 +1,214 @@
+\chapter{Paths and nodes}
+\label{ch:paths}
+
+Sooner or later an imported drawing is almost right, or a shape you need does not
+exist in any library. That is when you work below the level of ``rectangle and
+circle'' and edit the actual geometry. This chapter covers the drawing tools,
+the node editor, and the operations that reshape paths.
+
+\section{What an element actually is}
+
+Elements come in a few kinds, and the kind decides which tools apply:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.0cm}L{11.2cm}@{}}
+\toprule
+\textbf{Kind} & \textbf{Behaviour} \\
+\midrule
+Rectangle, ellipse, circle, line, polyline & \emph{Parametric} shapes: they
+remember their definition, so width, height, radius and corner behaviour stay
+editable. \\
+Path & Free geometry: a sequence of points, lines and curves. Imported SVG
+drawings are almost always paths. \\
+Text & Either bitmap text (a rendered glyph block) or vector text from a font
+file (Chapter~\ref{ch:text}). \\
+Image & A bitmap (Chapter~\ref{ch:images}). \\
+Group, layer, file & Containers. They have no geometry of their own. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \menu{Convert to path} turns a parametric shape or a text element into a
+path, after which it can be edited node by node but no longer by its original
+parameters. Two siblings of that command exist for undoing the transformation in
+spirit: \btn{Reify user changes} commits the changes you made by dragging (so
+that later parameter edits no longer fight with them), and
+\btn{Reset user changes} throws those changes away and restores the parametric
+shape.
+
+\begin{tipbox}[Convert late]
+Keep shapes parametric while you are still deciding sizes --- a rectangle you
+can still set to 60\unit{mm} in the \panel{Position} pane is worth more than a
+path you have to measure. Convert when you need to move individual corners, not
+before.
+\end{tipbox}
+
+\section{Drawing}
+
+The drawing tools live in the \panel{Tools} icon bar and each has simple click
+semantics:
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.6cm}L{11.6cm}@{}}
+\toprule
+\textbf{Tool} & \textbf{How it works} \\
+\midrule
+\btn{Line} & Click the start, click the end. \\
+\btn{Rectangle}, \btn{Circle}, \btn{Ellipse} & Click one corner or centre, click
+the opposite. Set exact sizes afterwards in the \panel{Position} pane. \\
+\btn{Polygon}, \btn{Polyline} & Left click adds a point and a segment;
+double-click completes the shape; right-click cancels.
+\emph{Polygon} offers sub-modes: \emph{Freehand}, \emph{Regular},
+\emph{Star 1}, \emph{Star 2} and \emph{Grow}. \\
+\btn{Vector} & The bezier tool: click for a corner point, click and hold to pull
+out a curve handle, double-click to complete, right-click to end an open path.
+This is the tool to reach for when you are tracing something by hand. \\
+\btn{Draw} & Freehand drawing: the path follows your pointer. \\
+\btn{Point} & Places a point element --- the input for a \mkseries{Dots}
+operation (drilling, perforation). \\
+\btn{Text} & Places a text element. \\
+\btn{Job Start} & Places a job-starting position on the scene
+(\emph{placement}). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Two ribbon modes are worth knowing because they are not shapes at all:
+\btn{Measure} draws dimension lines (the overlays visible in
+Figure~\ref{fig:loaded}) without adding elements to the job, and the
+\emph{nudge} ribbon mode lets you push a drawn line around as if it were physical
+--- used for organic, hand-drawn-looking paths.
+
+\begin{notebox}[Drawing is not design]
+Everything in this chapter works, and people do build real parts with it. If
+your artwork is more than a dozen curves, draw it in a vector editor and import
+it. Chapter~\ref{ch:files} covers the round trip, including the trick of
+right-clicking a file node and choosing \btn{Reload} after editing the source.
+\end{notebox}
+
+\section{Editing nodes}
+
+Select a path and activate \btn{Node Edit} in the ribbon. The tool shows the
+path's nodes --- the points where segments meet and where curves are controlled
+--- and lets you work on them directly:
+
+\begin{itemize}
+  \item \textbf{Drag a node} to move it. Snapping applies, so a node can be
+        dropped precisely onto a grid intersection or another element's point.
+  \item \textbf{\btn{Node Move}} is the simpler sibling tool, intended purely for
+        dragging nodes to new positions.
+  \item \textbf{\btn{Point Move}} does the same job for point elements and
+        placements.
+  \item \textbf{\btn{Parametric Edit}} appears for parametric shapes: instead of
+        editing raw nodes you edit the shape's underlying parameters, so a star
+        stays a star while you change its point count or inner radius.
+  \item \textbf{\btn{Tab Edit}} edits the \emph{tabs} of an element --- the short
+        uncut segments that hold a part in place during cutting, so it does not
+        shift or fall through. Tabs are what make a cut sheet survive the last
+        few seconds of the job.
+\end{itemize}
+
+\noindent Node editing is the one place where the geometry is genuinely fragile:
+a path that looks closed may have a 0.02\unit{mm} gap, and a laser will happily
+leave a part hanging by that gap. If a shape should be a closed loop, check it
+afterwards by cutting it on scrap.
+
+\section{Reshaping paths}
+
+These commands live on the element context menu, or in the console:
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.9cm}L{9.3cm}@{}}
+\toprule
+\textbf{Command} & \textbf{What it does} \\
+\midrule
+\btn{Break Subpaths} & Splits one path element into its separate subpaths, so
+each can be moved, assigned or deleted on its own. The cure for a drawing where
+``one object'' is really forty. \\
+\btn{Merge elements} & Joins selected paths into a single element. \\
+\btn{Group elements} / \btn{Ungroup elements} & Groups are organisational only:
+they do not alter geometry and do not merge paths. \\
+\btn{Simplify group} & Reduces nested group structure without changing geometry. \\
+\btn{Remove transparent objects} & Deletes elements that would burn nothing (no
+stroke and no fill). Useful after a heavy import. \\
+\btn{Outline element(s)} & Creates a new path offset by a given distance --- for
+example \cmd{1mm}. Not the same as kerf compensation: this makes a new element
+rather than adjusting the operation. \\
+\menu{Offset shapes} & \btn{\dots to outside} and \btn{\dots to inside} by a
+chosen distance (1--5\unit{mm}), used for lids, masks and press fits. \\
+\cmd{stitch [tolerance]} & Connects path ends that are within the tolerance of
+each other, reducing the number of separate burns and the travel between them.
+Console only; the cut planner can also stitch automatically
+(Chapter~\ref{ch:order}). \\
+\cmd{clipper} & Boolean combination of selected elements: the first argument
+is \cmd{union}, \cmd{difference}, \cmd{intersection} or \cmd{xor}. Console only --- there is no menu entry for it --- with
+options for fill type, interpolation and whether the originals are kept. \\
+\cmd{offset <distance>}, \cmd{offset2}, \cmd{offsetsimple} & The console
+equivalents of the offset menus, with options for join type, separate output and
+interpolation. \\
+\cmd{pocket <offset> <repeats>} & Pocketing: repeated inward offsets that hollow
+an area out, one ring per repeat. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Generating shapes you cannot draw}
+
+Three generators produce geometry that would be tedious to draw by hand.
+
+\subsection*{Living hinges}
+
+The \btn{Hinge} window generates a bendable hinge pattern --- the classic
+laser-cut lattice that lets plywood flex. You give it the \emph{X} and \emph{Y}
+coordinate of the hinge area, its \emph{Width} and \emph{Height}, and choose a
+\emph{Pattern} and \emph{Algorithm} from the combos, with a \emph{Rotation} and
+the \emph{Cell-Width} / \emph{Cell-Height} ratios that control the lattice.
+\btn{Preview Pattern} shows the result, \btn{Preview Shape} shows the boundary it
+will occupy, \btn{Apply to scene} puts it into the drawing, and
+\btn{Default Values} resets the numbers. Living hinges are cut, not engraved, so
+assign the result to a \mkseries{Cut} operation and expect a slow job: this is a
+lot of path.
+
+\subsection*{Tabs and keyholes}
+
+\btn{Tab Edit} places the small uncut bridges described above. The keyhole tool
+(right-click an element, \btn{Add a keyhole}) does the opposite job: it combines
+two elements so that one is engraved through the other as a mask --- used for
+nested artwork and for engraving a picture into a shape.
+
+\subsection*{Parametric generators (console)}
+
+A family of console commands builds mathematical shapes directly:
+
+\begin{lstlisting}[style=konsole]
+pgrid 10mm 10mm 4 3          # a grid of copies: cell size, columns, rows
+shape 5 0 0 20mm             # star/polygon: corners, x, y, radius
+growingshape 2 2 5 6 10mm    # a growing spiral-like shape
+cycloid 2 2 10mm 4mm 20      # cycloid curve
+fractal_tree 2 2 5 6         # a fractal tree
+\end{lstlisting}
+
+\noindent Each takes sizes and counts; \cmd{shape} and \cmd{growingshape} accept
+options such as \cmd{--angle}, \cmd{--ratio} and \cmd{--density}. They are not in
+any menu, which is deliberate: they are the escape hatch for the shapes a GUI
+cannot anticipate. Once created, the result is a normal element that the
+\btn{Parametric Edit} tool can continue to adjust.
+
+\begin{tryit}{Rescue a messy import}
+Take an SVG that has too many objects and make it cuttable.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Import the file and expand the tree. Note how many elements arrive and
+        whether they are grouped.
+  \item Use \btn{Measure} to check one known dimension against the real artwork.
+        If it is wrong, fix the size in the \panel{Position} pane before anything
+        else.
+  \item Find a path that should be several objects, select it, and use
+        \btn{Break Subpaths}. Move the pieces apart to see what they are.
+  \item Use \btn{Remove transparent objects} to shed anything invisible.
+  \item Add a \mkseries{Cut} operation for the outlines and a \mkseries{Engrave}
+        operation for the interior detail, assigning by colour or by selection.
+  \item Use \cmd{stitch 0.1mm} in the console and compare the plan's travel
+        distance before and after in the \panel{Simulation} window.
+  \item Save as a new project file. Your rescue is now reusable artwork.
+\end{enumerate}
+\end{tryit}

@@ -1,0 +1,480 @@
+\chapter{Glossary, help and reporting problems}
+\label{app:glossary}
+
+The tutorial chapters use their words without ceremony and expect you to keep
+moving. This appendix is the one to keep beside the machine: what the vocabulary
+means, where the program sends you when you ask for help, how to report a fault
+so that it can actually be fixed, which hardware is currently known to work,
+and a checklist to run through before the beam comes on.
+
+\section*{Glossary}
+
+Terms are listed as an operator meets them, in alphabetical order. Where a term
+has a specific meaning inside MeerK40t --- rather than the general laser-shop
+meaning --- that meaning is the one given.
+
+{\small
+\begin{longtable}{@{}p{3.3cm}p{11.1cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Meaning} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+
+\textbf{Bed} & The flat working area of the machine, and the white rectangle
+MeerK40t draws for it in the scene. Its size comes from the device's
+\setting{bedwidth} and \setting{bedheight} settings, so a bed with the wrong
+proportions is a device-configuration problem, not a drawing problem
+(Chapter~\ref{ch:connect}). \\
+
+\textbf{Blob} & The device-specific data that a plan is converted into before it
+is streamed to the controller --- the \cmd{blob} stage of planning. A blob shows
+up as a \ui{blob} node in the \panel{Tree}, and can be executed, converted back
+to elements, or deleted. \\
+
+\textbf{Burn} & Running a job with the beam on: the machine is marking or cutting
+material. Inside MeerK40t ``burn'' also names the work itself --- the
+\tabname{Burn-Operation} tab of the \panel{Tree} lists what will burn and in what
+order, and the status bar reports burn progress. \\
+
+\textbf{Classification} & The rule that decides which operation an element
+belongs to, by comparing the element's stroke and fill colours with the colours
+of your operations. Whether matching is exact or approximate, whether unmatched
+elements go to a ``default'' operation, and whether MeerK40t may create a new
+operation for them are all set on the \tabname{Classification} tab of the
+Preferences window (Chapter~\ref{ch:ops}). \\
+
+\textbf{Cutcode} & MeerK40t's internal list of laser primitives --- lines, arcs,
+curves, raster sweeps, dwells and moves --- each carrying the settings it must be
+burned with. Operations are turned into cutcode, and the drivers consume cutcode;
+you never edit it directly. \\
+
+\textbf{DPI} & Dots per inch: how many raster scan lines fit into an inch of
+travel. It is the reciprocal of the raster step, so doubling the DPI halves the
+step, roughly doubles the burn time, and only pays off while the step is still
+larger than your laser's spot (Chapter~\ref{ch:tuning}). \\
+
+\textbf{Dwell} & A deliberate pause at one point with the beam on, used to mark a
+dot or to pierce material. MeerK40t's \mkseries{Dots} operation carries a dwell
+time and produces one dwell per point element attached to it. \\
+
+\textbf{Effect} & A node that rewrites geometry instead of burning something
+itself. \emph{Hatch} fills a closed shape with parallel lines, \emph{Wobble}
+follows the outline with a wavy contour, and \emph{Warp} distorts geometry into a
+grid. Effects can be attached to elements or appended to a \mkseries{Cut} or
+\mkseries{Engrave} operation. \\
+
+\textbf{Element} & One piece of artwork in the \panel{Tree}: a path, rectangle,
+ellipse, line, polyline, point, text, image or blob. Elements live in the
+\ui{Elements} branch; operations do not contain them, they hold references to
+them. \\
+
+\textbf{Emphasis (selected)} & The emphasised nodes are the current selection ---
+the ones the toolbar, the property panes and the console act on. Emphasising an
+element also highlights the operations that reference it, and emphasising an
+operation highlights its sub-operations and the elements it uses. \\
+
+\textbf{Engrave} & A vector operation that traces a path with the beam on but
+does not cut through: thin, dark lines, good for text and detail. The same
+geometry burned with a \mkseries{Cut} operation and heavier settings is a cut
+(Chapter~\ref{ch:ops}). \\
+
+\textbf{Frame / outline} & Running the machine around the outside of a job so you
+can see where it will land before burning it. In MeerK40t the
+\cmd{outline <offset>} command --- also \menu{Outline element(s)...} on an element
+--- creates an offset outline path around the emphasised elements, and some
+drivers add machine-side frame buttons (Newly: \btn{Draw Frame},
+\btn{Move Frame}). \\
+
+\textbf{Galvo} & A marking head that steers the beam with mirrors across a fixed
+field instead of moving a gantry, as on fibre and UV marking machines. MeerK40t
+drives Ezcad2-compatible JCZ galvo controllers through the Balor driver. \\
+
+\textbf{G-code} & The motion language used by GRBL-family controllers. MeerK40t
+generates G-code for GRBL devices and can export it as \file{.gcode},
+\file{.nc} or \file{.gc}; K40, Ruida, Moshi and Newly machines speak their own
+protocols instead. \\
+
+\textbf{Hatch} & A fill made of parallel lines inside a closed shape, with a
+hatch distance and angle (algorithms: scanline, Eulerian, spiral). Hatching is
+how an area is engraved in sweeps instead of outline by outline. \\
+
+\textbf{Home} & A fixed position the machine can find for itself, usually with
+limit switches; the \cmd{home} command and the controller's own Home button send
+the head there. Home is the machine's reference point and is not necessarily the
+origin a job is placed from (Chapter~\ref{ch:connect}). \\
+
+\textbf{Image operation} & The \mkseries{Image} operation, which engraves an
+existing image pixel by pixel with the operation's own settings. It is not the
+same as \mkseries{Raster}, which first renders everything attached to it into one
+intermediate image and then burns that. \\
+
+\textbf{Job} & One compiled unit of work: the operations built into cutcode,
+wrapped up and handed to the spooler to stream to the machine. Jobs appear in the
+\panel{Spooler} pane with their status, passes, runtime and estimate. \\
+
+\textbf{Job origin (job start, user origin)} & The point a job is placed from, so
+that the same artwork can be burned at several positions on the bed. In MeerK40t
+it is a \emph{placement} node under the operations branch
+(\menu{Define Job Start Position}), and you may define several. \\
+
+\textbf{Kerf} & The width of material that the beam destroys. A part drawn
+20\unit{mm} wide comes out narrower unless you compensate, which is why operations
+expose a kerf value and MeerK40t can offset paths by half of it. \\
+
+\textbf{Laser path} & The preview of where the beam will actually travel, drawn
+over the artwork with the direction of each cut. Toggle it under
+\menu{View>Scene Appearance}. \\
+
+\textbf{Lid / interlock} & The safety switch that stops the beam when the
+enclosure is opened. MeerK40t cannot see it and cannot override it; a machine
+whose lid switch has been defeated is a machine that will injure someone. \\
+
+\textbf{Lihuiyu} & The driver family for Lihuiyu M2-Nano and M3-Nano boards ---
+the original K40 controller. USB only, vector and raster both supported. See
+\ref{app:drivers} for its settings. \\
+
+\textbf{Machine origin} & The zero point the machine itself works in, fixed by
+homing or by the controller. Where it physically sits --- front-left, centre, or
+somewhere else --- is decided by your device profile and controller, so establish
+it with a light test on scrap before you cut anything valuable. \\
+
+\textbf{Moshi} & The driver for Moshiboard controllers, found in older
+laser machines. USB, with the board's own command set. \\
+
+\textbf{Newly} & The driver for NewlyDraw System 8.1 machines. USB, with its own
+file slots on the controller and \btn{Draw Frame} / \btn{Move Frame} controls for
+checking placement. \\
+
+\textbf{Op} & A single operation node in the \panel{Tree}, holding one recipe:
+its type, colour, speed, power, passes and effects. An op is what you select,
+edit and drag elements onto. \\
+
+\textbf{Operation} & The recipe for burning a group of artwork: cut, engrave,
+raster, image or dots, plus its settings. Operations are listed in the
+\ui{Operations} branch and are planned in order, top to bottom
+(Chapter~\ref{ch:ops}). \\
+
+\textbf{Overscan} & Extra travel added at each end of a raster line so that the
+head is already at full speed when it reaches the image. Without it, the ends of
+each sweep linger and burn darker. \\
+
+\textbf{Passes} & How many times an operation repeats the same path or sweep.
+Two passes at moderate power usually cut cleaner than one at maximum, especially
+in plywood and acrylic. \\
+
+\textbf{PPI} & Pulses per inch: how many laser pulses are emitted per inch of
+travel, shown as \emph{frequency} in kilohertz on machines that expose it.
+It changes how an edge looks more than whether the material cuts at all. \\
+
+\textbf{Plan} & The working copy of the selected operations that the planner
+builds, stage by stage, and then hands to the spooler. Plans are numbered, so you
+can hold several at once; the console's \cmd{plan} commands act on them
+(Chapter~\ref{ch:order}). \\
+
+\textbf{Preopt / optimize} & The two optimisation stages of planning.
+\cmd{preopt} prepares the plan for reordering and adds the optimiser passes;
+\cmd{optimize} runs them, reducing travel and cutting inner contours before outer
+ones. With optimisation switched off, a plan skips both. \\
+
+\textbf{Profile} & A saved machine configuration --- a device entry with its
+driver, bed size, origin and settings. Profiles are chosen and edited in the
+\panel{Devices} pane; the device chooser at first start offers generic profiles
+grouped under each driver. \\
+
+\textbf{Raster} & Pixel artwork, and the operation that burns it line by line. A
+\mkseries{Raster} operation renders everything attached to it into one image and
+sweeps that image; a raster engrave is much slower than a vector one over the
+same area (Chapter~\ref{ch:engrave}). \\
+
+\textbf{Reference} & A node under an operation that points at an element in the
+elements branch, which is how one element can belong to several operations
+without being copied. (The alignment ``reference object'' --- an element other
+elements are aligned to --- is a different thing with the same name.) \\
+
+\textbf{Regmark} & A registration mark: artwork used only to align the work ---
+with a camera, a jig, or the machine's own pointer. Regmarks live in their own
+\ui{Regmarks} branch so they are never burned, and invisible objects in imported
+files can be loaded there. \\
+
+\textbf{Rotary} & A rotating attachment that turns a cylindrical workpiece so the
+laser can engrave around it. MeerK40t configures rotary work per device and also
+has support for cylindrical material on flat beds. \\
+
+\textbf{Ruida} & The driver for Ruida controllers, the black-and-yellow
+CO\textsubscript{2} machines with an RDC6442- or RDC6445-class panel. Network
+first, and able to emulate a Ruida controller for other software. \\
+
+\textbf{Spooler} & The queue of jobs waiting for the machine, and the pane that
+shows it (\panel{Spooler}, docked at the bottom of the main window on first use).
+It reports each job's items, steps, passes, runtime and estimate, and carries the
+\btn{Pause} and \btn{Abort} controls. \\
+
+\textbf{Step (raster step)} & The distance between adjacent raster scan lines,
+in millimetres or inches. It is the number MeerK40t actually works in; DPI is the
+same quantity expressed as lines per inch, and around 500\unit{dpi} the step is
+about 0.05\unit{mm}. \\
+
+\textbf{SVG} & The vector file format MeerK40t imports best, and also its native
+project format: \menu{File>Save} writes your project --- artwork, operations and
+notes --- out as SVG. \\
+
+\textbf{TTF / Hershey} & The font kinds available to vector (line) text:
+TrueType (\file{.ttf}), Hershey (\file{.jhf}) and Autocad shape (\file{.shx})
+fonts. All three are converted to paths that can be scaled and cut like any other
+vector shape (Chapter~\ref{ch:engrave}). \\
+
+\textbf{Vector} & A shape described mathematically --- a line, arc or curve ---
+rather than as pixels. Vectors scale without degrading and are burned by tracing
+the path, which is why they cut and score. \\
+
+\textbf{Wobble} & An effect that makes the beam follow a wavy contour around a
+path --- circle, sine wave, sawtooth, jigsaw, gear and other shapes --- with a
+radius, an interval and a speed. It produces decorative, stitch-like edges and
+wider, softer cuts. \\
+
+\textbf{Wordlist} & A named list of text values (optionally CSV-backed) whose
+entries are substituted into text at burn time, advancing one entry per burn.
+Used for serial numbers, batch labels and the like. \\
+
+\textbf{Work area} & The region the machine can actually reach, which is the bed
+minus whatever the head, the gantry or a rotary attachment takes away. Elements
+outside the work area are either unburnable or will be cut somewhere unexpected;
+the \panel{Tree} warns about them. \\
+
+\textbf{Zero, 0,0} & The coordinate origin the scene measures positions from. A
+\ui{Goto} utility node placed at 0,0 is shown in the \panel{Tree} as
+\ui{Origin}, which is a convenient way to see where the zero point of a job
+sits. \\
+
+\end{longtable}
+}
+
+\section*{Getting help}
+
+MeerK40t is developed by a community that mostly answers questions in public
+forums rather than by email, and the \menu{Help} menu is the front door to those
+places. The entries are always the same; only the addresses they open change.
+
+\begin{center}\small
+\begin{tabular}{@{}p{5.0cm}p{9.3cm}@{}}
+\toprule
+\textbf{Menu entry} & \textbf{What it opens} \\
+\midrule
+\menu{Help>Help} (\key{F1}) and
+\menu{Help>Online Reference} (\key{F11}) & Context-sensitive online help.
+MeerK40t looks at the widget under the mouse pointer, walks up through its
+parents until it finds help text, and opens the wiki page for that section;
+if nothing under the pointer has help text, it opens the general interface
+section instead. \\
+\menu{Help>Beginners' Help} & The wiki index for new users:
+{\scriptsize\file{https://github.com/meerk40t/meerk40t/wiki/Beginners:-0.-Index}}. Start here
+when the manual has not answered the question. \\
+\menu{Help>Github} & The project page:
+{\scriptsize\file{https://github.com/meerk40t/meerk40t}}. \\
+\menu{Help>Releases} & The release list, where installers, stable releases and
+weekly builds live:
+{\scriptsize\file{https://github.com/meerk40t/meerk40t/releases}}. \\
+\menu{Help>Facebook} & The K40 MeerK40t group:
+{\scriptsize\file{https://www.facebook.com/groups/716000085655097}}. \\
+\menu{Help>Discord} & The project's Discord server, where developers and users
+talk:
+{\scriptsize\file{https://discord.gg/vkDD3HdQq6}}. \\
+\menu{Help>Makers Forum} & The MeerK40t section of the Makers Forum:
+{\scriptsize\file{https://forum.makerforums.info/c/k40/meerk40t/120}}. \\
+\menu{Help>Feature request/feedback} & The GitHub Discussions chooser for
+reporting requests and ideas:
+{\scriptsize\file{https://github.com/meerk40t/meerk40t/discussions/new/choose}}. Feature
+requests belong here rather than in the issue tracker. \\
+\menu{Help>Check for Updates} & Runs the update check immediately and reports the
+result in an \ui{Update-Info} dialog. \\
+\menu{Help>Tips \&\& Tricks} & The Tips window: previous and next tip, a
+\btn{Try it out} button, and switches for showing tips at startup. \\
+\menu{Help>About MeerK40t} & The About window, described below. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{notebox}[Other doors into the same project]
+On macOS the first two entries differ: \btn{MeerK40t Help} opens a local help
+file shipped with the program, and \btn{Online Help} opens the wiki root. The
+bug tracker --- {\scriptsize\file{https://github.com/meerk40t/meerk40t/issues}} --- is also
+reachable from the console with \cmd{webhelp issues}, although it is not on the
+\menu{Help} menu. The project asks that the tracker be kept for actionable bug
+reports and that general questions go to the forums or Discussions.
+\end{notebox}
+
+\subsection*{The About window}
+
+\menu{Help>About MeerK40t} opens a window with four tabs. Two of them exist for
+bug reports, and you should treat them as part of the tool rather than as
+decoration:
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[\tabname{About}] The program version, the project's self-description and
+        the credits --- including the people, translators and icon set that made
+        the program.
+  \item[\tabname{In Memory of David Olsen}] A memorial to David Olsen
+        (1982--2024), known as Tatarize, who wrote MeerK40t, with a short history
+        of the project.
+  \item[\tabname{System-Information}] The exact MeerK40t version, the folder
+        holding your configuration file, and a full report of your operating
+        system, release, machine and processor. It has \btn{Copy to Clipboard}
+        and \btn{Check for Updates} buttons. This is the fastest way to state
+        your environment in a bug report.
+  \item[\tabname{MeerK40t-Components}] A table of the optional and required
+        libraries MeerK40t found --- Python, wxPython, numpy, pillow, the tracing
+        engines, serial and USB support, OpenCV, the clipping library and the
+        rest --- with a \ui{Version} and a \ui{Status} column and a link to each
+        project's home. A component marked \ui{Missing} or \ui{Faulty} explains a
+        whole class of ``the feature does not work'' reports, so include this
+        table when you file one.
+\end{description}
+
+\subsection*{Updates}
+
+Whether MeerK40t looks for new versions is a preference, on the
+\tabname{Options} page of the Preferences window, under ``Check for updates on
+startup'': \ui{Action} chooses between checking not at all, for major releases,
+or for major and beta releases, and \ui{Frequency} chooses between every startup,
+once a day or once a week. \menu{Help>Check for Updates} performs the same check
+on demand. The answers MeerK40t can give are that a newer release is available,
+that you already have the latest version for your system, or that no release
+information could be retrieved from GitHub. The same check is available in the
+console as \cmd{check_for_updates}, with \cmd{--beta} to include prereleases.
+
+\section*{Reporting a problem so it can be fixed}
+
+A bug report that can be acted on contains five things: what you ran, what you
+expected, what happened, the text of the error, and the smallest example that
+shows it. Work down this list and you will have all five.
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
+  \item \textbf{Read the console.} Open the \panel{Console} pane (the ribbon's
+        \btn{Console} button, or \menu{Panes>Console}) and scroll back through it
+        with the error visible.
+        MeerK40t reports failures, warnings about unburnable or unassigned
+        elements, and the planning stages here. Copy the text rather than
+        paraphrasing it --- a Python traceback's last line and a driver's error
+        code are the parts that identify the fault.
+  \item \textbf{Note the exact version.} The title bar shows the program name,
+        its version and the active device; the About window's
+        \tabname{About} and \tabname{System-Information} tabs show the same
+        string; \cmd{meerk40t --version} prints it on its own. A build from a git
+        checkout appends \ui{git} and the branch, a source tree appends
+        \ui{src}, and an installed package appends \ui{pkg} --- that suffix
+        matters, because it tells maintainers which artefact you are running.
+  \item \textbf{Say which machine and which profile.} Name the device entry from
+        the \panel{Devices} pane (the highlighted row is the active one), the
+        driver behind it, and how it is connected --- USB, serial, network or
+        not connected at all. A fault that only happens on one driver is a
+        different report from one that happens with no device at all.
+  \item \textbf{Include the diagnostics.} Use \btn{Copy to Clipboard} on the
+        \tabname{System-Information} tab, and again on the
+        \tabname{MeerK40t-Components} tab, and paste both into the report. If
+        the problem is about speed, \cmd{-f}/\cmd{--profiler} records a Python
+        profile of a session to a file, which is the useful evidence there.
+  \item \textbf{Attach the smallest file that reproduces it.} Delete everything
+        from a copy of the project that is not needed to trigger the fault, save
+        it, and check that the reduced file still misbehaves. An imported
+        original plus your saved project is often enough; a file with one
+        rectangle in it is far more likely to be investigated than a
+        20\unit{MB} artwork.
+  \item \textbf{Describe the steps.} ``Do this, then this, then that'' ---
+        including the settings involved (\setting{dpi},
+        \setting{bedwidth}, the operation's speed and power) and whether the
+        problem repeats on a second attempt. State what you expected to happen
+        as well as what did.
+  \item \textbf{Search before filing.} Look through the issue tracker and
+        Discussions for the same symptom; adding your version and diagnostics to
+        an existing report is more useful than opening a near-duplicate.
+  \item \textbf{Match your expectations to the project's state.} MeerK40t is in
+        a low-maintenance phase: issues and pull requests may wait a long time
+        for an answer, and silence usually means lack of time rather than lack of
+        interest. Weekly builds are automated snapshots that will contain
+        regressions --- if you are chasing a bug in one, say so, and reproduce it
+        on the latest stable release before reporting it as a stable-release bug.
+\end{enumerate}
+
+\section*{Project status and driver support}
+
+MeerK40t is currently in a low-maintenance phase: the original maintainers have
+limited bandwidth for active development, so issues and pull requests may not
+receive immediate feedback. Weekly builds are automated experimental snapshots
+that will contain bugs and regressions --- if you need a reliable machine, stay
+on the latest stable release --- and the fastest route to a fix for something you
+find is usually a pull request or a clear, reproducible report.
+
+Hardware support is tracked separately from program features. The table below
+reproduces the project's own status list; treat the notes column as the honest
+summary of what you are buying into.
+
+\begin{center}\small
+\begin{tabular}{@{}p{2.0cm}p{2.6cm}p{2.9cm}p{6.1cm}@{}}
+\toprule
+\textbf{Device type} & \textbf{Use status} & \textbf{Development status} &
+\textbf{Notes} \\
+\midrule
+Lihuiyu & Minor issues & Under revision & Users report raster Y-axis
+registration issues. \\
+GRBL & Okay & Stable & No issues known. \\
+Moshi & Okay & Stable & No issues known. \\
+Newly & Okay & Stable & No issues known. \\
+Ruida & Okay & Under revision & Fit for testing (rather than production). \\
+Balor & Okay & Stable & No issues known. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Status as published by the project on 17/12/2025. In the project's own
+legend, \emph{Okay} means generally reliable for production use, \emph{Minor
+issues} means usable but liable to occasional problems, \emph{Stable} means the
+core functionality is mature and well tested, and \emph{Under revision} means
+active development with changes expected. The driver-specific settings that go
+with each of these families are collected in \ref{app:drivers}.
+
+\section*{Final safety checklist}
+
+Tick all of these before pressing \btn{Start}. They take a minute and they cover
+the failures that ruin work, burn material or start fires --- in roughly that
+order of likelihood.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.5cm}p{13.9cm}@{}}
+\toprule
+\textbf{} & \textbf{Before the beam comes on} \\
+\midrule
+$\square$ & Enclosure closed, lid shut, every interlock intact and working ---
+no bypassed switches, no tape over sensors. \\
+$\square$ & Air assist on, if your machine has it; if it is off, you have
+decided that deliberately. \\
+$\square$ & Focus checked for this material and this thickness, with the
+machine's own gauge or jig. \\
+$\square$ & Workpiece secured: clamped, taped or magnetised, and clear of the
+head's travel over the whole job. \\
+$\square$ & Material identified with certainty. If you do not know what it is,
+do not cut it --- PVC, polyurethane, vinyl, ABS and unknown composites release
+poisonous fumes. \\
+$\square$ & Settings proven on scrap of the same material and thickness, not
+assumed from a forum post or a previous job. \\
+$\square$ & Bed size and origin correct for this machine, and the job inside the
+work area --- the job is not going to run off the bed or into a clamp. \\
+$\square$ & Material thickness and kerf accounted for, so that parts will fit
+after the cut rather than before it. \\
+$\square$ & Job estimated in Simulation or in the \panel{Spooler} estimate
+column, and the time and material cost accepted. \\
+$\square$ & Nothing flammable inside the enclosure that is not part of the job:
+no loose offcuts, no paper, no cleaning rags, no solvent. \\
+$\square$ & Extinguisher within reach and suitable for the material, and you
+know where the pause and stop controls are --- on the machine and in the
+\panel{Laser-Control} pane. \\
+$\square$ & You intend to stay with the machine for the whole job. It is not
+left unattended, ever. \\
+\bottomrule
+\end{tabular}
+\end{center}

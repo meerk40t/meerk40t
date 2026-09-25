@@ -1,0 +1,279 @@
+\chapter{Dialling in settings}
+\label{ch:tuning}
+
+Every laser, every tube, every diode and every sheet of material is slightly
+different. The recipes you find on the internet are starting points for someone
+else's machine. This chapter is about replacing them with numbers that belong to
+yours --- systematically, and in an afternoon rather than over a year of
+frustration.
+
+\section{The method}
+
+Three rules make all the difference:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Change one thing at a time.} A grid with speed on one axis and
+        power on the other, all burned in a single job on a single piece of
+        material, tells you more than fifty separate experiments.
+  \item \textbf{Write down what you burned.} The grid is worthless without a
+        record of the settings and the result. Engrave the labels into the test
+        piece, or photograph it with the numbers beside it.
+  \item \textbf{Test the material you will actually use.} Thickness, moisture,
+        glue content and the colour of the sheet all change the answer. Plywood
+        from two suppliers is two materials.
+\end{enumerate}
+
+\section{Test grids: the Parameter-Test window}
+
+\menu{Tools>Laser-Tools>Parameter-Test} builds the grid for you. It has two tabs:
+\tabname{Generator}, where the grid is designed, and \tabname{Templates}, where
+you save and reload designs.
+
+\begin{walkthrough}{Burn a speed/power grid on 3\unit{mm} plywood}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Open \menu{Tools>Laser-Tools>Parameter-Test}.
+  \item In \emph{Operation to test}, choose \btn{Cut}, \btn{Engrave},
+        \btn{Raster}, \btn{Image}, \btn{Hatch} or \btn{Wobble}. The parameter
+        rows below change with the choice: Cut and Engrave give you
+        \emph{Speed}, \emph{Power} and \emph{Passes}; Raster and Image add
+        \emph{DPI} and \emph{Overscan}; Hatch adds \emph{Hatch Distance} and
+        \emph{Hatch Angle}; Wobble adds its four wobble parameters.
+  \item Fill in \emph{First parameter (X-Axis)} and \emph{Second parameter
+        (Y-Axis)}: which parameter, how many steps (\btn{Count}), the
+        \btn{Minimum} and \btn{Maximum}, the cell \btn{Width}/\btn{Height},
+        the \btn{Delta} between steps and the colour. A sensible first grid for
+        cutting 3\unit{mm} plywood is speed 5--20\unit{mm/s} in five steps on X,
+        and power 40--100\% in five steps on Y.
+  \item Decide about labels. \btn{Labels} prints a descriptive label down the
+        sides of the grid; \btn{Values} prints the numbers; \btn{Simple} uses
+        vector shapes for the labels. Leave both on for your first grid.
+  \item Optionally tick \btn{Create boundary shape} to repeat the shape around
+        the effect, which makes the grid easier to cut free afterwards.
+  \item Press \btn{Create Pattern}. \emph{This deletes all existing operations
+        and elements} --- the dialog says so, and asks whether you want to empty
+        the project or keep it. On a fresh project, empty it.
+  \item Inspect the result on screen: it is a real, editable document, so you can
+        move it onto your material's position, or change one row before burning.
+  \item Press \btn{Queue to Spooler}. It plans the job in the background and puts
+        it in the \panel{Spooler}. It does \emph{not} start it; press
+        \btn{Start} in the spooler when the material is in place.
+\end{enumerate}
+\end{walkthrough}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.92]
+\foreach \x in {0,...,4} {
+  \foreach \y in {0,...,4} {
+    \pgfmathsetmacro{\p}{50+10*\y}
+    \pgfmathsetmacro{\s}{5+3*\x}
+    \draw[fill=black!\p!white,draw=mkgrey!60] (\x*1.25,\y*1.25) rectangle ++(1.05,1.05);
+  }
+}
+\foreach \x in {0,...,4} {
+  \pgfmathsetmacro{\s}{5+3*\x}
+  \node[font=\sffamily\tiny,color=mkdark] at (\x*1.25+0.52,-0.28) {\s};
+}
+\foreach \y in {0,...,4} {
+  \pgfmathsetmacro{\p}{50+10*\y}
+  \node[font=\sffamily\tiny,color=mkdark] at (-0.42,\y*1.25+0.52) {\p};
+}
+\node[font=\sffamily\scriptsize,color=mkdark] at (2.6,-0.85) {speed (mm/s) $\rightarrow$};
+\node[font=\sffamily\scriptsize,color=mkdark,rotate=90,anchor=south] at (-1.15,2.6) {power (\%) $\rightarrow$};
+\end{tikzpicture}
+\caption{A completed 5\,$\times$\,5 cut grid. Read it once: the squares that fell
+out define your cutting window; the top-right corner is burned through or charred;
+the bottom-left does not cut at all. The darkest squares that still cut cleanly
+are the ones worth writing down.}
+\label{fig:testgrid}
+\end{figure}
+
+\subsection*{Reading the grid}
+
+Look for three boundaries rather than for a single best square:
+
+\begin{itemize}
+  \item the \textbf{does-not-cut} boundary --- everything below and right of it
+        wastes material;
+  \item the \textbf{clean-cut} band --- squares that separate and have brown, not
+        black, edges;
+  \item the \textbf{charring} boundary --- where the edge is black, sticky, or
+        the material has a wide heat-affected zone around it.
+\end{itemize}
+
+\noindent Pick the setting in the clean-cut band that is nearest to the
+does-not-cut boundary: it is the fastest one that works, and it is the least
+likely to cause a fire. For engraving, the equivalent goal is the lightest burn
+that is consistently dark.
+
+\begin{tipbox}[Save the grid as a template]
+In the \tabname{Templates} tab, type a name and press \btn{Save}. You then have
+a one-click grid for the next new material, sized the way you like it. Reloading
+a template and pressing \btn{Create Pattern} takes ten seconds.
+\end{tipbox}
+
+\section{Storing the answer: the Material Library}
+
+A grid gives you numbers; the \btn{Material Library} keeps them.
+Open it with the \btn{Material Library} button or \menu{Tools>Material Library}.
+An entry is a named collection of operation presets, keyed by
+\emph{Material}, \emph{Thickness} and \emph{Laser type}, with an optional note.
+
+\begin{walkthrough}{Turn your grid into a library entry}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Build the operations you want to keep --- for example a \mkseries{Cut}
+        at your measured speed, power and passes, and an \mkseries{Engrave} at
+        its own numbers. If you have a saved project that already contains them,
+        load it.
+  \item Open the Material Library and press \btn{Get current} to capture the
+        operations from the tree as a new entry. (Alternatively,
+        \btn{Add new} creates an empty entry and you add operations by name from
+        the right-click menu: \emph{Add Cut}, \emph{Add Engrave},
+        \emph{Add Raster}, \emph{Add Image}, \emph{Add diagonal Hatch},
+        \emph{Add Wobble}, and so on.)
+  \item Fill in the \emph{Information} box: a good \emph{Title}, the
+        \emph{Material} and its \emph{Thickness}, the \emph{Laser} type, the
+        laser's \emph{Power} in watts and — for galvo machines — the
+        \emph{Lens-Size}. Add anything you would otherwise forget in the note
+        field: supplier, tape or no tape, focus setting, whether it needed two
+        passes.
+  \item Use the filter boxes at the top (\emph{Material}, \emph{Thickness},
+        \emph{Laser}, \btn{Reset Filter}) to check your entry lands where you
+        expect, and press \btn{Use for statusbar} if this is the entry you want
+        the quick-assign squares to offer.
+  \item Later: select the entry and press \btn{Load into Tree} to put its
+        operations straight into your job.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent The library imports other people's data too: \btn{Import} reads
+EZcad, LightBurn and MeerK40t library files (\file{*.lib}, \file{*.ini},
+\file{*.clb}, \file{*.cfg}), with options to compensate for a different lens size
+or a different laser power. That is worth knowing when you inherit a machine: the
+settings are probably already in a file somewhere, in units and geometry you do
+not share, which is exactly what the compensation fields are for.
+
+\begin{notebox}[Keep it honest]
+A library is only as good as its entries. If you change the tube, clean the lens,
+or switch suppliers, either re-test or mark the affected entries as stale. A
+wrong entry is more dangerous than no entry, because it saves time --- right up
+until the job fails.
+\end{notebox}
+
+\section{Kerf: cutting parts that fit}
+
+The beam removes material. That removed width is the \emph{kerf}, and it is why a
+10\unit{mm} tab does not fit a 10\unit{mm} slot.
+
+\subsection*{Measuring your kerf}
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Cut a simple shape of known size --- a 20\unit{mm} square in 3\unit{mm}
+        plywood is ideal.
+  \item Measure the finished part. If it is 19.85\unit{mm} wide, the beam took
+        0.15\unit{mm}: 0.075\unit{mm} from each side.
+  \item Measure it in both directions and on two different materials if you cut
+        both. Kerf varies with material, focus, speed and power --- and with how
+        well the machine tracks.
+\end{enumerate}
+
+\noindent Then enter the total width in the operation's
+\btn{Kerf compensation} field, for example \cmd{0.15mm}. MeerK40t offsets each
+closed path by half that amount so the finished part comes out at the designed
+size. For installation instructions on the faster offsetting library, see
+Chapter~\ref{ch:install}: without \cmd{pyclipr} installed, offsets are computed
+by a slower fallback.
+
+\begin{itemize}
+  \item For \emph{fits that must be tight or loose}, do not rely on kerf
+        compensation alone: design the clearance into the artwork. A
+        ``10\unit{mm}'' slot intended for a 10\unit{mm} tab is always wrong; make
+        it 10.1\unit{mm} or 10.2\unit{mm} and cut a test coupon.
+  \item For one-off offsets, the element context menu is quicker:
+        \menu{Outline element(s)} produces an outline path at a given distance,
+        and the \menu{Offset shapes} submenu offsets a shape to the outside or
+        the inside --- useful for making a lid that matches a box, or a mask that
+        surrounds a part.
+  \item Compensation applies per operation, so cut and engrave can differ.
+\end{itemize}
+
+\section{The machine's own calibration}
+
+Some wrong numbers are not material settings at all, but the machine's idea of
+distance. Calibrate these once, correctly, and they stay correct.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.4cm}L{5.0cm}L{5.7cm}@{}}
+\toprule
+\textbf{What} & \textbf{Symptom} & \textbf{How to fix} \\
+\midrule
+Axis scale (\setting{scale_x}, \setting{scale_y}) & A 100\unit{mm} move measures
+103\unit{mm} & Jog exactly 100\unit{mm}, measure, and correct the scale factor in
+the device configuration by the ratio measured $\div$ commanded. \\
+Backlash & Squares are not square, or lines repeat shifted in one direction &
+Newly exposes \emph{Horizontal/Vertical backlash} in millimetres; other drivers
+need mechanical attention (belt tension, eccentric nuts). \\
+Speed chart (Newly) & Corners rounded or overshooting at speed & The device's
+\emph{Raster Chart} holds \emph{Speed <=}, \emph{Acceleration Length},
+\emph{Backlash} and \emph{Corner Speed} rows. \\
+Acceleration (K40/Lihuiyu) & Raster lines ragged or the machine skipping at high
+speed & The \btn{Acceleration-Chart} window (\menu{Tools>Acceleration-Chart}) has
+separate breakpoints for \emph{Vector}, \emph{Vertical Raster} and
+\emph{Horizontal Raster}. \\
+Rotary steps (GRBL) & Wrapped artwork stretched or squashed along the
+circumference & \cmd{rotarycal <measured_mm>} recalculates steps/mm from a test
+burn; \cmd{rotarysuggest <diameter>} estimates it from your mechanics. \\
+Home corner & The head homes to the corner you do not expect, and jobs land
+mirrored & \emph{Force Declared Home} in the device configuration. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Beyond speed and power}
+
+Four settings change results in ways that surprise people.
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[PPI / frequency] Pulses per inch, or kHz on newer machines. Lower PPI
+        leaves a visible serration on acrylic edges and gives wood a rougher,
+        more charred cut; higher PPI gives smoother edges but can overheat the
+        material. If your machine exposes \btn{Frequency}, run one row of your
+        test grid across the values rather than guessing.
+  \item[Focus and material height] Focus is depth of field, and half of
+        ``my settings stopped working'' is a job run a millimetre out of focus.
+        Focus on the surface of the material you cut, not on a fixed table
+        height, and re-check it between pieces of different thickness.
+  \item[Masking and surface protection] Masking tape or transfer film reduces
+        scorch marks around a raster and matters more than most settings for
+        the final appearance on light-coloured wood and on painted surfaces.
+        Remember that tape changes what the beam sees first.
+  \item[Air assist] Clearing the smoke changes the burn as much as 10\% of power:
+        too little and the cut re-deposits soot and catches fire; too much and a
+        delicate engraving is blown pale.
+\end{description}
+
+\begin{machinebox}{Keep a record that ages well}
+The most valuable page in a workshop is not a settings table; it is a
+\emph{sourced} settings table. For each material write down: supplier and
+product, thickness measured with callipers, date, machine, focus setting, air
+assist on or off, tape or no tape, speed, power, passes, PPI and the verdict in
+one word. Six months later those columns are the difference between a repeatable
+process and superstition.
+\end{machinebox}
+
+\begin{tryit}{Build your own starting kit}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Pick the material you use most. Burn a 5$\times$5 cut grid and a
+        3$\times$3 engrave grid on one piece.
+  \item Photograph both with a written card in shot, and keep the photographs
+        with the physical samples in a labelled bag.
+  \item Measure the kerf from the cut grid and record it.
+  \item Enter the winning settings into the Material Library as two entries: one
+        for cutting, one for engraving.
+  \item Repeat for your second material. Then stop: two well-characterised
+        materials beat ten guesses.
+  \item From now on, when you have to guess on a new material, guess by
+        interpolation from these two --- and test the guess on scrap before it
+        touches a real job.
+\end{enumerate}
+\end{tryit}

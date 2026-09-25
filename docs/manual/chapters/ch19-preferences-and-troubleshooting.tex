@@ -1,0 +1,278 @@
+\chapter{Preferences, housekeeping and troubleshooting}
+\label{ch:prefs}
+
+This chapter covers the settings that shape the program itself --- as opposed to
+the job --- and then the practical business of fixing things when they go wrong:
+where your data lives, what to keep, and what to do when something misbehaves.
+
+\section{The Preferences window}
+
+Open it with \key{Ctrl+,}, \menu{Edit>Settings>Preferences}, or the
+\btn{Preferences} button. It is a notebook, and its tabs each collect settings
+from a different part of the program:
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.7cm}L{11.5cm}@{}}
+\toprule
+\textbf{Tab} & \textbf{What is in it} \\
+\midrule
+\tabname{General} & Units and language, plus the settings for \emph{Start},
+\emph{Options}, \emph{Laser}, \emph{Optimisations} and \emph{Laser Settings}. At
+the bottom, a saving panel with \btn{Save}, \btn{Export} and \btn{Import}. \\
+\tabname{Input/Output} & How files are read and written: pixels per inch,
+\emph{Images}, \emph{SVG-Features}, \emph{DXF} and the I/O page. \\
+\tabname{Classification} & Colour-based assignment of elements to operations,
+with presets \btn{Automatic} and \btn{Manual}. \\
+\tabname{Operations} & Defaults applied when operations are created. \\
+\tabname{GUI} & Behaviour of the interface itself --- the table below. \\
+\tabname{Scene} & Element display, selection behaviour and snapping. \\
+\tabname{Colors} & Every colour used on the scene, with \btn{Reset Colors to
+Default} and \btn{Reset Colors to brighter defaults} (for dark themes), plus the
+object-label colour. \\
+\tabname{Ribbon} & The ribbon editor: pages, panels and buttons. \\
+\tabname{Coordinate Space} & Visible only with \cmd{developer_mode} on; shows the
+coordinate transforms. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The settings you are most likely to want, with their defaults:
+
+\begin{center}\small
+\begin{tabular}{@{}L{5.6cm}L{1.8cm}L{6.8cm}@{}}
+\toprule
+\textbf{Label} & \textbf{Default} & \textbf{Effect} \\
+\midrule
+\btn{UI-Colours} & System & Force \emph{Dark} or \emph{Light} regardless of the
+operating system's setting. \\
+\btn{Single Instance} & on & Allow only one MeerK40t at a time. Turn it off when
+you genuinely want two devices driven from two windows. \\
+\btn{Soundfile} & (system) & The sound played by \cmd{beep} --- the end-of-job
+alarm for machines you cannot see. \\
+\btn{Autosave workspace} & on & Periodic save to \file{\_autosave.svg}. See the
+warning below. \\
+\emph{Frequency} & 5 minutes & How often the autosave runs (30\,s to
+10\,min). \\
+\btn{Optimize element display} & on & Do not draw invisible elements. \\
+\btn{Simplify Effects} & on & Limit effect complexity on screen; \key{CapsLock}
+temporarily disables it. \\
+\btn{Remember main window position} & on & Reopen where you left it. \\
+\btn{Save Window Positions} & on & Reopen windows where you left them. \\
+\btn{Launch Spooler on Job Start} & on & Bring up the spooler when a job
+starts. \\
+\btn{MouseWheel Pan} & off & Wheel pans instead of zooming; \key{Ctrl}+wheel does
+the other. \\
+\btn{Invert MouseWheel Pan} / \btn{Invert MouseWheel Zoom} & off & Reverse the
+directions if they feel wrong. \\
+\emph{ToolTip delay} & 100\unit{ms} & How quickly tooltips appear. \\
+\emph{Ribbon: hover before description} & 2000\unit{ms} & How long to hover a
+ribbon button before its long description appears. \\
+\btn{Long UI descriptions} & on & Show extended help in ribbons and context
+menus. \\
+\emph{Level} & 0 & Warning severity: 1 all warnings, 2 normal + critical, 3
+critical only, 4 ignore all. \\
+\btn{Enable Laser Arm} & off & Require the laser to be armed (\btn{Arm}) before
+it will start a job. \\
+\btn{Track changes and allow undo} & on & Undo system on or off (needs a
+restart). \\
+\emph{Levels of Undo-States} & 20 & How many undo steps to keep (3--250). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warnbox}[Autosave is not a recovery system]
+MeerK40t writes \file{\_autosave.svg} every few minutes, but it does not offer to
+reopen it after a crash or a bad exit. If something goes wrong, the file is there
+--- you have to open it yourself. Do not treat it as a substitute for
+\key{Ctrl+S}.
+\end{warnbox}
+
+\section{Appearance, language and updates}
+
+\begin{itemize}
+  \item \textbf{Themes}: \btn{UI-Colours} switches between the system setting,
+        dark and light. The scene has its own palette in \tabname{Colors}; if a
+        dark theme makes the bed or the grid hard to see, the single-click fix is
+        \btn{Reset Colors to brighter defaults}.
+  \item \textbf{Language}: \menu{Languages} switches the interface language.
+        Changing it requires a restart, and the dialog says so. The bundled set
+        includes English, German, Spanish, French, Hungarian, Italian, Japanese,
+        Dutch, Polish, both Portuguese variants, Russian, Turkish and Chinese.
+  \item \textbf{Updates}: the updater's settings live in the \emph{Options} page:
+        \emph{Action} (\emph{No, thank you}, \emph{Look for major releases},
+        \emph{Look for major+beta releases}) and \emph{Frequency} (\emph{At every
+        startup}, \emph{Once per day}, \emph{Once per week}). The same check can
+        be run on demand from \menu{Help>Check for Updates}, or with
+        \cmd{check\_for\_updates} in the console; the result appears in a window
+        titled \emph{Update-Info}. If you use beta releases, expect beta
+        problems.
+  \item \textbf{About} (\menu{Help>About MeerK40t}) has four tabs: \emph{About},
+        \emph{In Memory of David Olsen}, \emph{System-Information} and
+        \emph{MeerK40t-Components}. The last two list the versions of Python,
+        wxPython, numpy, Pillow, potrace, vtracer, ezdxf, pyusb, pyserial, OpenCV,
+        clipper and numba that are actually loaded --- exactly what to copy into a
+        bug report.
+  \item \textbf{Tips} (\menu{Help>Tips \&\& Tricks}) shows a tip with optional
+        image, \btn{Previous tip}, \btn{Next tip} and \btn{Try it out} (which
+        loads an example, so be careful: it can change your design). \btn{Show
+        tips at startup} and \btn{Automatically Update} control whether you see
+        them and whether they are refreshed from the project wiki.
+\end{itemize}
+
+\section{Where your data actually lives}
+
+Knowing this list turns several classes of problem into a two-minute fix.
+
+\begin{center}\small
+\begin{tabular}{@{}L{5.0cm}L{9.2cm}@{}}
+\toprule
+\textbf{File} & \textbf{Where and why} \\
+\midrule
+\file{MeerK40t.cfg} & The configuration, in the per-user configuration directory
+(\file{\textasciitilde/.config/MeerK40t/} on Linux,
+\file{\textasciitilde/Library/Application Support/MeerK40t/} on macOS,
+\file{\%LOCALAPPDATA\%\textbackslash MeerK40t\textbackslash} on Windows).
+Settings, devices, window layout, recent files. \\
+\file{MeerK40t.bak}, \file{.ba1}\dots\file{.ba5} & The five previous versions of
+that file, newest first. \\
+\file{\_autosave.svg} & The periodic workspace save, in the program's working
+directory. \\
+\file{cmdhistory.log} & Your console command history (last fifty commands). \\
+\file{MeerK40t-\emph{timestamp}.txt} & Crash logs: written to the current working
+directory, or to the configuration directory if that is not writable. \\
+\file{history.csv} & Job history exported from the spooler with \emph{Write
+CSV}. \\
+\file{tips.txt} & The local cache of tips shown by the Tips window. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The console also writes useful things on demand:
+\cmd{channel save console} records the console output to a timestamped file,
+\cmd{setting\_export <dir>} copies your whole configuration out (and
+\cmd{setting\_import <file>} reads it back), and the \btn{Export} button in the
+preferences does the same thing from the GUI.
+
+\section{Troubleshooting by symptom}
+
+\subsection*{The window is broken, a pane is missing, or a dialog is off-screen}
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item \menu{Panes>Reset Panes} restores the default layout.
+  \item \menu{Tools>Reset Windows} forgets stored window positions; the console
+        version is \cmd{window reset *}.
+  \item Still wrong? Close the program, move \file{MeerK40t.cfg} aside, and start
+        again. You lose the layout, not your projects.
+\end{enumerate}
+
+\subsection*{Nothing happens when I press Start}
+
+The program is usually refusing on purpose, and it says why:
+
+\begin{itemize}
+  \item \emph{``Nothing to burn. Operations need assigned shapes\dots''} --- there
+        is no artwork attached to any enabled operation.
+  \item \emph{``Some shapes are not assigned to any operation\dots Queue
+        anyway?''} --- some artwork will be skipped. Fix it with
+        \menu{Edit>Select all non-assigned} and the operation squares.
+  \item \emph{``Connect your laser device first''} --- the device is not talking
+        to the machine; Chapter~\ref{ch:connect} has the checklist.
+  \item \btn{Enable Laser Arm} is on and the laser is not armed --- press
+        \btn{Arm}, or turn the preference off.
+  \item Nothing at all, not even a dialog: check the \panel{Console} pane. The
+        refusal is printed there.
+\end{itemize}
+
+\subsection*{A job stops in the middle, or the head goes somewhere unexpected}
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Look at the \panel{Console} for the last device message; the driver's
+        \btn{Controller} window carries the raw traffic and any alarm.
+  \item An alarm (GRBL especially) usually means the machine hit a soft limit:
+        check the bed size, the flips and the declared home corner
+        (Chapter~\ref{ch:connect}) before assuming a mechanical fault.
+  \item If the job is still queued, the \panel{Spooler} shows its status; a job
+        can be paused, resumed, disabled or removed there.
+  \item If the machine stopped but the program thinks it is running, use
+        \btn{Abort} in the spooler and re-home before continuing.
+\end{enumerate}
+
+\subsection*{The burn is wrong}
+
+Almost always one of four things, in this order of likelihood: focus is off; the
+material is not what you think it is; the speed/power pair has not been verified
+on this machine; or the raster settings (DPI, overscan, direction) are wrong for
+the machine. Chapter~\ref{ch:tuning} is the systematic answer, and
+Chapter~\ref{ch:engrave} covers raster-specific faults.
+
+\subsection*{The program is slow}
+
+\begin{itemize}
+  \item Huge imported files: \btn{Remove transparent objects}, \btn{Break
+        Subpaths}, and \btn{Reduce polyline details} in the optimisation
+        settings. A drawing with 40\,000 nodes will never feel quick.
+  \item Display: turn off \emph{Instant Snap Display}, animation and image
+        caching toggles in \menu{View>Scene Appearance}, and \emph{Simplify
+        Effects} (or hold \key{CapsLock}).
+  \item Raster jobs: lower the DPI. Time scales linearly with it.
+  \item Still slow: run once with \cmd{-f profile.txt} and send the result with a
+        bug report --- it is a Python profile of the session, and it points at the
+        actual bottleneck.
+\end{itemize}
+
+\subsection*{Something crashed}
+
+MeerK40t installs a crash handler. On a crash it:
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item writes the traceback --- including a summary of the local variables at
+        each frame --- to \file{MeerK40t-\emph{timestamp}.txt} in the working
+        directory (falling back to the configuration directory if that is not
+        writable), and to the terminal's standard error;
+  \item shows a dialog titled \emph{Crash Detected! Send Log?} offering to send
+        those details to the developers. The dialog is explicit that only the
+        crash details are sent --- no project data, no personal information ---
+        and \btn{Cancel} aborts the program rather than continuing.
+\end{enumerate}
+
+\noindent The crash log is the most useful thing you can attach to a report, and
+it survives the crash: find it, read the first traceback, and note the version
+from the title bar or \cmd{meerk40t --version} (the suffix, \cmd{git},
+\cmd{src} or \cmd{pkg}, tells the developers how your copy was built). More on
+reporting in Appendix~\ref{app:glossary}.
+
+\subsection*{Permissions, sudo and USB}
+
+If MeerK40t only sees the laser when run as root or with \cmd{sudo}, install the
+udev rules from Chapter~\ref{ch:connect} and add your user to the \cmd{dialout}
+group. Running the program with elevated privileges is not recommended, and the
+program warns about it --- the warning can be silenced, but the better fix is the
+rules.
+
+\subsection*{Two copies of the program}
+
+With \btn{Single Instance} on, launching a second copy brings the first one
+forward. If you really do want two, or if the check is getting in your way on a
+shared machine, turn it off in the \tabname{General} tab.
+
+\begin{tryit}{Make your setup survivable}
+Twenty minutes now, an afternoon saved later.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item In the console, run \cmd{setting\_export /home/me/meerk40t-backup} and
+        confirm the timestamped \file{.cfg} file is there. Do it again after any
+        significant device or material work.
+  \item Note your configuration file's location from the table above, and confirm
+        the \file{.bak} files beside it.
+  \item Set \emph{Levels of Undo-States} to something larger than the default if
+        you do exploratory editing, and consider whether \emph{Autosave} interval
+        of five minutes suits your machine.
+  \item Turn on \emph{Enable Laser Arm} if anyone else ever uses this machine;
+        leave it off if you are the only operator and find it annoying.
+  \item Deliberately break the layout --- hide panes, float windows, move
+        everything --- then fix it with \menu{Panes>Reset Panes} and
+        \menu{Tools>Reset Windows}.
+  \item Open a project, make a change, and confirm \btn{Save Window Positions}
+        and \emph{Remember main window position} bring back your workspace on the
+        next start.
+\end{enumerate}
+\end{tryit}

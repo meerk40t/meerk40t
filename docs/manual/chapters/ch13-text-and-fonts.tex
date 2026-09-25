@@ -1,0 +1,197 @@
+\chapter{Text and fonts}
+\label{ch:text}
+
+Lettering is most of what a laser is used for: names, part numbers, signs, serial
+numbers, batch codes. MeerK40t handles text in two fundamentally different ways,
+and choosing the right one decides how the job looks.
+
+\section{Two kinds of text}
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[Bitmap text] An ordinary text element (\btn{Text} in the \panel{Tools}
+        bar, or \cmd{text WORKSHOP} in the console). It behaves like a picture of
+        text: fine for engraving, and it can also be converted into paths.
+  \item[Vector text] Text drawn as paths from a font file, created with the
+        \emph{linetext} tool. Every stroke is a real vector, so it can be cut,
+        scaled to any size without losing crispness, welded, and given a stroke
+        width for a bolder look.
+\end{description}
+
+\noindent Which to use:
+
+\begin{itemize}
+  \item \textbf{Cutting letters out} (a stencil, a sign, letters with holes):
+        vector text, assigned to a \mkseries{Cut} operation.
+  \item \textbf{Engraving crisp small lettering}: vector text in an
+        \mkseries{Engrave} operation. Thin, clean, repeatable.
+  \item \textbf{Large filled letters} on a plaque: either an \mkseries{Engrave}
+        operation with a \emph{hatch effect} (Chapter~\ref{ch:ops}) or a
+        \mkseries{Raster} operation, which fills the letters by scanning them.
+  \item \textbf{Text that will be edited in a picture editor}, or where the
+        exact typography matters more than the geometry: bitmap text, burned as
+        a raster.
+\end{itemize}
+
+\section{Choosing a font}
+
+MeerK40t can use three families of font:
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.4cm}L{4.0cm}L{7.8cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Extension} & \textbf{Character} \\
+\midrule
+Hershey fonts & \file{.jhf} & The classic single-stroke engraving fonts. Thin,
+even, ideal for small lettering and for cutting. \\
+Autocad shape fonts & \file{.shx} & Single-stroke engineering lettering; crisp
+and utilitarian. \\
+TrueType fonts & \file{.ttf} & Ordinary desktop fonts with outlines. Great for
+display lettering, but thin fonts vanish at small sizes when cut. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Open the \btn{Font-Manager} (from \menu{Edit>Settings>Font-Manager}, or
+the preferences window's \btn{Fonts} button). It shows an information panel, a
+\emph{Font-Work-Directory} with a picker for your own fonts, the list of
+\emph{System font locations} MeerK40t searches, the list of fonts it has found
+with a preview, and the buttons \btn{Import}, \btn{Delete}, \btn{Refresh}. The
+\emph{Goto a font-source} combo jumps to the well-known collections --- the
+Hershey font sets and the Autocad SHX fonts. Importing reports how many fonts
+succeeded and how many failed, which is worth reading: one bad file in a batch
+does not stop the rest.
+
+\begin{tipbox}[Pick fonts that survive the laser]
+A font with hairlines will burn into a thin scorch mark, and a font with tight
+counters (the enclosed parts of \cmd{e}, \cmd{a}, \cmd{o}) will fill in when it
+is cut small. Test your intended font at the size you intend to use --- a line of
+text on scrap costs seconds and settles the argument completely.
+\end{tipbox}
+
+\section{Working with text elements}
+
+Select a text element and choose \btn{Text properties} (or \btn{LineText
+properties} for vector text). The property panel offers:
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.4cm}L{10.8cm}@{}}
+\toprule
+\textbf{Control} & \textbf{What it does} \\
+\midrule
+\emph{Content} & The text itself. Multi-line content is supported. \\
+\emph{Left / Center / Right} & Alignment for multi-line text. \\
+font size buttons & Larger and smaller by one step. Hold \key{Shift} or
+\key{Ctrl} for bigger steps; right-click resets to the default. \\
+character-gap buttons & Increase or decrease the kerning between characters. \\
+line-distance buttons & Increase or reduce the space between lines. \\
+\btn{Weld} & Merges overlapping characters into one outline --- essential for
+script fonts and for anything where two letters touch, since otherwise they cut
+as two pieces that fall apart. \\
+font list & Double-click a font to apply it there and then; the preview below
+updates as you browse. \\
+\btn{Insert symbol} & Right-click the text box for \btn{Paste} and
+\btn{Insert symbol}, which opens a glyph picker listing each character with its
+Unicode value, ASCII code and preview --- the practical way to add
+\textdegree{}, \textmu{}, \texteuro{} or a non-Latin character. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent If a font in an imported design is not installed, the panel says
+\emph{Font missing} and names it. Install the font, or switch the text to a font
+you have --- do not begin a burn with a missing-font warning on screen, because
+what you are looking at is not what will be cut.
+
+\section{Text that changes between burns: wordlists}
+
+A wordlist turns a text element into a template. Write a placeholder in the text,
+such as \cmd{{NAME}}, and MeerK40t substitutes the current wordlist entry at
+burn time. The index then advances by one, so the next burn of the same job
+carries the next value --- which is what makes a single project produce a hundred
+numbered parts.
+
+\subsection*{The Wordlist Editor}
+
+Open \menu{Edit>Settings>Wordlist-Editor}, or the \panel{Wordlist} pane with its
+\btn{Edit} button. Each entry has a \emph{Name}, a type and an \emph{Index}. The
+editor's controls include:
+
+\begin{itemize}
+  \item \emph{Filter} to find an entry by name;
+  \item \emph{Start Index for CSV-based data} and \emph{Start Index for field} to
+        control where counting begins;
+  \item \btn{Jump} to position the index directly;
+  \item \btn{Add Text} and the list tools (add, edit, delete entries and their
+        values), and a tab containing the how-to text for the feature.
+\end{itemize}
+
+\noindent Besides the lists you create, several entries exist automatically and
+are useful in labels and serial plates: \cmd{version}, \cmd{date}, \cmd{time},
+\cmd{op_device}, \cmd{op_speed}, \cmd{op_power}, \cmd{op_dpi} and
+\cmd{op_passes}. A date-stamped test piece costs nothing to produce when the text
+element contains \cmd{{date}} and \cmd{{time}}.
+
+\subsection*{Counting without a computer in the loop}
+
+The \panel{Wordlist} pane's \btn{Next} and \btn{Prev} buttons step the whole
+list forwards or backwards --- left-click for pages and right-click for single
+entries. Between jobs, one click in that pane is often all the bookkeeping a
+production run needs. The element context menu has matching
+\btn{Increase Wordlist-Reference} and \btn{Decrease Wordlist-Reference} entries
+for adjusting a single reference, and \cmd{{NAME#+1}} in the text reaches
+forward within the list while writing.
+
+\subsection*{CSV data}
+
+A list can come from a file: the header row of a CSV becomes the entry names, and
+the rows become the values, with the \emph{Start Index for CSV-based data} setting
+deciding where to begin. That is the mechanism for engraving names onto a stack of
+gifts, or part numbers onto a tray of brackets, from a spreadsheet.
+
+\begin{walkthrough}{Number ten tags without touching the design}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Design one tag with a text element reading \cmd{No. {SERIAL}}.
+  \item Open the Wordlist Editor, add a wordlist called \cmd{SERIAL} and enter
+        ten values: 001 to 010.
+  \item Set the index to the first value.
+  \item Make a cutting sheet of ten tags, all using that same text element.
+  \item Burn the job. Every tag carries the next value in sequence, and the index
+        is left ready for the next sheet.
+  \item Check the index in the \panel{Wordlist} pane before re-running anything;
+        if the job is repeated, the numbering continues rather than restarting.
+\end{enumerate}
+\end{walkthrough}
+
+\section{Turning text into geometry}
+
+Three conversions appear on the text element's context menu, and they exist to
+solve three different problems:
+
+\begin{itemize}
+  \item \btn{Convert to path} --- the text becomes paths you can edit node by
+        node. Do this when you must adjust a single letter.
+  \item \btn{Convert to vector text} --- a bitmap text element is re-drawn as
+        vector text using the font of the same name. Do this when the design
+        arrived as outlines and you want stroke-based lettering.
+  \item \btn{Trace bitmap} --- vectorises the rendered text. Rarely the best
+        option, but it works on text of unknown origin
+        (Chapter~\ref{ch:images}).
+\end{itemize}
+
+\begin{tryit}{Make a stencil}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Create vector text with your chosen word or initials, sized so the
+        lettering is at least 20\unit{mm} tall.
+  \item Choose a stencil-friendly font, or use \btn{Weld} on a script font so
+        the letters hold together.
+  \item Convert it to a path and use \btn{Break Subpaths} to separate the
+        letters.
+  \item Add small connector bridges with \btn{Tab Edit} or by drawing short lines
+        across the cut, so the counters (the middles of \cmd{A}, \cmd{O}, \cmd{R})
+        do not fall out.
+  \item Assign everything to a \mkseries{Cut} operation, position it, and
+        cut it in card or thin plywood.
+  \item Adjust the bridges and re-cut. The second attempt is always the one you
+        keep --- which is the whole point of testing in card first.
+\end{enumerate}
+\end{tryit}

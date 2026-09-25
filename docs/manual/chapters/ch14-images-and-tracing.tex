@@ -1,0 +1,255 @@
+\chapter{Images: editing, splitting and tracing}
+\label{ch:images}
+
+Chapter~\ref{ch:engrave} showed how to burn an image. This chapter is about
+everything that happens \emph{around} that burn: preparing the picture, cutting
+it into pieces that fit the bed, masking one shape through another, and turning a
+bitmap into cuttable vectors.
+
+\section{Preparing the picture first}
+
+The single biggest quality improvement in image engraving happens before MeerK40t
+is involved. In any image editor:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Convert to grayscale. Colour information becomes noise in a laser job.
+  \item Correct the contrast. A laser has a much smaller effective tonal range
+        than a screen; a low-contrast photo engraves as an even grey smear.
+  \item Sharpen lightly, and consider a slight blur: engraving resolves detail
+        worse than a screen, so a little smoothing beats a little sharpening for
+        photographs.
+  \item Crop to the subject and resize so that the picture is roughly
+        200--300\unit{dpi} at the final physical size. More pixels than the burn
+        can resolve only cost time.
+  \item Save as PNG. Avoid JPEG artefacts, which dither into random speckle.
+\end{enumerate}
+
+\noindent Then import, and use the panels from Chapter~\ref{ch:engrave} ---
+\btn{Contrast}, \btn{Halftone}, \btn{Tone}, \btn{Gamma}, \btn{Sharpen},
+\btn{Auto Contrast} --- for the final taste adjustment in laser terms.
+
+\section{Image manipulations in the tree}
+
+Right-clicking an image element gives a large \menu{Image} submenu. The ones that
+earn their place:
+
+\begin{center}\small
+\begin{tabular}{@{}L{6.4cm}L{7.8cm}@{}}
+\toprule
+\textbf{Item} & \textbf{Effect} \\
+\midrule
+\btn{Dither to 1 bit} & Hard conversion to pure black and white. The clean
+starting point for line art scanned or photographed. \\
+\btn{Invert image} & Swaps black and white --- for white-on-black engravings and
+for inverting a dark background before burning. \\
+\btn{Mirror horizontal}, \btn{Flip vertical}, \btn{Rotate 90\textdegree{} CW},
+\btn{Rotate 90\textdegree{} CCW} & Orientation fixes that operate on the pixels
+rather than on the element's transform. \\
+\btn{Identify inner white areas}, \btn{Split image along white areas} &
+Finds enclosed white regions (for instance the holes in a letter, or the gaps in
+a logo) and can split the picture into separate pieces for them. \\
+\btn{Split image into subimages} & Divides the picture into its connected
+non-white regions --- one element per object. \\
+\btn{Divide into \emph{n} images} & Splits by grey level into a fixed number of
+sub-images. \\
+\btn{Save original image to output.png} / \btn{Save processed image to
+output.png} & Writes the bitmap out so you can inspect what the laser will
+actually see. Invaluable when a job burns something you did not expect. \\
+\btn{From Original} / \btn{From Modified} & Passthrough choice: burn the original
+pixels or your processed version. \\
+\btn{Unlock manipulations} / \btn{Lock manipulations} & Prevents accidental
+changes to a picture you have finished tuning. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Right-clicking the image in the tree also offers
+\btn{Image properties}, \btn{Remove effect} and the \menu{Raster-Wizard} scripts
+introduced in Chapter~\ref{ch:engrave}, plus \menu{Convert to Path} with the
+choices \emph{Horizontal}, \emph{Vertical}, \emph{Bidirectional} and
+\emph{Optimize travel} --- which converts the bitmap into path elements following
+the scan lines of the image, a technique for producing double-line lettering and
+outlines from artwork.
+
+\section{The Image Splitter: pictures bigger than the bed}
+
+\menu{Tools>Editing>Image Splitting}, or the \btn{Image ops} button, opens
+\emph{Create split images} with two tabs.
+
+\begin{walkthrough}{Engrave a picture wider than the machine}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Make the artwork the full size you want in reality --- for example
+        600\unit{mm} wide on a 300\unit{mm} bed. Do not shrink it to fit.
+  \item Open \emph{Create split images} and go to \tabname{Render + Split}.
+  \item Set \emph{X-Axis} and \emph{Y-Axis} to the number of tiles: two columns
+        for a 600\unit{mm} picture on a 300\unit{mm} bed. Set \emph{Order to
+        process} to \emph{Selection}, \emph{First Selected} or
+        \emph{Last Selected} as appropriate.
+  \item Set \emph{Image resolution:} \emph{DPI} to your burning resolution ---
+        500 is the default, 250 is often enough.
+  \item Press \btn{Create split images}. The dialog reports how many elements are
+        selected and then replaces them with the tiles.
+  \item Assign the tiles to your \mkseries{Image} operation. Because each tile is
+        its own element, you can now run them one at a time, repositioning the
+        material between runs, or use the machine's own repeat feature.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent The second tab, \tabname{Keyhole operation}, builds a \emph{mask}:
+choose \emph{Keyhole Object} (first or last selected), the \emph{DPI},
+\emph{Invert} and \emph{Trace}, then press \btn{Create keyhole image}. The result
+is artwork where one selected object is engraved through another as a keyhole
+--- a picture inside a frame outline, a logo inside a control panel cut-out.
+
+\noindent Both tools are also console commands, which is what to use in scripts:
+\cmd{render_split <columns> <rows> <dpi>} and \cmd{render_keyhole <dpi>}.
+
+\section{The image command tree}
+
+For repeatable work, the \cmd{image} command does everything the properties
+panels do, and a good deal more. Every transformation in this list applies to the
+selected image elements:
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.4cm}L{9.8cm}@{}}
+\toprule
+\textbf{Command} & \textbf{Effect} \\
+\midrule
+\cmd{threshold <tmax> <tmin>} & Cut the tonal range to pure black and white
+between two limits. \\
+\cmd{dither -m <method>} & Dither to one bit with a named algorithm. \\
+\cmd{remove <color> -d <distance>} & Remove a colour and everything within a
+distance of it --- the standard way to erase a white background. \\
+\cmd{crop <left> <upper> <right> <lower>} & Crop by pixel. \\
+\cmd{contrast <factor>}, \cmd{brightness <factor>} & Tone adjustments. \\
+\cmd{sharpness <factor>}, \cmd{blur}, \cmd{sharpen}, \cmd{edge\_enhance},
+\cmd{find\_edges}, \cmd{emboss}, \cmd{smooth}, \cmd{contour}, \cmd{detail} &
+The usual image filters. \\
+\cmd{quantize <colors>} & Reduce to a limited palette. \\
+\cmd{solarize <threshold>}, \cmd{invert}, \cmd{equalize}, \cmd{autocontrast
+<cutoff>} & Tonal transformations. \\
+\cmd{grayscale -m <method>} & Convert to grayscale by red, green, blue or
+alpha. \\
+\cmd{linecut <x1> <y1> <x2> <y2>} & Cut the image along a line. \\
+\cmd{slice <x>}, \cmd{slash <y>} & Cut the picture into two images vertically or
+horizontally. \\
+\cmd{pop <left> <upper> <right> <lower>} & Remove pixels to make rastering more
+efficient. \\
+\cmd{halftone} & Convert to a halftone dot screen. \\
+\cmd{innerwhite}, \cmd{identify\_contour} & Find enclosed white areas, and find
+contours for vectorisation. \\
+\cmd{linefill} & Create a line-fill representation of the image --- a path-based
+engraving instead of a raster. \\
+\cmd{background} & Use the image as the bed background, for camera-style
+overlay work. \\
+\cmd{save <filename>} & Write the image to disk (add \cmd{--processed} for the
+processed version). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Tracing: from bitmap to cuttable vector}
+
+Turning a logo that only exists as a photograph or a PNG into paths you can cut is
+the oldest trick in laser work, and MeerK40t offers three engines for it.
+
+\subsection*{Vectorisation with potrace}
+
+The standard engine is potrace. Open an image's properties and use the
+\tabname{Vectorisation} panel. If the engine is not installed, the panel says so
+--- it needs the \cmd{potrace} provider, available through
+\cmd{pip install pypotrace} on Linux with the \cmd{libpotrace-dev} and
+\cmd{libagg-dev} packages.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.0cm}L{2.2cm}L{9.0cm}@{}}
+\toprule
+\textbf{Control} & \textbf{Default} & \textbf{Meaning} \\
+\midrule
+\emph{Turnpolicy} & Minority & How ambiguous pixels are resolved. Change it when
+thin features are dropped or filled in. \\
+\emph{Despeckle} & 2 & Suppresses speckles up to this size in pixels. Raise it to
+remove scanner noise and JPEG rubbish; raise it too far and small real features
+disappear. \\
+\emph{Corners} & 9 & Threshold for corner detection; lower values round off
+corners, higher values keep them sharp. \\
+\emph{Simplify} & on & Reduces the number of bezier segments. \\
+\emph{Tolerance} & 20 & How much error simplification may introduce. \\
+\emph{Black-Level} & 50 & Where ``black'' begins. Raise it to ignore a grey
+background, lower it to keep faint features. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Press \btn{Preview} to see the result before committing, then
+\btn{Vectorize}. The output is a path element with a normal stroke, ready to be
+assigned to a cut or engrave operation. The console equivalent is \cmd{vectorize}
+with options \cmd{-z} (turnpolicy), \cmd{-t} (despeckle), \cmd{-a} (corners),
+\cmd{-n}, \cmd{-O} (tolerance), \cmd{-k} (black level), \cmd{-d} (dpi),
+\cmd{-C} (colour) and \cmd{-i} (invert) --- the whole panel is one command, which
+makes batch vectorisation easy.
+
+\subsection*{VTracer and contour detection}
+
+\begin{itemize}
+  \item \btn{Trace bitmap via vtracer} uses the VTracer engine instead, a
+        colour-capable tracer. It requires the \cmd{vtracer} package
+        (\cmd{pip install vtracer}); when it is missing, the console says so
+        plainly.
+  \item \emph{Contour recognition} (the \tabname{Contour recognition} panel) uses
+        OpenCV instead of a tracer. It offers its own \emph{Contrast} controls, an
+        \emph{Invert} option, a choice between the original and the dithered
+        image, \emph{Minimal} and \emph{Maximal size} limits in percent, a
+        \emph{Contour simplification} choice (\emph{None}, \emph{Visvalingam},
+        \emph{Douglas-Peucker}) and a \emph{Detection Method} choice of
+        \emph{Polygons} or \emph{Bounding rectangles}. Press \btn{Automatic
+        update}, \btn{Update} or \btn{Generate contours}, and it lists what it
+        found with areas, reporting ``No contours found.'' or how many it made and
+        how long it took.
+  \item \btn{Generate placements} turns detected contours into \emph{placements}
+        --- positioning references for each detected object, with a choice of
+        \emph{Edge (prefer short side)}, \emph{Edge (prefer long side)},
+        \emph{Center (unrotated)} or \emph{Center (rotated)}. This is the
+        mechanical way to find the centre of forty widgets on a jig.
+  \item The tree's \menu{Vectorization} submenu wraps the same tools with useful
+        presets: \emph{Contour detection --- shapes} and \emph{--- bounding},
+        \emph{Ignore inner areas}, and size classes \emph{Big objects},
+        \emph{Normal objects}, \emph{Small objects}.
+\end{itemize}
+
+\begin{warnbox}[Tracing is not magic, and it is not cutting]
+A traced photograph always contains far more paths than you want, with nodes
+everywhere and edges that double back on themselves. A traced logo has ragged
+edges that the original never had. Always inspect the result, delete junk with
+\btn{Break Subpaths} and \btn{Remove transparent objects}, and remember that a
+traced outline follows the \emph{darkness}, not the shape you perceive --- you
+often need the \emph{Black-Level} and \emph{Despeckle} controls before the result
+is usable. For anything that already exists as a vector file, get the vector file
+instead.
+\end{warnbox}
+
+\begin{notebox}[Two meanings of ``trace'']
+The console command \cmd{trace <method> <resolution>} does \emph{not} vectorise a
+bitmap. It creates a hull or cut outline around selected elements, with methods
+\cmd{quick}, \cmd{hull}, \cmd{segment} and \cmd{circle}. Bitmap vectorisation is
+\cmd{vectorize}.
+\end{notebox}
+
+\begin{tryit}{From photograph to cuttable silhouette}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Take a clear, high-contrast photograph of a simple object on a plain
+        background and import it.
+  \item In the image's properties, use \btn{Contrast} to push the background to
+        white and the object to black. \cmd{remove white -d 30} in the console is
+        the quick version.
+  \item Open \tabname{Vectorisation}, set \emph{Black-Level} around 50 and
+        \emph{Despeckle} around 3, and press \btn{Preview}.
+  \item Press \btn{Vectorize}, then inspect the result in the tree. Delete any
+        stray paths; use \btn{Break Subpaths} if a single path contains several
+        objects.
+  \item Assign the paths to a \mkseries{Cut} and physically cut the silhouette
+        from card. Compare it with the object.
+  \item Iterate on \emph{Despeckle} and \emph{Black-Level} until the silhouette
+        matches. Two or three iterations is normal.
+\end{enumerate}
+\end{tryit}

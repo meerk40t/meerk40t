@@ -1,0 +1,388 @@
+\chapter{Connecting your laser}
+\label{ch:connect}
+
+Connecting a laser is three separate jobs, and it is worth keeping them separate
+in your head: tell MeerK40t \emph{what} machine you own (a \emph{device}), tell it
+\emph{how} to reach that machine (the \emph{interface}), and then prove that the
+two agree by moving the head. This chapter walks all three. It ends with a
+troubleshooting table you will come back to.
+
+\section{Which driver is my machine?}
+
+MeerK40t talks to a controller, not to a brand. Find your machine in the
+catalogue below --- the entries are exactly what you see in the
+\btn{Select Device} dialog of Figure~\ref{fig:devices-dialog} --- and note the
+driver name in the right-hand column. The driver is what later chapters mean when
+they say ``your device''.
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.4cm}L{6.4cm}L{5.5cm}@{}}
+\toprule
+\textbf{Family} & \textbf{Entry in the list} & \textbf{Driver} \\
+\midrule
+K-Series CO\textsubscript{2} & \emph{K40-CO2-Laser (m2nano-Board) (Green/Blue)} &
+Lihuiyu \\
+& \emph{K40-CO2-Laser (m3nano-Board) (Purple/Blue)} & Lihuiyu \\
+& \emph{K40 CO2 (GRBL-Controller)} & GRBL \\
+& \emph{K40 CO2 --- MKS DLC32 (405$\times$285 mm)} & GRBL \\
+& \emph{K50/K60-CO2-Laser (Ruida-Controller)} & Ruida \\
+\midrule
+Diode & \emph{Ortur Laser Master 2 (GRBL)},
+\emph{Longer Ray5 (GRBL)}, \emph{Generic (GRBL-Controller)},
+\emph{Diode-Laser (GRBL-Controller)} &
+GRBL \\
+\midrule
+Other GRBL & \emph{GRBL-FluidNC (FluidNC-Controller)} & GRBL \\
+\midrule
+Moshi & \emph{CO2-Laser (Moshi-Board)} & Moshi \\
+\midrule
+Newly & \emph{RayLaser/U-SET}, \emph{Beijing SZTaiming}, \emph{Gama},
+\emph{Artsign JSM-40U/3040U/3060U}, \emph{Rabbit40B}, \emph{Jinan Suke},
+\emph{Lion laser} and a dozen more & Newly \\
+\midrule
+Galvo & \emph{Fibre-Laser (JCZ-Controller) (Non-MOPA)} or \emph{(MOPA)},
+\emph{CO2 (JCZ-Controller)}, \emph{UV (JCZ-Controller)} & Balor \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent If you cannot tell: a K40 with the original green or blue control board
+is Lihuiyu; a diode engraver that speaks G-code is GRBL; a big
+black-and-yellow CO\textsubscript{2} machine with a panel full of buttons is
+Ruida; a fibre or UV marker with a scan-head and no gantry is Balor. When in
+doubt, add a generic entry for the right family --- the defaults are only a
+starting point.
+
+\section{The device list}
+
+Open \menu{Edit>Device-Manager}, or the \panel{Devices} pane
+(\menu{Panes}), or \menu{Tools>Devices}. You get a table with one row per
+configured machine:
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.2cm}L{12.1cm}@{}}
+\toprule
+\textbf{Column} & \textbf{Meaning} \\
+\midrule
+\emph{Device} & The label you gave it. Double-click the cell to rename in
+place. \\
+\emph{Driver} & The internal driver class, for example \cmd{GRBLDevice} or
+\cmd{LihuiyuDevice}. This is how you confirm which family a row belongs to. \\
+\emph{Type} & The material source family: \cmd{Co2}, \cmd{Diode} and so on. It
+decides which default operation settings are used. \\
+\emph{Status} & The driver's own report --- \cmd{Idle}, \cmd{Running} or
+\cmd{paused}. \\
+\emph{Interface} & How the device is reached, for example \file{/dev/ttyUSB0:115200},
+\file{192.168.1.5:23}, \file{usb} or \file{mock}. If this looks wrong, nothing
+else will work. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent \textbf{The active device is drawn in red.} Only one device is active
+at a time; that is the machine MeerK40t will drive. The buttons along the bottom
+are \btn{Create New Device}, \btn{Duplicate}, \btn{Rename}, \btn{Remove},
+\btn{Activate} and --- right-aligned, opening the settings --- \btn{Config}.
+Grouping the rows is the whole point of having several: a shop with a K40 and a
+diode machine keeps a device for each, duplicates one as a base for a second
+identical machine, and switches with \btn{Activate} or by double-clicking the
+row. The active device cannot be removed, and \btn{Remove} asks for confirmation
+because it cannot be undone.
+
+\begin{tipbox}[The same thing from the console]
+\begin{lstlisting}[style=konsole]
+device                      # list the registered device entries
+device add grbl-generic -l "My diode"
+device activate "My diode"
+device duplicate "My diode" "Spare diode"
+device delete "Spare diode"
+devinfo                     # current logical and native position
+\end{lstlisting}
+These commands are what the dialog is doing behind the scenes, and they are the
+quickest way to script a machine setup.
+\end{tipbox}
+
+\section{Telling MeerK40t how big the bed is}
+
+Press \btn{Config} on the active row. Every driver has a Configuration window
+whose first tab contains the geometry settings. Get these right before you draw
+anything, because the bed size defines the scene's bed rectangle and the
+origin --- and therefore where your job will be cut.
+
+\begin{center}\small
+\begin{tabular}{@{}L{3.6cm}L{2.9cm}L{7.8cm}@{}}
+\toprule
+\textbf{Label} & \textbf{Typical default} & \textbf{What to do} \\
+\midrule
+\btn{Width}, \btn{Height} & 235\unit{mm} (GRBL), 310$\times$210\unit{mm} (Lihuiyu,
+Newly), 330$\times$210\unit{mm} (Moshi), 24$\times$16\unit{in} (Ruida),
+110\unit{mm} lens (Balor) & Measure your machine's real travel and enter it. The
+specification is often optimistic. \\
+\btn{Flip X}, \btn{Flip Y} & off, except GRBL Y and Balor X/Y & These make the
+on-screen axes match the machine. GRBL devices usually want \emph{Flip Y} on so
+that Y grows into the bed rather than away from it. \\
+\btn{Swap X and Y} & off (on for Balor) & For machines whose axes are mounted
+rotated. Applied before the flips. \\
+\btn{Force Declared Home} & \cmd{auto} & Which corner is the machine's zero:
+\emph{auto}, \emph{top-left}, \emph{top-right}, \emph{bottom-left},
+\emph{bottom-right} or \emph{center}. \\
+\btn{X-Axis} / \btn{Y-Axis} scale & 1.000 & Corrections for machines that move
+the wrong distance --- calibrate with a measured test burn, not by guesswork. \\
+\btn{Laserspot} & 0.3\unit{mm} & Your focal spot size. Used by the raster
+planner and by ``consider laserdot''. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{notebox}[Two settings you will see but should ignore]
+\emph{X-Margin} and \emph{Y-Margin} exist in several drivers' settings, with a
+default of \cmd{0}, but they are hidden from the GUI and marked in the program's
+own source as not working yet. Do not build a workflow on them. Position jobs on
+the scene instead (Chapter~\ref{ch:where}).
+\end{notebox}
+
+\section{Connecting each family}
+
+\subsection*{Lihuiyu / K40 over USB}
+
+The K40's controller board is reached through a CH341 USB-to-serial chip. In the
+\tabname{Interface} tab, choose the radio button \btn{USB} (or \btn{Networked},
+see below, or \btn{Mock} for a pretend machine). The USB settings let you pin
+down which board you mean when several are attached: \btn{Restrict Multiple
+Lasers} offers a CH341 version, a device index, and a serial-number match. The
+\btn{Write Buffer} group limits how much is queued at once (default 1500) ---
+relevant on the oldest boards.
+
+Two board-level settings on the first tab matter: \btn{Board} (\cmd{M2} is the
+classic green board, \cmd{M3} the newer one) and \btn{Maximum Laser strength},
+which caps output as a percentage of the tube's rating. The default cap is
+deliberately low and the program warns when you raise it: setting it too high can
+damage a tube that is smaller than the software assumes.
+
+\subsection*{GRBL}
+
+Pick the interface in the \tabname{Interface} tab with \btn{Interface Type}:
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.6cm}L{3.4cm}L{8.3cm}@{}}
+\toprule
+\textbf{Interface} & \textbf{Settings} & \textbf{Notes} \\
+\midrule
+\emph{Serial} & \btn{Serial Port} + \btn{Baud Rate} (115200 default) & The
+normal USB cable case. The port list is built from the ports the system reports;
+on Linux expect \file{/dev/ttyUSB0} or \file{/dev/ttyACM0}. \\
+\emph{TCP-Network} & \btn{Address} + \btn{Port} (23) & For a networked or
+Wi-Fi-equipped controller; also used by the K40 MKS DLC32 profile, which defaults
+to \file{192.168.10.90:8080}. \\
+\emph{WebSocket-Network} & \btn{Address} + \btn{Port} (81) & For FluidNC-style
+firmware. \\
+\emph{Mock} & --- & A fake machine that accepts everything. Excellent for
+practising the workflow without hardware. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Four other GRBL settings save a lot of time:
+
+\begin{itemize}
+  \item \btn{Require Validator} with \btn{Welcome Validator} (\cmd{Grbl}) ---
+        refuses to send anything until the controller has introduced itself. Turn
+        it on once your connection is reliable; it turns ``nothing happens'' into
+        an explicit error.
+  \item \btn{Reset on connect} --- sends a soft reset when the port opens. Useful
+        when a controller wakes up confused.
+  \item \btn{Reset on 'Clear Alarm'} (\setting{extended_alarm_clear}) --- also
+        resets the controller when you clear an alarm, for machines that need it.
+  \item \btn{Device has endstops} --- enables real homing. With endstops on a
+        top-left-homing board, also enable \btn{Sequential homing}, which homes Y
+        before X; without it such boards stop short by around 50\unit{mm}.
+\end{itemize}
+
+\noindent The ribbon for a GRBL device adds \btn{Clear Alarm}, \btn{Home}
+(right-click for physical home), \btn{Red Dot On}/\btn{Red Dot Off} for
+machines with a pilot laser, and --- if ESP3D upload is enabled --- the ESP3D
+upload and control buttons.
+
+\subsection*{Ruida}
+
+Ruida machines are configured as either \btn{USB} (a serial interface field
+accepting \file{/dev/...} or \cmd{COM\emph{n}}) or \btn{Networked}, which is UDP
+with an address setting. Two facts to know before you rely on it: the driver is
+marked in the project's own documentation as under revision, and users of at
+least one tested controller report that \emph{Flip X} and a raster
+\emph{Overscan} of zero are required. Test on scrap.
+
+MeerK40t can also \emph{pretend} to be a Ruida controller --- useful when you want
+to drive a K40 from software that only speaks Ruida
+(\cmd{ruidacontrol}, Chapter~\ref{ch:remote}).
+
+\subsection*{Moshi and Newly}
+
+Both use USB, both are older CO\textsubscript{2} machines, and both are
+reported as stable. Moshi boards talk through the same CH341 chip as the K40, so
+the USB-restriction settings look familiar. Newly adds a machine-specific
+concept: the controller stores the job in one of ten numbered \emph{files}
+(\btn{Output File}, default 0). File~0 executes immediately; the others can be
+sent and then replayed from the machine's own panel, which is what the ribbon
+buttons \btn{File 0}\dots\btn{File 9}, \btn{Send Only}, \btn{Draw Frame},
+\btn{Move Frame} and \btn{Replay} are for.
+
+\subsection*{Balor / JCZ galvo}
+
+Galvo machines connect over USB only --- there is no host and port to set. What
+matters in the configuration is the optics and the machine index:
+\btn{Lens Size} (default 110\unit{mm}) describes your field, and enabling a
+correction file (\btn{Enable} + \btn{File}, a \file{.cor} file from the lens
+supplier) makes the marked geometry match the design. \btn{Machine index to
+select} picks the controller when more than one is attached; \btn{Check serial
+no} lets you match a specific unit. The \tabname{Timings} tab holds the
+laser on/off and jump delays --- change these only with a documented reason, since
+they control whether corners are burned through or left open.
+
+\section{USB permissions on Linux}
+
+If the machine is not found on Linux, or only works when you run the program as
+root, the cause is almost always permission on the USB device. Create
+\file{/etc/udev/rules.d/99-meerk40t.rules} with the vendor rules for the chips
+MeerK40t uses:
+
+\begin{lstlisting}[style=file]
+# CH341 USB-to-serial chips (used by Lihuiyu laser controllers)
+SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="*", MODE="0666"
+# FTDI USB-to-serial chips (used by Ruida laser controllers)
+SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="*", MODE="0666"
+# BJJCZ galvo controllers
+SUBSYSTEM=="usb", ATTR{idVendor}=="9588", ATTR{idProduct}=="*", MODE="0666"
+# GSI Group galvo controllers
+SUBSYSTEM=="usb", ATTR{idVendor}=="28e9", ATTR{idProduct}=="*", MODE="0666"
+# Philips chips (used by Newly controllers)
+SUBSYSTEM=="usb", ATTR{idVendor}=="0471", ATTR{idProduct}=="*", MODE="0666"
+\end{lstlisting}
+
+\noindent then apply them and add yourself to the serial group:
+
+\begin{lstlisting}[style=konsole]
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo usermod -a -G dialout $USER
+\end{lstlisting}
+
+\noindent Log out and back in for the group change. Do not run MeerK40t with
+\cmd{sudo}: it is not recommended, and it produces configuration files your
+normal user cannot then read.
+
+\section{Proving the connection works}
+
+Before you cut anything, answer one question: can MeerK40t talk to the machine?
+Three windows tell you, all of them under \menu{Tools}:
+
+\begin{itemize}
+  \item \btn{Controller} (per device) --- the driver's own window, with
+        connection state, packet counters, a \btn{Reset statistics} button,
+        \btn{Clear Status-Log} and the raw traffic. If the connection is alive,
+        the counters climb.
+  \item \btn{Buffer} (\panel{BufferView}) --- shows the command flow queued to
+        the device. Useful when a job appears to hang: is the queue empty because
+        the job finished, or because it never started?
+  \item \panel{UsbConnect} --- tails the raw USB conversation and lets you type
+        into the pipe by hand. This is the deepest view available.
+\end{itemize}
+
+\noindent In the console, \cmd{devinfo} prints the current logical and native
+position, and \cmd{device} lists your devices. If the interface column in the
+device list shows a plausible port and the controller window shows traffic, the
+link is up.
+
+\section{Moving the head safely}
+\label{sec:jog}
+
+The \panel{Jog} pane is where you learn to trust the machine. It has nine
+direction buttons plus \btn{Home}, \btn{Unlock rail}, \btn{Confine} and \btn{Lock
+rail}.
+
+\begin{machinebox}{Do your first movements with the beam off}
+First moves are the ones where the head tries to leave the machine. Keep the
+enclosure closed, keep your hand near the emergency stop, and do not have
+material --- or your fingers --- under the head. If a direction button sends the
+head the wrong way, do not chase it with software: stop, and fix \emph{Flip X},
+\emph{Flip Y} or \emph{Swap X and Y} in the device configuration.
+\end{machinebox}
+
+\noindent Three distinctions worth learning on day one:
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[Home versus physical home] Left-clicking \btn{Home} sends the head to the
+        \emph{defined} home --- the origin the driver and your settings describe.
+        Right-clicking it runs the \emph{physical} home, which seeks the
+        controller's endstops. On GRBL the physical home sends \cmd{\$H} (or
+        \cmd{\$HY} then \cmd{\$HX} when sequential homing is on). Machines without
+        endstops simply move to 0,0.
+  \item[Locked versus unlocked rail] \btn{Unlock rail} lets the head be moved by
+        hand; \btn{Lock rail} re-engages it. On some drivers the rail locks itself
+        automatically after a job (\setting{autolock}).
+  \item[Confined movement] \btn{Confine} limits jogging to the bed size. Turning
+        confinement off lets you drive the head outside the declared area ---
+        which on GRBL means soft-limit alarms, and on anything else means
+        crashing into the frame. The program warns you when you switch it off.
+\end{description}
+
+\noindent Jog distance is set in the \panel{Distances} pane
+(\panel{Jog Distance:}); the default is 10\unit{mm} per press, and holding a
+button repeats the move. \btn{Move Laser to:} moves to typed X/Y coordinates, and
+the nine buttons beside it are saved positions --- left-click to go there,
+right-click to store the current position. They persist between sessions.
+
+\section{When it does not connect}
+
+\begin{center}\small
+\begin{tabular}{@{}L{6.1cm}L{8.2cm}@{}}
+\toprule
+\textbf{Symptom} & \textbf{Check, in this order} \\
+\midrule
+No device entry matches your machine & Add a generic entry for the family
+(Chapter~\ref{ch:connect}); the defaults are editable. \\
+Interface column says \cmd{UNCONFIGURED} or is empty & Choose the serial port (or
+type the network address) in the Interface tab; replug the cable and reopen the
+list. \\
+Port exists but nothing moves & Baud rate (115200 on almost all GRBL boards),
+\emph{require validator} and the welcome string, and \emph{reset on connect}. \\
+Works only with \cmd{sudo} (Linux) & Install the udev rules above and add yourself
+to \cmd{dialout}. \\
+GRBL answers with an alarm & \btn{Clear Alarm}; if the alarm returns
+immediately, the machine is hitting soft limits --- check bed size, flips and
+homing corner. \\
+Head moves the wrong way & \emph{Flip X}/\emph{Flip Y}/\emph{Swap XY}. Change one
+at a time and re-test. \\
+Head moves the wrong distance & Axis scale factors; calibrate with a measured
+move rather than arithmetic. \\
+Job stops halfway with the queue empty & Check the controller window for an alarm
+or an error, and the console for the last message received. \\
+Two K40s, only one responds & \emph{Restrict Multiple Lasers}: set the device
+index or serial number for each. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tryit}{Commission a machine in ten minutes}
+Work through this once, on any machine, and keep the results in your notes.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Add or activate the correct device. Confirm the \emph{Driver} and
+        \emph{Type} columns look right.
+  \item Enter the real bed size, measured with a tape, and set \emph{Force
+        Declared Home} to the corner your machine actually uses.
+  \item Open the \btn{Controller} window and confirm traffic. Note the interface
+        string.
+  \item In the \panel{Jog} pane, set the jog distance to 10\unit{mm} and jog in
+        all four directions, watching the head.
+  \item Home the machine (left-click), then right-click to run the physical home
+        if the machine has endstops.
+  \item Jog to a known point, then use \btn{Move Laser to:} to send the head to
+        X~0, Y~0 and confirm it lands where the machine thinks zero is.
+  \item Lock the rail, then unlock it and nudge the head by hand and back.
+  \item Save the console transcript or take a screenshot of the device
+        configuration. When something misbehaves in three months, this is your
+        reference.
+\end{enumerate}
+\end{tryit}
+
+\noindent Full per-driver settings tables, including every default mentioned in
+this chapter, are collected in Appendix~\ref{app:drivers}.

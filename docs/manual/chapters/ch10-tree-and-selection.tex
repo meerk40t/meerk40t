@@ -1,0 +1,278 @@
+\chapter{The tree, and selecting things}
+\label{ch:tree}
+
+The \panel{Tree} is the inventory of your job: what you drew, and what you intend
+to do with it. Learning where things live in it --- and how selection works in
+the two places you can select, the scene and the tree --- turns most confusing
+moments into obvious ones.
+
+\section{Three branches, one document}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\sffamily\scriptsize,anchor=west},
+  br/.style={font=\sffamily\small\bfseries,color=mkdark},
+  op/.style={color=mkred!80!black},
+  el/.style={color=mkblue!80!black},
+  rg/.style={color=mkgrey},
+  level 1/.style={sibling distance=38mm,level distance=9mm},
+  edge from parent/.style={draw=mkgrey!70}]
+\node[br] {MeerK40t project}
+  child { node[br] {Operations}
+    child { node[op] {Cut \emph{(red)}} }
+    child { node[op] {Engrave \emph{(blue)}} }
+    child { node[op] {Raster \emph{(black)}} }
+  }
+  child { node[br] {Elements}
+    child { node[el] {File node \emph{(imported)}} }
+    child { node[el] {Group / Layer} }
+    child { node[el] {Path, Rect, Ellipse, Text, Image} }
+  }
+  child { node[br] {Regmarks}
+    child { node[rg] {Alignment shapes} }
+  };
+\end{tikzpicture}
+\caption{The document tree. Elements are the artwork; operations are the recipes;
+regmarks are alignment aids that never burn by accident. Operations hold
+\emph{references} to elements rather than copies of them, which is why one shape
+can be cut and engraved in the same job and still remain a single object you can
+edit.}
+\label{fig:tree}
+\end{figure}
+
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[\emph{Operations}] Created by you. Each one is a recipe with settings and
+        a list of the elements it will burn. Right-click this branch to append
+        operations (Chapter~\ref{ch:ops}); right-click an operation for its
+        properties, its burning order, and conversions.
+  \item[\emph{Elements}] Your artwork. Imported files arrive as \emph{file} nodes
+        containing groups containing paths, or as loose elements. You can group,
+        ungroup, merge, duplicate and delete here.
+  \item[\emph{Regmarks}] Alignment marks, kept deliberately out of the way.
+        Nothing in this branch burns unless you ask it to.
+\end{description}
+
+\noindent The pane is also a two-tab notebook: \tabname{Burn-Operation} and
+\tabname{Details}. On load, both top branches expand automatically.
+
+\section{Selecting: scene and tree}
+
+Selection is the single most important skill in the program, and it has two
+faces: \emph{emphasis} (the element is highlighted, and operations, handles and
+the status bar apply to it) and the tree's own highlight.
+
+\begin{center}\small
+\begin{tabular}{@{}L{4.5cm}L{9.7cm}@{}}
+\toprule
+\textbf{Action} & \textbf{Result} \\
+\midrule
+Click an element & Selects it. With \setting{select_smallest} on
+(the default), a click picks the \emph{smallest} element under the pointer;
+hold \key{Ctrl} to pick the largest instead. The preference is under
+\menu{Edit>Settings>Preferences}, tab \tabname{Scene}. \\
+\key{Shift}+click & Adds the element to the selection. \\
+Left-drag on empty space & Rubber-band select. Drag \emph{right} to enclose
+(only fully enclosed elements are selected); drag \emph{left} to touch
+(anything the band crosses is selected). \key{Shift} adds, \key{Ctrl} inverts. \\
+\key{Ctrl+A} & Select all elements on the scene. \\
+\key{Ctrl+I} & Invert the selection. \\
+\key{Ctrl}\,+ click & With the default setting, selects the largest element under
+the pointer. \\
+Click in the tree & Selects the node, and emphasises the corresponding elements
+in the scene. \\
+Double-click in the tree & Opens the node's properties. \\
+Right click while drawing & Cancels the tool in progress and returns you to the
+select tool. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Once a selection exists, the status bar comes alive: the
+\panel{Position} readout shows X, Y, width and height, and the handle checkboxes
+(\btn{Move}, \btn{Resize}, \btn{Rotate}, \btn{Skew}) appear. Those checkboxes
+decide which manipulation handles are drawn on the scene, in case you find them
+cluttered.
+
+\begin{tipbox}[Selecting the unassigned]
+\menu{Edit>Select all non-assigned} is the practical cure for the most common
+mistake in the program: artwork that is sitting in the tree but belongs to no
+operation, and therefore will not burn. Run it whenever a job seems to be missing
+a piece.
+\end{tipbox}
+
+\section{The right-click menus, branch by branch}
+
+Nearly all tree functionality is in the context menus, and they differ by node
+type. This is the map.
+
+\subsection*{On the \emph{Operations} branch}
+
+\begin{itemize}
+  \item \menu{Append operation} --- \btn{Append Image}, \btn{Append Raster},
+        \btn{Append Engrave}, \btn{Append Cut}, \btn{Append new Hatch},
+        \btn{Append Dots}.
+  \item \menu{Append special operation(s)} --- the movement, time and interaction
+        steps listed in Chapter~\ref{ch:ops}, plus \btn{Append Shutdown} and
+        \btn{Append Console}.
+  \item \menu{Classification} --- \btn{Refresh classification for all},
+        \btn{Classification for unassigned}, \btn{Clear all assignments},
+        \btn{Select unassigned elements}.
+  \item Housekeeping: \btn{Clear all}, \btn{Clear unused},
+        \btn{Enable all operations}, \btn{Disable all operations},
+        \btn{Toggle all operations}.
+  \item \btn{Global operation settings}, \btn{Material Manager} and the
+        \btn{Reuse existing} toggle, which decides whether loading a file reuses
+        the operations already in the tree instead of creating new ones.
+  \item Placement commands: \btn{Append absolute placement},
+        \btn{Append relative placement}, \btn{Remove all placements}.
+\end{itemize}
+
+\subsection*{On an operation}
+
+\begin{itemize}
+  \item \btn{Operation properties}; \btn{Enable}/\btn{Disable ops};
+        \btn{Show}/\btn{Hide contained elements}; \btn{Enable similar},
+        \btn{Disable similar}.
+  \item \btn{Remove all items from operation};
+        \btn{Reset to device default values}; \btn{Reverse subitems order}.
+  \item \btn{Execute operation(s)} and \btn{Simulate operation(s)} --- run or
+        preview just this operation.
+  \item \menu{Burning sequence} --- \btn{Burn first}, \btn{Burn earlier},
+        \btn{Burn later}, \btn{Burn last}. Dragging rows in the tree does the same
+        job.
+  \item \menu{Convert operation} --- \btn{Convert to Image}, \btn{Convert to
+        Raster}, \btn{Convert to Engrave}, \btn{Convert to Cut}, \btn{Convert to
+        Dots}.
+  \item \menu{Insert operation} and \menu{Insert special operation(s)} --- add a
+        new operation immediately before or after this one.
+  \item \menu{Add effect} (cut and engrave only) --- \btn{Add hatch effect},
+        \btn{Add wobble effect}.
+  \item Quick-sets: speed, power, \btn{Passes}, \btn{DPI} and
+        \menu{Optimisation>Reduce travel moves}.
+\end{itemize}
+
+\subsection*{On an element or group}
+
+\begin{itemize}
+  \item Properties (\btn{Element properties}, \btn{Group properties},
+        \btn{Text properties}, \btn{Image properties}).
+  \item Structure: \btn{Group elements}, \btn{Ungroup elements},
+        \btn{Simplify group}, \btn{Merge items}, \btn{Break Subpaths},
+        \btn{Merge elements}, \btn{Convert to path},
+        \btn{Convert to vector text}.
+  \item Visibility and locking: \menu{Toggle visibility}, \btn{Hide elements},
+        \btn{Show elements}, \btn{Lock elements, prevents manipulations},
+        \btn{Unlock element, allows manipulation}.
+  \item Duplication: \menu{Duplicate element(s)} with \btn{Make 1 copy} or
+        \btn{Make \emph{n} copies}.
+  \item Transforms as menu items: mirror \emph{Horizontally}/\emph{Vertically},
+        a percentage \emph{Scale}, a \emph{Rotate} by angle,
+        \btn{Reify user changes}, \btn{Reset user changes}.
+  \item Geometry tools: \menu{Outline element(s)}, \menu{Offset shapes} (inside
+        and outside), \menu{Apply special effect} (line fills, wobbles, warp),
+        \btn{Add a keyhole}.
+  \item Assignment: \menu{Assign Operation}, \btn{Remove all assignments from
+        operations}, \btn{Exclusive assignment},
+        \btn{Inherit stroke and classify similar},
+        \btn{Inherit fill and classify similar}.
+  \item Tracing and images: \btn{Trace bitmap}, \btn{Trace bitmap via vtracer},
+        \menu{Vectorization}, \btn{Move to regmarks}.
+  \item Deletion, in two flavours: \btn{Delete group \dots\ and all its
+        child-elements fully} removes the node from the tree, while
+        \btn{Delete \dots\ elements, as selected in scene} removes only the
+        selected members. The distinction matters when you have three copies and
+        want to remove one.
+\end{itemize}
+
+\subsection*{On a file node, a regmark, and the other branches}
+
+\begin{description}[leftmargin=1.4em]
+  \item[File node] \btn{Convert to normal group} (dissolve the file container),
+        \btn{Reload}, \btn{Open containing folder}, \btn{Open in System}, and
+        \btn{Remove loaded file \dots\ and all its child-elements fully}. Reload
+        is the working pattern: fix the artwork in Inkscape, save, right-click the
+        file node in MeerK40t, reload, and your operations stay attached.
+  \item[Regmarks branch] \btn{Clear all} and
+        \btn{Toggle visibility of regmarks}.
+  \item[Regmark element] \btn{Move back to elements}, \btn{Create placement},
+        and \menu{Toggle magnet-lines} with \btn{Around border} and
+        \btn{At center}.
+  \item[Elements branch] \btn{Clear all}, \btn{Remove all assignments from
+        operations} and the \menu{Classification} submenu.
+  \item[Blob] \btn{Convert to Elements}, \btn{Execute Blob},
+        \btn{Convert to Cutcode} --- the blob node is what a job looks like after
+        it has been converted to machine instructions.
+\end{description}
+
+\section{Dragging in the tree}
+
+Dragging is not decoration; it is a first-class editing operation, and the rules
+differ by destination:
+
+\begin{itemize}
+  \item Dropping elements onto an \textbf{operation} creates references --- this
+        is the assign-by-drag described in Chapter~\ref{ch:ops}.
+  \item Reordering \textbf{operations} changes the burning order.
+  \item The \emph{Operations} branch accepts only operations and utility
+        operations. The \emph{Elements} branch accepts geometry, images and
+        groups. The \emph{Regmarks} branch accepts the same, and removes any
+        operation references on the way in --- that is how the program guarantees
+        a regmark will not accidentally burn.
+  \item Dragging a regmark onto an operation moves it back into the Elements
+        branch, provided the \setting{allow_reg_to_op_dragging} preference is on
+        (it is, by default).
+\end{itemize}
+
+\section{Regmarks in practice}
+
+Registration marks exist to answer the question ``where exactly is the thing I am
+engraving?''. Typical uses:
+
+\begin{enumerate}[leftmargin=1.6em]
+  \item Put a shape in the Regmarks branch that matches a physical feature of the
+        workpiece --- a corner, a hole, a printed square.
+  \item Position the artwork relative to it.
+  \item Burn the regmarks with a light trace (or use the camera's bed overlay) to
+        find the alignment, then run the real job.
+\end{enumerate}
+
+\noindent \btn{Move to regmarks} moves selected elements there;
+\btn{Toggle visibility of regmarks} shows them so you can position them;
+\btn{Move back to elements} returns them to normal life. Hidden objects in an
+imported SVG also arrive here, when the \btn{Load hidden objects to regmarks}
+preference is on --- which is a feature, not an accident: the hidden layer in
+somebody else's drawing is often exactly the alignment reference you need.
+
+\section{Undo, redo and the editing history}
+
+Undo is snapshot-based and generous: by default the last twenty states are kept
+(\setting{undo_levels}, changeable from 3 to 250 in the \tabname{Start} page of
+the preferences). \menu{Edit>Undo} (\key{Ctrl+Z}) and \menu{Edit>Redo}
+(\key{Ctrl+Shift+Z}) do the obvious thing, and the edit menu grows an
+\btn{Editing History} submenu listing the states by name --- clicking one jumps
+straight to it. The console equivalents are \cmd{undo}, \cmd{redo},
+\cmd{undolist} and \cmd{save_restore_point}.
+
+\begin{notebox}[What undo does not cover]
+Undo restores the document tree. It does not take back a job that has already
+been sent to the machine, and it does not un-cut material. Everything that
+matters at the machine is protected by testing, not by \key{Ctrl+Z}.
+\end{notebox}
+
+\begin{tryit}{Learn the tree by breaking it gently}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Load any SVG with a few shapes in it. Expand the file node and notice the
+        elements; right-click it and try \btn{Convert to normal group}.
+  \item Select two elements with \key{Shift}+click and group them
+        (\menu{Group elements}); then \btn{Ungroup elements}.
+  \item Create a \mkseries{Cut} operation, then drag one element onto it. Watch
+        the operation grow a child.
+  \item Right-click that child and remove it from the operation. The element
+        itself is still in the Elements branch --- references, not copies.
+  \item Move an element to the Regmarks branch and confirm it stops appearing in
+        jobs. Move it back.
+  \item Make a mess, then press \key{Ctrl+Z} ten times and watch the document
+        walk backwards through your work.
+\end{enumerate}
+\end{tryit}

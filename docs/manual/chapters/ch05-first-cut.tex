@@ -1,0 +1,286 @@
+\chapter{Your first cut}
+\label{ch:firstcut}
+
+This is the chapter to do with your hands on the machine. We will cut and engrave
+a small plywood tag: one cut operation for the outline and the hanging hole, one
+engrave operation for a line of lettering. Nothing here is specific to a
+particular machine except the numbers, and the numbers are the part you will
+adjust.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.95]
+\draw[line width=0.9pt,mkred] (0,0) rectangle (6,3);
+\draw[line width=0.9pt,mkred] (1.6,1.5) circle (0.28);
+\draw[mkblue,line width=0.6pt] (2.5,1.7) -- (5.4,1.7);
+\draw[mkblue,line width=0.6pt] (2.5,1.2) -- (5.4,1.2);
+\draw[mkblue,line width=0.6pt] (2.5,0.7) -- (4.6,0.7);
+\node[font=\sffamily\scriptsize,color=mkgrey] at (1.6,0.85) {hole};
+\node[font=\sffamily\scriptsize,color=mkgrey] at (3.9,-0.35) {cut: outline + hole (red)};
+\node[font=\sffamily\scriptsize,color=mkblue] at (3.95,2.15) {engrave: text (blue)};
+\draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},mkdark] (0,-0.75) -- (6,-0.75);
+\node[font=\sffamily\scriptsize,color=mkdark,fill=white] at (3,-0.75) {60 mm};
+\draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},mkdark] (6.7,0) -- (6.7,3);
+\node[font=\sffamily\scriptsize,color=mkdark,fill=white,rotate=90] at (6.7,1.5) {30 mm};
+\end{tikzpicture}
+\caption{The finished job: a 60\,$\times$\,30\unit{mm} tag. Two operations share
+one drawing --- a red \mkseries{Cut} operation for the outline and the 4\unit{mm}
+hole, and a blue \mkseries{Engrave} operation for the text. Colour is how you
+keep track of which is which.}
+\label{fig:first-tag}
+\end{figure}
+
+\section{Before you press Start}
+
+\begin{machinebox}{The five-minute setup}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item \textbf{Focus.} Set the lens height for your material with the machine's
+        own gauge or jig. Software cannot fix focus.
+  \item \textbf{Air assist on} (if fitted). It clears smoke from the beam path and
+        reduces flare.
+  \item \textbf{Secure the material.} Tape it, magnet it, or clamp it. A workpiece
+        that shifts mid-job produces scrap and possibly a fire.
+  \item \textbf{Focus test on scrap.} If you have never cut this material, treat
+        your first job as the test. Keep a fire extinguisher within reach and
+        never leave the machine running unattended.
+  \item \textbf{Know your escape.} Locate the pause and stop controls --- on the
+        machine, and in the \panel{Laser-Control} pane (\btn{Pause},
+        \btn{Stop}).
+\end{enumerate}
+\end{machinebox}
+
+\section{Step 1 --- Start a project and check the bed}
+
+\begin{walkthrough}{A new project}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Start MeerK40t and make sure your machine is the active device (the red
+        row in the \panel{Devices} pane, Chapter~\ref{ch:connect}).
+  \item \menu{File>New} (\key{Ctrl+N}) clears operations, elements and notes. You
+        now have an empty document.
+  \item Press \key{Ctrl+B} (zoom to bed). The white rectangle you see is your
+        machine's working area, drawn from the device's \emph{Width} and
+        \emph{Height} settings. If the proportions look wrong, stop and fix the
+        device configuration now --- everything downstream depends on it.
+\end{enumerate}
+\end{walkthrough}
+
+\section{Step 2 --- Draw the shape}
+
+You can draw the tag here or import it; both are normal. Drawing it makes the
+later steps easier to see.
+
+\begin{walkthrough}{Draw a rectangle, a hole and some text}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Click \btn{Rectangle} in the \panel{Tools} icon bar. Click once near the
+        top-left of the bed for the first corner, and again for the opposite
+        corner. A rectangle appears and is selected.
+  \item Open the \panel{Position} pane (\menu{Panes>Editing>Position}). Set
+        \btn{Width} to \cmd{60mm} and \btn{Height} to \cmd{30mm}, pressing
+        \key{Enter} in each field. Set \btn{X} and \btn{Y} to place it, for
+        example \cmd{20mm} and \cmd{20mm}.
+  \item Click \btn{Circle} in the \panel{Tools} bar and click near the left end of
+        the rectangle to place a circle. In the \panel{Position} pane set both
+        \btn{Width} and \btn{Height} to \cmd{4mm} (a circle with equal width and
+        height), then set \btn{X} to \cmd{26mm} and \btn{Y} to \cmd{33mm} so it
+        sits 8\unit{mm} from the end and centred vertically.
+  \item Click \btn{Text} in the \panel{Tools} bar and click to the right of the
+        hole. With the new text element selected, open \menu{Tools>Properties}
+        and type your lettering, for example the word \cmd{WORKSHOP}. Set the
+        height so it fits in the remaining width.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent If you prefer to type rather than click, the console does the same work.
+\cmd{rect 20mm 20mm 60mm 30mm} creates the rectangle, \cmd{circle 26mm 33mm 4mm}
+the hole, and \cmd{text WORKSHOP} a text element. Console-created elements are
+selected automatically, so \cmd{scale}, \cmd{position} and friends apply to them
+immediately --- see Chapter~\ref{ch:console}.
+
+\begin{tipbox}[Get the size right before the burn, not after]
+Importing from Inkscape or Illustrator usually brings a scale with it: the
+drawing arrives at whatever size the file says, which is rarely the size you
+want. Press \key{Ctrl+B}, look at the bed, and use the \panel{Position} pane to
+set the real width. The dimension lines drawn on the scene update as you type.
+\end{tipbox}
+
+\section{Step 3 --- Create the two operations}
+
+Operations are recipes, and this job needs two: one to cut, one to engrave.
+
+\begin{walkthrough}{Cut and engrave}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Right-click the \emph{Operations} branch in the \panel{Tree} and choose
+        \menu{Append operation>Append Cut}. A red operation appears. Rename it if
+        you like --- a name such as \emph{Cut 3mm ply} is worth more than
+        \emph{Cut} when you have six operations.
+  \item Right-click \emph{Operations} again and choose \menu{Append
+        operation>Append Engrave}. A blue operation appears below it.
+  \item The order of the list is the burning order. Cutting last is usually what
+        you want: engrave the text first, while the part is still held by the
+        surrounding material. Drag one operation above the other if you need to
+        reorder; dragging in the tree changes burn order.
+\end{enumerate}
+\end{walkthrough}
+
+\section{Step 4 --- Assign the artwork}
+
+\begin{walkthrough}{Put each shape in the right operation}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item \key{Ctrl+A} selects everything on the scene.
+  \item Open the \panel{Operations} pane (\menu{Panes>Tools>Operations}). It shows
+        one coloured square per operation. Click the \textbf{blue} square to
+        assign everything to the \mkseries{Engrave} operation.
+  \item Click the rectangle on the scene to select just it, then hold \key{Shift}
+        and click the circle. Both are now selected.
+  \item Click the \textbf{red} square. The rectangle and the circle move to the
+        \mkseries{Cut} operation; the text stays engraved.
+  \item Look at the tree. Each operation now lists the elements it contains. If
+        something is in the wrong place, drag it from one operation to the other,
+        or right-click it and use \menu{Assign Operation}.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent Text elements belong to \mkseries{Engrave} or \mkseries{Raster}, not
+\mkseries{Cut}: a cut operation traces outlines, and letters have no useful
+outline to trace into a hole. Everything you need to know about the five
+operation types is in Chapter~\ref{ch:ops}.
+
+\begin{warnbox}[Watch for orphans]
+If a shape is in the elements branch but referenced by no operation, it will not
+burn and MeerK40t will warn you before starting
+(``Some shapes are not assigned to any operation\dots''). Always take that
+warning seriously --- usually the fix is one click on an operation square.
+\end{warnbox}
+
+\section{Step 5 --- Set speed and power}
+
+This is the part of the job that only your machine can answer, but here is a
+sane order of operations. Select the \mkseries{Cut} operation and open
+\menu{Tools>Properties}.
+
+\begin{center}\small
+\begin{tabular}{@{}L{2.9cm}L{3.0cm}L{3.3cm}L{5.1cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Typical 40\unit{W} CO\textsubscript{2} on 3\unit{mm}
+plywood} & \textbf{Typical diode on 3\unit{mm} plywood} & \textbf{Why} \\
+\midrule
+\btn{Speed} & 5--10\unit{mm/s} & 3--6\unit{mm/s} & Slower means more energy per
+millimetre; below a few mm/s the material chars. \\
+\btn{Power} & 60--80\% & 80--100\% & Enough to cut through in one or two passes. \\
+\btn{Passes} & 1, then 2 if needed & 2--4 & Two moderate passes cut cleaner than
+one aggressive pass. \\
+\btn{Kerf compensation} & 0 until you measure it & 0 & Compensate only when you
+know your kerf (Chapter~\ref{ch:tuning}). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Then select the \mkseries{Engrave} operation and give it its own
+numbers: engraving is a lighter burn at a higher speed, commonly something like
+25--35\unit{mm/s} at 20--40\% power for a visible, shallow mark on wood. ``Power''
+may be displayed as a 0--1000 scale or as a percentage depending on your device;
+the tooltip on the field tells you which.
+
+\begin{tipbox}[Write the numbers down]
+Keep a small table on the wall next to the machine: material, thickness, speed,
+power, passes, and the date. Two of those lines save you an entire afternoon
+three months from now. Chapter~\ref{ch:tuning} shows how to build the same
+information systematically with a test grid and the Material Library.
+\end{tipbox}
+
+\section{Step 6 --- Position and check before burning}
+
+\begin{walkthrough}{Frame the job, then estimate it}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item In the \panel{Position} pane, make sure the whole tag lies inside the bed
+        rectangle on the scene. Anything outside the bed will not be cut, and on
+        some machines it will not even be attempted --- or will trigger a
+        soft-limit alarm.
+  \item On the \panel{Laser-Control} pane, \tabname{Laser} tab, press
+        \btn{Outline}. If your machine has a pilot laser or low-power mode, the
+        head traces the job's bounding outline so you can see where it will land.
+        If it does not, the outline is drawn on screen instead. Either way, this
+        is the step that catches the job positioned 40\unit{mm} to the left of
+        your material.
+  \item Press \btn{Simulate} to open the \panel{Simulation} window, then press
+        \btn{Recalculate}. You get an animated preview and time estimates:
+        \emph{Laser Time}, \emph{Travel Time}, \emph{Total Time} and distances.
+        Watching the animation is the fastest way to see an obviously wrong
+        order --- the head leaping back and forth across the bed between two
+        cuts that are next to each other.
+  \item Close the simulation window when you are satisfied.
+\end{enumerate}
+\end{walkthrough}
+
+\section{Step 7 --- Run the job}
+
+\begin{walkthrough}{Cut the tag}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Check the \btn{Optimize} checkbox on the Laser tab. With it on, the job
+        is planned through the full pipeline; with it off, the plan skips
+        optimisation passes. Beginners should leave it on.
+  \item Press \btn{Start}. Deliberately: the button is guarded so that a stray
+        keystroke cannot begin a burn, which is why the mouse click matters.
+  \item Watch the progress header on the Laser tab. It reports the job state and
+        the percentage; the detail line shows steps completed and time remaining.
+  \item If the material begins to flare, press \btn{Pause} and be ready with
+        \btn{Stop}. \btn{Pause} finishes the current move and holds;
+        \btn{Resume} continues. \btn{Stop} aborts the job.
+  \item When the job ends, wait for the head to stop and the smoke to clear
+        before opening the lid.
+\end{enumerate}
+\end{walkthrough}
+
+\noindent Behind that one click, the program ran the familiar chain of stages:
+copy the operations, preprocess the coordinates, validate them, convert to
+cutcode (\emph{blob}), add optimisation commands, optimise, and spool. You can
+watch the same stages run line by line in the \panel{Console} pane, and run them
+yourself in the \panel{Plan} tab or the \btn{Execute Job} window
+(Chapter~\ref{ch:order}). If you ever want the manual version, those are the
+places to look.
+
+\begin{behindbox}[Job progress, and what ``Optimize'' really changed]
+With \btn{Optimize} ticked, the plan is built and optimised before the spooler
+receives it. With it unticked, the same plan is built without the optimisation
+stages. The spooler then feeds the driver, and the driver feeds the machine. Each
+stage reports into the console channel, which is why the console is the single
+best diagnostic tool in the program.
+\end{behindbox}
+
+\section{Step 8 --- Judge the result, then save}
+
+Lift the part out and look at the cut edge. Three outcomes:
+
+\begin{itemize}
+  \item \textbf{It fell out cleanly.} Save the project (\key{Ctrl+S}) and write
+        your settings down. You have a working recipe.
+  \item \textbf{The outline cut, the text is faint.} The \mkseries{Engrave}
+        operation needs more power or less speed.
+  \item \textbf{The edges are charred and the material is sticky.} Too much energy:
+        raise the speed or lower the power. On wood, charring often means the
+        beam dwelled too long --- one faster pass beats two slow ones.
+  \item \textbf{It did not cut through.} Add a pass, then reduce speed, then raise
+        power --- in that order, and re-test on scrap each time.
+\end{itemize}
+
+\noindent Saving is worth a word, because it is not what most people expect.
+MeerK40t's project file is an \file{.svg} file --- the same format you import ---
+with extra attributes that preserve operations, settings and notes
+(\key{Ctrl+S}, or \menu{File>Save As} for a new name). It is not a proprietary
+container, and it is not a device job file; if you want the \file{.egv},
+\file{.gcode}, \file{.rd} or \file{.lmc} that the machine itself consumes, use
+\menu{Plan>Export} on the Laser panel (Chapter~\ref{ch:files}).
+
+\begin{tryit}{Repeat the exercise on your own material}
+Now do it again without reading the steps, with one change: cut a material you
+actually care about.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.4em]
+  \item Draw or import a part with one cut contour and one hole.
+  \item Create \mkseries{Cut} and \mkseries{Engrave} operations and assign the
+        shapes by colour.
+  \item Take a guess at the settings, write the guess down, and cut it.
+  \item Adjust exactly one setting and cut again.
+  \item Record both attempts. That page of notes is your first material profile,
+        and Chapter~\ref{ch:tuning} turns it into something repeatable.
+\end{enumerate}
+\end{tryit}
