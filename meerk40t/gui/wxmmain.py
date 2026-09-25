@@ -1769,8 +1769,10 @@ class MeerK40t(MWindow):
         if getattr(node, "type", None) == "reference" and hasattr(node, "parent"):
             target = node.parent
 
+        # Check whether we do have a variable to open the special parameter test window for laser operations.
+        variable_test_enabled = self.context.setting(bool, "use_variable_test_on_double_click", False)
         laser_op_types = ("op cut", "op engrave", "op raster", "op image", "op dots")
-        if getattr(target, "type", None) in laser_op_types:
+        if variable_test_enabled and getattr(target, "type", None) in laser_op_types:
 
             def open_parameter_test():
                 window_uri = "window/Templatetool"
