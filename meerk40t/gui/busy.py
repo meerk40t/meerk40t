@@ -88,8 +88,7 @@ class BusyInfo_main:
             self.panel.SetSizer(sizer)
             self.panel.Layout()
             self.show()
-            if self.parent is not None:
-                self.parent.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+            self.set_parent_cursor(wx.CURSOR_WAIT)
             self.shown = True
 
     def end(self):
@@ -97,13 +96,13 @@ class BusyInfo_main:
             return
         with self.lock:
             self.hide()
-            if self.parent is not None:
-                self.parent.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-            if self.frame:
-                self.frame.Close()
-                del self.frame
-                self.frame = None
-            self.shown = False
+            self.set_parent_cursor(wx.CURSOR_ARROW)
+            if self.frame is not None:
+                try:
+                    self.frame.Close()
+                except RuntimeError:
+                    pass  # Already destroyed with the application.
+            self.forget()
 
     def change(self, **kwds):
         if wx.IsMainThread() is False:
@@ -115,18 +114,50 @@ class BusyInfo_main:
     def hide(self):
         if wx.IsMainThread() is False:
             return
-        if self.frame:
+        if self.window_alive():
             self.frame.Hide()
 
     def reparent(self, newparent):
         self.parent = newparent
 
+    def set_parent_cursor(self, cursor):
+        if self.parent is None:
+            return
+        try:
+            self.parent.SetCursor(wx.Cursor(cursor))
+        except RuntimeError:
+            self.parent = None  # Destroyed with the application.
+
+    def window_alive(self):
+        """
+        Whether the busy window still exists.
+
+        The frame can be destroyed behind our back while the application is
+        closing, which leaves the Python wrappers without their C++ objects.
+        """
+        if self.frame is None or self.panel is None or self.text is None:
+            # The busy was ended before this thread could acquire the lock.
+            return False
+        try:
+            self.frame.GetHandle()
+        except RuntimeError:
+            self.forget()
+            return False
+        return True
+
+    def forget(self):
+        """Drop the window after it was destroyed elsewhere."""
+        self.frame = None
+        self.panel = None
+        self.text = None
+        self.display = None
+        self.shown = False
+
     def show(self):
         if wx.IsMainThread() is False:
             return
         with self.lock:
-            if self.frame is None or self.panel is None or self.text is None:
-                # The busy was ended before this thread could acquire the lock.
+            if not self.window_alive():
                 return
             for win in [self.panel, self.text]:
                 win.SetBackgroundColour(self.bgcolor)
