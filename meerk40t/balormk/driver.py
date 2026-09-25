@@ -26,6 +26,13 @@ from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.kernel import channel
 
+# The pedal poll interval setting is declared with this default in device.py. The driver
+# falls back to it when the saved value is missing or unparsable, so the documented
+# default and the runtime behaviour cannot drift apart.
+PEDAL_POLL_INTERVAL_DEFAULT = 0.25
+# A misconfigured interval must not turn the poll into a USB hammering busy loop.
+PEDAL_POLL_INTERVAL_FLOOR = 0.05
+
 
 class BalorDriver:
     """Balor (Galvo) device driver.
@@ -41,9 +48,15 @@ class BalorDriver:
       - "pause_resume_toggle": toggle pause/resume on press
       - "pause_while_pressed": pause while pressed, resume on release
       - "stop": emergency stop on press
+      - "arm_start": arm the laser and start the current job on press
+    - "arm_start" only reacts to a press transition; a pedal already held down
+      when polling starts is treated as the baseline, not as a press.
     - `service.pedal_active_low` controls semantics of the pedal bit
       (True => bit 0 = pressed, False => bit 1 = pressed).
-    - Poll interval is `self._pedal_poll_interval` (default 0.5s).
+    - Poll interval is the `pedal_poll_interval` setting
+      (`PEDAL_POLL_INTERVAL_DEFAULT`, 0.25s), floored at
+      `PEDAL_POLL_INTERVAL_FLOOR` (0.05s); it also shows up as
+      `self._pedal_poll_interval`.
     - Thread lifecycle and termination:
       - The worker loop checks `self._pedal_thread_running` and
         `self._shutdown` and exits when `_shutdown` is True or the
@@ -94,7 +107,7 @@ class BalorDriver:
         self._pedal_thread = None
         self._pedal_thread_running = False
         self.last_foot_state = None
-        self._pedal_poll_interval = 0.5  # 0.5 seconds
+        self._pedal_poll_interval = PEDAL_POLL_INTERVAL_DEFAULT
 
     def __repr__(self):
         return f"BalorDriver({self.name})"
@@ -879,10 +892,94 @@ class BalorDriver:
             # Give the worker a short time to exit; join with timeout
             self._pedal_thread.join(timeout=1.0)
             if self._pedal_thread.is_alive():
-                self.service.channel(
+                self.service.channel("console")(
                     "Warning: Pedal polling thread did not exit within timeout; continuing."
                 )
             self._pedal_thread = None
+
+    def _pedal_arm_start(self):
+        """
+        Footpedal arm+start: arm the laser and start the current job.
+
+        Delegates to the `arm` and `startjob` console commands, the same pair the
+        ctrl+alt+shift+a keybinding runs, so arming, plan selection and the automatic
+        disarm after spooling stay in gui/wxmmain.py.
+
+        The press is ignored, with a channel message, when those commands are not
+        registered (no gui), when a job is already queued or running, or when there is
+        nothing to burn.
+        """
+        kernel = self.service.kernel
+        if not kernel.has_command("arm") or not kernel.has_command("startjob"):
+            self.service.channel("console")(
+                "Footpedal: arm/startjob unavailable, press ignored."
+            )
+            return
+        spooler = getattr(self.service, "spooler", None)
+        if spooler is not None and not spooler.is_idle:
+            self.service.channel("console")(
+                "Footpedal: job already running, press ignored."
+            )
+            return
+        elements = getattr(kernel, "elements", None)
+        if elements is None or not elements.have_burnable_elements():
+            self.service.channel("console")(
+                "Footpedal: nothing to burn, press ignored."
+            )
+            return
+        self.service.channel("console")("Footpedal pressed: arming, starting job.")
+        self.service("arm\nstartjob\n")
+
+    def pedal_report(self):
+        """
+        Report the footpedal polling state, used by the `pedal_status` console command.
+
+        Covers the parts that decide whether a press does anything: the pin the polling
+        thread samples, what that pin currently reads, whether the thread runs, and the
+        guards `arm_start` applies.
+
+        @return: list of report lines
+        """
+        service = self.service
+        pin = service.footpedal_pin
+        active_low = service.pedal_active_low
+        thread = self._pedal_thread
+        running = thread is not None and thread.is_alive()
+        lines = [
+            f"Mode: {service.pedal_mode}",
+            f"Pin: {pin} (active low: {active_low})",
+            f"Polling thread: {'running' if running else 'not running'}",
+            f"Connected: {self.connected}",
+        ]
+        if not self.connected:
+            lines.append("Port: not connected")
+        else:
+            try:
+                port_list = self.connection.read_port()
+            except Exception as e:  # Reporting hardware failures is the point here.
+                lines.append(f"Port read failed: {e}")
+            else:
+                if port_list is None:
+                    lines.append("Port read: no reply")
+                else:
+                    ports = port_list[1]
+                    bit = (ports >> pin) & 1
+                    pressed = bit == 0 if active_low else bit == 1
+                    lines.append(f"Port word: 0x{ports:04x} (bit {pin} = {bit})")
+                    lines.append(f"Decoded: {'pressed' if pressed else 'released'}")
+                    lines.append(f"Last polled: {self.last_foot_state}")
+        kernel = service.kernel
+        lines.append(
+            "Commands: arm={} startjob={}".format(
+                kernel.has_command("arm"), kernel.has_command("startjob")
+            )
+        )
+        spooler = getattr(service, "spooler", None)
+        lines.append(f"Spooler idle: {getattr(spooler, 'is_idle', 'unavailable')}")
+        elements = getattr(kernel, "elements", None)
+        burnable = elements.have_burnable_elements() if elements is not None else "n/a"
+        lines.append(f"Burnable elements: {burnable}")
+        return lines
 
     def _pedal_polling_worker(self):
         """
@@ -896,6 +993,7 @@ class BalorDriver:
         - "pause_resume_toggle": Toggle pause/resume job on press
         - "pause_while_pressed": Pause while pressed, resume on release
         - "stop": Abort job (emergency stop) on press
+        - "arm_start": Arm the laser and start the current job on press
 
         Based on pedal_active_low setting:
         - True: Bit state 0 means "pressed" (active-low)
@@ -958,13 +1056,13 @@ class BalorDriver:
                                     if self.paused:
                                         self.resume()
                                         # print("Resuming job due to footpedal press.")
-                                        self.service.channel(
+                                        self.service.channel("console")(
                                             f"Footpedal pressed: Job resumed"
                                         )
                                     else:
                                         self.pause()
                                         # print("Pausing job due to footpedal press.")
-                                        self.service.channel(
+                                        self.service.channel("console")(
                                             f"Footpedal pressed: Job paused"
                                         )
 
@@ -975,7 +1073,7 @@ class BalorDriver:
                                     if not self.paused:
                                         self.pause()
                                         # print("Pausing job due to footpedal press.")
-                                        self.service.channel(
+                                        self.service.channel("console")(
                                             f"Footpedal pressed: Job paused"
                                         )
                                 elif not is_pressed and was_pressed:
@@ -984,7 +1082,7 @@ class BalorDriver:
                                         self.resume()
 
                                         # print("Resuming job due to footpedal release.")
-                                        self.service.channel(
+                                        self.service.channel("console")(
                                             f"Footpedal released: Job resumed"
                                         )
 
@@ -993,12 +1091,22 @@ class BalorDriver:
                                 if not was_pressed and is_pressed:
                                     self.reset()
                                     # print("Emergency stop due to footpedal press.")
-                                    self.service.channel(
+                                    self.service.channel("console")(
                                         f"Footpedal pressed: Emergency stop"
                                     )
+                            elif action == "arm_start":
+                                # Arm and start the job on press. Only a genuine press
+                                # transition counts: a pedal already down when polling
+                                # starts is the baseline, not a press.
+                                if (
+                                    prev_state is not None
+                                    and not was_pressed
+                                    and is_pressed
+                                ):
+                                    self._pedal_arm_start()
                             # Log non-action changes if logging enabled
                             if self.service.setting(bool, "log_pedal_events", False):
-                                self.service.channel(
+                                self.service.channel("console")(
                                     f"Footpedal {state_label} (bit={foot_state})"
                                 )
 
@@ -1006,16 +1114,28 @@ class BalorDriver:
                             self.service.signal("pedal_state", foot_state)
 
             except (AttributeError, TypeError, IndexError) as e:
-                # Handle errors gracefully (e.g., connection lost)
-                # print(f"Pedal Polling: Ignored error: {e}")
-                pass
+                # Structural errors (a missing setting or attribute) would otherwise be
+                # swallowed silently, leaving the pedal dead with no explanation.
+                if getattr(self, "_last_pedal_error", None) != str(e):
+                    self._last_pedal_error = str(e)
+                    self.service.channel("console")(f"Pedal polling error: {e}")
             except Exception as e:
                 # Log unexpected errors but keep thread alive
                 # print(f"Pedal Polling: Error: {e}")
-                self.service.channel(f"Pedal polling error: {e}")
+                self.service.channel("console")(f"Pedal polling error: {e}")
 
-            # Sleep for the configured interval
-            # print(f"Will sleep for {self._pedal_poll_interval} seconds.")
+            # Sleep for the configured interval. Anything unparsable falls back to the
+            # default, and the floor keeps a misconfigured value from turning the poll
+            # into a USB hammering busy loop. This runs outside the try above, so it
+            # must not raise.
+            try:
+                default = PEDAL_POLL_INTERVAL_DEFAULT
+                interval = float(
+                    getattr(self.service, "pedal_poll_interval", default) or default
+                )
+            except (TypeError, ValueError):
+                interval = PEDAL_POLL_INTERVAL_DEFAULT
+            self._pedal_poll_interval = max(PEDAL_POLL_INTERVAL_FLOOR, interval)
             time.sleep(self._pedal_poll_interval)
 
     def cylinder_validate(self):
