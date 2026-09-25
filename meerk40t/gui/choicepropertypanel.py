@@ -120,6 +120,10 @@ class ChoicePropertyPanel(ScrolledPanel):
         Power Controls:
             "percent": bool or callable - display as percentage (0-100%) vs absolute (0-1000)
 
+        Text Controls:
+            "monospace": True - fixed pitch font, so columns stay lined up
+            "lines": n - make room for n rows of text (multi-line controls)
+
         Speed Controls:
             "perminute": bool or callable - display per-minute vs per-second values
 
@@ -753,6 +757,26 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Set display value
         display_value = self._format_text_display_value(data, choice)
         control.SetValue(display_value)
+
+        if choice.get("monospace", False):
+            # Fixed pitch, so columnar text (like a ruler under bit states) lines up.
+            control.SetFont(
+                wx.Font(
+                    10,
+                    wx.FONTFAMILY_TELETYPE,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+
+        lines = choice.get("lines", 0)
+        if lines > 1:
+            # A text control is about two lines tall by default, which cuts off the
+            # rest. Ask for the rows wanted, keeping the border it already has.
+            line_height = control.GetCharHeight()
+            height = control.GetSize().height
+            border = height - max(height // line_height, 1) * line_height
+            control.SetMinSize(wx.Size(-1, line_height * lines + border))
 
         # Apply width and validation
         self._apply_control_width(control, choice.get("width", 0))

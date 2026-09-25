@@ -11,6 +11,25 @@ from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
 
+BIT_COUNT = 16
+
+
+def format_port_bits(ports):
+    """
+    The controller's input pins: the states with a ruler of their pin numbers.
+
+    The pin index is the number the light_pin and footpedal_pin settings use, so
+    a bit that changes can be read off and configured directly. "x" is a set bit.
+    """
+    states = ""
+    tens = ""
+    units = ""
+    for bit in range(BIT_COUNT):
+        states += "x" if (1 << bit) & ports else "-"
+        tens += f"{bit // 10}"
+        units += f"{bit % 10}"
+    return "\n".join((states, tens, units))
+
 
 class BalorConfiguration(MWindow):
     """BalorConfiguration - User interface panel for laser cutting operations
@@ -78,8 +97,14 @@ class BalorConfiguration(MWindow):
                 "object": self,
                 "default": "",
                 "type": str,
+                "style": "multiline",
+                "monospace": True,
+                "lines": 3,
                 "enabled": False,
                 "label": _("Bits"),
+                "tip": _(
+                    "State of the controller's input pins, numbered like the pin settings"
+                ),
                 # Hint for translation _("Parameters")
                 "section": "_10_Parameters",
                 # Hint for translation _("Pin-Index")
@@ -179,19 +204,7 @@ class BalorConfiguration(MWindow):
         else:
             port_list = self.context.driver.connection.read_port()
             ports = port_list[1]
-            status = ""
-            line1 = ""
-            line2 = ""
-            for bit in range(16):
-                line1 += f"{bit // 10}"
-                line2 += f"{bit % 10}"
-                if bool((1 << bit) & ports):
-                    status += "x"
-                else:
-                    status += "-"
-            # print (line1)
-            # print (line2)
-            # print (status)
+            status = format_port_bits(ports)
         self.test_bits = status
         self.context.root.signal("test_bits", status, self)
 
