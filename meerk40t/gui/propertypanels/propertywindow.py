@@ -248,12 +248,12 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
-        nodes = list(self.context.elements.flat(selected=True, cascade=False))
+        nodes = list(self.context.elements._tree.flat(selected=True, cascade=False))
         self.validate_display(nodes, "selected")
 
     @signal_listener("emphasized")
     def on_emphasized(self, origin, *args):
-        nodes = list(self.context.elements.flat(emphasized=True, cascade=False))
+        nodes = list(self.context.elements._tree.flat(emphasized=True, cascade=False))
         self.validate_display(nodes, "emphasized")
 
     @signal_listener("element_property_force")
