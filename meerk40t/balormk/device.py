@@ -4,7 +4,7 @@ Galvo Device
 Defines how the balor device interacts with the scene, and accepts data via the spooler.
 """
 
-from meerk40t.balormk.driver import BalorDriver
+from meerk40t.balormk.driver import PEDAL_POLL_INTERVAL_DEFAULT, BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
@@ -81,6 +81,14 @@ class BalorDevice(Service, Status):
         )
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
+        # Pedal modes that read the footpedal bit themselves, rather than leaving it to
+        # input operations.
+        pedal_modes = (
+            "pause_resume_toggle",
+            "pause_while_pressed",
+            "stop",
+            "arm_start",
         )
         choices = [
             {
@@ -365,12 +373,14 @@ class BalorDevice(Service, Status):
                     "pause_resume_toggle",
                     "pause_while_pressed",
                     "stop",
+                    "arm_start",
                 ],
                 "display": [
                     _("Ignore (only act on input operation)"),
                     _("Pause/Resume Job on Press"),
                     _("Pause While Pressed"),
                     _("Stop Job"),
+                    _("Arm and Start Job on Press"),
                 ],
                 "label": _("Pedal action"),
                 "tip": _(
@@ -395,11 +405,23 @@ class BalorDevice(Service, Status):
                 "section": "_10_Parameters",
                 # Hint for translation _("Pin-Index")
                 "subsection": "_31_Footpedal",
-                "conditional": (
-                    self,
-                    "pedal_mode",
-                    ("pause_resume_toggle", "pause_while_pressed", "stop"),
+                "conditional": (self, "pedal_mode", pedal_modes),
+                "signals": "balorpin",
+            },
+            {
+                "attr": "pedal_poll_interval",
+                "object": self,
+                "default": PEDAL_POLL_INTERVAL_DEFAULT,
+                "type": float,
+                "label": _("Pedal poll interval"),
+                "tip": _(
+                    "How often the foot pedal is checked, in seconds. A smaller value reacts sooner but talks to the controller more often."
                 ),
+                # Hint for translation _("Parameters")
+                "section": "_10_Parameters",
+                # Hint for translation _("Pin-Index")
+                "subsection": "_31_Footpedal",
+                "conditional": (self, "pedal_mode", pedal_modes),
                 "signals": "balorpin",
             },
             {

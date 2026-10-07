@@ -1050,6 +1050,14 @@ def plugin(service, lifecycle):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
     @service.console_command(
+        "pedal_status",
+        help=_("Shows the footpedal polling state"),
+    )
+    def galvo_pedal_status(command, channel, _, **kwgs):
+        for line in service.driver.pedal_report():
+            channel(line)
+
+    @service.console_command(
         "input_port",
         help=_("Checks the input_port"),
     )
