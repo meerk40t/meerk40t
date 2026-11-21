@@ -1,8 +1,8 @@
-name: Publish MeerK40t to PyPI 
+name: Publish MeerK40t to PyPI
 
-on: 
+on:
     workflow_dispatch:
-   
+
     release:
       types: [published]
 
@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - name: Install pypa/build
       run: >-
         python3 -m

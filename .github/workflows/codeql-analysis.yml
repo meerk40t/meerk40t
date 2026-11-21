@@ -28,20 +28,20 @@ defaults:
 jobs:
   analyze:
     name: CodeQL
-    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
-        python-version: [3.9]
+        os: [ubuntu-latest]
+        python-version: ["3.10"]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout ${{ github.ref }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -51,7 +51,7 @@ jobs:
       run: echo "version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")" >> $GITHUB_OUTPUT
 
     - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ${{ env.pythonLocation }}
         key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/requirements.txt') || 'no-reqs' }}
@@ -74,7 +74,7 @@ jobs:
         env
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: python
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -83,4 +83,4 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4

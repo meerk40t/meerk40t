@@ -13,11 +13,11 @@ jobs:
     runs-on: macos-11
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
-##    - name: Set up Python 3.9
-##      uses: actions/setup-python@v5
+      uses: actions/checkout@v6
+##    - name: Set up Python 3.10
+##      uses: actions/setup-python@v7
 ##      with:
-##        python-version: 3.9
+##        python-version: "3.10"
     - name: Alternative Python Install if needed
       run: |
         wget https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg
