@@ -14,7 +14,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Set up Python 3.11
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: 3.11
         architecture: x86
@@ -72,7 +72,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Set up Python 3.11
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: 3.11
         architecture: x86
@@ -130,7 +130,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Set up Python 3.9
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: 3.9
 
@@ -331,7 +331,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Set up Python 3.9
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: 3.9
 
