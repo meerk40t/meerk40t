@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python 3.10
       uses: actions/setup-python@v7
       with:
-        python-version: 3.10
+        python-version: "3.10"
         # This won't work on outdate windows versions like win7
         architecture: x86
         # 32-bit architecture required for libusb to connect properly
