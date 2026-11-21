@@ -66,7 +66,7 @@ jobs:
         fi
 
     - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ${{ env.pythonLocation }}
         key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ steps.reqs_nogui_hash.outputs.hash }}
