@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
@@ -69,7 +69,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
@@ -127,7 +127,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Python 3.9
       uses: actions/setup-python@v5
@@ -289,7 +289,7 @@ jobs:
         echo $(ldd --version)
 
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Ensure dependencies installed
       run: |
@@ -328,7 +328,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Python 3.9
       uses: actions/setup-python@v5
@@ -531,7 +531,7 @@ jobs:
       options: --privileged
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Patch metainfo release entry
       # Replace the committed placeholder <release> with the actual snapshot
@@ -576,7 +576,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
